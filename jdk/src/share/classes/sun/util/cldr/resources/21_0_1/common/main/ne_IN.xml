@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5953 $"/>
+		<generation date="$Date: 2011-07-05 08:22:55 +0900 (Tue, 05 Jul 2011) $"/>
+		<language type="ne"/>
+		<territory type="IN"/>
+	</identity>
+	<localeDisplayNames>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">मेट्रिक</measurementSystemName>
+			<measurementSystemName type="US">अमेरिकेली</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">जनवरी</month>
+							<month type="2">फरवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रेल</month>
+							<month type="5">मई</month>
+							<month type="6">जुन</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सेप्टेम्बर</month>
+							<month type="10">अक्टोबर</month>
+							<month type="11">नोभेम्बर</month>
+							<month type="12">दिसम्बर</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">आइतवार</day>
+							<day type="mon">सोमवार</day>
+							<day type="tue">मङ्गलवार</day>
+							<day type="wed">बुधवार</day>
+							<day type="thu">बिहीवार</day>
+							<day type="fri">शुक्रवार</day>
+							<day type="sat">शनिवार</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1">पहिलो पाउ</quarter>
+							<quarter type="2">दोस्रो पाउ</quarter>
+							<quarter type="3">तेस्रो पाउ</quarter>
+							<quarter type="4">चौथो पाउ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">पूर्वाह्न</dayPeriod>
+							<dayPeriod type="pm">अपराह्न</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<fields>
+					<field type="era">
+						<displayName>युग</displayName>
+					</field>
+					<field type="year">
+						<displayName>वर्ष</displayName>
+					</field>
+					<field type="week">
+						<displayName>साता</displayName>
+					</field>
+					<field type="day">
+						<displayName>वार</displayName>
+						<relative type="2">पर्सि</relative>
+					</field>
+					<field type="weekday">
+						<displayName>हप्ताको वार</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>पूर्वाह्न / अपराह्न</displayName>
+					</field>
+					<field type="second">
+						<displayName>सेकेन्ड</displayName>
+					</field>
+					<field type="zone">
+						<displayName>अञ्‍चल</displayName>
+					</field>
+				</fields>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">वैशाख</month>
+							<month type="2">जेठ</month>
+							<month type="3">असार</month>
+							<month type="4">साउन</month>
+							<month type="5">भदौ</month>
+							<month type="6">असोज</month>
+							<month type="7">कात्तिक</month>
+							<month type="8">मङसिर</month>
+							<month type="9">पुस</month>
+							<month type="10">माघ</month>
+							<month type="11">फागुन</month>
+							<month type="12">चैत</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="INR">
+				<displayName>भारतीय रूपिँया</displayName>
+				<displayName count="one">भारतीय रूपिँया</displayName>
+				<displayName count="other">भारतीय रूपिँया</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="week">
+			<unitPattern count="one">{0} साता</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="one">{0} वर्ष</unitPattern>
+			<unitPattern count="other">{0} वर्ष</unitPattern>
+		</unit>
+	</units>
+</ldml>
+

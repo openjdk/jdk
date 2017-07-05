@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@
   #define C1_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
 #endif
 
-
 #define C2_PRODUCT_FLAG_MEMBER(type, name, value, doc)         FLAG_MEMBER(name),
 #define C2_PD_PRODUCT_FLAG_MEMBER(type, name, doc)             FLAG_MEMBER(name),
 #define C2_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
@@ -81,6 +80,17 @@
   #define C2_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
 #endif
 
+#define ARCH_PRODUCT_FLAG_MEMBER(type, name, value, doc)         FLAG_MEMBER(name),
+#define ARCH_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
+#define ARCH_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
+#ifdef PRODUCT
+  #define ARCH_DEVELOP_FLAG_MEMBER(type, name, value, doc)       /* flag is constant */
+  #define ARCH_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)
+#else
+  #define ARCH_DEVELOP_FLAG_MEMBER(type, name, value, doc)       FLAG_MEMBER(name),
+  #define ARCH_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
+#endif
+
 typedef enum {
  RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER, RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER, RUNTIME_EXPERIMENTAL_FLAG_MEMBER, RUNTIME_NOTPRODUCT_FLAG_MEMBER, RUNTIME_MANAGEABLE_FLAG_MEMBER, RUNTIME_PRODUCT_RW_FLAG_MEMBER, RUNTIME_LP64_PRODUCT_FLAG_MEMBER)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER, RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER, RUNTIME_NOTPRODUCT_FLAG_MEMBER)
@@ -93,6 +103,7 @@ typedef enum {
 #ifdef COMPILER2
  C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, C2_PD_DEVELOP_FLAG_MEMBER, C2_PRODUCT_FLAG_MEMBER, C2_PD_PRODUCT_FLAG_MEMBER, C2_DIAGNOSTIC_FLAG_MEMBER, C2_EXPERIMENTAL_FLAG_MEMBER, C2_NOTPRODUCT_FLAG_MEMBER)
 #endif
+ ARCH_FLAGS(ARCH_DEVELOP_FLAG_MEMBER, ARCH_PRODUCT_FLAG_MEMBER, ARCH_DIAGNOSTIC_FLAG_MEMBER, ARCH_EXPERIMENTAL_FLAG_MEMBER, ARCH_NOTPRODUCT_FLAG_MEMBER)
  COMMANDLINEFLAG_EXT
  NUM_CommandLineFlag
 } CommandLineFlag;
@@ -134,7 +145,6 @@ typedef enum {
 #define RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    /* flag is constant */
 #endif // _LP64
 
-
 #define C2_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)         FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)             FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
@@ -147,6 +157,17 @@ typedef enum {
   #define C2_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)       FLAG_MEMBER_WITH_TYPE(name,type),
   #define C2_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
   #define C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    FLAG_MEMBER_WITH_TYPE(name,type),
+#endif
+
+#define ARCH_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)         FLAG_MEMBER_WITH_TYPE(name,type),
+#define ARCH_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
+#define ARCH_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
+#ifdef PRODUCT
+  #define ARCH_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)       /* flag is constant */
+  #define ARCH_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)
+#else
+  #define ARCH_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)       FLAG_MEMBER_WITH_TYPE(name,type),
+  #define ARCH_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    FLAG_MEMBER_WITH_TYPE(name,type),
 #endif
 
 typedef enum {
@@ -193,6 +214,11 @@ typedef enum {
           C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
 #endif
+ ARCH_FLAGS(ARCH_DEVELOP_FLAG_MEMBER_WITH_TYPE,
+          ARCH_PRODUCT_FLAG_MEMBER_WITH_TYPE,
+          ARCH_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+          ARCH_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
+          ARCH_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
  COMMANDLINEFLAGWITHTYPE_EXT
  NUM_CommandLineFlagWithType
 } CommandLineFlagWithType;

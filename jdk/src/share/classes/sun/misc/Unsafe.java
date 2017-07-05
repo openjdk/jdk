@@ -82,7 +82,7 @@ public final class Unsafe {
      */
     public static Unsafe getUnsafe() {
         Class<?> cc = sun.reflect.Reflection.getCallerClass(2);
-        if (cc.getClassLoader() != null)
+        if (!VM.isSystemDomainLoader(cc.getClassLoader()))
             throw new SecurityException("Unsafe");
         return theUnsafe;
     }

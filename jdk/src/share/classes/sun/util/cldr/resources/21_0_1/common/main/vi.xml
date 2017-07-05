@@ -1,0 +1,3654 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6706 $"/>
+		<generation date="$Date: 2012-03-16 14:28:59 +0900 (Fri, 16 Mar 2012) $"/>
+		<language type="vi"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>, </localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ab">Tiếng Abkhazia</language>
+			<language type="af">Tiếng Nam Phi</language>
+			<language type="am">Tiếng Amharic</language>
+			<language type="ar">Tiếng A-rập</language>
+			<language type="as">Tiếng Assam</language>
+			<language type="ay">Tiếng Aymara</language>
+			<language type="az">Tiếng Ai-déc-bai-gian</language>
+			<language type="az" alt="short">Tiếng Azeri</language>
+			<language type="be">Tiếng Bê-la-rút</language>
+			<language type="bg">Tiếng Bun-ga-ri</language>
+			<language type="bh" draft="contributed">Tiếng Bihari</language>
+			<language type="bn">Tiếng Bengali (Ấn Độ)</language>
+			<language type="bo">Tiếng Tây Tạng</language>
+			<language type="br" draft="contributed">Tiếng Breton</language>
+			<language type="bs">Tiếng Nam Tư</language>
+			<language type="ca">Tiếng Ca-ta-lăng</language>
+			<language type="cs">Tiếng Séc</language>
+			<language type="cy">Tiếng Xentơ</language>
+			<language type="da">Tiếng Đan Mạch</language>
+			<language type="de">Tiếng Đức</language>
+			<language type="de_CH">Tiếng Đức Chuẩn (Thụy Sĩ)</language>
+			<language type="dv">Tiếng Divehi</language>
+			<language type="dz">Tiếng Dzongkha</language>
+			<language type="efi">Tiếng Efik</language>
+			<language type="el">Tiếng Hy Lạp</language>
+			<language type="en">Tiếng Anh</language>
+			<language type="en_CA">Tiếng Anh (Canada)</language>
+			<language type="en_GB">Tiếng Anh (Anh)</language>
+			<language type="en_US">Tiếng Anh (Mỹ)</language>
+			<language type="eo">Tiếng Quốc Tế Ngữ</language>
+			<language type="es">Tiếng Tây Ban Nha</language>
+			<language type="es_419">Tiếng Tây Ban Nha (Mỹ La tinh)</language>
+			<language type="es_ES">Tiếng Tây Ban Nha (I-bê-ri)</language>
+			<language type="et">Tiếng E-xtô-ni-a</language>
+			<language type="eu" draft="contributed">Tiếng Basque</language>
+			<language type="fa">Tiếng Ba Tư</language>
+			<language type="fi">Tiếng Phần Lan</language>
+			<language type="fil">Tiếng Philipin</language>
+			<language type="fj">Tiếng Fiji</language>
+			<language type="fo">Tiếng Faore</language>
+			<language type="fr">Tiếng Pháp</language>
+			<language type="fr_CA">Tiếng Pháp (Canada)</language>
+			<language type="fy">Tiếng Frisian</language>
+			<language type="ga">Tiếng Ai-len</language>
+			<language type="gd">Tiếng Xentơ (Xcốt len)</language>
+			<language type="gl">Tiếng Galician</language>
+			<language type="gn">Tiếng Guarani</language>
+			<language type="gsw">Tiếng Đức Thụy Sĩ</language>
+			<language type="gu">Tiếng Gujarati</language>
+			<language type="ha">Tiếng Hausa</language>
+			<language type="haw">Tiếng Hawaii</language>
+			<language type="he">Tiếng Hê-brơ</language>
+			<language type="hi">Tiếng Hin-đi</language>
+			<language type="hr">Tiếng Crô-a-ti-a</language>
+			<language type="ht">Tiếng Haiti</language>
+			<language type="hu">Tiếng Hung-ga-ri</language>
+			<language type="hy">Tiếng Ác-mê-ni</language>
+			<language type="ia">Tiếng Khoa Học Quốc Tế</language>
+			<language type="id">Tiếng In-đô-nê-xia</language>
+			<language type="ig">Tiếng Igbo</language>
+			<language type="is">Tiếng Ai-xơ-len</language>
+			<language type="it">Tiếng Ý</language>
+			<language type="ja">Tiếng Nhật</language>
+			<language type="jv">Tiếng Gia-va</language>
+			<language type="ka">Tiếng Georgian</language>
+			<language type="kk">Tiếng Kazakh</language>
+			<language type="km">Tiếng Campuchia</language>
+			<language type="kn">Tiếng Kan-na-đa</language>
+			<language type="ko">Tiếng Hàn Quốc</language>
+			<language type="ks">Tiếng Kashmiri</language>
+			<language type="ku">Tiếng Kurd (Iran)</language>
+			<language type="ky" draft="contributed">Tiếng Kyrgyz</language>
+			<language type="la">Tiếng La-tinh</language>
+			<language type="lb">Tiếng Luxembourg</language>
+			<language type="ln">Tiếng Lingala</language>
+			<language type="lo">Tiếng Lào</language>
+			<language type="lt">Tiếng Lít-va</language>
+			<language type="lv">Tiếng Lát-vi-a</language>
+			<language type="mg">Tiếng Malagasy</language>
+			<language type="mi">Tiếng Maori</language>
+			<language type="mk">Tiếng Ma-xê-đô-ni-a</language>
+			<language type="ml">Tiếng Malayalam</language>
+			<language type="mn">Tiếng Mông Cổ</language>
+			<language type="mr">Tiếng Marathi</language>
+			<language type="ms">Tiếng Ma-lay-xi-a</language>
+			<language type="mt">Tiếng Mantơ</language>
+			<language type="my" draft="contributed">Tiếng Miến Điện</language>
+			<language type="nb" draft="contributed">Tiếng Na Uy (Bokmål)</language>
+			<language type="nd" draft="contributed">Bắc Ndebele</language>
+			<language type="ne">Tiếng Nê-pan</language>
+			<language type="nl">Tiếng Hà Lan</language>
+			<language type="nl_BE">Tiếng Flemish</language>
+			<language type="nn">Tiếng Na Uy (Nynorsk)</language>
+			<language type="no">Tiếng Na Uy</language>
+			<language type="nso" draft="contributed">Bắc Sotho</language>
+			<language type="ny" draft="contributed">Tiếng Nyanja</language>
+			<language type="oc" draft="contributed">Tiếng Occitan</language>
+			<language type="or" draft="contributed">Tiếng Ô-ri-a</language>
+			<language type="os" draft="contributed">Tiếng Ossetic</language>
+			<language type="pa" draft="contributed">Tiếng Punjabi</language>
+			<language type="pl">Tiếng Ba Lan</language>
+			<language type="ps" draft="contributed">Tiếng Pa-tô</language>
+			<language type="ps" alt="variant" draft="contributed">Tiếng Pushto</language>
+			<language type="pt">Tiếng Bồ Đào Nha</language>
+			<language type="pt_BR" draft="contributed">Tiếng Bồ Đào Nha (Braxin)</language>
+			<language type="pt_PT" draft="contributed">Tiếng Bồ Đào Nha (I-bê-ri)</language>
+			<language type="qu" draft="contributed">Tiếng Quechua</language>
+			<language type="rm" draft="contributed">Tiếng Rhaeto-Romance</language>
+			<language type="rn" draft="contributed">Tiếng Rundi</language>
+			<language type="ro">Tiếng Ru-ma-ni</language>
+			<language type="ru">Tiếng Nga</language>
+			<language type="rw" draft="contributed">Tiếng Kinyarwanda</language>
+			<language type="sa">Tiếng Phạn</language>
+			<language type="sd" draft="contributed">Tiếng Sin-hi</language>
+			<language type="se" draft="contributed">Bắc Sami</language>
+			<language type="sg" draft="contributed">Tiếng Sango</language>
+			<language type="sh" draft="contributed">Tiếng Xéc bi - Croatia</language>
+			<language type="si" draft="contributed">Tiếng Sinhala</language>
+			<language type="sk">Tiếng Xlô-vác</language>
+			<language type="sl">Tiếng Xlô-ven</language>
+			<language type="sm" draft="contributed">Tiếng Samoa</language>
+			<language type="sn" draft="contributed">Tiếng Shona</language>
+			<language type="so">Tiếng Xô-ma-li</language>
+			<language type="sq">Tiếng An-ba-ni</language>
+			<language type="sr">Tiếng Séc-bi</language>
+			<language type="ss" draft="contributed">Tiếng Swati</language>
+			<language type="st">Tiếng Sesotho</language>
+			<language type="su" draft="contributed">Tiếng Xu đăng</language>
+			<language type="sv">Tiếng Thụy Điển</language>
+			<language type="sw" draft="contributed">Tiếng Bantu (Đông Phi)</language>
+			<language type="swb" draft="contributed">Tiếng Cômo</language>
+			<language type="ta" draft="contributed">Tiếng Tamil</language>
+			<language type="te" draft="contributed">Tiếng Telugu</language>
+			<language type="tet" draft="contributed">Tetum</language>
+			<language type="tg" draft="contributed">Tiếng Tajik</language>
+			<language type="th">Tiếng Thái</language>
+			<language type="ti" draft="contributed">Tiếng Tigrigya</language>
+			<language type="tk" draft="contributed">Tiếng Tuôc-men</language>
+			<language type="tl" draft="contributed">Tiếng Tagalog</language>
+			<language type="tlh" draft="contributed">Tiếng Klingon</language>
+			<language type="tn" draft="contributed">Tiếng Tswana</language>
+			<language type="to" draft="contributed">Tiếng Tonga</language>
+			<language type="tpi" draft="contributed">Tiếng Tok Pisin</language>
+			<language type="tr">Tiếng Thổ Nhĩ Kỳ</language>
+			<language type="ts" draft="contributed">Tiếng Tsonga</language>
+			<language type="tt" draft="contributed">Tiếng Tatar</language>
+			<language type="tw" draft="contributed">Tiếng Twi</language>
+			<language type="ty" draft="contributed">Tiếng Tahiti</language>
+			<language type="ug" draft="contributed">Tiếng Uighur</language>
+			<language type="ug" alt="variant" draft="contributed">Tiếng Uyghur</language>
+			<language type="uk">Tiếng U-crai-na</language>
+			<language type="und">Tiếng không xác định</language>
+			<language type="ur" draft="contributed">Tiếng Uđu</language>
+			<language type="uz">Tiếng U-dơ-bếch</language>
+			<language type="ve" draft="contributed">Tiếng Venda</language>
+			<language type="vi">Tiếng Việt</language>
+			<language type="wo" draft="contributed">Tiếng Wolof</language>
+			<language type="xh" draft="contributed">Tiếng Bantu</language>
+			<language type="yi">Tiếng Y-đit</language>
+			<language type="yo" draft="contributed">Tiếng Yoruba</language>
+			<language type="yue" draft="contributed">Tiếng Quảng Đông</language>
+			<language type="zh">Tiếng Trung Quốc</language>
+			<language type="zh_Hans" draft="contributed">Tiếng Trung Quốc (Giản thể)</language>
+			<language type="zh_Hant" draft="contributed">Tiếng Trung Quốc (Phồn thể)</language>
+			<language type="zu" draft="contributed">Tiếng Zulu</language>
+			<language type="zxx" draft="contributed">Không có nội dung ngôn ngữ</language>
+		</languages>
+		<scripts>
+			<script type="Arab">Chữ Ả Rập</script>
+			<script type="Arab" alt="variant">Chữ Ba Tư-Ả Rập</script>
+			<script type="Armn">Chữ Armenia</script>
+			<script type="Beng">Chữ Bengali</script>
+			<script type="Bopo">Chữ Bopomofo</script>
+			<script type="Brai">Chữ nổi Braille</script>
+			<script type="Cyrl">Chữ Kirin</script>
+			<script type="Deva">Chữ Devanagari</script>
+			<script type="Ethi">Chữ Ethiopia</script>
+			<script type="Geor">Chữ Georgia</script>
+			<script type="Grek">Chữ Hy Lạp</script>
+			<script type="Gujr">Chữ Gujarati</script>
+			<script type="Guru">Chữ Gurmukhi</script>
+			<script type="Hang">Chữ Hangul</script>
+			<script type="Hani">Chữ Hán</script>
+			<script type="Hans">Giản thể</script>
+			<script type="Hans" alt="stand-alone">Chữ Hán giản thể</script>
+			<script type="Hant">Phồn thể</script>
+			<script type="Hant" alt="stand-alone">Chữ Hán phồn thể</script>
+			<script type="Hebr">Chữ Do Thái</script>
+			<script type="Hira">Chữ Hiragana</script>
+			<script type="Jpan">Nhật Bản</script>
+			<script type="Kana">Chữ Katakana</script>
+			<script type="Khmr">Chữ Khơ-me</script>
+			<script type="Knda">Chữ Kannada</script>
+			<script type="Kore">Hàn Quốc</script>
+			<script type="Laoo">Chữ Lào</script>
+			<script type="Latn">Chữ La tinh</script>
+			<script type="Mlym">Chữ Malayalam</script>
+			<script type="Mong">Chữ Mông Cổ</script>
+			<script type="Mymr">Myanma</script>
+			<script type="Orya">Chữ Oriya</script>
+			<script type="Sinh">Chữ Sinhala</script>
+			<script type="Taml">Chữ Tamil</script>
+			<script type="Telu">Chữ Telugu</script>
+			<script type="Thaa">Chữ Thaana</script>
+			<script type="Thai">Chữ Thái</script>
+			<script type="Tibt">Chữ Tây Tạng</script>
+			<script type="Zsym">Ký hiệu</script>
+			<script type="Zxxx">Chưa có chữ viết</script>
+			<script type="Zyyy">Chung</script>
+			<script type="Zzzz">Chữ viết Không xác định</script>
+		</scripts>
+		<territories>
+			<territory type="001">Thế giới</territory>
+			<territory type="002">Châu Phi</territory>
+			<territory type="003">Bắc Mỹ</territory>
+			<territory type="005">Nam Mỹ</territory>
+			<territory type="009">Châu Đại Dương</territory>
+			<territory type="011">Tây Phi</territory>
+			<territory type="013">Trung Mỹ</territory>
+			<territory type="014" draft="contributed">Đông Phí</territory>
+			<territory type="015">Bắc Phi</territory>
+			<territory type="017">Trung Phi</territory>
+			<territory type="018">Miền Nam Châu Phi</territory>
+			<territory type="019">Châu Mỹ</territory>
+			<territory type="021">Miền Bắc Châu Mỹ</territory>
+			<territory type="029">Ca-ri-bê</territory>
+			<territory type="030">Đông Á</territory>
+			<territory type="034">Nam Á</territory>
+			<territory type="035">Đông Nam Á</territory>
+			<territory type="039">Nam Âu</territory>
+			<territory type="053">Úc và New Zealand</territory>
+			<territory type="054">Melanesia</territory>
+			<territory type="057">Vùng Micronesian</territory>
+			<territory type="061">Polynesia</territory>
+			<territory type="142">Châu Á</territory>
+			<territory type="143">Trung Á</territory>
+			<territory type="145">Tây Á</territory>
+			<territory type="150">Âu Châu</territory>
+			<territory type="151">Đông Âu</territory>
+			<territory type="154">Miền Bắc Châu Âu</territory>
+			<territory type="155">Tây Âu</territory>
+			<territory type="419">Châu Mỹ La-tinh</territory>
+			<territory type="AC">Đảo Ascension</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AE">Các Tiểu Vương quốc A-rập Thống nhất</territory>
+			<territory type="AF">Áp-ga-ni-xtan</territory>
+			<territory type="AG">An-ti-gu-a và Ba-bu-đa</territory>
+			<territory type="AI">Anguilla</territory>
+			<territory type="AL">An-ba-ni</territory>
+			<territory type="AM">Ác-mê-ni-a</territory>
+			<territory type="AN">Tây Ấn Hà Lan</territory>
+			<territory type="AO">Ăng-gô-la</territory>
+			<territory type="AQ">Nam Cực</territory>
+			<territory type="AR">Ác-hen-ti-na</territory>
+			<territory type="AS">Đảo Somoa thuộc Mỹ</territory>
+			<territory type="AT">Áo</territory>
+			<territory type="AU">Úc</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AX">Quần đảo Aland</territory>
+			<territory type="AZ">Ai-déc-bai-gian</territory>
+			<territory type="BA">Bô-xni-a Héc-xê-gô-vi-na</territory>
+			<territory type="BB">Bác-ba-đốt</territory>
+			<territory type="BD">Băng-la-đét</territory>
+			<territory type="BE">Bỉ</territory>
+			<territory type="BF">Buốc-ki-na Pha-xô</territory>
+			<territory type="BG">Bun-ga-ri</territory>
+			<territory type="BH">Ba-ren</territory>
+			<territory type="BI">Bu-run-đi</territory>
+			<territory type="BJ">Bê-nanh</territory>
+			<territory type="BM">Bermuda</territory>
+			<territory type="BN">Bru-nây</territory>
+			<territory type="BO">Bô-li-vi-a</territory>
+			<territory type="BR">Bra-xin</territory>
+			<territory type="BS">Ba-ha-ma</territory>
+			<territory type="BT">Bu-tan (Bhutan)</territory>
+			<territory type="BV">Đảo Bouvet (Na Uy)</territory>
+			<territory type="BW">Bốt-xoa-na</territory>
+			<territory type="BY">Bê-la-rút</territory>
+			<territory type="BZ">Bê-li-xê</territory>
+			<territory type="CA">Ca-na-đa</territory>
+			<territory type="CC">Quần đảo Cocos</territory>
+			<territory type="CD">Cộng hoà dân chủ Côngô</territory>
+			<territory type="CD" alt="variant">Công-gô (DRC)</territory>
+			<territory type="CF">Cộng hòa Trung Phi</territory>
+			<territory type="CG">Công-gô</territory>
+			<territory type="CG" alt="variant">Cộng hòa Công-gô</territory>
+			<territory type="CH">Thụy Sĩ</territory>
+			<territory type="CI">Bờ Biển Ngà</territory>
+			<territory type="CI" alt="variant">Bờ Biển Ngà</territory>
+			<territory type="CK">Quần Đảo Cook</territory>
+			<territory type="CL">Chi-lê</territory>
+			<territory type="CM">Ca-mơ-run</territory>
+			<territory type="CN">Trung Quốc</territory>
+			<territory type="CO">Cô-lôm-bi-a</territory>
+			<territory type="CP">Đảo Clipperton</territory>
+			<territory type="CR">Cốt-xta Ri-ca</territory>
+			<territory type="CS">Séc-bia</territory>
+			<territory type="CU">Cu Ba</territory>
+			<territory type="CV">Cáp-ve</territory>
+			<territory type="CX">Đảo Giáng Sinh</territory>
+			<territory type="CY">Síp</territory>
+			<territory type="CZ">Cộng hòa Séc</territory>
+			<territory type="DE">Đức</territory>
+			<territory type="DG">Diego Garcia</territory>
+			<territory type="DJ">Gi-bu-ti</territory>
+			<territory type="DK">Đan Mạch</territory>
+			<territory type="DM" draft="contributed">Dominica</territory>
+			<territory type="DO">Cộng hoà Đô-mi-ni-ca</territory>
+			<territory type="DZ">An-giê-ri</territory>
+			<territory type="EA">Ceuta và Melilla</territory>
+			<territory type="EC">Ê-cu-a-đo</territory>
+			<territory type="EE">E-xtô-ni-a</territory>
+			<territory type="EG">Ai Cập</territory>
+			<territory type="EH">Tây Sahara</territory>
+			<territory type="ER">Ê-ri-tơ-rê-a</territory>
+			<territory type="ES">Tây Ban Nha</territory>
+			<territory type="ET">Ê-ti-ô-pi-a</territory>
+			<territory type="EU">Liên Minh Châu Âu</territory>
+			<territory type="FI">Phần Lan</territory>
+			<territory type="FJ">Phi-gi</territory>
+			<territory type="FK">Quần Đảo Falkland</territory>
+			<territory type="FK" alt="variant" draft="contributed">Quần đảo Falkland [Islas Malvinas]</territory>
+			<territory type="FM">Mi-crô-nê-xi-a</territory>
+			<territory type="FO">Quần Đảo Faroe</territory>
+			<territory type="FR">Pháp</territory>
+			<territory type="GA">Ga-bông</territory>
+			<territory type="GB">Vương quốc Anh</territory>
+			<territory type="GD">Grê-na-đa</territory>
+			<territory type="GE">Gru-di-a</territory>
+			<territory type="GF">Quiana thuộc Pháp</territory>
+			<territory type="GG" draft="contributed">Guernsey</territory>
+			<territory type="GH">Gha-na</territory>
+			<territory type="GI" draft="contributed">Gibraltar</territory>
+			<territory type="GL">Băng Đảo</territory>
+			<territory type="GM">Găm-bi-a</territory>
+			<territory type="GN">Ghi-nê</territory>
+			<territory type="GP" draft="contributed">Guadeloupe</territory>
+			<territory type="GQ">Ghi-nê Xích-đạo</territory>
+			<territory type="GR">Hy Lạp</territory>
+			<territory type="GS" draft="contributed">Quần đảo Nam Georgia và Nam Sandwich</territory>
+			<territory type="GT">Goa-tê-ma-la</territory>
+			<territory type="GU">Đảo Gu-am</territory>
+			<territory type="GW">Ghi-nê Bít-xao</territory>
+			<territory type="GY">Guy-a-na</territory>
+			<territory type="HK">Đặc khu hành chính Hồng Kông thuộc CHND Trung Hoa</territory>
+			<territory type="HK" alt="short">Hồng Kông</territory>
+			<territory type="HM" draft="contributed">Đảo Heard và Quần đảo McDonald</territory>
+			<territory type="HN">Hôn-đu-rát</territory>
+			<territory type="HR">Crô-a-ti-a</territory>
+			<territory type="HT">Ha-i-ti</territory>
+			<territory type="HU">Hung-ga-ri</territory>
+			<territory type="IC">Quần đảo Canary</territory>
+			<territory type="ID">Nam Dương</territory>
+			<territory type="IE">Ai-len</territory>
+			<territory type="IL">I-xra-en</territory>
+			<territory type="IM" draft="contributed">Đảo Man</territory>
+			<territory type="IN">Ấn Độ</territory>
+			<territory type="IO" draft="contributed">Thuộc địa Anh tại Ấn Độ Dương</territory>
+			<territory type="IQ">I-rắc</territory>
+			<territory type="IR">I-ran</territory>
+			<territory type="IS">Ai-xơ-len</territory>
+			<territory type="IT">Ý</territory>
+			<territory type="JE" draft="contributed">Jersey</territory>
+			<territory type="JM">Ha-mai-ca</territory>
+			<territory type="JO">Gióc-đa-ni</territory>
+			<territory type="JP">Nhật Bản</territory>
+			<territory type="KE">Kê-ni-a</territory>
+			<territory type="KG">Cư-rơ-gư-xtan</territory>
+			<territory type="KH">Campuchia</territory>
+			<territory type="KI">Ki-ri-ba-ti</territory>
+			<territory type="KM">Cô-mô</territory>
+			<territory type="KN">Xan-kít và Nê-vi</territory>
+			<territory type="KP">Bắc Triều Tiên</territory>
+			<territory type="KR">Hàn Quốc</territory>
+			<territory type="KW">Cô-oét</territory>
+			<territory type="KY">Quần Đảo Cayman</territory>
+			<territory type="KZ">Ka-dắc-xtan</territory>
+			<territory type="LA">Lào</territory>
+			<territory type="LB">Li-băng</territory>
+			<territory type="LC">Xan Lu-xi</territory>
+			<territory type="LI">Lich-ten-xtên</territory>
+			<territory type="LK">Xri Lan-ca</territory>
+			<territory type="LR">Li-bê-ri-a</territory>
+			<territory type="LS">Lê-xô-thô</territory>
+			<territory type="LT">Li-tu-a-ni-a</territory>
+			<territory type="LU">Lúc-xăm-bua</territory>
+			<territory type="LV">Lát-vi-a</territory>
+			<territory type="LY">Li-bi</territory>
+			<territory type="MA">Ma-rốc</territory>
+			<territory type="MC">Mô-na-cô</territory>
+			<territory type="MD">Môn-đô-va</territory>
+			<territory type="ME" draft="contributed">Montenegro</territory>
+			<territory type="MG">Ma-đa-gát-xca</territory>
+			<territory type="MH">Quần đảo Mác-san</territory>
+			<territory type="MK">Ma-xê-đô-ni-a</territory>
+			<territory type="MK" alt="variant" draft="contributed">Macedonia [FYROM]</territory>
+			<territory type="ML">Ma-li</territory>
+			<territory type="MM">Mi-an-ma</territory>
+			<territory type="MN">Mông Cổ</territory>
+			<territory type="MO" draft="contributed">Đặc khu hành chính Macao thuộc CHND Trung Hoa</territory>
+			<territory type="MO" alt="short" draft="contributed">Macao</territory>
+			<territory type="MP" draft="contributed">Quần Đảo Bắc Mariana</territory>
+			<territory type="MR">Mô-ri-ta-ni</territory>
+			<territory type="MS" draft="contributed">Montserrat</territory>
+			<territory type="MT">Man-ta</territory>
+			<territory type="MU">Mô-ri-xơ</territory>
+			<territory type="MV">Man-đi-vơ</territory>
+			<territory type="MW">Ma-la-uy</territory>
+			<territory type="MX">Mê-hi-cô</territory>
+			<territory type="MY">Ma-lay-xi-a</territory>
+			<territory type="MZ">Mô-dăm-bích</territory>
+			<territory type="NA">Nam-mi-bi-a</territory>
+			<territory type="NC">New Caledonia</territory>
+			<territory type="NE">Ni-giê</territory>
+			<territory type="NF">Đảo Norfolk</territory>
+			<territory type="NG">Ni-giê-ri-a</territory>
+			<territory type="NI">Ni-ca-ra-goa</territory>
+			<territory type="NL">Hà Lan</territory>
+			<territory type="NO">Na Uy</territory>
+			<territory type="NP">Nê-pan</territory>
+			<territory type="NR" draft="contributed">Nauru</territory>
+			<territory type="NU" draft="contributed">Niue</territory>
+			<territory type="NZ">Niu Di-lân</territory>
+			<territory type="OM">Ô-man</territory>
+			<territory type="PA">Pa-na-ma</territory>
+			<territory type="PE">Pê-ru</territory>
+			<territory type="PF">Polynesia thuộc Pháp</territory>
+			<territory type="PG">Pa-pu-a Niu Ghi-nê</territory>
+			<territory type="PH">Phi-lip-pin</territory>
+			<territory type="PK">Pa-ki-xtan</territory>
+			<territory type="PL">Ba Lan</territory>
+			<territory type="PM" draft="contributed">Saint Pierre và Miquelon</territory>
+			<territory type="PN" draft="contributed">Quần đảo Pitcairn</territory>
+			<territory type="PR" draft="contributed">Puerto Rico</territory>
+			<territory type="PS">Lãnh thổ Palestine</territory>
+			<territory type="PT">Bồ Đào Nha</territory>
+			<territory type="PW" draft="contributed">Palau</territory>
+			<territory type="PY">Pa-ra-goay</territory>
+			<territory type="QA">Ca-ta</territory>
+			<territory type="QO" draft="contributed">Vùng xa xôi thuộc Châu Đại Dương</territory>
+			<territory type="RO">Ru-ma-ni</territory>
+			<territory type="RS" draft="contributed">Xéc-bi</territory>
+			<territory type="RU">Nga</territory>
+			<territory type="RW">Ru-an-đa</territory>
+			<territory type="SA">A-rập Xê-út</territory>
+			<territory type="SB">Quần đảo Xô-lô-mông</territory>
+			<territory type="SC">Xây-sen</territory>
+			<territory type="SD">Xu-đăng</territory>
+			<territory type="SE">Thụy Điển</territory>
+			<territory type="SG">Xin-ga-po</territory>
+			<territory type="SH">Saint Helena</territory>
+			<territory type="SI">Xlô-ven-ni-a</territory>
+			<territory type="SJ" draft="contributed">Svalbard và Jan Mayen</territory>
+			<territory type="SK">Xlô-va-ki-a</territory>
+			<territory type="SL">Xi-ê-ra Lê-ôn</territory>
+			<territory type="SM">Xan Ma-ri-nô</territory>
+			<territory type="SN">Xê-nê-gan</territory>
+			<territory type="SO">Xô-ma-li</territory>
+			<territory type="SR">Xu-ri-nam</territory>
+			<territory type="ST">Xao Tô-mê và Prin-xi-pê</territory>
+			<territory type="SV">En-san-va-đo</territory>
+			<territory type="SY">Xi-ri</territory>
+			<territory type="SZ">Xoa-di-len</territory>
+			<territory type="TA">Tristan da Cunha</territory>
+			<territory type="TC" draft="contributed">Quần Đảo Turk và Caicos</territory>
+			<territory type="TD">Sát</territory>
+			<territory type="TF">Thuộc Địa Nam của Pháp</territory>
+			<territory type="TG">Tô-gô</territory>
+			<territory type="TH">Thái Lan</territory>
+			<territory type="TJ">Tát-gi-ki-xtan</territory>
+			<territory type="TK" draft="contributed">Tokelau</territory>
+			<territory type="TL">Đông Ti-mo</territory>
+			<territory type="TL" alt="variant" draft="contributed">Đông Timor</territory>
+			<territory type="TM">Tuốc-mê-ni-xtan</territory>
+			<territory type="TN">Tuy-ni-di</territory>
+			<territory type="TO">Tông-ga</territory>
+			<territory type="TR">Thổ Nhĩ Kỳ</territory>
+			<territory type="TT">Tri-ni-đát và Tô-ba-gô</territory>
+			<territory type="TV">Tu-va-lu</territory>
+			<territory type="TW">Đài Loan</territory>
+			<territory type="TZ">Tan-da-ni-a</territory>
+			<territory type="UA">U-crai-na</territory>
+			<territory type="UG">U-gan-đa</territory>
+			<territory type="UM" draft="contributed">Các đảo nhỏ xa trung tâm thuộc Mỹ</territory>
+			<territory type="US">Hoa Kỳ</territory>
+			<territory type="UY">U-ru-goay</territory>
+			<territory type="UZ">U-dơ-bê-ki-xtan</territory>
+			<territory type="VA">Va-ti-căng</territory>
+			<territory type="VC">Xan Vin-xen và Grê-na-din</territory>
+			<territory type="VE">Vê-nê-zu-ê-la</territory>
+			<territory type="VG">Đảo Virgin, thuộc Anh</territory>
+			<territory type="VI">Quần đảo Virgin, Mỹ</territory>
+			<territory type="VN">Việt Nam</territory>
+			<territory type="VU">Va-nu-a-tu</territory>
+			<territory type="WF" draft="contributed">Wallis và Futuna</territory>
+			<territory type="WS">Xa-moa</territory>
+			<territory type="YE">Y-ê-men</territory>
+			<territory type="ZA">Nam Phi</territory>
+			<territory type="ZM">Dăm-bi-a</territory>
+			<territory type="ZW">Dim-ba-bu-ê</territory>
+			<territory type="ZZ" draft="contributed">Vùng Chưa biết hoặc không Hợp lệ</territory>
+		</territories>
+		<keys>
+			<key type="calendar">Lịch</key>
+			<key type="collation">Sắp xếp</key>
+			<key type="currency">Tiền tệ</key>
+			<key type="numbers">Số</key>
+			<key type="x">Sử dụng cá nhân</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers">Chữ số A rập - Ấn Độ</type>
+			<type type="arabext" key="numbers">Chữ số A rập - Ấn Độ mở rộng</type>
+			<type type="armn" key="numbers">Chữ số Armeni</type>
+			<type type="armnlow" key="numbers">Chữ số Armenia viết thường</type>
+			<type type="beng" key="numbers">Chữ số Bangladesh</type>
+			<type type="big5han" key="collation">Thứ tự sắp xếp theo tiếng Trung phồn thể - Big5</type>
+			<type type="buddhist" key="calendar">Lịch Phật Giáo</type>
+			<type type="chinese" key="calendar">Lịch Trung Quốc</type>
+			<type type="coptic" key="calendar">Lịch Copts</type>
+			<type type="deva" key="numbers">Chữ số Devanagari</type>
+			<type type="dictionary" key="collation">Thứ tự sắp xếp theo từ điển</type>
+			<type type="ducet" key="collation">Thứ tự sắp xếp unicode mặc định</type>
+			<type type="ethi" key="numbers">Chữ số Ethiopia</type>
+			<type type="ethiopic" key="calendar">Lịch Ethiopia</type>
+			<type type="ethiopic-amete-alem" key="calendar">Lịch Ethiopic Amete Alem</type>
+			<type type="fullwide" key="numbers">Chữ số có độ rộng đầy đủ</type>
+			<type type="gb2312han" key="collation">Thứ tự sắp xếp theo tiếng Trung giản thể - GB2312</type>
+			<type type="geor" key="numbers">Chữ số Gregory</type>
+			<type type="gregorian" key="calendar">Lịch Gregory</type>
+			<type type="grek" key="numbers">Chữ số Hy Lạp</type>
+			<type type="greklow" key="numbers">Chữ số Hy Lạp viết thường</type>
+			<type type="gujr" key="numbers">Chữ số Gujarati</type>
+			<type type="guru" key="numbers">Chữ số Gurmukhi</type>
+			<type type="hanidec" key="numbers">Chữ số thập phân Trung Quốc</type>
+			<type type="hans" key="numbers">Chữ số của tiếng Trung giản thể</type>
+			<type type="hansfin" key="numbers">Chữ số dùng trong tài chính của tiếng Trung giản thể</type>
+			<type type="hant" key="numbers">Chữ số tiếng Trung phồn thể</type>
+			<type type="hantfin" key="numbers">Chữ số dùng trong tài chính của tiếng Trung phồn thể</type>
+			<type type="hebr" key="numbers">Chữ số Do Thái</type>
+			<type type="hebrew" key="calendar">Lịch Do Thái</type>
+			<type type="indian" key="calendar">Lịch Quốc gia Ấn Độ</type>
+			<type type="islamic" key="calendar">Lịch Islamic</type>
+			<type type="islamic-civil" key="calendar">Lịch Islamic-Civil</type>
+			<type type="japanese" key="calendar">Lịch Nhật Bản</type>
+			<type type="jpan" key="numbers">Chữ số Nhật Bản</type>
+			<type type="jpanfin" key="numbers">Chữ số dùng trong tài chính của tiếng Nhật</type>
+			<type type="khmr" key="numbers">Chữ số Khmer</type>
+			<type type="knda" key="numbers">Chữ số Kannada</type>
+			<type type="laoo" key="numbers">Chữ số Lào</type>
+			<type type="latn" key="numbers">Chữ số phương Tây</type>
+			<type type="mlym" key="numbers">Chữ số Malayalam</type>
+			<type type="mong" key="numbers">Chữ số Mông Cổ</type>
+			<type type="mymr" key="numbers">Chữ số Myanma</type>
+			<type type="orya" key="numbers">Chữ số Oriya</type>
+			<type type="persian" key="calendar">Lịch Ba Tư</type>
+			<type type="phonebook" key="collation">Thứ tự sắp xếp theo danh bạ điện thoại</type>
+			<type type="pinyin" key="collation">Thứ tự sắp xếp theo bính âm</type>
+			<type type="reformed" key="collation">Thứ tự sắp xếp đã sửa đổi</type>
+			<type type="roc" key="calendar">Lịch Trung Hoa Dân Quốc</type>
+			<type type="roman" key="numbers">Chữ số La mã</type>
+			<type type="romanlow" key="numbers">Chữ số La Mã viết thường</type>
+			<type type="search" key="collation">Tìm kiếm mục đích chung</type>
+			<type type="stroke" key="collation">Thứ tự sắp xếp theo nét chữ</type>
+			<type type="taml" key="numbers">Chữ số Tamil</type>
+			<type type="telu" key="numbers">Chữ số Telugu</type>
+			<type type="thai" key="numbers">Chữ số Thái</type>
+			<type type="tibt" key="numbers">Chữ số Tây Tạng</type>
+			<type type="traditional" key="collation">Thứ tự sắp xếp truyền thống</type>
+			<type type="unihan" key="collation">Trình tự sắp xếp theo bộ-nét</type>
+		</types>
+		<transformNames>
+			<transformName type="Numeric" draft="contributed">Số</transformName>
+			<transformName type="Tone" draft="contributed">Âm</transformName>
+			<transformName type="x-Accents" draft="contributed">Dấu</transformName>
+			<transformName type="x-Fullwidth" draft="contributed">Độ rộng tối đa</transformName>
+			<transformName type="x-Halfwidth" draft="contributed">Nửa độ rộng</transformName>
+			<transformName type="x-Jamo" draft="contributed">Jamo</transformName>
+			<transformName type="x-Pinyin" draft="contributed">Bính âm</transformName>
+			<transformName type="x-Publishing" draft="contributed">Xuất bản</transformName>
+		</transformNames>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Hệ mét</measurementSystemName>
+			<measurementSystemName type="UK">Vương Quốc Anh</measurementSystemName>
+			<measurementSystemName type="US">Hoa Kỳ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Ngôn ngữ: {0}</codePattern>
+			<codePattern type="script">Chữ viết: {0}</codePattern>
+			<codePattern type="territory">Vùng: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a à ả ã á ạ ă ằ ẳ ẵ ắ ặ â ầ ẩ ẫ ấ ậ b c d đ e è ẻ ẽ é ẹ ê ề ể ễ ế ệ f g h i ì ỉ ĩ í ị j k l m n o ò ỏ õ ó ọ ô ồ ổ ỗ ố ộ ơ ờ ở ỡ ớ ợ p q r s t u ù ủ ũ ú ụ ư ừ ử ữ ứ ự v w x y ỳ ỷ ỹ ý ỵ z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol">[a b c d đ e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A Ă Â B C D Đ E Ê F G H I J K L M N O Ô Ơ P Q R S T U Ư V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, 'ngày' dd MMMM 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'Ngày' dd 'tháng' M 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">'Ngày' d</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">'Năm' y G</dateFormatItem>
+						<dateFormatItem id="yM" draft="contributed">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d-M-yyyy G</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yQ">Q yyyy G</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">'Năm' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d-M-yyyy G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM-yyyy G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Tout</month>
+							<month type="2" draft="contributed">Baba</month>
+							<month type="3" draft="contributed">Hator</month>
+							<month type="4" draft="contributed">Kiahk</month>
+							<month type="5" draft="contributed">Toba</month>
+							<month type="6" draft="contributed">Amshir</month>
+							<month type="7" draft="contributed">Baramhat</month>
+							<month type="8" draft="contributed">Baramouda</month>
+							<month type="9" draft="contributed">Bashans</month>
+							<month type="10" draft="contributed">Paona</month>
+							<month type="11" draft="contributed">Epep</month>
+							<month type="12" draft="contributed">Mesra</month>
+							<month type="13" draft="contributed">Nasie</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Tout</month>
+							<month type="2" draft="contributed">Baba</month>
+							<month type="3" draft="contributed">Hator</month>
+							<month type="4" draft="contributed">Kiahk</month>
+							<month type="5" draft="contributed">Toba</month>
+							<month type="6" draft="contributed">Amshir</month>
+							<month type="7" draft="contributed">Baramhat</month>
+							<month type="8" draft="contributed">Baramouda</month>
+							<month type="9" draft="contributed">Bashans</month>
+							<month type="10" draft="contributed">Paona</month>
+							<month type="11" draft="contributed">Epep</month>
+							<month type="12" draft="contributed">Mesra</month>
+							<month type="13" draft="contributed">Nasie</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Tout</month>
+							<month type="2" draft="contributed">Baba</month>
+							<month type="3" draft="contributed">Hator</month>
+							<month type="4" draft="contributed">Kiahk</month>
+							<month type="5" draft="contributed">Toba</month>
+							<month type="6" draft="contributed">Amshir</month>
+							<month type="7" draft="contributed">Baramhat</month>
+							<month type="8" draft="contributed">Baramouda</month>
+							<month type="9" draft="contributed">Bashans</month>
+							<month type="10" draft="contributed">Paona</month>
+							<month type="11" draft="contributed">Epep</month>
+							<month type="12" draft="contributed">Mesra</month>
+							<month type="13" draft="contributed">Nasie</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Meskerem</month>
+							<month type="2" draft="contributed">Tekemt</month>
+							<month type="3" draft="contributed">Hedar</month>
+							<month type="4" draft="contributed">Tahsas</month>
+							<month type="5" draft="contributed">Ter</month>
+							<month type="6" draft="contributed">Yekatit</month>
+							<month type="7" draft="contributed">Megabit</month>
+							<month type="8" draft="contributed">Miazia</month>
+							<month type="9" draft="contributed">Genbot</month>
+							<month type="10" draft="contributed">Sene</month>
+							<month type="11" draft="contributed">Hamle</month>
+							<month type="12" draft="contributed">Nehasse</month>
+							<month type="13" draft="contributed">Pagumen</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Meskerem</month>
+							<month type="2" draft="contributed">Tekemt</month>
+							<month type="3" draft="contributed">Hedar</month>
+							<month type="4" draft="contributed">Tahsas</month>
+							<month type="5" draft="contributed">Ter</month>
+							<month type="6" draft="contributed">Yekatit</month>
+							<month type="7" draft="contributed">Megabit</month>
+							<month type="8" draft="contributed">Miazia</month>
+							<month type="9" draft="contributed">Genbot</month>
+							<month type="10" draft="contributed">Sene</month>
+							<month type="11" draft="contributed">Hamle</month>
+							<month type="12" draft="contributed">Nehasse</month>
+							<month type="13" draft="contributed">Pagumen</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Meskerem</month>
+							<month type="2" draft="contributed">Tekemt</month>
+							<month type="3" draft="contributed">Hedar</month>
+							<month type="4" draft="contributed">Tahsas</month>
+							<month type="5" draft="contributed">Ter</month>
+							<month type="6" draft="contributed">Yekatit</month>
+							<month type="7" draft="contributed">Megabit</month>
+							<month type="8" draft="contributed">Miazia</month>
+							<month type="9" draft="contributed">Genbot</month>
+							<month type="10" draft="contributed">Sene</month>
+							<month type="11" draft="contributed">Hamle</month>
+							<month type="12" draft="contributed">Nehasse</month>
+							<month type="13" draft="contributed">Pagumen</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">thg 1</month>
+							<month type="2">thg 2</month>
+							<month type="3">thg 3</month>
+							<month type="4">thg 4</month>
+							<month type="5">thg 5</month>
+							<month type="6">thg 6</month>
+							<month type="7">thg 7</month>
+							<month type="8">thg 8</month>
+							<month type="9">thg 9</month>
+							<month type="10">thg 10</month>
+							<month type="11">thg 11</month>
+							<month type="12">thg 12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">tháng một</month>
+							<month type="2">tháng hai</month>
+							<month type="3">tháng ba</month>
+							<month type="4">tháng tư</month>
+							<month type="5">tháng năm</month>
+							<month type="6">tháng sáu</month>
+							<month type="7">tháng bảy</month>
+							<month type="8">tháng tám</month>
+							<month type="9">tháng chín</month>
+							<month type="10">tháng mười</month>
+							<month type="11">tháng mười một</month>
+							<month type="12">tháng mười hai</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">CN</day>
+							<day type="mon">Th 2</day>
+							<day type="tue">Th 3</day>
+							<day type="wed">Th 4</day>
+							<day type="thu">Th 5</day>
+							<day type="fri">Th 6</day>
+							<day type="sat">Th 7</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">CN</day>
+							<day type="mon" draft="contributed">T2</day>
+							<day type="tue" draft="contributed">T3</day>
+							<day type="wed" draft="contributed">T4</day>
+							<day type="thu" draft="contributed">T5</day>
+							<day type="fri" draft="contributed">T6</day>
+							<day type="sat" draft="contributed">T7</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Chủ nhật</day>
+							<day type="mon">Thứ hai</day>
+							<day type="tue">Thứ ba</day>
+							<day type="wed">Thứ tư</day>
+							<day type="thu">Thứ năm</day>
+							<day type="fri">Thứ sáu</day>
+							<day type="sat">Thứ bảy</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">CN</day>
+							<day type="mon">T2</day>
+							<day type="tue">T3</day>
+							<day type="wed">T4</day>
+							<day type="thu">T5</day>
+							<day type="fri">T6</day>
+							<day type="sat">T7</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">1</quarter>
+							<quarter type="2" draft="contributed">2</quarter>
+							<quarter type="3" draft="contributed">3</quarter>
+							<quarter type="4" draft="contributed">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Quý 1</quarter>
+							<quarter type="2">Quý 2</quarter>
+							<quarter type="3">Quý 3</quarter>
+							<quarter type="4">Quý 4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="contributed">Q1</quarter>
+							<quarter type="2" draft="contributed">Q2</quarter>
+							<quarter type="3" draft="contributed">Q3</quarter>
+							<quarter type="4" draft="contributed">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3" draft="contributed">3</quarter>
+							<quarter type="4" draft="contributed">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="contributed">Quý 1</quarter>
+							<quarter type="2" draft="contributed">Quý 2</quarter>
+							<quarter type="3" draft="contributed">Quý 3</quarter>
+							<quarter type="4" draft="contributed">Quý 4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">SA</dayPeriod>
+							<dayPeriod type="pm">CH</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">tr. CN</era>
+						<era type="1">sau CN</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, 'ngày' dd MMMM 'năm' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'Ngày' dd 'tháng' M 'năm' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">'Ngày' d</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">H:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="contributed">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="mmss" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">'Năm' y</dateFormatItem>
+						<dateFormatItem id="yM">M/yyyy</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d-M-yyyy</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQ">Q yyyy</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yyQ" draft="contributed">Q yy</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y</dateFormatItem>
+						<dateFormatItem id="yyyyMM" draft="contributed">MM-yyyy</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="contributed">'Ngày' d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="contributed">h'h' a - h'h' a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h'h' - h'h' a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="a" draft="contributed">HH'h' - HH'h'</greatestDifference>
+							<greatestDifference id="H" draft="contributed">HH'h' - HH'h'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="contributed">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">HH:mm-HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="contributed">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">HH:mm-HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="contributed">h'h' a - h'h' a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h'h'-h'h' a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="a" draft="contributed">HH'h'-HH'h' v</greatestDifference>
+							<greatestDifference id="H" draft="contributed">HH'h'-HH'h' v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="contributed">'Tháng' M - 'Tháng' M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">dd/MM - dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM - dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="contributed">EEEE, dd/MM - EEEE, dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE, dd/MM - EEEE, dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="contributed">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="contributed">'Ngày' dd 'tháng' M - 'Ngày' dd 'tháng' M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">'Ngày' dd 'tháng' M - 'Ngày' dd 'tháng' M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="contributed">EEEE, 'ngày' dd - EEEE, 'ngày' dd 'tháng' M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE, 'ngày' dd 'tháng' M - EEEE, 'ngày' dd 'tháng' M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="contributed">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">MM/yyyy - MM/yyyy</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/yyyy - MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">EEEE, dd/MM/yyyy - EEEE, dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE, dd/MM/yyyy - EEEE, dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="y" draft="contributed">EEEE, dd/MM/yyyy - EEEE, dd/MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="contributed">'Tháng' M - 'Tháng' M 'năm' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">'Tháng' M 'năm' y - 'Tháng' M 'năm' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="contributed">'Ngày' dd 'tháng' M - 'Ngày' dd 'tháng' M 'năm' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">'Ngày' dd 'tháng' M - 'Ngày' dd 'tháng' M 'năm' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">'Ngày' dd 'tháng' M 'năm' y - 'Ngày' dd 'tháng' M 'năm' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="contributed">EEEE, 'ngày' dd MMM - EEEE, 'ngày' dd MMM 'năm' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE, 'ngày' dd MMM - EEEE, 'ngày' dd MMM 'năm' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">EEEE, 'ngày' dd MMM 'năm' y - EEEE, 'ngày' dd MMM 'năm' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM-MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>Thời đại</displayName>
+					</field>
+					<field type="year">
+						<displayName>Năm</displayName>
+						<relative type="-1" draft="contributed">Năm ngoái</relative>
+						<relative type="0" draft="contributed">Năm nay</relative>
+						<relative type="1" draft="contributed">Năm sau</relative>
+					</field>
+					<field type="month">
+						<displayName>Tháng</displayName>
+						<relative type="-1" draft="contributed">Tháng trước</relative>
+						<relative type="0" draft="contributed">Tháng này</relative>
+						<relative type="1" draft="contributed">Tháng sau</relative>
+					</field>
+					<field type="week">
+						<displayName>Tuần</displayName>
+						<relative type="-1" draft="contributed">Tuần trước</relative>
+						<relative type="0" draft="contributed">Tuần này</relative>
+						<relative type="1" draft="contributed">Tuần sau</relative>
+					</field>
+					<field type="day">
+						<displayName>Ngày</displayName>
+						<relative type="-2" draft="contributed">Ngày hôm kia</relative>
+						<relative type="-1">Ngày hôm qua</relative>
+						<relative type="0">Hôm nay</relative>
+						<relative type="1">Ngày mai</relative>
+						<relative type="2" draft="contributed">Ngày kia</relative>
+					</field>
+					<field type="weekday">
+						<displayName>Ngày trong tuần</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>SA/CH</displayName>
+					</field>
+					<field type="hour">
+						<displayName>Giờ</displayName>
+					</field>
+					<field type="minute">
+						<displayName>Phút</displayName>
+					</field>
+					<field type="second">
+						<displayName>Giây</displayName>
+					</field>
+					<field type="zone">
+						<displayName>Múi giờ</displayName>
+					</field>
+				</fields>
+			</calendar>
+			<calendar type="hebrew">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Tishri</month>
+							<month type="2" draft="contributed">Heshvan</month>
+							<month type="3" draft="contributed">Kislev</month>
+							<month type="4" draft="contributed">Tevet</month>
+							<month type="5" draft="contributed">Shevat</month>
+							<month type="6" draft="contributed">Adar I</month>
+							<month type="7" draft="contributed">Adar</month>
+							<month type="7" draft="contributed" yeartype="leap">Adar II</month>
+							<month type="8" draft="contributed">Nisan</month>
+							<month type="9" draft="contributed">Iyar</month>
+							<month type="10" draft="contributed">Sivan</month>
+							<month type="11" draft="contributed">Tamuz</month>
+							<month type="12" draft="contributed">Av</month>
+							<month type="13" draft="contributed">Elul</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Tishri</month>
+							<month type="2" draft="contributed">Heshvan</month>
+							<month type="3" draft="contributed">Kislev</month>
+							<month type="4" draft="contributed">Tevet</month>
+							<month type="5" draft="contributed">Shevat</month>
+							<month type="6" draft="contributed">Adar I</month>
+							<month type="7" draft="contributed">Adar</month>
+							<month type="7" draft="contributed" yeartype="leap">Adar II</month>
+							<month type="8" draft="contributed">Nisan</month>
+							<month type="9" draft="contributed">Iyar</month>
+							<month type="10" draft="contributed">Sivan</month>
+							<month type="11" draft="contributed">Tamuz</month>
+							<month type="12" draft="contributed">Av</month>
+							<month type="13" draft="contributed">Elul</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Tishri</month>
+							<month type="2" draft="contributed">Heshvan</month>
+							<month type="3" draft="contributed">Kislev</month>
+							<month type="4" draft="contributed">Tevet</month>
+							<month type="5" draft="contributed">Shevat</month>
+							<month type="6" draft="contributed">Adar I</month>
+							<month type="7" draft="contributed">Adar</month>
+							<month type="7" draft="contributed" yeartype="leap">Adar II</month>
+							<month type="8" draft="contributed">Nisan</month>
+							<month type="9" draft="contributed">Iyar</month>
+							<month type="10" draft="contributed">Sivan</month>
+							<month type="11" draft="contributed">Tamuz</month>
+							<month type="12" draft="contributed">Av</month>
+							<month type="13" draft="contributed">Elul</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="islamic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, 'ngày' dd MMMM 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'Ngày' dd 'tháng' M 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">'Ngày' d</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
+						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y</dateFormatItem>
+						<dateFormatItem id="yM" draft="contributed">M/yyyy</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="contributed">E, d-M-yyyy</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="contributed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="contributed">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="contributed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQ" draft="contributed">Q yyyy</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="contributed">QQQ y</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">'Năm' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, 'ngày' dd MMMM 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'Ngày' dd 'tháng' M 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">'Ngày' d</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">'Năm' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Farvardin</month>
+							<month type="2" draft="contributed">Ordibehesht</month>
+							<month type="3" draft="contributed">Khordad</month>
+							<month type="4" draft="contributed">Tir</month>
+							<month type="5" draft="contributed">Mordad</month>
+							<month type="6" draft="contributed">Shahrivar</month>
+							<month type="7" draft="contributed">Mehr</month>
+							<month type="8" draft="contributed">Aban</month>
+							<month type="9" draft="contributed">Azar</month>
+							<month type="10" draft="contributed">Dey</month>
+							<month type="11" draft="contributed">Bahman</month>
+							<month type="12" draft="contributed">Esfand</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Farvardin</month>
+							<month type="2" draft="contributed">Ordibehesht</month>
+							<month type="3" draft="contributed">Khordad</month>
+							<month type="4" draft="contributed">Tir</month>
+							<month type="5" draft="contributed">Mordad</month>
+							<month type="6" draft="contributed">Shahrivar</month>
+							<month type="7" draft="contributed">Mehr</month>
+							<month type="8" draft="contributed">Aban</month>
+							<month type="9" draft="contributed">Azar</month>
+							<month type="10" draft="contributed">Dey</month>
+							<month type="11" draft="contributed">Bahman</month>
+							<month type="12" draft="contributed">Esfand</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Farvardin</month>
+							<month type="2" draft="contributed">Ordibehesht</month>
+							<month type="3" draft="contributed">Khordad</month>
+							<month type="4" draft="contributed">Tir</month>
+							<month type="5" draft="contributed">Mordad</month>
+							<month type="6" draft="contributed">Shahrivar</month>
+							<month type="7" draft="contributed">Mehr</month>
+							<month type="8" draft="contributed">Aban</month>
+							<month type="9" draft="contributed">Azar</month>
+							<month type="10" draft="contributed">Dey</month>
+							<month type="11" draft="contributed">Bahman</month>
+							<month type="12" draft="contributed">Esfand</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="contributed">Trước R.O.C</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, 'ngày' dd MMMM 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'Ngày' dd 'tháng' M 'năm' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">'Ngày' d</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">'Năm' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat draft="contributed">+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat draft="contributed">GMT{0}</gmtFormat>
+			<regionFormat>Giờ {0}</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<fallbackRegionFormat>Giờ {1} ({0})</fallbackRegionFormat>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Beulah, Bắc Dakota</exemplarCity>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="contributed">Không rõ</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>Andorra</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>Antigua</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>Anguilla</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="contributed">Dumont D'Urville</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>Adelaide</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>Aruba</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>Baku</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>Barbados</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>Bahrain</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Bermuda</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>Boa Vista</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>Belem</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>Araguaina</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>Bahia</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>Belize</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>Blanc-Sablon</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>Bangui</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>Abidjan</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Costa Rica</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>Cape Verde</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>Berlin</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>Djibouti</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Dominica</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>Algiers</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Canary</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>Addis Ababa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>Fiji</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Grenada</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>Accra</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>Banjul</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>Athens</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>Nam Georgia</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Guatemala</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>Bissau</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>Guyana</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>Hồng Kông</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>Baghdad</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaica</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>Amman</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>Bishkek</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>St. Kitts</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>Kuwait</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aqtau</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Aqtobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Almaty</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>Viêng Chăn</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>Beirut</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>St. Lucia</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>Luxembourg</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>Monaco</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>Antananarivo</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>Malta</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>Mauritius</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>Maldives</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>Blantyre</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>Amsterdam</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>Nauru</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>Panama</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>Azores</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>Palau</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>Asuncion</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>Qatar</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>Belgrade</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>Anadyr</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>Singapore</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>El Salvador</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>Bangkok</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>Ashgabat</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>Đài Bắc</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>Adak</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>Anchorage</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>St. Vincent</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>St. Thomas</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>TP Hồ Chí Minh</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>Apia</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>Aden</exemplarCity>
+			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic draft="contributed">Giờ Acre</generic>
+					<standard draft="contributed">Giờ Chuẩn Acre</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Acre</daylight>
+				</long>
+			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Giờ Afghanistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Giờ Trung Phi</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Giờ Đông Phi</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Giờ Chuẩn Nam Phi</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="contributed">Giờ Tây Phi</generic>
+					<standard draft="contributed">Giờ Chuẩn Tây Phi</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Tây Phi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aktyubinsk">
+				<long>
+					<generic draft="contributed">Giờ Aktyubinsk</generic>
+					<standard draft="contributed">Giờ Chuẩn Aktyubinsk</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Aktyubinsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Giờ Alaska</generic>
+					<standard>Giờ Chuẩn Alaska</standard>
+					<daylight>Giờ Mùa Hè Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska_Hawaii">
+				<long>
+					<generic draft="contributed">Giờ Alaska-Hawaii</generic>
+					<standard draft="contributed">Giờ Chuẩn Alaska-Hawaii</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Alaska-Hawaii</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic draft="contributed">Giờ Almaty</generic>
+					<standard draft="contributed">Giờ Chuẩn Almaty</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Almaty</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="contributed">Giờ Amazon</generic>
+					<standard draft="contributed">Giờ Chuẩn Amazon</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Amazon</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="contributed">Giờ miền trung</generic>
+					<standard draft="contributed">Giờ chuẩn miền trung</standard>
+					<daylight draft="contributed">Giờ ban ngày miền trung</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="contributed">Giờ miền đông</generic>
+					<standard draft="contributed">Giờ chuẩn miền đông</standard>
+					<daylight draft="contributed">Giờ ban ngày miền đông</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="contributed">Giờ miền núi</generic>
+					<standard draft="contributed">Giờ chuẩn miền núi</standard>
+					<daylight draft="contributed">Giờ ban ngày miền núi</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="contributed">Giờ Thái Bình Dương</generic>
+					<standard draft="contributed">Giờ chuẩn Thái Bình Dương</standard>
+					<daylight draft="contributed">Giờ ban ngày Thái Bình Dương</daylight>
+				</long>
+			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic draft="contributed">Giờ Anadyr</generic>
+					<standard draft="contributed">Giờ Chuẩn Anadyr</standard>
+					<daylight draft="contributed">Giờ mùa hè Anadyr</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic draft="contributed">Giờ Aqtau</generic>
+					<standard draft="contributed">Giờ Chuẩn Aqtau</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Aqtau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic draft="contributed">Giờ Aqtobe</generic>
+					<standard draft="contributed">Giờ Chuẩn Aqtobe</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Aqtobe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="contributed">Giờ A-rập</generic>
+					<standard draft="contributed">Giờ Chuẩn A-rập</standard>
+					<daylight draft="contributed">Giờ Mùa Hè A-rập</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Giờ Argentina</generic>
+					<standard>Giờ Chuẩn Argentina</standard>
+					<daylight>Giờ Mùa Hè Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Giờ miền tây Argentina</generic>
+					<standard>Giờ chuẩn miền mây Argentina</standard>
+					<daylight>Giờ mùa hè miền tây Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="contributed">Giờ Armenia</generic>
+					<standard draft="contributed">Giờ Chuẩn Armenia</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Armenia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ashkhabad">
+				<long>
+					<generic draft="contributed">Giờ Ashkhabad</generic>
+					<standard draft="contributed">Giờ Chuẩn Ashkhabad</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Ashkhabad</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Giờ Đại Tây Dương</generic>
+					<standard>Giờ Chuẩn Đại Tây Dương</standard>
+					<daylight>Giờ Mùa hè Đại Tây Dương</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Giờ Miền Trung Nước Úc</generic>
+					<standard>Giờ Chuẩn Miền Trung Nước Úc</standard>
+					<daylight>Giờ Mùa Hè Miền Trung Nước Úc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Giờ Miền Trung Tây Nước Úc</generic>
+					<standard>Giờ Chuẩn Miền Trung Tây Nước Úc</standard>
+					<daylight>Giờ Mùa Hè Miền Trung Tây Nước Úc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Giờ Miền Đông Nước Úc</generic>
+					<standard>Giờ Chuẩn Miền Đông Nước Úc</standard>
+					<daylight>Giờ Mùa Hè Miền Đông Nước Úc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Giờ Miền Tây Nước Úc</generic>
+					<standard>Giờ Chuẩn Miền Tây Nước Úc</standard>
+					<daylight>Giờ Mùa Hè Miền Tây Nước Úc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="contributed">Giờ Azerbaijan</generic>
+					<standard draft="contributed">Giờ Chuẩn Azerbaijan</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Azerbaijan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="contributed">Giờ Azores</generic>
+					<standard draft="contributed">Giờ Chuẩn Azores</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Azores</daylight>
+				</long>
+			</metazone>
+			<metazone type="Baku">
+				<long>
+					<generic draft="contributed">Giờ Baku</generic>
+					<standard draft="contributed">Giờ Chuẩn Baku</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Baku</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="contributed">Giờ Bangladesh</generic>
+					<standard draft="contributed">Giờ Chuẩn Bangladesh</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Bangladesh</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bering">
+				<long>
+					<generic draft="contributed">Giờ Bering</generic>
+					<standard draft="contributed">Giờ Chuẩn Bering</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Bering</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="contributed">Giờ Bhutan</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="contributed">Giờ Bolivia</standard>
+				</long>
+			</metazone>
+			<metazone type="Borneo">
+				<long>
+					<generic draft="contributed">Giờ Borneo</generic>
+					<standard draft="contributed">Giờ Chuẩn Borneo</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Borneo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Giờ Brasilia</generic>
+					<standard>Giờ Chuẩn Brasilia</standard>
+					<daylight>Giờ Mùa Hè Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="contributed">Giờ Brunei Darussalam</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="contributed">Giờ Cape Verde</generic>
+					<standard draft="contributed">Giờ Chuẩn Cape Verde</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Cape Verde</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="contributed">Giờ Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Changbai">
+				<long>
+					<standard draft="contributed">Giờ Changbai</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="contributed">Giờ Chatham</generic>
+					<standard draft="contributed">Giờ Chuẩn Chatham</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="contributed">Giờ Chile</generic>
+					<standard draft="contributed">Giờ Chuẩn Chile</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Chile</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="contributed">Giờ Trung Quốc</generic>
+					<standard draft="contributed">Giờ Chuẩn Trung Quốc</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Trung Quốc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Giờ Choibalsan</generic>
+					<standard>Giờ Chuẩn Choibalsan</standard>
+					<daylight>Giờ Mùa Hè Choibalsan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="contributed">Giờ Đảo Christmas</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="contributed">Giờ Colombia</generic>
+					<standard draft="contributed">Giờ Chuẩn Colombia</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Colombia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="contributed">Giờ Quần Đảo Cook</generic>
+					<standard draft="contributed">Giờ Chuẩn Quần Đảo Cook</standard>
+					<daylight draft="contributed">Giờ Nửa Mùa Hè Quần Đảo Cook</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="contributed">Giờ Cuba</generic>
+					<standard draft="contributed">Giờ Chuẩn Cuba</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Cuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dacca">
+				<long>
+					<standard draft="contributed">Giờ Dacca</standard>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="contributed">Giờ Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="contributed">Giờ Dumont-d'Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="Dushanbe">
+				<long>
+					<generic draft="contributed">Giờ Dushanbe</generic>
+					<standard draft="contributed">Giờ Chuẩn Dushanbe</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Dushanbe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dutch_Guiana">
+				<long>
+					<standard draft="contributed">Giờ Guiana thuộc Hà Lan</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="contributed">Giờ Đông Timor</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="contributed">Giờ Đảo Phục Sinh</generic>
+					<standard draft="contributed">Giờ Chuẩn Đảo Phục Sinh</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Đảo Phục Sinh</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="contributed">Giờ Ecuador</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="contributed">Giờ Trung Âu</generic>
+					<standard draft="contributed">Giờ Chuẩn Trung Âu</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Trung Âu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="contributed">Giờ Đông Âu</generic>
+					<standard draft="contributed">Giờ Chuẩn Đông Âu</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Đông Âu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="contributed">Giờ Tây Âu</generic>
+					<standard draft="contributed">Giờ Chuẩn Tây Âu</standard>
+					<daylight draft="contributed">Giờ Mùa hè Tây Âu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="contributed">Giờ Quần Đảo Falkland</generic>
+					<standard draft="contributed">Giờ Chuẩn Quần Đảo Falkland</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Quần Đảo Falkland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="contributed">Giờ Fiji</generic>
+					<standard draft="contributed">Giờ Chuẩn Fiji</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Fiji</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="contributed">Giờ Guiana thuộc Pháp</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="contributed">Giờ Nam Cực và Nam Nước Pháp</standard>
+				</long>
+			</metazone>
+			<metazone type="Frunze">
+				<long>
+					<generic draft="contributed">Giờ Frunze</generic>
+					<standard draft="contributed">Giờ Chuẩn Frunze</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Frunze</daylight>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="contributed">Giờ Galapagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="contributed">Giờ Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="contributed">Giờ Georgia</generic>
+					<standard draft="contributed">Giờ Chuẩn Georgia</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Georgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Gilbert</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="contributed">Giờ Trung Bình Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Central">
+				<long>
+					<generic draft="contributed">Giờ Miền Trung Greenland</generic>
+					<standard draft="contributed">Giờ Chuẩn Miền Trung Greenland</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Miền Trung Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="contributed">Giờ Miền Đông Greenland</generic>
+					<standard draft="contributed">Giờ Chuẩn Miền Đông Greenland</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Miền Đông Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="contributed">Giờ Miền Tây Greenland</generic>
+					<standard draft="contributed">Giờ Chuẩn Miền Tây Greenland</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Miền Tây Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard draft="contributed">Giờ Chuẩn Guam</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="contributed">Giờ Chuẩn Vùng Vịnh</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="contributed">Giờ Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="contributed">Giờ Hawaii-Aleutian</generic>
+					<standard draft="contributed">Giờ Chuẩn Hawaii-Aleutian</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Hawaii-Aleutian</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="contributed">Giờ Hồng Kông</generic>
+					<standard draft="contributed">Giờ Chuẩn Hồng Kông</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Hồng Kông</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Giờ Hovd</generic>
+					<standard>Giờ Chuẩn Hovd</standard>
+					<daylight>Giờ Mùa Hè Hovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="contributed">Giờ Chuẩn Ấn Độ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="contributed">Giờ Ấn Độ Dương</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="contributed">Giờ Đông Dương</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="contributed">Giờ Miền Trung Indonexia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="contributed">Giờ Miền Đông Indonexia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="contributed">Giờ Miền Tây Indonexia</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="contributed">Giờ Iran</generic>
+					<standard draft="contributed">Giờ Chuẩn Iran</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Giờ Irkutsk</generic>
+					<standard>Giờ Chuẩn Irkutsk</standard>
+					<daylight>Giờ Mùa Hè Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="contributed">Giờ Israel</generic>
+					<standard draft="contributed">Giờ Chuẩn Israel</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Israel</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="contributed">Giờ Nhật Bản</generic>
+					<standard draft="contributed">Giờ Chuẩn Nhật Bản</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Nhật Bản</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic draft="contributed">Giờ Petropavlovsk-Kamchatski</generic>
+					<standard draft="contributed">Giờ chuẩn Petropavlovsk-Kamchatski</standard>
+					<daylight draft="contributed">Giờ mùa hè Petropavlovsk-Kamchatski</daylight>
+				</long>
+			</metazone>
+			<metazone type="Karachi">
+				<long>
+					<standard draft="contributed">Giờ Karachi</standard>
+				</long>
+			</metazone>
+			<metazone type="Kashgar">
+				<long>
+					<standard draft="contributed">Giờ Kashgar</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Giờ Miền Đông Kazakhstan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Giờ Miền Tây Kazakhstan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kizilorda">
+				<long>
+					<generic draft="contributed">Giờ Kizilorda</generic>
+					<standard draft="contributed">Giờ Chuẩn Kizilorda</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Kizilorda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="contributed">Giờ Hàn Quốc</generic>
+					<standard draft="contributed">Giờ Chuẩn Hàn Quốc</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Hàn Quốc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="contributed">Giờ Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Giờ Krasnoyarsk</generic>
+					<standard>Giờ Chuẩn Krasnoyarsk</standard>
+					<daylight>Giờ Mùa Hè Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kuybyshev">
+				<long>
+					<generic draft="contributed">Giờ Kuybyshev</generic>
+					<standard draft="contributed">Giờ Chuẩn Kuybyshev</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Kuybyshev</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kwajalein">
+				<long>
+					<standard draft="contributed">Giờ Kwajalein</standard>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="provisional">Giờ Kyrgystan</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard draft="provisional">Giờ Lanka</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Line</standard>
+				</long>
+			</metazone>
+			<metazone type="Long_Shu">
+				<long>
+					<standard draft="provisional">Giờ Long-Shu</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Giờ Lord Howe</generic>
+					<standard>Giờ Chuẩn Lord Howe</standard>
+					<daylight>Giờ Mùa Hè Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic draft="provisional">Giờ Ma Cao</generic>
+					<standard draft="provisional">Giờ Chuẩn Ma Cao</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Ma Cao</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="contributed">Giờ Macquarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="contributed">Giờ Magadan</generic>
+					<standard draft="contributed">Giờ Chuẩn Magadan</standard>
+					<daylight draft="contributed">Giờ mùa hè Magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaya">
+				<long>
+					<standard draft="provisional">Giờ Malaya</standard>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="provisional">Giờ Malaysia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="contributed">Giờ Maldives</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="contributed">Giờ Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Marshall</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="contributed">Giờ Mauritius</generic>
+					<standard draft="contributed">Giờ Chuẩn Mauritius</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Mauritius</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="contributed">Giờ Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="contributed">Giờ Ulan Bator</generic>
+					<standard draft="contributed">Giờ chuẩn Ulan Bator</standard>
+					<daylight draft="contributed">Giờ mùa hè Ulan Bator</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Giờ Matxcơva</generic>
+					<standard>Giờ Chuẩn Matxcơva</standard>
+					<daylight>Giờ Mùa Hè Matxcơva</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="provisional">Giờ Myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="contributed">Giờ Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="provisional">Giờ Nepan</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="contributed">Giờ New Caledonia</generic>
+					<standard draft="contributed">Giờ Chuẩn New Caledonia</standard>
+					<daylight draft="contributed">Giờ Mùa Hè New Caledonia</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="contributed">Giờ New Zealand</generic>
+					<standard draft="contributed">Giờ Chuẩn New Zealand</standard>
+					<daylight draft="contributed">Giờ Mùa Hè New Zealand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Giờ Newfoundland</generic>
+					<standard>Giờ Chuẩn Newfoundland</standard>
+					<daylight>Giờ Mùa Hè Newfoundland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="contributed">Giờ Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Norfolk</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Giờ Fernando de Noronha</generic>
+					<standard>Giờ Chuẩn Fernando de Noronha</standard>
+					<daylight>Giờ Mùa Hè Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Bắc Mariana</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="contributed">Giờ Novosibirsk</generic>
+					<standard draft="contributed">Giờ chuẩn Novosibirsk</standard>
+					<daylight draft="contributed">Giờ mùa hè Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="contributed">Giờ Omsk</generic>
+					<standard draft="contributed">Giờ chuẩn Omsk</standard>
+					<daylight draft="contributed">Giờ mùa hè Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="provisional">Giờ Pakistan</generic>
+					<standard draft="provisional">Giờ Chuẩn Pakistan</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Pakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="contributed">Giờ Palau</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="contributed">Giờ Papua New Guinea</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="contributed">Giờ Paraguay</generic>
+					<standard draft="contributed">Giờ Chuẩn Paraguay</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Paraguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="contributed">Giờ Peru</generic>
+					<standard draft="contributed">Giờ Chuẩn Peru</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Peru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="provisional">Giờ Philippin</generic>
+					<standard draft="provisional">Giờ Chuẩn Philippin</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Philippin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Phoenix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="contributed">Giờ Pierre và Miquelon</generic>
+					<standard draft="contributed">Giờ Chuẩn Pierre và Miquelon</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Pierre và Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="contributed">Giờ Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="contributed">Giờ Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic draft="provisional">Giờ Qyzylorda</generic>
+					<standard draft="provisional">Giờ Chuẩn Qyzylorda</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Qyzylorda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="contributed">Giờ Reunion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="contributed">Giờ Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="contributed">Giờ Sakhalin</generic>
+					<standard draft="contributed">Giờ Chuẩn Sakhalin</standard>
+					<daylight draft="contributed">Giờ mùa hè Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic draft="contributed">Giờ Samara</generic>
+					<standard draft="contributed">Giờ Chuẩn Samara</standard>
+					<daylight draft="contributed">Giờ mùa hè Samara</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samarkand">
+				<long>
+					<generic draft="provisional">Giờ Samarkand</generic>
+					<standard draft="provisional">Giờ Chuẩn Samarkand</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Samarkand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<standard draft="contributed">Giờ Chuẩn Samoa</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="contributed">Giờ Seychelles</standard>
+				</long>
+			</metazone>
+			<metazone type="Shevchenko">
+				<long>
+					<generic draft="provisional">Giờ Shevchenko</generic>
+					<standard draft="provisional">Giờ Chuẩn Shevchenko</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Shevchenko</daylight>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="provisional">Giờ Chuẩn Singapo</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="contributed">Giờ Quần Đảo Solomon</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="contributed">Giờ Nam Georgia</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="contributed">Giờ Suriname</standard>
+				</long>
+			</metazone>
+			<metazone type="Sverdlovsk">
+				<long>
+					<generic draft="provisional">Giờ Sverdlovsk</generic>
+					<standard draft="provisional">Giờ Chuẩn Sverdlovsk</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Sverdlovsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="contributed">Giờ Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="contributed">Giờ Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="provisional">Giờ Đài Bắc</generic>
+					<standard draft="provisional">Giờ Chuẩn Đài Bắc</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Đài Bắc</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="provisional">Giờ Tajikistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tashkent">
+				<long>
+					<generic draft="provisional">Giờ Tashkent</generic>
+					<standard draft="provisional">Giờ Chuẩn Tashkent</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Tashkent</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tbilisi">
+				<long>
+					<generic draft="provisional">Giờ Tbilisi</generic>
+					<standard draft="provisional">Giờ Chuẩn Tbilisi</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Tbilisi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="contributed">Giờ Tokelau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="contributed">Giờ Tonga</generic>
+					<standard draft="contributed">Giờ Chuẩn Tonga</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="contributed">Giờ Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Giờ Thổ Nhĩ Kỳ</generic>
+					<standard draft="contributed">Giờ Chuẩn Thổ Nhĩ Kỳ</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Thổ Nhĩ Kỳ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="provisional">Giờ Turkmenistan</generic>
+					<standard draft="provisional">Giờ Chuẩn Turkmenistan</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Turkmenistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="contributed">Giờ Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uralsk">
+				<long>
+					<generic draft="provisional">Giờ Ural'sk</generic>
+					<standard draft="provisional">Giờ Chuẩn Ural'sk</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Ural'sk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="contributed">Giờ Uruguay</generic>
+					<standard draft="contributed">Giờ Chuẩn Uruguay</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard draft="provisional">Giờ Urumqi</standard>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="provisional">Giờ Uzbekistan</generic>
+					<standard draft="provisional">Giờ Chuẩn Uzbekistan</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Uzbekistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="contributed">Giờ Vanuatu</generic>
+					<standard draft="contributed">Giờ Chuẩn Vanuatu</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="contributed">Giờ Venezuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="contributed">Giờ Vladivostok</generic>
+					<standard draft="contributed">Giờ Chuẩn Vladivostok</standard>
+					<daylight draft="contributed">Giờ mùa hè Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Giờ Volgograd</generic>
+					<standard>Giờ Chuẩn Volgograd</standard>
+					<daylight>Giờ Mùa Hè Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="contributed">Giờ Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="contributed">Giờ Đảo Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="contributed">Giờ Wallis và Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="contributed">Giờ Yakutsk</generic>
+					<standard draft="contributed">Giờ Chuẩn Yakutsk</standard>
+					<daylight draft="contributed">Giờ mùa hè Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="contributed">Giờ Yekaterinburg</generic>
+					<standard draft="contributed">Giờ Chuẩn Yekaterinburg</standard>
+					<daylight draft="contributed">Giờ mùa hè Yekaterinburg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yerevan">
+				<long>
+					<generic draft="provisional">Giờ Yerevan</generic>
+					<standard draft="provisional">Giờ Chuẩn Yerevan</standard>
+					<daylight draft="provisional">Giờ Mùa Hè Yerevan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<generic draft="contributed">Giờ Yukon</generic>
+					<standard draft="contributed">Giờ Chuẩn Yukon</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Yukon</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<perMille draft="contributed">‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" draft="contributed">0.0 N</pattern>
+					<pattern type="10000" draft="contributed">00 N</pattern>
+					<pattern type="100000" draft="contributed">000 N</pattern>
+					<pattern type="1000000" draft="contributed">0.0 Tr</pattern>
+					<pattern type="10000000" draft="contributed">00 Tr</pattern>
+					<pattern type="100000000" draft="contributed">000 Tr</pattern>
+					<pattern type="1000000000" draft="contributed">0.0 Tỷ</pattern>
+					<pattern type="10000000000" draft="contributed">00 Tỷ</pattern>
+					<pattern type="100000000000" draft="contributed">000 Tỷ</pattern>
+					<pattern type="1000000000000" draft="contributed">0.0 NT</pattern>
+					<pattern type="10000000000000" draft="contributed">00 NT</pattern>
+					<pattern type="100000000000000" draft="contributed">000 NT</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName>Điram UAE</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Đồng afghani của Afghanistan</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Đồng lek của Albani</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Đồng dram của Armenia</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Đồng guilder của Antille thuộc Hà Lan</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Đồng kwanza của Angola</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Đồng peso của Argentina</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Đồng đô la của Úc</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Đồng florin của Aruba</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Đồng manat của Azerbaijan</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Đồng mác có thể chuyển đổi của Bosnia-Herzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Đồng đô la của Barbadia</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Đồng taka của Bangladesh</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Lép Bungari</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Đồng dinar của Bahrain</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Đồng franc của Burundi</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Đồng đô la Bermuda</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Đồng đô la của Brunei</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Đồng boliviano của Bolivia</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>Real Braxin</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Đồng đô la của Bahamia</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Đồng ngultrum của Bhutan</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Đồng pula của Botswana</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Đồng rúp của Belarus</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Đồng đô la của Belize</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Đồng đô la của Canada</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Đồng franc của Congo</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="contributed">Franc Thụy sĩ</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Đồng Peso của Chile</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Yuan Trung Quốc</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Đồng Peso của Colombia</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Đồng colón của Costa Rica</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Đồng peso có thể chuyển đổi của Cuba</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Đồng peso của Cu Ba</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Đồng escudo của Cape Verde</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Đồng curon của cộng hòa Séc</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Đồng franc của Djibouti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Đồng curon của Đan Mạch</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Đồng peso của Dominica</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Đồng dina của Algeri</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName draft="contributed">Crun Extônia</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="contributed">Đồng bảng của Ai Cập</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="contributed">Đồng nakfa của Eritrea</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="contributed">Đồng birr của Ethiopia</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="contributed">Euro</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="contributed">Đô-la Fi-ji</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="contributed">Đồng bảng của quần đảo Falkland</displayName>
+			</currency>
+			<currency type="FRF">
+				<displayName draft="contributed">Franc Pháp</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="contributed">Bảng Anh</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="contributed">Lari Georgia</displayName>
+			</currency>
+			<currency type="GHC">
+				<displayName draft="contributed">Cedi Ghana (1979-2007)</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="contributed">Cedi Ghana</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="contributed">Pao Gibraltar</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="contributed">Đồng dalasi của Gambia</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="contributed">Franc Guinea</displayName>
+			</currency>
+			<currency type="GNS">
+				<displayName draft="contributed">Syli Guinea</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName draft="contributed">Drachma Hy Lạp</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="contributed">Quetzal Guatemala</displayName>
+			</currency>
+			<currency type="GWP">
+				<displayName draft="contributed">Peso Guinea-Bissau</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="contributed">Đô-la Guyana</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="contributed">Đô-la Hồng Kông</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="contributed">Honduras Lempira</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="contributed">Đồng kuna của Croatia</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="contributed">Gourde Haiti</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="contributed">Phôrin Hungari</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="contributed">Rupia Inđônêxia</displayName>
+			</currency>
+			<currency type="IEP">
+				<displayName draft="contributed">Pao Ai-len</displayName>
+			</currency>
+			<currency type="ILP">
+				<displayName draft="contributed">Pao Ixraen</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="contributed">Sêken Ixraen</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="contributed">Rupi Ấn Độ</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="contributed">Dinar I-rắc</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="contributed">Rial I-ran</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="contributed">Đồng curon của Iceland</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName draft="contributed">Lia Ý</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="contributed">Đô la Jamaica</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="contributed">Dinar Jordan</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="contributed">Yên Nhật</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName draft="contributed">Si-ling Kê-ny-a</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="contributed">Đồng som của Kyrgystan</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Riên Campuchia</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="contributed">Đồng franc của Comoros</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="contributed">Đồng Won Triều Tiên</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="contributed">Won Hàn Quốc</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="contributed">Đồng dina của Kuwait</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Đô la Quần đảo Cayman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="contributed">Kazakhstan Tenge</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="contributed">Đồng kíp của Lào</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="contributed">Đồng bảng của Li Băng</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="contributed">Đồng rupi của Sri Lanka</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="contributed">Đô la Liberia</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="contributed">Đồng loti của Lesotho</displayName>
+			</currency>
+			<currency type="LTL">
+				<displayName draft="contributed">Litat Lituani</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName draft="contributed">Đồng lats của Latvia</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="contributed">Đồng dinar của Libi</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="contributed">Điaham Marốc</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="contributed">Đồng leu của Moldova</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="contributed">Đồng Ariary của Malagasy</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="contributed">Đồng dena của Macedonia</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="contributed">Đồng kyat của Myanma</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="contributed">Đồng tugrik của Mông Cổ</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="contributed">Đồng pataca của Ma Cao</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName draft="contributed">Đồng ouguiya của Mauritania</displayName>
+			</currency>
+			<currency type="MTL">
+				<displayName draft="contributed">Lia xứ Man-tơ</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="contributed">Đồng rupi của Mauritius</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="contributed">Đồng rufiyaa của Maldives</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="contributed">Đồng kwacha của Malawi</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="contributed">Peso Mêhicô</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="contributed">Rinhgit Malaixia</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="contributed">Đồng đô la của Namibia</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="contributed">Đồng naira của Nigeria</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="contributed">Đồng córdoba của Nicaragua</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="contributed">Curon Na Uy</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="contributed">Đồng rupi của Nepal</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="contributed">Đô-la New Zealand</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="contributed">Đồng rial của Oman</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="contributed">Đồng balboa của Panama</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="contributed">Nuevo Sol Pêru</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="contributed">Đồng kina của Papua New Guinean</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="contributed">Peso Philíppin</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="contributed">Rupi Pakistan</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="contributed">Zloty Ba Lan</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="contributed">Đồng guarani của Paraguay</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="contributed">Đồng rial của Qatari</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="contributed">Lây Rumani</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="contributed">Đina Xéc-bi</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="contributed">Rúp Nga</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="contributed">Đồng franc của Rwanda</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="contributed">Rian Ả rập Xêút</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="contributed">Đô la quần đảo Solomon</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="contributed">Đồng rupi của Seychelles</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="contributed">Đồng bảng của Sudan</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="contributed">Cua-ron Thuỵ Điển</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="contributed">Đô-la Singapore</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="contributed">Đồng bảng của Saint Helena</displayName>
+			</currency>
+			<currency type="SIT">
+				<displayName draft="contributed">Tôla Xlôvênia</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName draft="contributed">Cuaron Xlôvác</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="contributed">Đồng leone của Sierra Leone</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="contributed">Đồng shilling của Somali</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="contributed">Đồng đô la của Suriname</displayName>
+			</currency>
+			<currency type="STD">
+				<displayName draft="contributed">Đồng dobra của São Tomé và Príncipe</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="contributed">Đồng bảng của Syria</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="contributed">Đồng Lilangeni của Swazi</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="contributed">Bạt Thái Lan</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="contributed">Đồng somoni của Tajikistan</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="contributed">Đồng manat của Turkmenistan</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="contributed">Đồng dinar của Tunisia</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="contributed">Đồng paʻanga của Tonga</displayName>
+			</currency>
+			<currency type="TRL">
+				<displayName draft="contributed">Lia Thổ Nhĩ Kỳ</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="contributed">Lia Thổ Nhĩ Kỳ Mới</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="contributed">Đồng đô la của Trinidad và Tobago</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="contributed">Đô-la Đài Loan</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="contributed">Đồng shilling của Tanzania</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="contributed">Rúp U-crai-na</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="contributed">Đồng shilling của Uganda</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>Đô-la Mỹ</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="contributed">Đồng peso của Uruguay</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="contributed">Đồng som của Uzbekistan</displayName>
+			</currency>
+			<currency type="VEB">
+				<displayName draft="contributed">Bôliva Vênêduêla</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName draft="contributed">Đồng bolívar của Venezuela</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Đồng</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="contributed">Đồng vatu của Vanuatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="contributed">Đồng tala của Samoa</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="contributed">Đồng CFA Franc BEAC</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="contributed">Vàng</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="contributed">Đồng đô là của phía đông Caribê</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Franc CFA BCEAO</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="contributed">Đồng Franc Thái Bình Dương</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="contributed">Tiền tệ chưa biết hoặc không hợp lệ</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="contributed">Đồng rial của Yemen</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="contributed">Ran Nam Phi</displayName>
+			</currency>
+			<currency type="ZMK">
+				<displayName draft="contributed">Đồng kwacha của Zambia</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0} ngày</unitPattern>
+			<unitPattern count="other" alt="short">{0} ngày</unitPattern>
+		</unit>
+		<unit type="day-future">
+			<unitPattern count="0">Trong 0 ngày</unitPattern>
+			<unitPattern count="1">Trong 1 ngày</unitPattern>
+			<unitPattern count="other">Trong {0} ngày</unitPattern>
+		</unit>
+		<unit type="day-past">
+			<unitPattern count="0">0 ngày trước</unitPattern>
+			<unitPattern count="1">1 ngày trước</unitPattern>
+			<unitPattern count="other">{0} ngày trước</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0} giờ</unitPattern>
+			<unitPattern count="other" alt="short">{0} g</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="0">Trong 0 giờ</unitPattern>
+			<unitPattern count="1">Trong 1 giờ</unitPattern>
+			<unitPattern count="other">Trong {0} giờ</unitPattern>
+		</unit>
+		<unit type="hour-past">
+			<unitPattern count="0">0 giờ trước</unitPattern>
+			<unitPattern count="1">1 giờ trước</unitPattern>
+			<unitPattern count="other">{0} giờ trước</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0} phút</unitPattern>
+			<unitPattern count="other" alt="short">{0} ph</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="0">Trong 0 phút</unitPattern>
+			<unitPattern count="1">Trong 1 phút</unitPattern>
+			<unitPattern count="other">Trong {0} phút</unitPattern>
+		</unit>
+		<unit type="minute-past">
+			<unitPattern count="0">0 phút trước</unitPattern>
+			<unitPattern count="1">1 phút trước</unitPattern>
+			<unitPattern count="other">{0} phút trước</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0} tháng</unitPattern>
+			<unitPattern count="other" alt="short">{0} tháng</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="0">Trong 0 tháng</unitPattern>
+			<unitPattern count="1">Trong 1 tháng</unitPattern>
+			<unitPattern count="other">Trong {0} tháng</unitPattern>
+		</unit>
+		<unit type="month-past">
+			<unitPattern count="0">0 tháng trước</unitPattern>
+			<unitPattern count="1">1 tháng trước</unitPattern>
+			<unitPattern count="other">{0} tháng trước</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0} giây</unitPattern>
+			<unitPattern count="other" alt="short">{0} s</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="0">Trong 0 giây</unitPattern>
+			<unitPattern count="1">Trong 1 giây</unitPattern>
+			<unitPattern count="other">Trong {0} giây</unitPattern>
+		</unit>
+		<unit type="second-past">
+			<unitPattern count="0">0 giây trước</unitPattern>
+			<unitPattern count="1">1 giây trước</unitPattern>
+			<unitPattern count="other">{0} giây trước</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0} tuần</unitPattern>
+			<unitPattern count="other" alt="short">{0} tuần</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="0">Trong 0 tuần</unitPattern>
+			<unitPattern count="1">Trong 1 tuần</unitPattern>
+			<unitPattern count="other">Trong {0} tuần</unitPattern>
+		</unit>
+		<unit type="week-past">
+			<unitPattern count="0">0 tuần trước</unitPattern>
+			<unitPattern count="1">1 tuần trước</unitPattern>
+			<unitPattern count="other">{0} tuần trước</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0} năm</unitPattern>
+			<unitPattern count="other" alt="short">{0} năm</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="0">Trong 0 năm</unitPattern>
+			<unitPattern count="1">Trong 1 năm</unitPattern>
+			<unitPattern count="other">Trong {0} năm</unitPattern>
+		</unit>
+		<unit type="year-past">
+			<unitPattern count="0">0 năm trước</unitPattern>
+			<unitPattern count="1">1 năm trước</unitPattern>
+			<unitPattern count="other">{0} năm trước</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2">{0} và {1}</listPatternPart>
+			<listPatternPart type="end">{0} và {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="contributed">yes:y</yesstr>
+			<nostr draft="contributed">no:n</nostr>
+		</messages>
+	</posix>
+</ldml>
+

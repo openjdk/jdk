@@ -44,7 +44,7 @@ static void *getJRSFramework() {
     return jrsFwk;
 }
 
-static char *getPosixLocale(int cat) {
+char *getPosixLocale(int cat) {
     char *lc = setlocale(cat, NULL);
     if ((lc == NULL) || (strcmp(lc, "C") == 0)) {
         lc = getenv("LANG");
@@ -54,24 +54,20 @@ static char *getPosixLocale(int cat) {
 }
 
 #define LOCALEIDLENGTH  128
-char *setupMacOSXLocale(int cat) {
+char *getMacOSXLocale(int cat) {
     switch (cat) {
     case LC_MESSAGES:
         {
             void *jrsFwk = getJRSFramework();
-            if (jrsFwk == NULL) return getPosixLocale(cat);
+            if (jrsFwk == NULL) return NULL;
 
             char *(*JRSCopyPrimaryLanguage)() = dlsym(jrsFwk, "JRSCopyPrimaryLanguage");
             char *primaryLanguage = JRSCopyPrimaryLanguage ? JRSCopyPrimaryLanguage() : NULL;
-            if (primaryLanguage == NULL) return getPosixLocale(cat);
+            if (primaryLanguage == NULL) return NULL;
 
             char *(*JRSCopyCanonicalLanguageForPrimaryLanguage)(char *) = dlsym(jrsFwk, "JRSCopyCanonicalLanguageForPrimaryLanguage");
             char *canonicalLanguage = JRSCopyCanonicalLanguageForPrimaryLanguage ?  JRSCopyCanonicalLanguageForPrimaryLanguage(primaryLanguage) : NULL;
             free (primaryLanguage);
-            if (canonicalLanguage == NULL) return getPosixLocale(cat);
-
-            void (*JRSSetDefaultLocalization)(char *) = dlsym(jrsFwk, "JRSSetDefaultLocalization");
-            if (JRSSetDefaultLocalization) JRSSetDefaultLocalization(canonicalLanguage);
 
             return canonicalLanguage;
         }
@@ -88,6 +84,24 @@ char *setupMacOSXLocale(int cat) {
     }
 
     return NULL;
+}
+
+char *setupMacOSXLocale(int cat) {
+    char * ret = getMacOSXLocale(cat);
+
+    if (cat == LC_MESSAGES && ret != NULL) {
+        void *jrsFwk = getJRSFramework();
+        if (jrsFwk != NULL) {
+            void (*JRSSetDefaultLocalization)(char *) = dlsym(jrsFwk, "JRSSetDefaultLocalization");
+            if (JRSSetDefaultLocalization) JRSSetDefaultLocalization(ret);
+        }
+    }
+
+    if (ret == NULL) {
+        return getPosixLocale(cat);
+    } else {
+        return ret;
+    }
 }
 
 /* There are several toolkit options on Mac OS X, so we should try to

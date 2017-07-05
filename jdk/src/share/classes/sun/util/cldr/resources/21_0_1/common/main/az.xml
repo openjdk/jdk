@@ -1,0 +1,2687 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="az"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa">afarca</language>
+			<language type="ab">abxazca</language>
+			<language type="ace">akin dili</language>
+			<language type="ach">akoli dili</language>
+			<language type="ada">adangme dili</language>
+			<language type="ady">aduge dili</language>
+			<language type="ae">avestanca</language>
+			<language type="af">Afrikaanca</language>
+			<language type="afa">afro-aziat dili</language>
+			<language type="afh">afrihili dili</language>
+			<language type="ain">aynuca</language>
+			<language type="ak">akanca</language>
+			<language type="akk">akadianca</language>
+			<language type="ale">aleutca</language>
+			<language type="alg">algonguyan dili</language>
+			<language type="alt" draft="contributed">cənub altay dili</language>
+			<language type="am">amarikcə</language>
+			<language type="an">aragonca</language>
+			<language type="ang" draft="contributed">qədimi ingiliscə</language>
+			<language type="anp">angikə dili</language>
+			<language type="apa">apaçi dili</language>
+			<language type="ar">Ərəbcə</language>
+			<language type="arc">aramik dili</language>
+			<language type="arn">araukanca</language>
+			<language type="arp">arapaho dili</language>
+			<language type="art">suni dil</language>
+			<language type="arw">aravakça</language>
+			<language type="ast">asturicə</language>
+			<language type="ath">atapaskanca</language>
+			<language type="aus">avstraliyca</language>
+			<language type="av">avarikcə</language>
+			<language type="awa">avadicə</language>
+			<language type="ay">aymarca</language>
+			<language type="az">azərbaycanca</language>
+			<language type="ba">başkir dili</language>
+			<language type="bad">banda dili</language>
+			<language type="bai">bamilek dili</language>
+			<language type="bal">baluc dili</language>
+			<language type="ban">balincə</language>
+			<language type="bas">basa dili</language>
+			<language type="bat">baltik dili</language>
+			<language type="be">belarusca</language>
+			<language type="bej">beja dili</language>
+			<language type="bem">bemba dili</language>
+			<language type="ber">berber dili</language>
+			<language type="bg">bolqarca</language>
+			<language type="bh">biharicə</language>
+			<language type="bho">bxoçpuri dili</language>
+			<language type="bi">bislama dili</language>
+			<language type="bik">bikolca</language>
+			<language type="bin">bini dili</language>
+			<language type="bla" draft="contributed">siksikə dili</language>
+			<language type="bm">bambara dili</language>
+			<language type="bn">Benqal dili</language>
+			<language type="bnt">bantu dili</language>
+			<language type="bo" draft="contributed">tibet dili</language>
+			<language type="br">Bretonca</language>
+			<language type="bra">braj dili</language>
+			<language type="bs">bosniya dili</language>
+			<language type="btk">batak dili</language>
+			<language type="bua">buryat dili</language>
+			<language type="bug">bugin dili</language>
+			<language type="byn">bilincə</language>
+			<language type="ca">katalanca</language>
+			<language type="cad">kado dili</language>
+			<language type="cai">mərkəzi amerika indus dili</language>
+			<language type="car">karib dili</language>
+			<language type="cau">qavqaz dili</language>
+			<language type="cch">atsamca</language>
+			<language type="ce">çeçen dili</language>
+			<language type="ceb">kebuano dili</language>
+			<language type="cel">kelt dili</language>
+			<language type="ch">çamoro dili</language>
+			<language type="chb">çibçə dili</language>
+			<language type="chg">çağatay dili</language>
+			<language type="chk">çukiz dili</language>
+			<language type="chm" draft="contributed">mari dili</language>
+			<language type="chn">çinuk ləhçəsi</language>
+			<language type="cho">çoktau dili</language>
+			<language type="chp">çipevyan dili</language>
+			<language type="chr">çiroki dili</language>
+			<language type="chy">çeyen dili</language>
+			<language type="cmc">çamik dili</language>
+			<language type="co">korsikan dili</language>
+			<language type="cop">kopt dili</language>
+			<language type="cpe">inglis kreol dili</language>
+			<language type="cpf">fransız kreol dili</language>
+			<language type="cpp" draft="contributed">portugal kreol dili</language>
+			<language type="cr">kri dili</language>
+			<language type="crh">krım türkçə</language>
+			<language type="crp">kreol dili</language>
+			<language type="cs">çex dili</language>
+			<language type="csb" draft="contributed">kaşubyan dili</language>
+			<language type="cu">kilsə slav dili</language>
+			<language type="cus">kuşitik dili</language>
+			<language type="cv">çuvaş dili</language>
+			<language type="cy" draft="contributed">uelscə</language>
+			<language type="da">danimarka dili</language>
+			<language type="dak">dakota dili</language>
+			<language type="dar">darqva dili</language>
+			<language type="day">dayak dili</language>
+			<language type="de">almanca</language>
+			<language type="de_AT" draft="contributed">almanca (AT)</language>
+			<language type="de_CH" draft="contributed">isveç yüksək almancası</language>
+			<language type="del">delaver dili</language>
+			<language type="den" draft="contributed">slavey</language>
+			<language type="dgr">doqrib dili</language>
+			<language type="din">dinka dili</language>
+			<language type="doi">doqri dili</language>
+			<language type="dra">dravid dili</language>
+			<language type="dsb" draft="contributed">aşağı sorbca</language>
+			<language type="dua">duala dili</language>
+			<language type="dum" draft="contributed">ortacaq hollandca</language>
+			<language type="dv">diveh dili</language>
+			<language type="dyu">dyula dili</language>
+			<language type="dz">dzonqa dili</language>
+			<language type="ee">eve dili</language>
+			<language type="efi">efik dili</language>
+			<language type="egy">qədimi misir dili</language>
+			<language type="eka">ekacuk dili</language>
+			<language type="el">yunanca</language>
+			<language type="elx">elamit dili</language>
+			<language type="en">ingiliscə</language>
+			<language type="en_AU" draft="contributed">ingiliscə (AU)</language>
+			<language type="en_CA" draft="contributed">ingiliscə (CA)</language>
+			<language type="en_GB" draft="contributed">ingiliscə (GB)</language>
+			<language type="en_US" draft="contributed">ingiliscə (ABŞ)</language>
+			<language type="enm" draft="contributed">ortacaq ingiliscə</language>
+			<language type="eo">esperanto dili</language>
+			<language type="es">ispanca</language>
+			<language type="es_419" draft="contributed">latın amerika ispancası</language>
+			<language type="es_ES" draft="contributed">iber-ispanca</language>
+			<language type="et">estonca</language>
+			<language type="eu">bask dili</language>
+			<language type="ewo">evondo dili</language>
+			<language type="fa" draft="contributed">farsca</language>
+			<language type="fan">fang dili</language>
+			<language type="fat">fanti dili</language>
+			<language type="ff">fula dili</language>
+			<language type="fi">fincə</language>
+			<language type="fil">taqaloqca</language>
+			<language type="fiu">fin-uğri dili</language>
+			<language type="fj">fiji dili</language>
+			<language type="fo">farer dili</language>
+			<language type="fon">fon dili</language>
+			<language type="fr">fransızca</language>
+			<language type="fr_CA" draft="contributed">fransızca (CA)</language>
+			<language type="fr_CH" draft="contributed">isveç fransızca</language>
+			<language type="frm" draft="contributed">ortacaq fransızca</language>
+			<language type="fro" draft="contributed">qədimi fransızca</language>
+			<language type="frr" draft="contributed">şimal fris dili</language>
+			<language type="fur">friul dili</language>
+			<language type="fy" draft="contributed">frisk dili</language>
+			<language type="ga" draft="contributed">irlandca</language>
+			<language type="gaa">qa dili</language>
+			<language type="gay">qayo dili</language>
+			<language type="gba">qabaya dili</language>
+			<language type="gd" draft="contributed">skot gaelik dili</language>
+			<language type="gem">Alman dili</language>
+			<language type="gez">qez dili</language>
+			<language type="gil">qilbert gili</language>
+			<language type="gl">qalisian dili</language>
+			<language type="gmh" draft="contributed">ortacaq yüksək almanca</language>
+			<language type="gn">quaranicə</language>
+			<language type="goh" draft="contributed">qədimi almanca</language>
+			<language type="gon">qondi dili</language>
+			<language type="gor">qorontalo dili</language>
+			<language type="got">gotça</language>
+			<language type="grb">qrebo dili</language>
+			<language type="grc">qədimi yunanca</language>
+			<language type="gsw" draft="contributed">isveç almanca</language>
+			<language type="gu">gujarati dili</language>
+			<language type="gv" draft="contributed">manks dili</language>
+			<language type="gwi">qviçin dili</language>
+			<language type="ha">Hausa dili</language>
+			<language type="hai">hayda dili</language>
+			<language type="haw" draft="contributed">Qavayca</language>
+			<language type="he" draft="contributed">ivritcə</language>
+			<language type="hi" draft="contributed">hindi dili</language>
+			<language type="hil" draft="contributed">hiliqaynon dili</language>
+			<language type="him" draft="contributed">himaçali dili</language>
+			<language type="hit" draft="contributed">hittit dili</language>
+			<language type="hmn" draft="contributed">monq dili</language>
+			<language type="ho" draft="contributed">hiri motu dili</language>
+			<language type="hr">xorvatca</language>
+			<language type="hsb" draft="contributed">yuxarı sorbca</language>
+			<language type="ht">haiti dili</language>
+			<language type="hu" draft="contributed">macarca</language>
+			<language type="hup" draft="contributed">hupa dili</language>
+			<language type="hy">Ermənicə</language>
+			<language type="hz" draft="contributed">Herer dili</language>
+			<language type="ia" draft="contributed">interlingua dili</language>
+			<language type="iba" draft="contributed">iban dili</language>
+			<language type="id" draft="contributed">indoneziya dili</language>
+			<language type="ie" draft="contributed">interlingue dili</language>
+			<language type="ig" draft="contributed">iqbo dili</language>
+			<language type="ii" draft="contributed">siçuan yi dili</language>
+			<language type="ijo" draft="contributed">ico dili</language>
+			<language type="ik" draft="contributed">inupiaq dili</language>
+			<language type="ilo" draft="contributed">iloko dili</language>
+			<language type="inc" draft="contributed">diqər hint dili</language>
+			<language type="ine" draft="contributed">hint-yevropa dili</language>
+			<language type="inh" draft="contributed">inquş dili</language>
+			<language type="io" draft="contributed">ido dili</language>
+			<language type="ira" draft="contributed">iranca</language>
+			<language type="iro" draft="contributed">irokuay dili</language>
+			<language type="is" draft="contributed">isləndcə</language>
+			<language type="it" draft="contributed">italyanca</language>
+			<language type="iu" draft="contributed">inuktikut dili</language>
+			<language type="ja">yaponca</language>
+			<language type="jbo" draft="contributed">loğban dili</language>
+			<language type="jpr" draft="contributed">judo-farsca</language>
+			<language type="jrb" draft="contributed">jude-ərəbcə</language>
+			<language type="jv" draft="contributed">yavaca dili</language>
+			<language type="ka">gürcü dili</language>
+			<language type="kaa" draft="contributed">qara-qalpaq dili</language>
+			<language type="kab" draft="contributed">kabule dili</language>
+			<language type="kac" draft="contributed">kaçinca</language>
+			<language type="kaj" draft="contributed">ju dili</language>
+			<language type="kam" draft="contributed">kamba dili</language>
+			<language type="kar" draft="contributed">karen dili</language>
+			<language type="kaw" draft="contributed">kavi dili</language>
+			<language type="kbd" draft="contributed">kabardca</language>
+			<language type="kcg" draft="contributed">tiyap dili</language>
+			<language type="kfo" draft="contributed">koro dili</language>
+			<language type="kg" draft="contributed">konqo dili</language>
+			<language type="kha" draft="contributed">xazi dili</language>
+			<language type="khi" draft="contributed">xoyzan dili</language>
+			<language type="kho" draft="contributed">xotan dili</language>
+			<language type="ki" draft="contributed">kikuyu dili</language>
+			<language type="kj" draft="contributed">kuanyama dili</language>
+			<language type="kk" draft="contributed">qazax dili</language>
+			<language type="kl" draft="contributed">kalalisut dili</language>
+			<language type="km" draft="contributed">kambodiya dili</language>
+			<language type="kmb" draft="contributed">kimbundu dili</language>
+			<language type="kn" draft="contributed">kannada dili</language>
+			<language type="ko" draft="contributed">koreya dili</language>
+			<language type="kok" draft="contributed">konkan dili</language>
+			<language type="kos" draft="contributed">kosreyan dili</language>
+			<language type="kpe" draft="contributed">kpelle dili</language>
+			<language type="kr" draft="contributed">kanur dili</language>
+			<language type="krc" draft="contributed">qaraçay-balkar dili</language>
+			<language type="krl" draft="contributed">karelyan dili</language>
+			<language type="kro" draft="contributed">kru dili</language>
+			<language type="kru" draft="contributed">kurux dili</language>
+			<language type="ks" draft="contributed">kəşmir dili</language>
+			<language type="ku" draft="contributed">kürdcə</language>
+			<language type="kum" draft="contributed">kumuk dili</language>
+			<language type="kut" draft="contributed">kutenay dili</language>
+			<language type="kv" draft="contributed">komi dili</language>
+			<language type="kw">korniş dili</language>
+			<language type="ky" draft="contributed">qırğızca</language>
+			<language type="la" draft="contributed">latınca</language>
+			<language type="lad" draft="contributed">ladin dili</language>
+			<language type="lah" draft="contributed">laxnda dili</language>
+			<language type="lam" draft="contributed">lamba dili</language>
+			<language type="lb" draft="contributed">luksemburq dili</language>
+			<language type="lez" draft="contributed">ləzqi dili</language>
+			<language type="lg">qanda dili</language>
+			<language type="li" draft="contributed">limburqiş dili</language>
+			<language type="ln" draft="contributed">Linqala dili</language>
+			<language type="lo" draft="contributed">laos dili</language>
+			<language type="lol" draft="contributed">monqo dili</language>
+			<language type="loz" draft="contributed">lozi dili</language>
+			<language type="lt" draft="contributed">litva dili</language>
+			<language type="lu" draft="contributed">luba-katanqa dili</language>
+			<language type="lua" draft="contributed">luba-lulua dili</language>
+			<language type="lui" draft="contributed">luyseno dili</language>
+			<language type="lun" draft="contributed">lunda dili</language>
+			<language type="luo" draft="contributed">luo dili</language>
+			<language type="lus" draft="contributed">lushayca</language>
+			<language type="lv" draft="contributed">latışca</language>
+			<language type="mad" draft="contributed">maduriz dili</language>
+			<language type="mag" draft="contributed">maqahi dili</language>
+			<language type="mai" draft="contributed">maitili dili</language>
+			<language type="mak" draft="contributed">makasar dili</language>
+			<language type="man" draft="contributed">məndinqo dili</language>
+			<language type="map">avstronezicə</language>
+			<language type="mas" draft="contributed">masay dili</language>
+			<language type="mdf" draft="contributed">mokşa dili</language>
+			<language type="mdr" draft="contributed">mandar dili</language>
+			<language type="men" draft="contributed">mende dili</language>
+			<language type="mg" draft="contributed">malaqas dili</language>
+			<language type="mga" draft="contributed">ortacaq irlandca</language>
+			<language type="mh" draft="contributed">marşal dili</language>
+			<language type="mi" draft="contributed">maori dili</language>
+			<language type="mic" draft="contributed">mikmak dili</language>
+			<language type="min" draft="contributed">minanqkaban dili</language>
+			<language type="mis" draft="contributed">çeşitli diller</language>
+			<language type="mk" draft="contributed">makedoniya dili</language>
+			<language type="mkh" draft="contributed">mon-xmer dili</language>
+			<language type="ml" draft="contributed">malayalamca</language>
+			<language type="mn" draft="contributed">monqolca</language>
+			<language type="mnc" draft="contributed">mançu dili</language>
+			<language type="mni" draft="contributed">manipüri dili</language>
+			<language type="mno" draft="contributed">manobo dili</language>
+			<language type="mo" draft="contributed">moldavca</language>
+			<language type="moh" draft="contributed">moxak dili</language>
+			<language type="mos" draft="contributed">mosi dili</language>
+			<language type="mr" draft="contributed">marati dili</language>
+			<language type="ms" draft="contributed">malayca</language>
+			<language type="mt" draft="contributed">malta dili</language>
+			<language type="mul" draft="contributed">digər dillər</language>
+			<language type="mun" draft="contributed">munda dili</language>
+			<language type="mus">krik dili</language>
+			<language type="mwl" draft="contributed">mirand dili</language>
+			<language type="mwr" draft="contributed">maruari dili</language>
+			<language type="my">burmis dili</language>
+			<language type="myn" draft="contributed">maya dili</language>
+			<language type="myv">erzya dili</language>
+			<language type="na" draft="contributed">nauru dili</language>
+			<language type="nah" draft="contributed">nahuatl dili</language>
+			<language type="nai" draft="contributed">şimal amerika yerli dili</language>
+			<language type="nap" draft="contributed">neapolital dili</language>
+			<language type="nb" draft="contributed">norvec bokmal dili</language>
+			<language type="nd" draft="contributed">şimal ndebele dili</language>
+			<language type="nds" draft="contributed">aşağı almanca</language>
+			<language type="ne" draft="contributed">nepalca</language>
+			<language type="new" draft="contributed">nevari dili</language>
+			<language type="ng" draft="contributed">nqonka dili</language>
+			<language type="nia" draft="contributed">nyas dili</language>
+			<language type="nic" draft="contributed">niger-kordofyan dili</language>
+			<language type="niu" draft="contributed">niyuan dili</language>
+			<language type="nl">hollandca</language>
+			<language type="nl_BE" draft="contributed">flem dili</language>
+			<language type="nn" draft="contributed">norveç ninorsk dili</language>
+			<language type="no" draft="contributed">norveç dili</language>
+			<language type="nog" draft="contributed">noqay dili</language>
+			<language type="non" draft="contributed">qədimi norsca</language>
+			<language type="nqo" draft="contributed">nqo dili</language>
+			<language type="nr" draft="contributed">cənub ndebele dili</language>
+			<language type="nso" draft="contributed">şimal soto dili</language>
+			<language type="nub" draft="contributed">nubiy dili</language>
+			<language type="nv" draft="contributed">navayo dili</language>
+			<language type="ny" draft="contributed">nyanca dili</language>
+			<language type="nym" draft="contributed">nyamvezi dili</language>
+			<language type="nyn" draft="contributed">nyankol dili</language>
+			<language type="nyo" draft="contributed">niyoro dili</language>
+			<language type="nzi" draft="contributed">nizima dili</language>
+			<language type="oc" draft="contributed">oksitanca</language>
+			<language type="oj" draft="contributed">ocibva dili</language>
+			<language type="om" draft="contributed">oromo dili</language>
+			<language type="or" draft="contributed">Oriyə dili</language>
+			<language type="os" draft="contributed">osetik dili</language>
+			<language type="osa" draft="contributed">osage dili</language>
+			<language type="ota" draft="contributed">osman dili</language>
+			<language type="oto" draft="contributed">otomian dili</language>
+			<language type="pa" draft="contributed">puncab dili</language>
+			<language type="paa" draft="contributed">papua dili</language>
+			<language type="pag" draft="contributed">panqasinan dili</language>
+			<language type="pal" draft="contributed">paxlavi dili</language>
+			<language type="pam" draft="contributed">pampanqa dili</language>
+			<language type="pap" draft="contributed">papyamento dili</language>
+			<language type="pau" draft="contributed">palayanca</language>
+			<language type="peo" draft="contributed">qədimi farsca</language>
+			<language type="phi" draft="contributed">filipin dili</language>
+			<language type="phn" draft="contributed">foyenik dili</language>
+			<language type="pi" draft="contributed">pali dili</language>
+			<language type="pl" draft="contributed">Polish dili</language>
+			<language type="pon" draft="contributed">ponpeyan dili</language>
+			<language type="pra" draft="contributed">prakrit dili</language>
+			<language type="pro" draft="contributed">qədimi provensialca</language>
+			<language type="ps" draft="contributed">Puştu dili</language>
+			<language type="pt">portuqalca</language>
+			<language type="pt_PT" draft="contributed">İber portuqalca</language>
+			<language type="qu" draft="contributed">kuechya dili</language>
+			<language type="raj" draft="contributed">racastan dili</language>
+			<language type="rap" draft="contributed">rapanu dili</language>
+			<language type="rar" draft="contributed">rarotonqan dili</language>
+			<language type="rn" draft="contributed">rundi dili</language>
+			<language type="ro" draft="contributed">rumın</language>
+			<language type="rom" draft="contributed">roman dili</language>
+			<language type="root" draft="contributed">rut dili</language>
+			<language type="ru">rusca</language>
+			<language type="rup">aromanca</language>
+			<language type="rw" draft="contributed">kinyarvanda dili</language>
+			<language type="sa" draft="contributed">Sanskrit dili</language>
+			<language type="sad" draft="contributed">sandave dili</language>
+			<language type="sah" draft="contributed">yakut dili</language>
+			<language type="sai" draft="contributed">cənub amerika yerli dili</language>
+			<language type="sal" draft="contributed">salişan dili</language>
+			<language type="sam" draft="contributed">samaritan dili</language>
+			<language type="sas" draft="contributed">sasak dili</language>
+			<language type="sat" draft="contributed">santal dili</language>
+			<language type="sc" draft="contributed">sardin dili</language>
+			<language type="scn" draft="contributed">sisili dili</language>
+			<language type="sco" draft="contributed">skots dili</language>
+			<language type="sd" draft="contributed">sindhi dili</language>
+			<language type="se" draft="contributed">şimal sami dili</language>
+			<language type="sel" draft="contributed">selkup dili</language>
+			<language type="sem" draft="contributed">ivrit dili</language>
+			<language type="sg" draft="contributed">sanqo dili</language>
+			<language type="sga" draft="contributed">qədimi irlandca</language>
+			<language type="sgn" draft="contributed">işarət dili</language>
+			<language type="sh" draft="contributed">serb-xorvatca</language>
+			<language type="shn" draft="contributed">şan dili</language>
+			<language type="si" draft="contributed">sinhaliscə</language>
+			<language type="sid" draft="contributed">sidamo dili</language>
+			<language type="sio" draft="contributed">sioyan dili</language>
+			<language type="sit" draft="contributed">sino-tibet dili</language>
+			<language type="sk" draft="contributed">slovakca</language>
+			<language type="sl" draft="contributed">slovencə</language>
+			<language type="sla" draft="contributed">slav dili</language>
+			<language type="sm" draft="contributed">samoa dili</language>
+			<language type="sma" draft="contributed">cənub sami dili</language>
+			<language type="smi" draft="contributed">səmi dili</language>
+			<language type="smj" draft="contributed">lule sami dili</language>
+			<language type="smn" draft="contributed">inari sami</language>
+			<language type="sms" draft="contributed">skolt dili</language>
+			<language type="sn" draft="contributed">şona dili</language>
+			<language type="snk" draft="contributed">soninke dili</language>
+			<language type="so" draft="contributed">somali dili</language>
+			<language type="sog" draft="contributed">soqdiyen dili</language>
+			<language type="son" draft="contributed">sonqay dili</language>
+			<language type="sq">Albanca</language>
+			<language type="sr" draft="contributed">serb dili</language>
+			<language type="srn" draft="contributed">sranan tonqo dili</language>
+			<language type="srr" draft="contributed">serer dilii</language>
+			<language type="ss" draft="contributed">svati dili</language>
+			<language type="ssa" draft="contributed">nilo-sahara dili</language>
+			<language type="st" draft="contributed">Sesoto dili</language>
+			<language type="su" draft="contributed">sundanca</language>
+			<language type="suk" draft="contributed">sukuma dili</language>
+			<language type="sus" draft="contributed">susu dili</language>
+			<language type="sux" draft="contributed">sumeryan dili</language>
+			<language type="sv" draft="contributed">isveçcə</language>
+			<language type="sw" draft="contributed">suahilicə</language>
+			<language type="syr" draft="contributed">siryak dili</language>
+			<language type="ta" draft="contributed">tamilcə</language>
+			<language type="tai" draft="contributed">tay dili</language>
+			<language type="te" draft="contributed">teluqu dili</language>
+			<language type="tem" draft="contributed">timne dili</language>
+			<language type="ter" draft="contributed">tereno dili</language>
+			<language type="tet" draft="contributed">tetum dili</language>
+			<language type="tg" draft="contributed">tacik dili</language>
+			<language type="th" draft="contributed">tayca</language>
+			<language type="ti" draft="contributed">tiqrin dili</language>
+			<language type="tig" draft="contributed">tiqre dili</language>
+			<language type="tiv" draft="contributed">tiv dili</language>
+			<language type="tk" draft="contributed">türkməncə</language>
+			<language type="tkl" draft="contributed">tokelay dili</language>
+			<language type="tl" draft="contributed">taqaloq dili</language>
+			<language type="tlh" draft="contributed">klinqon</language>
+			<language type="tli" draft="contributed">tlinqit dili</language>
+			<language type="tmh" draft="contributed">tamaşek dili</language>
+			<language type="tn" draft="contributed">svana dili</language>
+			<language type="to" draft="contributed">tonqa dili</language>
+			<language type="tog" draft="contributed">niyasa tonga dili</language>
+			<language type="tpi" draft="contributed">tok pisin dili</language>
+			<language type="tr" draft="contributed">türkcə</language>
+			<language type="ts" draft="contributed">sonqa dili</language>
+			<language type="tsi" draft="contributed">simşyan dili</language>
+			<language type="tt" draft="contributed">tatarca</language>
+			<language type="tum" draft="contributed">tumbuka dili</language>
+			<language type="tup" draft="contributed">tupi dili</language>
+			<language type="tut">altaik dili</language>
+			<language type="tvl" draft="contributed">tuvalu dili</language>
+			<language type="tw" draft="contributed">Tvi dili</language>
+			<language type="ty" draft="contributed">taxiti dili</language>
+			<language type="tyv" draft="contributed">tuvinyan dili</language>
+			<language type="udm" draft="contributed">udmurt dili</language>
+			<language type="ug" draft="contributed">uyğurca</language>
+			<language type="uga" draft="contributed">uqaritik dili</language>
+			<language type="uk" draft="contributed">ukraynaca</language>
+			<language type="umb" draft="contributed">umbundu dili</language>
+			<language type="und" draft="contributed">bilinməyən vəya gəcərsiz dil</language>
+			<language type="ur" draft="contributed">urduca</language>
+			<language type="uz" draft="contributed">özbəkcə</language>
+			<language type="vai" draft="contributed">vay dili</language>
+			<language type="ve" draft="contributed">venda dili</language>
+			<language type="vi" draft="contributed">vyetnamca</language>
+			<language type="vo" draft="contributed">volapük dili</language>
+			<language type="vot" draft="contributed">votik dili</language>
+			<language type="wa" draft="contributed">valun dili</language>
+			<language type="wak" draft="contributed">vakaşan dili</language>
+			<language type="wal" draft="contributed">valamo dili</language>
+			<language type="war" draft="contributed">varay dili</language>
+			<language type="was" draft="contributed">vaşo dili</language>
+			<language type="wen" draft="contributed">sorb dili</language>
+			<language type="wo" draft="contributed">volof dili</language>
+			<language type="xal" draft="contributed">kalmıqca</language>
+			<language type="xh" draft="contributed">xosa dili</language>
+			<language type="yao" draft="contributed">yao dili</language>
+			<language type="yap" draft="contributed">yapiz dili</language>
+			<language type="yi" draft="contributed">Yahudi dili</language>
+			<language type="yo" draft="contributed">yoruba dili</language>
+			<language type="ypk" draft="contributed">yupik dili</language>
+			<language type="za" draft="contributed">juənq dili</language>
+			<language type="zap" draft="contributed">zapotek dili</language>
+			<language type="zbl">blisimbols dili</language>
+			<language type="zen" draft="contributed">zenaqa dili</language>
+			<language type="zh">çincə</language>
+			<language type="zh_Hans" draft="contributed">adi çincə</language>
+			<language type="zh_Hant" draft="contributed">gələnəksəl çincə</language>
+			<language type="znd" draft="contributed">zande dili</language>
+			<language type="zu" draft="contributed">zulu dili</language>
+			<language type="zun" draft="contributed">zuni dili</language>
+			<language type="zza" draft="contributed">zaza dili</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="contributed">ərəb</script>
+			<script type="Armi" draft="contributed">armi</script>
+			<script type="Armn" draft="contributed">erməni</script>
+			<script type="Avst" draft="contributed">avestan</script>
+			<script type="Bali" draft="contributed">bali</script>
+			<script type="Batk" draft="contributed">batak</script>
+			<script type="Beng" draft="contributed">benqal</script>
+			<script type="Blis" draft="contributed">blissymbols</script>
+			<script type="Bopo" draft="contributed">Bopomofo</script>
+			<script type="Brah" draft="contributed">brahmi</script>
+			<script type="Brai" draft="contributed">kor yazısı</script>
+			<script type="Bugi" draft="contributed">buqin</script>
+			<script type="Buhd" draft="contributed">buhid</script>
+			<script type="Cakm" draft="contributed">kakm</script>
+			<script type="Cans" draft="contributed">birləşmiş kanada yerli yazısı</script>
+			<script type="Cari" draft="contributed">kariyan</script>
+			<script type="Cham" draft="contributed">çam</script>
+			<script type="Cher" draft="contributed">çiroki</script>
+			<script type="Cirt" draft="contributed">sirt</script>
+			<script type="Copt" draft="contributed">koptik</script>
+			<script type="Cprt" draft="contributed">kipr</script>
+			<script type="Cyrl" draft="contributed">kiril</script>
+			<script type="Cyrs" draft="contributed">qədimi kilsa kirili</script>
+			<script type="Deva" draft="contributed">devanagari</script>
+			<script type="Dsrt" draft="contributed">deseret</script>
+			<script type="Egyd" draft="contributed">misir demotik</script>
+			<script type="Egyh" draft="contributed">misir hiyeratik</script>
+			<script type="Egyp" draft="contributed">misir hiyeroqlif</script>
+			<script type="Ethi" draft="contributed">efiopiya</script>
+			<script type="Geok" draft="contributed">gürcü xutsuri</script>
+			<script type="Geor" draft="contributed">gürcü</script>
+			<script type="Glag" draft="contributed">qlaqolitik</script>
+			<script type="Goth" draft="contributed">qotik</script>
+			<script type="Grek" draft="contributed">yunan</script>
+			<script type="Gujr" draft="contributed">qucarat</script>
+			<script type="Guru" draft="contributed">qurmuxi</script>
+			<script type="Hang" draft="contributed">hanqul</script>
+			<script type="Hani" draft="contributed">han</script>
+			<script type="Hano" draft="contributed">hanunu</script>
+			<script type="Hans" draft="contributed">basitləştirilmiş han</script>
+			<script type="Hant" draft="contributed">qədimi han</script>
+			<script type="Hebr" draft="contributed">yahudi</script>
+			<script type="Hira" draft="contributed">iragana</script>
+			<script type="Hmng" draft="contributed">pahav monq</script>
+			<script type="Hrkt" draft="contributed">katakana vəya hiraqana</script>
+			<script type="Hung" draft="contributed">qədimi macar</script>
+			<script type="Inds" draft="contributed">hindistan</script>
+			<script type="Ital" draft="contributed">qədimi italyalı</script>
+			<script type="Java" draft="contributed">cava</script>
+			<script type="Jpan" draft="contributed">yapon</script>
+			<script type="Kali" draft="contributed">kayax li</script>
+			<script type="Kana" draft="contributed">katakana</script>
+			<script type="Khar" draft="contributed">xaroşti</script>
+			<script type="Khmr" draft="contributed">xmer</script>
+			<script type="Knda" draft="contributed">kannada</script>
+			<script type="Kore" draft="contributed">korean</script>
+			<script type="Kthi" draft="contributed">kti</script>
+			<script type="Lana" draft="contributed">lanna</script>
+			<script type="Laoo" draft="contributed">lao</script>
+			<script type="Latf" draft="contributed">fraktur latını</script>
+			<script type="Latg" draft="contributed">gael latını</script>
+			<script type="Latn" draft="contributed">latın</script>
+			<script type="Lepc" draft="contributed">lepçə</script>
+			<script type="Limb" draft="contributed">limbu</script>
+			<script type="Lyci" draft="contributed">lusian</script>
+			<script type="Lydi" draft="contributed">ludian</script>
+			<script type="Mand" draft="contributed">mandayen</script>
+			<script type="Mani" draft="contributed">maniçayen</script>
+			<script type="Maya" draft="contributed">maya hiyeroqlifi</script>
+			<script type="Mero" draft="contributed">meroytik</script>
+			<script type="Mlym" draft="contributed">malayalam</script>
+			<script type="Mong" draft="contributed">monqol</script>
+			<script type="Moon" draft="contributed">mun</script>
+			<script type="Mtei" draft="contributed">meytey mayek</script>
+			<script type="Mymr" draft="contributed">miyanmar</script>
+			<script type="Nkoo" draft="contributed">nko</script>
+			<script type="Ogam" draft="contributed">oğam</script>
+			<script type="Olck" draft="contributed">ol çiki</script>
+			<script type="Orkh" draft="contributed">orxon</script>
+			<script type="Orya" draft="contributed">oriya</script>
+			<script type="Osma" draft="contributed">osmanya</script>
+			<script type="Perm" draft="contributed">qədimi permik</script>
+			<script type="Phag" draft="contributed">faqs-pa</script>
+			<script type="Phli" draft="contributed">fli</script>
+			<script type="Phlp" draft="contributed">flp</script>
+			<script type="Phlv" draft="contributed">kitab paxlavi</script>
+			<script type="Phnx" draft="contributed">foenik</script>
+			<script type="Plrd" draft="contributed">polard fonetik</script>
+			<script type="Prti" draft="contributed">prti</script>
+			<script type="Rjng" draft="contributed">recəng</script>
+			<script type="Roro" draft="contributed">ronqoronqo</script>
+			<script type="Runr" draft="contributed">runik</script>
+			<script type="Samr" draft="contributed">samaritan</script>
+			<script type="Sara" draft="contributed">sarati</script>
+			<script type="Saur" draft="contributed">saurastra</script>
+			<script type="Sgnw" draft="contributed">işarət yazısı</script>
+			<script type="Shaw" draft="contributed">şavyan</script>
+			<script type="Sinh" draft="contributed">sinhala</script>
+			<script type="Sund" draft="contributed">sundan</script>
+			<script type="Sylo" draft="contributed">siloti nəqri</script>
+			<script type="Syrc" draft="contributed">siryak</script>
+			<script type="Syre" draft="contributed">estrangela süryanice</script>
+			<script type="Tagb" draft="contributed">taqbanva</script>
+			<script type="Tale" draft="contributed">tay le</script>
+			<script type="Talu" draft="contributed">təzə tay lu</script>
+			<script type="Taml" draft="contributed">tamil</script>
+			<script type="Tavt" draft="contributed">tavt</script>
+			<script type="Telu" draft="contributed">telugu</script>
+			<script type="Teng" draft="contributed">tengvar</script>
+			<script type="Tfng" draft="contributed">tifinaq</script>
+			<script type="Tglg" draft="contributed">taqaloq</script>
+			<script type="Thaa" draft="contributed">txana</script>
+			<script type="Thai" draft="contributed">tay</script>
+			<script type="Tibt" draft="contributed">tibet</script>
+			<script type="Ugar" draft="contributed">uqarit</script>
+			<script type="Vaii" draft="contributed">vay</script>
+			<script type="Visp" draft="contributed">danışma səsləri</script>
+			<script type="Xpeo" draft="contributed">qədimi fars</script>
+			<script type="Xsux" draft="contributed">sumer-akadyan kuneyform</script>
+			<script type="Yiii" draft="contributed">yi</script>
+			<script type="Zmth" draft="contributed">zmth</script>
+			<script type="Zsym" draft="contributed">zsym</script>
+			<script type="Zxxx" draft="contributed">yazısız</script>
+			<script type="Zyyy" draft="contributed">adi yazi</script>
+			<script type="Zzzz" draft="contributed">bilinməyən veya gəcərsiz</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="contributed">Dünya</territory>
+			<territory type="002" draft="contributed">Afrika</territory>
+			<territory type="003" draft="contributed">Şimal Amerika</territory>
+			<territory type="005" draft="contributed">Cənub Amerika</territory>
+			<territory type="009" draft="contributed">Okeyaniya</territory>
+			<territory type="011" draft="contributed">Qərb afrika</territory>
+			<territory type="013" draft="contributed">Orta Amerika</territory>
+			<territory type="014" draft="contributed">Şərq Afrika</territory>
+			<territory type="015" draft="contributed">Şimal Afrika</territory>
+			<territory type="017" draft="contributed">Orta Afrika</territory>
+			<territory type="019" draft="contributed">Amerikalar</territory>
+			<territory type="029" draft="contributed">Kariyıplar</territory>
+			<territory type="030" draft="contributed">Şərq Asiya</territory>
+			<territory type="034" draft="contributed">Cənub Asiya</territory>
+			<territory type="035" draft="contributed">Cənub Şərq Asiya</territory>
+			<territory type="039" draft="contributed">Cənub Avropa</territory>
+			<territory type="053" draft="contributed">Avstraliya və Yeni Zelandiya</territory>
+			<territory type="054" draft="contributed">Melanesya</territory>
+			<territory type="057" draft="contributed">Mikronesiya reqionu</territory>
+			<territory type="061" draft="contributed">Polineziya</territory>
+			<territory type="142" draft="contributed">Aziya</territory>
+			<territory type="143" draft="contributed">Orta Aziya</territory>
+			<territory type="145" draft="contributed">Qərb Asiya</territory>
+			<territory type="150" draft="contributed">Avropa</territory>
+			<territory type="151" draft="contributed">Şərq Avropa</territory>
+			<territory type="154" draft="contributed">Şimal Avropa</territory>
+			<territory type="155" draft="contributed">Qərb Avropa</territory>
+			<territory type="419" draft="contributed">Latın Amerikası</territory>
+			<territory type="AD" draft="contributed">Andorra</territory>
+			<territory type="AE" draft="contributed">Birləşmiş Ərəb Emiratları</territory>
+			<territory type="AF" draft="contributed">Əfqənistan</territory>
+			<territory type="AG" draft="contributed">Antiqua və Barbuda</territory>
+			<territory type="AI" draft="contributed">Anquila</territory>
+			<territory type="AL" draft="contributed">Albaniya</territory>
+			<territory type="AM" draft="contributed">Ermənistan</territory>
+			<territory type="AN" draft="contributed">Hollandiya antilleri</territory>
+			<territory type="AO" draft="contributed">Angola</territory>
+			<territory type="AQ" draft="contributed">Antarktika</territory>
+			<territory type="AR" draft="contributed">Arqentina</territory>
+			<territory type="AS" draft="contributed">Amerika Samoası</territory>
+			<territory type="AT" draft="contributed">Avstriya</territory>
+			<territory type="AU" draft="contributed">Avstraliya</territory>
+			<territory type="AW" draft="contributed">Aruba</territory>
+			<territory type="AX" draft="contributed">Aland Adaları</territory>
+			<territory type="AZ">Azərbaycan</territory>
+			<territory type="BA" draft="contributed">Bosniya və Herzokovina</territory>
+			<territory type="BB" draft="contributed">Barbados</territory>
+			<territory type="BD" draft="contributed">Banqladeş</territory>
+			<territory type="BE" draft="contributed">Belçika</territory>
+			<territory type="BF" draft="contributed">Burkina Faso</territory>
+			<territory type="BG" draft="contributed">Bolqariya</territory>
+			<territory type="BH" draft="contributed">Bahreyn</territory>
+			<territory type="BI" draft="contributed">Burundi</territory>
+			<territory type="BJ" draft="contributed">Benin</territory>
+			<territory type="BL" draft="contributed">Seynt Bartelemey</territory>
+			<territory type="BM" draft="contributed">Bermuda</territory>
+			<territory type="BN" draft="contributed">Bruney</territory>
+			<territory type="BO" draft="contributed">Boliviya</territory>
+			<territory type="BR">Braziliya</territory>
+			<territory type="BS" draft="contributed">Bahamalar</territory>
+			<territory type="BT" draft="contributed">Butan</territory>
+			<territory type="BV" draft="contributed">Bove Adası</territory>
+			<territory type="BW" draft="contributed">Botsvana</territory>
+			<territory type="BY" draft="contributed">Belarus</territory>
+			<territory type="BZ" draft="contributed">Beliz</territory>
+			<territory type="CA" draft="contributed">Kanada</territory>
+			<territory type="CC" draft="contributed">Kokos Adaları</territory>
+			<territory type="CD" draft="contributed">Konqo - Kinşasa</territory>
+			<territory type="CF" draft="contributed">Orta Afrika respublikası</territory>
+			<territory type="CG" draft="contributed">Konqo - Brazavil</territory>
+			<territory type="CH" draft="contributed">isveçriya</territory>
+			<territory type="CI" draft="contributed">İvori Sahili</territory>
+			<territory type="CK" draft="contributed">Kuk Adaları</territory>
+			<territory type="CL" draft="contributed">Çile</territory>
+			<territory type="CM" draft="contributed">Kamerun</territory>
+			<territory type="CN">Çin</territory>
+			<territory type="CO" draft="contributed">Kolumbiya</territory>
+			<territory type="CR" draft="contributed">Kosta Rika</territory>
+			<territory type="CU" draft="contributed">Kuba</territory>
+			<territory type="CV" draft="contributed">Kape Verde</territory>
+			<territory type="CX" draft="contributed">Çristmas Adası</territory>
+			<territory type="CY" draft="contributed">Kipr</territory>
+			<territory type="CZ" draft="contributed">Çex respublikası</territory>
+			<territory type="DE">Almaniya</territory>
+			<territory type="DJ" draft="contributed">Ciboti</territory>
+			<territory type="DK" draft="contributed">Danemarka</territory>
+			<territory type="DM" draft="contributed">Dominika</territory>
+			<territory type="DO" draft="contributed">Dominik Respublikası</territory>
+			<territory type="DZ" draft="contributed">Cezayır</territory>
+			<territory type="EC" draft="contributed">Ekvador</territory>
+			<territory type="EE" draft="contributed">Estoniya</territory>
+			<territory type="EG" draft="contributed">Misir</territory>
+			<territory type="EH" draft="contributed">Qərb Sahara</territory>
+			<territory type="ER" draft="contributed">Eritreya</territory>
+			<territory type="ES" draft="contributed">İspaniya</territory>
+			<territory type="ET" draft="contributed">Efiopiya</territory>
+			<territory type="EU" draft="contributed">Avropa Birləşliyi</territory>
+			<territory type="FI" draft="contributed">Finlandiya</territory>
+			<territory type="FJ" draft="contributed">Fici</territory>
+			<territory type="FK" draft="contributed">Folkland Adaları</territory>
+			<territory type="FM" draft="contributed">Mikronesiya</territory>
+			<territory type="FO" draft="contributed">Faro Adaları</territory>
+			<territory type="FR">Fransa</territory>
+			<territory type="GA" draft="contributed">Qabon</territory>
+			<territory type="GB" draft="contributed">Birləşmiş Krallıq</territory>
+			<territory type="GD" draft="contributed">Qrenada</territory>
+			<territory type="GE" draft="contributed">Gürcüstan</territory>
+			<territory type="GF" draft="contributed">Fransız Quyanası</territory>
+			<territory type="GG" draft="contributed">Görnsey</territory>
+			<territory type="GH" draft="contributed">Qana</territory>
+			<territory type="GI" draft="contributed">Gibraltar</territory>
+			<territory type="GL" draft="contributed">Qrinland</territory>
+			<territory type="GM" draft="contributed">Qambiya</territory>
+			<territory type="GN" draft="contributed">Qvineya</territory>
+			<territory type="GP" draft="contributed">Qvadalup</territory>
+			<territory type="GQ" draft="contributed">Ekvator Qineya</territory>
+			<territory type="GR" draft="contributed">Yunanıstan</territory>
+			<territory type="GS" draft="contributed">Cənub Gürcüstan və Cənub Sandvilç Adaları</territory>
+			<territory type="GT" draft="contributed">Qvatemala</territory>
+			<territory type="GU" draft="contributed">Quam</territory>
+			<territory type="GW" draft="contributed">Qvineya-Bisau</territory>
+			<territory type="GY" draft="contributed">Quyana</territory>
+			<territory type="HK" draft="contributed">Honk Konq çina</territory>
+			<territory type="HK" alt="short" draft="contributed">Honk Konq</territory>
+			<territory type="HM" draft="contributed">Hörd və Makdonald Adaları</territory>
+			<territory type="HN" draft="contributed">Qonduras</territory>
+			<territory type="HR" draft="contributed">Xorvatiya</territory>
+			<territory type="HT" draft="contributed">Haiti</territory>
+			<territory type="HU" draft="contributed">Macaristan</territory>
+			<territory type="ID" draft="contributed">İndoneziya</territory>
+			<territory type="IE" draft="contributed">İrlandiya</territory>
+			<territory type="IL" draft="contributed">İzrail</territory>
+			<territory type="IM" draft="contributed">Man Adası</territory>
+			<territory type="IN">Hindistan</territory>
+			<territory type="IO" draft="contributed">Britaniya-Hindistan Okeanik territoriyası</territory>
+			<territory type="IQ" draft="contributed">İrak</territory>
+			<territory type="IR" draft="contributed">İran</territory>
+			<territory type="IS" draft="contributed">İslandiya</territory>
+			<territory type="IT">İtaliya</territory>
+			<territory type="JE" draft="contributed">Cörsi</territory>
+			<territory type="JM" draft="contributed">Yamayka</territory>
+			<territory type="JO" draft="contributed">Ürdün</territory>
+			<territory type="JP">Yaponiya</territory>
+			<territory type="KE" draft="contributed">Kenya</territory>
+			<territory type="KG" draft="contributed">Kırqızstan</territory>
+			<territory type="KH" draft="contributed">Kambodiya</territory>
+			<territory type="KI" draft="contributed">Kiribati</territory>
+			<territory type="KM" draft="contributed">Komoros</territory>
+			<territory type="KN" draft="contributed">Seynt Kits və Nevis</territory>
+			<territory type="KP" draft="contributed">Şimal Koreya</territory>
+			<territory type="KR" draft="contributed">Cənub Koreya</territory>
+			<territory type="KW" draft="contributed">Kuveyt</territory>
+			<territory type="KY" draft="contributed">Kayman Adaları</territory>
+			<territory type="KZ" draft="contributed">Kazaxstan</territory>
+			<territory type="LA" draft="contributed">Laos</territory>
+			<territory type="LB" draft="contributed">Lebanon</territory>
+			<territory type="LC" draft="contributed">Seynt Lusiya</territory>
+			<territory type="LI" draft="contributed">Lixtenşteyn</territory>
+			<territory type="LK" draft="contributed">Şri Lanka</territory>
+			<territory type="LR" draft="contributed">Liberiya</territory>
+			<territory type="LS" draft="contributed">Lesoto</territory>
+			<territory type="LT" draft="contributed">Litva</territory>
+			<territory type="LU" draft="contributed">Lüksemburq</territory>
+			<territory type="LV" draft="contributed">Latviya</territory>
+			<territory type="LY" draft="contributed">Libya</territory>
+			<territory type="MA" draft="contributed">Morokko</territory>
+			<territory type="MC" draft="contributed">Monako</territory>
+			<territory type="MD" draft="contributed">Moldova</territory>
+			<territory type="ME" draft="contributed">Monteneqro</territory>
+			<territory type="MF" draft="contributed">Seynt Martin</territory>
+			<territory type="MG" draft="contributed">Madaqaskar</territory>
+			<territory type="MH" draft="contributed">Marşal Adaları</territory>
+			<territory type="MK" draft="contributed">Masedoniya</territory>
+			<territory type="ML" draft="contributed">Mali</territory>
+			<territory type="MM" draft="contributed">Myanmar</territory>
+			<territory type="MN" draft="contributed">Monqoliya</territory>
+			<territory type="MO" draft="contributed">Makao Çina</territory>
+			<territory type="MO" alt="short" draft="contributed">Makao</territory>
+			<territory type="MP" draft="contributed">Şimal Mariana Adaları</territory>
+			<territory type="MQ" draft="contributed">Martiniqu</territory>
+			<territory type="MR" draft="contributed">Mavritaniya</territory>
+			<territory type="MS" draft="contributed">Montserat</territory>
+			<territory type="MT" draft="contributed">Malta</territory>
+			<territory type="MU" draft="contributed">Mavritis</territory>
+			<territory type="MV" draft="contributed">Maldiv</territory>
+			<territory type="MW" draft="contributed">Malavi</territory>
+			<territory type="MX" draft="contributed">Meksika</territory>
+			<territory type="MY" draft="contributed">Malaysiya</territory>
+			<territory type="MZ" draft="contributed">Mazambik</territory>
+			<territory type="NA" draft="contributed">Namibiya</territory>
+			<territory type="NC" draft="contributed">Yeni Kaledoniya</territory>
+			<territory type="NE" draft="contributed">nijer</territory>
+			<territory type="NF" draft="contributed">Norfolk Adası</territory>
+			<territory type="NG" draft="contributed">Nijeriya</territory>
+			<territory type="NI" draft="contributed">Nikaraqua</territory>
+			<territory type="NL" draft="contributed">Hollandiya</territory>
+			<territory type="NO" draft="contributed">Norvec</territory>
+			<territory type="NP" draft="contributed">Nepal</territory>
+			<territory type="NR" draft="contributed">Nauru</territory>
+			<territory type="NU" draft="contributed">Niye</territory>
+			<territory type="NZ" draft="contributed">Yeni Zelandiya</territory>
+			<territory type="OM" draft="contributed">Oman</territory>
+			<territory type="PA" draft="contributed">Panama</territory>
+			<territory type="PE" draft="contributed">Peru</territory>
+			<territory type="PF" draft="contributed">Fransız Polineziya</territory>
+			<territory type="PG" draft="contributed">Papua Yeni Qvineya</territory>
+			<territory type="PH" draft="contributed">Filipin</territory>
+			<territory type="PK" draft="contributed">Pakistan</territory>
+			<territory type="PL" draft="contributed">Polşa</territory>
+			<territory type="PM" draft="contributed">Seynt Piyer və Mikelon</territory>
+			<territory type="PN" draft="contributed">Pitkarn</territory>
+			<territory type="PR" draft="contributed">Puerto Riko</territory>
+			<territory type="PS" draft="contributed">Fələstin Bölqüsü</territory>
+			<territory type="PT" draft="contributed">Portuqal</territory>
+			<territory type="PW" draft="contributed">Palav</territory>
+			<territory type="PY" draft="contributed">Paraqvay</territory>
+			<territory type="QA" draft="contributed">Qatar</territory>
+			<territory type="QO" draft="contributed">Uzak Okeyaniya</territory>
+			<territory type="RE" draft="contributed">Reyunion</territory>
+			<territory type="RO" draft="contributed">Romaniya</territory>
+			<territory type="RS" draft="contributed">Serbiya</territory>
+			<territory type="RU">Rusiya</territory>
+			<territory type="RW" draft="contributed">Rvanda</territory>
+			<territory type="SA" draft="contributed">Saudi Ərəbistan</territory>
+			<territory type="SB" draft="contributed">Solomon Adaları</territory>
+			<territory type="SC" draft="contributed">Seyçels</territory>
+			<territory type="SD" draft="contributed">sudan</territory>
+			<territory type="SE" draft="contributed">isveç</territory>
+			<territory type="SG" draft="contributed">Sinqapur</territory>
+			<territory type="SH" draft="contributed">Seynt Elena</territory>
+			<territory type="SI" draft="contributed">Sloveniya</territory>
+			<territory type="SJ" draft="contributed">svalbard və yan mayen</territory>
+			<territory type="SK" draft="contributed">Slovakiya</territory>
+			<territory type="SL" draft="contributed">Siyera Leon</territory>
+			<territory type="SM" draft="contributed">San Marino</territory>
+			<territory type="SN" draft="contributed">Seneqal</territory>
+			<territory type="SO" draft="contributed">Somaliya</territory>
+			<territory type="SR" draft="contributed">surinamə</territory>
+			<territory type="ST" draft="contributed">Sao Tom və Prinsip</territory>
+			<territory type="SV" draft="contributed">El Salvador</territory>
+			<territory type="SY" draft="contributed">siriya</territory>
+			<territory type="SZ" draft="contributed">svazilənd</territory>
+			<territory type="TC" draft="contributed">Türk və Kaykos Adaları</territory>
+			<territory type="TD" draft="contributed">Çad</territory>
+			<territory type="TF" draft="contributed">Fransız Cənub teritoriyası</territory>
+			<territory type="TG" draft="contributed">Toqo</territory>
+			<territory type="TH" draft="contributed">tayland</territory>
+			<territory type="TJ" draft="contributed">tacikistan</territory>
+			<territory type="TK" draft="contributed">Tokelau</territory>
+			<territory type="TL" draft="contributed">Şərq Timor</territory>
+			<territory type="TM" draft="contributed">Türkmənistan</territory>
+			<territory type="TN" draft="contributed">Tunisiya</territory>
+			<territory type="TO" draft="contributed">Tonqa</territory>
+			<territory type="TR" draft="contributed">Türkiya</territory>
+			<territory type="TT" draft="contributed">Trinidan və Tobaqo</territory>
+			<territory type="TV" draft="contributed">Tuvalu</territory>
+			<territory type="TW" draft="contributed">tayvan</territory>
+			<territory type="TZ" draft="contributed">tanzaniya</territory>
+			<territory type="UA" draft="contributed">Ukraina</territory>
+			<territory type="UG" draft="contributed">Uqanda</territory>
+			<territory type="UM" draft="contributed">Birləşmiş Ştatların uzaq adaları</territory>
+			<territory type="US">Amerika Birləşmiş Ştatları</territory>
+			<territory type="UY" draft="contributed">Uruqvay</territory>
+			<territory type="UZ" draft="contributed">Özbəkistan</territory>
+			<territory type="VA" draft="contributed">Vatikan</territory>
+			<territory type="VC" draft="contributed">Seynt Vinsent və Qrenada</territory>
+			<territory type="VE" draft="contributed">Venesuela</territory>
+			<territory type="VG" draft="contributed">Britaniya Virgin Adaları</territory>
+			<territory type="VI" draft="contributed">ABŞ Virqin Adaları</territory>
+			<territory type="VN" draft="contributed">Vyetnam</territory>
+			<territory type="VU" draft="contributed">Vanuatu</territory>
+			<territory type="WF" draft="contributed">Valis və Futuna</territory>
+			<territory type="WS" draft="contributed">Samoa</territory>
+			<territory type="YE" draft="contributed">Yemen</territory>
+			<territory type="YT" draft="contributed">Mayot</territory>
+			<territory type="ZA" draft="contributed">Cənub Afrika</territory>
+			<territory type="ZM" draft="contributed">Zambiya</territory>
+			<territory type="ZW" draft="contributed">Zimbabve</territory>
+			<territory type="ZZ" draft="contributed">bilinmir</territory>
+		</territories>
+		<types>
+			<type type="buddhist" key="calendar" draft="contributed">Budist təqvimi</type>
+			<type type="chinese" key="calendar" draft="contributed">Çin təqvimi</type>
+			<type type="gregorian" key="calendar" draft="contributed">Qreqoriy təqvimi</type>
+			<type type="hebrew" key="calendar" draft="contributed">Yahudi təqvimi</type>
+			<type type="indian" key="calendar" draft="contributed">Hindi təqvimi</type>
+			<type type="islamic" key="calendar" draft="contributed">Müsəlman təqvimi</type>
+			<type type="islamic-civil" key="calendar" draft="contributed">Ivrit təqvimi</type>
+			<type type="japanese" key="calendar" draft="contributed">Yapon təqvimi</type>
+			<type type="pinyin" key="collation" draft="contributed">Pinyin təqvimi</type>
+			<type type="roc" key="calendar" draft="contributed">Çin respublikası təqvimi</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="contributed">metr</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">ABŞ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="contributed">Dil: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Yazı: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Rayon: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c ç d e ə f g ğ h x ı i {i\u0307} j k q l m n o ö p r s ş t u ü v y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[w]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A B C Ç D E Ə F G Ğ H X I İ J K Q L M N O Ö P R S Ş T U Ü V W Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="contributed">«</quotationStart>
+		<quotationEnd draft="contributed">»</quotationEnd>
+		<alternateQuotationStart draft="contributed">‹</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">›</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">yan</month>
+							<month type="2">fev</month>
+							<month type="3">mar</month>
+							<month type="4">apr</month>
+							<month type="5">may</month>
+							<month type="6">iyn</month>
+							<month type="7">iyl</month>
+							<month type="8">avq</month>
+							<month type="9">sen</month>
+							<month type="10">okt</month>
+							<month type="11">noy</month>
+							<month type="12">dek</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Yanvar</month>
+							<month type="2">Fevral</month>
+							<month type="3">Mart</month>
+							<month type="4">Aprel</month>
+							<month type="5">May</month>
+							<month type="6">İyun</month>
+							<month type="7">İyul</month>
+							<month type="8">Avqust</month>
+							<month type="9">Sentyabr</month>
+							<month type="10">Oktyabr</month>
+							<month type="11">Noyabr</month>
+							<month type="12">Dekabr</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">B.</day>
+							<day type="mon">B.E.</day>
+							<day type="tue">Ç.A.</day>
+							<day type="wed">Ç.</day>
+							<day type="thu">C.A.</day>
+							<day type="fri">C</day>
+							<day type="sat" draft="contributed">Ş.</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">bazar</day>
+							<day type="mon">bazar ertəsi</day>
+							<day type="tue">çərşənbə axşamı</day>
+							<day type="wed">çərşənbə</day>
+							<day type="thu">cümə axşamı</day>
+							<day type="fri">cümə</day>
+							<day type="sat">şənbə</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">7</day>
+							<day type="mon">1</day>
+							<day type="tue">2</day>
+							<day type="wed">3</day>
+							<day type="thu">4</day>
+							<day type="fri">5</day>
+							<day type="sat">6</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1-ci kv.</quarter>
+							<quarter type="2">2-ci kv.</quarter>
+							<quarter type="3">3-cü kv.</quarter>
+							<quarter type="4">4-cü kv.</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1-ci kvartal</quarter>
+							<quarter type="2">2-ci kvartal</quarter>
+							<quarter type="3">3-cü kvartal</quarter>
+							<quarter type="4">4-cü kvartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraNames>
+						<era type="0">eramızdan əvvəl</era>
+						<era type="1">bizim eramızın</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">e.ə.</era>
+						<era type="1">b.e.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d, MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM , y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d, MMM</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d, MMM, y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>era</displayName>
+					</field>
+					<field type="year">
+						<displayName>il</displayName>
+					</field>
+					<field type="month">
+						<displayName>ay</displayName>
+					</field>
+					<field type="week">
+						<displayName>həftə</displayName>
+					</field>
+					<field type="day">
+						<displayName>bu gün</displayName>
+						<relative type="-1">dünən</relative>
+						<relative type="0">bu gün</relative>
+						<relative type="1">sabah</relative>
+					</field>
+					<field type="weekday">
+						<displayName>həftə günü</displayName>
+					</field>
+					<field type="hour">
+						<displayName>saat</displayName>
+					</field>
+					<field type="minute">
+						<displayName>dəqiqə</displayName>
+					</field>
+					<field type="second">
+						<displayName>saniyə</displayName>
+					</field>
+					<field type="zone">
+						<displayName>zona</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="contributed">Bilinmir</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="contributed">rofera</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity draft="contributed">çənub polus</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="contributed">syova</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="contributed">moson</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="contributed">Deyvis</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="contributed">vostok</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="contributed">Keysi</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="contributed">Dumont de Urvile</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="contributed">makmurdo</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="contributed">rio qayegos</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="contributed">mendoza</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="contributed">san xuan</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="contributed">uşuya</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="contributed">La Rioha</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="contributed">san luis</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="contributed">Katamarka</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="contributed">Cucuy</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="contributed">tukuman</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="contributed">Kordoba</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="contributed">Buenos Ayres</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="contributed">perf</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="contributed">Yukla</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="contributed">Darvin</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="contributed">Adelayd</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="contributed">Broken Hil</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity draft="contributed">Kuriye</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="contributed">melburn</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="contributed">sidney</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="contributed">Brisbeyn</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="contributed">Lord Hove</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="contributed">İrunepe</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="contributed">Rio Branko</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="contributed">porto velo</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="contributed">Kuyaba</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="contributed">Kampo Qrande</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="contributed">Araguayna</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="contributed">sao paulo</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="contributed">Bahiya</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="contributed">Maseyo</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="contributed">resif</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="contributed">noronha</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="contributed">Douson</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="contributed">vaythors</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="contributed">İnuvik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="contributed">vənkuver</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="contributed">Douson Krik</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="contributed">yelounayf</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="contributed">Edmondton</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="contributed">svift kurent</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="contributed">Kəmbric Bey</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="contributed">recina</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="contributed">vinipeq</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="contributed">resolut</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="contributed">reyni river</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="contributed">rankin inlet</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="contributed">Koral Harbor</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="contributed">funder bey</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="contributed">nipiqon</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="contributed">toronto</exemplarCity>
+			</zone>
+			<zone type="America/Montreal">
+				<exemplarCity draft="contributed">montreal</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="contributed">İqalut</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="contributed">panqnirtanq</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="contributed">monkton</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="contributed">Halifaks</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="contributed">Qus Bey</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="contributed">Qleys Bey</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="contributed">Blank-Sablon</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="contributed">St Johns</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="contributed">Kinşasa</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="contributed">Lubumbaşi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="contributed">İster</exemplarCity>
+			</zone>
+			<zone type="Asia/Kashgar">
+				<exemplarCity draft="contributed">Kaşqar</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="contributed">urumçi</exemplarCity>
+			</zone>
+			<zone type="Asia/Chongqing">
+				<exemplarCity draft="contributed">Conqinq</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="contributed">Qalapaqos</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="contributed">Kanari</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="contributed">Seuta</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="contributed">ponape</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="contributed">Kosraye</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="contributed">tul</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="contributed">skoresbisund</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="contributed">Danmarkşavn</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="contributed">Cakarta</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="contributed">pontiyanak</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="contributed">Makasar</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="contributed">Cayapura</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity draft="contributed">Enderböri</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="contributed">Kirimati</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="contributed">tarava</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="contributed">Aktau</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="contributed">qüzülorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="contributed">Almati</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="contributed">Kvajaleyn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity draft="contributed">Maxiro</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="contributed">ulanbatar</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity draft="contributed">Coybalsan</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="contributed">tixuana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="contributed">Hermosilo</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="contributed">mazaltan</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="contributed">Cihuvava</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="contributed">monterey</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="contributed">mexiko</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="contributed">Kankun</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="contributed">Kuçinq</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="contributed">Çatam</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="contributed">Markuyesas</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="contributed">Qambiyer</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="contributed">Madeyra</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="contributed">Kalininqrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="contributed">moskva</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="contributed">volqoqrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="contributed">samara</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="contributed">yekaterinburq</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="contributed">novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="contributed">İrkutsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="contributed">yakutsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="contributed">vladivostok</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="contributed">saxalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="contributed">Maqadan</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="contributed">Kamçatka</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="contributed">Anadır</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="contributed">ujgorod</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="contributed">Kiyev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="contributed">simferopol</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="contributed">zaporojye</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="contributed">midvey</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="contributed">Conston</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="contributed">veyk</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="contributed">nom</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="contributed">Ankorac</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="contributed">yakutat</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="contributed">Cüneau</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="contributed">Los Anceles</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="contributed">Boyse</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="contributed">finiks</exemplarCity>
+			</zone>
+			<zone type="America/Shiprock">
+				<exemplarCity draft="contributed">şiprok</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="contributed">nyu salem</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="contributed">Orta, Şimal Dakota</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="contributed">Cikaqo</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="contributed">menomini</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="contributed">vinsenes</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="contributed">pitersburq</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="contributed">tell şəhəri</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="contributed">Noks</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="contributed">vinamak</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="contributed">Marenqo</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="contributed">İndianapolis</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="contributed">Luisvil</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="contributed">vevey</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="contributed">montiçelo</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="contributed">Detroyt</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="contributed">nyu york</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="contributed">səmərkənd</exemplarCity>
+			</zone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="contributed">Orta Avropa</generic>
+					<standard draft="contributed">Orta Avropa</standard>
+					<daylight draft="contributed">Orta Avropa/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="contributed">Şərq Avropa</generic>
+					<standard draft="contributed">Şərq Avropa</standard>
+					<daylight draft="contributed">Şərq Avropa/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kuybyshev">
+				<long>
+					<generic draft="contributed">Kuybuşev</generic>
+					<standard draft="contributed">Kuybuşev</standard>
+					<daylight draft="contributed">Kuybuşev/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="contributed">Moskva</generic>
+					<standard draft="contributed">Moskva/standart</standard>
+					<daylight draft="contributed">Moskva/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic draft="contributed">Samara</generic>
+					<standard draft="contributed">Samara</standard>
+					<daylight draft="contributed">Samara/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Türkiya</generic>
+					<standard draft="contributed">Türkiya</standard>
+					<daylight draft="contributed">Türkiya/yay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="contributed">Volqoqrad</generic>
+					<standard draft="contributed">Volqoqrad</standard>
+					<daylight draft="contributed">Volqoqrad/yay</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed">.</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<exponential draft="contributed">E</exponential>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern draft="contributed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="ADP">
+				<displayName>Andora pesetası</displayName>
+				<displayName count="other" draft="contributed">Andora pesetası</displayName>
+			</currency>
+			<currency type="AED">
+				<displayName draft="contributed">Birləşmiş ərəb emiratlar dirhamı</displayName>
+				<displayName count="other" draft="contributed">BƏE dirhamı</displayName>
+			</currency>
+			<currency type="AFA">
+				<displayName>Əfgəni (1927-2002)</displayName>
+				<displayName count="other" draft="contributed">Əfgən (1927-2002)</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Əfgəni</displayName>
+				<displayName count="other" draft="contributed">Əfgən</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Alban leki</displayName>
+				<displayName count="other" draft="contributed">Alban leki</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Erməni dramı</displayName>
+				<displayName count="other" draft="contributed">Erməni dramı</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="contributed">Hollandiya antila gilderi</displayName>
+				<displayName count="other" draft="contributed">Hollandiya Antila gilderi</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Anqola kvanzası</displayName>
+				<displayName count="other" draft="contributed">Anqola kvanzasi</displayName>
+			</currency>
+			<currency type="AOK">
+				<displayName>Anqola kvanzasi (1977-1990)</displayName>
+				<displayName count="other" draft="contributed">Anqola kvanzasi (1977-1990)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>Anqola yeni kvanzası (1990-2000)</displayName>
+				<displayName count="other" draft="contributed">Anqola yeni kvanzasi (AON)</displayName>
+			</currency>
+			<currency type="AOR">
+				<displayName>Anqola kvanzası (1995-1999)</displayName>
+				<displayName count="other" draft="contributed">Anqola kvanzasi (1995-1999)</displayName>
+			</currency>
+			<currency type="ARA">
+				<displayName>Argentina avstralı</displayName>
+				<displayName count="other" draft="contributed">Argentina avstralı</displayName>
+			</currency>
+			<currency type="ARP">
+				<displayName>Argentina pesosu (1983-1985)</displayName>
+				<displayName count="other" draft="contributed">Argentina pesosu (1983-1985)</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Argentina pesosu</displayName>
+				<displayName count="other" draft="contributed">Argentina pesosu</displayName>
+			</currency>
+			<currency type="ATS">
+				<displayName>Avstriya şilingi</displayName>
+				<displayName count="other" draft="contributed">Avstriya şilingi</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Avstraliya dolları</displayName>
+				<displayName count="other" draft="contributed">Avstraliya dolları</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Aruba qilderi</displayName>
+				<displayName count="other" draft="contributed">Aruba qilderi</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName>Manat</displayName>
+				<displayName count="other" draft="contributed">Azərbaycan manatı (1993-2006)</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Azərbaycan manatı</displayName>
+				<displayName count="other" draft="contributed">Azərbaycan manatı</displayName>
+				<symbol>man.</symbol>
+			</currency>
+			<currency type="BAD">
+				<displayName>Bosniya-Herzeqovina dinarı</displayName>
+				<displayName count="other" draft="contributed">Bosniya-Herzeqovina dinarı</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Bosniya-Herzeqovina markası</displayName>
+				<displayName count="other" draft="contributed">Bosniya-Herzeqovina markası</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Barbados dolları</displayName>
+				<displayName count="other" draft="contributed">Barbados dolları</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Banqladeş takası</displayName>
+				<displayName count="other" draft="contributed">Banqladeş takası</displayName>
+			</currency>
+			<currency type="BEC">
+				<displayName>Belçika frankı (deyşirik)</displayName>
+				<displayName count="other" draft="contributed">Belçika frankı (deyşirik)</displayName>
+			</currency>
+			<currency type="BEF">
+				<displayName>Belçika frankı</displayName>
+				<displayName count="other" draft="contributed">Belçika frankı</displayName>
+			</currency>
+			<currency type="BEL">
+				<displayName>Belçika frankı (finans)</displayName>
+				<displayName count="other" draft="contributed">Belçika frankı (finans)</displayName>
+			</currency>
+			<currency type="BGL">
+				<displayName>Bolqariya levası</displayName>
+				<displayName count="other" draft="contributed">Bolqariya levası</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Bolqariya yeni levası</displayName>
+				<displayName count="other" draft="contributed">Bolqariya yeni levası</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Bahreyn dinarı</displayName>
+				<displayName count="other" draft="contributed">Bahreyn dinarı</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Burundi frankası</displayName>
+				<displayName count="other" draft="contributed">Burundi frankası</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Bermuda dolları</displayName>
+				<displayName count="other" draft="contributed">Bermuda dolları</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Bruney dolları</displayName>
+				<displayName count="other" draft="contributed">Bruney dolları</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Boliviya boliviano</displayName>
+				<displayName count="other" draft="contributed">Boliviya boliviano</displayName>
+			</currency>
+			<currency type="BOP">
+				<displayName>Boliviya pesosu</displayName>
+				<displayName count="other" draft="contributed">Boliviya pesosu</displayName>
+			</currency>
+			<currency type="BOV">
+				<displayName>Boliviya mvdolı</displayName>
+				<displayName count="other" draft="contributed">Boliviya mvdolı</displayName>
+			</currency>
+			<currency type="BRB">
+				<displayName>Braziliya kruzeyro novası</displayName>
+				<displayName count="other" draft="contributed">Braziliya kruzeyro novası</displayName>
+			</currency>
+			<currency type="BRC">
+				<displayName>Braziliya kruzadosu</displayName>
+				<displayName count="other" draft="contributed">Braziliya kruzadosu</displayName>
+			</currency>
+			<currency type="BRE">
+				<displayName>Braziliya kruzeyrosu (1990-1993)</displayName>
+				<displayName count="other" draft="contributed">Braziliya kruzeyrosu (1990-1993)</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>Braziliya realı</displayName>
+				<displayName count="other" draft="contributed">Braziliya realı</displayName>
+			</currency>
+			<currency type="BRN">
+				<displayName>Braziliya kruzado novası</displayName>
+				<displayName count="other" draft="contributed">Braziliya kruzado novası</displayName>
+			</currency>
+			<currency type="BRR">
+				<displayName>Braziliya kruzeyrosu</displayName>
+				<displayName count="other" draft="contributed">Braziliya kruzeyrosu</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Bahama dolları</displayName>
+				<displayName count="other" draft="contributed">Bahama dolları</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Butan ngultrumu</displayName>
+				<displayName count="other" draft="contributed">Butan ngultrumu</displayName>
+			</currency>
+			<currency type="BUK">
+				<displayName>Burmis kyatı</displayName>
+				<displayName count="other" draft="contributed">Burmis kyatı</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Botsvana pulası</displayName>
+				<displayName count="other" draft="contributed">Botsvana pulası</displayName>
+			</currency>
+			<currency type="BYB">
+				<displayName>Belarusiya yeni rublu</displayName>
+				<displayName count="other" draft="contributed">Belarusiya yeni rublu</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Belarusiya rublu</displayName>
+				<displayName count="other" draft="contributed">Belarusiya rublu</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Beliz dolları</displayName>
+				<displayName count="other" draft="contributed">Beliz dolları</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Kanadiya dolları</displayName>
+				<displayName count="other" draft="contributed">Kanada dolları</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Konqoliz frank konqolaysı</displayName>
+				<displayName count="other" draft="contributed">Konqoliz frank konqolaysı</displayName>
+			</currency>
+			<currency type="CHE">
+				<displayName draft="contributed">WIR Yevrosu</displayName>
+				<displayName count="other" draft="contributed">WIR Yevrosu</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="contributed">İsveçriya frankası</displayName>
+				<displayName count="other" draft="contributed">İsveçriya frankası</displayName>
+			</currency>
+			<currency type="CHW">
+				<displayName draft="contributed">WIR frankası</displayName>
+				<displayName count="other" draft="contributed">WIR frankası</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Çili pesosu</displayName>
+				<displayName count="other" draft="contributed">Çili pesosu</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Çin yuan renminbi</displayName>
+				<displayName count="other" draft="contributed">Çin yuanı</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Kolombiya pesosu</displayName>
+				<displayName count="other" draft="contributed">Kolombiya pesosu</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Kosta rika kolonu</displayName>
+				<displayName count="other" draft="contributed">Kosta Rika kolonu</displayName>
+			</currency>
+			<currency type="CSD">
+				<displayName draft="contributed">Qədimi Serb dinarı</displayName>
+				<displayName count="other" draft="contributed">Qədimi serb dinarı</displayName>
+			</currency>
+			<currency type="CSK">
+				<displayName>Çexoslavakiya korunası</displayName>
+				<displayName count="other" draft="contributed">Çexoslavakiya korunası</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Kuba pesosu</displayName>
+				<displayName count="other" draft="contributed">Kuba pesosu</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Kape Verde eskudosu</displayName>
+				<displayName count="other" draft="contributed">Kape Verde eskudosu</displayName>
+			</currency>
+			<currency type="CYP">
+				<displayName>Kipr paundu</displayName>
+				<displayName count="other" draft="contributed">Kipr paundu</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Çex respublikası korunası</displayName>
+				<displayName count="other" draft="contributed">Cex respublika korunası</displayName>
+			</currency>
+			<currency type="DDM">
+				<displayName draft="contributed">şərq almaniya ostmarkı</displayName>
+				<displayName count="other" draft="contributed">Şərq Almaniya ostmarkı</displayName>
+			</currency>
+			<currency type="DEM">
+				<displayName draft="contributed">alman markası</displayName>
+				<displayName count="other" draft="contributed">Alman markası</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>jibouti frankası</displayName>
+				<displayName count="other" draft="contributed">Jibouti frankası</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Danemarka kronası</displayName>
+				<displayName count="other" draft="contributed">Danemarka kronası</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>dominika pesosu</displayName>
+				<displayName count="other" draft="contributed">Dominika pesosu</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Alcəzir dinarı</displayName>
+				<displayName count="other" draft="contributed">Alcəzir dinarı</displayName>
+			</currency>
+			<currency type="ECS">
+				<displayName draft="contributed">ekvador sukresi</displayName>
+				<displayName count="other" draft="contributed">Ekvador sukresi</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName draft="contributed">Estoniya krunu</displayName>
+				<displayName count="other" draft="contributed">Estoniya krunu</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="contributed">misir paundu</displayName>
+				<displayName count="other" draft="contributed">Misir paundu</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="contributed">Eirtreya nakfası</displayName>
+				<displayName count="other" draft="contributed">Eritreya nakfası</displayName>
+			</currency>
+			<currency type="ESA">
+				<displayName draft="contributed">İspan pesetası (A)</displayName>
+				<displayName count="other" draft="contributed">İspan pesetası (A account)</displayName>
+			</currency>
+			<currency type="ESB">
+				<displayName draft="contributed">İspan pesetası (dəyşirik)</displayName>
+				<displayName count="other" draft="contributed">İspan pesetası (dəyşirik)</displayName>
+			</currency>
+			<currency type="ESP">
+				<displayName draft="contributed">İspan pesetası</displayName>
+				<displayName count="other" draft="contributed">İspan pesetası</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="contributed">Efiopiya birası</displayName>
+				<displayName count="other" draft="contributed">Efiopiya birası</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="contributed">Yevro</displayName>
+				<displayName count="other" draft="contributed">yevro</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName draft="contributed">Fin markası</displayName>
+				<displayName count="other" draft="contributed">Fin markası</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="contributed">Fici dolları</displayName>
+				<displayName count="other" draft="contributed">Fici dolları</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="contributed">Folkland Adası paundu</displayName>
+				<displayName count="other" draft="contributed">Folkland adası paundu</displayName>
+			</currency>
+			<currency type="FRF">
+				<displayName draft="contributed">Fransız markası</displayName>
+				<displayName count="other" draft="contributed">Fransız markası</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>Britaniya paund sterlingi</displayName>
+				<displayName count="other" draft="contributed">Britaniya paund sterlingi</displayName>
+			</currency>
+			<currency type="GEK">
+				<displayName draft="contributed">Gürcüstan kupon lariti</displayName>
+				<displayName count="other" draft="contributed">Gürcüstan kupon lariti</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="contributed">Gürcüstan larisi</displayName>
+				<displayName count="other" draft="contributed">Gürcüstan larisi</displayName>
+			</currency>
+			<currency type="GHC">
+				<displayName draft="contributed">Qana sedisi (1979-2007)</displayName>
+				<displayName count="other" draft="contributed">Qana sedisi (GHC)</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="contributed">Qana sedisi</displayName>
+				<displayName count="other" draft="contributed">Qana sedisi</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="contributed">Gibraltar paundu</displayName>
+				<displayName count="other" draft="contributed">Gibraltar paundu</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="contributed">Qambiya dalasi</displayName>
+				<displayName count="other" draft="contributed">Qambiya dalasi</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="contributed">Qvineya frankası</displayName>
+				<displayName count="other" draft="contributed">qvineya frankası</displayName>
+			</currency>
+			<currency type="GNS">
+				<displayName draft="contributed">Qvineya sulisi</displayName>
+				<displayName count="other" draft="contributed">Gineya sulisi</displayName>
+			</currency>
+			<currency type="GQE">
+				<displayName draft="contributed">Ekvatoriya Gvineya ekvele quneanası</displayName>
+				<displayName count="other" draft="contributed">Ekvatoriya Gvineya ekvele quneanası</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName draft="contributed">Yunan draçması</displayName>
+				<displayName count="other" draft="contributed">Yunan draxması</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="contributed">Qvatemala küetzalı</displayName>
+				<displayName count="other" draft="contributed">Qvatemala küetzalı</displayName>
+			</currency>
+			<currency type="GWE">
+				<displayName draft="contributed">Portugal Qvineya eskudosu</displayName>
+				<displayName count="other" draft="contributed">Portugal Qvineya eskudosu</displayName>
+			</currency>
+			<currency type="GWP">
+				<displayName draft="contributed">Qvineya-Bisau pesosu</displayName>
+				<displayName count="other" draft="contributed">Qvineya-Bisau pesosu</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="contributed">Quyana dolları</displayName>
+				<displayName count="other" draft="contributed">Quyana dolları</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="contributed">Honk Konq dolları</displayName>
+				<displayName count="other" draft="contributed">Honk Konq dolları</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="contributed">Honduras lempirası</displayName>
+				<displayName count="other" draft="contributed">Honduras lempirası</displayName>
+			</currency>
+			<currency type="HRD">
+				<displayName>Xorvatiya dinarı</displayName>
+				<displayName count="other" draft="contributed">Xorvatiya dinarı</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Xorvatiya kunu</displayName>
+				<displayName count="other" draft="contributed">Xorvatiya kunu</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="contributed">Haiti qourdu</displayName>
+				<displayName count="other" draft="contributed">Haiti qourdu</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="contributed">Macarıstan forinti</displayName>
+				<displayName count="other" draft="contributed">Macarıstan forinti</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="contributed">İndoneziya rupisi</displayName>
+				<displayName count="other" draft="contributed">İndoneziya rupisi</displayName>
+			</currency>
+			<currency type="IEP">
+				<displayName draft="contributed">İrlandiya paundu</displayName>
+				<displayName count="other" draft="contributed">İrlandiya paundu</displayName>
+			</currency>
+			<currency type="ILP">
+				<displayName draft="contributed">İzrail paundu</displayName>
+				<displayName count="other" draft="contributed">İzrail paundu</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="contributed">İzrail yeni şekeli</displayName>
+				<displayName count="other" draft="contributed">İzrail ail yeni şekeli</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="contributed">Hindistan rupisi</displayName>
+				<displayName count="other" draft="contributed">Hindistan rupisi</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="contributed">İraq dinarı</displayName>
+				<displayName count="other" draft="contributed">İraq dinarı</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="contributed">İran rialı</displayName>
+				<displayName count="other" draft="contributed">İran rialı</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="contributed">Aysland kronası</displayName>
+				<displayName count="other" draft="contributed">Aysland kronası</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName draft="contributed">İtaliya lirası</displayName>
+				<displayName count="other" draft="contributed">İtaliya lirası</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="contributed">Yamayka dolları</displayName>
+				<displayName count="other" draft="contributed">Yamayka dolları</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="contributed">İordaniya dinarı</displayName>
+				<displayName count="other" draft="contributed">İordaniya dinarı</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="contributed">Yapon yeni</displayName>
+				<displayName count="other" draft="contributed">Yapon yeni</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName draft="contributed">Kenya şillingi</displayName>
+				<displayName count="other" draft="contributed">Kenya şillingi</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="contributed">Kırğızstan somu</displayName>
+				<displayName count="other" draft="contributed">Kırğızstan somu</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Kambodiya riyeli</displayName>
+				<displayName count="other" draft="contributed">Kambodiya riyeli</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Komoro frankı</displayName>
+				<displayName count="other" draft="contributed">Komoro frankı</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="contributed">Şimal koreya vonu</displayName>
+				<displayName count="other" draft="contributed">Şimal Koreya vonu</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="contributed">Cənub koreya vonu</displayName>
+				<displayName count="other" draft="contributed">Cənub Koreya vonu</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="contributed">Kuveyt dinarı</displayName>
+				<displayName count="other" draft="contributed">Kuveyt dinarı</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Keyman Adaları dolları</displayName>
+				<displayName count="other" draft="contributed">Keyman Adaları dolları</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="contributed">Kazaxstan tenqesi</displayName>
+				<displayName count="other" draft="contributed">Kazaxstan tenqesi</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="contributed">Laotiya kipi</displayName>
+				<displayName count="other" draft="contributed">Laotiya kipi</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="contributed">Lebanon paundu</displayName>
+				<displayName count="other" draft="contributed">Lebanon paundu</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="contributed">Şri Lanka rupisi</displayName>
+				<displayName count="other" draft="contributed">Şri Lanka rupisi</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="contributed">Liberiya dolları</displayName>
+				<displayName count="other" draft="contributed">Liberiya dolları</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="contributed">Lesoto lotisi</displayName>
+				<displayName count="other" draft="contributed">Lesoto lotisi</displayName>
+			</currency>
+			<currency type="LTL">
+				<displayName draft="contributed">Litva litası</displayName>
+				<displayName count="other" draft="contributed">Litva litası</displayName>
+			</currency>
+			<currency type="LTT">
+				<displayName draft="contributed">Litva talonası</displayName>
+				<displayName count="other" draft="contributed">Litva talonası</displayName>
+			</currency>
+			<currency type="LUC">
+				<displayName draft="contributed">Luksemburq frankası (dəyişik)</displayName>
+				<displayName count="other" draft="contributed">Luksemburq dəyişik frankası</displayName>
+			</currency>
+			<currency type="LUF">
+				<displayName draft="contributed">Luksemburq frankası</displayName>
+				<displayName count="other" draft="contributed">Luksemburq frankası</displayName>
+			</currency>
+			<currency type="LUL">
+				<displayName draft="contributed">Luksemburq frankası (finans)</displayName>
+				<displayName count="other" draft="contributed">Luksemburq finans frankası</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName draft="contributed">Latviya latsı</displayName>
+				<displayName count="other" draft="contributed">Latviya latsı</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName draft="contributed">Latviya rublu</displayName>
+				<displayName count="other" draft="contributed">Latviya rublu</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="contributed">Liviya dinarı</displayName>
+				<displayName count="other" draft="contributed">Liviya dinarı</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="contributed">Morokko dirhamı</displayName>
+				<displayName count="other" draft="contributed">Morokko dirhamı</displayName>
+			</currency>
+			<currency type="MAF">
+				<displayName draft="contributed">Morokko frankası</displayName>
+				<displayName count="other" draft="contributed">Morokko frankası</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="contributed">Moldova leyusu</displayName>
+				<displayName count="other" draft="contributed">Moldova leyusu</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="contributed">Madaqaskar ariarisi</displayName>
+				<displayName count="other" draft="contributed">Madaqaskar ariarisi</displayName>
+			</currency>
+			<currency type="MGF">
+				<displayName draft="contributed">Madaqaskar frankası</displayName>
+				<displayName count="other" draft="contributed">Madaqaskar frankası</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="contributed">Masedoniya denarı</displayName>
+				<displayName count="other" draft="contributed">Masedoniya denarı</displayName>
+			</currency>
+			<currency type="MLF">
+				<displayName draft="contributed">Mali frankı</displayName>
+				<displayName count="other" draft="contributed">Mali frankı</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="contributed">Myanmar kiyatı</displayName>
+				<displayName count="other" draft="contributed">Myanmar kiyatı</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="contributed">Monqoliya tuqriki</displayName>
+				<displayName count="other" draft="contributed">Monqoliya tuqriki</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="contributed">Makao patakası</displayName>
+				<displayName count="other" draft="contributed">Makao patakası</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName draft="contributed">Mavritaniya oyuquyası</displayName>
+				<displayName count="other" draft="contributed">Mavritaniya oyuquyası</displayName>
+			</currency>
+			<currency type="MTP">
+				<displayName draft="contributed">Maltiz paundu</displayName>
+				<displayName count="other" draft="contributed">Maltiz paundu</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="contributed">Mavritis rupiyi</displayName>
+				<displayName count="other" draft="contributed">Mavritis rupiyi</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="contributed">Maldiv Adaları rufiyi</displayName>
+				<displayName count="other" draft="contributed">Maldiv adaları rufiyi</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="contributed">Malavi kvaçası</displayName>
+				<displayName count="other" draft="contributed">Malavi kvaçası</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="contributed">Meksika pesosu</displayName>
+				<displayName count="other" draft="contributed">Meksika pesosu</displayName>
+			</currency>
+			<currency type="MXP">
+				<displayName draft="contributed">Meksika gümüş pesosu</displayName>
+				<displayName count="other" draft="contributed">Meksika gümüş pesosu</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="contributed">Malaysiya rinqiti</displayName>
+				<displayName count="other" draft="contributed">Malaysiya rinqiti</displayName>
+			</currency>
+			<currency type="MZE">
+				<displayName draft="contributed">Mozambik eskudosu</displayName>
+				<displayName count="other" draft="contributed">Mozambik eskudosu</displayName>
+			</currency>
+			<currency type="MZM">
+				<displayName draft="contributed">Qədim Mozambik metikalı</displayName>
+				<displayName count="other" draft="contributed">Qədim mozambik metikalı</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="contributed">Mozambik metikalı</displayName>
+				<displayName count="other" draft="contributed">Mozambik metikalı</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="contributed">Namibiya dolları</displayName>
+				<displayName count="other" draft="contributed">Namibiya dolları</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="contributed">Nigeriya nairi</displayName>
+				<displayName count="other" draft="contributed">Nigeriya nairi</displayName>
+			</currency>
+			<currency type="NIC">
+				<displayName draft="contributed">Nikaraqua kordobu</displayName>
+				<displayName count="other" draft="contributed">Nikaraqua kordobu</displayName>
+			</currency>
+			<currency type="NLG">
+				<displayName>Hollandiya gilderi</displayName>
+				<displayName count="other" draft="contributed">Hollandiya gilderi</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="contributed">Norveç kronu</displayName>
+				<displayName count="other" draft="contributed">Norveç kronu</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="contributed">Nepal rupiyi</displayName>
+				<displayName count="other" draft="contributed">Nepal rupiyi</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="contributed">Yeni Zelandiya dolları</displayName>
+				<displayName count="other" draft="contributed">Yeni Zelandiya dolları</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="contributed">Mman rialı</displayName>
+				<displayName count="other" draft="contributed">Oman rialı</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="contributed">Panamaniya balboa</displayName>
+				<displayName count="other" draft="contributed">Panamaniya balboa</displayName>
+			</currency>
+			<currency type="PEI">
+				<displayName draft="contributed">Peru inti</displayName>
+				<displayName count="other" draft="contributed">Peru inti</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="contributed">Peru sol nuyevosu</displayName>
+				<displayName count="other" draft="contributed">Peru sol nuyevosu</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName draft="contributed">Peru solu</displayName>
+				<displayName count="other" draft="contributed">Peru solu</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="contributed">Papua Yeni Qvineya kini</displayName>
+				<displayName count="other" draft="contributed">Papua Yeni Qvineya kini</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="contributed">Filipin pesosu</displayName>
+				<displayName count="other" draft="contributed">Filipin pesosu</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="contributed">Pakistan rupiyi</displayName>
+				<displayName count="other" draft="contributed">Pakistan rupiyi</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="contributed">Polsha zlotisi</displayName>
+				<displayName count="other" draft="contributed">Polsha zlotisi</displayName>
+			</currency>
+			<currency type="PLZ">
+				<displayName draft="contributed">Polsha zlotisi (1950-1995)</displayName>
+				<displayName count="other" draft="contributed">Polsha zlotisi (1950-1995)</displayName>
+			</currency>
+			<currency type="PTE">
+				<displayName draft="contributed">Portuqal eskudosu</displayName>
+				<displayName count="other" draft="contributed">Portuqal eskudosu</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="contributed">Paraqvay quarani</displayName>
+				<displayName count="other" draft="contributed">Paraqvay quarani</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="contributed">Qatar rialı</displayName>
+				<displayName count="other" draft="contributed">Qatar rialı</displayName>
+			</currency>
+			<currency type="RHD">
+				<displayName draft="contributed">Rodezian dolları</displayName>
+				<displayName count="other" draft="contributed">Rodezian dolları</displayName>
+			</currency>
+			<currency type="ROL">
+				<displayName draft="contributed">Qədim Roman leyu</displayName>
+				<displayName count="other" draft="contributed">Roman qədimi leyu</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="contributed">Roman leyu</displayName>
+				<displayName count="other" draft="contributed">Roman leyu</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="contributed">Serbiya dinarı</displayName>
+				<displayName count="other" draft="contributed">Serbiya dinarı</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="contributed">Rusiya rublu</displayName>
+				<displayName count="other" draft="contributed">Rusiya rublu</displayName>
+			</currency>
+			<currency type="RUR">
+				<displayName draft="contributed">Rusiya rublu (1991-1998)</displayName>
+				<displayName count="other" draft="contributed">Rusiya rublu (1991-1998)</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="contributed">Rvanda frankı</displayName>
+				<displayName count="other" draft="contributed">Rvanda frankı</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="contributed">Saudi riyalı</displayName>
+				<displayName count="other" draft="contributed">Saudi riyalı</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="contributed">Solomon Adaları dolları</displayName>
+				<displayName count="other" draft="contributed">Solomon Adaları dolları</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="contributed">Seyçel rupiyi</displayName>
+				<displayName count="other" draft="contributed">Seyçel rupiyi</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="contributed">Sudan paundu</displayName>
+				<displayName count="other" draft="contributed">Sudan paundu</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="contributed">İsveç kronu</displayName>
+				<displayName count="other" draft="contributed">İsveç kronu</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="contributed">Sinqapur dolları</displayName>
+				<displayName count="other" draft="contributed">Sinqapur dolları</displayName>
+			</currency>
+			<currency type="SIT">
+				<displayName draft="contributed">Sloveniya toları</displayName>
+				<displayName count="other" draft="contributed">Sloveniya toları</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName draft="contributed">Slovak korunası</displayName>
+				<displayName count="other" draft="contributed">Slovak korunası</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="contributed">Somaliya şillingi</displayName>
+				<displayName count="other" draft="contributed">Somaliya şillingi</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="contributed">Surinam dolları</displayName>
+				<displayName count="other" draft="contributed">Surinam dolları</displayName>
+			</currency>
+			<currency type="SUR">
+				<displayName draft="contributed">Sovet rublu</displayName>
+				<displayName count="other" draft="contributed">Sovet rublu</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName draft="contributed">el salvador kolonu</displayName>
+				<displayName count="other" draft="contributed">El Salvador kolonu</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="contributed">Siriya paundu</displayName>
+				<displayName count="other" draft="contributed">Siriya paundu</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="contributed">Svazilənd lilangeni</displayName>
+				<displayName count="other" draft="contributed">Svazilənd lilangeni</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="contributed">tay bahtı</displayName>
+				<displayName count="other" draft="contributed">Tay bahtı</displayName>
+			</currency>
+			<currency type="TJR">
+				<displayName draft="contributed">Tacikistan rublu</displayName>
+				<displayName count="other" draft="contributed">Tacikistan rublu</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="contributed">Tacikistan somoni</displayName>
+				<displayName count="other" draft="contributed">Tacikistan somoni</displayName>
+			</currency>
+			<currency type="TMM">
+				<displayName draft="contributed">Türkmənistan manatı</displayName>
+				<displayName count="other" draft="contributed">Türkmənistan manatı</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="contributed">Tunis dinarı</displayName>
+				<displayName count="other" draft="contributed">Tunis dinarı</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="contributed">Tonqa panqası</displayName>
+				<displayName count="other" draft="contributed">Tonqa panqası</displayName>
+			</currency>
+			<currency type="TPE">
+				<displayName draft="contributed">Timor eskudu</displayName>
+				<displayName count="other" draft="contributed">Timor eskudu</displayName>
+			</currency>
+			<currency type="TRL">
+				<displayName draft="contributed">Türk köhnə lirası</displayName>
+				<displayName count="other" draft="contributed">Türk köhnə lirası</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="contributed">Türk lirası</displayName>
+				<displayName count="other" draft="contributed">Türk lira</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="contributed">Tayvan yeni dolları</displayName>
+				<displayName count="other" draft="contributed">Tayvan yeni dolları</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="contributed">Tanzaniya şilingi</displayName>
+				<displayName count="other" draft="contributed">Tanzaniya şilingi</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="contributed">Ukraina hrivnyası</displayName>
+				<displayName count="other" draft="contributed">Ukraina hrivnyası</displayName>
+			</currency>
+			<currency type="UAK">
+				<displayName draft="contributed">Ukraina karbovenesası</displayName>
+				<displayName count="other" draft="contributed">Ukraina karbovenesası</displayName>
+			</currency>
+			<currency type="UGS">
+				<displayName draft="contributed">Uqanda şelingi (1966-1987)</displayName>
+				<displayName count="other" draft="contributed">Uqanda şelingi (1966-1987)</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="contributed">Uqanda şelingi</displayName>
+				<displayName count="other" draft="contributed">Uqanda şelingi</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="contributed">ABŞ dolları</displayName>
+				<displayName count="other" draft="contributed">ABŞ dolları</displayName>
+			</currency>
+			<currency type="USN">
+				<displayName draft="contributed">ABŞ dolları (yeni gün)</displayName>
+				<displayName count="other" draft="contributed">ABŞ dolları (yeni gün)</displayName>
+			</currency>
+			<currency type="USS">
+				<displayName draft="contributed">ABŞ dolları (həmin gün)</displayName>
+				<displayName count="other" draft="contributed">ABŞ dolları (həmin gün)</displayName>
+			</currency>
+			<currency type="UYI">
+				<displayName draft="contributed">Uruqvay pesosu Unidades Indexadas</displayName>
+				<displayName count="other" draft="contributed">Uruqvay pesosu unidades indexadas</displayName>
+			</currency>
+			<currency type="UYP">
+				<displayName draft="contributed">Uruqvay pesosu (1975-1993)</displayName>
+				<displayName count="other" draft="contributed">Uruqvay pesosu (1975-1993)</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="contributed">Uruqvay pesosu</displayName>
+				<displayName count="other" draft="contributed">Uruqvay pesosu</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="contributed">Özbəkistan sumu</displayName>
+				<displayName count="other" draft="contributed">Özbəkistan sumu</displayName>
+			</currency>
+			<currency type="VEB">
+				<displayName draft="contributed">Venesuela bolivarı (1871-2008)</displayName>
+				<displayName count="other" draft="contributed">Venesuela bolivarı (1871-2008)</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName draft="contributed">Venesuela bolivarı</displayName>
+				<displayName count="other" draft="contributed">Venesuela bolivarı</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="contributed">Vyetnam donqu</displayName>
+				<displayName count="other" draft="contributed">Vyetnam donqu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="contributed">Qərb Samoa talası</displayName>
+				<displayName count="other" draft="contributed">Qərb Samoa talası</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName draft="contributed">gümüş</displayName>
+				<displayName count="other" draft="contributed">gümüş</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="contributed">qızıl</displayName>
+				<displayName count="other" draft="contributed">qızıl</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="contributed">Şərq karib dolları</displayName>
+				<displayName count="other" draft="contributed">Şərq karib dolları</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName draft="contributed">Fransız gızıl frankı</displayName>
+				<displayName count="other" draft="contributed">Fransız gızıl frankı</displayName>
+			</currency>
+			<currency type="XFU">
+				<displayName draft="contributed">Fransız UİC frankı</displayName>
+				<displayName count="other" draft="contributed">Fransız UİC frankı</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>CFA franka BCEAO</displayName>
+				<displayName count="other" draft="contributed">CFA franka BCEAO</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName draft="contributed">Palladium</displayName>
+				<displayName count="other" draft="contributed">Palladium</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>CFP frankı</displayName>
+				<displayName count="other" draft="contributed">CFP frankı</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName draft="contributed">platinum</displayName>
+				<displayName count="other" draft="contributed">platinum</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="contributed">bilinməyən vəya gəcərsiz</displayName>
+				<displayName count="other" draft="contributed">bilinməyən vəya gəcərsiz</displayName>
+			</currency>
+			<currency type="YDD">
+				<displayName draft="contributed">yemen dinarı</displayName>
+				<displayName count="other" draft="contributed">Yemen dinarı</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="contributed">yemen rialı</displayName>
+				<displayName count="other" draft="contributed">Yemen rialı</displayName>
+			</currency>
+			<currency type="YUD">
+				<displayName draft="contributed">Yuqoslaviya dinarı (hard)</displayName>
+				<displayName count="other" draft="contributed">Yuqoslaviya dinarı (hard)</displayName>
+			</currency>
+			<currency type="YUM">
+				<displayName draft="contributed">Yuqoslaviya yeni dinarı (hard)</displayName>
+				<displayName count="other" draft="contributed">Yuqoslaviya yeni dinarı (hard)</displayName>
+			</currency>
+			<currency type="YUN">
+				<displayName draft="contributed">Yuqoslaviya dinarı (dəyişik)</displayName>
+				<displayName count="other" draft="contributed">Yuqoslaviya dinarı (dəyişik)</displayName>
+			</currency>
+			<currency type="ZAL">
+				<displayName draft="contributed">Cənub afrika randı (finans)</displayName>
+				<displayName count="other" draft="contributed">Cənub Afrika randı (finans)</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="contributed">Cənub afrika randı</displayName>
+				<displayName count="other" draft="contributed">Cənub Afrika randı</displayName>
+			</currency>
+			<currency type="ZMK">
+				<displayName draft="contributed">Zambiya kvaçı</displayName>
+				<displayName count="other" draft="contributed">Zambiya kvaçı</displayName>
+			</currency>
+			<currency type="ZRN">
+				<displayName draft="contributed">Zair yeni zairi</displayName>
+				<displayName count="other" draft="contributed">Zair yeni zairi</displayName>
+			</currency>
+			<currency type="ZRZ">
+				<displayName draft="contributed">Zair zairi</displayName>
+				<displayName count="other" draft="contributed">Zair zairi</displayName>
+			</currency>
+			<currency type="ZWD">
+				<displayName draft="contributed">Zimbabve dolları (1980-2008)</displayName>
+				<displayName count="other" draft="contributed">Zimbabve dolları (1980-2008)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0} gün</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0} saat</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0} dəqiqə</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0} ay</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0} saniyə</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0} həftə</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0} il</unitPattern>
+		</unit>
+	</units>
+	<posix>
+		<messages>
+			<yesstr draft="contributed">hə:h</yesstr>
+			<nostr draft="contributed">yox:y</nostr>
+		</messages>
+	</posix>
+</ldml>

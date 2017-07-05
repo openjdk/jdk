@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.nio.file.spi.FileTypeDetector;
 import java.io.IOException;
 
 /**
@@ -95,5 +96,10 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
         } else {
             return super.readAttributes(file, type, options);
         }
+    }
+
+    @Override
+    FileTypeDetector getFileTypeDetector() {
+        return new GnomeFileTypeDetector();
     }
 }

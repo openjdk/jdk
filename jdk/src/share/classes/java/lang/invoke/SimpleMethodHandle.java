@@ -35,8 +35,12 @@ import java.util.logging.Logger;
  * @author jrose
  */
 final class SimpleMethodHandle extends MethodHandle {
-    SimpleMethodHandle(MethodType type, LambdaForm form) {
+    private SimpleMethodHandle(MethodType type, LambdaForm form) {
         super(type, form);
+    }
+
+    /*non-public*/ static SimpleMethodHandle make(MethodType type, LambdaForm form) {
+        return new SimpleMethodHandle(type, form);
     }
 
     @Override

@@ -82,7 +82,7 @@ class LinuxFileSystem extends UnixFileSystem {
             try {
                 for (;;) {
                     UnixMountEntry entry = new UnixMountEntry();
-                    int res = getextmntent(fp, entry);
+                    int res = getmntent(fp, entry);
                     if (res < 0)
                         break;
                     entries.add(entry);

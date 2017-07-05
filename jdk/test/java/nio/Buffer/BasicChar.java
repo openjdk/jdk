@@ -402,6 +402,19 @@ public class BasicChar
         ck(b, b.charAt(1), 'f');
         ck(b, b.subSequence(1, 3).toString().equals("fg"));
 
+        // String ops
+
+        // 7190219
+        b.clear();
+        int pos = b.position();
+        tryCatch(b, BufferOverflowException.class, new Runnable() {
+            public void run() {
+                b.put(String.valueOf(new char[b.capacity() + 1]), 0,
+                        b.capacity() + 1);
+            }});
+        ck(b, b.position(), pos);
+        relGet(b);
+
 
 
         // Compact

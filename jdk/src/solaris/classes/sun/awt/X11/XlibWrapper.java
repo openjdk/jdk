@@ -27,6 +27,7 @@ package sun.awt.X11;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.security.action.GetPropertyAction;
 import sun.misc.*;
 
 final public class XlibWrapper
@@ -590,12 +591,8 @@ static native String XSetLocaleModifiers(String modifier_list);
     static final boolean isBuildInternal;
 
     static {
-        String dataModelProp = (String)AccessController.doPrivileged(
-            new PrivilegedAction() {
-                    public Object run() {
-                        return System.getProperty("sun.arch.data.model");
-                    }
-                });
+        String dataModelProp = AccessController.doPrivileged(
+            new GetPropertyAction("sun.arch.data.model"));
         try {
             dataModel = Integer.parseInt(dataModelProp);
         } catch (Exception e) {
@@ -647,7 +644,8 @@ static native String XSetLocaleModifiers(String modifier_list);
     }
 
     private static boolean getBuildInternal() {
-        String javaVersion = XToolkit.getSystemProperty("java.version");
+        String javaVersion = AccessController.doPrivileged(
+                                 new GetPropertyAction("java.version"));
         return javaVersion != null && javaVersion.contains("internal");
     }
 

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Vector;
 import java.util.Enumeration;
+import sun.awt.AWTAccessor;
 import java.awt.peer.MenuBarPeer;
 import java.awt.event.KeyEvent;
 import javax.accessibility.*;
@@ -74,6 +75,16 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        AWTAccessor.setMenuBarAccessor(
+            new AWTAccessor.MenuBarAccessor() {
+                public Menu getHelpMenu(MenuBar menuBar) {
+                    return menuBar.helpMenu;
+                }
+
+                public Vector getMenus(MenuBar menuBar) {
+                    return menuBar.menus;
+                }
+            });
     }
 
     /**
