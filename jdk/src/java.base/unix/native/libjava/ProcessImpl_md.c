@@ -97,8 +97,7 @@
  *   address space temporarily, before launching the target command.
  *
  * Based on the above analysis, we are currently using vfork() on
- * Linux and spawn() on other Unix systems, but the code to use clone()
- * and fork() remains.
+ * Linux and posix_spawn() on other Unix systems.
  */
 
 
@@ -385,37 +384,11 @@ static int copystrings(char *buf, int offset, const char * const *arg) {
 }
 
 /**
- * We are unusually paranoid; use of clone/vfork is
+ * We are unusually paranoid; use of vfork is
  * especially likely to tickle gcc/glibc bugs.
  */
 #ifdef __attribute_noinline__  /* See: sys/cdefs.h */
 __attribute_noinline__
-#endif
-
-#define START_CHILD_USE_CLONE 0  /* clone() currently disabled; see above. */
-
-#ifdef START_CHILD_USE_CLONE
-static pid_t
-cloneChild(ChildStuff *c) {
-#ifdef __linux__
-#define START_CHILD_CLONE_STACK_SIZE (64 * 1024)
-    /*
-     * See clone(2).
-     * Instead of worrying about which direction the stack grows, just
-     * allocate twice as much and start the stack in the middle.
-     */
-    if ((c->clone_stack = malloc(2 * START_CHILD_CLONE_STACK_SIZE)) == NULL)
-        /* errno will be set to ENOMEM */
-        return -1;
-    return clone(childProcess,
-                 c->clone_stack + START_CHILD_CLONE_STACK_SIZE,
-                 CLONE_VFORK | CLONE_VM | SIGCHLD, c);
-#else
-/* not available on Solaris / Mac */
-    assert(0);
-    return -1;
-#endif
-}
 #endif
 
 static pid_t
@@ -590,12 +563,11 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     c->argv = NULL;
     c->envv = NULL;
     c->pdir = NULL;
-    c->clone_stack = NULL;
 
     /* Convert prog + argBlock into a char ** argv.
      * Add one word room for expansion of argv for use by
      * execve_as_traditional_shell_script.
-     * This word is also used when using spawn mode
+     * This word is also used when using posix_spawn mode
      */
     assert(prog != NULL && argBlock != NULL);
     if ((phelperpath = getBytes(env, helperpath))   == NULL) goto Catch;
@@ -654,7 +626,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
             throwIOException(env, errno, "fork failed");
             break;
           case MODE_POSIX_SPAWN:
-            throwIOException(env, errno, "spawn failed");
+            throwIOException(env, errno, "posix_spawn failed");
             break;
         }
         goto Catch;
@@ -677,8 +649,6 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     fds[2] = (err[0] != -1) ? err[0] : -1;
 
  Finally:
-    free(c->clone_stack);
-
     /* Always clean up the child's side of the pipes */
     closeSafely(in [0]);
     closeSafely(out[1]);

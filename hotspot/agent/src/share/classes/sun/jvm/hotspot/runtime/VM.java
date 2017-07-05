@@ -123,6 +123,7 @@ public class VM {
 
   private static Type intxType;
   private static Type uintxType;
+  private static Type sizetType;
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
@@ -175,7 +176,7 @@ public class VM {
 
      public long getIntx() {
         if (Assert.ASSERTS_ENABLED) {
-           Assert.that(isIntx(), "not a intx flag!");
+           Assert.that(isIntx(), "not an intx flag!");
         }
         return addr.getCIntegerAt(0, intxType.getSize(), false);
      }
@@ -191,6 +192,17 @@ public class VM {
         return addr.getCIntegerAt(0, uintxType.getSize(), true);
      }
 
+     public boolean isSizet() {
+        return type.equals("size_t");
+     }
+
+     public long getSizet() {
+        if (Assert.ASSERTS_ENABLED) {
+           Assert.that(isSizet(), "not a size_t flag!");
+        }
+        return addr.getCIntegerAt(0, sizetType.getSize(), true);
+     }
+
      public String getValue() {
         if (isBool()) {
            return new Boolean(getBool()).toString();
@@ -198,6 +210,8 @@ public class VM {
            return new Long(getIntx()).toString();
         } else if (isUIntx()) {
            return new Long(getUIntx()).toString();
+        } else if (isSizet()) {
+            return new Long(getSizet()).toString();
         } else {
            return null;
         }
@@ -323,6 +337,7 @@ public class VM {
 
     intxType = db.lookupType("intx");
     uintxType = db.lookupType("uintx");
+    sizetType = db.lookupType("size_t");
     boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,7 @@ class gcLogFileStream : public fileStream {
   /* If "force" sets true, force log file rotation from outside JVM */
   bool should_rotate(bool force) {
     return force ||
-             ((GCLogFileSize != 0) && ((uintx)_bytes_written >= GCLogFileSize));
+             ((GCLogFileSize != 0) && (_bytes_written >= (jlong)GCLogFileSize));
   }
 };
 

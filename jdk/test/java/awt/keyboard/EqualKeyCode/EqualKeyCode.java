@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,14 @@
 /*
   @test
   @bug 6799551
-  @library ../../regtesthelpers
-  @build Util Sysout
   @summary Extended key codes for small letters undefined
   @author Andrei Dmitriev: area=awt.keyboard
   @run main EqualKeyCode
 */
 
 
-import sun.awt.*;
 import java.awt.*;
-import test.java.awt.regtesthelpers.Util;
-import test.java.awt.regtesthelpers.Sysout;
+import java.awt.event.KeyEvent;
 
 public class EqualKeyCode {
 
@@ -46,13 +42,13 @@ public class EqualKeyCode {
             char cSmall = LETTERS.charAt(i);
             char cLarge = Character.toUpperCase(cSmall);
 
-            int iSmall = ExtendedKeyCodes.getExtendedKeyCodeForChar(cSmall);
-            int iLarge = ExtendedKeyCodes.getExtendedKeyCodeForChar(cLarge);
+            int iSmall = KeyEvent.getExtendedKeyCodeForChar(cSmall);
+            int iLarge = KeyEvent.getExtendedKeyCodeForChar(cLarge);
 
             System.out.print(" " + cSmall + ":" + iSmall + " ---- ");
             System.out.println(" " + cLarge + " : " + iLarge);
-            if (ExtendedKeyCodes.getExtendedKeyCodeForChar(cSmall) !=
-                ExtendedKeyCodes.getExtendedKeyCodeForChar(cLarge))
+            if (KeyEvent.getExtendedKeyCodeForChar(cSmall) !=
+                KeyEvent.getExtendedKeyCodeForChar(cLarge))
             {
                 throw new RuntimeException("ExtendedKeyCode doesn't exist or doesn't match between capital and small letters.");
             }

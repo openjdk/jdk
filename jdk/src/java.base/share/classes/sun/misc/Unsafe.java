@@ -631,6 +631,10 @@ public final class Unsafe {
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
      * @return {@code true} if successful
      */
     public final native boolean compareAndSwapObject(Object o, long offset,
@@ -640,6 +644,10 @@ public final class Unsafe {
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
      * @return {@code true} if successful
      */
     public final native boolean compareAndSwapInt(Object o, long offset,
@@ -649,6 +657,10 @@ public final class Unsafe {
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
      * @return {@code true} if successful
      */
     public final native boolean compareAndSwapLong(Object o, long offset,

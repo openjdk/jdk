@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @test
  * @bug 8003720
  * @summary Method in interpreter stack frame can be deallocated
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/sun.misc
  * @compile -XDignore.symbol.file Victim.java
  * @run main/othervm -Xverify:all -Xint Test8003720
  */
