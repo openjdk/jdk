@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._HPP_file, "opto/node.hpp");
   AD.addInclude(AD._HPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._HPP_file, "opto/subnode.hpp");
+  AD.addInclude(AD._HPP_file, "opto/vectornode.hpp");
   AD.addInclude(AD._CPP_CLONE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_CLONE_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_EXPAND_file, "precompiled.hpp");

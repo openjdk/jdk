@@ -996,6 +996,29 @@ static void call_initializeSystemClass(TRAPS) {
                                          vmSymbols::void_method_signature(), CHECK);
 }
 
+char java_runtime_name[128] = "";
+
+// extract the JRE name from sun.misc.Version.java_runtime_name
+static const char* get_java_runtime_name(TRAPS) {
+  klassOop k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+                                      Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               instanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_name_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL)
+      return NULL;
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_runtime_name,
+                                                        sizeof(java_runtime_name));
+    return name;
+  } else {
+    return NULL;
+  }
+}
+
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
@@ -3352,6 +3375,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       // The VM creates & returns objects of this class. Make sure it's initialized.
       initialize_class(vmSymbols::java_lang_Class(), CHECK_0);
       call_initializeSystemClass(CHECK_0);
+
+      // get the Java runtime name after java.lang.System is initialized
+      JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
     } else {
       warning("java.lang.System not initialized");
     }
