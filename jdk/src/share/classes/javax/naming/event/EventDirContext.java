@@ -34,7 +34,7 @@ import javax.naming.directory.SearchControls;
  * of events fired when objects named in a directory context changes.
  *<p>
  * The methods in this interface support identification of objects by
- * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2254.txt">RFC 2254</a>
+ * <A HREF="http://www.ietf.org/rfc/rfc2254.txt">RFC 2254</a>
  * search filters.
  *
  *<P>Using the search filter, it is possible to register interest in objects

@@ -701,56 +701,6 @@ class java_beans_beancontext_BeanContextSupport_PersistenceDelegate extends java
 // AWT
 
 /**
- * The persistence delegate for {@link Dimension}.
- * It is impossible to use {@link DefaultPersistenceDelegate}
- * because all getters have return types that differ from parameter types
- * of the constructor {@link Dimension#Dimension(int, int)}.
- *
- * @author Sergey A. Malenkov
- */
-final class java_awt_Dimension_PersistenceDelegate extends PersistenceDelegate {
-    protected boolean mutatesTo(Object oldInstance, Object newInstance) {
-        return oldInstance.equals(newInstance);
-    }
-
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        Dimension dimension = (Dimension) oldInstance;
-        Object[] args = new Object[] {
-                dimension.width,
-                dimension.height,
-        };
-        return new Expression(dimension, dimension.getClass(), "new", args);
-    }
-}
-
-/**
- * The persistence delegate for {@link GridBagConstraints}.
- * It is impossible to use {@link DefaultPersistenceDelegate}
- * because this class does not have any properties.
- *
- * @author Sergey A. Malenkov
- */
-final class java_awt_GridBagConstraints_PersistenceDelegate extends PersistenceDelegate {
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        GridBagConstraints gbc = (GridBagConstraints) oldInstance;
-        Object[] args = new Object[] {
-                gbc.gridx,
-                gbc.gridy,
-                gbc.gridwidth,
-                gbc.gridheight,
-                gbc.weightx,
-                gbc.weighty,
-                gbc.anchor,
-                gbc.fill,
-                gbc.insets,
-                gbc.ipadx,
-                gbc.ipady,
-        };
-        return new Expression(gbc, gbc.getClass(), "new", args);
-    }
-}
-
-/**
  * The persistence delegate for {@link Insets}.
  * It is impossible to use {@link DefaultPersistenceDelegate}
  * because this class does not have any properties.
@@ -771,54 +721,6 @@ final class java_awt_Insets_PersistenceDelegate extends PersistenceDelegate {
                 insets.right,
         };
         return new Expression(insets, insets.getClass(), "new", args);
-    }
-}
-
-/**
- * The persistence delegate for {@link Point}.
- * It is impossible to use {@link DefaultPersistenceDelegate}
- * because all getters have return types that differ from parameter types
- * of the constructor {@link Point#Point(int, int)}.
- *
- * @author Sergey A. Malenkov
- */
-final class java_awt_Point_PersistenceDelegate extends PersistenceDelegate {
-    protected boolean mutatesTo(Object oldInstance, Object newInstance) {
-        return oldInstance.equals(newInstance);
-    }
-
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        Point point = (Point) oldInstance;
-        Object[] args = new Object[] {
-                point.x,
-                point.y,
-        };
-        return new Expression(point, point.getClass(), "new", args);
-    }
-}
-
-/**
- * The persistence delegate for {@link Rectangle}.
- * It is impossible to use {@link DefaultPersistenceDelegate}
- * because all getters have return types that differ from parameter types
- * of the constructor {@link Rectangle#Rectangle(int, int, int, int)}.
- *
- * @author Sergey A. Malenkov
- */
-final class java_awt_Rectangle_PersistenceDelegate extends PersistenceDelegate {
-    protected boolean mutatesTo(Object oldInstance, Object newInstance) {
-        return oldInstance.equals(newInstance);
-    }
-
-    protected Expression instantiate(Object oldInstance, Encoder out) {
-        Rectangle rectangle = (Rectangle) oldInstance;
-        Object[] args = new Object[] {
-                rectangle.x,
-                rectangle.y,
-                rectangle.width,
-                rectangle.height,
-        };
-        return new Expression(rectangle, rectangle.getClass(), "new", args);
     }
 }
 

@@ -233,7 +233,8 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeIntMemory
         for (i=0; i< len; i++) {
             if (ptrs[i] != 0) {
                 GlyphInfo *ginfo = (GlyphInfo *)ptrs[i];
-                if (ginfo->cellInfo != NULL) {
+                if (ginfo->cellInfo != NULL &&
+                    ginfo->managed == MANAGED_GLYPH) {
                     // invalidate this glyph's accelerated cache cell
                     AccelGlyphCache_RemoveAllCellInfos(ginfo);
                 }
@@ -264,7 +265,8 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeLongMemory
         for (i=0; i< len; i++) {
             if (ptrs[i] != 0L) {
                 GlyphInfo *ginfo = (GlyphInfo *) jlong_to_ptr(ptrs[i]);
-                if (ginfo->cellInfo != NULL) {
+                if (ginfo->cellInfo != NULL &&
+                    ginfo->managed == MANAGED_GLYPH) {
                     AccelGlyphCache_RemoveAllCellInfos(ginfo);
                 }
                 free((void*)ginfo);
@@ -285,7 +287,7 @@ Java_sun_font_StrikeCache_getGlyphCacheDescription
     GlyphInfo *info;
     size_t baseAddr;
 
-    if ((*env)->GetArrayLength(env, results) < 10) {
+    if ((*env)->GetArrayLength(env, results) < 13) {
         return;
     }
 
@@ -310,6 +312,9 @@ Java_sun_font_StrikeCache_getGlyphCacheDescription
     nresults[8] = (size_t)&(info->topLeftY)-baseAddr;
     nresults[9] = (size_t)&(info->image)-baseAddr;
     nresults[10] = (jlong)(uintptr_t)info; /* invisible glyph */
+    nresults[11] = (size_t)&(info->cellInfo)-baseAddr;
+    nresults[12] = (size_t)&(info->managed)-baseAddr;
+
     (*env)->ReleasePrimitiveArrayCritical(env, results, nresults, 0);
 }
 

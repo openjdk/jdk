@@ -84,15 +84,26 @@ typedef float t2kScalar;
 
 #define t2kScalarAverage(a, b) (((a) + (b)) / (t2kScalar)(2))
 
+  /* managed: 1 means the glyph has a hardware cached
+   * copy, and its freeing is managed by the the usual
+   * 2D disposer code.
+   * A value of 0 means its either unaccelerated (and so has no cellInfos)
+   * or we want to free this in a different way.
+   * The field uses previously unused padding, so doesn't enlarge
+   * the structure.
+   */
+#define UNMANAGED_GLYPH 0
+#define MANAGED_GLYPH   1
 typedef struct GlyphInfo {
     float        advanceX;
     float        advanceY;
     UInt16       width;
     UInt16       height;
     UInt16       rowBytes;
+    UInt8         managed;
     float        topLeftX;
     float        topLeftY;
-    struct _CacheCellInfo *cellInfo;
+    void         *cellInfo;
     UInt8        *image;
 } GlyphInfo;
 
