@@ -3273,7 +3273,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ sll(Rret, LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);  // get return address
 
-  __ ld_ptr(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
+  __ load_heap_oop(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
   __ null_check(G3_method_handle);
 
   // Adjust Rret first so Llast_SP can be same as Rret

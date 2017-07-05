@@ -205,7 +205,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
       set_canonical(new StoreField(x->obj(), x->offset(), x->field(), value, x->is_static(),
-                                       x->lock_stack(), x->state_before(), x->is_loaded(), x->is_initialized()));
+                                       x->state_before(), x->is_loaded(), x->is_initialized()));
       return;
     }
   }
@@ -256,7 +256,7 @@ void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
       set_canonical(new StoreIndexed(x->array(), x->index(), x->length(),
-                                     x->elt_type(), value, x->lock_stack()));
+                                     x->elt_type(), value, x->state_before()));
       return;
     }
   }
@@ -667,7 +667,7 @@ void Canonicalizer::do_If(If* x) {
             }
           }
           set_canonical(canon);
-          set_bci(cmp->bci());
+          set_bci(cmp->state_before()->bci());
         }
       }
     } else if (l->as_InstanceOf() != NULL) {
@@ -685,7 +685,7 @@ void Canonicalizer::do_If(If* x) {
         set_canonical(new Goto(is_inst_sux, x->state_before(), x->is_safepoint()));
       } else {
         // successors differ => simplify to: IfInstanceOf
-        set_canonical(new IfInstanceOf(inst->klass(), inst->obj(), true, inst->bci(), is_inst_sux, no_inst_sux));
+        set_canonical(new IfInstanceOf(inst->klass(), inst->obj(), true, inst->state_before()->bci(), is_inst_sux, no_inst_sux));
       }
     }
   } else if (rt == objectNull && (l->as_NewInstance() || l->as_NewArray())) {

@@ -420,7 +420,8 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
-    jobject2reg(method()->constant_encoding(), O0);
+    __ mov(G2_thread, O0);
+    jobject2reg(method()->constant_encoding(), O1);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), relocInfo::runtime_call_type);
     __ delayed()->nop();
   }

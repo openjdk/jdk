@@ -7349,43 +7349,6 @@ instruct bytes_reverse_short(rRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct loadI_reversed(rRegI dst, memory src) %{
-  match(Set dst (ReverseBytesI (LoadI src)));
-
-  format %{ "bswap_movl $dst, $src" %}
-  opcode(0x8B, 0x0F, 0xC8); /* Opcode 8B 0F C8 */
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src), REX_reg(dst), OpcS, opc3_reg(dst));
-  ins_pipe( ialu_reg_mem );
-%}
-
-instruct loadL_reversed(rRegL dst, memory src) %{
-  match(Set dst (ReverseBytesL (LoadL src)));
-
-  format %{ "bswap_movq $dst, $src" %}
-  opcode(0x8B, 0x0F, 0xC8); /* Opcode 8B 0F C8 */
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), REX_reg_wide(dst), OpcS, opc3_reg(dst));
-  ins_pipe( ialu_reg_mem );
-%}
-
-instruct storeI_reversed(memory dst, rRegI src) %{
-  match(Set dst (StoreI dst (ReverseBytesI  src)));
-
-  format %{ "movl_bswap $dst, $src" %}
-  opcode(0x0F, 0xC8, 0x89); /* Opcode 0F C8 89 */
-  ins_encode( REX_reg(src), OpcP, opc2_reg(src), REX_reg_mem(src, dst), OpcT, reg_mem(src, dst) );
-  ins_pipe( ialu_mem_reg );
-%}
-
-instruct storeL_reversed(memory dst, rRegL src) %{
-  match(Set dst (StoreL dst (ReverseBytesL  src)));
-
-  format %{ "movq_bswap $dst, $src" %}
-  opcode(0x0F, 0xC8, 0x89); /* Opcode 0F C8 89 */
-  ins_encode( REX_reg_wide(src), OpcP, opc2_reg(src), REX_reg_mem_wide(src, dst), OpcT, reg_mem(src, dst) );
-  ins_pipe( ialu_mem_reg );
-%}
-
-
 //---------- Zeros Count Instructions ------------------------------------------
 
 instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{

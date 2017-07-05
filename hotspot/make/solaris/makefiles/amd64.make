@@ -35,7 +35,8 @@ ifeq ("${Platform_compiler}", "sparcWorks")
 
 # Temporary until SS10 C++ compiler is fixed
 OPT_CFLAGS/generateOptoStub.o = -xO2
-
+# Temporary util SS12u1 C++ compiler is fixed
+OPT_CFLAGS/c1_LinearScan.o = -xO2
 else
 
 ifeq ("${Platform_compiler}", "gcc")
