@@ -1515,10 +1515,9 @@ void instanceKlass::oop_follow_contents(ParCompactionManager* cm,
 // closure's do_header() method dicates whether the given closure should be
 // applied to the klass ptr in the object header.
 
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)   \
-                                                                        \
-int instanceKlass::oop_oop_iterate##nv_suffix(oop obj,                  \
-                                              OopClosureType* closure) {\
+#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)        \
+                                                                             \
+int instanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) { \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik);\
   /* header */                                                          \
   if (closure->do_header()) {                                           \
@@ -1532,6 +1531,26 @@ int instanceKlass::oop_oop_iterate##nv_suffix(oop obj,                  \
     assert_is_in_closed_subset)                                         \
   return size_helper();                                                 \
 }
+
+#ifndef SERIALGC
+#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
+                                                                                \
+int instanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                \
+                                              OopClosureType* closure) {        \
+  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik); \
+  /* header */                                                                  \
+  if (closure->do_header()) {                                                   \
+    obj->oop_iterate_header(closure);                                           \
+  }                                                                             \
+  /* instance variables */                                                      \
+  InstanceKlass_OOP_MAP_REVERSE_ITERATE(                                        \
+    obj,                                                                        \
+    SpecializationStats::record_do_oop_call##nv_suffix(SpecializationStats::ik);\
+    (closure)->do_oop##nv_suffix(p),                                            \
+    assert_is_in_closed_subset)                                                 \
+   return size_helper();                                                        \
+}
+#endif // !SERIALGC
 
 #define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix) \
                                                                         \
@@ -1550,9 +1569,13 @@ int instanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj,              \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceKlass_OOP_OOP_ITERATE_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
+#ifndef SERIALGC
+ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
+#endif // !SERIALGC
 
 void instanceKlass::iterate_static_fields(OopClosure* closure) {
     InstanceKlass_OOP_ITERATE( \

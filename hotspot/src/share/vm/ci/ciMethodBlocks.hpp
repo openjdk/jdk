@@ -48,6 +48,8 @@ public:
   int num_blocks()  { return _num_blocks;}
   void clear_processed();
 
+  ciBlock *make_dummy_block(); // a block not associated with a bci
+
 #ifndef PRODUCT
   void dump();
 #endif
@@ -81,7 +83,7 @@ public:
     fall_through_bci = -1
   };
 
-  ciBlock(ciMethod *method, int index, ciMethodBlocks *mb, int start_bci);
+  ciBlock(ciMethod *method, int index, int start_bci);
   int start_bci() const         { return _start_bci; }
   int limit_bci() const         { return _limit_bci; }
   int control_bci() const       { return _control_bci; }
@@ -93,7 +95,6 @@ public:
   int ex_start_bci() const      { return _ex_start_bci; }
   int ex_limit_bci() const      { return _ex_limit_bci; }
   bool contains(int bci) const { return start_bci() <= bci && bci < limit_bci(); }
-
 
   // flag handling
   bool  processed() const           { return (_flags & Processed) != 0; }

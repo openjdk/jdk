@@ -29,6 +29,8 @@ class objArrayOopDesc : public arrayOopDesc {
   friend class objArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
+  friend class CSMarkOopClosure;
+  friend class G1ParScanPartialArrayClosure;
 
   template <class T> T* obj_at_addr(int index) const {
     assert(is_within_bounds(index), "index out of bounds");
@@ -88,5 +90,5 @@ class objArrayOopDesc : public arrayOopDesc {
   int oop_iterate_range(OopClosureType* blk, int start, int end);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayOop_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DECL)
 };

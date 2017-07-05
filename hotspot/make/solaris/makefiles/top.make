@@ -54,6 +54,7 @@ Include_DBs/GC     = $(VM)/includeDB_gc \
                      $(VM)/gc_implementation/includeDB_gc_parallelScavenge \
                      $(VM)/gc_implementation/includeDB_gc_concurrentMarkSweep \
                      $(VM)/gc_implementation/includeDB_gc_parNew \
+                     $(VM)/gc_implementation/includeDB_gc_g1 \
                      $(VM)/gc_implementation/includeDB_gc_serial \
                      $(VM)/gc_implementation/includeDB_gc_shared
 
