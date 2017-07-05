@@ -105,7 +105,7 @@ else
     # We have a stored source revision (.src-rev)
 
     store-source-revision:
-	$(call LogWarn, Warning: No mercurial configuration present, not updating .src-rev)
+	$(call LogInfo, No mercurial configuration present$(COMMA) not updating .src-rev)
 
     $(SOURCE_REVISION_TRACKER): $(STORED_SOURCE_REVISION)
 	$(install-file)
@@ -115,7 +115,7 @@ else
     # We don't have a stored source revision. Can't do anything, really.
 
     store-source-revision:
-	$(call LogWarn, Error: No mercurial configuration present, cannot create .src-rev)
+	$(call LogWarn, Error: No mercurial configuration present$(COMMA) cannot create .src-rev)
 	exit 2
 
     create-source-revision-tracker:

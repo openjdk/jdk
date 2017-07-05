@@ -183,9 +183,10 @@ public class PropertyDescriptor extends FeatureDescriptor {
             setShortDescription(description.toString());
         }
         Object values = info.get(PropertyInfo.Name.enumerationValues);
-        if (values != null) {
-            setValue(PropertyInfo.Name.enumerationValues.name(), values);
+        if (values == null) {
+            values = new Object[0];
         }
+        setValue(PropertyInfo.Name.enumerationValues.name(), values);
         this.baseName = base;
     }
 

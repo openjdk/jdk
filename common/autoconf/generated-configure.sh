@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1482168759
+DATE_WHEN_GENERATED=1482828098
 
 ###############################################################################
 #
@@ -24677,7 +24677,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_MINOR has been sanitized from '$wit
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_MINOR=0
+      VERSION_MINOR=$DEFAULT_VERSION_MINOR
     fi
   fi
 
@@ -24724,7 +24724,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_SECURITY has been sanitized from '$
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_SECURITY=0
+      VERSION_SECURITY=$DEFAULT_VERSION_SECURITY
     fi
   fi
 
@@ -24771,7 +24771,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_PATCH has been sanitized from '$wit
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_PATCH=0
+      VERSION_PATCH=$DEFAULT_VERSION_PATCH
     fi
   fi
 
@@ -30665,24 +30665,9 @@ $as_echo "$tool_specified" >&6; }
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
 
-
-  $ECHO "Check if jvm arg is ok: --patch-module foo=bar" >&5
-  $ECHO "Command: $JAVA --patch-module foo=bar -version" >&5
-  OUTPUT=`$JAVA --patch-module foo=bar -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    dummy="$dummy --patch-module foo=bar"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Boot JDK supports modules" >&5
 $as_echo_n "checking if Boot JDK supports modules... " >&6; }
-  if test "x$JVM_ARG_OK" = "xtrue"; then
+  if "$JAVA" --list-modules > /dev/null 2>&1; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     BOOT_JDK_MODULAR="true"

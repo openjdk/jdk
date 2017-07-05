@@ -155,9 +155,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (UseFMA) {
-    warning("FMA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseFMA, false);
+  if (FLAG_IS_DEFAULT(UseFMA)) {
+    FLAG_SET_DEFAULT(UseFMA, true);
   }
 
   // On z/Architecture, we take UseSHA as the general switch to enable/disable the SHA intrinsics.

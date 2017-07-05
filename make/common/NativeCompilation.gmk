@@ -371,7 +371,8 @@ endef
 #       when compiling C code
 #   DISABLED_WARNINGS_CXX_<toolchain> Disable the given warnings for the specified
 #       toolchain when compiling C++ code
-#   STRIP_SYMBOLS Set to true to strip the final binary if the toolchain allows for it
+#   STRIP_SYMBOLS Set to false to override global strip policy and always leave
+#       symbols in the binary, if the toolchain allows for it
 #   DEBUG_SYMBOLS Set to false to disable generation of debug symbols
 #   COPY_DEBUG_SYMBOLS Set to false to override global setting of debug symbol copying
 #   ZIP_EXTERNAL_DEBUG_SYMBOLS Set to false to override global setting of debug symbol
@@ -885,6 +886,10 @@ define SetupNativeCompilationBody
        endif # !STATIC_LIBRARY
     endif # $1_DEBUG_SYMBOLS != false
   endif # COPY_DEBUG_SYMBOLS
+
+  # Unless specifically set, stripping should only happen if symbols are also
+  # being copied.
+  $$(call SetIfEmpty, $1_STRIP_SYMBOLS, $$($1_COPY_DEBUG_SYMBOLS))
 
   ifneq ($$($1_STRIP_SYMBOLS), false)
     ifneq ($$($1_STRIP), )

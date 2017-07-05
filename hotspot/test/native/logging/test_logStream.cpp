@@ -41,41 +41,41 @@ void LogStreamTest::verify_stream(outputStream* stream) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "3 workers\n"));
 }
 
-TEST_F(LogStreamTest, from_log) {
+TEST_VM_F(LogStreamTest, from_log) {
   Log(gc) log;
   LogStream stream(log.debug());
 
   verify_stream(&stream);
 }
 
-TEST_F(LogStreamTest, from_logtarget) {
+TEST_VM_F(LogStreamTest, from_logtarget) {
   LogTarget(Debug, gc) log;
   LogStream stream(log);
 
   verify_stream(&stream);
 }
 
-TEST_F(LogStreamTest, handle) {
+TEST_VM_F(LogStreamTest, handle) {
   LogStreamHandle(Debug, gc) stream;
 
   verify_stream(&stream);
 }
 
-TEST_F(LogStreamTest, no_rm) {
+TEST_VM_F(LogStreamTest, no_rm) {
   ResourceMark rm;
   outputStream* stream = LogTarget(Debug, gc)::stream();
 
   verify_stream(stream);
 }
 
-TEST_F(LogStreamTest, c_heap_stream) {
+TEST_VM_F(LogStreamTest, c_heap_stream) {
   Log(gc) log;
   LogStreamCHeap stream(log.debug());
 
   verify_stream(&stream);
 }
 
-TEST_F(LogStreamTest, c_heap_stream_target) {
+TEST_VM_F(LogStreamTest, c_heap_stream_target) {
   LogTarget(Debug, gc) log;
   LogStreamCHeap stream(log);
 

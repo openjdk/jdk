@@ -28,7 +28,6 @@ package java.security;
 
 import java.util.Enumeration;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.Objects;
 import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
@@ -107,9 +106,10 @@ public abstract class Policy {
         }
     }
 
-    // PolicyInfo is stored in an AtomicReference
-    private static AtomicReference<PolicyInfo> policy =
-        new AtomicReference<>(new PolicyInfo(null, false));
+    // PolicyInfo is volatile since we apply DCL during initialization.
+    // For correctness, care must be taken to read the field only once and only
+    // write to it after any other initialization action has taken place.
+    private static volatile PolicyInfo policyInfo = new PolicyInfo(null, false);
 
     private static final Debug debug = Debug.getInstance("policy");
 
@@ -121,9 +121,8 @@ public abstract class Policy {
     private WeakHashMap<ProtectionDomain.Key, PermissionCollection> pdMapping;
 
     /** package private for AccessControlContext and ProtectionDomain */
-    static boolean isSet()
-    {
-        PolicyInfo pi = policy.get();
+    static boolean isSet() {
+        PolicyInfo pi = policyInfo;
         return pi.policy != null && pi.initialized == true;
     }
 
@@ -168,16 +167,15 @@ public abstract class Policy {
      */
     static Policy getPolicyNoCheck()
     {
-        PolicyInfo pi = policy.get();
+        PolicyInfo pi = policyInfo;
         // Use double-check idiom to avoid locking if system-wide policy is
         // already initialized
         if (pi.initialized == false || pi.policy == null) {
             synchronized (Policy.class) {
-                PolicyInfo pinfo = policy.get();
-                if (pinfo.policy == null) {
+                pi = policyInfo;
+                if (pi.policy == null) {
                     return loadPolicyProvider();
                 }
-                return pinfo.policy;
             }
         }
         return pi.policy;
@@ -206,7 +204,7 @@ public abstract class Policy {
             policyProvider.equals(DEFAULT_POLICY))
         {
             Policy polFile = new sun.security.provider.PolicyFile();
-            policy.set(new PolicyInfo(polFile, true));
+            policyInfo = new PolicyInfo(polFile, true);
             return polFile;
         }
 
@@ -216,7 +214,7 @@ public abstract class Policy {
          * provider to avoid potential recursion.
          */
         Policy polFile = new sun.security.provider.PolicyFile();
-        policy.set(new PolicyInfo(polFile, false));
+        policyInfo = new PolicyInfo(polFile, false);
 
         Policy pol = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
@@ -244,7 +242,7 @@ public abstract class Policy {
             }
             pol = polFile;
         }
-        policy.set(new PolicyInfo(pol, true));
+        policyInfo = new PolicyInfo(pol, true);
         return pol;
     }
 
@@ -274,7 +272,7 @@ public abstract class Policy {
             initPolicy(p);
         }
         synchronized (Policy.class) {
-            policy.set(new PolicyInfo(p, p != null));
+            policyInfo = new PolicyInfo(p, p != null);
         }
     }
 
@@ -326,7 +324,7 @@ public abstract class Policy {
         }
 
         if (policyDomain.getCodeSource() != null) {
-            Policy pol = policy.get().policy;
+            Policy pol = policyInfo.policy;
             if (pol != null) {
                 policyPerms = pol.getPermissions(policyDomain);
             }

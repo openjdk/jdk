@@ -436,7 +436,7 @@ class os: AllStatic {
     vm_thread,
     cgc_thread,        // Concurrent GC thread
     pgc_thread,        // Parallel GC thread
-    java_thread,
+    java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
     os_thread

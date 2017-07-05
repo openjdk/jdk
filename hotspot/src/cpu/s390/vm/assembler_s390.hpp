@@ -790,6 +790,16 @@ class Assembler : public AbstractAssembler {
 #define MDB_ZOPC    (unsigned long)(237L << 40 | 28)
 #define MXDB_ZOPC   (unsigned long)(237L << 40 | 7)
 
+// Multiply-Add
+#define MAEBR_ZOPC  (unsigned  int)(179 << 24 | 14 << 16)
+#define MADBR_ZOPC  (unsigned  int)(179 << 24 | 30 << 16)
+#define MSEBR_ZOPC  (unsigned  int)(179 << 24 | 15 << 16)
+#define MSDBR_ZOPC  (unsigned  int)(179 << 24 | 31 << 16)
+#define MAEB_ZOPC   (unsigned long)(237L << 40 | 14)
+#define MADB_ZOPC   (unsigned long)(237L << 40 | 30)
+#define MSEB_ZOPC   (unsigned long)(237L << 40 | 15)
+#define MSDB_ZOPC   (unsigned long)(237L << 40 | 31)
+
 // Divide
 // RR, signed
 #define DSGFR_ZOPC  (unsigned  int)(0xb91d << 16)
@@ -2204,6 +2214,20 @@ class Assembler : public AbstractAssembler {
   inline void z_mdb(  FloatRegister f1, int64_t d2, Register x2, Register b2);  // f1 = f1 * *(d2+x2+b2)      ; double
   inline void z_meeb( FloatRegister f1, const Address& a);
   inline void z_mdb(  FloatRegister f1, const Address& a);
+
+  // MUL-ADD
+  inline void z_maebr(FloatRegister f1, FloatRegister f3, FloatRegister f2);    // f1 = f3 * f2 + f1          ; float
+  inline void z_madbr(FloatRegister f1, FloatRegister f3, FloatRegister f2);    // f1 = f3 * f2 + f1          ; double
+  inline void z_msebr(FloatRegister f1, FloatRegister f3, FloatRegister f2);    // f1 = f3 * f2 - f1          ; float
+  inline void z_msdbr(FloatRegister f1, FloatRegister f3, FloatRegister f2);    // f1 = f3 * f2 - f1          ; double
+  inline void z_maeb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2); // f1 = f3 * *(d2+x2+b2) + f1 ; float
+  inline void z_madb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2); // f1 = f3 * *(d2+x2+b2) + f1 ; double
+  inline void z_mseb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2); // f1 = f3 * *(d2+x2+b2) - f1 ; float
+  inline void z_msdb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2); // f1 = f3 * *(d2+x2+b2) - f1 ; double
+  inline void z_maeb(FloatRegister f1, FloatRegister f3, const Address& a);
+  inline void z_madb(FloatRegister f1, FloatRegister f3, const Address& a);
+  inline void z_mseb(FloatRegister f1, FloatRegister f3, const Address& a);
+  inline void z_msdb(FloatRegister f1, FloatRegister f3, const Address& a);
 
   // DIV
   inline void z_debr( FloatRegister f1, FloatRegister f2);                      // f1 = f1 / f2               ; float
