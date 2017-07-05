@@ -79,7 +79,7 @@ public class CaseNode extends BreakableNode {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterCaseNode(this) != null) {
             if (test != null) {
                 test = test.accept(visitor);
             }
@@ -87,7 +87,7 @@ public class CaseNode extends BreakableNode {
                 body = (Block)body.accept(visitor);
             }
 
-            return visitor.leave(this);
+            return visitor.leaveCaseNode(this);
         }
 
         return this;

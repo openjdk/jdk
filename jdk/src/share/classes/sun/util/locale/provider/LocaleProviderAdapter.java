@@ -47,6 +47,7 @@ import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.cldr.CLDRLocaleProviderAdapter;
+import sun.util.spi.CalendarProvider;
 
 /**
  * The LocaleProviderAdapter abstract class.
@@ -295,7 +296,10 @@ public abstract class LocaleProviderAdapter {
         }
         if (type == Type.JRE) {
             String oldname = locale.toString().replace('_', '-');
-            return langtags.contains(oldname);
+            return langtags.contains(oldname) ||
+                   "ja-JP-JP".equals(oldname) ||
+                   "th-TH-TH".equals(oldname) ||
+                   "no-NO-NY".equals(oldname);
         }
         return false;
     }
@@ -421,6 +425,14 @@ public abstract class LocaleProviderAdapter {
      * @return a CalendarNameProvider
      */
     public abstract CalendarNameProvider getCalendarNameProvider();
+
+    /**
+     * Returns a CalendarProvider for this LocaleProviderAdapter, or null if no
+     * CalendarProvider is available.
+     *
+     * @return a CalendarProvider
+     */
+    public abstract CalendarProvider getCalendarProvider();
 
     public abstract LocaleResources getLocaleResources(Locale locale);
 

@@ -33,11 +33,11 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
@@ -48,16 +48,16 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
 public abstract class ScriptFunction extends ScriptObject {
 
     /** Method handle for prototype getter for this ScriptFunction */
-    public static final MethodHandle G$PROTOTYPE  = findOwnMH("G$prototype",  Object.class, Object.class);
+    public static final MethodHandle G$PROTOTYPE = findOwnMH("G$prototype", Object.class, Object.class);
 
     /** Method handle for prototype setter for this ScriptFunction */
-    public static final MethodHandle S$PROTOTYPE  = findOwnMH("S$prototype",  void.class, Object.class, Object.class);
+    public static final MethodHandle S$PROTOTYPE = findOwnMH("S$prototype", void.class, Object.class, Object.class);
 
     /** Method handle for length getter for this ScriptFunction */
-    public static final MethodHandle G$LENGTH     = findOwnMH("G$length",     int.class, Object.class);
+    public static final MethodHandle G$LENGTH = findOwnMH("G$length", int.class, Object.class);
 
     /** Method handle for name getter for this ScriptFunction */
-    public static final MethodHandle G$NAME       = findOwnMH("G$name",       Object.class, Object.class);
+    public static final MethodHandle G$NAME = findOwnMH("G$name", Object.class, Object.class);
 
     /** Method handle for allocate function for this ScriptFunction */
     static final MethodHandle ALLOCATE = findOwnMH("allocate", Object.class);
@@ -67,13 +67,17 @@ public abstract class ScriptFunction extends ScriptObject {
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
 
-    private final ScriptFunctionData data;
+    private static final MethodHandle IS_FUNCTION_MH  = findOwnMH("isFunctionMH", boolean.class, Object.class, ScriptFunctionData.class);
+
+    private static final MethodHandle IS_NONSTRICT_FUNCTION = findOwnMH("isNonStrictFunction", boolean.class, Object.class, Object.class, ScriptFunctionData.class);
 
     /** Reference to constructor prototype. */
     protected Object prototype;
 
     /** The parent scope. */
     private final ScriptObject scope;
+
+    private final ScriptFunctionData data;
 
     /**
      * Constructor
@@ -97,7 +101,7 @@ public abstract class ScriptFunction extends ScriptObject {
             final boolean builtin,
             final boolean isConstructor) {
 
-        this (new ScriptFunctionData(name, methodHandle, specs, strict, builtin, isConstructor), map, scope);
+        this(new FinalScriptFunctionData(name, methodHandle, specs, strict, builtin, isConstructor), map, scope);
     }
 
     /**
@@ -118,8 +122,8 @@ public abstract class ScriptFunction extends ScriptObject {
             constructorCount++;
         }
 
-        this.data = data;
-        this.scope  = scope;
+        this.data  = data;
+        this.scope = scope;
     }
 
     @Override
@@ -295,20 +299,20 @@ public abstract class ScriptFunction extends ScriptObject {
     /**
      * Return the most appropriate invoke handle if there are specializations
      * @param type most specific method type to look for invocation with
+     * @param callsite args for trampoline invocation
      * @return invoke method handle
      */
-    private final MethodHandle getBestInvoker(final MethodType type) {
-        return data.getBestInvoker(type);
+    private MethodHandle getBestInvoker(final MethodType type, final Object[] args) {
+        return data.getBestInvoker(type, args);
     }
 
     /**
-     * Get the invoke handle - the most generic (and if no specializations are in place, only) invocation
-     * method handle for this ScriptFunction
-     * @see SpecializedFunction
-     * @return invokeHandle
+     * Return the most appropriate invoke handle if there are specializations
+     * @param type most specific method type to look for invocation with
+     * @return invoke method handle
      */
-    public final MethodHandle getInvokeHandle() {
-        return data.getInvoker();
+    public MethodHandle getBestInvoker(final MethodType type) {
+        return getBestInvoker(type, null);
     }
 
     /**
@@ -319,7 +323,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return bound invoke handle
      */
     public final MethodHandle getBoundInvokeHandle(final ScriptObject self) {
-        return MH.bindTo(bindToCalleeIfNeeded(getInvokeHandle()), self);
+        return MH.bindTo(bindToCalleeIfNeeded(data.getGenericInvoker()), self);
     }
 
     /**
@@ -329,7 +333,8 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return the potentially bound method handle
      */
     private MethodHandle bindToCalleeIfNeeded(final MethodHandle methodHandle) {
-        return data.needsCallee() ? MH.bindTo(methodHandle, this) : methodHandle;
+        return ScriptFunctionData.needsCallee(methodHandle) ? MH.bindTo(methodHandle, this) : methodHandle;
+
     }
 
     /**
@@ -340,15 +345,6 @@ public abstract class ScriptFunction extends ScriptObject {
         return data.getName();
     }
 
-    /**
-     * Does this script function need to be compiled. This determined by
-     * null checking invokeHandle
-     *
-     * @return true if this needs compilation
-     */
-    public final boolean needsCompilation() {
-        return data.getInvoker() == null;
-    }
 
     /**
      * Get the scope for this function
@@ -356,15 +352,6 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public final ScriptObject getScope() {
         return scope;
-    }
-
-    /**
-     * Reset the invoker handle. This is used by trampolines for
-     * lazy code generation
-     * @param invoker new invoker
-     */
-    protected void resetInvoker(final MethodHandle invoker) {
-        data.resetInvoker(invoker);
     }
 
     /**
@@ -464,7 +451,7 @@ public abstract class ScriptFunction extends ScriptObject {
     @Override
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
         final MethodType type = desc.getMethodType();
-        return new GuardedInvocation(pairArguments(data.getBestConstructor(type), type), null, NashornGuards.getFunctionGuard(this));
+        return new GuardedInvocation(pairArguments(data.getBestConstructor(type.changeParameterType(0, ScriptFunction.class), null), type), null, getFunctionGuard(this));
     }
 
     @SuppressWarnings("unused")
@@ -472,7 +459,7 @@ public abstract class ScriptFunction extends ScriptObject {
         if (obj instanceof ScriptObject || !ScriptFunctionData.isPrimitiveThis(obj)) {
             return obj;
         }
-        return ((GlobalObject) Context.getGlobalTrusted()).wrapAsObject(obj);
+        return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(obj);
     }
 
     /**
@@ -506,8 +493,7 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle guard = null;
 
         if (data.needsCallee()) {
-            final MethodHandle callHandle = getBestInvoker(type);
-
+            final MethodHandle callHandle = getBestInvoker(type, request.getArguments());
             if (NashornCallSiteDescriptor.isScope(desc)) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
                 // (callee, this, args...) => (callee, args...)
@@ -525,13 +511,12 @@ public abstract class ScriptFunction extends ScriptObject {
                     if (ScriptFunctionData.isPrimitiveThis(request.getArguments()[1])) {
                         boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
                     } else {
-                        guard = NashornGuards.getNonStrictFunctionGuard(this);
+                        guard = getNonStrictFunctionGuard(this);
                     }
                 }
             }
         } else {
-            final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1));
-
+            final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1), request.getArguments());
             if (NashornCallSiteDescriptor.isScope(desc)) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
                 // (this, args...) => (args...)
@@ -545,7 +530,8 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         boundHandle = pairArguments(boundHandle, type);
-        return new GuardedInvocation(boundHandle, guard == null ? NashornGuards.getFunctionGuard(this) : guard);
+
+        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this) : guard);
    }
 
     /**
@@ -554,11 +540,48 @@ public abstract class ScriptFunction extends ScriptObject {
      * These don't want a callee parameter, so bind that. Name binding is optional.
      */
     MethodHandle getCallMethodHandle(final MethodType type, final String bindName) {
-        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(getBestInvoker(type)), bindName), type);
+        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(getBestInvoker(type, null)), bindName), type);
     }
 
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {
         return bindName == null ? methodHandle : MH.insertArguments(methodHandle, 1, bindName);
+    }
+
+    /**
+     * Get the guard that checks if a {@link ScriptFunction} is equal to
+     * a known ScriptFunction, using reference comparison
+     *
+     * @param function The ScriptFunction to check against. This will be bound to the guard method handle
+     *
+     * @return method handle for guard
+     */
+    private static MethodHandle getFunctionGuard(final ScriptFunction function) {
+        assert function.data != null;
+        return MH.insertArguments(IS_FUNCTION_MH, 1, function.data);
+    }
+
+    /**
+     * Get a guard that checks if a {@link ScriptFunction} is equal to
+     * a known ScriptFunction using reference comparison, and whether the type of
+     * the second argument (this-object) is not a JavaScript primitive type.
+     *
+     * @param function The ScriptFunction to check against. This will be bound to the guard method handle
+     *
+     * @return method handle for guard
+     */
+    private static MethodHandle getNonStrictFunctionGuard(final ScriptFunction function) {
+        assert function.data != null;
+        return MH.insertArguments(IS_NONSTRICT_FUNCTION, 2, function.data);
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isFunctionMH(final Object self, final ScriptFunctionData data) {
+        return self instanceof ScriptFunction && ((ScriptFunction)self).data == data;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isNonStrictFunction(final Object self, final Object arg, final ScriptFunctionData data) {
+        return self instanceof ScriptFunction && ((ScriptFunction)self).data == data && arg instanceof ScriptObject;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

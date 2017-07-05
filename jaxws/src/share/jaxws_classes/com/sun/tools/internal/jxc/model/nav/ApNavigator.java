@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@ import com.sun.source.util.Trees;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 
+import java.lang.annotation.Annotation;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -370,6 +372,21 @@ public class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableE
 
         @Override
         public TypeKind getKind() {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public List<? extends AnnotationMirror> getAnnotationMirrors() {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
             throw new IllegalStateException();
         }
     };

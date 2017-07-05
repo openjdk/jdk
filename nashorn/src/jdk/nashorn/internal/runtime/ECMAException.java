@@ -237,7 +237,7 @@ public final class ECMAException extends NashornException {
             return (String)name;
         }
 
-        return (String)name + ": " + (String)msg;
+        return name + ": " + msg;
     }
 
     private static Throwable asThrowable(final Object obj) {

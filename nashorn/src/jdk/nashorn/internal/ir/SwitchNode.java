@@ -85,7 +85,7 @@ public class SwitchNode extends BreakableNode {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterSwitchNode(this) != null) {
             expression = expression.accept(visitor);
 
             for (int i = 0, count = cases.size(); i < count; i++) {
@@ -94,7 +94,7 @@ public class SwitchNode extends BreakableNode {
 
             //the default case is in the cases list and should not be explicitly traversed!
 
-            return visitor.leave(this);
+            return visitor.leaveSwitchNode(this);
         }
 
         return this;

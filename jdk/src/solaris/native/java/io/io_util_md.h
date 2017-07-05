@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,24 @@
  * questions.
  */
 
-#include "jni.h"
 #include "jni_util.h"
 
 /*
  * Macros to use the right data type for file descriptors
  */
 #define FD jint
+
+/*
+ * Prototypes for functions in io_util_md.c called from io_util.c,
+ * FileDescriptor.c, FileInputStream.c, FileOutputStream.c,
+ * UnixFileSystem_md.c
+ */
+ssize_t handleWrite(FD fd, const void *buf, jint len);
+ssize_t handleRead(FD fd, void *buf, jint len);
+jint handleAvailable(FD fd, jlong *pbytes);
+jint handleSetLength(FD fd, jlong length);
+
+FD handleOpen(const char *path, int oflag, int mode);
 
 /*
  * Macros to set/get fd from the java.io.FileDescriptor.  These
@@ -53,20 +64,39 @@
 #define THIS_FD(obj) (*env)->GetIntField(env, obj, IO_fd_fdID)
 
 /*
- * Route the routines through VM
+ * Route the routines
  */
-#define IO_Append JVM_Write
-#define IO_Write JVM_Write
-#define IO_Sync JVM_Sync
-#define IO_Read JVM_Read
-#define IO_Lseek JVM_Lseek
-#define IO_Available JVM_Available
-#define IO_SetLength JVM_SetLength
+#define IO_Sync fsync
+#define IO_Read handleRead
+#define IO_Write handleWrite
+#define IO_Append handleWrite
+#define IO_Available handleAvailable
+#define IO_SetLength handleSetLength
+
+#ifdef _ALLBSD_SOURCE
+#define open64 open
+#define fstat64 fstat
+#define stat64 stat
+#define lseek64 lseek
+#define ftruncate64 ftruncate
+#define IO_Lseek lseek
+#else
+#define IO_Lseek lseek64
+#endif
 
 /*
  * On Solaris, the handle field is unused
  */
 #define SET_HANDLE(fd) return (jlong)-1
+
+/*
+ * Retry the operation if it is interrupted
+ */
+#define RESTARTABLE(_cmd, _result) do { \
+    do { \
+        _result = _cmd; \
+    } while((_result == -1) && (errno == EINTR)); \
+} while(0)
 
 /*
  * IO helper function(s)

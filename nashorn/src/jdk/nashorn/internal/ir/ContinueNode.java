@@ -61,8 +61,8 @@ public class ContinueNode extends LabeledNode {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            return visitor.leave(this);
+        if (visitor.enterContinueNode(this) != null) {
+            return visitor.leaveContinueNode(this);
         }
 
         return this;

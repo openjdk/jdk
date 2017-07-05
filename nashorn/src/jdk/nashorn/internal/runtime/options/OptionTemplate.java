@@ -278,7 +278,7 @@ public class OptionTemplate implements Comparable<OptionTemplate> {
                     this.valueNextArg = Boolean.parseBoolean(arg);
                     break;
                 default:
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException(keyToken);
                 }
             }
 

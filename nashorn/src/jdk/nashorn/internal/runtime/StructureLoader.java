@@ -38,6 +38,7 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
@@ -129,6 +130,6 @@ final class StructureLoader extends NashornLoader {
         }
 
         final byte[] code = new ObjectClassGenerator(context).generate(descriptor);
-        return defineClass(name, code, 0, code.length);
+        return defineClass(name, code, 0, code.length, new ProtectionDomain(null, getPermissions(null)));
     }
 }

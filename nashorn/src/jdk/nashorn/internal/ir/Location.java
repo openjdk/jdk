@@ -65,7 +65,11 @@ public class Location implements Cloneable {
 
     @Override
     protected Object clone() {
-        return new Location(this);
+        try {
+            return super.clone();
+        } catch(CloneNotSupportedException e) {
+            throw new AssertionError(e);
+        }
     }
 
     @Override

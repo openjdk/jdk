@@ -40,13 +40,14 @@ import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
@@ -84,11 +85,13 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     private static final DebugLogger LOG = new DebugLogger("finalize");
 
+    private final LexicalContext lexicalContext = new LexicalContext();
+
     FinalizeTypes() {
     }
 
     @Override
-    public Node leave(final CallNode callNode) {
+    public Node leaveCallNode(final CallNode callNode) {
         final EvalArgs evalArgs = callNode.getEvalArgs();
         if (evalArgs != null) {
             evalArgs.setCode(evalArgs.getCode().accept(this));
@@ -96,15 +99,14 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         // AccessSpecializer - call return type may change the access for this location
         final Node function = callNode.getFunction();
-        if (function instanceof ReferenceNode) {
-            setTypeOverride(callNode, ((ReferenceNode)function).getReference().getType());
+        if (function instanceof FunctionNode) {
+            return setTypeOverride(callNode, ((FunctionNode)function).getReturnType());
         }
         return callNode;
     }
 
     private Node leaveUnary(final UnaryNode unaryNode) {
-        unaryNode.setRHS(convert(unaryNode.rhs(), unaryNode.getType()));
-        return unaryNode;
+        return unaryNode.setRHS(convert(unaryNode.rhs(), unaryNode.getType()));
     }
 
     @Override
@@ -125,8 +127,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveDECINC(final UnaryNode unaryNode) {
-        specialize(unaryNode);
-        return unaryNode;
+        return specialize(unaryNode).node;
     }
 
     @Override
@@ -158,9 +159,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
         }
 
-        binaryNode.setLHS(convert(lhs, type));
-        binaryNode.setRHS(convert(rhs, type));
-        return binaryNode;
+        return binaryNode.setLHS(convert(lhs, type)).setRHS(convert(rhs, type));
     }
 
     @Override
@@ -170,12 +169,13 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveASSIGN(final BinaryNode binaryNode) {
-        Type destType = specialize(binaryNode);
+        final SpecializedNode specialized = specialize(binaryNode);
+        final BinaryNode specBinaryNode = (BinaryNode)specialized.node;
+        Type destType = specialized.type;
         if (destType == null) {
-            destType = binaryNode.getType();
+            destType = specBinaryNode.getType();
         }
-        binaryNode.setRHS(convert(binaryNode.rhs(), destType));
-        return binaryNode;
+        return specBinaryNode.setRHS(convert(specBinaryNode.rhs(), destType));
     }
 
     @Override
@@ -235,40 +235,40 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveBIT_AND(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : binaryNode.getSymbol();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_OR(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_XOR(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveCOMMALEFT(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null;
-        binaryNode.setRHS(discard(binaryNode.rhs()));
-        // AccessSpecializer - the type of rhs, which is the remaining value of this node may have changed
+        final BinaryNode newBinaryNode = (BinaryNode)binaryNode.setRHS(discard(binaryNode.rhs()));
+        // AccessSpecializer - the type of lhs, which is the remaining value of this node may have changed
         // in that case, update the node type as well
-        propagateType(binaryNode, binaryNode.lhs().getType());
-        return binaryNode;
+        propagateType(newBinaryNode, newBinaryNode.lhs().getType());
+        return newBinaryNode;
     }
 
     @Override
     public Node leaveCOMMARIGHT(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null;
-        binaryNode.setLHS(discard(binaryNode.lhs()));
+        final BinaryNode newBinaryNode = binaryNode.setLHS(discard(binaryNode.lhs()));
         // AccessSpecializer - the type of rhs, which is the remaining value of this node may have changed
         // in that case, update the node type as well
-        propagateType(binaryNode, binaryNode.rhs().getType());
-        return binaryNode;
+        propagateType(newBinaryNode, newBinaryNode.rhs().getType());
+        return newBinaryNode;
     }
 
     @Override
@@ -344,7 +344,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveSHR(final BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isLong();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isLong() : "long coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
@@ -354,13 +354,20 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
+        lexicalContext.push(block);
         updateSymbols(block);
         return block;
     }
 
     @Override
-    public Node leave(final CatchNode catchNode) {
+    public Node leaveBlock(Block block) {
+        lexicalContext.pop(block);
+        return super.leaveBlock(block);
+    }
+
+    @Override
+    public Node leaveCatchNode(final CatchNode catchNode) {
         final Node exceptionCondition = catchNode.getExceptionCondition();
         if (exceptionCondition != null) {
             catchNode.setExceptionCondition(convert(exceptionCondition, Type.BOOLEAN));
@@ -369,23 +376,23 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final DoWhileNode doWhileNode) {
-        return enter((WhileNode)doWhileNode);
+    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
+        return enterWhileNode(doWhileNode);
     }
 
     @Override
-    public Node leave(final DoWhileNode doWhileNode) {
-        return leave((WhileNode)doWhileNode);
+    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
+        return leaveWhileNode(doWhileNode);
     }
 
     @Override
-    public Node leave(final ExecuteNode executeNode) {
+    public Node leaveExecuteNode(final ExecuteNode executeNode) {
         executeNode.setExpression(discard(executeNode.getExpression()));
         return executeNode;
     }
 
     @Override
-    public Node leave(final ForNode forNode) {
+    public Node leaveForNode(final ForNode forNode) {
         final Node init   = forNode.getInit();
         final Node test   = forNode.getTest();
         final Node modify = forNode.getModify();
@@ -413,11 +420,12 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         if (functionNode.isLazy()) {
             return null;
         }
 
+        lexicalContext.push(functionNode);
         // If the function doesn't need a callee, we ensure its __callee__ symbol doesn't get a slot. We can't do
         // this earlier, as access to scoped variables, self symbol, etc. in previous phases can all trigger the
         // need for the callee.
@@ -432,18 +440,26 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         }
 
         updateSymbols(functionNode);
+        functionNode.setState(CompilationState.FINALIZED);
+
         return functionNode;
     }
 
     @Override
-    public Node leave(final IfNode ifNode) {
+    public Node leaveFunctionNode(FunctionNode functionNode) {
+        lexicalContext.pop(functionNode);
+        return super.leaveFunctionNode(functionNode);
+    }
+
+    @Override
+    public Node leaveIfNode(final IfNode ifNode) {
         ifNode.setTest(convert(ifNode.getTest(), Type.BOOLEAN));
         return ifNode;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node enter(final LiteralNode literalNode) {
+    public Node enterLiteralNode(final LiteralNode literalNode) {
         if (literalNode instanceof ArrayLiteralNode) {
             final ArrayLiteralNode arrayLiteralNode = (ArrayLiteralNode)literalNode;
             final Node[]           array            = arrayLiteralNode.getValue();
@@ -461,7 +477,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final ReturnNode returnNode) {
+    public Node leaveReturnNode(final ReturnNode returnNode) {
         final Node expr = returnNode.getExpression();
         if (expr != null) {
             returnNode.setExpression(convert(expr, getCurrentFunctionNode().getReturnType()));
@@ -470,7 +486,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final RuntimeNode runtimeNode) {
+    public Node leaveRuntimeNode(final RuntimeNode runtimeNode) {
         final List<Node> args = runtimeNode.getArgs();
         for (final Node arg : args) {
             assert !arg.getType().isUnknown();
@@ -479,7 +495,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final SwitchNode switchNode) {
+    public Node leaveSwitchNode(final SwitchNode switchNode) {
         final Node           expression  = switchNode.getExpression();
         final List<CaseNode> cases       = switchNode.getCases();
         final boolean        allInteger  = switchNode.getTag().getSymbolType().isInteger();
@@ -498,34 +514,34 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final TernaryNode ternaryNode) {
-        ternaryNode.setLHS(convert(ternaryNode.lhs(), Type.BOOLEAN));
-        return ternaryNode;
+    public Node leaveTernaryNode(final TernaryNode ternaryNode) {
+        return ternaryNode.setLHS(convert(ternaryNode.lhs(), Type.BOOLEAN));
     }
 
     @Override
-    public Node leave(final ThrowNode throwNode) {
+    public Node leaveThrowNode(final ThrowNode throwNode) {
         throwNode.setExpression(convert(throwNode.getExpression(), Type.OBJECT));
         return throwNode;
     }
 
     @Override
-    public Node leave(final VarNode varNode) {
-
+    public Node leaveVarNode(final VarNode varNode) {
         final Node rhs = varNode.getInit();
         if (rhs != null) {
-            Type destType = specialize(varNode);
+            final SpecializedNode specialized = specialize(varNode);
+            final VarNode specVarNode = (VarNode)specialized.node;
+            Type destType = specialized.type;
             if (destType == null) {
-                destType = varNode.getType();
+                destType = specVarNode.getType();
             }
-            assert varNode.hasType() : varNode + " doesn't have a type";
-            varNode.setInit(convert(rhs, destType));
+            assert specVarNode.hasType() : specVarNode + " doesn't have a type";
+            return specVarNode.setInit(convert(rhs, destType));
         }
         return varNode;
     }
 
     @Override
-    public Node leave(final WhileNode whileNode) {
+    public Node leaveWhileNode(final WhileNode whileNode) {
         final Node test = whileNode.getTest();
         if (test != null) {
             whileNode.setTest(convert(test, Type.BOOLEAN));
@@ -534,7 +550,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final WithNode withNode) {
+    public Node leaveWithNode(final WithNode withNode) {
         withNode.setExpression(convert(withNode.getExpression(), Type.OBJECT));
         return withNode;
     }
@@ -553,14 +569,14 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * that scope and slot information is correct for every symbol
      * @param block block for which to to finalize type info.
      */
-    private static void updateSymbols(final Block block) {
+    private void updateSymbols(final Block block) {
         if (!block.needsScope()) {
             return; // nothing to do
         }
 
-        assert !(block instanceof FunctionNode) || block.getFunction() == block;
+        final FunctionNode functionNode = lexicalContext.getFunction(block);
+        assert !(block instanceof FunctionNode) || functionNode == block;
 
-        final FunctionNode functionNode   = block.getFunction();
         final List<Symbol> symbols        = block.getFrame().getSymbols();
         final boolean      allVarsInScope = functionNode.allVarsInScope();
         final boolean      isVarArg       = functionNode.isVarArg();
@@ -629,10 +645,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             break;
         }
 
-        binaryNode.setLHS(convert(lhs, widest));
-        binaryNode.setRHS(convert(rhs, widest));
-
-        return binaryNode;
+        return binaryNode.setLHS(convert(lhs, widest)).setRHS(convert(rhs, widest));
     }
 
     /**
@@ -654,9 +667,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     private Node leaveBinary(final BinaryNode binaryNode, final Type lhsType, final Type rhsType) {
-        binaryNode.setLHS(convert(binaryNode.lhs(), lhsType));
-        binaryNode.setRHS(convert(binaryNode.rhs(), rhsType));
-        return binaryNode;
+        return binaryNode.setLHS(convert(binaryNode.lhs(), lhsType)).setRHS(convert(binaryNode.rhs(), rhsType));
     }
 
     /**
@@ -677,7 +688,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
 
             @Override
-            public Node enter(final IdentNode identNode) {
+            public Node enterIdentNode(final IdentNode identNode) {
                 if (!exclude.contains(identNode)) {
                     setCanBePrimitive(identNode.getSymbol());
                 }
@@ -685,26 +696,36 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
 
             @Override
-            public Node enter(final AccessNode accessNode) {
+            public Node enterAccessNode(final AccessNode accessNode) {
                 setCanBePrimitive(accessNode.getProperty().getSymbol());
                 return null;
             }
 
             @Override
-            public Node enter(final IndexNode indexNode) {
+            public Node enterIndexNode(final IndexNode indexNode) {
                 exclude.add(indexNode.getBase()); //prevent array base node to be flagged as primitive, but k in a[k++] is fine
                 return indexNode;
             }
         });
     }
 
-    private static Type specialize(final Assignment<?> assignment) {
+    private static class SpecializedNode {
+        final Node node;
+        final Type type;
+
+        SpecializedNode(Node node, Type type) {
+            this.node = node;
+            this.type = type;
+        }
+    }
+
+    private static <T extends Node> SpecializedNode specialize(final Assignment<T> assignment) {
         final Node node = ((Node)assignment);
-        final Node lhs = assignment.getAssignmentDest();
+        final T lhs = assignment.getAssignmentDest();
         final Node rhs = assignment.getAssignmentSource();
 
         if (!canHaveCallSiteType(lhs)) {
-            return null;
+            return new SpecializedNode(node, null);
         }
 
         final Type to;
@@ -716,13 +737,13 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         if (!isSupportedCallSiteType(to)) {
             //meaningless to specialize to boolean or object
-            return null;
+            return new SpecializedNode(node, null);
         }
 
-        setTypeOverride(lhs, to);
-        propagateType(node, to);
+        final Node newNode = assignment.setAssignmentDest(setTypeOverride(lhs, to));
+        propagateType(newNode, to);
 
-        return to;
+        return new SpecializedNode(newNode, to);
     }
 
 
@@ -734,7 +755,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * @return true if node can have a callsite type
      */
     private static boolean canHaveCallSiteType(final Node node) {
-        return node instanceof TypeOverride && ((TypeOverride)node).canHaveCallSiteType();
+        return node instanceof TypeOverride && ((TypeOverride<?>)node).canHaveCallSiteType();
     }
 
     /**
@@ -760,7 +781,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * @param node    node for which to change type
      * @param to      new type
      */
-    private static void setTypeOverride(final Node node, final Type to) {
+    @SuppressWarnings("unchecked")
+    private static <T extends Node> T setTypeOverride(final T node, final Type to) {
         final Type from = node.getType();
         if (!node.getType().equals(to)) {
             LOG.info("Changing call override type for '" + node + "' from " + node.getType() + " to " + to);
@@ -769,7 +791,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
         }
         LOG.info("Type override for lhs in '" + node + "' => " + to);
-        ((TypeOverride)node).setType(to);
+        return ((TypeOverride<T>)node).setType(to);
     }
 
     /**
@@ -814,8 +836,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
         } else {
             if (canHaveCallSiteType(node) && isSupportedCallSiteType(to)) {
-                setTypeOverride(node, to);
-                return resultNode;
+                assert node instanceof TypeOverride;
+                return setTypeOverride(node, to);
             }
             resultNode = new UnaryNode(node.getSource(), Token.recast(node.getToken(), TokenType.CONVERT), node);
         }
