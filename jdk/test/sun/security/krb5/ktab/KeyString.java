@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,21 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
+ */
+/*
+ * @test
+ * @bug 6917791
+ * @summary KeyTabEntry, when the byte value smaller then 16, the string drop '0'
  */
 
-void PtrQueue::handle_zero_index() {
-  assert(0 == _index, "Precondition.");
-  // This thread records the full buffer and allocates a new one (while
-  // holding the lock if there is one).
-  void** buf = _buf;
-  _buf = qset()->allocate_buffer();
-  _sz = qset()->buffer_size();
-  _index = _sz;
-  assert(0 <= _index && _index <= _sz, "Invariant.");
-  if (buf != NULL) {
-    if (_lock) {
-      locking_enqueue_completed_buffer(buf);
-    } else {
-      qset()->enqueue_complete_buffer(buf);
+import sun.security.krb5.internal.ktab.KeyTabEntry;
+
+public class KeyString {
+    public static void main(String[] args) throws Exception {
+        KeyTabEntry e = new KeyTabEntry(null, null, null, 1, 1, new byte[8]);
+        // "0x" plus eight "00"
+        if (e.getKeyString().length() != 18) {
+            throw new Exception("key bytes length not correct");
+        }
     }
-  }
 }

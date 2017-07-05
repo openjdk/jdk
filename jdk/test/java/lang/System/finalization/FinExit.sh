@@ -24,7 +24,9 @@
 #
 
 #
-x=`$TESTJAVA/bin/java -cp $TESTCLASSES FinExit`
+
+# We only want the first character, Windows might add CRLF
+x=`$TESTJAVA/bin/java -cp "$TESTCLASSES" FinExit | cut -c1`
 echo $x
 if [ "x$x" != "x1" ]; then
   echo On-exit finalizer invoked twice

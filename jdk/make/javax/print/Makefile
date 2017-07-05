@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = print
 PACKAGE = javax.print
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

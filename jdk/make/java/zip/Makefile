@@ -25,6 +25,7 @@
 
 
 BUILDDIR = ../..
+MODULE  = base
 PACKAGE = java.util.zip
 LIBRARY = zip
 PRODUCT = sun

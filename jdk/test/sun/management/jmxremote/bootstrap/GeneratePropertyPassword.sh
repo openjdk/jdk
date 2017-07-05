@@ -45,7 +45,7 @@ cat <<EOF > ${TMP_FILE}
 s^@TEST-SRC@/^${TESTCLASSES}${DFILESEP}^g
 EOF
     ;;
-Windows_95 | Windows_98 | Windows_NT | Windows_ME)
+Windows_95 | Windows_98 | Windows_NT | Windows_ME | CYGWIN*)
     PATHSEP=";"
     FILESEP="\\"
     DFILESEP=$FILESEP$FILESEP

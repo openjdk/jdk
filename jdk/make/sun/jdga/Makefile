@@ -25,6 +25,7 @@
 
 
 BUILDDIR = ../..
+MODULE  = java2d
 PACKAGE = sun.jdga
 LIBRARY = sunwjdga
 PRODUCT = sun

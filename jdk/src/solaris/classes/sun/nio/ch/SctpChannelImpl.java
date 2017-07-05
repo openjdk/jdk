@@ -38,7 +38,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.NoConnectionPendingException;
-import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.NotYetConnectedException;
@@ -54,7 +53,6 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
-import sun.nio.ch.NativeDispatcher;
 import sun.nio.ch.PollArrayWrapper;
 import sun.nio.ch.SelChImpl;
 import static com.sun.nio.sctp.SctpStandardSocketOption.*;
@@ -69,9 +67,6 @@ import static sun.nio.ch.SctpResultContainer.SHUTDOWN;
 public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {
-    /* Used to make native close and preClose calls */
-    private static NativeDispatcher nd;
-
     private final FileDescriptor fd;
 
     private final int fdVal;
@@ -182,7 +177,7 @@ public class SctpChannelImpl extends SctpChannel
                 synchronized (stateLock) {
                     ensureOpenAndUnconnected();
                     if (isBound())
-                        throw new AlreadyBoundException();
+                        SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
                     Net.bind(fd, isa.getAddress(), isa.getPort());
@@ -234,7 +229,7 @@ public class SctpChannelImpl extends SctpChannel
                     if (add) {
                         for (InetSocketAddress addr : localAddresses) {
                             if (addr.getAddress().equals(address)) {
-                                throw new AlreadyBoundException();
+                                SctpNet.throwAlreadyBoundException();
                             }
                         }
                     } else { /*removing */
@@ -370,7 +365,7 @@ public class SctpChannelImpl extends SctpChannel
                                 InetAddress ia = isa.getAddress();
                                 if (ia.isAnyLocalAddress())
                                     ia = InetAddress.getLocalHost();
-                                n = Net.connect(fd, ia, isa.getPort());
+                                n = SctpNet.connect(fdVal, ia, isa.getPort());
                                 if (  (n == IOStatus.INTERRUPTED)
                                       && isOpen())
                                     continue;
@@ -556,7 +551,7 @@ public class SctpChannelImpl extends SctpChannel
     @Override
     public void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            nd.preClose(fd);
+            SctpNet.preClose(fdVal);
 
             if (receiverThread != 0)
                 NativeThread.signal(receiverThread);
@@ -662,7 +657,7 @@ public class SctpChannelImpl extends SctpChannel
             /* Postpone the kill if there is a waiting reader
              * or writer thread. */
             if (receiverThread == 0 && senderThread == 0) {
-                nd.close(fd);
+                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
             } else {
                 state = ChannelState.KILLPENDING;
@@ -874,8 +869,8 @@ public class SctpChannelImpl extends SctpChannel
         public HandlerResult handleNotification(
                 AssociationChangeNotification not, T unused) {
             if (not.event().equals(
-                    AssociationChangeNotification.AssocChangeEvent.COMM_UP)) {
-                assert association == null;
+                    AssociationChangeNotification.AssocChangeEvent.COMM_UP) &&
+                    association == null) {
                 SctpAssocChange sac = (SctpAssocChange) not;
                 association = new SctpAssociationImpl
                        (sac.assocId(), sac.maxInStreams(), sac.maxOutStreams());
@@ -987,17 +982,17 @@ public class SctpChannelImpl extends SctpChannel
         SocketAddress target = messageInfo.address();
         boolean unordered = messageInfo.isUnordered();
         int ppid = messageInfo.payloadProtocolID();
-        int pos = src.position();
-        int lim = src.limit();
-
-        assert (pos <= lim && streamNumber >= 0);
-        int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof DirectBuffer)
-            return sendFromNativeBuffer(fd, src, rem, pos, target, streamNumber,
+            return sendFromNativeBuffer(fd, src, target, streamNumber,
                     unordered, ppid);
 
         /* Substitute a native buffer */
+        int pos = src.position();
+        int lim = src.limit();
+        assert (pos <= lim && streamNumber >= 0);
+
+        int rem = (pos <= lim ? lim - pos : 0);
         ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
         try {
             bb.put(src);
@@ -1005,7 +1000,7 @@ public class SctpChannelImpl extends SctpChannel
             /* Do not update src until we see how many bytes were written */
             src.position(pos);
 
-            int n = sendFromNativeBuffer(fd, bb, rem, pos, target, streamNumber,
+            int n = sendFromNativeBuffer(fd, bb, target, streamNumber,
                     unordered, ppid);
             if (n > 0) {
                 /* now update src */
@@ -1019,13 +1014,16 @@ public class SctpChannelImpl extends SctpChannel
 
     private int sendFromNativeBuffer(int fd,
                                      ByteBuffer bb,
-                                     int rem,
-                                     int pos,
                                      SocketAddress target,
                                      int streamNumber,
                                      boolean unordered,
                                      int ppid)
             throws IOException {
+        int pos = bb.position();
+        int lim = bb.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+
         int written = send0(fd, ((DirectBuffer)bb).address() + pos,
                             rem, target, -1 /*121*/, streamNumber, unordered, ppid);
         if (written > 0)
@@ -1097,6 +1095,5 @@ public class SctpChannelImpl extends SctpChannel
         java.security.AccessController.doPrivileged(
                 new sun.security.action.LoadLibraryAction("sctp"));
         initIDs();
-        nd = new SctpSocketDispatcher();
     }
 }

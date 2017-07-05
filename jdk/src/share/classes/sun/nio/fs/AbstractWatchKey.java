@@ -88,26 +88,24 @@ abstract class AbstractWatchKey extends WatchKey {
     final void signalEvent(WatchEvent.Kind<?> kind, Object context) {
         synchronized (this) {
             int size = events.size();
-            if (size > 1) {
-                // don't let list get too big
-                if (size >= MAX_EVENT_LIST_SIZE) {
-                    kind = StandardWatchEventKind.OVERFLOW;
-                    context = null;
+            if (size > 0) {
+                // if the previous event is an OVERFLOW event or this is a
+                // repeated event then we simply increment the counter
+                WatchEvent<?> prev = events.get(size-1);
+                if ((prev.kind() == StandardWatchEventKind.OVERFLOW) ||
+                    ((kind == prev.kind() &&
+                     Objects.equals(context, prev.context()))))
+                {
+                    ((Event<?>)prev).increment();
+                    return;
                 }
 
-                // repeated event
-                WatchEvent<?> prev = events.get(size-1);
-                if (kind == prev.kind()) {
-                    boolean isRepeat;
-                    if (context == null) {
-                        isRepeat = (prev.context() == null);
-                    } else {
-                        isRepeat = context.equals(prev.context());
-                    }
-                    if (isRepeat) {
-                        ((Event<?>)prev).increment();
-                        return;
-                    }
+                // if the list has reached the limit then drop pending events
+                // and queue an OVERFLOW event
+                if (size >= MAX_EVENT_LIST_SIZE) {
+                    events.clear();
+                    kind = StandardWatchEventKind.OVERFLOW;
+                    context = null;
                 }
             }
 

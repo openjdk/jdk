@@ -49,7 +49,7 @@ OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
     PS=":"    ;;
-  Windows* )
+  Windows* | CYGWIN* )
     PS=";"    ;;
   * )
     echo "Unrecognized system!"

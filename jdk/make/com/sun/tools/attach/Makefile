@@ -25,6 +25,7 @@
 
 
 BUILDDIR = ../../../..
+MODULE  = attach
 PACKAGE = com.sun.tools.attach
 LIBRARY = attach
 PRODUCT = sun
@@ -65,6 +66,7 @@ $(SERVICEDIR)/%: $(SHARE_SRC)/classes/sun/tools/attach/META-INF/services/%
 	@$(MKDIR) -p $(@D)
 	@$(RM) $@
 	@$(CAT) $< | $(SED) -e "s/^#\[$(PLATFORM)\]//" > $@
+	@$(install-module-file)
                                                                                                 
 .PHONY: copy-files
 

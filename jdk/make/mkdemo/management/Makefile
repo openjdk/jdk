@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = demos
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
