@@ -191,6 +191,9 @@ public interface ClassFileTransformer {
      *         if the input does not represent a well-formed class file
      * @return a well-formed class file buffer (the result of the transform),
      *         or {@code null} if no transform is performed
+     *
+     * @revised 9
+     * @spec JPMS
      */
     default byte[]
     transform(  ClassLoader         loader,
@@ -229,6 +232,7 @@ public interface ClassFileTransformer {
      *         or {@code null} if no transform is performed
      *
      * @since  9
+     * @spec JPMS
      */
     default byte[]
     transform(  Module              module,
