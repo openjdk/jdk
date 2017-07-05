@@ -52,7 +52,7 @@ public class ValidationState implements ValidationContext {
     private SymbolTable fSymbolTable            = null;
     private Locale fLocale                      = null;
 
-    private ArrayList<String> fIdList;
+    private HashSet<String> fIds;
     private ArrayList<String> fIdRefList;
 
     //
@@ -97,7 +97,7 @@ public class ValidationState implements ValidationContext {
             String key;
             for (int i = 0; i < fIdRefList.size(); i++) {
                 key = fIdRefList.get(i);
-                if (fIdList == null || !fIdList.contains(key)) {
+                if (fIds == null || !fIds.contains(key)) {
                     if (missingIDs == null) {
                         missingIDs = new HashSet();
                     }
@@ -112,7 +112,7 @@ public class ValidationState implements ValidationContext {
         fExtraChecking = true;
         fFacetChecking = true;
         fNamespaces = true;
-        fIdList = null;
+        fIds = null;
         fIdRefList = null;
         fEntityState = null;
         fNamespaceContext = null;
@@ -126,7 +126,7 @@ public class ValidationState implements ValidationContext {
      * the two tables.
      */
     public void resetIDTables() {
-        fIdList = null;
+        fIds = null;
         fIdRefList = null;
     }
 
@@ -168,12 +168,11 @@ public class ValidationState implements ValidationContext {
 
     // id
     public boolean isIdDeclared(String name) {
-        if (fIdList == null) return false;
-        return fIdList.contains(name);
+        return fIds != null && fIds.contains(name);
     }
     public void addId(String name) {
-        if (fIdList == null) fIdList = new ArrayList();
-        fIdList.add(name);
+        if (fIds == null) fIds = new HashSet<>();
+        fIds.add(name);
     }
 
     // idref

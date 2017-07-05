@@ -148,14 +148,14 @@ class CommandExecutor {
         boolean check(String token, final Iterator<String> iterator, final String cwd) {
             // Iterate through redirect prefixes to file a match.
             for (int i = 0; i < redirectPrefixes.length; i++) {
-               String prefix = redirectPrefixes[i];
+               final String prefix = redirectPrefixes[i];
 
                // If a match is found.
                 if (token.startsWith(prefix)) {
                     // Indicate we have at least one redirect (efficiency.)
                     hasRedirects = true;
                     // Map prefix to RedirectType.
-                    RedirectType redirect = redirects[i];
+                    final RedirectType redirect = redirects[i];
                     // Strip prefix from token
                     token = token.substring(prefix.length());
 
@@ -223,8 +223,8 @@ class CommandExecutor {
             // Only if there was redirects (saves new structure in ProcessBuilder.)
             if (hasRedirects) {
                 // If output and error are the same file then merge.
-                File outputFile = outputRedirect.file();
-                File errorFile = errorRedirect.file();
+                final File outputFile = outputRedirect.file();
+                final File errorFile = errorRedirect.file();
 
                 if (outputFile != null && outputFile.equals(errorFile)) {
                     mergeError = true;
@@ -274,26 +274,26 @@ class CommandExecutor {
         public void run() {
             try {
                 // Buffer for copying.
-                byte[] b = new byte[BUFFER_SIZE];
+                final byte[] b = new byte[BUFFER_SIZE];
                 // Read from the InputStream until EOF.
                 int read;
                 while (-1 < (read = input.read(b, 0, b.length))) {
                     // Write available date to OutputStream.
                     output.write(b, 0, read);
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 // Assume the worst.
                 throw new RuntimeException("Broken pipe", e);
             } finally {
                 // Make sure the streams are closed.
                 try {
                     input.close();
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     // Don't care.
                 }
                 try {
                     output.close();
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     // Don't care.
                 }
             }
@@ -363,7 +363,7 @@ class CommandExecutor {
     private long envVarLongValue(final String key) {
         try {
             return Long.parseLong(envVarValue(key, "0"));
-        } catch (NumberFormatException ex) {
+        } catch (final NumberFormatException ex) {
             return 0L;
         }
     }
@@ -478,7 +478,7 @@ class CommandExecutor {
         // iterate through all tokens.
         final Iterator<String> iterator = tokens.iterator();
         while (iterator.hasNext()) {
-            String token = iterator.next();
+            final String token = iterator.next();
 
             // Check if is a redirect.
             if (redirectInfo.check(token, iterator, cwd)) {
@@ -551,7 +551,7 @@ class CommandExecutor {
      * @param tokens  tokens of the command
      * @param isPiped true if the output of this command should be piped to the next
      */
-    private void command(final List<String> tokens, boolean isPiped) {
+    private void command(final List<String> tokens, final boolean isPiped) {
         // Test to see if we should echo the command to output.
         if (envVarBooleanValue("JJS_ECHO")) {
             System.out.println(String.join(" ", tokens));
@@ -584,7 +584,7 @@ class CommandExecutor {
         boolean inputIsPipe = firstProcessBuilder.redirectInput() == Redirect.PIPE;
         boolean outputIsPipe = lastProcessBuilder.redirectOutput() == Redirect.PIPE;
         boolean errorIsPipe = lastProcessBuilder.redirectError() == Redirect.PIPE;
-        boolean inheritIO = envVarBooleanValue("JJS_INHERIT_IO");
+        final boolean inheritIO = envVarBooleanValue("JJS_INHERIT_IO");
 
         // If not redirected and inputStream is current processes' input.
         if (inputIsPipe && (inheritIO || inputStream == System.in)) {
@@ -609,10 +609,10 @@ class CommandExecutor {
 
         // Start the processes.
         final List<Process> processes = new ArrayList<>();
-        for (ProcessBuilder pb : processBuilders) {
+        for (final ProcessBuilder pb : processBuilders) {
             try {
                 processes.add(pb.start());
-            } catch (IOException ex) {
+            } catch (final IOException ex) {
                 reportError("unknown.command", String.join(" ", pb.command()));
                 return;
             }
@@ -701,7 +701,7 @@ class CommandExecutor {
             // Accumulate the output and error streams.
             outputString += byteOutputStream != null ? byteOutputStream.toString() : "";
             errorString += byteErrorStream != null ? byteErrorStream.toString() : "";
-        } catch (InterruptedException ex) {
+        } catch (final InterruptedException ex) {
             // Kill any living processes.
             processes.stream().forEach(p -> {
                 if (p.isAlive()) {
@@ -829,7 +829,7 @@ class CommandExecutor {
         final Iterator<String> iterator = tokens.iterator();
         while (iterator.hasNext() && exitCode == EXIT_SUCCESS) {
             // Next word token.
-            String token = iterator.next();
+            final String token = iterator.next();
 
             if (token == null) {
                 continue;
@@ -876,23 +876,23 @@ class CommandExecutor {
         return exitCode;
     }
 
-    void setEnvironment(Map<String, String> environment) {
+    void setEnvironment(final Map<String, String> environment) {
         this.environment = environment;
     }
 
-    void setInputStream(InputStream inputStream) {
+    void setInputStream(final InputStream inputStream) {
         this.inputStream = inputStream;
     }
 
-    void setInputString(String inputString) {
+    void setInputString(final String inputString) {
         this.inputString = inputString;
     }
 
-    void setOutputStream(OutputStream outputStream) {
+    void setOutputStream(final OutputStream outputStream) {
         this.outputStream = outputStream;
     }
 
-    void setErrorStream(OutputStream errorStream) {
+    void setErrorStream(final OutputStream errorStream) {
         this.errorStream = errorStream;
     }
 }

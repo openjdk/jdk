@@ -22,7 +22,6 @@
  */
 
 import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
 
 /*
  * @test
@@ -40,7 +39,6 @@ public class CopySwap extends CopyCommon {
      */
     private void testPositive() {
         testSmallCopy(true);
-        testLargeCopy(true);
     }
 
     /**

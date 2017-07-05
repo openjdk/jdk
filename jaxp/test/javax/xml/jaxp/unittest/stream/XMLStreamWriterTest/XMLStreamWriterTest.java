@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package stream.XMLStreamWriterTest;
 
 import java.io.StringWriter;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLEventWriter;
 
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.dom.DOMResult;
 
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.w3c.dom.Document;
 
 /*
  * @test
- * @bug 6347190
+ * @bug 6347190 8139584
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @run testng/othervm stream.XMLStreamWriterTest.XMLStreamWriterTest
@@ -42,6 +50,48 @@ import org.testng.annotations.Test;
  */
 @Listeners({jaxp.library.BasePolicy.class})
 public class XMLStreamWriterTest {
+    /**
+     * @bug 8139584
+     * Verifies that the resulting XML contains the standalone setting.
+     */
+    @Test
+    public void testCreateStartDocument() throws XMLStreamException {
+
+        StringWriter stringWriter = new StringWriter();
+        XMLOutputFactory out = XMLOutputFactory.newInstance();
+        XMLEventFactory eventFactory = XMLEventFactory.newInstance();
+
+        XMLEventWriter eventWriter = out.createXMLEventWriter(stringWriter);
+
+        XMLEvent event = eventFactory.createStartDocument("iso-8859-15", "1.0", true);
+        eventWriter.add(event);
+        eventWriter.flush();
+        Assert.assertTrue(stringWriter.toString().contains("encoding=\"iso-8859-15\""));
+        Assert.assertTrue(stringWriter.toString().contains("version=\"1.0\""));
+        Assert.assertTrue(stringWriter.toString().contains("standalone=\"yes\""));
+    }
+
+    /**
+     * @bug 8139584
+     * Verifies that the resulting XML contains the standalone setting.
+     */
+    @Test
+    public void testCreateStartDocument_DOMWriter()
+            throws ParserConfigurationException, XMLStreamException {
+
+        XMLOutputFactory xof = XMLOutputFactory.newInstance();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.newDocument();
+        XMLEventWriter eventWriter = xof.createXMLEventWriter(new DOMResult(doc));
+        XMLEventFactory eventFactory = XMLEventFactory.newInstance();
+        XMLEvent event = eventFactory.createStartDocument("iso-8859-15", "1.0", true);
+        eventWriter.add(event);
+        eventWriter.flush();
+        Assert.assertEquals(doc.getXmlEncoding(), "iso-8859-15");
+        Assert.assertEquals(doc.getXmlVersion(), "1.0");
+        Assert.assertTrue(doc.getXmlStandalone());
+    }
 
     /**
      * Test of main method, of class TestXMLStreamWriter.

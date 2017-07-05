@@ -39,10 +39,10 @@ final class ExportEntryTreeImpl extends TreeImpl implements ExportEntryTree {
     private final IdentifierTree localName;
 
     private ExportEntryTreeImpl(final long startPos, final long endPos,
-            IdentifierTree exportName,
-            IdentifierTree moduleRequest,
-            IdentifierTree importName,
-            IdentifierTree localName) {
+            final IdentifierTree exportName,
+            final IdentifierTree moduleRequest,
+            final IdentifierTree importName,
+            final IdentifierTree localName) {
         super(null); // no underlying Node!
         this.startPos = startPos;
         this.endPos = endPos;
@@ -52,7 +52,7 @@ final class ExportEntryTreeImpl extends TreeImpl implements ExportEntryTree {
         this.localName = localName;
     }
 
-    private static ExportEntryTreeImpl createExportEntry(Module.ExportEntry entry) {
+    private static ExportEntryTreeImpl createExportEntry(final Module.ExportEntry entry) {
         return new ExportEntryTreeImpl(entry.getStartPosition(),
                 entry.getEndPosition(),
                 identOrNull(entry.getExportName()),
@@ -61,7 +61,7 @@ final class ExportEntryTreeImpl extends TreeImpl implements ExportEntryTree {
                 identOrNull(entry.getLocalName()));
     }
 
-    static List<ExportEntryTreeImpl> createExportList(List<Module.ExportEntry> exportList) {
+    static List<ExportEntryTreeImpl> createExportList(final List<Module.ExportEntry> exportList) {
         return exportList.stream().
             map(ExportEntryTreeImpl::createExportEntry).
             collect(Collectors.toList());

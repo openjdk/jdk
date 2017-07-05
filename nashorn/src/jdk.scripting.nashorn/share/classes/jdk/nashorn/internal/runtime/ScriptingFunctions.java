@@ -149,7 +149,7 @@ public final class ScriptingFunctions {
         String inputString = null;
 
         if (arg0 instanceof NativeArray) {
-            String[] array = (String[])JSType.toJavaArray(arg0, String.class);
+            final String[] array = (String[])JSType.toJavaArray(arg0, String.class);
             tokens = new ArrayList<>();
             tokens.addAll(Arrays.asList(array));
         } else {
@@ -206,7 +206,7 @@ public final class ScriptingFunctions {
 
         final String outString = executor.getOutputString();
         final String errString = executor.getErrorString();
-        int exitCode = executor.getExitCode();
+        final int exitCode = executor.getExitCode();
 
         // Set globals for secondary results.
         global.set(OUT_NAME, outString, 0);
@@ -222,7 +222,7 @@ public final class ScriptingFunctions {
 
     private static Function<String, String> readLineHelper;
 
-    public static void setReadLineHelper(Function<String, String> func) {
+    public static void setReadLineHelper(final Function<String, String> func) {
         readLineHelper = Objects.requireNonNull(func);
     }
 

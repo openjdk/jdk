@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,18 +21,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.internal.misc;
 
-#include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
-#include "memory/resourceArea.hpp"
-#include "oops/instanceKlass.hpp"
-#include "unittest.hpp"
+import java.io.FilePermission;
 
-// Tests InstanceKlass::package_from_name()
-TEST_VM(instanceKlass, null_symbol) {
-  ResourceMark rm;
-  TempNewSymbol package_sym = InstanceKlass::package_from_name(NULL, NULL);
-  ASSERT_TRUE(package_sym == NULL) << "Wrong package for NULL symbol";
+public interface JavaIOFilePermissionAccess {
+
+    /**
+     * Returns a new FilePermission plus an alternative path.
+     *
+     * @param input the input
+     * @return the new FilePermission plus the alt path (as npath2)
+     *         or the input itself if no alt path is available.
+     */
+    FilePermission newPermPlusAltPath(FilePermission input);
+
+    /**
+     * Returns a new FilePermission using an alternative path.
+     *
+     * @param input the input
+     * @return the new FilePermission using the alt path (as npath)
+     *         or null if no alt path is available
+     */
+    FilePermission newPermUsingAltPath(FilePermission input);
 }

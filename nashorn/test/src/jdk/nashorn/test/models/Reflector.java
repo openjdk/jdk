@@ -42,7 +42,7 @@ public final class Reflector {
     private Reflector() {}
     private static final Module NASHORN_MOD = Context.class.getModule();
 
-    public static Object invoke(Method m, Object self, Object...args) {
+    public static Object invoke(final Method m, final Object self, final Object...args) {
         if (m.getDeclaringClass().getModule() != NASHORN_MOD) {
             throw new RuntimeException(m + " is not from Nashorn module");
         }
@@ -58,7 +58,7 @@ public final class Reflector {
         }
     }
 
-    public static Object newInstance(Constructor c, Object...args) {
+    public static Object newInstance(final Constructor c, final Object...args) {
         if (c.getDeclaringClass().getModule() != NASHORN_MOD) {
             throw new RuntimeException(c + " is not from Nashorn module");
         }
@@ -74,7 +74,7 @@ public final class Reflector {
         }
     }
 
-    public static Object get(Field f, Object self) {
+    public static Object get(final Field f, final Object self) {
         if (f.getDeclaringClass().getModule() != NASHORN_MOD) {
             throw new RuntimeException(f + " is not from Nashorn module");
         }

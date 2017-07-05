@@ -75,6 +75,7 @@ final class PackagesHelper {
     }
 
     private final Context context;
+    private final boolean modulePathSet;
     private final StandardJavaFileManager fm;
     private final Set<JavaFileObject.Kind> fileKinds;
     private final FileSystem jrtfs;
@@ -86,10 +87,16 @@ final class PackagesHelper {
      */
     PackagesHelper(final Context context) throws IOException {
         this.context = context;
-        final String classPath = context.getEnv()._classpath;
+        final String modulePath = context.getEnv()._module_path;
+        this.modulePathSet = modulePath != null && !modulePath.isEmpty();
         if (isJavacAvailable()) {
+            final String classPath = context.getEnv()._classpath;
             fm = compiler.getStandardFileManager(null, null, null);
             fileKinds = EnumSet.of(JavaFileObject.Kind.CLASS);
+
+            if (this.modulePathSet) {
+                fm.setLocation(StandardLocation.MODULE_PATH, getFiles(modulePath));
+            }
 
             if (classPath != null && !classPath.isEmpty()) {
                 fm.setLocation(StandardLocation.CLASS_PATH, getFiles(classPath));
@@ -155,6 +162,13 @@ final class PackagesHelper {
         final Set<String> props = new HashSet<>();
         if (fm != null) {
             listPackage(StandardLocation.PLATFORM_CLASS_PATH, pkg, props);
+            if (this.modulePathSet) {
+                for (Set<Location> locs : fm.listModuleLocations(StandardLocation.MODULE_PATH)) {
+                    for (Location loc : locs) {
+                        listPackage(loc, pkg, props);
+                    }
+                }
+            }
             listPackage(StandardLocation.CLASS_PATH, pkg, props);
         } else if (jrtfs != null) {
             // look for the /packages/<package_name> directory

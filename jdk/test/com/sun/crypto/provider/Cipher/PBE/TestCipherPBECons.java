@@ -36,7 +36,6 @@ import javax.crypto.NoSuchPaddingException;
  * @author Yun Ke
  * @author Bill Situ
  * @author Yu-Ching (Valerie) PENG
- * @run main TestCipherKeyWrapperPBEKey
  */
 public class TestCipherPBECons {
 

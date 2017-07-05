@@ -350,7 +350,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // These functions return the addresses of the fields that define the
   // boundaries of the contiguous allocation area.  (These fields should be
   // physically near to one another.)
-  virtual HeapWord** top_addr() const {
+  virtual HeapWord* volatile* top_addr() const {
     guarantee(false, "inline contiguous allocation not supported");
     return NULL;
   }
