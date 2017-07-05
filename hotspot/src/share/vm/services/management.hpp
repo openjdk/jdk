@@ -76,6 +76,9 @@ public:
     _stamp.update();
   }
 
+  static jlong begin_vm_creation_time() {
+    return _begin_vm_creation_time->get_value();
+  }
   static jlong vm_init_done_time() {
     return _vm_init_done_time->get_value();
   }

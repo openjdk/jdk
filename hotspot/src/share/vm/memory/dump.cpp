@@ -1402,7 +1402,7 @@ class LinkClassesClosure : public ObjectClosure {
         instanceKlass* ik = (instanceKlass*) k;
         // Link the class to cause the bytecodes to be rewritten and the
         // cpcache to be created.
-        if (ik->get_init_state() < instanceKlass::linked) {
+        if (ik->init_state() < instanceKlass::linked) {
           ik->link_class(THREAD);
           guarantee(!HAS_PENDING_EXCEPTION, "exception in class rewriting");
         }
@@ -1535,7 +1535,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
         // are loaded in order that the related data structures (klass,
         // cpCache, Sting constants) are located together.
 
-        if (ik->get_init_state() < instanceKlass::linked) {
+        if (ik->init_state() < instanceKlass::linked) {
           ik->link_class(THREAD);
           guarantee(!(HAS_PENDING_EXCEPTION), "exception in class rewriting");
         }

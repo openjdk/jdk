@@ -91,7 +91,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                constantPoolHandle cp, bool is_interface,
                                FieldAllocationCount *fac,
                                objArrayHandle* fields_annotations,
-                               int* java_fields_count_ptr, TRAPS);
+                               u2* java_fields_count_ptr, TRAPS);
 
   // Method parsing
   methodHandle parse_method(constantPoolHandle cp, bool is_interface,

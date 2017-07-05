@@ -59,6 +59,10 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   VMError::report_coredump_status(buffer, success);
 }
 
+int os::get_last_error() {
+  return errno;
+}
+
 bool os::is_debugger_attached() {
   // not implemented
   return false;

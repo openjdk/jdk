@@ -86,6 +86,7 @@ inline void Assembler::prefix(Address adr, Register reg,  bool byteinst) {}
 inline void Assembler::prefixq(Address adr, Register reg) {}
 
 inline void Assembler::prefix(Address adr, XMMRegister reg) {}
+inline void Assembler::prefixq(Address adr, XMMRegister reg) {}
 #else
 inline void Assembler::emit_long64(jlong x) {
   *(jlong*) _code_pos = x;
