@@ -403,7 +403,7 @@ public abstract class ColorModel implements Transparency{
      * @return <code>true</code> if alpha is supported in this
      * <code>ColorModel</code>; <code>false</code> otherwise.
      */
-    final public boolean hasAlpha() {
+    public final boolean hasAlpha() {
         return supportsAlpha;
     }
 
@@ -419,7 +419,7 @@ public abstract class ColorModel implements Transparency{
      *          in the pixel values to be translated by this
      *          <code>ColorModel</code>; <code>false</code> otherwise.
      */
-    final public boolean isAlphaPremultiplied() {
+    public final boolean isAlphaPremultiplied() {
         return isAlphaPremultiplied;
     }
 
@@ -430,7 +430,7 @@ public abstract class ColorModel implements Transparency{
      * @return the transfer type.
      * @since 1.3
      */
-    final public int getTransferType() {
+    public final int getTransferType() {
         return transferType;
     }
 
@@ -1512,7 +1512,7 @@ public abstract class ColorModel implements Transparency{
      * @return the <code>ColorSpace</code> of this
      * <code>ColorModel</code>.
      */
-    final public ColorSpace getColorSpace() {
+    public final ColorSpace getColorSpace() {
         return colorSpace;
     }
 

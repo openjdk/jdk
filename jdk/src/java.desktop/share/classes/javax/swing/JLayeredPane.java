@@ -159,25 +159,25 @@ import javax.accessibility.*;
 public class JLayeredPane extends JComponent implements Accessible {
     /// Watch the values in getObjectForLayer()
     /** Convenience object defining the Default layer. Equivalent to new Integer(0).*/
-    public final static Integer DEFAULT_LAYER = 0;
+    public static final Integer DEFAULT_LAYER = 0;
     /** Convenience object defining the Palette layer. Equivalent to new Integer(100).*/
-    public final static Integer PALETTE_LAYER = 100;
+    public static final Integer PALETTE_LAYER = 100;
     /** Convenience object defining the Modal layer. Equivalent to new Integer(200).*/
-    public final static Integer MODAL_LAYER = 200;
+    public static final Integer MODAL_LAYER = 200;
     /** Convenience object defining the Popup layer. Equivalent to new Integer(300).*/
-    public final static Integer POPUP_LAYER = 300;
+    public static final Integer POPUP_LAYER = 300;
     /** Convenience object defining the Drag layer. Equivalent to new Integer(400).*/
-    public final static Integer DRAG_LAYER = 400;
+    public static final Integer DRAG_LAYER = 400;
     /** Convenience object defining the Frame Content layer.
       * This layer is normally only use to position the contentPane and menuBar
       * components of JFrame.
       * Equivalent to new Integer(-30000).
       * @see JFrame
       */
-    public final static Integer FRAME_CONTENT_LAYER = new Integer(-30000);
+    public static final Integer FRAME_CONTENT_LAYER = new Integer(-30000);
 
     /** Bound property */
-    public final static String LAYER_PROPERTY = "layeredContainerLayer";
+    public static final String LAYER_PROPERTY = "layeredContainerLayer";
     // Hashtable to store layer values for non-JComponent components
     private Hashtable<Component,Integer> componentToLayer;
     private boolean optimizedDrawingPossible = true;

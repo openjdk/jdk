@@ -250,6 +250,7 @@ jdk_other = \
     javax/naming \
     javax/script \
     javax/smartcardio \
+    javax/transaction \
     javax/xml \
     -javax/xml/crypto \
     jdk/asm \

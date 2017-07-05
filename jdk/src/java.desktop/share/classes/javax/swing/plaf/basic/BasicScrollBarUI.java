@@ -115,7 +115,7 @@ public class BasicScrollBarUI
     /** Scroll timer */
     protected Timer scrollTimer;
 
-    private final static int scrollSpeedThrottle = 60; // delay in milli seconds
+    private static final int scrollSpeedThrottle = 60; // delay in milli seconds
 
     /**
      * True indicates a middle click will absolutely position the

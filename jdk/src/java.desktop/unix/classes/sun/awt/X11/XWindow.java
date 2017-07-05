@@ -54,7 +54,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
    * allow a smudge factor so that moving the mouse by a small
    * amount does not wipe out the multi-click state variables.
    */
-    private final static int AWT_MULTICLICK_SMUDGE = 4;
+    private static final int AWT_MULTICLICK_SMUDGE = 4;
     // ButtonXXX events stuff
     static int lastX = 0, lastY = 0;
     static long lastTime = 0;
@@ -123,7 +123,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     native void getWMInsets(long window, long left, long top, long right, long bottom, long border);
     native long getTopWindow(long window, long rootWin);
     native void getWindowBounds(long window, long x, long y, long width, long height);
-    private native static void initIDs();
+    private static native void initIDs();
 
     static {
         initIDs();
@@ -441,7 +441,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     // and one that does not get overridden. The problem is that in postInit
     // we call setBackground and we don't have all the stuff initialized to
     // do a full paint for most peers. So we cannot call setBackground in postInit.
-    final public void xSetBackground(Color c) {
+    public final void xSetBackground(Color c) {
         XToolkit.awtLock();
         try {
             winBackground(c);
@@ -572,6 +572,14 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     static int getModifiers(int state, int button, int keyCode) {
+        return getModifiers(state, button, keyCode, false);
+    }
+
+    static int getWheelModifiers(int state, int button) {
+        return getModifiers(state, button, 0, true);
+    }
+
+    private static int getModifiers(int state, int button, int keyCode, boolean isWheelMouse) {
         int modifiers = 0;
 
         if (((state & XConstants.ShiftMask) != 0) ^ (keyCode == KeyEvent.VK_SHIFT)) {
@@ -602,7 +610,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             // ONLY one of these conditions should be TRUE to add that modifier.
             if (((state & XlibUtil.getButtonMask(i + 1)) != 0) != (button == XConstants.buttons[i])){
                 //exclude wheel buttons from adding their numbers as modifiers
-                if (!isWheel(XConstants.buttons[i])) {
+                if (!isWheelMouse || !isWheel(XConstants.buttons[i])) {
                     modifiers |= InputEvent.getMaskForButton(i+1);
                 }
             }
@@ -715,9 +723,9 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (button > XConstants.buttons[4]){
             button -= 2;
         }
-        modifiers = getModifiers(xbe.get_state(),button,0);
 
         if (!isWheel(lbutton)) {
+            modifiers = getModifiers(xbe.get_state(), button, 0);
             MouseEvent me = new MouseEvent(getEventSource(),
                                            type == XConstants.ButtonPress ? MouseEvent.MOUSE_PRESSED : MouseEvent.MOUSE_RELEASED,
                                            jWhen,modifiers, x, y,
@@ -743,6 +751,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 
         }
         else {
+            modifiers = getWheelModifiers(xbe.get_state(), button);
             if (xev.get_type() == XConstants.ButtonPress) {
                 MouseWheelEvent mwe = new MouseWheelEvent(getEventSource(),MouseEvent.MOUSE_WHEEL, jWhen,
                                                           modifiers,
@@ -1037,13 +1046,13 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return xEventType == XConstants.KeyPress ? java.awt.event.KeyEvent.KEY_PRESSED :
                xEventType == XConstants.KeyRelease ? java.awt.event.KeyEvent.KEY_RELEASED : 0;
     }
-    static private long xkeycodeToKeysym(XKeyEvent ev) {
+    private static long xkeycodeToKeysym(XKeyEvent ev) {
         return XKeysym.getKeysym( ev );
     }
     private long xkeycodeToPrimaryKeysym(XKeyEvent ev) {
         return XKeysym.xkeycode2primary_keysym( ev );
     }
-    static private int primaryUnicode2JavaKeycode(int uni) {
+    private static int primaryUnicode2JavaKeycode(int uni) {
         return (uni > 0? sun.awt.ExtendedKeyCodes.getExtendedKeyCodeForChar(uni) : 0);
         //return (uni > 0? uni + 0x01000000 : 0);
     }

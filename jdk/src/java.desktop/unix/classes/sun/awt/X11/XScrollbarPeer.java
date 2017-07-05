@@ -31,7 +31,7 @@ import java.awt.peer.*;
 import sun.util.logging.PlatformLogger;
 
 class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbarClient {
-    private final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XScrollbarPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XScrollbarPeer");
 
     private static final int DEFAULT_LENGTH = 50;
     private static final int DEFAULT_WIDTH_SOLARIS = 19;

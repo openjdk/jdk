@@ -29,6 +29,7 @@
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -47,6 +48,8 @@ public class bug6980209 implements ActionListener {
     private static Boolean enterReturn;
     private static Boolean exitReturn;
     private static int dispatchedEvents;
+    private static JButton button;
+    private static Point point;
 
     public static void main(String[] args) throws Exception {
         System.out.println(
@@ -62,6 +65,23 @@ public class bug6980209 implements ActionListener {
                     setup(frame);
                 }
             });
+            final Robot robot = new Robot();
+            robot.delay(100);
+            robot.waitForIdle();
+            robot.setAutoDelay(10);
+            robot.setAutoWaitForIdle(true);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    point = button.getLocationOnScreen();
+                }
+            });
+            robot.mouseMove( point.x + 5, point.y + 5 );
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.delay(100);
+            robot.waitForIdle();
+
             testExitBeforeEnter();
             System.out.println("Run random test in EDT");
             runInEDT = true;
@@ -102,6 +122,7 @@ public class bug6980209 implements ActionListener {
     private static void testRandomly() throws AWTException {
         disorderCounter = 0;
         final Robot robot = new Robot();
+        robot.setAutoDelay(1);
         for (int i = 0; i < ATTEMPTS; i++) {
             enterReturn = null;
             exitReturn = null;
@@ -156,14 +177,14 @@ public class bug6980209 implements ActionListener {
     }
 
     private static void setup(final JFrame frame) {
-        JButton jButton = new JButton("Button");
-        frame.getContentPane().add(jButton);
-        jButton.addActionListener(new bug6980209());
+        button = new JButton("Button");
+        frame.getContentPane().add(button);
+        button.addActionListener(new bug6980209());
         frame.pack();
         frame.setVisible(true);
-        jButton.setFocusable(true);
-        jButton.requestFocus();
-        jButton.addKeyListener(new KeyListener() {
+        button.setFocusable(true);
+        button.requestFocus();
+        button.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
             }

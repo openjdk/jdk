@@ -88,8 +88,6 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
   send_reference_stats_event(REF_WEAK, rps.weak_count());
   send_reference_stats_event(REF_FINAL, rps.final_count());
   send_reference_stats_event(REF_PHANTOM, rps.phantom_count());
-  send_reference_stats_event(REF_CLEANER, rps.cleaner_count());
-  send_reference_stats_event(REF_JNI, rps.jni_weak_ref_count());
 }
 
 #if INCLUDE_SERVICES

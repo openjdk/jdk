@@ -83,7 +83,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private String printer;
     private URI    myURI;
     private URL    myURL;
-    transient private ServiceNotifier notifier = null;
+    private transient ServiceNotifier notifier = null;
 
     private static int MAXCOPIES = 1000;
     private static short MAX_ATTRIBUTE_LENGTH = 255;

@@ -53,7 +53,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
 
     private static final Object WINDOWS_CHECK_BOX_UI_KEY = new Object();
 
-    private final static String propertyPrefix = "CheckBox" + ".";
+    private static final String propertyPrefix = "CheckBox" + ".";
 
     private boolean defaults_initialized = false;
 

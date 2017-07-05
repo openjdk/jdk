@@ -70,7 +70,7 @@ import javax.swing.plaf.basic.ComboPopup;
  */
 public class WindowsRootPaneUI extends BasicRootPaneUI {
 
-    private final static WindowsRootPaneUI windowsRootPaneUI = new WindowsRootPaneUI();
+    private static final WindowsRootPaneUI windowsRootPaneUI = new WindowsRootPaneUI();
     static final AltProcessor altProcessor = new AltProcessor();
 
     public static ComponentUI createUI(JComponent c) {

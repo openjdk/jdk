@@ -27,7 +27,7 @@
 #include "GeomUtilities.h"
 
 #include "sun_awt_CGraphicsConfig.h"
-
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /*
  * Class:     sun_awt_CGraphicsConfig

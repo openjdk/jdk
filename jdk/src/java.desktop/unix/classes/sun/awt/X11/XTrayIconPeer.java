@@ -63,8 +63,8 @@ public class XTrayIconPeer implements TrayIconPeer,
     int old_x, old_y;
     int ex_width, ex_height;
 
-    final static int TRAY_ICON_WIDTH = 24;
-    final static int TRAY_ICON_HEIGHT = 24;
+    static final int TRAY_ICON_WIDTH = 24;
+    static final int TRAY_ICON_HEIGHT = 24;
 
     XTrayIconPeer(TrayIcon target)
       throws AWTException

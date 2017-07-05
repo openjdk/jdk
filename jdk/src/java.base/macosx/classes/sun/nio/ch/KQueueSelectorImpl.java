@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,24 @@ class KQueueSelectorImpl
         long fds = IOUtil.makePipe(false);
         fd0 = (int)(fds >>> 32);
         fd1 = (int)fds;
-        kqueueWrapper = new KQueueArrayWrapper();
-        kqueueWrapper.initInterrupt(fd0, fd1);
-        fdMap = new HashMap<>();
-        totalChannels = 1;
+        try {
+            kqueueWrapper = new KQueueArrayWrapper();
+            kqueueWrapper.initInterrupt(fd0, fd1);
+            fdMap = new HashMap<>();
+            totalChannels = 1;
+        } catch (Throwable t) {
+            try {
+                FileDispatcherImpl.closeIntFD(fd0);
+            } catch (IOException ioe0) {
+                t.addSuppressed(ioe0);
+            }
+            try {
+                FileDispatcherImpl.closeIntFD(fd1);
+            } catch (IOException ioe1) {
+                t.addSuppressed(ioe1);
+            }
+            throw t;
+        }
     }
 
 

@@ -352,7 +352,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
 
     // ---- member variables --------------------------------------------
 
-    private final static Highlighter.Highlight[] noHighlights =
+    private static final Highlighter.Highlight[] noHighlights =
             new Highlighter.Highlight[0];
     private Vector<HighlightInfo> highlights = new Vector<HighlightInfo>();
     private JTextComponent component;

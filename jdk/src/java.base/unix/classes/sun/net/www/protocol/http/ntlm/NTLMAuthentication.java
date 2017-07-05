@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,9 @@ public class NTLMAuthentication extends AuthenticationInfo {
         password = pw.getPassword();
         init0();
         try {
-            client = new Client(System.getProperty("ntlm.version"), hostname,
-                    username, ntdomain, password);
+            String version = java.security.AccessController.doPrivileged(
+                    new sun.security.action.GetPropertyAction("ntlm.version"));
+            client = new Client(version, hostname, username, ntdomain, password);
         } catch (NTLMException ne) {
             try {
                 client = new Client(null, hostname, username, ntdomain, password);

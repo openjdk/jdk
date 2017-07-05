@@ -248,12 +248,13 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
     const char *detail = defaultDetail;
     char *errmsg;
     size_t fmtsize;
+    char tmpbuf[1024];
     jstring s;
 
     if (errnum != 0) {
-        const char *s = strerror(errnum);
-        if (strcmp(s, "Unknown error") != 0)
-            detail = s;
+        int ret = getErrorString(errnum, tmpbuf, sizeof(tmpbuf));
+        if (ret != EINVAL)
+            detail = tmpbuf;
     }
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
     fmtsize = sizeof(IOE_FORMAT) + strlen(detail) + 3 * sizeof(errnum);

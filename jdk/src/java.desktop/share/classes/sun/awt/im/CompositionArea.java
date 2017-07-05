@@ -64,11 +64,11 @@ public final class CompositionArea extends JPanel implements InputMethodListener
     private TextLayout composedTextLayout;
     private TextHitInfo caret = null;
     private JFrame compositionWindow;
-    private final static int TEXT_ORIGIN_X = 5;
-    private final static int TEXT_ORIGIN_Y = 15;
-    private final static int PASSIVE_WIDTH = 480;
-    private final static int WIDTH_MARGIN=10;
-    private final static int HEIGHT_MARGIN=3;
+    private static final int TEXT_ORIGIN_X = 5;
+    private static final int TEXT_ORIGIN_Y = 15;
+    private static final int PASSIVE_WIDTH = 480;
+    private static final int WIDTH_MARGIN=10;
+    private static final int HEIGHT_MARGIN=3;
 
     CompositionArea() {
         // create composition window with localized title

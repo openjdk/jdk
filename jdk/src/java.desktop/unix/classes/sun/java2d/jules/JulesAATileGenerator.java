@@ -33,13 +33,13 @@ import sun.java2d.xr.*;
 
 public class JulesAATileGenerator implements AATileGenerator {
     /* Threading stuff */
-    final static ExecutorService rasterThreadPool =
+    static final ExecutorService rasterThreadPool =
                                           Executors.newCachedThreadPool();
-    final static int CPU_CNT = Runtime.getRuntime().availableProcessors();
+    static final int CPU_CNT = Runtime.getRuntime().availableProcessors();
 
-    final static boolean ENABLE_THREADING = false;
-    final static int THREAD_MIN = 16;
-    final static int THREAD_BEGIN = 16;
+    static final boolean ENABLE_THREADING = false;
+    static final int THREAD_MIN = 16;
+    static final int THREAD_BEGIN = 16;
 
     IdleTileCache tileCache;
     TileWorker worker;
@@ -47,8 +47,8 @@ public class JulesAATileGenerator implements AATileGenerator {
     int rasterTileCnt;
 
     /* Tiling */
-    final static int TILE_SIZE = 32;
-    final static int TILE_SIZE_FP = 32 << 16;
+    static final int TILE_SIZE = 32;
+    static final int TILE_SIZE_FP = 32 << 16;
     int left, right, top, bottom, width, height;
     int leftFP, topFP;
     int tileCnt, tilesX, tilesY;
