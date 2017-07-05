@@ -31,16 +31,14 @@
 
 
 AC_PREREQ([2.61])
-AC_INIT(openjdk, jdk8, build-dev@openjdk.java.net)
-
-# Do not change or remove the following line, it is needed for consistency checks:
-# DATE_WHEN_GENERATED: @DATE_WHEN_GENERATED@
+AC_INIT(OpenJDK, jdk8, build-dev@openjdk.java.net,,http://openjdk.java.net)
 
 AC_CONFIG_AUX_DIR([build-aux])
 m4_include([build-aux/pkg.m4])
 
 # Include these first...
 m4_include([basics.m4])
+m4_include([basics_windows.m4])
 m4_include([builddeps.m4])
 # ... then the rest
 m4_include([boot-jdk.m4])
@@ -51,35 +49,57 @@ m4_include([libraries.m4])
 m4_include([platform.m4])
 m4_include([source-dirs.m4])
 m4_include([toolchain.m4])
+m4_include([toolchain_windows.m4])
 
-# This line needs to be here, verbatim, after all includes.
-# It is replaced with custom functionality when building
+AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK])
+AC_DEFUN_ONCE([CUSTOM_LATE_HOOK])
+
+# This line needs to be here, verbatim, after all includes and the dummy hook
+# definitions. It is replaced with custom functionality when building
 # custom sources.
-AC_DEFUN_ONCE([CUSTOM_HOOK])
+#CUSTOM_AUTOCONF_INCLUDE
+
+# Do not change or remove the following line, it is needed for consistency checks:
+DATE_WHEN_GENERATED=@DATE_WHEN_GENERATED@
 
 ###############################################################################
 #
-# Initialization
+# Initialization / Boot-strapping
+#
+# The bootstrapping process needs to solve the "chicken or the egg" problem,
+# thus it jumps back and forth, each time gaining something needed later on.
 #
 ###############################################################################
 
 # Basic initialization that must happen first of all
 BASIC_INIT
+BASIC_SETUP_FUNDAMENTAL_TOOLS
 
 # Now we can determine OpenJDK build and target platforms. This is required to
 # have early on.
 PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
-# Continue setting up basic stuff.
+# Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
 BASIC_SETUP_LOGGING
+
+# These are needed to be able to create a configuration name (and thus the output directory)
+JDKOPT_SETUP_JDK_VARIANT
+JDKOPT_SETUP_JVM_VARIANTS
+JDKOPT_SETUP_DEBUG_LEVEL
+
+# With basic setup done, call the custom early hook.
+CUSTOM_EARLY_HOOK
+
+# To properly create a configuration name, we need to have the OpenJDK target
+# and options (variants and debug level) parsed.
+BASIC_SETUP_OUTPUT_DIR
 
 # Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
 HELP_SETUP_DEPENDENCY_HELP
 
-# Setup simple tools, that do not need have cross compilation support.
-# Without these, we can't properly run the rest of the configure script.
-BASIC_SETUP_TOOLS
+# Setup tools that requires more complex handling, or that is not needed by the configure script.
+BASIC_SETUP_COMPLEX_TOOLS
 
 # Check if pkg-config is available.
 PKG_PROG_PKG_CONFIG
@@ -100,15 +120,8 @@ BDEPS_SCAN_FOR_BUILDDEPS
 ###############################################################################
 
 # We need build & target for this.
-JDKOPT_SETUP_JDK_VARIANT
-JDKOPT_SETUP_JVM_VARIANTS
-JDKOPT_SETUP_DEBUG_LEVEL
 JDKOPT_SETUP_JDK_OPTIONS
 JDKOPT_SETUP_JDK_VERSION_NUMBERS
-
-# To properly create a configuration name, we need to have the OpenJDK target
-# and options (variants and debug level) parsed.
-BASIC_SETUP_OUTPUT_DIR
 
 ###############################################################################
 #
@@ -137,7 +150,6 @@ SRCDIRS_SETUP_OUTPUT_DIRS
 ###############################################################################
 
 TOOLCHAIN_SETUP_SYSROOT_AND_OUT_OPTIONS
-TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
 # Locate the actual tools
 TOOLCHAIN_SETUP_PATHS
 
@@ -151,10 +163,6 @@ PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_LIBS
 TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION
 TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK
-
-# After we have toolchain, we can compile the uncygdrive helper
-BASIC_COMPILE_UNCYGDRIVE
-
 
 # Setup debug symbols (need objcopy from the toolchain for that)
 JDKOPT_SETUP_DEBUG_SYMBOLS
@@ -172,6 +180,9 @@ LIB_SETUP_FREETYPE
 LIB_SETUP_ALSA
 LIB_SETUP_MISC_LIBS
 LIB_SETUP_STATIC_LINK_LIBSTDCPP
+
+# After we have toolchain and the paths to all libraries (needed by msys), we can compile the fixpath helper
+BASIC_COMPILE_FIXPATH
 
 ###############################################################################
 #
@@ -210,7 +221,7 @@ BPERF_SETUP_CCACHE
 BASIC_TEST_USABILITY_ISSUES
 
 # At the end, call the custom hook. (Dummy macro if no custom sources available)
-CUSTOM_HOOK
+CUSTOM_LATE_HOOK
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.

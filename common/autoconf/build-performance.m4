@@ -41,6 +41,10 @@ AC_DEFUN([BPERF_CHECK_CORES],
         # Looks like a MacOSX system
         NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print [$]5}'`
         FOUND_CORES=yes
+    elif test -n "$NUMBER_OF_PROCESSORS"; then
+        # On windows, look in the env
+        NUM_CORES=$NUMBER_OF_PROCESSORS
+        FOUND_CORES=yes
     fi
 
     # For c/c++ code we run twice as many concurrent build
@@ -50,7 +54,8 @@ AC_DEFUN([BPERF_CHECK_CORES],
     if test "x$FOUND_CORES" = xyes; then
         AC_MSG_RESULT([$NUM_CORES])
     else
-        AC_MSG_RESULT([could not detect number of cores, defaulting to 1!])
+        AC_MSG_RESULT([could not detect number of cores, defaulting to 1])
+        AC_MSG_WARN([This will disable all parallelism from build!])
     fi 
 
 ])
@@ -76,16 +81,18 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
         MEMORY_SIZE=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Memory' | awk  '{print [$]2}'`
         MEMORY_SIZE=`expr $MEMORY_SIZE \* 1024`
         FOUND_MEM=yes
-    elif test "x$build_os" = xwindows; then
+    elif test "x$OPENJDK_BUILD_OS" = xwindows; then
         # Windows, but without cygwin
-        MEMORY_SIZE=`systeminfo | grep 'Total Physical Memory:' | awk '{ print [$]4 }' | sed 's/,//'`
+        MEMORY_SIZE=`wmic computersystem get totalphysicalmemory -value | grep = | cut -d "=" -f 2-`
+        MEMORY_SIZE=`expr $MEMORY_SIZE / 1024 / 1024`
         FOUND_MEM=yes    
     fi
 
     if test "x$FOUND_MEM" = xyes; then
         AC_MSG_RESULT([$MEMORY_SIZE MB])
     else
-        AC_MSG_RESULT([could not detect memory size defaulting to 1024 MB!])
+        AC_MSG_RESULT([could not detect memory size, defaulting to 1024 MB])
+        AC_MSG_WARN([This might seriously impact build performance!])
     fi 
 ])
 
@@ -123,7 +130,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
 [
     AC_ARG_ENABLE([ccache],
 	      [AS_HELP_STRING([--disable-ccache],
-	      		      [use ccache to speed up recompilations @<:@enabled@:>@])],
+	      		      [disable using ccache to speed up recompilations @<:@enabled@:>@])],
               [ENABLE_CCACHE=${enable_ccache}], [ENABLE_CCACHE=yes])
     if test "x$ENABLE_CCACHE" = xyes; then
         AC_PATH_PROG(CCACHE, ccache)
@@ -196,7 +203,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
 # Can the C/C++ compiler use precompiled headers?
 #
 AC_ARG_ENABLE([precompiled-headers], [AS_HELP_STRING([--disable-precompiled-headers],
-	[use precompiled headers when compiling C++ @<:@enabled@:>@])],
+	[disable using precompiled headers when compiling C++ @<:@enabled@:>@])],
     [ENABLE_PRECOMPH=${enable_precompiled-headers}], [ENABLE_PRECOMPH=yes])
 
 USE_PRECOMPILED_HEADER=1
@@ -228,8 +235,7 @@ AC_SUBST(USE_PRECOMPILED_HEADER)
 AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
 [
 AC_ARG_WITH(sjavac-server-java, [AS_HELP_STRING([--with-sjavac-server-java],
-	[use this java binary for running the sjavac background server and other long running java tasks in the build process,
-     e.g. ---with-sjavac-server-java="/opt/jrockit/bin/java -server"])])
+	[use this java binary for running the sjavac background server @<:@Boot JDK java@:>@])])
 
 if test "x$with_sjavac_server_java" != x; then
     SJAVAC_SERVER_JAVA="$with_sjavac_server_java"

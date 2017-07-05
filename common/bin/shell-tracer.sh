@@ -22,20 +22,26 @@
 # questions.
 #
 
-if [ -x /usr/bin/ggrep ] ; then
-    # Gnu grep on Solaris
-    # (reference configure and build/solaris-i586-clientANDserver-release/spec.gmk
-    GREP=/usr/bin/ggrep
+# Usage: sh shell-tracer.sh <TIME_CMD> <OUTPUT_FILE> <OLD_SHELL> <shell command line>
+#
+# This shell script is supposed to be set as a replacement for SHELL in make,
+# causing it to be called whenever make wants to execute shell commands.
+# The <shell command line> is suitable for passing on to the old shell, 
+# typically beginning with -c.
+#
+# This script will make sure the shell command line is executed with 
+# OLD_SHELL -x, and it will also store a simple log of the the time it takes to
+# execute the command in the OUTPUT_FILE, using the "time" utility as pointed 
+# to by TIME_CMD. If TIME_CMD is "-", no timestamp will be stored.
+
+TIME_CMD="$1"
+OUTPUT_FILE="$2"
+OLD_SHELL="$3"
+shift
+shift
+shift
+if [ "$TIME_CMD" != "-" ]; then
+"$TIME_CMD" -f "[TIME:%E] $*" -a -o "$OUTPUT_FILE" "$OLD_SHELL" -x "$@"
 else
-    GREP=grep
+"$OLD_SHELL" -x "$@"
 fi
-#
-EXP="Note: Some input files use or override a deprecated API."
-EXP="${EXP}|Note: Recompile with -Xlint:deprecation for details."
-EXP="${EXP}|Note: Some input files use unchecked or unsafe operations."
-EXP="${EXP}|Note: Recompile with -Xlint:unchecked for details."
-EXP="${EXP}| warning"
-EXP="${EXP}|uses or overrides a deprecated API."
-EXP="${EXP}|uses unchecked or unsafe operations."
-#
-${GREP} --line-buffered -v -E "${EXP}"
