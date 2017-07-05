@@ -37,27 +37,13 @@ static JNIEnv *appKitEnv = NULL;
 static NSArray *sPerformModes = nil;
 static NSArray *sAWTPerformModes = nil;
 
-static BOOL sCocoaComponentCompatibility = NO;
-static NSTimeInterval sCocoaComponentCompatibilityTimeout = 0.5;
 static BOOL sLoggingEnabled = YES;
 
 #ifdef AWT_THREAD_ASSERTS_ENV_ASSERT
 int sAWTThreadAsserts = 0;
 #endif /* AWT_THREAD_ASSERTS_ENV_ASSERT */
 
-
-// This is for backward compatibility for those people using CocoaComponent
-// Since we've flipped the AWT threading model for Tiger (10.4), all the rules
-// for CocoaComponent are wrong.
-// So for existing CocoaComponent users, we can't be synchronous.
-// Making things totally asynchronous breaks a _lot_, so we try to be
-// synchronous and time out after a little bit.
-#define NOT_READY 0
-#define READY 1
-#define IN_PROGRESS 2
-
 BOOL sInPerformFromJava = NO;
-NSUInteger sPerformCount = 0;
 
 // This class is used so that performSelectorOnMainThread can be
 // controlled a little more easily by us.  It has 2 roles.
@@ -73,8 +59,6 @@ NSUInteger sPerformCount = 0;
 
 - (id) initWithTarget:(id)target selector:(SEL)selector arg:(id)arg wait:(BOOL)wait;
 - (void) perform;
-- (void) performCompatible;
-- (void) _performCompatible:(NSConditionLock *)resultLock;
 @end
 
 
@@ -113,8 +97,6 @@ NSUInteger sPerformCount = 0;
         sInPerformFromJava = YES;
     }
 
-    sPerformCount++;
-
     // Actually do the work (cheat to avoid a method call)
     @try {
         objc_msgSend(fTarget, fSelector, fArg);
@@ -126,69 +108,6 @@ NSUInteger sPerformCount = 0;
         if (!nestedPerform && fWait) {
             sInPerformFromJava = NO;
         }
-    }
-}
-
-- (void) performCompatible {
-    // We check if we are on the AppKit thread because frequently, apps
-    // using CocoaComponent are doing things on the wrong thread!
-    if (pthread_main_np()) {
-        [fTarget performSelector:fSelector withObject:fArg];
-    } else {
-        // Setup the lock
-        NSConditionLock *resultLock =
-            [[NSConditionLock alloc] initWithCondition:NOT_READY];
-
-        // Make sure that if we return early, nothing gets released out
-        // from under us
-        [resultLock retain];
-        [fTarget retain];
-        [fArg retain];
-        [self retain];
-        // Do an asynchronous perform to the main thread.
-        [self performSelectorOnMainThread:@selector(_performCompatible:)
-              withObject:resultLock waitUntilDone:NO modes:sAWTPerformModes];
-
-        // Wait for a little bit for it to finish
-        [resultLock lockWhenCondition:READY beforeDate:[NSDate dateWithTimeIntervalSinceNow:sCocoaComponentCompatibilityTimeout]];
-
-        // If the _performCompatible is actually in progress,
-        // we should let it finish
-        if ([resultLock condition] == IN_PROGRESS) {
-            [resultLock lockWhenCondition:READY];
-        }
-
-        if ([resultLock condition] == NOT_READY && sLoggingEnabled) {
-            NSLog(@"[Java CocoaComponent compatibility mode]: Operation timed out due to possible deadlock: selector '%@' on target '%@' with args '%@'", NSStringFromSelector(fSelector), fTarget, fArg);
-        }
-
-        [resultLock unlock];
-        [resultLock autorelease];
-    }
-}
-
-- (void) _performCompatible:(NSConditionLock *)resultLock {
-    // notify that the perform is in progress!
-    [resultLock lock];
-    [resultLock unlockWithCondition:IN_PROGRESS];
-
-    sPerformCount++;
-
-    // Actually do the work.
-    @try {
-        [fTarget performSelector:fSelector withObject:fArg];
-    } @catch (NSException *e) {
-        NSLog(@"*** CPerformer: ignoring exception '%@' raised during performCompatible of selector '%@' on target '%@' with args '%@'", e, NSStringFromSelector(fSelector), fTarget, fArg);
-    } @finally {
-        // notify done!
-        [resultLock lock];
-        [resultLock unlockWithCondition:READY];
-
-        // Clean up after ourselves
-        [resultLock autorelease];
-        [fTarget autorelease];
-        [fArg autorelease];
-        [self autorelease];
     }
 }
 @end
@@ -236,13 +155,8 @@ AWT_ASSERT_APPKIT_THREAD;
 // java event thread without deadlocking. See CToolkit.invokeAndWait.
 + (void)performOnMainThread:(SEL)aSelector onObject:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait awtMode:(BOOL)inAWT {
     CPerformer *performer = [[CPerformer alloc] initWithTarget:target selector:aSelector arg:arg wait:wait];
-    if (sCocoaComponentCompatibility && wait && inAWT) {
-        [performer performCompatible];
-        [performer autorelease];
-    } else {
-        [performer performSelectorOnMainThread:@selector(perform) withObject:nil waitUntilDone:wait modes:((inAWT) ? sAWTPerformModes : sPerformModes)]; // AWT_THREADING Safe (cover method)
-        [performer release];
-    }
+    [performer performSelectorOnMainThread:@selector(perform) withObject:nil waitUntilDone:wait modes:((inAWT) ? sAWTPerformModes : sPerformModes)]; // AWT_THREADING Safe (cover method)
+    [performer release];
 }
 
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block {
@@ -250,6 +164,14 @@ AWT_ASSERT_APPKIT_THREAD;
         block(); 
     } else { 
         [JNFRunLoop performOnMainThreadWaiting:wait withBlock:block]; 
+    }
+}
+
++ (void)performOnMainThread:(SEL)aSelector on:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait {
+    if ([NSThread isMainThread] && wait == YES) {
+        [target performSelector:aSelector withObject:arg];
+    } else {
+        [JNFRunLoop performOnMainThread:aSelector on:target withObject:arg waitUntilDone:wait];
     }
 }
 

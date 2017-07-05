@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,5 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 interface ActivateMe extends Remote {
     public void ping() throws RemoteException;
-    public void unregister() throws Exception;
     public void shutdown() throws Exception;
-    public void justGoAway() throws RemoteException;
 }

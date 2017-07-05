@@ -7287,6 +7287,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
     final Set<AWTKeyStroke> getFocusTraversalKeys_NoIDCheck(int id) {
         // Okay to return Set directly because it is an unmodifiable view
+        @SuppressWarnings("unchecked")
         Set<AWTKeyStroke> keystrokes = (focusTraversalKeys != null)
             ? focusTraversalKeys[id]
             : null;

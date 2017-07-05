@@ -273,8 +273,31 @@ public class CDataTransferer extends DataTransferer {
 
     @Override
     protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        for (int i = 0; i < fileList.size(); i++)
+        {
+            byte[] bytes = fileList.get(i).getBytes();
+            bos.write(bytes, 0, bytes.length);
+            bos.write(0);
+        }
+        return bos;
+    }
+
+    @Override
+    protected boolean isURIListFormat(long format) {
+        String nat = getNativeForFormat(format);
+        if (nat == null) {
+            return false;
+        }
+        try {
+            DataFlavor df = new DataFlavor(nat);
+            if (df.getPrimaryType().equals("text") && df.getSubType().equals("uri-list")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Not a MIME format.
+        }
+        return false;
     }
 }
 

@@ -59,6 +59,12 @@ ifndef OPENJDK
       # This gets built on unix platforms implicitly in the old build even though
       # it's excluded in the closed build.
       EXCLUDES+=sun/java2d/pisces
+
+      # AccessBridge is compiled separately below.
+      EXFILES += AccessBridge.java \
+		 com/sun/java/accessibility/util/java/awt/ChoiceTranslator.java
+      # This seems to never be built
+      EXCLUDES += com/sun/java/accessibility/extensions
    endif
 
 endif
@@ -248,10 +254,8 @@ include CopyIntoClasses.gmk
 # Now we have COPY_PATTERNS, COPY_FILES and COPY_EXTRA
 
 ifndef OPENJDK
-    CLOSED_SRC_DIRS:=$(JDK_TOPDIR)/src/closed/share/classes
-    ifneq ($(OPENJDK_TARGET_OS_API_DIR),windows)
-      CLOSED_SRC_DIRS += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
-    endif
+    CLOSED_SRC_DIRS:=$(JDK_TOPDIR)/src/closed/share/classes \
+		     $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
 endif
 
 MACOSX_SRC_DIRS :=
@@ -364,8 +368,44 @@ endif
 
 ##########################################################################################
 
-# copy with -a to preserve timestamps so dependencies down the line aren't messed up
+ifndef OPENJDK
+ifeq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_32,\
+		SETUP:=GENERATE_JDKBYTECODE,\
+		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
+		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/32bit,\
+		BIN:=$(JDK_OUTPUTDIR)/classes_ab/32bit))
+
+    $(BUILD_ACCESSBRIDGE_32): $(BUILD_JDK)
+
+    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_LEGACY,\
+		SETUP:=GENERATE_JDKBYTECODE,\
+		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
+		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/legacy,\
+		BIN:=$(JDK_OUTPUTDIR)/classes_ab/legacy))
+
+    $(BUILD_ACCESSBRIDGE_LEGACY): $(BUILD_JDK)
+
+else
+
+    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_64,\
+		SETUP:=GENERATE_JDKBYTECODE,\
+		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
+		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/64bit,\
+		BIN:=$(JDK_OUTPUTDIR)/classes_ab/64bit))
+
+    $(BUILD_ACCESSBRIDGE_64): $(BUILD_JDK)
+
+endif
+endif
+endif
+
+##########################################################################################
+
 all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
-	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin
+	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
+	$(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
+	$(BUILD_ACCESSBRIDGE_LEGACY)
 
 .PHONY: all

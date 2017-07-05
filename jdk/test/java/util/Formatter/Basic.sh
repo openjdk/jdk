@@ -23,7 +23,8 @@
 
 #
 
-${TESTJAVA}/bin/javac -cp ${TESTSRC} -d . ${TESTSRC}/Basic.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -cp ${TESTSRC} -d . \
+    ${TESTSRC}/Basic.java
 
 expectPass() {
   if [ $1 -eq 0 ]
@@ -38,7 +39,7 @@ runTest() {
   echo "Testing:" ${1}
   TZ="${1}"; export TZ
   echo "  " $TZ
-  ${TESTJAVA}/bin/java Basic
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} Basic
   expectPass $?
 }
 

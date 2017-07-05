@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,26 @@ import java.util.Map;
  *     style ({@link Calendar#LONG_FORMAT} or {@link Calendar#LONG_STANDALONE}) is
  *     specified. See also the <a href="../../text/SimpleDateFormat.html#year">
  *     Year representation in {@code SimpleDateFormat}</a>.</td>
+ *   </tr>
+ *   <tr>
+ *     <td rowspan="2" valign="top">{@code "roc"}</td>
+ *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td>0</td>
+ *     <td>Before R.O.C.</td>
+ *   </tr>
+ *   <tr>
+ *     <td>1</td>
+ *     <td>R.O.C.</td>
+ *   </tr>
+ *   <tr>
+ *     <td rowspan="2" valign="top">{@code "islamic"}</td>
+ *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td>0</td>
+ *     <td>Before AH</td>
+ *   </tr>
+ *   <tr>
+ *     <td>1</td>
+ *     <td>Anno Hijrah (AH)</td>
  *   </tr>
  * </table>
  *

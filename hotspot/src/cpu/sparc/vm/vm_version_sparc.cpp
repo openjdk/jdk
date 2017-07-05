@@ -259,6 +259,10 @@ void VM_Version::initialize() {
   if (!has_vis1()) // Drop to 0 if no VIS1 support
     UseVIS = 0;
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
+    (cache_line_size > ContendedPaddingWidth))
+    ContendedPaddingWidth = cache_line_size;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print("Allocation");
@@ -285,6 +289,9 @@ void VM_Version::initialize() {
     }
     if (PrefetchFieldsAhead > 0) {
       tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+    }
+    if (ContendedPaddingWidth > 0) {
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 #endif // PRODUCT

@@ -926,6 +926,48 @@ public final class Float extends Number implements Comparable<Float> {
                  1));                          // (0.0, -0.0) or (NaN, !NaN)
     }
 
+    /**
+     * Adds two {@code float} values together as per the + operator.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b}
+     * @jls 4.2.4 Floating-Point Operations
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static float sum(float a, float b) {
+        return a + b;
+    }
+
+    /**
+     * Returns the greater of two {@code float} values
+     * as if by calling {@link Math#max(float, float) Math.max}.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static float max(float a, float b) {
+        return Math.max(a, b);
+    }
+
+    /**
+     * Returns the smaller of two {@code float} values
+     * as if by calling {@link Math#min(float, float) Math.min}.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static float min(float a, float b) {
+        return Math.min(a, b);
+    }
+
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = -2671257302660747028L;
 }

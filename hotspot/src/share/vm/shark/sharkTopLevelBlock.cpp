@@ -113,7 +113,19 @@ void SharkTopLevelBlock::scan_for_traps() {
       ciSignature* sig;
       method = iter()->get_method(will_link, &sig);
       assert(will_link, "typeflow responsibility");
-
+      // We can't compile calls to method handle intrinsics, because we use
+      // the interpreter entry points and they expect the top frame to be an
+      // interpreter frame. We need to implement the intrinsics for Shark.
+      if (method->is_method_handle_intrinsic() || method->is_compiled_lambda_form()) {
+        if (SharkPerformanceWarnings) {
+          warning("JSR292 optimization not yet implemented in Shark");
+        }
+        set_trap(
+          Deoptimization::make_trap_request(
+            Deoptimization::Reason_unhandled,
+            Deoptimization::Action_make_not_compilable), bci());
+          return;
+      }
       if (!method->holder()->is_linked()) {
         set_trap(
           Deoptimization::make_trap_request(
@@ -158,6 +170,16 @@ void SharkTopLevelBlock::scan_for_traps() {
         return;
       }
       break;
+    case Bytecodes::_invokedynamic:
+    case Bytecodes::_invokehandle:
+      if (SharkPerformanceWarnings) {
+        warning("JSR292 optimization not yet implemented in Shark");
+      }
+      set_trap(
+        Deoptimization::make_trap_request(
+          Deoptimization::Reason_unhandled,
+          Deoptimization::Action_make_not_compilable), bci());
+      return;
     }
   }
 
@@ -1030,7 +1052,6 @@ ciMethod* SharkTopLevelBlock::improve_virtual_call(ciMethod*   caller,
       dest_method->holder() == java_lang_Object_klass())
     return dest_method;
 
-#ifdef SHARK_CAN_DEOPTIMIZE_ANYWHERE
   // This code can replace a virtual call with a direct call if this
   // class is the only one in the entire set of loaded classes that
   // implements this method.  This makes the compiled code dependent
@@ -1063,6 +1084,8 @@ ciMethod* SharkTopLevelBlock::improve_virtual_call(ciMethod*   caller,
     dest_method->find_monomorphic_target(calling_klass, klass, actual_receiver);
   if (monomorphic_target != NULL) {
     assert(!monomorphic_target->is_abstract(), "shouldn't be");
+
+    function()->dependencies()->assert_unique_concrete_method(actual_receiver, monomorphic_target);
 
     // Opto has a bunch of type checking here that I don't
     // understand.  It's to inhibit casting in one direction,
@@ -1097,7 +1120,6 @@ ciMethod* SharkTopLevelBlock::improve_virtual_call(ciMethod*   caller,
   // with non-monomorphic targets if the receiver has an exact
   // type.  We don't mark types this way, so we can't do this.
 
-#endif // SHARK_CAN_DEOPTIMIZE_ANYWHERE
 
   return NULL;
 }
@@ -1298,8 +1320,9 @@ void SharkTopLevelBlock::do_call() {
 
   // Try to inline the call
   if (!call_is_virtual) {
-    if (SharkInliner::attempt_inline(call_method, current_state()))
+    if (SharkInliner::attempt_inline(call_method, current_state())) {
       return;
+    }
   }
 
   // Find the method we are calling

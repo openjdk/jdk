@@ -77,6 +77,7 @@ public:
   bool is_type() const                      { return true; }
   bool is_classless() const                 { return is_primitive_type(); }
 
+  const char* name();
   virtual void print_name_on(outputStream* st);
   void print_name() {
     print_name_on(tty);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,13 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // ignore this element - it has language and territory elements that aren't locale data
             pushIgnoredContainer(qName);
             break;
+        case "type":
+            if ("calendar".equals(attributes.getValue("key"))) {
+                pushStringEntry(qName, attributes, CLDRConverter.CALENDAR_NAME_PREFIX + attributes.getValue("type"));
+            } else {
+                pushIgnoredContainer(qName);
+            }
+            break;
         case "language":
             // for LocaleNames
             // copy string
@@ -98,19 +105,30 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "symbol":
             // for CurrencyNames
             // need to get the key from the containing <currency> element
-            pushStringEntry(qName, attributes, CLDRConverter.CURRENCY_SYMBOL_PREFIX + getContainerKey());
+            pushStringEntry(qName, attributes, CLDRConverter.CURRENCY_SYMBOL_PREFIX
+                                               + getContainerKey());
             break;
+
+        // Calendar or currency
         case "displayName":
-            // for CurrencyNames
-            // need to get the key from the containing <currency> element
-            // ignore if is has "count" attribute
-            String containerKey = getContainerKey();
-            if (containerKey != null && attributes.getValue("count") == null) {
-                pushStringEntry(qName, attributes,
-                                CLDRConverter.CURRENCY_NAME_PREFIX + containerKey.toLowerCase(Locale.ROOT),
-                                attributes.getValue("type"));
-            } else {
-                pushIgnoredContainer(qName);
+            {
+                if (currentCalendarType != null) {
+                    pushStringEntry(qName, attributes,
+                            currentCalendarType.keyElementName() + "field." + getContainerKey());
+                } else {
+                    // for CurrencyNames
+                    // need to get the key from the containing <currency> element
+                    // ignore if is has "count" attribute
+                    String containerKey = getContainerKey();
+                    if (containerKey != null && attributes.getValue("count") == null) {
+                        pushStringEntry(qName, attributes,
+                                        CLDRConverter.CURRENCY_NAME_PREFIX
+                                        + containerKey.toLowerCase(Locale.ROOT),
+                                        attributes.getValue("type"));
+                    } else {
+                        pushIgnoredContainer(qName);
+                    }
+                }
             }
             break;
 
@@ -127,6 +145,35 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     pushContainer(qName, attributes);
                 } else {
                     pushIgnoredContainer(qName);
+                }
+            }
+            break;
+        case "fields":
+            if (currentCalendarType != null) {
+                pushContainer(qName, attributes);
+            } else {
+                pushIgnoredContainer(qName);
+            }
+            break;
+        case "field":
+            {
+                String type = attributes.getValue("type");
+                switch (type) {
+                case "era":
+                case "year":
+                case "month":
+                case "week":
+                case "weekday":
+                case "dayperiod":
+                case "hour":
+                case "minute":
+                case "second":
+                case "zone":
+                    pushKeyContainer(qName, attributes, type);
+                    break;
+                default:
+                    pushIgnoredContainer(qName);
+                    break;
                 }
             }
             break;

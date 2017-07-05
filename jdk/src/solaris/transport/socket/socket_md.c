@@ -49,7 +49,7 @@ dbgsysListen(int fd, int backlog) {
 }
 
 int
-dbgsysConnect(int fd, struct sockaddr *name, int namelen) {
+dbgsysConnect(int fd, struct sockaddr *name, socklen_t namelen) {
     int rv = connect(fd, name, namelen);
     if (rv < 0 && (errno == EINPROGRESS || errno == EINTR)) {
         return DBG_EINPROGRESS;
@@ -59,7 +59,7 @@ dbgsysConnect(int fd, struct sockaddr *name, int namelen) {
 }
 
 int
-dbgsysFinishConnect(int fd, long timeout) {
+dbgsysFinishConnect(int fd, int timeout) {
     int rv = dbgsysPoll(fd, 0, 1, timeout);
     if (rv == 0) {
         return DBG_ETIMEOUT;
@@ -71,7 +71,7 @@ dbgsysFinishConnect(int fd, long timeout) {
 }
 
 int
-dbgsysAccept(int fd, struct sockaddr *name, int *namelen) {
+dbgsysAccept(int fd, struct sockaddr *name, socklen_t *namelen) {
     int rv;
     for (;;) {
         rv = accept(fd, name, namelen);
@@ -85,8 +85,8 @@ dbgsysAccept(int fd, struct sockaddr *name, int *namelen) {
 }
 
 int
-dbgsysRecvFrom(int fd, char *buf, int nBytes,
-                  int flags, struct sockaddr *from, int *fromlen) {
+dbgsysRecvFrom(int fd, char *buf, size_t nBytes,
+                  int flags, struct sockaddr *from, socklen_t *fromlen) {
     int rv;
     do {
         rv = recvfrom(fd, buf, nBytes, flags, from, fromlen);
@@ -96,8 +96,8 @@ dbgsysRecvFrom(int fd, char *buf, int nBytes,
 }
 
 int
-dbgsysSendTo(int fd, char *buf, int len,
-                int flags, struct sockaddr *to, int tolen) {
+dbgsysSendTo(int fd, char *buf, size_t len,
+                int flags, struct sockaddr *to, socklen_t tolen) {
     int rv;
     do {
         rv = sendto(fd, buf, len, flags, to, tolen);
@@ -107,7 +107,7 @@ dbgsysSendTo(int fd, char *buf, int len,
 }
 
 int
-dbgsysRecv(int fd, char *buf, int nBytes, int flags) {
+dbgsysRecv(int fd, char *buf, size_t nBytes, int flags) {
     int rv;
     do {
         rv = recv(fd, buf, nBytes, flags);
@@ -117,7 +117,7 @@ dbgsysRecv(int fd, char *buf, int nBytes, int flags) {
 }
 
 int
-dbgsysSend(int fd, char *buf, int nBytes, int flags) {
+dbgsysSend(int fd, char *buf, size_t nBytes, int flags) {
     int rv;
     do {
         rv = send(fd, buf, nBytes, flags);
@@ -151,7 +151,7 @@ int dbgsysSocketClose(int fd) {
 }
 
 int
-dbgsysBind(int fd, struct sockaddr *name, int namelen) {
+dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen) {
     return bind(fd, name, namelen);
 }
 
@@ -171,7 +171,7 @@ dbgsysNetworkToHostShort(unsigned short netshort) {
 }
 
 int
-dbgsysGetSocketName(int fd, struct sockaddr *name, int *namelen) {
+dbgsysGetSocketName(int fd, struct sockaddr *name, socklen_t *namelen) {
     return getsockname(fd, name, namelen);
 }
 

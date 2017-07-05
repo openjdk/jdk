@@ -38,17 +38,21 @@ import sun.security.util.SecurityConstants;
  * directory, or it can be a reference to a more complicated object,
  * such as a query to a database or to a search engine. More
  * information on the types of URLs and their formats can be found at:
- * <blockquote>
- *     <a href="http://www.socs.uts.edu.au/MosaicDocs-old/url-primer.html">
- *    <i>http://www.socs.uts.edu.au/MosaicDocs-old/url-primer.html</i></a>
- * </blockquote>
+ * <a href=
+ * "http://web.archive.org/web/20051219043731/http://archive.ncsa.uiuc.edu/SDG/Software/Mosaic/Demo/url-primer.html">
+ * <i>Types of URL</i></a>
  * <p>
- * In general, a URL can be broken into several parts. The previous
- * example of a URL indicates that the protocol to use is
+ * In general, a URL can be broken into several parts. Consider the
+ * following example:
+ * <blockquote><pre>
+ *     http://www.example.com/docs/resource1.html
+ * </pre></blockquote>
+ * <p>
+ * The URL above indicates that the protocol to use is
  * <code>http</code> (HyperText Transfer Protocol) and that the
  * information resides on a host machine named
- * <code>www.socs.uts.edu.au</code>. The information on that host
- * machine is named <code>/MosaicDocs-old/url-primer.html</code>. The exact
+ * <code>www.example.com</code>. The information on that host
+ * machine is named <code>/docs/resource1.html</code>. The exact
  * meaning of this name on the host machine is both protocol
  * dependent and host dependent. The information normally resides in
  * a file, but it could be generated on the fly. This component of
@@ -61,7 +65,7 @@ import sun.security.util.SecurityConstants;
  * <code>http</code> is <code>80</code>. An alternative port could be
  * specified as:
  * <blockquote><pre>
- *     http://www.socs.uts.edu.au:80/MosaicDocs-old/url-primer.html
+ *     http://www.example.com:1080/docs/resource1.html
  * </pre></blockquote>
  * <p>
  * The syntax of <code>URL</code> is defined by  <a

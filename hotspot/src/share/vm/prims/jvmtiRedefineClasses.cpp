@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1334,20 +1334,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  int orig_length = old_cp->orig_length();
-  if (orig_length == 0) {
-    // This old_cp is an actual original constant pool. We save
-    // the original length in the merged constant pool so that
-    // merge_constant_pools() can be more efficient. If a constant
-    // pool has a non-zero orig_length() value, then that constant
-    // pool was created by a merge operation in RedefineClasses.
-    merge_cp->set_orig_length(old_cp->length());
-  } else {
-    // This old_cp is a merged constant pool from a previous
-    // RedefineClasses() calls so just copy the orig_length()
-    // value.
-    merge_cp->set_orig_length(old_cp->orig_length());
-  }
+  // Update the version number of the constant pool
+  merge_cp->increment_and_save_version(old_cp->version());
 
   ResourceMark rm(THREAD);
   _index_map_count = 0;
@@ -2417,18 +2405,19 @@ void VM_RedefineClasses::set_new_constant_pool(
        int scratch_cp_length, TRAPS) {
   assert(scratch_cp->length() >= scratch_cp_length, "sanity check");
 
-    // scratch_cp is a merged constant pool and has enough space for a
-    // worst case merge situation. We want to associate the minimum
-    // sized constant pool with the klass to save space.
-    constantPoolHandle smaller_cp(THREAD,
-    ConstantPool::allocate(loader_data, scratch_cp_length,
-                                   THREAD));
-    // preserve orig_length() value in the smaller copy
-    int orig_length = scratch_cp->orig_length();
-    assert(orig_length != 0, "sanity check");
-    smaller_cp->set_orig_length(orig_length);
-    scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
-    scratch_cp = smaller_cp;
+  // scratch_cp is a merged constant pool and has enough space for a
+  // worst case merge situation. We want to associate the minimum
+  // sized constant pool with the klass to save space.
+  constantPoolHandle smaller_cp(THREAD,
+          ConstantPool::allocate(loader_data, scratch_cp_length, THREAD));
+
+  // preserve version() value in the smaller copy
+  int version = scratch_cp->version();
+  assert(version != 0, "sanity check");
+  smaller_cp->set_version(version);
+
+  scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
+  scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
   scratch_cp->set_pool_holder(scratch_class());

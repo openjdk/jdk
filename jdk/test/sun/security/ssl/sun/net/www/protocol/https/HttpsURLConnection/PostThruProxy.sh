@@ -50,7 +50,9 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}OriginServer.java \
-    ${TESTSRC}${FS}ProxyTunnelServer.java ${TESTSRC}${FS}PostThruProxy.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    ${TESTSRC}${FS}OriginServer.java \
+    ${TESTSRC}${FS}ProxyTunnelServer.java \
+    ${TESTSRC}${FS}PostThruProxy.java
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} PostThruProxy ${HOSTNAME} ${TESTSRC}
 exit

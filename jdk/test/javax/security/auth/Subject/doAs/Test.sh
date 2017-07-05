@@ -66,7 +66,8 @@ esac
 # remove any leftover built class
 cd ${TESTCLASSES}${FS}
 ${RM} Test.class
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS} ${TESTSRC}${FS}Test.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS} \
+    ${TESTSRC}${FS}Test.java
 WD=`pwd`
 cd ${TESTSRC}${FS}
 cd $WD

@@ -1012,7 +1012,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @since 1.4
      */
     public synchronized AdjustmentListener[] getAdjustmentListeners() {
-        return (AdjustmentListener[])(getListeners(AdjustmentListener.class));
+        return getListeners(AdjustmentListener.class);
     }
 
     /**
