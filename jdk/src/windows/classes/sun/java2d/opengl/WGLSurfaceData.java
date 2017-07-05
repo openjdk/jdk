@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,23 @@
 package sun.java2d.opengl;
 
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.Transparency;
 import java.awt.image.ColorModel;
+import sun.awt.SunToolkit;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.SurfaceData;
-import sun.java2d.loops.SurfaceType;
 
 public abstract class WGLSurfaceData extends OGLSurfaceData {
 
     protected WComponentPeer peer;
     private WGLGraphicsConfig graphicsConfig;
 
-    private native void initOps(long pConfigInfo, long pPeerData,
-                                int xoff, int yoff);
+    private native void initOps(long pConfigInfo, WComponentPeer peer,
+                                long hwnd);
     protected native boolean initPbuffer(long pData, long pConfigInfo,
                                          boolean isOpaque,
                                          int width, int height);
@@ -58,19 +55,9 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         this.graphicsConfig = gc;
 
         long pConfigInfo = gc.getNativeConfigInfo();
-        long pPeerData = 0L;
-        int xoff = 0, yoff = 0;
-        if (peer != null) {
-            Component c = (Component)peer.getTarget();
-            if (c instanceof Container) {
-                Insets insets = ((Container)c).getInsets();
-                xoff = -insets.left;
-                yoff = -insets.bottom;
-            }
-            pPeerData = peer.getData();
-        }
+        long hwnd = peer != null ? peer.getHWnd() : 0L;
 
-        initOps(pConfigInfo, pPeerData, xoff, yoff);
+        initOps(pConfigInfo, peer, hwnd);
     }
 
     public GraphicsConfiguration getDeviceConfiguration() {
@@ -82,6 +69,15 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
      * of an on-screen Window.
      */
     public static WGLWindowSurfaceData createData(WComponentPeer peer) {
+        // the OGL pipeline can render directly to the screen and interfere
+        // with layered windows, which is why we don't allow accelerated
+        // surfaces in this case
+        if (!peer.isAccelCapable())
+        // REMIND: commented until toplevel translucency is implemented
+//            || !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
+        {
+            return null;
+        }
         WGLGraphicsConfig gc = getGC(peer);
         return new WGLWindowSurfaceData(peer, gc);
     }
@@ -91,13 +87,29 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
      * double-buffered on-screen Window.
      */
     public static WGLOffScreenSurfaceData createData(WComponentPeer peer,
-                                                     Image image)
+                                                     Image image,
+                                                     int type)
     {
+        // the OGL pipeline can render directly to the screen and interfere
+        // with layered windows, which is why we don't allow accelerated
+        // surfaces in this case
+        if (!peer.isAccelCapable())
+        // REMIND: commented until toplevel translucency is implemented
+//            || !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
+        {
+            return null;
+        }
         WGLGraphicsConfig gc = getGC(peer);
         Rectangle r = peer.getBounds();
-        return new WGLOffScreenSurfaceData(peer, gc, r.width, r.height,
-                                           image, peer.getColorModel(),
-                                           FLIP_BACKBUFFER);
+        if (type == FLIP_BACKBUFFER) {
+            return new WGLOffScreenSurfaceData(peer, gc, r.width, r.height,
+                                               image, peer.getColorModel(),
+                                               type);
+        } else {
+            return new WGLVSyncOffScreenSurfaceData(peer, gc, r.width, r.height,
+                                                    image, peer.getColorModel(),
+                                                    type);
+        }
     }
 
     /**
@@ -152,6 +164,42 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         }
     }
 
+    /**
+     * A surface which implements a v-synced flip back-buffer with COPIED
+     * FlipContents.
+     *
+     * This surface serves as a back-buffer to the outside world, while
+     * it is actually an offscreen surface. When the BufferStrategy this surface
+     * belongs to is showed, it is first copied to the real private
+     * FLIP_BACKBUFFER, which is then flipped.
+     */
+    public static class WGLVSyncOffScreenSurfaceData extends
+        WGLOffScreenSurfaceData
+    {
+        private WGLOffScreenSurfaceData flipSurface;
+
+        public WGLVSyncOffScreenSurfaceData(WComponentPeer peer,
+                                            WGLGraphicsConfig gc,
+                                            int width, int height,
+                                            Image image, ColorModel cm,
+                                            int type)
+        {
+            super(peer, gc, width, height, image, cm, type);
+            flipSurface = WGLSurfaceData.createData(peer, image, FLIP_BACKBUFFER);
+        }
+
+        public SurfaceData getFlipSurface() {
+            return flipSurface;
+        }
+
+        @Override
+        public void flush() {
+            flipSurface.flush();
+            super.flush();
+        }
+
+    }
+
     public static class WGLOffScreenSurfaceData extends WGLSurfaceData {
 
         private Image offscreenImage;
@@ -193,4 +241,17 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
             return offscreenImage;
         }
     }
+
+    /**
+     * Updates the layered window with the contents of the surface.
+     *
+     * @param psdops pointer to the native ogl sd structure
+     * @param pData pointer to the AwtWindow peer data
+     * @param w width of the window
+     * @param h height of the window
+     * @see sun.awt.windows.TranslucentWindowPainter
+     */
+    public static native boolean updateWindowAccelImpl(long psdops,
+                                                       WComponentPeer peer,
+                                                       int w, int h);
 }

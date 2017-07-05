@@ -41,12 +41,10 @@ CPLUSPLUSLIBRARY=true
 # for a few ones with native methods) so shouldn't clobber them.
 DONT_CLOBBER_CLASSES=true
 
-include $(BUILDDIR)/common/Defs.gmk
-
-#
 # Use higher optimization level
-#
-_OPT = $(CC_HIGHER_OPT)
+OPTIMIZATION_LEVEL = HIGHER
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Files

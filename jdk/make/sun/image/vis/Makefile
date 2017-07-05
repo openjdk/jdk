@@ -31,17 +31,13 @@ PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image_v
 PRODUCT = sun
 
-#
 # Tell Defs.gmk we need VIS instructions
-#
 VIS_NEEDED=true
 
-include $(BUILDDIR)/common/Defs.gmk
-
-#
 # Select highest level of optimization for this library
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Use generic mapfile

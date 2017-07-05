@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ FILES_export = \
 	sun/java2d/loops/TransformHelper.java \
 	sun/java2d/loops/GraphicsPrimitiveMgr.java \
         sun/java2d/loops/GraphicsPrimitive.java \
+        sun/java2d/pipe/hw/AccelSurface.java \
+	sun/java2d/pipe/hw/AccelDeviceEventNotifier.java \
+        sun/java2d/pipe/hw/ContextCapabilities.java \
         sun/awt/image/ImagingLib.java \
 	sun/java2d/SurfaceData.java \
 	sun/java2d/SunGraphics2D.java \
@@ -107,6 +110,7 @@ FILES_export = \
 	sun/java2d/pipe/BufferedContext.java \
 	sun/java2d/pipe/BufferedMaskBlit.java \
 	sun/java2d/pipe/BufferedOpCodes.java \
+	sun/java2d/pipe/BufferedMaskBlit.java \
 	sun/java2d/pipe/BufferedPaints.java \
 	sun/java2d/pipe/BufferedRenderPipe.java \
 	sun/java2d/pipe/BufferedTextPipe.java \

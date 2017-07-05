@@ -303,7 +303,7 @@ public abstract class Charset$Coder$ {
 
 #if[encoder]
 
-    private WeakReference cachedDecoder = null;
+    private WeakReference<CharsetDecoder> cachedDecoder = null;
 
     /**
      * Tells whether or not the given byte array is a legal replacement value
@@ -322,13 +322,13 @@ public abstract class Charset$Coder$ {
      *          is a legal replacement value for this encoder
      */
     public boolean isLegalReplacement(byte[] repl) {
-        WeakReference wr = cachedDecoder;
+        WeakReference<CharsetDecoder> wr = cachedDecoder;
         CharsetDecoder dec = null;
-        if ((wr == null) || ((dec = (CharsetDecoder)wr.get()) == null)) {
+        if ((wr == null) || ((dec = wr.get()) == null)) {
             dec = charset().newDecoder();
             dec.onMalformedInput(CodingErrorAction.REPORT);
             dec.onUnmappableCharacter(CodingErrorAction.REPORT);
-            cachedDecoder = new WeakReference(dec);
+            cachedDecoder = new WeakReference<CharsetDecoder>(dec);
         } else {
             dec.reset();
         }

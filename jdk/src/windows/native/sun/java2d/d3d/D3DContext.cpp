@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,19 @@
  * have any questions.
  */
 
-#include "sun_java2d_d3d_D3DContext.h"
+#include "D3DPipeline.h"
 #include "jlong.h"
-#include "jni_util.h"
-#include "Trace.h"
-
-#include "ddrawUtils.h"
-#include "awt_Win32GraphicsDevice.h"
-#include "sun_java2d_SunGraphics2D.h"
 
 #include "GraphicsPrimitiveMgr.h"
-
-#include "RegistryKey.h"
-#include "WindowsFlags.h"
-
-#include "Win32SurfaceData.h"
-#include "D3DSurfaceData.h"
-#include "D3DUtils.h"
 #include "D3DContext.h"
-#include "D3DRuntimeTest.h"
-
-#include "IntDcm.h"
-#include "IntArgb.h"
-#include "Region.h"
+#include "D3DSurfaceData.h"
+#include "D3DBufImgOps.h"
+#include "D3DPaints.h"
+#include "D3DRenderQueue.h"
+#include "D3DShaders.h"
+#include "D3DTextRenderer.h"
+#include "D3DPipelineManager.h"
+#include "D3DGlyphCache.h"
 
 typedef struct {
     D3DBLEND src;
@@ -73,472 +63,907 @@ D3DBlendRule StdBlendRules[] = {
     { D3DBLEND_INVDESTALPHA, D3DBLEND_INVSRCALPHA }, /*12 - RULE_AlphaXor*/
 };
 
-/**
- * D3DContext
- */
-D3DContext* D3DContext::CreateD3DContext(DDraw *ddObject, DXObject* dxObject)
+void
+D3DUtils_SetOrthoMatrixOffCenterLH(D3DMATRIX *m,
+                                   float width, float height)
 {
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::CreateD3DContext");
-    // create and test the d3d context
-    D3DContext *d3dContext = new D3DContext(ddObject, dxObject);
-    // if there was a failure while creating or testing the device,
-    // dispose of it and return NULL
-    if (!(d3dContext->GetDeviceCaps() & J2D_D3D_ENABLED_OK)) {
-        delete d3dContext;
-        d3dContext = NULL;
-    }
-    return d3dContext;
+    ZeroMemory(m, sizeof(D3DMATRIX));
+    m->_11 =  2.0f/width;
+    m->_22 = -2.0f/height;
+    m->_33 =  0.5f;
+    m->_44 =  1.0f;
+
+    m->_41 = -1.0f;
+    m->_42 =  1.0f;
+    m->_43 =  0.5f;
 }
 
-D3DContext::D3DContext(DDraw *ddObject, DXObject* dxObject)
+void
+D3DUtils_SetIdentityMatrix(D3DMATRIX *m)
 {
-    GetExclusiveAccess();
-    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::D3DContext");
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  ddObject=0x%d dxObject=0x%x",
-                ddObject, dxObject);
-    d3dDevice = NULL;
-    d3dObject = NULL;
-    ddTargetSurface = NULL;
-    lpMaskTexture = NULL;
-    lpGlyphCacheTexture = NULL;
-    glyphCache = NULL;
-    glyphCacheAvailable = TRUE;
-    deviceCaps = J2D_D3D_FAILURE;
-    bBeginScenePending = FALSE;
-    jD3DContext = NULL;
+    m->_12 = m->_13 = m->_14 = m->_21 = m->_23 = m->_24 = 0.0f;
+    m->_31 = m->_32 = m->_34 = m->_41 = m->_42 = m->_43 = 0.0f;
+    m->_11 = m->_22 = m->_33 = m->_44 = 1.0f;
+}
 
-    this->dxObject = dxObject;
-    this->ddObject = ddObject;
+// the following methods are copies of the AffineTransform's class
+// corresponding methods, with these changes to the indexes:
+// 00 -> 11
+// 11 -> 22
+// 01 -> 21
+// 10 -> 12
+// 02 -> 41
+// 12 -> 42
 
-    if (SUCCEEDED(dxObject->CreateD3DObject(&d3dObject))) {
+void
+D3DUtils_2DConcatenateM(D3DMATRIX *m, D3DMATRIX *m1)
+{
+    float M0, M1;
+    float T00, T10, T01, T11;
+    float T02, T12;
 
-        // The device type we choose to use doesn't change over time
-        pDeviceGUID = D3DUtils_SelectDeviceGUID(d3dObject);
-        if (pDeviceGUID) {
-            bIsHWRasterizer = (*pDeviceGUID == IID_IDirect3DHALDevice ||
-                               *pDeviceGUID == IID_IDirect3DTnLHalDevice);
-            CreateD3DDevice();
-        } else {
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "D3CCoD3DContext::D3DContext: Can't find "\
-                          "suitable D3D device");
-        }
+    T00 = m1->_11; T01 = m1->_21; T02 = m1->_41;
+    T10 = m1->_12; T11 = m1->_22; T12 = m1->_42;
+
+    M0 = m->_11;
+    M1 = m->_21;
+    m->_11  = T00 * M0 + T10 * M1;
+    m->_21  = T01 * M0 + T11 * M1;
+    m->_41 += T02 * M0 + T12 * M1;
+
+    M0 = m->_12;
+    M1 = m->_22;
+    m->_12  = T00 * M0 + T10 * M1;
+    m->_22  = T01 * M0 + T11 * M1;
+    m->_42 += T02 * M0 + T12 * M1;
+}
+
+#ifdef UPDATE_TX
+
+void
+D3DUtils_2DScaleM(D3DMATRIX *m, float sx, float sy)
+{
+    m->_11 *= sx;
+    m->_22 *= sy;
+}
+
+void
+D3DUtils_2DInvertM(D3DMATRIX *m)
+{
+    float M11, M21, M41;
+    float M12, M22, M42;
+    float det;
+
+    M11 = m->_11; M21 = m->_21; M41 = m->_41;
+    M12 = m->_12; M22 = m->_22; M42 = m->_42;
+    det = M11 * M22 - M21 * M12;
+    if (fabs(det) <= 0.0000000001f) {
+        memset(m, 0, sizeof(D3DMATRIX));
+        return;
+    }
+    m->_11 =  M22 / det;
+    m->_12 = -M12 / det;
+    m->_21 = -M21 / det;
+    m->_22 =  M11 / det;
+    m->_41 = (M21 * M42 - M22 * M41) / det;
+    m->_42 = (M12 * M41 - M11 * M42) / det;
+}
+
+void
+D3DUtils_2DTranslateM(D3DMATRIX *m, float tx, float ty)
+{
+    m->_41 = tx * m->_11 + ty * m->_21 + m->_41;
+    m->_42 = tx * m->_12 + ty * m->_22 + m->_42;
+}
+
+void
+D3DUtils_2DTransformXY(D3DMATRIX *m, float *px, float *py)
+{
+    float x = *px;
+    float y = *py;
+
+    *px = x * m->_11 + y * m->_21 + m->_41;
+    *py = x * m->_12 + y * m->_22 + m->_42;
+}
+
+void
+D3DUtils_2DInverseTransformXY(D3DMATRIX *m, float *px, float *py)
+{
+    float x = *px, y = *py;
+
+    x -= m->_41;
+    y -= m->_42;
+
+    float det = m->_11 * m->_22 - m->_21 * m->_12;
+    if (fabs(det) < 0.0000000001f) {
+        *px = 0.0f;
+        *py = 0.0f;
     } else {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "D3DContext::D3DContext: Can't "\
-                      "create IDirect3D7 interface");
+        *px = (x * m->_22 - y * m->_21) / det;
+        *py = (y * m->_11 - x * m->_12) / det;
     }
+}
 
-    compState = sun_java2d_SunGraphics2D_COMP_ISCOPY;
+#endif // UPDATE_TX
+
+static void
+D3DContext_DisposeShader(jlong programID)
+{
+    IDirect3DPixelShader9 *shader =
+        (IDirect3DPixelShader9 *)jlong_to_ptr(programID);
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_DisposeShader");
+
+    SAFE_RELEASE(shader);
+}
+
+// static
+HRESULT
+D3DContext::CreateInstance(IDirect3D9 *pd3d9, UINT adapter, D3DContext **ppCtx)
+{
+    HRESULT res;
+    *ppCtx = new D3DContext(pd3d9, adapter);
+    if (FAILED(res = (*ppCtx)->InitContext())) {
+        delete *ppCtx;
+        *ppCtx = NULL;
+    }
+    return res;
+}
+
+D3DContext::D3DContext(IDirect3D9 *pd3d, UINT adapter)
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::D3DContext");
+    J2dTraceLn1(J2D_TRACE_VERBOSE, "  pd3d=0x%x", pd3d);
+    pd3dObject = pd3d;
+    pd3dDevice = NULL;
+    adapterOrdinal = adapter;
+
+    pResourceMgr = NULL;
+    pMaskCache = NULL;
+    pVCacher = NULL;
+
+    pSyncQuery = NULL;
+    pSyncRTRes = NULL;
+    pStateBlock = NULL;
+
+    D3DC_INIT_SHADER_LIST(convolvePrograms,   MAX_CONVOLVE);
+    D3DC_INIT_SHADER_LIST(rescalePrograms,    MAX_RESCALE);
+    D3DC_INIT_SHADER_LIST(lookupPrograms,     MAX_LOOKUP);
+    D3DC_INIT_SHADER_LIST(basicGradPrograms,  4);
+    D3DC_INIT_SHADER_LIST(linearGradPrograms, 8);
+    D3DC_INIT_SHADER_LIST(radialGradPrograms, 8);
+
+    pLCDGlyphCache= NULL;
+    pGrayscaleGlyphCache= NULL;
+    lcdTextProgram = NULL;
+    aaPgramProgram = NULL;
+
+    contextCaps = CAPS_EMPTY;
+    bBeginScenePending = FALSE;
+
+    ZeroMemory(&devCaps, sizeof(D3DCAPS9));
+    ZeroMemory(&curParams, sizeof(curParams));
+
     extraAlpha = 1.0f;
-    colorPixel = 0xffffffff;
-
-    ReleaseExclusiveAccess();
 }
 
-void D3DContext::SetJavaContext(JNIEnv *env, jobject newD3Dc) {
-    GetExclusiveAccess();
+void D3DContext::ReleaseDefPoolResources()
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::ReleaseDefPoolResources");
 
-    // Only bother if the new D3DContext object is different
-    // from the one we already have reference to.
-    if (env->IsSameObject(newD3Dc, jD3DContext) == FALSE) {
-        J2dTraceLn(J2D_TRACE_VERBOSE, "D3DContext:SetJavaContext: "\
-                   "setting new java context object");
-        // invalidate the old context, since we've got a new one
-        InvalidateIfTarget(env, ddTargetSurface);
+    EndScene();
 
-        if (jD3DContext != NULL) {
-            env->DeleteWeakGlobalRef(jD3DContext);
-        }
-        // set the new java-level context object
-        jD3DContext = env->NewWeakGlobalRef(newD3Dc);
+    D3DPipelineManager::NotifyAdapterEventListeners(devCaps.AdapterOrdinal,
+                                                    DEVICE_RESET);
+
+    contextCaps = CAPS_EMPTY;
+
+    SAFE_RELEASE(pSyncQuery);
+    SAFE_RELEASE(pStateBlock);
+
+    if (pVCacher != NULL) {
+        pVCacher->ReleaseDefPoolResources();
     }
-    ReleaseExclusiveAccess();
+    if (pMaskCache != NULL) {
+        pMaskCache->ReleaseDefPoolResources();
+    }
+    if (pLCDGlyphCache != NULL) {
+        pLCDGlyphCache->ReleaseDefPoolResources();
+    }
+    if (pGrayscaleGlyphCache != NULL) {
+        pGrayscaleGlyphCache->ReleaseDefPoolResources();
+    }
+    if (pResourceMgr != NULL) {
+        if (pSyncRTRes != NULL) {
+            pResourceMgr->ReleaseResource(pSyncRTRes);
+            pSyncRTRes = NULL;
+        }
+        pResourceMgr->ReleaseDefPoolResources();
+    }
+    ZeroMemory(lastTexture, sizeof(lastTexture));
+    ZeroMemory(lastTextureColorState, sizeof(lastTextureColorState));
 }
 
-void D3DContext::Release3DDevice() {
-    GetExclusiveAccess();
+void D3DContext::ReleaseContextResources()
+{
     J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DContext::Release3DDevice: d3dDevice = 0x%x",
-                d3dDevice);
+                "D3DContext::ReleaseContextResources: pd3dDevice = 0x%x",
+                pd3dDevice);
 
-    // make sure we do EndScene if one is pending
-    FlushD3DQueueForTarget(ddTargetSurface);
+    ReleaseDefPoolResources();
 
-    // Let the java-level object know that the context
-    // state is no longer valid, forcing it to be reinitialized
-    // later.
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    InvalidateIfTarget(env, ddTargetSurface);
+    D3DPipelineManager::NotifyAdapterEventListeners(devCaps.AdapterOrdinal,
+                                                    DEVICE_DISPOSED);
 
-    // We don't need to release it since we didn't create it
-    ddTargetSurface = NULL;
+    // dispose shader lists
+    ShaderList_Dispose(&convolvePrograms);
+    ShaderList_Dispose(&rescalePrograms);
+    ShaderList_Dispose(&lookupPrograms);
+    ShaderList_Dispose(&basicGradPrograms);
+    ShaderList_Dispose(&linearGradPrograms);
+    ShaderList_Dispose(&radialGradPrograms);
 
-    // disable the use of this context until we ensure the capabilities
-    // of the new device and run the tests
-    deviceCaps = J2D_D3D_FAILURE;
+    SAFE_DELETE(pLCDGlyphCache);
+    SAFE_DELETE(pGrayscaleGlyphCache);
 
-    if (lpMaskTexture != NULL) {
-        lpMaskTexture->Release();
-        delete lpMaskTexture;
-        lpMaskTexture = NULL;
-    }
+    SAFE_RELEASE(lcdTextProgram);
+    SAFE_RELEASE(aaPgramProgram);
 
-    // reset the depth buffer format
-    memset(&depthBufferFormat, 0, sizeof(depthBufferFormat));
-
-    if (d3dDevice) {
-        // setting the texture increases its reference number, so
-        // we should reset the textures for all stages to make sure
-        // they're released
-        for (int stage = 0; stage <= MAX_USED_TEXTURE_STAGE; stage++) {
-            d3dDevice->SetTexture(stage, NULL);
-            lastTexture[stage] = NULL;
-        }
-        d3dDevice->Release();
-        d3dDevice = NULL;
-    }
-    ReleaseExclusiveAccess();
+    SAFE_DELETE(pVCacher);
+    SAFE_DELETE(pMaskCache);
+    SAFE_DELETE(pResourceMgr);
 }
 
 D3DContext::~D3DContext() {
     J2dTraceLn2(J2D_TRACE_INFO,
-                "~D3DContext: d3dDevice=0x%x, d3dObject =0x%x",
-                d3dDevice, d3dObject);
-    GetExclusiveAccess();
-    if (lpGlyphCacheTexture != NULL) {
-        lpGlyphCacheTexture->Release();
-        delete lpGlyphCacheTexture;
-        lpGlyphCacheTexture = NULL;
-    }
-    Release3DDevice();
-    if (d3dObject != NULL) {
-        d3dObject->Release();
-        d3dObject = NULL;
-    }
-    ReleaseExclusiveAccess();
+                "~D3DContext: pd3dDevice=0x%x, pd3dObject =0x%x",
+                pd3dDevice, pd3dObject);
+    ReleaseContextResources();
+    SAFE_RELEASE(pd3dDevice);
 }
 
 HRESULT
-D3DContext::InitD3DDevice(IDirect3DDevice7 *d3dDevice)
+D3DContext::InitDevice(IDirect3DDevice9 *pd3dDevice)
 {
-    HRESULT res = D3D_OK;
+    HRESULT res = S_OK;
+
+    pd3dDevice->GetDeviceCaps(&devCaps);
+
     J2dRlsTraceLn1(J2D_TRACE_INFO,
-                   "D3DContext::InitD3DDevice: d3dDevice=Ox%x", d3dDevice);
+                   "D3DContext::InitDevice: device %d", adapterOrdinal);
 
-    d3dDevice->GetCaps(&d3dDevDesc);
     // disable some of the unneeded and costly d3d functionality
-    d3dDevice->SetRenderState(D3DRENDERSTATE_CULLMODE, D3DCULL_NONE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_TEXTUREPERSPECTIVE, FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_SPECULARENABLE, FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_LIGHTING,  FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_CLIPPING,  FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, D3DZB_FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_COLORVERTEX, FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_STENCILENABLE, FALSE);
+    pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    pd3dDevice->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
+    pd3dDevice->SetRenderState(D3DRS_LIGHTING,  FALSE);
+    pd3dDevice->SetRenderState(D3DRS_CLIPPING,  FALSE);
+    pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, D3DZB_FALSE);
+    pd3dDevice->SetRenderState(D3DRS_COLORVERTEX, FALSE);
+    pd3dDevice->SetRenderState(D3DRS_STENCILENABLE, FALSE);
 
-    d3dDevice->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_POINT);
-    d3dDevice->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_POINT);
+    // set the default texture addressing mode
+    pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+    pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+    // REMIND: check supported filters with
+    // IDirect3D9::CheckDeviceFormat with D3DUSAGE_QUERY_FILTER
+    pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+    pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 
     // these states never change
-    d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-    d3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-    d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-    d3dDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+    pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+    pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    pd3dDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_MODULATE);
+    pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+    pd3dDevice->SetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+
     // init the array of latest textures
-    memset(&lastTexture, 0, sizeof(lastTexture));
-    // this will force the state initialization on first UpdateState
-    opState = STATE_UNDEFINED;
+    ZeroMemory(lastTexture, sizeof(lastTexture));
+    ZeroMemory(lastTextureColorState, sizeof(lastTextureColorState));
+
+    opState = STATE_CHANGE;
+
+    if (pResourceMgr == NULL) {
+        res = D3DResourceManager::CreateInstance(this, &pResourceMgr);
+    } else {
+        res = pResourceMgr->Init(this);
+    }
+    RETURN_STATUS_IF_FAILED(res);
+
+    if (pVCacher == NULL) {
+        res = D3DVertexCacher::CreateInstance(this, &pVCacher);
+    } else {
+        res = pVCacher->Init(this);
+    }
+    RETURN_STATUS_IF_FAILED(res);
+
+    if (pMaskCache == NULL) {
+        res = D3DMaskCache::CreateInstance(this, &pMaskCache);
+    } else{
+        res = pMaskCache->Init(this);
+    }
+    RETURN_STATUS_IF_FAILED(res);
+
+    if (pLCDGlyphCache != NULL) {
+        if (FAILED(res = pLCDGlyphCache->Init(this))) {
+            // we can live without the cache
+            SAFE_DELETE(pLCDGlyphCache);
+            res = S_OK;
+        }
+    }
+
+    if (pGrayscaleGlyphCache != NULL) {
+        if (FAILED(res = pGrayscaleGlyphCache->Init(this))) {
+            // we can live without the cache
+            SAFE_DELETE(pGrayscaleGlyphCache);
+            res = S_OK;
+        }
+    }
 
     D3DMATRIX tx;
     D3DUtils_SetIdentityMatrix(&tx);
-    d3dDevice->SetTransform(D3DTRANSFORMSTATE_WORLD, &tx);
+    pd3dDevice->SetTransform(D3DTS_WORLD, &tx);
+    bIsIdentityTx = TRUE;
+
+    if (pSyncQuery == NULL) {
+        // this is allowed to fail, do not propagate the error
+        if (FAILED(pd3dDevice->CreateQuery(D3DQUERYTYPE_EVENT, &pSyncQuery))) {
+            J2dRlsTraceLn(J2D_TRACE_WARNING,
+                          "D3DContext::InitDevice: sync query not available");
+            pSyncQuery = NULL;
+        }
+    }
+    if (pSyncRTRes == NULL) {
+        D3DFORMAT format;
+        if (FAILED(GetResourceManager()->
+                   CreateRTSurface(32, 32, TRUE, TRUE, &format, &pSyncRTRes))) {
+            J2dRlsTraceLn(J2D_TRACE_WARNING,
+                          "D3DContext::InitDevice: "
+                          "error creating sync surface");
+        }
+    }
 
     bBeginScenePending = FALSE;
 
-    D3DUtils_SetupTextureFormats(d3dDevice, textureTable);
+    J2dRlsTraceLn1(J2D_TRACE_INFO,
+                   "D3DContext::InitDefice: successfully initialized device %d",
+                   adapterOrdinal);
 
-    // REMIND: debugging: allows testing the argb path in
-    // UploadImageToTexture on devices with alpha texture support
-    if ((getenv("J2D_D3D_NOALPHATEXTURE") != NULL) ||
-         FAILED(res = D3DUtils_FindMaskTileTextureFormat(d3dDevice,
-                                                         &maskTileTexFormat)))
-    {
-        // use ARGB if can't find alpha texture (or in case argb
-        // was specifically requested)
-        J2dTraceLn(J2D_TRACE_VERBOSE,
-                   "D3DContext::InitD3DDevice: "\
-                   "Using IntARBG instead of Alpha texture");
-        if (textureTable[TR_TRANSLUCENT_IDX][DEPTH32_IDX].pfType != PF_INVALID)
-        {
-            memcpy(&maskTileTexFormat,
-                   &textureTable[TR_TRANSLUCENT_IDX][DEPTH32_IDX].pddpf,
-                   sizeof(maskTileTexFormat));
-            res = D3D_OK;
-        }
-    } else {
-        J2dTraceLn(J2D_TRACE_VERBOSE,
-                   "D3DContext::InitD3DDevice: Found Alpha-texture format");
-    }
     return res;
 }
 
 HRESULT
-D3DContext::CreateAndTestD3DDevice(DxCapabilities *dxCaps)
+D3DContext::CheckAndResetDevice()
 {
-    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::CreateAndTestD3DDevice");
-    HRESULT res;
-    if (pDeviceGUID == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "D3DContext::CreateAndTestD3DDevice: "\
-                      "No usable d3d device");
-        deviceCaps = J2D_D3D_FAILURE;
-        return DDERR_GENERIC;
-    }
+    HRESULT res = E_FAIL;
 
-    Release3DDevice();
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::CheckAndResetDevice");
 
-    // Create a temp surface so we can use it when creating a device
-    DXSurface *target = NULL;
-    if (FAILED(res = CreateSurface(NULL, 10, 10, 32, TR_OPAQUE,
-                                   D3D_PLAIN_SURFACE|D3D_RENDER_TARGET,
-                                   &target, NULL)))
-    {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::CreateAndTestD3DDevice: "\
-                                  "can't create scratch surface");
-        return res;
-    }
-
-    if (FAILED(res = d3dObject->CreateDevice(*pDeviceGUID,
-                                             target->GetDDSurface(),
-                                             &d3dDevice)))
-    {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::CreateAndTestD3DDevice: "\
-                                  "error creating d3d device");
-    } else if (FAILED(res = InitD3DDevice(d3dDevice))) {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::CreateAndTestD3DDevice: "\
-                                  "error initializing D3D device");
-    } else {
-        J2dRlsTraceLn(J2D_TRACE_VERBOSE,
-                      "D3DContext::CreateAndTestD3DDevice: "\
-                      "D3D device creation/initialization successful");
-        // the device is successfully created and initialized,
-        // now run some tests on it
-        deviceCaps = TestD3DDevice(ddObject, this, dxCaps);
-    }
-
-    // We can safely dispose the scratch surface here
-    if (target != NULL) {
-        target->Release();
-        delete target;
-    }
-
-    return res;
-}
-
-void
-D3DContext::CreateD3DDevice()
-{
-    GetExclusiveAccess();
-    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::CreateD3DDevice");
-    // this is a weird way of getting a handle on the ddInstance
-    HMONITOR hMonitor = dxObject->GetHMonitor();
-    DxCapabilities *dxCaps =
-        AwtWin32GraphicsDevice::GetDxCapsForDevice(hMonitor);
-
-    int d3dCapsValidity = dxCaps->GetD3dCapsValidity();
-    // Always run the test unless we crashed doing so the last time.
-    // The reasons:
-    //   - the user may have disabled d3d acceleration in the display panel
-    //     since the last run
-    //   - the user may have installed the new drivers, which may cause BSODs
-    //   - if the test had failed previously because of quality issues, the
-    //     new driver may have fixed the problem, but we'd never know since we
-    //     never try again
-    //   - user (or developer, rather) may have specified a
-    //     different rasterizer via env. variable
-    if (d3dCapsValidity != J2D_ACCEL_TESTING) {
-        dxCaps->SetD3dCapsValidity(J2D_ACCEL_TESTING);
-
-        // this will create the device, test it and set the
-        // deviceCaps
-        CreateAndTestD3DDevice(dxCaps);
-
-        dxCaps->SetD3dDeviceCaps(deviceCaps);
-        dxCaps->SetD3dCapsValidity(J2D_ACCEL_SUCCESS);
-    }
-    int requiredResults = forceD3DUsage ?
-        J2D_D3D_REQUIRED_RESULTS : J2D_D3D_DESIRED_RESULTS;
-
-#ifdef DEBUG
-    J2dTraceLn(J2D_TRACE_VERBOSE, "CreateD3DDevice: requested caps:");
-    PrintD3DCaps(requiredResults);
-    J2dTraceLn(J2D_TRACE_VERBOSE, " caps supported by the device:");
-    PrintD3DCaps(deviceCaps);
-    J2dTraceLn(J2D_TRACE_VERBOSE, " missing caps:");
-    PrintD3DCaps(requiredResults & ~deviceCaps);
-#endif // DEBUG
-
-    if ((deviceCaps & requiredResults) != requiredResults) {
-        if (!(deviceCaps & J2D_D3D_HW_OK)) {
-            // disable d3d for all devices, because we've encountered
-            // known bad hardware. See comment in TestForBadHardware().
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "CreateD3DDevice: bad hardware found,"\
-                          " disabling d3d for all devices.");
-            SetD3DEnabledFlag(NULL, FALSE, FALSE);
+    if (pd3dDevice != NULL) {
+        if (FAILED(res = pd3dDevice->TestCooperativeLevel())) {
+            if (res == D3DERR_DEVICELOST) {
+                J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d is still lost",
+                            adapterOrdinal);
+                // nothing to be done here, wait for D3DERR_DEVICENOTRESET
+                return res;
+            } else if (res == D3DERR_DEVICENOTRESET) {
+                J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d needs to be reset",
+                            adapterOrdinal);
+                res = ResetContext();
+            } else {
+                // some unexpected error
+                DebugPrintD3DError(res, "D3DContext::CheckAndResetDevice: "\
+                                   "unknown error %x from TestCooperativeLevel");
+            }
         } else {
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "CreateD3DDevice: tests FAILED, d3d disabled.");
+            J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d is not lost",
+                        adapterOrdinal);
         }
-        // REMIND: the first time the context initialization fails,
-        // deviceUseD3D is set to FALSE in DDrawObjectStruct, and because of
-        // this we never attempt to initialize it again later.
-        // For example, if the app switches to a display mode where
-        // d3d is not supported, we disable d3d, but it stays disabled
-        // even when the display mode is switched back to a supported one.
-        // May be we should disable it only in case of a hard error.
-        ddObject->DisableD3D();
-        Release3DDevice();
     } else {
-        deviceCaps |= J2D_D3D_ENABLED_OK;
-        J2dRlsTraceLn1(J2D_TRACE_INFO,
-                       "CreateD3DDevice: tests PASSED, "\
-                       "d3d enabled (forced: %s).",
-                       forceD3DUsage ? "yes" : "no");
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  null device");
     }
-
-    ReleaseExclusiveAccess();
-}
-
-HRESULT
-D3DContext::SetRenderTarget(DDrawSurface *ddSurface)
-{
-    static D3DVIEWPORT7 vp = { 0, 0, 0, 0, 0.0f, 1.0f };
-    static D3DMATRIX tx;
-    BOOL bSetProjectionMatrix = FALSE;
-    HRESULT res = DDERR_GENERIC;
-    GetExclusiveAccess();
-
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "D3DContext::SetRenderTarget: old=0x%x new=0x%x",
-                ddTargetSurface, ddSurface);
-
-    ddTargetSurface = NULL;
-
-    DXSurface *dxSurface = NULL;
-    if (d3dDevice == NULL || ddSurface == NULL ||
-        (dxSurface = ddSurface->GetDXSurface()) == NULL)
-    {
-        ReleaseExclusiveAccess();
-        J2dTraceLn3(J2D_TRACE_WARNING,
-                    "D3DContext::SetRenderTarget invalid state:"\
-                    "d3dDevice=0x%x ddSurface=0x%x dxSurface=0x%x",
-                    d3dDevice, ddSurface, dxSurface);
-        return res;
-    }
-
-    if (FAILED(res = ddSurface->IsLost())) {
-        ReleaseExclusiveAccess();
-        DebugPrintDirectDrawError(res, "D3DContext::SetRenderTarget: "\
-                                  "target surface (and/or depth buffer) lost");
-        return res;
-    }
-
-    ForceEndScene();
-
-    if (FAILED(res = d3dDevice->SetRenderTarget(dxSurface->GetDDSurface(), 0)))
-    {
-        ReleaseExclusiveAccess();
-        DebugPrintDirectDrawError(res, "D3DContext::SetRenderTarget: "\
-                                  "error setting render target");
-        return res;
-    }
-
-    int width = dxSurface->GetWidth();
-    int height = dxSurface->GetHeight();
-    // set the projection matrix if the the dimensions of the new
-    // rendertarget are different from the old one.
-    if (FAILED(d3dDevice->GetViewport(&vp)) ||
-        (int)vp.dwWidth != width  || (int)vp.dwHeight != height)
-    {
-        bSetProjectionMatrix = TRUE;
-    }
-
-    vp.dwX = vp.dwY = 0;
-    vp.dwWidth  = width;
-    vp.dwHeight = height;
-    vp.dvMinZ = 0.0f;
-    vp.dvMaxZ = 1.0f;
-
-    if (FAILED(res = d3dDevice->SetViewport(&vp))) {
-        DebugPrintDirectDrawError(res, "D3DContext::SetRenderTarget: "\
-                                  "error setting viewport");
-        ReleaseExclusiveAccess();
-        return res;
-    }
-
-    if (bSetProjectionMatrix) {
-        D3DUtils_SetOrthoMatrixOffCenterLH(&tx, (float)width, (float)height);
-        res = d3dDevice->SetTransform(D3DTRANSFORMSTATE_PROJECTION, &tx);
-    }
-
-    if (SUCCEEDED(res)) {
-        ddTargetSurface = ddSurface;
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "D3DContext::SetRenderTarget: succeeded, "\
-                    "new target=0x%x", ddTargetSurface);
-    } else {
-        DebugPrintDirectDrawError(res, "D3DContext::SetRenderTarget: failed");
-    }
-
-    ReleaseExclusiveAccess();
     return res;
 }
 
 HRESULT
-D3DContext::SetTransform(jobject xform,
-                         jdouble m00, jdouble m10,
+D3DContext::ResetContext()
+{
+    HRESULT res = E_FAIL;
+
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::ResetContext");
+    if (pd3dDevice != NULL) {
+        D3DPRESENT_PARAMETERS newParams;
+
+        newParams = curParams;
+
+        if (newParams.Windowed) {
+            // reset to the current display mode if we're windowed,
+            // otherwise to the display mode we were in when the device
+            // was lost
+            newParams.BackBufferFormat = D3DFMT_UNKNOWN;
+            newParams.FullScreen_RefreshRateInHz = 0;
+            newParams.BackBufferWidth = 0;
+            newParams.BackBufferHeight = 0;
+        }
+        res = ConfigureContext(&newParams);
+    }
+    return res;
+}
+
+HRESULT
+D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
+{
+    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DContext::ConfigureContext device %d",
+                   adapterOrdinal);
+    HRESULT res = S_OK;
+    D3DFORMAT stencilFormat;
+    HWND focusHWND = D3DPipelineManager::GetInstance()->GetCurrentFocusWindow();
+    D3DDEVTYPE devType = D3DPipelineManager::GetInstance()->GetDeviceType();
+    // this is needed so that we can find the stencil buffer format
+    if (pNewParams->BackBufferFormat == D3DFMT_UNKNOWN) {
+        D3DDISPLAYMODE dm;
+
+        pd3dObject->GetAdapterDisplayMode(adapterOrdinal, &dm);
+        pNewParams->BackBufferFormat = dm.Format;
+    }
+
+    stencilFormat =
+        D3DPipelineManager::GetInstance()->GetMatchingDepthStencilFormat(
+            adapterOrdinal,
+            pNewParams->BackBufferFormat, pNewParams->BackBufferFormat);
+
+    pNewParams->EnableAutoDepthStencil = TRUE;
+    pNewParams->AutoDepthStencilFormat = stencilFormat;
+
+    // do not set device window in the windowed mode, we use additional
+    // swap chains for rendering, the default chain is not used. otherwise
+    // our scratch focus window will be made visible
+    J2dTraceLn1(J2D_TRACE_VERBOSE, "  windowed=%d",pNewParams->Windowed);
+    if (pNewParams->Windowed) {
+        pNewParams->hDeviceWindow = (HWND)0;
+    }
+
+    // The focus window may change when we're entering/exiting the full-screen
+    // mode. It may either be set to the default focus window (when there are
+    // no more devices in fs mode), or to fs window for another device
+    // in fs mode. See D3DPipelineManager::GetCurrentFocusWindow.
+    if (pd3dDevice != NULL) {
+        D3DDEVICE_CREATION_PARAMETERS cParams;
+        pd3dDevice->GetCreationParameters(&cParams);
+        if (cParams.hFocusWindow != focusHWND) {
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  focus window changed, need to recreate the device");
+
+            // if fs -> windowed, first exit fs, then recreate, otherwise
+            // the screen might be left in a different display mode
+            if (pNewParams->Windowed && !curParams.Windowed) {
+                J2dTraceLn(J2D_TRACE_VERBOSE,
+                            "  exiting full-screen mode, reset the device");
+                curParams.Windowed = FALSE;
+                ReleaseDefPoolResources();
+                res = pd3dDevice->Reset(&curParams);
+
+                if (FAILED(res)) {
+                    DebugPrintD3DError(res, "D3DContext::ConfigureContext: "\
+                                       "cound not reset the device");
+                }
+            }
+
+            // note that here we should release all device resources, not only
+            // thos in the default pool since the device is released
+            ReleaseContextResources();
+            SAFE_RELEASE(pd3dDevice);
+        }
+    }
+
+    if (pd3dDevice != NULL) {
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  resetting the device");
+
+        ReleaseDefPoolResources();
+
+        if (pNewParams->PresentationInterval == D3DPRESENT_INTERVAL_IMMEDIATE &&
+            !IsImmediateIntervalSupported())
+        {
+            pNewParams->PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+        }
+
+        res = pd3dDevice->Reset(pNewParams);
+        if (FAILED(res)) {
+            DebugPrintD3DError(res,
+                "D3DContext::ConfigureContext: cound not reset the device");
+            return res;
+        }
+        J2dRlsTraceLn1(J2D_TRACE_INFO,
+            "D3DContext::ConfigureContext: successfully reset device: %d",
+            adapterOrdinal);
+    } else {
+        D3DCAPS9 d3dCaps;
+        DWORD dwBehaviorFlags;
+
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  creating a new device");
+
+        if (FAILED(res = pd3dObject->GetDeviceCaps(adapterOrdinal,
+                                                   devType, &d3dCaps)))
+        {
+            DebugPrintD3DError(res,
+                "D3DContext::ConfigureContext: failed to get caps");
+            return res;
+        }
+
+        if (pNewParams->PresentationInterval == D3DPRESENT_INTERVAL_IMMEDIATE &&
+            !(d3dCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE))
+        {
+            pNewParams->PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+        }
+
+        // not preserving fpu control word could cause issues (4860749)
+        dwBehaviorFlags = D3DCREATE_FPU_PRESERVE;
+
+        J2dRlsTrace(J2D_TRACE_VERBOSE,
+                    "[V] dwBehaviorFlags=D3DCREATE_FPU_PRESERVE|");
+        if (d3dCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
+            J2dRlsTrace(J2D_TRACE_VERBOSE,
+                        "D3DCREATE_HARDWARE_VERTEXPROCESSING");
+            dwBehaviorFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
+        } else {
+            J2dRlsTrace(J2D_TRACE_VERBOSE,
+                        "D3DCREATE_SOFTWARE_VERTEXPROCESSING");
+            dwBehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+        }
+        // Handling focus changes by ourselves proved to be problematic,
+        // so we're reverting back to D3D handling
+        // dwBehaviorFlags |= D3DCREATE_NOWINDOWCHANGES;
+        J2dRlsTrace(J2D_TRACE_VERBOSE,"\n");
+
+        if (FAILED(res = pd3dObject->CreateDevice(adapterOrdinal, devType,
+                                                  focusHWND,
+                                                  dwBehaviorFlags,
+                                                  pNewParams, &pd3dDevice)))
+        {
+            DebugPrintD3DError(res,
+                "D3DContext::ConfigureContext: error creating d3d device");
+            return res;
+        }
+        J2dRlsTraceLn1(J2D_TRACE_INFO,
+            "D3DContext::ConfigureContext: successfully created device: %d",
+            adapterOrdinal);
+        bIsHWRasterizer = (devType == D3DDEVTYPE_HAL);
+    }
+
+    curParams = *pNewParams;
+    // during the creation of the device d3d modifies this field, we reset
+    // it back to 0
+    curParams.Flags = 0;
+
+    if (FAILED(res = InitDevice(pd3dDevice))) {
+        ReleaseContextResources();
+        return res;
+    }
+
+    res = InitContextCaps();
+
+    return res;
+}
+
+HRESULT
+D3DContext::InitContext()
+{
+    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DContext::InitContext device %d",
+                   adapterOrdinal);
+
+    D3DPRESENT_PARAMETERS params;
+    ZeroMemory(&params, sizeof(D3DPRESENT_PARAMETERS));
+
+    params.hDeviceWindow = 0;
+    params.Windowed = TRUE;
+    params.BackBufferCount = 1;
+    params.BackBufferFormat = D3DFMT_UNKNOWN;
+    params.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    params.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+
+    return ConfigureContext(&params);
+}
+
+HRESULT
+D3DContext::Sync()
+{
+    HRESULT res = S_OK;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::Sync");
+
+    if (pSyncQuery != NULL) {
+        J2dTrace(J2D_TRACE_VERBOSE, "  flushing the device queue..");
+        while (S_FALSE ==
+               (res = pSyncQuery->GetData(NULL, 0, D3DGETDATA_FLUSH))) ;
+        J2dTrace(J2D_TRACE_VERBOSE, ".. done\n");
+    }
+    if (pSyncRTRes != NULL) {
+        D3DLOCKED_RECT lr;
+        IDirect3DSurface9 *pSurface = pSyncRTRes->GetSurface();
+        if (SUCCEEDED(pSurface->LockRect(&lr, NULL, D3DLOCK_NOSYSLOCK))) {
+            pSurface->UnlockRect();
+        }
+    }
+    return res;
+}
+
+HRESULT
+D3DContext::SaveState()
+{
+    HRESULT res;
+
+    RETURN_STATUS_IF_NULL(pd3dDevice, S_OK);
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SaveState");
+
+    FlushVertexQueue();
+    UpdateState(STATE_CHANGE);
+
+    if (pStateBlock != NULL) {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "D3DContext::SaveState: existing state block!");
+        SAFE_RELEASE(pStateBlock);
+    }
+
+    if (SUCCEEDED(res =
+            pd3dDevice->CreateStateBlock(D3DSBT_ALL, &pStateBlock)))
+    {
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created state block");
+    } else {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "D3DContext::SaveState: failed to create state block");
+    }
+    ZeroMemory(lastTexture, sizeof(lastTexture));
+
+    return res;
+}
+
+HRESULT
+D3DContext::RestoreState()
+{
+    HRESULT res = S_OK;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::RestoreState");
+
+    FlushVertexQueue();
+    UpdateState(STATE_CHANGE);
+
+    if (pStateBlock != NULL) {
+        if (SUCCEEDED(res = pStateBlock->Apply())) {
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  restored device state");
+        } else {
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "D3DContext::RestoreState: failed to restore state");
+        }
+        SAFE_RELEASE(pStateBlock);
+    } else {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "D3DContext::RestoreState: empty state block!");
+    }
+    ZeroMemory(lastTexture, sizeof(lastTexture));
+
+    return res;
+}
+
+#define POINT_FILTER_CAP (D3DPTFILTERCAPS_MAGFPOINT|D3DPTFILTERCAPS_MINFPOINT)
+#define LINEAR_FILTER_CAP (D3DPTFILTERCAPS_MAGFLINEAR|D3DPTFILTERCAPS_MINFLINEAR)
+
+BOOL
+D3DContext::IsStretchRectFilteringSupported(D3DTEXTUREFILTERTYPE fType)
+{
+    if (fType == D3DTEXF_POINT) {
+        return ((devCaps.StretchRectFilterCaps & POINT_FILTER_CAP) != 0);
+    }
+    if (fType == D3DTEXF_LINEAR) {
+        return ((devCaps.StretchRectFilterCaps & LINEAR_FILTER_CAP) != 0);
+    }
+    return FALSE;
+}
+
+BOOL
+D3DContext::IsTextureFilteringSupported(D3DTEXTUREFILTERTYPE fType)
+{
+    if (fType == D3DTEXF_POINT) {
+        return ((devCaps.TextureFilterCaps & POINT_FILTER_CAP) != 0);
+    }
+    if (fType == D3DTEXF_LINEAR) {
+        return ((devCaps.TextureFilterCaps & LINEAR_FILTER_CAP) != 0);
+    }
+    return FALSE;
+}
+
+BOOL
+D3DContext::IsTextureFormatSupported(D3DFORMAT format, DWORD usage)
+{
+    HRESULT hr = pd3dObject->CheckDeviceFormat(adapterOrdinal,
+                                               devCaps.DeviceType,
+                                               curParams.BackBufferFormat,
+                                               usage,
+                                               D3DRTYPE_TEXTURE,
+                                               format);
+    return SUCCEEDED( hr );
+}
+
+BOOL
+D3DContext::IsDepthStencilBufferOk(D3DSURFACE_DESC *pTargetDesc)
+{
+    IDirect3DSurface9 *pStencil;
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::IsDepthStencilBufferOk");
+
+    if (SUCCEEDED(pd3dDevice->GetDepthStencilSurface(&pStencil))) {
+        D3DSURFACE_DESC descStencil;
+        pStencil->GetDesc(&descStencil);
+        pStencil->Release();
+
+        D3DDISPLAYMODE dm;
+        return
+            (SUCCEEDED(pd3dDevice->GetDisplayMode(0, &dm)) &&
+             pTargetDesc->Width <= descStencil.Width &&
+             pTargetDesc->Height <= descStencil.Height &&
+             SUCCEEDED(pd3dObject->CheckDepthStencilMatch(
+                   adapterOrdinal,
+                   devCaps.DeviceType,
+                   dm.Format, pTargetDesc->Format,
+                   descStencil.Format)));
+    }
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+        "  current stencil buffer is not compatible with new Render Target");
+
+    return false;
+}
+
+
+
+HRESULT
+D3DContext::InitDepthStencilBuffer(D3DSURFACE_DESC *pTargetDesc)
+{
+    HRESULT res;
+    IDirect3DSurface9 *pBB;
+    D3DDISPLAYMODE dm;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::InitDepthStencilBuffer");
+
+    if (FAILED(res = pd3dDevice->GetDisplayMode(0, &dm))) {
+        return res;
+    }
+
+    D3DFORMAT newFormat =
+        D3DPipelineManager::GetInstance()->GetMatchingDepthStencilFormat(
+            adapterOrdinal, dm.Format, pTargetDesc->Format);
+
+    res = pd3dDevice->CreateDepthStencilSurface(
+        pTargetDesc->Width, pTargetDesc->Height,
+        newFormat, D3DMULTISAMPLE_NONE, 0, false, &pBB, 0);
+    if (SUCCEEDED(res)) {
+        res = pd3dDevice->SetDepthStencilSurface(pBB);
+        pBB->Release();
+    }
+
+    return res;
+}
+
+
+HRESULT
+D3DContext::SetRenderTarget(IDirect3DSurface9 *pSurface)
+{
+    static D3DMATRIX tx;
+    HRESULT res;
+    D3DSURFACE_DESC descNew;
+    IDirect3DSurface9 *pCurrentTarget;
+
+    J2dTraceLn1(J2D_TRACE_INFO,
+                "D3DContext::SetRenderTarget: pSurface=0x%x",
+                pSurface);
+
+    RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
+    RETURN_STATUS_IF_NULL(pSurface, E_FAIL);
+
+    pSurface->GetDesc(&descNew);
+
+    if (SUCCEEDED(res = pd3dDevice->GetRenderTarget(0, &pCurrentTarget))) {
+        if (pCurrentTarget != pSurface) {
+            FlushVertexQueue();
+            if (FAILED(res = pd3dDevice->SetRenderTarget(0, pSurface))) {
+                DebugPrintD3DError(res, "D3DContext::SetRenderTarget: "\
+                                        "error setting render target");
+                SAFE_RELEASE(pCurrentTarget);
+                return res;
+            }
+
+            if (!IsDepthStencilBufferOk(&descNew)) {
+                if (FAILED(res = InitDepthStencilBuffer(&descNew))) {
+                    SAFE_RELEASE(pCurrentTarget);
+                    return res;
+                }
+            }
+        }
+        SAFE_RELEASE(pCurrentTarget);
+    }
+    // we set the transform even if the render target didn't change;
+    // this is because in some cases (fs mode) we use the default SwapChain of
+    // the device, and its render target will be the same as the device's, and
+    // we have to set the matrix correctly. This shouldn't be a performance
+    // issue as render target changes are relatively rare
+    D3DUtils_SetOrthoMatrixOffCenterLH(&tx,
+                       (float)descNew.Width,
+                       (float)descNew.Height);
+    pd3dDevice->SetTransform(D3DTS_PROJECTION, &tx);
+
+    J2dTraceLn1(J2D_TRACE_VERBOSE, "  current render target=0x%x", pSurface);
+    return res;
+}
+
+HRESULT
+D3DContext::ResetTransform()
+{
+    HRESULT res = S_OK;
+    D3DMATRIX tx;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::ResetTransform");
+    if (pd3dDevice == NULL) {
+        return E_FAIL;
+    }
+
+    // no need for state change, just flush the queue
+    FlushVertexQueue();
+
+    D3DUtils_SetIdentityMatrix(&tx);
+    if (FAILED(res = pd3dDevice->SetTransform(D3DTS_WORLD, &tx))) {
+        DebugPrintD3DError(res, "D3DContext::SetTransform failed");
+    }
+    bIsIdentityTx = TRUE;
+    return res;
+}
+
+HRESULT
+D3DContext::SetTransform(jdouble m00, jdouble m10,
                          jdouble m01, jdouble m11,
                          jdouble m02, jdouble m12)
 {
-    GetExclusiveAccess();
+    HRESULT res = S_OK;
+    D3DMATRIX tx, tx1;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetTransform");
-    if (d3dDevice == NULL) {
-        ReleaseExclusiveAccess();
-        return DDERR_GENERIC;
-    }
-    HRESULT res = D3D_OK;
-    D3DMATRIX tx;
-
-    if (xform == NULL) {
-        J2dTraceLn(J2D_TRACE_VERBOSE, "  disabling transform");
-        D3DUtils_SetIdentityMatrix(&tx);
-    } else {
-        J2dTraceLn(J2D_TRACE_VERBOSE, "  enabling transform");
-
-        // copy values from AffineTransform object into native matrix array
-        memset(&tx, 0, sizeof(D3DMATRIX));
-        tx._11 = (float)m00;
-        tx._12 = (float)m10;
-        tx._21 = (float)m01;
-        tx._22 = (float)m11;
-        // The -0.5 adjustment is needed to correctly align texels to
-        // pixels with orgthogonal projection matrix.
-        // Note that we readjust vertex coordinates for cases
-        // when we don't do texture mapping or use D3DPT_LINESTRIP.
-        tx._41 = (float)m02-0.5f;
-        tx._42 = (float)m12-0.5f;
-
-        tx._33 = 1.0f;
-        tx._44 = 1.0f;
+    if (pd3dDevice == NULL) {
+        return E_FAIL;
     }
 
-    J2dTraceLn(J2D_TRACE_VERBOSE, "  setting new tx matrix");
+    // no need for state change, just flush the queue
+    FlushVertexQueue();
+
+    // In order to correctly map texels to pixels we need to
+    // adjust geometry by -0.5f in the transformed space.
+    // In order to do that we first create a translated matrix
+    // and then concatenate it with the world transform.
+    //
+    // Note that we only use non-id transform with DrawTexture,
+    // the rest is rendered pre-transformed.
+    //
+    // The identity transform for textures is handled in
+    // D3DVertexCacher::DrawTexture() because shifting by -0.5 for id
+    // transform breaks lines rendering.
+
+    ZeroMemory(&tx1, sizeof(D3DMATRIX));
+
+    tx1._11 = (float)m00;
+    tx1._12 = (float)m10;
+    tx1._21 = (float)m01;
+    tx1._22 = (float)m11;
+    tx1._41 = (float)m02;
+    tx1._42 = (float)m12;
+
+    tx1._33 = 1.0f;
+    tx1._44 = 1.0f;
+
+    D3DUtils_SetIdentityMatrix(&tx);
+    tx._41 = -0.5f;
+    tx._42 = -0.5f;
+    D3DUtils_2DConcatenateM(&tx, &tx1);
+
     J2dTraceLn4(J2D_TRACE_VERBOSE,
                 "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
     J2dTraceLn4(J2D_TRACE_VERBOSE,
@@ -547,13 +972,99 @@ D3DContext::SetTransform(jobject xform,
                 "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
     J2dTraceLn4(J2D_TRACE_VERBOSE,
                 "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
-    if (FAILED(res = d3dDevice->SetTransform(D3DTRANSFORMSTATE_WORLD, &tx))) {
-        DebugPrintDirectDrawError(res, "D3DContext::SetTransform failed");
+    if (FAILED(res = pd3dDevice->SetTransform(D3DTS_WORLD, &tx))) {
+        DebugPrintD3DError(res, "D3DContext::SetTransform failed");
     }
+    bIsIdentityTx = FALSE;
 
-    ReleaseExclusiveAccess();
     return res;
 }
+
+HRESULT
+D3DContext::SetRectClip(int x1, int y1, int x2, int y2)
+{
+    HRESULT res = S_OK;
+    D3DSURFACE_DESC desc;
+    IDirect3DSurface9 *pCurrentTarget;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetRectClip");
+    J2dTraceLn4(J2D_TRACE_VERBOSE,
+                "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+                x1, y1, x2, y2);
+
+    RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
+
+    // no need for state change, just flush the queue
+    FlushVertexQueue();
+
+    pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+
+    res = pd3dDevice->GetRenderTarget(0, &pCurrentTarget);
+    RETURN_STATUS_IF_FAILED(res);
+
+    pCurrentTarget->GetDesc(&desc);
+    SAFE_RELEASE(pCurrentTarget);
+
+    if (x1 <= 0 && y1 <= 0 &&
+        (UINT)x2 >= desc.Width && (UINT)y2 >= desc.Height)
+    {
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  disabling clip (== render target dimensions)");
+        return pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+    }
+
+    // clip to the dimensions of the target surface, otherwise
+    // SetScissorRect will fail
+    if (x1 < 0)                 x1 = 0;
+    if (y1 < 0)                 y1 = 0;
+    if ((UINT)x2 > desc.Width)  x2 = desc.Width;
+    if ((UINT)y2 > desc.Height) y2 = desc.Height;
+    if (x1 > x2)                x2 = x1 = 0;
+    if (y1 > y2)                y2 = y1 = 0;
+    RECT newRect = { x1, y1, x2, y2 };
+    if (SUCCEEDED(res = pd3dDevice->SetScissorRect(&newRect))) {
+        res = pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+    } else {
+        DebugPrintD3DError(res, "Error setting scissor rect");
+        J2dRlsTraceLn4(J2D_TRACE_ERROR,
+                       "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+                       x1, y1, x2, y2);
+    }
+
+    return res;
+}
+
+HRESULT
+D3DContext::ResetClip()
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::ResetClip");
+    // no need for state change, just flush the queue
+    FlushVertexQueue();
+    pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+    return pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+}
+
+ClipType
+D3DContext::GetClipType()
+{
+    // REMIND: this method could be optimized: we could keep the
+    // clip state around when re/setting the clip instead of asking
+    // every time.
+    DWORD zEnabled = 0;
+    DWORD stEnabled = 0;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::GetClipType");
+    pd3dDevice->GetRenderState(D3DRS_SCISSORTESTENABLE, &stEnabled);
+    if (stEnabled) {
+        return CLIP_RECT;
+    }
+    pd3dDevice->GetRenderState(D3DRS_ZENABLE, &zEnabled);
+    if (zEnabled) {
+        return CLIP_SHAPE;
+    }
+    return CLIP_NONE;
+}
+
 
 /**
  * This method assumes that ::SetRenderTarget has already
@@ -561,89 +1072,34 @@ D3DContext::SetTransform(jobject xform,
  * depth buffer to the target surface prior to setting it
  * as target surface to the device.
  */
+DWORD dwAlphaSt, dwSrcBlendSt, dwDestBlendSt;
+D3DMATRIX tx, idTx;
+
 HRESULT
-D3DContext::SetClip(JNIEnv *env, jobject clip,
-                    jboolean isRect,
-                    int x1, int y1,
-                    int x2, int y2)
+D3DContext::BeginShapeClip()
 {
-    HRESULT res;
-    static J2D_XY_VERTEX clipRect[] = {
-#ifdef USE_SINGLE_VERTEX_FORMAT
-        { 0.0f, 0.0f, 1.0f, 0xffffffff, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f, 0xffffffff, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f, 0xffffffff, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f, 0xffffffff, 0.0f, 0.0f }
-#else
-        // Note that we use D3DFVF_XYZ vertex format
-        // implies 0xffffffff diffuse color, so we don't
-        // have to specify it.
-        { 0.0f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f },
-#endif // USE_SINGLE_VERTEX_FORMAT
-    };
-    static J2DXY_HEXA spanVx[MAX_CACHED_SPAN_VX_NUM];
+    HRESULT res = S_OK;
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::BeginShapeClip");
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetClip");
-    J2dTraceLn5(J2D_TRACE_VERBOSE,
-                "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d isRect=%-2d",
-                x1, y1, x2, y2, isRect);
-    GetExclusiveAccess();
-    // the target surface must already be set
-    if (d3dDevice == NULL || ddTargetSurface == NULL) {
-        ReleaseExclusiveAccess();
-        return DDERR_GENERIC;
-    }
+    UpdateState(STATE_CHANGE);
 
+    pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
 
-    // Must do EndScene prior to setting a new clip, otherwise the
-    // primitives which are already in the pipeline will be rendered with
-    // the new clip when we do EndScene.
-    ForceEndScene();
+    // save alpha blending state
+    pd3dDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &dwAlphaSt);
+    pd3dDevice->GetRenderState(D3DRS_SRCBLEND, &dwSrcBlendSt);
+    pd3dDevice->GetRenderState(D3DRS_DESTBLEND, &dwDestBlendSt);
 
-    if (clip == NULL) {
-        J2dTraceLn(J2D_TRACE_VERBOSE,
-                   "D3DContext::SetClip: disabling clip (== NULL)");
-        res = d3dDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, D3DZB_FALSE);
-        ReleaseExclusiveAccess();
-        return res;
-    } else if (isRect) {
-        // optimization: disable depth buffer if the clip is equal to
-        // the size of the viewport
-        int w = ddTargetSurface->GetDXSurface()->GetWidth();
-        int h = ddTargetSurface->GetDXSurface()->GetHeight();
-        if (x1 == 0 && y1 == 0 && x2 == w && y2 == h) {
-            J2dTraceLn(J2D_TRACE_VERBOSE,
-                       "D3DContext::SetClip: disabling clip (== viewport)");
-            res = d3dDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, D3DZB_FALSE);
-            ReleaseExclusiveAccess();
-            return res;
-        }
-    }
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 
-    // save the old settings
-    DWORD dwAlphaSt, dwSrcBlendSt, dwDestBlendSt;
-    d3dDevice->GetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, &dwAlphaSt);
-    d3dDevice->GetRenderState(D3DRENDERSTATE_SRCBLEND, &dwSrcBlendSt);
-    d3dDevice->GetRenderState(D3DRENDERSTATE_DESTBLEND, &dwDestBlendSt);
-
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ZERO);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ONE);
-
-    // disable texturing
-    if (lastTexture[0] != NULL) {
-        // note that we do not restore the texture after we set the clip,
-        // it will be reset the next time a texturing operation is performed
-        SetTexture(NULL);
-    }
-
-    D3DMATRIX tx, idTx;
-    d3dDevice->GetTransform(D3DTRANSFORMSTATE_WORLD, &tx);
+    pd3dDevice->GetTransform(D3DTS_WORLD, &tx);
     D3DUtils_SetIdentityMatrix(&idTx);
-    d3dDevice->SetTransform(D3DTRANSFORMSTATE_WORLD, &idTx);
+    // translate the clip spans by 1.0f in z direction so that the
+    // clip spans are rendered to the z buffer
+    idTx._43 = 1.0f;
+    pd3dDevice->SetTransform(D3DTS_WORLD, &idTx);
 
     // The depth buffer is first cleared with zeroes, which is the farthest
     // plane from the viewer (our projection matrix is an inversed orthogonal
@@ -653,545 +1109,381 @@ D3DContext::SetClip(JNIEnv *env, jobject clip,
     // have their vertices' Z coordinate set to 0.0, they will effectively be
     // clipped because the Z depth test for them will fail (vertex with 1.0
     // depth is closer than the one with 0.0f)
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, D3DZB_TRUE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, TRUE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZFUNC, D3DCMP_ALWAYS);
-    d3dDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, 0L, 0.0f, 0x0L);
+    pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
+    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+    pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+    pd3dDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, 0L, 0.0f, 0x0L);
 
-    float fx1, fy1, fx2, fy2;
-    if (SUCCEEDED(d3dDevice->BeginScene())) {
-        if (isRect) {
-            fx1 = (float)x1; fy1 = (float)y1;
-            fx2 = (float)x2; fy2 = (float)y2;
-            D3DU_INIT_VERTEX_QUAD_XY(clipRect, fx1, fy1, fx2, fy2);
-            res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, D3DFVF_XY_VERTEX,
-                                           clipRect, 4, NULL);
-        } else {
-            RegionData clipInfo;
-            Region_GetInfo(env, clip, &clipInfo);
-            SurfaceDataBounds span;
-            J2DXY_HEXA *pHexa = (J2DXY_HEXA*)spanVx;
-            jint numOfCachedSpans = 0;
+    //res = BeginScene(STATE_SHAPE_CLIPOP);
 
-            Region_StartIteration(env, &clipInfo);
-            while (Region_NextIteration(&clipInfo, &span)) {
-                fx1 = (float)(span.x1); fy1 = (float)(span.y1);
-                fx2 = (float)(span.x2); fy2 = (float)(span.y2);
-                D3DU_INIT_VERTEX_XYZ_6(*pHexa, fx1, fy1, fx2, fy2, 1.0f);
-                numOfCachedSpans++;
-                pHexa = (J2DXY_HEXA*)PtrAddBytes(pHexa, sizeof(J2DXY_HEXA));
-                if (numOfCachedSpans >= MAX_CACHED_SPAN_VX_NUM) {
-                    res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST,
-                                                   D3DFVF_XY_VERTEX,
-                                                   (void*)spanVx,
-                                                   6*numOfCachedSpans, NULL);
-                    numOfCachedSpans = 0;
-                    pHexa = (J2DXY_HEXA*)spanVx;
-                    if (FAILED(res)) {
-                        break;
-                    }
-                }
-            }
-            if (numOfCachedSpans > 0) {
-                res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST,
-                                               D3DFVF_XY_VERTEX,
-                                               (void*)spanVx,
-                                               6*numOfCachedSpans, NULL);
-            }
-            Region_EndIteration(env, &clipInfo);
-        }
-        res = d3dDevice->EndScene();
-    }
-
-    // reset the transform
-    d3dDevice->SetTransform(D3DTRANSFORMSTATE_WORLD, &tx);
-
-    // reset the alpha compositing
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, dwAlphaSt);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, dwSrcBlendSt);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, dwDestBlendSt);
-
-    // Setup the depth buffer.
-    // We disable further updates to the depth buffer: it should only
-    // be updated in SetClip method.
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, FALSE);
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ZFUNC, D3DCMP_LESS);
-
-    ReleaseExclusiveAccess();
     return res;
 }
 
-DXSurface *
-D3DContext::GetMaskTexture()
-{
-    if (lpMaskTexture != NULL) {
-        // This in theory should never happen since
-        // we're using managed textures, but in case
-        // we switch to using something else.
-        if (FAILED(lpMaskTexture->IsLost())) {
-            lpMaskTexture->Restore();
-        }
-        return lpMaskTexture;
-    }
-    InitMaskTileTexture();
-    return lpMaskTexture;
-}
-
-
 HRESULT
-D3DContext::InitMaskTileTexture()
+D3DContext::EndShapeClip()
 {
     HRESULT res;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::InitMaskTileTexture");
-    if (lpMaskTexture != NULL) {
-        lpMaskTexture->Release();
-    }
-    lpMaskTexture = NULL;
+    // no need for state change, just flush the queue
+    res = FlushVertexQueue();
 
-    DWORD caps2 = 0, caps = DDSCAPS_TEXTURE;
-    if (bIsHWRasterizer) {
-        caps2 = DDSCAPS2_TEXTUREMANAGE;
-    } else {
-        caps |= DDSCAPS_SYSTEMMEMORY;
-    }
+    // restore alpha blending state
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, dwAlphaSt);
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, dwSrcBlendSt);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, dwDestBlendSt);
 
-    if (FAILED(res =
-               dxObject->CreateSurface(DDSD_WIDTH|DDSD_HEIGHT|DDSD_CAPS|
-                                       DDSD_PIXELFORMAT|DDSD_TEXTURESTAGE,
-                                       caps,
-                                       caps2,
-                                       &maskTileTexFormat,
-                                       D3DSD_MASK_TILE_SIZE, D3DSD_MASK_TILE_SIZE,
-                                       (DXSurface **)&lpMaskTexture, 0)))
-    {
-        // in case we want to do something here later..
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::InitMaskTileTexture: "\
-                                  "failed to create mask tile texture");
-    }
+    // resore the transform
+    pd3dDevice->SetTransform(D3DTS_WORLD, &tx);
+
+    // Enable the depth buffer.
+    // We disable further updates to the depth buffer: it should only
+    // be updated in SetClip method.
+    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+    pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESS);
+
     return res;
 }
 
 HRESULT
-D3DContext::UploadImageToTexture(DXSurface *texture, jubyte *pixels,
-                                 jint dstx, jint dsty,
-                                 jint srcx, jint srcy,
-                                 jint srcWidth, jint srcHeight,
-                                 jint srcStride)
+D3DContext::UploadTileToTexture(D3DResource *pTextureRes, void *pixels,
+                                jint dstx, jint dsty,
+                                jint srcx, jint srcy,
+                                jint srcWidth, jint srcHeight,
+                                jint srcStride,
+                                TileFormat srcFormat,
+                                jint *pPixelsTouchedL,
+                                jint* pPixelsTouchedR)
 {
-    HRESULT res = D3D_OK;
-    SurfaceDataRasInfo rasInfo;
+#ifndef PtrAddBytes
+#define PtrAddBytes(p, b)               ((void *) (((intptr_t) (p)) + (b)))
+#define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, (y)*(yinc) + (x)*(xinc))
+#endif // PtrAddBytes
 
-
+    HRESULT res = S_OK;
+    IDirect3DTexture9 *pTexture = pTextureRes->GetTexture();
+    D3DSURFACE_DESC *pDesc = pTextureRes->GetDesc();
     RECT r = { dstx, dsty, dstx+srcWidth, dsty+srcHeight };
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::UploadImageToTexture");
+    RECT *pR = &r;
+    D3DLOCKED_RECT lockedRect;
+    DWORD dwLockFlags = D3DLOCK_NOSYSLOCK;
+    // these are only counted for LCD glyph uploads
+    jint pixelsTouchedL = 0, pixelsTouchedR = 0;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::UploadTileToTexture");
     J2dTraceLn4(J2D_TRACE_VERBOSE,
-                " rect={%-4d, %-4d, %-4d, %-4d}",
-                r.left, r.top, r.right, r.bottom);
-    // REMIND: it may be faster to lock for NULL instead of
-    // rect, need to test later.
-    if (FAILED(res = texture->Lock(&r, &rasInfo,
-                                   DDLOCK_WAIT|DDLOCK_NOSYSLOCK, NULL)))
+        " rect={%-4d, %-4d, %-4d, %-4d}",
+        r.left, r.top, r.right, r.bottom);
+
+    // REMIND: we should also check for dstx, dsty being 0 here,
+    // but they're always 0 in dynamic texture case
+    if (pDesc->Usage == D3DUSAGE_DYNAMIC &&
+        srcWidth == pDesc->Width && srcHeight == pDesc->Height)
     {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::UploadImageToTexture: could "\
-                                  "not lock texture");
+        dwLockFlags |= D3DLOCK_DISCARD;
+        pR = NULL;
+    }
+
+    if (FAILED(res = pTexture->LockRect(0, &lockedRect, pR, dwLockFlags))) {
+        DebugPrintD3DError(res,
+            "D3DContext::UploadImageToTexture: could "\
+            "not lock texture");
         return res;
     }
 
-    if (rasInfo.pixelStride == 1) {
-        // 8bpp alpha texture
-        void *pSrcPixels = PtrCoord(pixels, srcx, 1, srcy, srcStride);
-        void *pDstPixels = rasInfo.rasBase;
-        do {
-            memcpy(pDstPixels, pSrcPixels, srcWidth);
-            pSrcPixels = PtrAddBytes(pSrcPixels, srcStride);
-            pDstPixels = PtrAddBytes(pDstPixels, rasInfo.scanStride);
-        } while (--srcHeight > 0);
-    } else {
-        // ARGB texture
-        jubyte *pSrcPixels = (jubyte*)PtrCoord(pixels, srcx, 1, srcy, srcStride);
-        jint *pDstPixels = (jint*)rasInfo.rasBase;
-        for (int yy = 0; yy < srcHeight; yy++) {
-            for (int xx = 0; xx < srcWidth; xx++) {
-                jubyte pix = pSrcPixels[xx];
-                StoreIntArgbFrom4ByteArgb(pDstPixels, 0, xx,
-                                          pix, pix, pix, pix);
-            }
-            pSrcPixels = (jubyte*)PtrAddBytes(pSrcPixels, srcStride);
-            pDstPixels = (jint*)PtrAddBytes(pDstPixels, rasInfo.scanStride);
+    if (srcFormat == TILEFMT_1BYTE_ALPHA) {
+        // either a MaskFill tile, or a grayscale glyph
+        if (pDesc->Format == D3DFMT_A8) {
+            void *pSrcPixels = PtrCoord(pixels, srcx, 1, srcy, srcStride);
+            void *pDstPixels = lockedRect.pBits;
+            do {
+                memcpy(pDstPixels, pSrcPixels, srcWidth);
+                pSrcPixels = PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            } while (--srcHeight > 0);
         }
+        else if (pDesc->Format == D3DFMT_A8R8G8B8) {
+            jubyte *pSrcPixels = (jubyte*)
+                PtrCoord(pixels, srcx, 1, srcy, srcStride);
+            jint *pDstPixels = (jint*)lockedRect.pBits;
+            for (int yy = 0; yy < srcHeight; yy++) {
+                for (int xx = 0; xx < srcWidth; xx++) {
+                    // only need to set the alpha channel (the D3D texture
+                    // state will be setup in this case to replicate the
+                    // alpha channel as needed)
+                    pDstPixels[xx] = pSrcPixels[xx] << 24;
+                }
+                pSrcPixels = (jubyte*)PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = (jint*)PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            }
+        }
+    } else if (srcFormat == TILEFMT_3BYTE_RGB) {
+        // LCD glyph with RGB order
+        if (pDesc->Format == D3DFMT_R8G8B8) {
+            jubyte *pSrcPixels = (jubyte*)
+                PtrCoord(pixels, srcx, 3, srcy, srcStride);
+            jubyte *pDstPixels = (jubyte*)lockedRect.pBits;
+            for (int yy = 0; yy < srcHeight; yy++) {
+                for (int xx = 0; xx < srcWidth*3; xx+=3) {
+                    // alpha channel is ignored in this case
+                    // (note that this is backwards from what one might
+                    // expect; it appears that D3DFMT_R8G8B8 is actually
+                    // laid out in BGR order in memory)
+                    pDstPixels[xx+0] = pSrcPixels[xx+2];
+                    pDstPixels[xx+1] = pSrcPixels[xx+1];
+                    pDstPixels[xx+2] = pSrcPixels[xx+0];
+                }
+                pixelsTouchedL +=
+                    (pDstPixels[0+0]|pDstPixels[0+1]|pDstPixels[0+2]) ? 1 : 0;
+                jint i = 3*(srcWidth-1);
+                pixelsTouchedR +=
+                    (pDstPixels[i+0]|pDstPixels[i+1]|pDstPixels[i+2]) ? 1 : 0;
+
+                pSrcPixels = (jubyte*)PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = (jubyte*)PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            }
+        }
+        else if (pDesc->Format == D3DFMT_A8R8G8B8) {
+            jubyte *pSrcPixels = (jubyte*)
+                PtrCoord(pixels, srcx, 3, srcy, srcStride);
+            jint *pDstPixels = (jint*)lockedRect.pBits;
+            for (int yy = 0; yy < srcHeight; yy++) {
+                for (int dx = 0, sx = 0; dx < srcWidth; dx++, sx+=3) {
+                    // alpha channel is ignored in this case
+                    jubyte r = pSrcPixels[sx+0];
+                    jubyte g = pSrcPixels[sx+1];
+                    jubyte b = pSrcPixels[sx+2];
+                    pDstPixels[dx] = (r << 16) | (g << 8) | (b);
+                }
+                pixelsTouchedL += (pDstPixels[0]          ? 1 : 0);
+                pixelsTouchedR += (pDstPixels[srcWidth-1] ? 1 : 0);
+
+                pSrcPixels = (jubyte*)PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = (jint*)PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            }
+        }
+    } else if (srcFormat == TILEFMT_3BYTE_BGR) {
+        // LCD glyph with BGR order
+        if (pDesc->Format == D3DFMT_R8G8B8) {
+            void *pSrcPixels = PtrCoord(pixels, srcx, 3, srcy, srcStride);
+            void *pDstPixels = lockedRect.pBits;
+            jubyte *pbDst;
+            do {
+                // alpha channel is ignored in this case
+                // (note that this is backwards from what one might
+                // expect; it appears that D3DFMT_R8G8B8 is actually
+                // laid out in BGR order in memory)
+                memcpy(pDstPixels, pSrcPixels, srcWidth * 3);
+
+                pbDst = (jubyte*)pDstPixels;
+                pixelsTouchedL +=(pbDst[0+0]|pbDst[0+1]|pbDst[0+2]) ? 1 : 0;
+                jint i = 3*(srcWidth-1);
+                pixelsTouchedR +=(pbDst[i+0]|pbDst[i+1]|pbDst[i+2]) ? 1 : 0;
+
+                pSrcPixels = PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            } while (--srcHeight > 0);
+        }
+        else if (pDesc->Format == D3DFMT_A8R8G8B8) {
+            jubyte *pSrcPixels = (jubyte*)
+                PtrCoord(pixels, srcx, 3, srcy, srcStride);
+            jint *pDstPixels = (jint*)lockedRect.pBits;
+            for (int yy = 0; yy < srcHeight; yy++) {
+                for (int dx = 0, sx = 0; dx < srcWidth; dx++, sx+=3) {
+                    // alpha channel is ignored in this case
+                    jubyte b = pSrcPixels[sx+0];
+                    jubyte g = pSrcPixels[sx+1];
+                    jubyte r = pSrcPixels[sx+2];
+                    pDstPixels[dx] = (r << 16) | (g << 8) | (b);
+                }
+                pixelsTouchedL += (pDstPixels[0]          ? 1 : 0);
+                pixelsTouchedR += (pDstPixels[srcWidth-1] ? 1 : 0);
+
+                pSrcPixels = (jubyte*)PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = (jint*)PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            }
+        }
+    } else if (srcFormat == TILEFMT_4BYTE_ARGB_PRE) {
+        // MaskBlit tile
+        if (pDesc->Format == D3DFMT_A8R8G8B8) {
+            void *pSrcPixels = PtrCoord(pixels, srcx, 4, srcy, srcStride);
+            void *pDstPixels = lockedRect.pBits;
+            do {
+                memcpy(pDstPixels, pSrcPixels, srcWidth * 4);
+                pSrcPixels = PtrAddBytes(pSrcPixels, srcStride);
+                pDstPixels = PtrAddBytes(pDstPixels, lockedRect.Pitch);
+            } while (--srcHeight > 0);
+        }
+    } else {
+        // should not happen, no-op just in case...
     }
-    return texture->Unlock(&r);
+
+    if (pPixelsTouchedL) {
+        *pPixelsTouchedL  = pixelsTouchedL;
+    }
+    if (pPixelsTouchedR) {
+        *pPixelsTouchedR = pixelsTouchedR;
+    }
+
+    return pTexture->UnlockRect(0);
 }
 
 HRESULT
-D3DContext::InitGlyphCache()
+D3DContext::InitLCDGlyphCache()
 {
-    HRESULT res = D3D_OK;
-
-    if (glyphCache != NULL) {
-        return D3D_OK;
+    if (pLCDGlyphCache == NULL) {
+        return D3DGlyphCache::CreateInstance(this, CACHE_LCD, &pLCDGlyphCache);
     }
-
-    if (!glyphCacheAvailable) {
-        return DDERR_GENERIC;
-    }
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::InitGlyphCache");
-
-    // init glyph cache data structure
-    glyphCache = AccelGlyphCache_Init(D3D_GCACHE_WIDTH,
-                                      D3D_GCACHE_HEIGHT,
-                                      D3D_GCACHE_CELL_WIDTH,
-                                      D3D_GCACHE_CELL_HEIGHT,
-                                      NULL);
-    if (glyphCache == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "D3DContext::InitGlyphCache: "\
-                      "could not init D3D glyph cache");
-        glyphCacheAvailable = FALSE;
-        return DDERR_GENERIC;
-    }
-
-    DWORD caps2 = 0, caps = DDSCAPS_TEXTURE;
-    if (bIsHWRasterizer) {
-        caps2 = DDSCAPS2_TEXTUREMANAGE;
-    } else {
-        caps |= DDSCAPS_SYSTEMMEMORY;
-    }
-    if (FAILED(res =
-               dxObject->CreateSurface(DDSD_WIDTH|DDSD_HEIGHT|DDSD_CAPS|
-                                       DDSD_PIXELFORMAT|DDSD_TEXTURESTAGE,
-                                       caps,
-                                       caps2,
-                                       &maskTileTexFormat,
-                                       D3D_GCACHE_WIDTH, D3D_GCACHE_HEIGHT,
-                                       (DXSurface **)&lpGlyphCacheTexture, 0)))
-    {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::InitGlyphCache: glyph cache "\
-                                  "texture creation failed");
-        glyphCacheAvailable = FALSE;
-        return res;
-    }
-    return res;
+    return S_OK;
 }
 
 HRESULT
-D3DContext::GlyphCacheAdd(JNIEnv *env, GlyphInfo *glyph)
+D3DContext::InitGrayscaleGlyphCache()
 {
-    HRESULT res = D3D_OK;
-    if (!glyphCacheAvailable || glyph->image == NULL) {
-        return DDERR_GENERIC;
+    if (pGrayscaleGlyphCache == NULL) {
+        return D3DGlyphCache::CreateInstance(this, CACHE_GRAY,
+                                             &pGrayscaleGlyphCache);
     }
-
-    AccelGlyphCache_AddGlyph(glyphCache, glyph);
-
-    if (glyph->cellInfo != NULL) {
-        // store glyph image in texture cell
-        res = UploadImageToTexture(lpGlyphCacheTexture, (jubyte*)glyph->image,
-                                   glyph->cellInfo->x, glyph->cellInfo->y,
-                                   0, 0,
-                                   glyph->width, glyph->height,
-                                   glyph->width);
-    }
-
-    return res;
+    return S_OK;
 }
 
-void
-D3DContext::SetColor(jint eargb, jint flags)
-{
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "D3DContext::SetColor: eargb=%08x flags=%d", eargb, flags);
-
-    /*
-     * The colorPixel field is a 32-bit ARGB premultiplied color
-     * value.  The incoming eargb field is a 32-bit ARGB value
-     * that is not premultiplied.  If the alpha is not 1.0 (255)
-     * then we need to premultiply the color components before
-     * storing it in the colorPixel field.
-     */
-    jint a = (eargb >> 24) & 0xff;
-
-    if (a == 0xff) {
-        colorPixel = eargb;
-    } else {
-        jint a2 = a + (a >> 7);
-        jint r = (((eargb >> 16) & 0xff) * a2) >> 8;
-        jint g = (((eargb >>  8) & 0xff) * a2) >> 8;
-        jint b = (((eargb      ) & 0xff) * a2) >> 8;
-        colorPixel = (a << 24) | (r << 16) | (g << 8) | (b << 0);
-    }
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  updated color: colorPixel=%08x",
-                colorPixel);
-}
-
-void
+HRESULT
 D3DContext::ResetComposite()
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::ResetComposite");
-    GetExclusiveAccess();
-    if (d3dDevice == NULL) {
-        ReleaseExclusiveAccess();
-        return;
-    }
-    d3dDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
-    compState = sun_java2d_SunGraphics2D_COMP_ISCOPY;
+
+    RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
+
+    HRESULT res = UpdateState(STATE_CHANGE);
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
     extraAlpha = 1.0f;
-    ReleaseExclusiveAccess();
+    return res;
 }
 
-void
+HRESULT
 D3DContext::SetAlphaComposite(jint rule, jfloat ea, jint flags)
 {
+    HRESULT res;
     J2dTraceLn3(J2D_TRACE_INFO,
                 "D3DContext::SetAlphaComposite: rule=%-1d ea=%f flags=%d",
                 rule, ea, flags);
-    GetExclusiveAccess();
 
-    if (d3dDevice == NULL) {
-        ReleaseExclusiveAccess();
-        return;
-    }
+    RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
+
+    res = UpdateState(STATE_CHANGE);
 
     // we can safely disable blending when:
     //   - comp is SrcNoEa or SrcOverNoEa, and
     //   - the source is opaque
-    // (turning off blending can have a large positive impact on
-    // performance);
+    // (turning off blending can have a large positive impact on performance)
     if ((rule == RULE_Src || rule == RULE_SrcOver) &&
         (ea == 1.0f) &&
         (flags & D3DC_SRC_IS_OPAQUE))
-     {
-         J2dTraceLn1(J2D_TRACE_VERBOSE,
-                     "  disabling alpha comp rule=%-1d ea=1.0 src=opq)", rule);
-         d3dDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, FALSE);
-     } else {
+    {
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                    "  disabling alpha comp rule=%-1d ea=1.0 src=opq)", rule);
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+    } else {
         J2dTraceLn2(J2D_TRACE_VERBOSE,
                     "  enabling alpha comp (rule=%-1d ea=%f)", rule, ea);
-        d3dDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 
-        d3dDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND,
-                                  StdBlendRules[rule].src);
-        d3dDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND,
-                                  StdBlendRules[rule].dst);
-     }
+        pd3dDevice->SetRenderState(D3DRS_SRCBLEND,
+                                   StdBlendRules[rule].src);
+        pd3dDevice->SetRenderState(D3DRS_DESTBLEND,
+                                   StdBlendRules[rule].dst);
+    }
 
-    // update state
-    compState = sun_java2d_SunGraphics2D_COMP_ALPHA;
     extraAlpha = ea;
-
-    if (extraAlpha == 1.0f) {
-        blitPolygonPixel = 0xffffffff;
-    } else {
-        // the 0xffffffff pixel needs to be premultiplied by extraAlpha
-        jint ea = (jint)(extraAlpha * 255.0f + 0.5f) & 0xff;
-        blitPolygonPixel = (ea << 24) | (ea << 16) | (ea << 8) | (ea << 0);
-    }
-
-    ReleaseExclusiveAccess();
-}
-
-HRESULT D3DContext::CreateSurface(JNIEnv *env, jint width, jint height,
-                                  jint depth, jint transparency,
-                                  jint d3dSurfaceType,
-                                  DXSurface **dxSurface, jint* pType)
-{
-    DWORD dwFlags = 0, ddsCaps = 0, ddsCaps2 = 0;
-    D3DTextureTableCell *cell = NULL;
-    DXSurface *lpRetSurface = NULL;
-    HRESULT res;
-
-    GetExclusiveAccess();
-
-    dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-
-    if (d3dSurfaceType & D3D_TEXTURE_SURFACE) {
-        ddsCaps |= DDSCAPS_TEXTURE;
-        dwFlags |= DDSD_PIXELFORMAT | DDSD_TEXTURESTAGE;
-
-        jint trIdx = D3D_TR_IDX(transparency);
-        jint depthIdx = D3D_DEPTH_IDX(depth);
-        cell = &textureTable[trIdx][depthIdx];
-        if (cell->pfType == PF_INVALID) {
-            ReleaseExclusiveAccess();
-            J2dTraceLn2(J2D_TRACE_ERROR,
-                        "D3DContext::CreateSurface: no texture "\
-                        "pixel format for depth: %d transparency=%d",
-                        depth, transparency);
-            return DDERR_NOTFOUND;
-        }
-        if (pType != NULL) *pType = cell->pfType;
-        if (d3dSurfaceType & D3D_RENDER_TARGET) {
-            // RTT is requested => must be allocated non-managed and
-            // non-systemmemory pool.
-            // REMIND: must check if this is supported by
-            // the device, as it may not have a local video memory, only AGP
-            // may be we should just use VIDEOMEMORY
-            // NOTE: this will likely fail if the device is not accelerated
-            ddsCaps |= DDSCAPS_LOCALVIDMEM;
-        } else {
-            // This is a normal texture, allocate in managed pool if the device
-            // is accelerated, otherwise must use system memory.
-            if (bIsHWRasterizer) {
-                ddsCaps2 |= DDSCAPS2_TEXTUREMANAGE;
-            } else {
-                ddsCaps |= DDSCAPS_SYSTEMMEMORY;
-            }
-        }
-
-        if (IsPow2TexturesOnly()) {
-            jint w, h;
-            for (w = 1; width  > w; w <<= 1);
-            for (h = 1; height > h; h <<= 1);
-            width = w;
-            height = h;
-        }
-        if (IsSquareTexturesOnly()) {
-            if (width > height) {
-                height = width;
-            } else {
-                width = height;
-            }
-        }
-
-        DWORD dwRatio = GetMaxTextureAspectRatio();
-        // Note: Reference rasterizer returns ratio '0',
-        // which presumably means 'any'.
-        if ((DWORD)width  > GetMaxTextureWidth()    ||
-            (DWORD)height > GetMaxTextureHeight()   ||
-            (DWORD)width  < GetMinTextureWidth()    ||
-            (DWORD)height < GetMinTextureHeight()   ||
-            ((dwRatio > 0) && ((DWORD)(width/height) > dwRatio ||
-                               (DWORD)(height/width) > dwRatio)))
-        {
-            ReleaseExclusiveAccess();
-            J2dRlsTraceLn2(J2D_TRACE_ERROR,
-                           "D3DContext::CreateSurface: failed to create"\
-                           " texture: dimensions %dx%d not supported.",
-                           width, height);
-            J2dRlsTraceLn5(J2D_TRACE_ERROR,
-                           "  Supported texture dimensions: %dx%d-%dxd% "\
-                           " with max ratio %f.",
-                           GetMinTextureWidth(), GetMinTextureHeight(),
-                           GetMaxTextureWidth(), GetMaxTextureHeight(),
-                           GetMaxTextureAspectRatio());
-            return D3DERR_TEXTURE_BADSIZE;
-        }
-    } else if (d3dSurfaceType & D3D_PLAIN_SURFACE) {
-        ddsCaps |= DDSCAPS_OFFSCREENPLAIN |
-            (bIsHWRasterizer ? DDSCAPS_VIDEOMEMORY : DDSCAPS_SYSTEMMEMORY);
-    } else if (d3dSurfaceType & D3D_ATTACHED_SURFACE) {
-        // can't handle this for now
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "D3DContext::CreateSurface: Can't create attached"\
-                      " surfaces using this code path yet");
-        ReleaseExclusiveAccess();
-        return DDERR_GENERIC;
-    }
-    if (d3dSurfaceType & D3D_RENDER_TARGET) {
-        ddsCaps |= DDSCAPS_3DDEVICE;
-    }
-
-    if (SUCCEEDED(res = dxObject->CreateSurface(dwFlags, ddsCaps, ddsCaps2,
-                                                (cell != NULL) ?
-                                                    &cell->pddpf : NULL,
-                                                width, height,
-                                                &lpRetSurface,
-                                                0/*backbuffers*/)))
-    {
-        if (d3dSurfaceType & D3D_RENDER_TARGET) {
-            if (FAILED(res = AttachDepthBuffer(lpRetSurface))) {
-                lpRetSurface->Release();
-                delete lpRetSurface;
-                ReleaseExclusiveAccess();
-                return res;
-            }
-            // Attempt to set the new surface as a temporary render target;
-            // in some cases this may fail. For example, if undocumented maximum
-            // Direct3D target surface dimensions were exceeded (2048 in some
-            // cases).
-            if (d3dDevice != NULL) {
-                FlushD3DQueueForTarget(NULL);
-
-                IDirectDrawSurface7 *lpDDSurface = NULL;
-                HRESULT res1 = d3dDevice->GetRenderTarget(&lpDDSurface);
-
-                // we are holding a lock for the context, so we can
-                // change/restore the current render target safely
-                res = d3dDevice->SetRenderTarget(lpRetSurface->GetDDSurface(), 0);
-                if (SUCCEEDED(res1) && lpDDSurface != NULL) {
-                    d3dDevice->SetRenderTarget(lpDDSurface, 0);
-                }
-                if (FAILED(res)) {
-                    DebugPrintDirectDrawError(res,
-                        "D3DContext::CreateSurface: cannot set new surface as "\
-                        "temp. render target");
-                    lpRetSurface->Release();
-                    delete lpRetSurface;
-                    ReleaseExclusiveAccess();
-                    return res;
-                }
-            }
-        }
-        *dxSurface = lpRetSurface;
-    } else {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::CreateSurface: error"\
-                                  " creating surface");
-    }
-
-    ReleaseExclusiveAccess();
     return res;
 }
 
+#ifdef UPDATE_TX
+
+// Note: this method of adjusting pixel to texel mapping proved to be
+// difficult to perfect. The current variation works great for id,
+// scale (including all kinds of flips) transforms, but not still not
+// for generic transforms.
+//
+// Since we currently only do DrawTexture with non-id transform we instead
+// adjust the geometry (see D3DVertexCacher::DrawTexture(), SetTransform())
+//
+// In order to enable this code path UpdateTextureTransforms needs to
+// be called in SetTexture(), SetTransform() and ResetTranform().
 HRESULT
-D3DContext::AttachDepthBuffer(DXSurface *dxSurface)
+D3DContext::UpdateTextureTransforms(DWORD dwSamplerToUpdate)
 {
-    HRESULT res;
+    HRESULT res = S_OK;
+    DWORD dwSampler, dwMaxSampler;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::AttachDepthBuffer");
-
-    if (dxSurface == NULL) {
-        return DDERR_GENERIC;
+    if (dwSamplerToUpdate == -1) {
+        // update all used samplers, dwMaxSampler will be set to max
+        dwSampler = 0;
+        dwSampler = MAX_USED_TEXTURE_SAMPLER;
+        J2dTraceLn(J2D_TRACE_INFO, "D3DContext::UpdateTextureTransforms: "\
+                                   "updating all samplers");
+    } else {
+        // update only given sampler, dwMaxSampler will be set to it as well
+        dwSampler = dwSamplerToUpdate;
+        dwMaxSampler = dwSamplerToUpdate;
+        J2dTraceLn1(J2D_TRACE_INFO, "D3DContext::UpdateTextureTransforms: "\
+                                    "updating sampler %d", dwSampler);
     }
 
-    GetExclusiveAccess();
+    do {
+        D3DTRANSFORMSTATETYPE state =
+            (D3DTRANSFORMSTATETYPE)(D3DTS_TEXTURE0 + dwSampler);
+        IDirect3DTexture9 *pTexture = lastTexture[dwSampler];
 
-    // initialize the depth buffer format it needed
-    if (depthBufferFormat.dwSize == 0) {
-        // Some hardware has a restriction that the target surface and the
-        // attached depth buffer must have the same bit depth, so we should
-        // attempt to find a depth pixel format with the same depth as
-        // the target.
-        DWORD prefDepth = dxSurface->ddsd.ddpfPixelFormat.dwRGBBitCount;
-        if (FAILED(res = D3DUtils_FindDepthBufferFormat(d3dObject,
-                                                        prefDepth,
-                                                        &depthBufferFormat,
-                                                        pDeviceGUID)))
-        {
-            DebugPrintDirectDrawError(res,
-                                      "D3DContext::AttachDepthBuffer: "\
-                                      "can't find depth buffer format");
-            ReleaseExclusiveAccess();
-            return res;
+        if (pTexture != NULL) {
+            D3DMATRIX mt, tx;
+            D3DSURFACE_DESC texDesc;
+
+            pd3dDevice->GetTransform(D3DTS_WORLD, &tx);
+            J2dTraceLn4(10,
+                        "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
+            J2dTraceLn4(10,
+                        "  %5f %5f %5f %5f", tx._21, tx._22, tx._23, tx._24);
+            J2dTraceLn4(10,
+                        "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
+            J2dTraceLn4(10,
+                        "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
+
+            // this formula works for scales and flips
+            if (tx._11 == 0.0f) {
+                tx._11 = tx._12;
+            }
+            if (tx._22 == 0.0f) {
+                tx._22 = tx._21;
+            }
+
+            pTexture->GetLevelDesc(0, &texDesc);
+
+            // shift by .5 texel, but take into account
+            // the scale factor of the device transform
+
+            // REMIND: this approach is not entirely correct,
+            // as it only takes into account the scale of the device
+            // transform.
+            mt._31 = (1.0f / (2.0f * texDesc.Width  * tx._11));
+            mt._32 = (1.0f / (2.0f * texDesc.Height * tx._22));
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "  offsets: tx=%f ty=%f",
+                        mt._31, mt._32);
+
+            pd3dDevice->SetTextureStageState(dwSampler,
+                                             D3DTSS_TEXTURETRANSFORMFLAGS,
+                                             D3DTTFF_COUNT2);
+            res = pd3dDevice->SetTransform(state, &mt);
+        } else {
+            res = pd3dDevice->SetTextureStageState(dwSampler,
+                                                   D3DTSS_TEXTURETRANSFORMFLAGS,
+                                                   D3DTTFF_DISABLE);
         }
-    }
-    if (FAILED(res = dxSurface->AttachDepthBuffer(dxObject,
-                                                  bIsHWRasterizer,
-                                                  &depthBufferFormat)))
-    {
-        DebugPrintDirectDrawError(res,
-                                  "D3DContext::AttachDepthBuffer: "\
-                                  "can't attach depth buffer or it is lost");
-    }
+        dwSampler++;
+    } while (dwSampler <= dwMaxSampler);
 
-    ReleaseExclusiveAccess();
     return res;
 }
+#endif // UPDATE_TX
 
 /**
  * We go into the pains of maintaining the list of set textures
@@ -1200,399 +1492,412 @@ D3DContext::AttachDepthBuffer(DXSurface *dxSurface)
  * GetTexture() (note that we'd have to then call Release() on the
  * texture since GetTexture() increases texture's ref. count).
  */
-HRESULT /*NOLOCK*/
-D3DContext::SetTexture(DXSurface *dxSurface, DWORD dwStage)
+HRESULT
+D3DContext::SetTexture(IDirect3DTexture9 *pTexture, DWORD dwSampler)
 {
-    HRESULT res = D3D_OK;
-    IDirectDrawSurface7 *newTexture =
-        dxSurface == NULL ? NULL : dxSurface->GetDDSurface();
+    HRESULT res = S_OK;
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetTexture");
 
-    if (dwStage < 0 || dwStage > MAX_USED_TEXTURE_STAGE) {
+    if (dwSampler < 0 || dwSampler > MAX_USED_TEXTURE_SAMPLER) {
         J2dTraceLn1(J2D_TRACE_ERROR,
-                    "D3DContext::SetTexture: incorrect stage: %d", dwStage);
-        return DDERR_GENERIC;
+                    "D3DContext::SetTexture: incorrect sampler: %d", dwSampler);
+        return E_FAIL;
     }
-    if (lastTexture[dwStage] != newTexture) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "D3DContext::SetTexture: new texture=0x%x", newTexture);
-        res = d3dDevice->SetTexture(dwStage, newTexture);
-        lastTexture[dwStage] = SUCCEEDED(res) ? newTexture : NULL;
+    if (lastTexture[dwSampler] != pTexture) {
+        if (FAILED(res = FlushVertexQueue())) {
+            return res;
+        }
+        J2dTraceLn2(J2D_TRACE_VERBOSE,
+                    "  new texture=0x%x on sampler %d", pTexture, dwSampler);
+        res = pd3dDevice->SetTexture(dwSampler, pTexture);
+        if (SUCCEEDED(res)) {
+            lastTexture[dwSampler] = pTexture;
+            // REMIND: see comment at UpdateTextureTransforms
+#ifdef UPDATE_TX
+            res = UpdateTextureTransforms(dwSampler);
+#endif
+        }  else {
+            lastTexture[dwSampler] = NULL;
+        }
     }
     return res;
 }
 
-void
-D3DContext::FlushD3DQueueForTarget(DDrawSurface *ddSurface)
+HRESULT
+D3DContext::UpdateTextureColorState(DWORD dwState, DWORD dwSampler)
 {
-    GetExclusiveAccess();
-    J2dTraceLn2(J2D_TRACE_VERBOSE,
-                "D3DContext::FlushD3DQueueForTarget surface=0x%x target=0x%x",
-                ddSurface, ddTargetSurface);
+    HRESULT res = S_OK;
 
-    if ((ddSurface == ddTargetSurface || ddSurface == NULL) &&
-        d3dDevice != NULL)
-    {
-        ForceEndScene();
+    if (dwState != lastTextureColorState[dwSampler]) {
+        res = pd3dDevice->SetTextureStageState(dwSampler,
+                                               D3DTSS_ALPHAARG1, dwState);
+        res = pd3dDevice->SetTextureStageState(dwSampler,
+                                               D3DTSS_COLORARG1, dwState);
+        lastTextureColorState[dwSampler] = dwState;
     }
-    ReleaseExclusiveAccess();
+
+    return res;
 }
 
-void
-D3DContext::InvalidateIfTarget(JNIEnv *env, DDrawSurface *ddSurface)
-{
-    GetExclusiveAccess();
-    if ((ddSurface == ddTargetSurface) && d3dDevice != NULL &&
-        jD3DContext != NULL)
-    {
-        J2dTraceLn(J2D_TRACE_VERBOSE,
-                   "D3DContext:InvalidateIfTarget: invalidating java context");
-
-        jobject jD3DContext_tmp = env->NewLocalRef(jD3DContext);
-        if (jD3DContext_tmp != NULL) {
-            JNU_CallMethodByName(env, NULL, jD3DContext_tmp,
-                                 "invalidateContext", "()V");
-            env->DeleteLocalRef(jD3DContext_tmp);
-        }
-    }
-    ReleaseExclusiveAccess();
-}
-
-void /*NOLOCK*/
+HRESULT /*NOLOCK*/
 D3DContext::UpdateState(jbyte newState)
 {
-    // Try to minimize context switching by only changing
-    // attributes when necessary.
-    if (newState != opState) {
-        // if the new context is texture rendering
-        if (newState & STATE_TEXTURE) {
-            // we can be here because of two reasons:
-            // old context wasn't STATE_TEXTURE or
-            // the new STATE_TEXTURE_STAGE is different
+    HRESULT res = S_OK;
 
-            // do the appropriate texture stage setup if needed
-            DWORD dwAA1, dwCA1;
-            BOOL bUpdateStateNeeded = FALSE;
-            if ((newState & STATE_TEXTURE_STAGE_MASK) &&
-                !(opState & STATE_TEXTURE_STAGE_MASK))
-            {
-                // setup mask rendering
-                dwAA1 = (D3DTA_TEXTURE|D3DTA_ALPHAREPLICATE);
-                dwCA1 = (D3DTA_TEXTURE|D3DTA_ALPHAREPLICATE);
-                bUpdateStateNeeded = TRUE;
-                J2dTraceLn(J2D_TRACE_VERBOSE,
-                           "UpdateState: STATE_TEXTURE_STAGE_MASK");
-            } else if ((newState & STATE_TEXTURE_STAGE_BLIT) &&
-                       !(opState & STATE_TEXTURE_STAGE_BLIT))
-            {
-                // setup blit rendering
-                dwAA1 = D3DTA_TEXTURE;
-                dwCA1 = D3DTA_TEXTURE;
-                bUpdateStateNeeded = TRUE;
-                J2dTraceLn(J2D_TRACE_VERBOSE,
-                           "UpdateState: STATE_TEXTURE_STAGE_BLIT");
-            }
-
-            // this optimization makes sense because if the state
-            // is changing from non-texture to texture, we don't necessarily
-            // need to update the texture stage state
-            if (bUpdateStateNeeded) {
-                d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, dwAA1);
-                d3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, dwCA1);
-            } else {
-                J2dTraceLn2(J2D_TRACE_WARNING,
-                            "UpdateState: no context changes were made! "\
-                            "current=0x%x new=0x%x", opState, newState);
-            }
-        } else {
-            J2dTraceLn(J2D_TRACE_VERBOSE,
-                       "UpdateState: STATE_RENDEROP");
-            // if switching from a texture rendering state
-            if (opState & STATE_TEXTURE) {
-                // disable texture rendering
-                // we don't need to change texture stage states
-                // because they're irrelevant if the texture
-                // is not set
-                // REMIND: another possible optimiziation: instead of
-                // setting texture to NULL, change the texture stage state
-                SetTexture(NULL);
-            }
-        }
-        opState = newState;
+    if (opState == newState) {
+        // The op is the same as last time, so we can return immediately.
+        return res;
+    } else if (opState != STATE_CHANGE) {
+        res = FlushVertexQueue();
     }
+
+    switch (opState) {
+    case STATE_MASKOP:
+        pMaskCache->Disable();
+        break;
+    case STATE_GLYPHOP:
+        D3DTR_DisableGlyphVertexCache(this);
+        break;
+    case STATE_TEXTUREOP:
+        // optimization: certain state changes (those marked STATE_CHANGE)
+        // are allowed while texturing is enabled.
+        // In this case, we can allow previousOp to remain as it is and
+        // then return early.
+        if (newState == STATE_CHANGE) {
+            return res;
+        }
+        // REMIND: not necessary if we are switching to MASKOP or GLYPHOP
+        // (or a complex paint, for that matter), but would that be a
+        // worthwhile optimization?
+        SetTexture(NULL);
+        break;
+    case STATE_AAPGRAMOP:
+        res = DisableAAParallelogramProgram();
+        break;
+    default:
+        break;
+    }
+
+    switch (newState) {
+    case STATE_MASKOP:
+        pMaskCache->Enable();
+        UpdateTextureColorState(D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE);
+        break;
+    case STATE_GLYPHOP:
+        D3DTR_EnableGlyphVertexCache(this);
+        UpdateTextureColorState(D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE);
+        break;
+    case STATE_TEXTUREOP:
+        UpdateTextureColorState(D3DTA_TEXTURE);
+        break;
+    case STATE_AAPGRAMOP:
+        res = EnableAAParallelogramProgram();
+        break;
+    default:
+        break;
+    }
+
+    opState = newState;
+
+    return res;
+}
+
+HRESULT D3DContext::FlushVertexQueue()
+{
+    if (pVCacher != NULL) {
+        return pVCacher->Render();
+    }
+    return E_FAIL;
 }
 
 HRESULT D3DContext::BeginScene(jbyte newState)
 {
-    if (!d3dDevice) {
-        return DDERR_GENERIC;
+    if (!pd3dDevice) {
+        return E_FAIL;
     } else {
         UpdateState(newState);
         if (!bBeginScenePending) {
             bBeginScenePending = TRUE;
-#ifdef DEBUG
-            endSceneQueueDepth = 0;
-#endif /* DEBUG */
-            HRESULT res = d3dDevice->BeginScene();
+            HRESULT res = pd3dDevice->BeginScene();
             J2dTraceLn(J2D_TRACE_INFO, "D3DContext::BeginScene");
             if (FAILED(res)) {
                 // this will cause context reinitialization
-                opState = STATE_UNDEFINED;
+                opState = STATE_CHANGE;
             }
             return res;
         }
-        return D3D_OK;
+        return S_OK;
     }
 }
 
-HRESULT D3DContext::EndScene(HRESULT ddResult) {
-    if (FAILED(ddResult)) {
-        return ForceEndScene();
-    }
-#ifdef DEBUG
-    endSceneQueueDepth++;
-#endif /* DEBUG */
-    return D3D_OK;
-}
-
-HRESULT D3DContext::ForceEndScene() {
+HRESULT D3DContext::EndScene() {
     if (bBeginScenePending) {
+        FlushVertexQueue();
         bBeginScenePending = FALSE;
-        J2dTraceLn(J2D_TRACE_INFO, "D3DContext::ForceEndScene");
-#ifdef DEBUG
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  queue depth=%d",
-                    endSceneQueueDepth);
-        endSceneQueueDepth = 0;
-#endif /* DEBUG */
-        return d3dDevice->EndScene();
+        J2dTraceLn(J2D_TRACE_INFO, "D3DContext::EndScene");
+        return pd3dDevice->EndScene();
     }
-    return D3D_OK;
+    return S_OK;
 }
 
 /**
- * Utility function: checks the result, calls RestoreSurface
- * on the destination surface, and throws InvalidPipeException.
+ * Compiles and links the given fragment shader program.  If
+ * successful, this function returns a handle to the newly created shader
+ * program; otherwise returns 0.
  */
-static void
-D3DContext_CheckResult(JNIEnv *env, HRESULT res, jlong pDest) {
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_CheckResult");
-    if (FAILED(res)) {
-        J2dTraceLn(J2D_TRACE_ERROR,
-                   "D3DContext_CheckResult: failed, restoring dest surface");
-        Win32SDOps *dstOps = (Win32SDOps *)jlong_to_ptr(pDest);
-        if (dstOps != NULL) {
-            // RestoreSurface for surfaces associated
-            // with VolatileImages only marks them lost, not
-            // attempting to restore. This is done later
-            // when VolatileImage.validate() is called.
-            dstOps->RestoreSurface(env, dstOps);
+IDirect3DPixelShader9 *D3DContext::CreateFragmentProgram(DWORD **shaders,
+                                                       ShaderList *programs,
+                                                       jint flags)
+{
+    DWORD *sourceCode;
+    IDirect3DPixelShader9 *pProgram;
 
-            // if this is an "unexpected" error, disable acceleration
-            // of this image to avoid an infinite recreate/render/error loop
-            if (res != DDERR_SURFACELOST && res != DDERR_INVALIDMODE &&
-                res != DDERR_GENERIC && res != DDERR_WASSTILLDRAWING &&
-                res != DDERR_SURFACEBUSY)
-            {
-                jobject sdObject = env->NewLocalRef(dstOps->sdOps.sdObject);
-                if (sdObject != NULL) {
-                    JNU_CallMethodByName(env, NULL, sdObject,
-                                         "disableD3D", "()V");
-                    env->DeleteLocalRef(sdObject);
-                }
-            }
+    J2dTraceLn1(J2D_TRACE_INFO,
+                "D3DContext::CreateFragmentProgram: flags=%d",
+                flags);
 
+    sourceCode = shaders[flags];
+    if (FAILED(pd3dDevice->CreatePixelShader(sourceCode, &pProgram))) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+            "D3DContext::CreateFragmentProgram: error creating program");
+        return NULL;
+    }
+
+    // add it to the cache
+    ShaderList_AddProgram(programs, ptr_to_jlong(pProgram),
+                          0 /*unused*/, 0 /*unused*/, flags);
+
+    return pProgram;
+}
+
+/**
+ * Locates and enables a fragment program given a list of shader programs
+ * (ShaderInfos), using this context's state and flags as search
+ * parameters.  The "flags" parameter is a bitwise-or'd value that helps
+ * differentiate one program for another; the interpretation of this value
+ * varies depending on the type of shader (BufImgOp, Paint, etc) but here
+ * it is only used to find another ShaderInfo with that same "flags" value.
+ */
+HRESULT D3DContext::EnableFragmentProgram(DWORD **shaders,
+                                          ShaderList *programList,
+                                          jint flags)
+{
+    HRESULT res;
+    jlong programID;
+    IDirect3DPixelShader9 *pProgram;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::EnableFragmentProgram");
+
+    programID =
+        ShaderList_FindProgram(programList,
+                               0 /*unused*/, 0 /*unused*/, flags);
+
+    pProgram = (IDirect3DPixelShader9 *)jlong_to_ptr(programID);
+    if (pProgram == NULL) {
+        pProgram = CreateFragmentProgram(shaders, programList, flags);
+        if (pProgram == NULL) {
+            return E_FAIL;
         }
-        SurfaceData_ThrowInvalidPipeException(env, "Surface Lost");
     }
+
+    if (FAILED(res = pd3dDevice->SetPixelShader(pProgram))) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+            "D3DContext::EnableFragmentProgram: error setting pixel shader");
+        return res;
+    }
+
+    return S_OK;
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    setTransform
- * Signature: (JLLjava/awt/geom/AffineTransform;DDDDDD)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DContext_setTransform
-    (JNIEnv *env, jobject d3dc, jlong pCtx, jlong pDest, jobject xform,
-     jdouble m00, jdouble m10,
-     jdouble m01, jdouble m11,
-     jdouble m02, jdouble m12)
+HRESULT D3DContext::EnableBasicGradientProgram(jint flags)
 {
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_setTransform");
-    if (pd3dc != NULL) {
-        HRESULT res = pd3dc->SetTransform(xform,
-                                          m00,  m10,
-                                          m01,  m11,
-                                          m02,  m12);
-        D3DContext_CheckResult(env, res, pDest);
-    }
+    return EnableFragmentProgram((DWORD **)gradShaders,
+                                 &basicGradPrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    resetTransform
- * Signature: (JLL)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DContext_resetTransform
-    (JNIEnv *env, jobject d3dc, jlong pCtx, jlong pDest)
+HRESULT D3DContext::EnableLinearGradientProgram(jint flags)
 {
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_resetTransform");
-    if (pd3dc != NULL) {
-        HRESULT res = pd3dc->SetTransform(NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        D3DContext_CheckResult(env, res, pDest);
-    }
+    return EnableFragmentProgram((DWORD **)linearShaders,
+                                 &linearGradPrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    setClip
- * Signature: (JLLsun/java2d/pipe/Region;ZIIII)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DContext_setClip
-    (JNIEnv *env, jobject d3dc, jlong pCtx, jlong pDest,
-     jobject clip, jboolean isRect,
-     jint x1, jint y1, jint x2, jint y2)
+HRESULT D3DContext::EnableRadialGradientProgram(jint flags)
 {
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_setClip");
-    if (pd3dc != NULL) {
-        HRESULT res = pd3dc->SetClip(env, clip, isRect, x1, y1, x2, y2);
-        D3DContext_CheckResult(env, res, pDest);
-    }
+    return EnableFragmentProgram((DWORD **)radialShaders,
+                                 &radialGradPrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    resetClip
- * Signature: (JLLsun/java2d/pipe/Region;Z)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DContext_resetClip
-    (JNIEnv *env, jobject d3dc, jlong pCtx, jlong pDest)
+HRESULT D3DContext::EnableConvolveProgram(jint flags)
 {
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_resetClip");
-    if (pd3dc != NULL) {
-        HRESULT res = pd3dc->SetClip(env, NULL, JNI_FALSE, 0, 0, 0, 0);
-        D3DContext_CheckResult(env, res, pDest);
-    }
+    return EnableFragmentProgram((DWORD **)convolveShaders,
+                                 &convolvePrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    setRenderTarget
- * Signature: (JJ)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DContext_setRenderTarget
-    (JNIEnv *env, jobject d3dc, jlong pCtx, jlong pDest)
+HRESULT D3DContext::EnableRescaleProgram(jint flags)
 {
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    Win32SDOps *dstOps = (Win32SDOps *)jlong_to_ptr(pDest);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_setRenderTarget");
-    if (pd3dc != NULL && dstOps != NULL) {
-        HRESULT res = pd3dc->SetRenderTarget(dstOps->lpSurface);
-        D3DContext_CheckResult(env, res, pDest);
-    }
+    return EnableFragmentProgram((DWORD **)rescaleShaders,
+                                 &rescalePrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    setColor
- * Signature: (JII)V
- */
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DContext_setColor(JNIEnv *env, jobject oc,
-                                        jlong pCtx,
-                                        jint pixel, jint flags)
+HRESULT D3DContext::EnableLookupProgram(jint flags)
 {
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_setColor");
-    if (d3dc != NULL) {
-        d3dc->SetColor(pixel, flags);
-    }
+    return EnableFragmentProgram((DWORD **)lookupShaders,
+                                 &lookupPrograms, flags);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    setAlphaComposite
- * Signature: (JIFI)V
- */
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DContext_setAlphaComposite(JNIEnv *env, jobject oc,
-                                                 jlong pCtx,
-                                                 jint rule,
-                                                 jfloat extraAlpha,
-                                                 jint flags)
+HRESULT D3DContext::EnableLCDTextProgram()
 {
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
+    HRESULT res;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_setAlphaComposite");
-    if (d3dc != NULL) {
-        d3dc->SetAlphaComposite(rule, extraAlpha, flags);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::EnableLCDTextProgram");
+
+    if (lcdTextProgram == NULL) {
+        if (FAILED(res = pd3dDevice->CreatePixelShader(lcdtext0,
+                                                       &lcdTextProgram)))
+        {
+            return res;
+        }
     }
 
+    if (FAILED(res = pd3dDevice->SetPixelShader(lcdTextProgram))) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+            "D3DContext::EnableLCDTextProgram: error setting pixel shader");
+        return res;
+    }
+
+    return S_OK;
 }
 
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DContext_resetComposite(JNIEnv *env, jobject oc,
-                                              jlong pCtx)
+HRESULT D3DContext::EnableAAParallelogramProgram()
 {
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
+    HRESULT res;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_resetComposite");
-    if (d3dc != NULL) {
-        d3dc->ResetComposite();
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::EnableAAParallelogramProgram");
+
+    if (aaPgramProgram == NULL) {
+        if (FAILED(res = pd3dDevice->CreatePixelShader(aapgram0,
+                                                       &aaPgramProgram))) {
+            DebugPrintD3DError(res, "D3DContext::EnableAAParallelogramProgram: "
+                               "error creating pixel shader");
+            return res;
+        }
     }
+
+    if (FAILED(res = pd3dDevice->SetPixelShader(aaPgramProgram))) {
+        DebugPrintD3DError(res, "D3DContext::EnableAAParallelogramProgram: "
+                           "error setting pixel shader");
+        return res;
+    }
+
+    return S_OK;
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    initNativeContext
- * Signature: (I)J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_java2d_d3d_D3DContext_initNativeContext
-  (JNIEnv *env, jobject d3dc, jint screen)
+HRESULT D3DContext::DisableAAParallelogramProgram()
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DContext_initNativeContext screen=%d",
-                screen);
+    HRESULT res;
 
-    HMONITOR hMon = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-    DDrawObjectStruct *tmpDdInstance = GetDDInstanceForDevice(hMon);
-    D3DContext *d3dContext = NULL;
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::DisableAAParallelogramProgram");
 
-    if (tmpDdInstance != NULL && tmpDdInstance->ddObject != NULL) {
-        AwtToolkit::GetInstance().SendMessage(WM_AWT_D3D_CREATE_DEVICE,
-                                              (WPARAM)tmpDdInstance->ddObject,
-                                              NULL);
-        d3dContext = tmpDdInstance->ddObject->GetD3dContext();
+    if (aaPgramProgram != NULL) {
+        if (FAILED(res = pd3dDevice->SetPixelShader(NULL))) {
+            DebugPrintD3DError(res,
+                               "D3DContext::DisableAAParallelogramProgram: "
+                               "error clearing pixel shader");
+            return res;
+        }
     }
-    J2dTraceLn1(J2D_TRACE_VERBOSE,
-                "D3DContext_initNativeContext created d3dContext=0x%x",
-                d3dContext);
 
-    return ptr_to_jlong(d3dContext);
+    return S_OK;
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DContext
- * Method:    getNativeDeviceCaps
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_sun_java2d_d3d_D3DContext_getNativeDeviceCaps
-  (JNIEnv *env, jobject d3dc, jlong pCtx)
+BOOL D3DContext::IsAlphaRTSurfaceSupported()
 {
-    D3DContext *d3dContext = (D3DContext *)jlong_to_ptr(pCtx);
+    HRESULT res = pd3dObject->CheckDeviceFormat(adapterOrdinal,
+            devCaps.DeviceType,
+            curParams.BackBufferFormat,
+            D3DUSAGE_RENDERTARGET,
+            D3DRTYPE_SURFACE,
+            D3DFMT_A8R8G8B8);
+    return SUCCEEDED(res);
+}
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DContext_getNativeDeviceCaps");
-    if (d3dContext != NULL) {
-        d3dContext->SetJavaContext(env, d3dc);
-        return (jint)d3dContext->GetDeviceCaps();
+BOOL D3DContext::IsAlphaRTTSupported()
+{
+    HRESULT res = pd3dObject->CheckDeviceFormat(adapterOrdinal,
+            devCaps.DeviceType,
+            curParams.BackBufferFormat,
+            D3DUSAGE_RENDERTARGET,
+            D3DRTYPE_TEXTURE,
+            D3DFMT_A8R8G8B8);
+    return SUCCEEDED(res);
+}
+
+BOOL D3DContext::IsOpaqueRTTSupported()
+{
+    HRESULT res = pd3dObject->CheckDeviceFormat(adapterOrdinal,
+            devCaps.DeviceType,
+            curParams.BackBufferFormat,
+            D3DUSAGE_RENDERTARGET,
+            D3DRTYPE_TEXTURE,
+            curParams.BackBufferFormat);
+    return SUCCEEDED(res);
+}
+
+HRESULT D3DContext::InitContextCaps() {
+    J2dTraceLn(J2D_TRACE_INFO, "D3DContext::InitContextCaps");
+    J2dTraceLn1(J2D_TRACE_VERBOSE, "  caps for adapter %d :", adapterOrdinal);
+
+    if (pd3dDevice == NULL || pd3dObject == NULL) {
+        contextCaps = CAPS_EMPTY;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_EMPTY");
+        return E_FAIL;
     }
-    return J2D_D3D_FAILURE;
+
+    contextCaps = CAPS_DEVICE_OK;
+    J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_DEVICE_OK");
+
+    if (IsAlphaRTSurfaceSupported()) {
+        contextCaps |= CAPS_RT_PLAIN_ALPHA;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_RT_PLAIN_ALPHA");
+    }
+    if (IsAlphaRTTSupported()) {
+        contextCaps |= CAPS_RT_TEXTURE_ALPHA;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_RT_TEXTURE_ALPHA");
+    }
+    if (IsOpaqueRTTSupported()) {
+        contextCaps |= CAPS_RT_TEXTURE_OPAQUE;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_RT_TEXTURE_OPAQUE");
+    }
+    if (IsPixelShader20Supported()) {
+        contextCaps |= CAPS_LCD_SHADER | CAPS_BIOP_SHADER | CAPS_PS20;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE,
+                      "  | CAPS_LCD_SHADER | CAPS_BIOP_SHADER | CAPS_PS20");
+        // Pre-PS3.0 video boards are very slow with the AA shader, so
+        // we will require PS30 hw even though the shader is compiled for 2.0a
+//        if (IsGradientInstructionExtensionSupported()) {
+//            contextCaps |= CAPS_AA_SHADER;
+//            J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_AA_SHADER");
+//        }
+    }
+    if (IsPixelShader30Supported()) {
+        if ((contextCaps & CAPS_AA_SHADER) == 0) {
+            // This flag was not already mentioned above...
+            J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_AA_SHADER");
+        }
+        contextCaps |= CAPS_PS30 | CAPS_AA_SHADER;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_PS30");
+    }
+    if (IsMultiTexturingSupported()) {
+        contextCaps |= CAPS_MULTITEXTURE;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_MULTITEXTURE");
+    }
+    if (!IsPow2TexturesOnly()) {
+        contextCaps |= CAPS_TEXNONPOW2;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_TEXNONPOW2");
+    }
+    if (!IsSquareTexturesOnly()) {
+        contextCaps |= CAPS_TEXNONSQUARE;
+        J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  | CAPS_TEXNONSQUARE");
+    }
+    return S_OK;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -112,29 +112,11 @@ FILES_cpp = \
 	GDIHashtable.cpp \
 	Devices.cpp \
 	ObjectList.cpp \
-	DDBlitLoops.cpp \
-	DDRenderer.cpp \
 	GDIBlitLoops.cpp \
 	GDIRenderer.cpp \
-	Win32OffScreenSurfaceData.cpp \
-	Win32SurfaceData.cpp \
-	WinBackBufferSurfaceData.cpp \
+	GDIWindowSurfaceData.cpp \
 	WindowsFlags.cpp \
-	WBufferStrategy.cpp \
 	WPrinterJob.cpp \
-	ddrawUtils.cpp \
-	dxCapabilities.cpp \
-	dxInit.cpp \
-	RegistryKey.cpp \
-	D3DBlitLoops.cpp \
-	D3DContext.cpp \
-	D3DMaskFill.cpp \
-	D3DRenderer.cpp \
-	D3DRuntimeTest.cpp \
-	D3DSurfaceData.cpp \
-	D3DTextRenderer_md.cpp \
-	D3DUtils.cpp \
-	ddrawObject.cpp \
 	awt_AWTEvent.cpp \
 	awt_BitmapUtil.cpp \
 	awt_Brush.cpp \
@@ -199,6 +181,23 @@ FILES_cpp = \
 	awt_Mlib.cpp \
 	awt_new.cpp \
 	awt_TrayIcon.cpp \
+	ShaderList.cpp \
+	D3DBlitLoops.cpp \
+	D3DBufImgOps.cpp \
+	D3DContext.cpp \
+	D3DGlyphCache.cpp \
+	D3DGraphicsDevice.cpp \
+	D3DMaskBlit.cpp \
+	D3DMaskCache.cpp \
+	D3DMaskFill.cpp \
+	D3DPipelineManager.cpp \
+	D3DPaints.cpp \
+	D3DRenderer.cpp \
+	D3DRenderQueue.cpp \
+	D3DResourceManager.cpp \
+	D3DSurfaceData.cpp \
+	D3DTextRenderer.cpp \
+	D3DVertexCacher.cpp \
 	ShellFolder2.cpp \
 	ThemeReader.cpp \
 	ComCtl32Util.cpp \

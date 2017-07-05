@@ -35,7 +35,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files to compile
 #
-AUTO_FILES_JAVA_DIRS = javax/transaction/xa
+AUTO_FILES_JAVA_DIRS = javax/transaction
 
 #
 # Rules

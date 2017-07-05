@@ -1,5 +1,5 @@
 #
-# Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,7 @@ SUNWprivate_1.1 {
         Java_java_awt_TextField_initIDs;
         Java_java_awt_TrayIcon_initIDs;
         Java_sun_font_FontManager_getFontConfig;
+        Java_sun_font_FontManager_getFontConfigVersion;
         Java_sun_font_FontManager_getFontConfigAASettings;
 	Java_sun_font_FontManager_getFontPath;
 	Java_sun_font_FontManager_setNativeFontPath;
@@ -241,6 +242,7 @@ SUNWprivate_1.1 {
         AWTCharAscent;
         AWTCharDescent;
         AWTDrawGlyphList;
+        AccelGlyphCache_RemoveAllCellInfos;
 
         Java_sun_awt_X11_XToolkit_waitForEvents;
         Java_java_awt_Event_initIDs;

@@ -41,6 +41,7 @@
  */
 
 extern int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP);
+int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP);
 
 /* IP helper library routines */
 int (PASCAL FAR *GetIpAddrTable_fn)();
@@ -168,11 +169,10 @@ static int ipinflen = 2048;
  */
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
-    DWORD ret, numInterfaces;
-    IP_ADAPTER_ADDRESSES *ptr, *ptr1, *adapters=0;
+    DWORD ret;
+    IP_ADAPTER_ADDRESSES *ptr, *adapters=0;
     ULONG len=ipinflen, count=0;
     netif *nif=0, *dup_nif, *last=0, *loopif=0;
-    netaddr *addr, *addr1;
     int tun=0, net=0;
 
     *netifPP = 0;
@@ -330,7 +330,7 @@ err:
 
 static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
     LPSOCKADDR                   sock;
-    int                          ret, count = 0;
+    int                          count = 0;
     netaddr                     *curr, *start=0, *prev=0;
     PIP_ADAPTER_UNICAST_ADDRESS uni_addr;
     PIP_ADAPTER_ANYCAST_ADDRESS any_addr;
@@ -364,7 +364,7 @@ static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
             sock = uni_addr->Address.lpSockaddr;
             SOCKETADDRESS_COPY (&curr->addr, sock);
             if (prefix != NULL) {
-              curr->mask = prefix->PrefixLength;
+              curr->mask = (short)prefix->PrefixLength;
               if (sock->sa_family == AF_INET) {
                 sock = prefix->Address.lpSockaddr;
                 SOCKETADDRESS_COPY(&curr->brdcast, sock);
