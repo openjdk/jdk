@@ -81,7 +81,7 @@ public interface Struct {
   /**
    * Produces the ordered values of the attributes of the SQL
    * structured type that this <code>Struct</code> object represents.
-   *  As individual attrbutes are proccessed, this method uses the given type map
+   *  As individual attributes are processed, this method uses the given type map
    * for customizations of the type mappings.
    * If there is no
    * entry in the given type map that matches the structured

@@ -34,6 +34,7 @@ import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetLongAction;
+import sun.security.action.GetPropertyAction;
 
 /**
  * RMIMasterSocketFactory attempts to create a socket connection to the
@@ -103,22 +104,21 @@ public class RMIMasterSocketFactory extends RMISocketFactory {
         try {
             String proxyHost;
             proxyHost = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("http.proxyHost"));
+                new GetPropertyAction("http.proxyHost"));
 
             if (proxyHost == null)
                 proxyHost = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("proxyHost"));
+                    new GetPropertyAction("proxyHost"));
 
-            Boolean tmp = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction("java.rmi.server.disableHttp"));
+            boolean disable = java.security.AccessController.doPrivileged(
+                new GetPropertyAction("java.rmi.server.disableHttp", "true"))
+                .equalsIgnoreCase("true");
 
-            if (!tmp.booleanValue() &&
-                (proxyHost != null && proxyHost.length() > 0)) {
+            if (!disable && proxyHost != null && proxyHost.length() > 0) {
                 setFactories = true;
             }
         } catch (Exception e) {
-            // unable to obtain the properties, so assume default behavior.
-            setFactories = true;
+            // unable to obtain the properties, so use the default behavior.
         }
 
         if (setFactories) {

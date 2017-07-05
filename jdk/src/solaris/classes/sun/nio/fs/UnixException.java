@@ -61,7 +61,7 @@ class UnixException extends Exception {
         if (msg != null) {
             return msg;
         } else {
-            return new String(UnixNativeDispatcher.strerror(errno()));
+            return Util.toString(UnixNativeDispatcher.strerror(errno()));
         }
     }
 

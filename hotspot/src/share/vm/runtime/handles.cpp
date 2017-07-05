@@ -45,7 +45,7 @@
 oop* HandleArea::allocate_handle(oop obj) {
   assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
-  assert(obj->is_oop(), "sanity check");
+  assert(obj->is_oop(), err_msg("not an oop: " INTPTR_FORMAT, (intptr_t*) obj));
   return real_allocate_handle(obj);
 }
 

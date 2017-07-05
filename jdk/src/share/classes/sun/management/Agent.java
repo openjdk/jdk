@@ -323,7 +323,7 @@ public class Agent {
                     : String.format(
                     "service:jmx:rmi:///jndi/rmi://%s:%s/jmxrmi", hostname, jmxremotePort);
 
-            String instanceName = System.getProperty("com.sun.management.jdp.name");
+            String instanceName = props.getProperty("com.sun.management.jdp.name");
 
             try{
                JdpController.startDiscoveryService(address, port, instanceName, jmxUrlStr);

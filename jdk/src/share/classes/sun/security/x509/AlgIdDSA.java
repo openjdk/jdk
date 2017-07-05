@@ -113,9 +113,9 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
      * define the algorithm parameters.  Those integers are encoded
      * as big-endian byte arrays.
      *
-     * @param p the DSS/DSA paramter "P"
-     * @param q the DSS/DSA paramter "Q"
-     * @param g the DSS/DSA paramter "G"
+     * @param p the DSS/DSA parameter "P"
+     * @param q the DSS/DSA parameter "Q"
+     * @param g the DSS/DSA parameter "G"
      */
     public AlgIdDSA (byte p [], byte q [], byte g [])
     throws IOException
@@ -130,9 +130,9 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
      * If all three are null, then the parameters portion of the algorithm id
      * is set to null.  See note in header regarding use.
      *
-     * @param p the DSS/DSA paramter "P"
-     * @param q the DSS/DSA paramter "Q"
-     * @param g the DSS/DSA paramter "G"
+     * @param p the DSS/DSA parameter "P"
+     * @param q the DSS/DSA parameter "Q"
+     * @param g the DSS/DSA parameter "G"
      */
     public AlgIdDSA (BigInteger p, BigInteger q, BigInteger g)
     {

@@ -662,7 +662,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
     /**
      * Returns the "extent" from the <code>BoundedRangeModel</code>.
-     * This respresents the range of values "covered" by the knob.
+     * This represents the range of values "covered" by the knob.
      *
      * @return an int representing the extent
      * @see #setExtent

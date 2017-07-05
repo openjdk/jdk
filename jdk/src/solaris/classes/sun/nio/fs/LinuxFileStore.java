@@ -98,7 +98,8 @@ class LinuxFileStore
             int fd = path.openForAttributeAccess(false);
             try {
                 // fgetxattr returns size if called with size==0
-                LinuxNativeDispatcher.fgetxattr(fd, "user.java".getBytes(), 0L, 0);
+                byte[] name = Util.toBytes("user.java");
+                LinuxNativeDispatcher.fgetxattr(fd, name, 0L, 0);
                 return true;
             } catch (UnixException e) {
                 // attribute does not exist

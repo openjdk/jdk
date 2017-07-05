@@ -78,7 +78,7 @@ import java.net.*;
  * </UL>
  *
  * <P>If handshaking fails for any reason, the <code>SSLSocket</code>
- * is closed, and no futher communications can be done.
+ * is closed, and no further communications can be done.
  *
  * <P>There are two groups of cipher suites which you will need to know
  * about when managing cipher suites: <UL>

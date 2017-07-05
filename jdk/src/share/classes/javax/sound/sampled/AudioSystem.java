@@ -115,7 +115,7 @@ import com.sun.media.sound.JDK13Services;
  * is optional.
  *
  * <p>If the provider class is specified, and it can be
- * successully retrieved from the installed providers, the list of
+ * successfully retrieved from the installed providers, the list of
  * <code>Mixer.Info</code> objects is retrieved
  * from the provider. Otherwise, or when these mixers
  * do not provide a subsequent match, the list is retrieved

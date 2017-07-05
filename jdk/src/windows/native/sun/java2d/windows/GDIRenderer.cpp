@@ -68,7 +68,7 @@ static POINT *TransformPoly(jint *xpoints, jint *ypoints,
 
     // Fix for 4298688 - draw(Line) and Polygon omit last pixel
     // We will need to add a point if we need to close it off or
-    // if we need to fix the endpoint to accomodate the Windows
+    // if we need to fix the endpoint to accommodate the Windows
     // habit of never drawing the last pixel of a Polyline.  Note
     // that if the polyline is already closed then neither fix
     // is needed because the last pixel is also the first pixel

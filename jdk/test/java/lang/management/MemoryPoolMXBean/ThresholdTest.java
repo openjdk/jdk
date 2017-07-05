@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          MemoryPoolMXBean.isCollectionThresholdExceeded().
  * @author  Mandy Chung
  *
- * @run main ThresholdTest
+ * @run main/othervm ThresholdTest
  */
 
 import java.lang.management.*;
@@ -36,6 +36,9 @@ import java.util.*;
 
 public class ThresholdTest {
     public static void main(String args[]) throws Exception {
+        long[] bigObject = new long[1000000];
+
+        System.gc(); // force an initial full-gc
         List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
         try {
             for (MemoryPoolMXBean p : pools) {
@@ -82,6 +85,10 @@ public class ThresholdTest {
         }
 
         p.setUsageThreshold(1);
+        // force a full gc to minimize the likelihood of running GC
+        // between getting the usage and checking the threshold
+        System.gc();
+
         MemoryUsage u = p.getUsage();
         if (u.getUsed() >= 1) {
             if (!p.isUsageThresholdExceeded()) {

@@ -569,7 +569,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Returns true if the character at offset is navigatable too. This
+     * Returns true if the character at offset is navigable too. This
      * is implemented in terms of <code>isLiteral</code>, subclasses
      * may wish to provide different behavior.
      */
@@ -862,7 +862,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Returns the number of occurences of <code>f</code> before
+     * Returns the number of occurrences of <code>f</code> before
      * the location <code>start</code> in the current
      * <code>AttributedCharacterIterator</code>.
      */

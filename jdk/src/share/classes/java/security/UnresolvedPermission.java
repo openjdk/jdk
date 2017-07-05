@@ -441,7 +441,7 @@ implements java.io.Serializable
      *
      * @return the target name of the underlying permission that
      *          has not been resolved, or {@code null},
-     *          if there is no targe name
+     *          if there is no target name
      *
      * @since 1.5
      */

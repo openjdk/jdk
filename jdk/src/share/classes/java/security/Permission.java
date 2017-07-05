@@ -138,14 +138,14 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * Returns the hash code value for this Permission object.
      * <P>
      * The required {@code hashCode} behavior for Permission Objects is
-     * the following: <p>
+     * the following:
      * <ul>
      * <li>Whenever it is invoked on the same Permission object more than
      *     once during an execution of a Java application, the
      *     {@code hashCode} method
      *     must consistently return the same integer. This integer need not
      *     remain consistent from one execution of an application to another
-     *     execution of the same application. <p>
+     *     execution of the same application.
      * <li>If two Permission objects are equal according to the
      *     {@code equals}
      *     method, then calling the {@code hashCode} method on each of the

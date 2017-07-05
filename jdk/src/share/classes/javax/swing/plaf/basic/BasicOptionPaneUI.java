@@ -923,7 +923,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         private boolean reverseButtons;
         /**
          * Indicates whether or not centersChildren should be used vs
-         * the orientation. This is done for backward compatability
+         * the orientation. This is done for backward compatibility
          * for subclassers.
          */
         private boolean useOrientation;

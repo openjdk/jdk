@@ -52,7 +52,7 @@
  * the number times an object has been referenced through
  * commonRef_refToID. A RefNode is freed once the reference
  * count is decremented to 0 (with commonRef_release*), even if the
- * correspoding object has not been collected.
+ * corresponding object has not been collected.
  *
  * One hash table is maintained. The mapping of ID to jobject (or RefNode*)
  * is handled with one hash table that will re-size itself as the number

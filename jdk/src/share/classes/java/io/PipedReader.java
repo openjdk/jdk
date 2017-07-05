@@ -145,15 +145,14 @@ public class PipedReader extends Reader {
      * unconnected piped writer and <code>snk</code>
      * is an unconnected piped reader, they
      * may be connected by either the call:
-     * <p>
+     *
      * <pre><code>snk.connect(src)</code> </pre>
      * <p>
      * or the call:
-     * <p>
+     *
      * <pre><code>src.connect(snk)</code> </pre>
      * <p>
-     * The two
-     * calls have the same effect.
+     * The two calls have the same effect.
      *
      * @param      src   The piped writer to connect to.
      * @exception  IOException  if an I/O error occurs.

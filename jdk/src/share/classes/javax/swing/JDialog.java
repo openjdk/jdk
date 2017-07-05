@@ -44,9 +44,10 @@ import javax.accessibility.*;
  * as its only child.
  * The {@code contentPane} should be the parent of any children of the
  * {@code JDialog}.
- * As a convenience {@code add} and its variants, {@code remove} and
- * {@code setLayout} have been overridden to forward to the
- * {@code contentPane} as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to a dialog as follows:
  * <pre>
  *       dialog.add(child);
  * </pre>
@@ -862,7 +863,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * {@code setLayout} are forwarded to the {@code contentPane}.
      *
      * @return true if {@code add} and {@code setLayout}
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout
@@ -1024,7 +1025,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * This method is called by the constructor.
      * <p>
      * Swing's painting architecture requires an opaque {@code JComponent}
-     * in the containment hiearchy. This is typically provided by the
+     * in the containment hierarchy. This is typically provided by the
      * content pane. If you replace the content pane it is recommended you
      * replace it with an opaque {@code JComponent}.
      * @see JRootPane

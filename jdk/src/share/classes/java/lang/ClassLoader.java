@@ -362,7 +362,7 @@ public abstract class ClassLoader {
      * default implementation of this method searches for classes in the
      * following order:
      *
-     * <p><ol>
+     * <ol>
      *
      *   <li><p> Invoke {@link #findLoadedClass(String)} to check if the class
      *   has already been loaded.  </p></li>
@@ -488,7 +488,7 @@ public abstract class ClassLoader {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (ReflectUtil.isNonPublicProxyClass(cls)) {
-                for (Class intf: cls.getInterfaces()) {
+                for (Class<?> intf: cls.getInterfaces()) {
                     checkPackageAccess(intf, pd);
                 }
                 return;

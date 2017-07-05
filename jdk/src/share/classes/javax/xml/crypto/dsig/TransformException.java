@@ -31,7 +31,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 
 /**
- * Indicates an exceptional condition that occured while executing a
+ * Indicates an exceptional condition that occurred while executing a
  * transform algorithm.
  *
  * <p>A <code>TransformException</code> can contain a cause: another

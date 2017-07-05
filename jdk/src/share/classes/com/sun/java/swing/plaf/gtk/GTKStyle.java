@@ -131,7 +131,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
      * Returns a <code>SynthPainter</code> that will route the appropriate
      * calls to a <code>GTKEngine</code>.
      *
-     * @param state SynthContext indentifying requestor
+     * @param state SynthContext identifying requestor
      * @return SynthPainter
      */
     @Override
@@ -204,7 +204,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     /**
      * Returns the color for the specified state.
      *
-     * @param context SynthContext identifying requester
+     * @param context SynthContext identifying requestor
      * @param state to get the color for
      * @param type of the color
      * @return Color to render with
@@ -305,7 +305,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
      * insets will be placed in it, otherwise a new Insets object will be
      * created and returned.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @param insets Where to place Insets
      * @return Insets.
      */
@@ -640,7 +640,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     /**
      * Convenience method to get a class specific integer value.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @param key Key identifying class specific value
      * @param defaultValue Returned if there is no value for the specified
      *        type
@@ -660,7 +660,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     /**
      * Convenience method to get a class specific Insets value.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @param key Key identifying class specific value
      * @param defaultValue Returned if there is no value for the specified
      *        type
@@ -680,7 +680,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     /**
      * Convenience method to get a class specific Boolean value.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @param key Key identifying class specific value
      * @param defaultValue Returned if there is no value for the specified
      *        type
@@ -702,7 +702,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
      * to. A Style should NOT assume the opacity will remain this value, the
      * developer may reset it or override it.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @return opaque Whether or not the JComponent is opaque.
      */
     @Override
@@ -843,7 +843,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
 
         // Is it another kind of value ?
         if (key != "engine") {
-            // For backward compatability we'll fallback to the UIManager.
+            // For backward compatibility we'll fallback to the UIManager.
             // We don't go to the UIManager for engine as the engine is GTK
             // specific.
             Object value = UIManager.get(key);

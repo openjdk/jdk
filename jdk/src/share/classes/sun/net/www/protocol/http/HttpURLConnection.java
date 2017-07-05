@@ -903,6 +903,18 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     private String getHostAndPort(URL url) {
         String host = url.getHost();
+        final String hostarg = host;
+        try {
+            // lookup hostname and use IP address if available
+            host = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<String>() {
+                    public String run() throws IOException {
+                            InetAddress addr = InetAddress.getByName(hostarg);
+                            return addr.getHostAddress();
+                    }
+                }
+            );
+        } catch (PrivilegedActionException e) {}
         int port = url.getPort();
         if (port == -1) {
             String scheme = url.getProtocol();
@@ -2256,7 +2268,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets the authentication for an HTTP server, and applies it to
      * the connection.
      * @param authHdr the AuthenticationHeader which tells what auth scheme is
-     * prefered.
+     * preferred.
      */
     @SuppressWarnings("fallthrough")
     private AuthenticationInfo getServerAuthentication (AuthenticationHeader authhdr) {

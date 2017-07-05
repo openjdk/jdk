@@ -43,7 +43,7 @@ package java.awt.font;
 import java.awt.geom.Rectangle2D;
 
 /**
- * The <code>GlyphMetrics</code> class represents infomation for a
+ * The <code>GlyphMetrics</code> class represents information for a
  * single glyph.   A glyph is the visual representation of one or more
  * characters.  Many different glyphs can be used to represent a single
  * character or combination of characters.  <code>GlyphMetrics</code>
@@ -143,24 +143,24 @@ public final class GlyphMetrics {
      * as a ligature, for example 'fi' or 'ffi'.  It is followed by
      * filler glyphs for the remaining characters. Filler and combining
      * glyphs can be intermixed to control positioning of accent marks
-     * on the logically preceeding ligature.
+     * on the logically preceding ligature.
      */
     public static final byte LIGATURE = 1;
 
     /**
      * Indicates a glyph that represents a combining character,
      * such as an umlaut.  There is no caret position between this glyph
-     * and the preceeding glyph.
+     * and the preceding glyph.
      */
     public static final byte COMBINING = 2;
 
     /**
      * Indicates a glyph with no corresponding character in the
      * backing store.  The glyph is associated with the character
-     * represented by the logicaly preceeding non-component glyph.  This
+     * represented by the logically preceding non-component glyph.  This
      * is used for kashida justification or other visual modifications to
      * existing glyphs.  There is no caret position between this glyph
-     * and the preceeding glyph.
+     * and the preceding glyph.
      */
     public static final byte COMPONENT = 3;
 

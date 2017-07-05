@@ -36,7 +36,7 @@ import javax.sql.rowset.*;
 
 /**
  * The standard implementation of the <code>JdbcRowSet</code> interface. See the interface
- * defintion for full behavior and implementation requirements.
+ * definition for full behavior and implementation requirements.
  *
  * @author Jonathan Bruce, Amit Handa
  */
@@ -67,7 +67,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     private ResultSet rs;
 
     /**
-     * The <code>RowSetMetaDataImpl</code> object that is contructed when
+     * The <code>RowSetMetaDataImpl</code> object that is constructed when
      * a <code>ResultSet</code> object is passed to the <code>JdbcRowSet</code>
      * constructor. This helps in constructing all metadata associated
      * with the <code>ResultSet</code> object using the setter methods of
@@ -3152,7 +3152,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * <code>DatabaseMetaData</code> method, this method returns
      * <code>null</code>.
      *
-     * @return the <code>Statment</code> object that produced
+     * @return the <code>Statement</code> object that produced
      * this rowset's <code>ResultSet</code> object or <code>null</code>
      * if the result set was produced some other way
      * @throws SQLException if a database access error occurs
@@ -4748,7 +4748,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
 
    /**
-     * Sets the designated paramter to the given <code>String</code> object.
+     * Sets the designated parameter to the given <code>String</code> object.
      * The driver converts this to a SQL <code>NCHAR</code> or
      * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value
      * (depending on the argument's
@@ -5883,7 +5883,7 @@ a
 
 
  /**
-  * Sets the designated paramter to the given <code>String</code> object.
+  * Sets the designated parameter to the given <code>String</code> object.
   * The driver converts this to a SQL <code>NCHAR</code> or
   * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code>
   * @param parameterName the name of the column to be set
@@ -6222,7 +6222,7 @@ a
     * if parameterIndex does not correspond
     * to a parameter marker in the SQL statement,  if the length specified
     * is less than zero or if the number of bytes in the inputstream does not match
-    * the specfied length.
+    * the specified length.
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     *
     * @since 1.6
@@ -6283,7 +6283,7 @@ a
       * @throws SQLException  if parameterIndex does not correspond
       * to a parameter marker in the SQL statement,  or if the length specified
       * is less than zero; if the number of bytes in the inputstream does not match
-      * the specfied length; if a database access error occurs or
+      * the specified length; if a database access error occurs or
       * this method is called on a closed <code>CallableStatement</code>
       * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
       * this method

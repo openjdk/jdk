@@ -31,7 +31,7 @@ package com.sun.beans.decoder;
  * For example:<pre>
  * &lt;false/&gt;</pre>
  * is equivalent to {@code false} in Java code.
- * <p>The following atribute is supported:
+ * <p>The following attribute is supported:
  * <dl>
  * <dt>id
  * <dd>the identifier of the variable that is intended to store the result

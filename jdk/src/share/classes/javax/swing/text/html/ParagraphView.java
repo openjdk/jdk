@@ -211,7 +211,7 @@ public class ParagraphView extends javax.swing.text.ParagraphView {
 
     /**
      * Renders using the given rendering surface and area on that
-     * surface.  This is implemented to delgate to the superclass
+     * surface.  This is implemented to delegate to the superclass
      * after stashing the base coordinate for tab calculations.
      *
      * @param g the rendering surface to use

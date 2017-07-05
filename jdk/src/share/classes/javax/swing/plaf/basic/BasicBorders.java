@@ -497,7 +497,7 @@ public class BasicBorders {
 
 
     /**
-     * Draws the border around the splitpane. To work correctly you shoudl
+     * Draws the border around the splitpane. To work correctly you should
      * also install a border on the divider (property SplitPaneDivider.border).
      */
     public static class SplitPaneBorder implements Border, UIResource {

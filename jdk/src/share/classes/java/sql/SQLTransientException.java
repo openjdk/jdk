@@ -27,7 +27,7 @@ package java.sql;
 
 /**
  * The subclass of {@link SQLException} is thrown in situations where a
- * previoulsy failed operation might be able to succeed when the operation is
+ * previously failed operation might be able to succeed when the operation is
  * retried without any intervention by application-level functionality.
  *<p>
  *
@@ -53,7 +53,7 @@ public class SQLTransientException extends java.sql.SQLException {
         /**
          * Constructs a <code>SQLTransientException</code> object
          *  with a given <code>reason</code>. The <code>SQLState</code>
-         * is initialized to <code>null</code> and the vender code is initialized
+         * is initialized to <code>null</code> and the vendor code is initialized
          * to 0.
          *
          * The <code>cause</code> is not initialized, and may subsequently be

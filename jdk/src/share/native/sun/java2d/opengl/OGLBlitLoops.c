@@ -661,7 +661,12 @@ OGLBlitLoops_Blit(JNIEnv *env,
                             (sy2-sy1) != (jint)(dy2-dy1) ||
                             oglc->extraAlpha != 1.0f;
                         break;
-
+#ifdef MACOSX
+                    case OGLC_VENDOR_ATI:
+                        // see 8024461
+                        viaTexture = JNI_TRUE;
+                        break;
+#endif
                     default:
                         // just use the glDrawPixels() codepath
                         viaTexture = JNI_FALSE;

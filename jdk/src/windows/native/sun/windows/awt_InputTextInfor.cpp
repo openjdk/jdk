@@ -277,7 +277,7 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
        have to merge. Or if the current composing string size is 0, we don't have to merge either.
 
        So in clusion, the three conditions not not merge are:
-       1. no commited string
+       1. no committed string
        2. m_pResultTextInfor points to NULL
        3. the current string size is 0;
 

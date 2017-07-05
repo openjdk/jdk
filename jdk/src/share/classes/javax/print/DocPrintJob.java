@@ -102,7 +102,7 @@ public interface DocPrintJob {
      * specific job attribute should verify it is in that set, but
      * updates about an attribute will be made only if it changes and this
      * is detected by the job. Also updates may be subject to batching
-     * by the job. To minimise overhead in print job processing it is
+     * by the job. To minimize overhead in print job processing it is
      * recommended to listen on only that subset of attributes which
      * are likely to change.
      * If the specified set is empty no attribute updates will be reported

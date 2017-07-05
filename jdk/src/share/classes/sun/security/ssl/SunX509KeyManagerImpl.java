@@ -36,7 +36,7 @@ import javax.security.auth.x500.X500Principal;
 
 
 /**
- * An implemention of X509KeyManager backed by a KeyStore.
+ * An implementation of X509KeyManager backed by a KeyStore.
  *
  * The backing KeyStore is inspected when this object is constructed.
  * All key entries containing a PrivateKey and a non-empty chain of

@@ -41,7 +41,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class Base64GetEncoderTest {
 
     public static void main(String args[]) throws Throwable {
-        final Base64.Encoder encoder = Base64.getEncoder(0, "$$$".getBytes(US_ASCII));
+        final Base64.Encoder encoder = Base64.getMimeEncoder(0, "$$$".getBytes(US_ASCII));
 
         testEncodeToString(encoder);
 

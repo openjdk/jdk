@@ -56,7 +56,6 @@ import java.util.Collection;
  * constraints.  A nonfair lock that is continuously contended may
  * indefinitely postpone one or more reader or writer threads, but
  * will normally have higher throughput than a fair lock.
- * <p>
  *
  * <dt><b><i>Fair mode</i></b>
  * <dd>When constructed as fair, threads contend for entry using an

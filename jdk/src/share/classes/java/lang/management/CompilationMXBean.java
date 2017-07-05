@@ -74,7 +74,7 @@ public interface CompilationMXBean extends PlatformManagedObject {
     public boolean isCompilationTimeMonitoringSupported();
 
     /**
-     * Returns the approximate accumlated elapsed time (in milliseconds)
+     * Returns the approximate accumulated elapsed time (in milliseconds)
      * spent in compilation.
      * If multiple threads are used for compilation, this value is
      * summation of the approximate time that each thread spent in compilation.

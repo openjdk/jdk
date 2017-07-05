@@ -76,7 +76,7 @@ import sun.security.util.SecurityConstants;
  * <code>Thread</code>. An instance of the subclass can then be
  * allocated and started. For example, a thread that computes primes
  * larger than a stated value could be written as follows:
- * <p><hr><blockquote><pre>
+ * <hr><blockquote><pre>
  *     class PrimeThread extends Thread {
  *         long minPrime;
  *         PrimeThread(long minPrime) {
@@ -91,7 +91,7 @@ import sun.security.util.SecurityConstants;
  * </pre></blockquote><hr>
  * <p>
  * The following code would then create a thread and start it running:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     PrimeThread p = new PrimeThread(143);
  *     p.start();
  * </pre></blockquote>
@@ -102,7 +102,7 @@ import sun.security.util.SecurityConstants;
  * then be allocated, passed as an argument when creating
  * <code>Thread</code>, and started. The same example in this other
  * style looks like the following:
- * <p><hr><blockquote><pre>
+ * <hr><blockquote><pre>
  *     class PrimeRun implements Runnable {
  *         long minPrime;
  *         PrimeRun(long minPrime) {
@@ -117,7 +117,7 @@ import sun.security.util.SecurityConstants;
  * </pre></blockquote><hr>
  * <p>
  * The following code would then create a thread and start it running:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     PrimeRun p = new PrimeRun(143);
  *     new Thread(p).start();
  * </pre></blockquote>

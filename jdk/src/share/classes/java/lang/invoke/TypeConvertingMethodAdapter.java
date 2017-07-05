@@ -28,6 +28,7 @@ package java.lang.invoke;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
+import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import static sun.invoke.util.Wrapper.*;
 
@@ -204,27 +205,27 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
     }
 
     /**
-     * Convert an argument of type 'argType' to be passed to 'targetType' assuring that it is 'functionalType'.
+     * Convert an argument of type 'arg' to be passed to 'target' assuring that it is 'functional'.
      * Insert the needed conversion instructions in the method code.
-     * @param argType
-     * @param targetType
-     * @param functionalType
+     * @param arg
+     * @param target
+     * @param functional
      */
-    void convertType(String dArg, String dTarget, String dFunctional) {
-        if (dArg.equals(dTarget)) {
+    void convertType(Class<?> arg, Class<?> target, Class<?> functional) {
+        if (arg.equals(target)) {
             return;
         }
-        Wrapper wArg = toWrapper(dArg);
-        Wrapper wTarget = toWrapper(dTarget);
-        if (wArg == VOID || wTarget == VOID) {
+        if (arg == Void.TYPE || target == Void.TYPE) {
             return;
         }
-        if (isPrimitive(wArg)) {
-            if (isPrimitive(wTarget)) {
+        if (arg.isPrimitive()) {
+            Wrapper wArg = Wrapper.forPrimitiveType(arg);
+            if (target.isPrimitive()) {
                 // Both primitives: widening
-                widen(wArg, wTarget);
+                widen(wArg, Wrapper.forPrimitiveType(target));
             } else {
                 // Primitive argument to reference target
+                String dTarget = BytecodeDescriptor.unparse(target);
                 Wrapper wPrimTarget = wrapperOrNullFromDescriptor(dTarget);
                 if (wPrimTarget != null) {
                     // The target is a boxed primitive type, widen to get there before boxing
@@ -237,16 +238,18 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
                 }
             }
         } else {
+            String dArg = BytecodeDescriptor.unparse(arg);
             String dSrc;
-            Wrapper wFunctional = toWrapper(dFunctional);
-            if (isPrimitive(wFunctional)) {
+            if (functional.isPrimitive()) {
                 dSrc = dArg;
             } else {
                 // Cast to convert to possibly more specific type, and generate CCE for invalid arg
-                dSrc = dFunctional;
-                cast(dArg, dFunctional);
+                dSrc = BytecodeDescriptor.unparse(functional);
+                cast(dArg, dSrc);
             }
-            if (isPrimitive(wTarget)) {
+            String dTarget = BytecodeDescriptor.unparse(target);
+            if (target.isPrimitive()) {
+                Wrapper wTarget = toWrapper(dTarget);
                 // Reference argument to primitive target
                 Wrapper wps = wrapperOrNullFromDescriptor(dSrc);
                 if (wps != null) {

@@ -1225,7 +1225,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1284,7 +1284,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1411,7 +1411,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1475,7 +1475,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.

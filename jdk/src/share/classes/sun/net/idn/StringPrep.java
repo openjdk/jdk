@@ -153,7 +153,7 @@ public final class StringPrep {
         }
     }
 
-    // CharTrie implmentation for reading the trie data
+    // CharTrie implementation for reading the trie data
     private StringPrepTrieImpl sprepTrieImpl;
     // Indexes read from the data file
     private int[] indexes;

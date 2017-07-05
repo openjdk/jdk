@@ -55,7 +55,7 @@ import com.sun.jmx.snmp.ThreadContext;
 class SnmpSubNextRequestHandler extends SnmpSubRequestHandler {
     private SnmpAdaptorServer server = null;
     /**
-     * The constuctor initialize the subrequest with the whole varbind
+     * The constructor initialize the subrequest with the whole varbind
      * list contained in the original request.
      */
     protected SnmpSubNextRequestHandler(SnmpAdaptorServer server,

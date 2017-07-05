@@ -126,7 +126,7 @@ public abstract class ElementHandler {
 
     /**
      * Parses attributes of the element.
-     * By default, the following atribute is supported:
+     * By default, the following attribute is supported:
      * <dl>
      * <dt>id
      * <dd>the identifier of the variable that is intended to store the result

@@ -42,7 +42,7 @@
 
 U_NAMESPACE_BEGIN
 
-// Characters that get refered to by name...
+// Characters that get referred to by name...
 #define C_SIGN_ZWNJ           0x200C
 #define C_SIGN_ZWJ            0x200D
 

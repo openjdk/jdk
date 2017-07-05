@@ -47,7 +47,7 @@ import java.beans.ConstructorProperties;
  *      [ 1 ]   [   0    0    1   ] [ 1 ]   [         1         ]
  * </pre>
  * <p>
- * <a name="quadrantapproximation"></a><h4>Handling 90-Degree Rotations</h4>
+ * <h4><a name="quadrantapproximation">Handling 90-Degree Rotations</a></h4>
  * <p>
  * In some variations of the <code>rotate</code> methods in the
  * <code>AffineTransform</code> class, a double-precision argument
@@ -525,7 +525,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
     /**
      * Constructs a new <code>AffineTransform</code> from an array of
      * floating point values representing either the 4 non-translation
-     * enries or the 6 specifiable entries of the 3x3 transformation
+     * entries or the 6 specifiable entries of the 3x3 transformation
      * matrix.  The values are retrieved from the array as
      * {&nbsp;m00&nbsp;m10&nbsp;m01&nbsp;m11&nbsp;[m02&nbsp;m12]}.
      * @param flatmatrix the float array containing the values to be set
@@ -715,7 +715,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
 
     /**
      * Returns a transform that rotates coordinates around an anchor
-     * point accordinate to a rotation vector.
+     * point according to a rotation vector.
      * All coordinates rotate about the specified anchor coordinates
      * by the same amount.
      * The amount of rotation is such that coordinates along the former
@@ -845,7 +845,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * this transform.
      * The return value is either one of the constants TYPE_IDENTITY
      * or TYPE_GENERAL_TRANSFORM, or a combination of the
-     * appriopriate flag bits.
+     * appropriate flag bits.
      * A valid combination of flag bits is an exclusive OR operation
      * that can combine
      * the TYPE_TRANSLATION flag bit
@@ -2876,7 +2876,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param ptDst the specified <code>Point2D</code> that stores the
      * result of transforming <code>ptSrc</code>
      * @return the <code>ptDst</code> after transforming
-     * <code>ptSrc</code> and stroring the result in <code>ptDst</code>.
+     * <code>ptSrc</code> and storing the result in <code>ptDst</code>.
      * @since 1.2
      */
     public Point2D transform(Point2D ptSrc, Point2D ptDst) {

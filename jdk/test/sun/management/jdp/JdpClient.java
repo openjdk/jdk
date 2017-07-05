@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Map;
 import sun.management.jdp.JdpException;
 import sun.management.jdp.JdpJmxPacket;
+import sun.management.jdp.JdpPacketReader;
 
 public class JdpClient {
 
@@ -46,6 +48,31 @@ public class JdpClient {
         private final DatagramChannel channel;
         private static int maxPacketCount = 1;
         private static int maxEmptyPacketCount = 10;
+
+        private void get(Map<?,?> map, String key)
+            throws JdpException {
+
+            if (map.get(key) == null) {
+                  throw new JdpException("Test failed, packet field " + key + " missed");
+            }
+        }
+
+        private void checkFieldPresence(JdpJmxPacket p)
+            throws IOException, JdpException {
+
+            byte[] b = p.getPacketData();
+
+            JdpPacketReader reader = new JdpPacketReader(b);
+            Map<String,String> pMap = reader.getDiscoveryDataAsMap();
+
+            get(pMap, JdpJmxPacket.UUID_KEY);
+            get(pMap, JdpJmxPacket.MAIN_CLASS_KEY);
+            get(pMap, JdpJmxPacket.JMX_SERVICE_URL_KEY);
+            // get(pMap, JdpJmxPacket.INSTANCE_NAME_KEY);
+            get(pMap, JdpJmxPacket.PROCESS_ID_KEY);
+            get(pMap, JdpJmxPacket.BROADCAST_INTERVAL_KEY);
+            get(pMap, JdpJmxPacket.RMI_HOSTNAME_KEY);
+        }
 
 
         PacketListener(DatagramChannel channel) {
@@ -67,6 +94,8 @@ public class JdpClient {
                 try {
                     while (true) {
 
+                        // Use tcpdump -U -w - -s 1400 -c 2 -vv port 7095
+                        // to verify that correct packet being sent
                         sel.selectedKeys().clear();
                         buf.rewind();
 
@@ -87,10 +116,10 @@ public class JdpClient {
                         buf.flip();
                         byte[] dgramData = new byte[buf.remaining()];
                         buf.get(dgramData);
-
                         try {
                             JdpJmxPacket packet = new JdpJmxPacket(dgramData);
                             JdpDoSomething.printJdpPacket(packet);
+                            checkFieldPresence(packet);
                             if(++count > maxPacketCount){
                                    break;
                             }

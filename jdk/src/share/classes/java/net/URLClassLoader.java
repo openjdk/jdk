@@ -25,21 +25,30 @@
 
 package java.net;
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.Manifest;
-import java.util.jar.JarFile;
-import java.util.jar.Attributes;
-import java.util.jar.Attributes.Name;
-import java.security.CodeSigner;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FilePermission;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.AccessControlContext;
-import java.security.SecureClassLoader;
+import java.security.AccessController;
+import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
+import java.security.SecureClassLoader;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
 import sun.net.www.ParseUtil;
@@ -84,6 +93,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @exception  SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
+     * @exception  NullPointerException if {@code urls} is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
     public URLClassLoader(URL[] urls, ClassLoader parent) {
@@ -127,6 +137,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @exception  SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
+     * @exception  NullPointerException if {@code urls} is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
     public URLClassLoader(URL[] urls) {
@@ -169,6 +180,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @exception  SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
+     * @exception  NullPointerException if {@code urls} is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
     public URLClassLoader(URL[] urls, ClassLoader parent,
@@ -260,13 +272,13 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * and errors are not caught. Calling close on an already closed
     * loader has no effect.
     * <p>
-    * @throws IOException if closing any file opened by this class loader
+    * @exception IOException if closing any file opened by this class loader
     * resulted in an IOException. Any such exceptions are caught internally.
     * If only one is caught, then it is re-thrown. If more than one exception
     * is caught, then the second and following exceptions are added
     * as suppressed exceptions of the first one caught, which is then re-thrown.
     *
-    * @throws SecurityException if a security manager is set, and it denies
+    * @exception SecurityException if a security manager is set, and it denies
     *   {@link RuntimePermission}{@code ("closeClassLoader")}
     *
     * @since 1.7
@@ -339,6 +351,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @return the resulting class
      * @exception ClassNotFoundException if the class could not be found,
      *            or if the loader is closed.
+     * @exception NullPointerException if {@code name} is {@code null}.
      */
     protected Class<?> findClass(final String name)
          throws ClassNotFoundException
@@ -621,6 +634,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * If the protocol is not "file", then permission
      * to connect to and accept connections from the URL's host is granted.
      * @param codesource the codesource
+     * @exception NullPointerException if {@code codesource} is {@code null}.
      * @return the permissions granted to the codesource
      */
     protected PermissionCollection getPermissions(CodeSource codesource)
@@ -700,6 +714,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param urls the URLs to search for classes and resources
      * @param parent the parent class loader for delegation
+     * @exception  NullPointerException if {@code urls} is {@code null}.
      * @return the resulting class loader
      */
     public static URLClassLoader newInstance(final URL[] urls,
@@ -725,6 +740,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * loading the class.
      *
      * @param urls the URLs to search for classes and resources
+     * @exception  NullPointerException if {@code urls} is {@code null}.
      * @return the resulting class loader
      */
     public static URLClassLoader newInstance(final URL[] urls) {

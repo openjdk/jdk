@@ -396,7 +396,7 @@ public abstract class AbstractWriter {
     }
 
     /**
-     * Sets the String used to reprsent newlines. This is initialized
+     * Sets the String used to represent newlines. This is initialized
      * in the constructor from either the Document, or the System property
      * line.separator.
      *
@@ -698,7 +698,7 @@ public abstract class AbstractWriter {
     }
 
     /**
-     * Support method to locate an occurence of a particular character.
+     * Support method to locate an occurrence of a particular character.
      */
     private int indexOf(char[] chars, char sChar, int startIndex,
                         int endIndex) {
