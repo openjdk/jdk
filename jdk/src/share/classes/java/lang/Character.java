@@ -2571,6 +2571,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * significantly better space and time performance by caching
      * frequently requested values.
      *
+     * This method will always cache values in the range '&#92;u0000'
+     * to '&#92;u007f'", inclusive, and may cache other values outside
+     * of this range.
+     *
      * @param  c a char value.
      * @return a <tt>Character</tt> instance representing <tt>c</tt>.
      * @since  1.5

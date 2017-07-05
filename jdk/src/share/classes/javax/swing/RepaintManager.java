@@ -732,7 +732,7 @@ public class RepaintManager
                 (Window)dirty :
                 SwingUtilities.getWindowAncestor(dirty);
             if (window != null &&
-                !AWTAccessor.getWindowAccessor().isOpaque(window))
+                !window.isOpaque())
             {
                 windows.add(window);
             }
@@ -996,7 +996,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!AWTAccessor.getWindowAccessor().isOpaque(w)) {
+        if (!w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1032,7 +1032,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!AWTAccessor.getWindowAccessor().isOpaque(w)) {
+        if (!w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;

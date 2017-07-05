@@ -219,6 +219,9 @@ public final class Short extends Number implements Comparable<Short> {
      * significantly better space and time performance by caching
      * frequently requested values.
      *
+     * This method will always cache values in the range -128 to 127,
+     * inclusive, and may cache other values outside of this range.
+     *
      * @param  s a short value.
      * @return a {@code Short} instance representing {@code s}.
      * @since  1.5

@@ -493,9 +493,9 @@ public abstract class PartialCompositeContext implements Context, Resolver {
      * Tests whether a name contains a nonempty component.
      */
     protected static boolean allEmpty(Name name) {
-        Enumeration enum_ = name.getAll();
+        Enumeration<String> enum_ = name.getAll();
         while (enum_.hasMoreElements()) {
-            if (!enum_.equals("")) {
+            if (!enum_.nextElement().isEmpty()) {
                 return false;
             }
         }
