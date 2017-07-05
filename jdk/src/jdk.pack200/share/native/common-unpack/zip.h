@@ -68,8 +68,8 @@ struct jar {
   }
 
   // Private Methods
-  void write_data(void* ptr, int len);
-  void write_data(bytes& b) { write_data(b.ptr, (int)b.len); }
+  void write_data(void* ptr, size_t len);
+  void write_data(bytes& b) { write_data(b.ptr, b.len); }
   void add_to_jar_directory(const char* fname, bool store, int modtime,
                             int len, int clen, uLong crc);
   void write_jar_header(const char* fname, bool store, int modtime,

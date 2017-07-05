@@ -99,6 +99,7 @@ class Bsd {
   static void set_page_size(int val)                                { _page_size = val; }
 
   static address   ucontext_get_pc(ucontext_t* uc);
+  static void ucontext_set_pc(ucontext_t* uc, address pc);
   static intptr_t* ucontext_get_sp(ucontext_t* uc);
   static intptr_t* ucontext_get_fp(ucontext_t* uc);
 

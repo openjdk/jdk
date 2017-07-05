@@ -206,7 +206,8 @@ class InstanceKlass: public Klass {
     _misc_is_contended             = 1 << 4, // marked with contended annotation
     _misc_has_default_methods      = 1 << 5, // class/superclass/implemented interfaces has default methods
     _misc_declares_default_methods = 1 << 6, // directly declares default methods (any access)
-    _misc_has_been_redefined       = 1 << 7  // class has been redefined
+    _misc_has_been_redefined       = 1 << 7, // class has been redefined
+    _misc_is_scratch_class         = 1 << 8  // class is the redefined scratch class
   };
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
@@ -626,11 +627,23 @@ class InstanceKlass: public Klass {
     _misc_flags |= _misc_has_been_redefined;
   }
 
+  bool is_scratch_class() const {
+    return (_misc_flags & _misc_is_scratch_class) != 0;
+  }
+
+  void set_is_scratch_class() {
+    _misc_flags |= _misc_is_scratch_class;
+  }
+
   void init_previous_versions() {
     _previous_versions = NULL;
   }
 
+ private:
+  static int  _previous_version_count;
+ public:
   static void purge_previous_versions(InstanceKlass* ik);
+  static bool has_previous_versions() { return _previous_version_count > 0; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {

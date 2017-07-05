@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,6 @@ public class X86Frame extends Frame {
 
   // Entry frames
   private static       int ENTRY_FRAME_CALL_WRAPPER_OFFSET;
-
-  // Native frames
-  private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
 
   private static VMReg rbp;
 
@@ -423,19 +420,11 @@ public class X86Frame extends Frame {
     return addressOfStackSlot(LINK_OFFSET).getAddressAt(0);
   }
 
-  // FIXME: not implementable yet
-  //inline void      frame::set_link(intptr_t* addr)  { *(intptr_t **)addr_at(link_offset) = addr; }
-
   public Address getUnextendedSP() { return raw_unextendedSP; }
 
   // Return address:
   public Address getSenderPCAddr() { return addressOfStackSlot(RETURN_ADDR_OFFSET); }
   public Address getSenderPC()     { return getSenderPCAddr().getAddressAt(0);      }
-
-  // return address of param, zero origin index.
-  public Address getNativeParamAddr(int idx) {
-    return addressOfStackSlot(NATIVE_FRAME_INITIAL_PARAM_OFFSET + idx);
-  }
 
   public Address getSenderSP()     { return addressOfStackSlot(SENDER_SP_OFFSET); }
 

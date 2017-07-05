@@ -225,9 +225,9 @@ struct entry {
   }
 
 #ifdef PRODUCT
-  char* string() { return 0; }
+  const char* string() { return NULL; }
 #else
-  char* string();  // see far below
+  const char* string();  // see far below
 #endif
 };
 
@@ -718,13 +718,13 @@ void unpacker::read_file_header() {
   // Now we can size the whole archive.
   // Read everything else into a mega-buffer.
   rp = hdr.rp;
-  int header_size_0 = (int)(rp - input.base()); // used-up header (4byte + 3int)
-  int header_size_1 = (int)(rplimit - rp);      // buffered unused initial fragment
-  int header_size   = header_size_0+header_size_1;
+  size_t header_size_0 = (rp - input.base()); // used-up header (4byte + 3int)
+  size_t header_size_1 = (rplimit - rp);      // buffered unused initial fragment
+  size_t header_size   = header_size_0 + header_size_1;
   unsized_bytes_read = header_size_0;
   CHECK;
   if (foreign_buf) {
-    if (archive_size > (size_t)header_size_1) {
+    if (archive_size > header_size_1) {
       abort("EOF reading fixed input buffer");
       return;
     }
@@ -738,7 +738,7 @@ void unpacker::read_file_header() {
       return;
     }
     input.set(U_NEW(byte, add_size(header_size_0, archive_size, C_SLOP)),
-              (size_t) header_size_0 + archive_size);
+              header_size_0 + archive_size);
     CHECK;
     assert(input.limit()[0] == 0);
     // Move all the bytes we read initially into the real buffer.
@@ -961,13 +961,13 @@ void cpool::init(unpacker* u_, int counts[CONSTANT_Limit]) {
   nentries = next_entry;
 
   // place a limit on future CP growth:
-  int generous = 0;
+  size_t generous = 0;
   generous = add_size(generous, u->ic_count); // implicit name
   generous = add_size(generous, u->ic_count); // outer
   generous = add_size(generous, u->ic_count); // outer.utf8
   generous = add_size(generous, 40); // WKUs, misc
   generous = add_size(generous, u->class_count); // implicit SourceFile strings
-  maxentries = add_size(nentries, generous);
+  maxentries = (uint)add_size(nentries, generous);
 
   // Note that this CP does not include "empty" entries
   // for longs and doubles.  Those are introduced when
@@ -985,8 +985,9 @@ void cpool::init(unpacker* u_, int counts[CONSTANT_Limit]) {
   }
 
   // Initialize *all* our entries once
-  for (int i = 0 ; i < maxentries ; i++)
+  for (uint i = 0 ; i < maxentries ; i++) {
     entries[i].outputIndex = REQUESTED_NONE;
+  }
 
   initGroupIndexes();
   // Initialize hashTab to a generous power-of-two size.
@@ -3680,21 +3681,22 @@ void cpool::computeOutputIndexes() {
 
 unpacker* debug_u;
 
-static bytes& getbuf(int len) {  // for debugging only!
+static bytes& getbuf(size_t len) {  // for debugging only!
   static int bn = 0;
   static bytes bufs[8];
   bytes& buf = bufs[bn++ & 7];
-  while ((int)buf.len < len+10)
+  while (buf.len < len + 10) {
     buf.realloc(buf.len ? buf.len * 2 : 1000);
+  }
   buf.ptr[0] = 0;  // for the sake of strcat
   return buf;
 }
 
-char* entry::string() {
+const char* entry::string() {
   bytes buf;
   switch (tag) {
   case CONSTANT_None:
-    return (char*)"<empty>";
+    return "<empty>";
   case CONSTANT_Signature:
     if (value.b.ptr == null)
       return ref(0)->string();
@@ -3714,26 +3716,28 @@ char* entry::string() {
     break;
   default:
     if (nrefs == 0) {
-      buf = getbuf(20);
-      sprintf((char*)buf.ptr, TAG_NAME[tag]);
+      return TAG_NAME[tag];
     } else if (nrefs == 1) {
       return refs[0]->string();
     } else {
-      char* s1 = refs[0]->string();
-      char* s2 = refs[1]->string();
-      buf = getbuf((int)strlen(s1) + 1 + (int)strlen(s2) + 4 + 1);
+      const char* s1 = refs[0]->string();
+      const char* s2 = refs[1]->string();
+      buf = getbuf(strlen(s1) + 1 + strlen(s2) + 4 + 1);
       buf.strcat(s1).strcat(" ").strcat(s2);
       if (nrefs > 2)  buf.strcat(" ...");
     }
   }
-  return (char*)buf.ptr;
+  return (const char*)buf.ptr;
 }
 
 void print_cp_entry(int i) {
   entry& e = debug_u->cp.entries[i];
-  char buf[30];
-  sprintf(buf, ((uint)e.tag < CONSTANT_Limit)? TAG_NAME[e.tag]: "%d", e.tag);
-  printf(" %d\t%s %s\n", i, buf, e.string());
+
+  if ((uint)e.tag < CONSTANT_Limit) {
+    printf(" %d\t%s %s\n", i, TAG_NAME[e.tag], e.string());
+  } else {
+    printf(" %d\t%d %s\n", i, e.tag, e.string());
+  }
 }
 
 void print_cp_entries(int beg, int end) {

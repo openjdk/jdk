@@ -142,14 +142,11 @@ void VM_RedefineClasses::doit() {
 
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(_class_defs[i].klass, _scratch_classes[i], thread);
-    ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
-    // Free the memory for this class at class unloading time.  Not before
-    // because CMS might think this is still live.
-    cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
-    _scratch_classes[i] = NULL;
   }
 
   // Clean out MethodData pointing to old Method*
+  // Have to do this after all classes are redefined and all methods that
+  // are redefined are marked as old.
   MethodDataCleaner clean_weak_method_links;
   ClassLoaderDataGraph::classes_do(&clean_weak_method_links);
 
@@ -2902,18 +2899,13 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // }
 
     assert(stackmap_p + 1 <= stackmap_end, "no room for frame_type");
-    // The Linux compiler does not like frame_type to be u1 or u2. It
-    // issues the following warning for the first if-statement below:
-    //
-    // "warning: comparison is always true due to limited range of data type"
-    //
-    u4 frame_type = *stackmap_p;
+    u1 frame_type = *stackmap_p;
     stackmap_p++;
 
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type >= 0 && frame_type <= 63) {
+    if (frame_type <= 63) {
       // nothing more to do for same_frame
     }
 

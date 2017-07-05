@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ package com.sun.net.ssl;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.IOException;
+import java.security.cert.Certificate;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
-
-import javax.security.cert.X509Certificate;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 /**
  * HTTP URL connection with support for HTTPS-specific features. See
@@ -70,7 +70,8 @@ class HttpsURLConnection extends HttpURLConnection
      * the server did not authenticate.
      * @return the server certificate chain
      */
-    public abstract X509Certificate [] getServerCertificateChain();
+    public abstract Certificate[] getServerCertificates()
+        throws SSLPeerUnverifiedException;
 
     /**
      * HostnameVerifier provides a callback mechanism so that
