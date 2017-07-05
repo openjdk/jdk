@@ -337,6 +337,15 @@ GetJREPath(char *path, jint pathsize)
         }
     }
 
+    /* Try getting path to JRE from path to JLI.DLL */
+    if (GetApplicationHomeFromDll(path, pathsize)) {
+        JLI_Snprintf(javadll, sizeof(javadll), "%s\\bin\\" JAVA_DLL, path);
+        if (stat(javadll, &s) == 0) {
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
+        }
+    }
+
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
 
@@ -404,22 +413,52 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 }
 
 /*
- * If app is "c:\foo\bin\javac", then put "c:\foo" into buf.
+ * Removes the trailing file name and one sub-folder from a path.
+ * If buf is "c:\foo\bin\javac", then put "c:\foo" into buf.
  */
 jboolean
-GetApplicationHome(char *buf, jint bufsize)
+TruncatePath(char *buf)
 {
     char *cp;
-    GetModuleFileName(0, buf, bufsize);
     *JLI_StrRChr(buf, '\\') = '\0'; /* remove .exe file name */
     if ((cp = JLI_StrRChr(buf, '\\')) == 0) {
         /* This happens if the application is in a drive root, and
-         * there is no bin directory. */
+        * there is no bin directory. */
         buf[0] = '\0';
         return JNI_FALSE;
     }
     *cp = '\0';  /* remove the bin\ part */
     return JNI_TRUE;
+}
+
+/*
+ * Retrieves the path to the JRE home by locating the executable file
+ * of the current process and then truncating the path to the executable
+ */
+jboolean
+GetApplicationHome(char *buf, jint bufsize)
+{
+    GetModuleFileName(NULL, buf, bufsize);
+    return TruncatePath(buf);
+}
+
+/*
+ * Retrieves the path to the JRE home by locating JLI.DLL and
+ * then truncating the path to JLI.DLL
+ */
+jboolean
+GetApplicationHomeFromDll(char *buf, jint bufsize)
+{
+    HMODULE hModule;
+    DWORD dwFlags =
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+
+    if (GetModuleHandleEx(dwFlags, (LPCSTR)&GetJREPath, &hModule) == 0) {
+        return JNI_FALSE;
+    };
+    GetModuleFileName(hModule, buf, bufsize);
+    return TruncatePath(buf);
 }
 
 /*

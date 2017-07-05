@@ -1,13 +1,16 @@
-{null=0, 1=2, false=true, foo=bar}
-object null
+{foo=bar, 1=2, false=true, null=0, a=null}
+string foo
 number 1
 boolean false
-string foo
+object null
+string a
 string bar
 number 2
 boolean true
 number 0
-bar
-null
-null
-{null=0, 1=2, false=true, foo=baz}
+object null
+map.foo=bar
+map.false=undefined
+map.null=undefined
+map.a=null
+{foo=baz, 1=2, false=true, null=0, a=null}

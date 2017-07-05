@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ final class RewriteSystem extends BaseEntry {
     public String getSystemIdStartString () {
         return systemIdStartString;
     }
+
     /**
      * Get the rewritePrefix attribute.
      * @return The rewritePrefix attribute value.
@@ -79,7 +80,6 @@ final class RewriteSystem extends BaseEntry {
     public URL getRewritePrefix() {
         return rewritePrefix;
     }
-
 
     /**
      * Try to match the specified systemId with the entry. Return the match if it
@@ -91,14 +91,20 @@ final class RewriteSystem extends BaseEntry {
      * @return The replacement URI if the match is successful, null if not.
      */
     public String match(String systemId, int currentMatch) {
-        if (systemIdStartString.length() <= systemId.length() &&
+        if (systemIdStartString.length() < systemId.length() &&
                 systemIdStartString.equals(systemId.substring(0, systemIdStartString.length()))) {
             if (currentMatch < systemIdStartString.length()) {
                 String prefix = rewritePrefix.toExternalForm();
-                if (!prefix.endsWith(SLASH) && !systemId.startsWith(SLASH)) {
-                    return prefix + SLASH + systemId.substring(systemIdStartString.length());
+                String sysId;
+                if (systemIdStartString.endsWith(SLASH)) {
+                    sysId = systemId.substring(systemIdStartString.length());
                 } else {
-                    return prefix + systemId.substring(systemIdStartString.length());
+                    sysId = systemId.substring(systemIdStartString.length() + 1);
+                }
+                if (prefix.endsWith(SLASH)) {
+                    return prefix + sysId;
+                } else {
+                    return prefix + SLASH + sysId;
                 }
             }
         }

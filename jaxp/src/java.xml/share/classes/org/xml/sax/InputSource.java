@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 package org.xml.sax;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.InputStream;
 
@@ -343,8 +344,57 @@ public class InputSource {
         return characterStream;
     }
 
+    /**
+     * Indicates whether the {@code InputSource} object is empty. Empty is
+     * defined as follows:
+     * <ul>
+     * <li>All of the input sources, including the public identifier, system
+     * identifier, byte stream, and character stream, are {@code null}.
+     * </li>
+     * <li>The public identifier and system identifier are  {@code null}, and
+     * byte and character stream are either  {@code null} or contain no byte
+     * or character.
+     * <p>
+     * Note that this method will reset the byte stream if it is provided, or
+     * the character stream if the byte stream is not provided.
+     * </li>
+     * </ul>
+     * <p>
+     * In case of error while checking the byte or character stream, the method
+     * will return false to allow the XML processor to handle the error.
+     *
+     * @return true if the {@code InputSource} object is empty, false otherwise
+     */
+    public boolean isEmpty() {
+        return (publicId == null && systemId == null && isStreamEmpty());
+    }
 
+    private boolean isStreamEmpty() {
+        boolean empty = true;
+        try {
+            if (byteStream != null) {
+                byteStream.reset();
+                int bytesRead = byteStream.available();
+                if (bytesRead > 0) {
+                    return false;
+                }
+            }
 
+            if (characterStream != null) {
+                characterStream.reset();
+                int c = characterStream.read();
+                characterStream.reset();
+                if (c != -1) {
+                    return false;
+                }
+            }
+        } catch (IOException ex) {
+            //in case of error, return false
+            return false;
+        }
+
+        return empty;
+    }
     ////////////////////////////////////////////////////////////////////
     // Internal state.
     ////////////////////////////////////////////////////////////////////

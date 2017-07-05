@@ -33,4 +33,4 @@ print(n);
 var s = n.toString(5);
 var m = parseInt(s, 5);
 print(m === n);
-print(n);
+print(m);
