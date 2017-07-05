@@ -50,8 +50,7 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
     initval_index_offset     = 3,
     low_offset               = 4,
     high_offset              = 5,
-    generic_signature_offset = 6,
-    field_slots              = 7
+    field_slots              = 6
   };
 
  private:
@@ -60,29 +59,28 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
   void set_name_index(u2 val)                    { _shorts[name_index_offset] = val;         }
   void set_signature_index(u2 val)               { _shorts[signature_index_offset] = val;    }
   void set_initval_index(u2 val)                 { _shorts[initval_index_offset] = val;      }
-  void set_generic_signature_index(u2 val)       { _shorts[generic_signature_offset] = val;  }
 
   u2 name_index() const                          { return _shorts[name_index_offset];        }
   u2 signature_index() const                     { return _shorts[signature_index_offset];   }
   u2 initval_index() const                       { return _shorts[initval_index_offset];     }
-  u2 generic_signature_index() const             { return _shorts[generic_signature_offset]; }
 
  public:
   static FieldInfo* from_field_array(typeArrayOop fields, int index) {
     return ((FieldInfo*)fields->short_at_addr(index * field_slots));
+  }
+  static FieldInfo* from_field_array(u2* fields, int index) {
+    return ((FieldInfo*)(fields + index * field_slots));
   }
 
   void initialize(u2 access_flags,
                   u2 name_index,
                   u2 signature_index,
                   u2 initval_index,
-                  u2 generic_signature_index,
                   u4 offset) {
     _shorts[access_flags_offset] = access_flags;
     _shorts[name_index_offset] = name_index;
     _shorts[signature_index_offset] = signature_index;
     _shorts[initval_index_offset] = initval_index;
-    _shorts[generic_signature_offset] = generic_signature_index;
     set_offset(offset);
   }
 
@@ -101,14 +99,6 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
     int index = signature_index();
     if (is_internal()) {
       return lookup_symbol(index);
-    }
-    return cp->symbol_at(index);
-  }
-
-  Symbol* generic_signature(constantPoolHandle cp) const {
-    int index = generic_signature_index();
-    if (index == 0) {
-      return NULL;
     }
     return cp->symbol_at(index);
   }

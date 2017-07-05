@@ -58,8 +58,11 @@ size_t MinChunkSize = 0;
 void CompactibleFreeListSpace::set_cms_values() {
   // Set CMS global values
   assert(MinChunkSize == 0, "already set");
-  #define numQuanta(x,y) ((x+y-1)/y)
-  MinChunkSize = numQuanta(sizeof(FreeChunk), MinObjAlignmentInBytes) * MinObjAlignment;
+
+  // MinChunkSize should be a multiple of MinObjAlignment and be large enough
+  // for chunks to contain a FreeChunk.
+  size_t min_chunk_size_in_bytes = align_size_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
+  MinChunkSize = min_chunk_size_in_bytes / BytesPerWord;
 
   assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
   IndexSetStart  = MinChunkSize;
@@ -2534,12 +2537,8 @@ void CompactibleFreeListSpace::check_free_list_consistency() const {
     " linear allocation buffers");
   assert(BinaryTreeDictionary<FreeChunk>::min_tree_chunk_size*HeapWordSize == sizeof(TreeChunk<FreeChunk>),
     "else MIN_TREE_CHUNK_SIZE is wrong");
-  assert((IndexSetStride == 2 && IndexSetStart == 4) ||                   // 32-bit
-         (IndexSetStride == 1 && IndexSetStart == 3), "just checking");   // 64-bit
-  assert((IndexSetStride != 2) || (IndexSetStart % 2 == 0),
-      "Some for-loops may be incorrectly initialized");
-  assert((IndexSetStride != 2) || (IndexSetSize % 2 == 1),
-      "For-loops that iterate over IndexSet with stride 2 may be wrong");
+  assert(IndexSetStart != 0, "IndexSetStart not initialized");
+  assert(IndexSetStride != 0, "IndexSetStride not initialized");
 }
 #endif
 
