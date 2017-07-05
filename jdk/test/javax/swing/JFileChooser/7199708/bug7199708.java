@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.swing.UIManager;
 
 /**
  * @test
- * @bug 7199708
+ * @bug 7199708 8159587
  * @author Alexander Scherbatiy
  * @summary FileChooser crashs when opening large folder
  * @run main bug7199708

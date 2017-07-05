@@ -24,16 +24,23 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.Plugin.State;
 import jdk.tools.jlink.plugin.Plugin;
@@ -117,9 +124,24 @@ public final class ReleaseInfoPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
-        out.getReleaseProperties().putAll(in.getReleaseProperties());
-        out.getReleaseProperties().putAll(release);
+
+        // create a TOP level ResourcePoolEntry for "release" file.
+        out.add(ResourcePoolEntry.create("/java.base/release",
+            ResourcePoolEntry.Type.TOP, releaseFileContent()));
+        return out.build();
+    }
+
+    private byte[] releaseFileContent() {
+        Properties props = new Properties();
+        props.putAll(release);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            props.store(baos, "");
+            return baos.toByteArray();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 }

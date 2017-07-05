@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,16 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XSLTC.java,v 1.2.4.1 2005/09/05 09:51:38 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager.Feature;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -39,20 +34,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlFeatures;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -101,7 +97,7 @@ public final class XSLTC {
 
 
     // All literal text in the stylesheet
-    private Vector m_characterData;
+    private ArrayList<StringBuilder> m_characterData;
 
     // These define the various methods for outputting the translet
     public static final int FILE_OUTPUT        = 0;
@@ -152,26 +148,31 @@ public final class XSLTC {
 
     private XMLSecurityManager _xmlSecurityManager;
 
-    private final FeatureManager _featureManager;
+    private final JdkXmlFeatures _xmlFeatures;
 
     /**
     *  Extension function class loader variables
     */
 
-    /* Class loader reference that will be used to external extension functions loading */
+    /* Class loader reference that will be used for external extension functions loading */
     private ClassLoader _extensionClassLoader;
 
     /**
-    *  HashSet with the loaded classes
+    *  HashMap with the loaded classes
     */
     private final Map<String, Class> _externalExtensionFunctions;
 
     /**
+     * Catalog features
+     */
+    CatalogFeatures _catalogFeatures;
+
+    /**
      * XSLTC compiler constructor
      */
-    public XSLTC(boolean useServicesMechanism, FeatureManager featureManager) {
+    public XSLTC(boolean useServicesMechanism, JdkXmlFeatures featureManager) {
         _parser = new Parser(this, useServicesMechanism);
-        _featureManager = featureManager;
+        _xmlFeatures = featureManager;
         _extensionClassLoader = null;
         _externalExtensionFunctions = new HashMap<>();
     }
@@ -208,12 +209,14 @@ public final class XSLTC {
      * @param name name of the feature
      * @return true if the feature is enabled, false otherwise
      */
-    public boolean getFeature(Feature name) {
-        return _featureManager.isFeatureEnabled(name);
+    public boolean getFeature(JdkXmlFeatures.XmlFeature name) {
+        return _xmlFeatures.getFeature(name);
     }
 
     /**
      * Return allowed protocols for accessing external stylesheet.
+     * @param name the name of the property
+     * @return the value of the property
      */
     public Object getProperty(String name) {
         if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
@@ -225,12 +228,16 @@ public final class XSLTC {
             return _xmlSecurityManager;
         } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
             return _extensionClassLoader;
+        } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
+            return _catalogFeatures;
         }
         return null;
     }
 
     /**
      * Set allowed protocols for accessing external stylesheet.
+     * @param name the name of the property
+     * @param value the value of the property
      */
     public void setProperty(String name, Object value) {
         if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
@@ -245,6 +252,8 @@ public final class XSLTC {
             /* Clear the external extension functions HashMap if extension class
                loader was changed */
             _externalExtensionFunctions.clear();
+        } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
+            _catalogFeatures = (CatalogFeatures)value;
         }
     }
 
@@ -286,7 +295,7 @@ public final class XSLTC {
     }
 
     /*
-     * Function loads an external external extension functions.
+     * Function loads an external extension function.
      * The filtering of function types (external,internal) takes place in FunctionCall class
      *
      */
@@ -601,18 +610,18 @@ public final class XSLTC {
     }
 
     /**
-     * Get a Vector containing all compile error messages
-     * @return A Vector containing all compile error messages
+     * Get a list of all compile error messages
+     * @return A List containing all compile error messages
      */
-    public Vector getErrors() {
+    public ArrayList<ErrorMsg> getErrors() {
         return _parser.getErrors();
     }
 
     /**
-     * Get a Vector containing all compile warning messages
-     * @return A Vector containing all compile error messages
+     * Get a list of all compile warning messages
+     * @return A List containing all compile error messages
      */
-    public Vector getWarnings() {
+    public ArrayList<ErrorMsg> getWarnings() {
         return _parser.getWarnings();
     }
 
@@ -991,7 +1000,7 @@ public final class XSLTC {
      *               <code>char[]</code>.
      */
     public String getCharacterData(int index) {
-        return ((StringBuffer) m_characterData.elementAt(index)).toString();
+        return (m_characterData.get(index)).toString();
     }
 
     /**
@@ -1010,14 +1019,13 @@ public final class XSLTC {
      * @return int offset at which character data will be stored
      */
     public int addCharacterData(String newData) {
-        StringBuffer currData;
+        StringBuilder currData;
         if (m_characterData == null) {
-            m_characterData = new Vector();
-            currData = new StringBuffer();
-            m_characterData.addElement(currData);
+            m_characterData = new ArrayList<>();
+            currData = new StringBuilder();
+            m_characterData.add(currData);
         } else {
-            currData = (StringBuffer) m_characterData
-                                           .elementAt(m_characterData.size()-1);
+            currData = m_characterData.get(m_characterData.size()-1);
         }
 
         // Character data could take up to three-times as much space when
@@ -1025,8 +1033,8 @@ public final class XSLTC {
         // constant is 65535/3.  If we exceed that,
         // (We really should use some "bin packing".)
         if (newData.length() + currData.length() > 21845) {
-            currData = new StringBuffer();
-            m_characterData.addElement(currData);
+            currData = new StringBuilder();
+            m_characterData.add(currData);
         }
 
         int newDataOffset = currData.length();

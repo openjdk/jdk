@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106 8004979 8161500
+ * @bug 5033583 6316717 6470106 8004979 8161500 8162539
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -44,28 +44,16 @@ public class GenericStringTest {
                     String actual = method.toGenericString();
                     System.out.println(actual);
                     if (method.isBridge()) {
-                        if (! egs.bridgeValue().equals(actual)) {
-                            failures++;
-                            System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                              egs.value(), actual);
-                        }
+                        failures += checkForFailure(egs.bridgeValue(), actual);
                     } else {
-                        if (! egs.value().equals(actual)) {
-                            failures++;
-                            System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                              egs.value(), actual);
-                        }
+                        failures += checkForFailure(egs.value(), actual);
                     }
                 }
 
                 if (method.isAnnotationPresent(ExpectedString.class)) {
                     ExpectedString es = method.getAnnotation(ExpectedString.class);
                     String actual = method.toString();
-                    if (! es.value().equals(actual)) {
-                        failures++;
-                        System.err.printf("ERROR: Expected ''%s''; got ''%s''.\n",
-                                          es.value(), actual);
-                    }
+                    failures += checkForFailure(es.value(), actual);
                 }
 
             }
@@ -87,6 +75,15 @@ public class GenericStringTest {
             System.err.println("Test failed.");
             throw new RuntimeException();
         }
+    }
+
+    private static int checkForFailure(String expected, String actual) {
+        if (!expected.equals(actual)) {
+            System.err.printf("ERROR: Expected ''%s'';%ngot             ''%s''.\n",
+                              expected, actual);
+            return 1;
+        } else
+            return 0;
     }
 }
 
@@ -115,6 +112,8 @@ class TestClass2<E, F extends Exception> {
 
     @ExpectedGenericString(
    "public void TestClass2.method2() throws F")
+    @ExpectedString(
+   "public void TestClass2.method2() throws java.lang.Exception")
     public void method2() throws F {return;}
 
     @ExpectedGenericString(

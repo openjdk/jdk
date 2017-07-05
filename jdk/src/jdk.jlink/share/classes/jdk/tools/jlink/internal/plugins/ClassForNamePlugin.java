@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import static jdk.internal.org.objectweb.asm.ClassReader.*;
@@ -44,7 +45,7 @@ import jdk.internal.org.objectweb.asm.tree.LdcInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LineNumberNode;
 import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.Plugin;
 
 public final class ClassForNamePlugin implements Plugin {
@@ -55,8 +56,8 @@ public final class ClassForNamePlugin implements Plugin {
                               path.length() - ".class".length());
     }
 
-    private static int getAccess(ModuleEntry resource) {
-        ClassReader cr = new ClassReader(resource.getBytes());
+    private static int getAccess(ResourcePoolEntry resource) {
+        ClassReader cr = new ClassReader(resource.contentBytes());
 
         return cr.getAccess();
     }
@@ -67,8 +68,8 @@ public final class ClassForNamePlugin implements Plugin {
         return index == -1 ? "" : binaryName.substring(0, index);
     }
 
-    private ModuleEntry transform(ModuleEntry resource, ModulePool pool) {
-        byte[] inBytes = resource.getBytes();
+    private ResourcePoolEntry transform(ResourcePoolEntry resource, ResourcePool pool) {
+        byte[] inBytes = resource.contentBytes();
         ClassReader cr = new ClassReader(inBytes);
         ClassNode cn = new ClassNode();
         cr.accept(cn, EXPAND_FRAMES);
@@ -76,7 +77,7 @@ public final class ClassForNamePlugin implements Plugin {
         boolean modified = false;
         LdcInsnNode ldc = null;
 
-        String thisPackage = getPackage(binaryClassName(resource.getPath()));
+        String thisPackage = getPackage(binaryClassName(resource.path()));
 
         for (MethodNode mn : ms) {
             InsnList il = mn.instructions;
@@ -96,7 +97,7 @@ public final class ClassForNamePlugin implements Plugin {
                         min.desc.equals("(Ljava/lang/String;)Ljava/lang/Class;")) {
                         String ldcClassName = ldc.cst.toString();
                         String thatClassName = ldcClassName.replaceAll("\\.", "/");
-                        Optional<ModuleEntry> thatClass =
+                        Optional<ResourcePoolEntry> thatClass =
                             pool.findEntryInContext(thatClassName + ".class", resource);
 
                         if (thatClass.isPresent()) {
@@ -128,7 +129,7 @@ public final class ClassForNamePlugin implements Plugin {
             cn.accept(cw);
             byte[] outBytes = cw.toByteArray();
 
-            return resource.create(outBytes);
+            return resource.copyWithContent(outBytes);
         }
 
         return resource;
@@ -140,13 +141,13 @@ public final class ClassForNamePlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Objects.requireNonNull(in);
         Objects.requireNonNull(out);
 
         in.entries()
             .forEach(resource -> {
-                String path = resource.getPath();
+                String path = resource.path();
 
                 if (path.endsWith(".class") && !path.endsWith("/module-info.class")) {
                     out.add(transform(resource, in));
@@ -154,6 +155,7 @@ public final class ClassForNamePlugin implements Plugin {
                     out.add(resource);
                 }
             });
+        return out.build();
     }
 
     @Override

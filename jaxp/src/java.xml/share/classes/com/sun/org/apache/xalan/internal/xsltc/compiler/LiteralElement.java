@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -9,16 +9,13 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: LiteralElement.java,v 1.2.4.1 2005/09/13 12:38:33 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
@@ -57,8 +54,6 @@ final class LiteralElement extends Instruction {
     // different names. This flag is set to false if some attribute
     // names are not known at compile time.
     private boolean _allAttributesUnique = false;
-
-    private final static String XMLNS_STRING = "xmlns";
 
     /**
      * Returns the QName for this literal element
@@ -140,8 +135,8 @@ final class LiteralElement extends Instruction {
         // Treat default namespace as "" and not null
         if (prefix == null)
             prefix = Constants.EMPTYSTRING;
-        else if (prefix.equals(XMLNS_STRING))
-            return(XMLNS_STRING);
+        else if (prefix.equals(XMLNS_PREFIX))
+            return(XMLNS_PREFIX);
 
         // Check if we must translate the prefix
         final String alternative = stable.lookupPrefixAlias(prefix);
@@ -264,7 +259,7 @@ final class LiteralElement extends Instruction {
                 // Ignore special attributes (e.g. xmlns:prefix and xmlns)
                 final String prefix = qname.getPrefix();
                 if (prefix != null && prefix.equals(XMLNS_PREFIX) ||
-                    prefix == null && qname.getLocalPart().equals("xmlns") ||
+                    prefix == null && qname.getLocalPart().equals(XMLNS_PREFIX) ||
                     uri != null && uri.equals(XSLT_URI))
                 {
                     continue;
@@ -337,9 +332,9 @@ final class LiteralElement extends Instruction {
         il.append(methodGen.startElement());
 
         // The value of an attribute may depend on a (sibling) variable
-        int j=0;
+        int j = 0;
         while (j < elementCount())  {
-            final SyntaxTreeNode item = (SyntaxTreeNode) elementAt(j);
+            final SyntaxTreeNode item = elementAt(j);
             if (item instanceof Variable) {
                 item.translate(classGen, methodGen);
             }
@@ -348,35 +343,12 @@ final class LiteralElement extends Instruction {
 
         // Compile code to emit namespace attributes
         if (_accessedPrefixes != null) {
-            boolean declaresDefaultNS = false;
-
             for (Map.Entry<String, String> entry : _accessedPrefixes.entrySet()) {
                 final String prefix = entry.getKey();
                 final String uri = entry.getValue();
-
-                if (uri != Constants.EMPTYSTRING ||
-                        prefix != Constants.EMPTYSTRING)
-                {
-                    if (prefix == Constants.EMPTYSTRING) {
-                        declaresDefaultNS = true;
-                    }
-                    il.append(methodGen.loadHandler());
-                    il.append(new PUSH(cpg,prefix));
-                    il.append(new PUSH(cpg,uri));
-                    il.append(methodGen.namespace());
-                }
-            }
-
-            /*
-             * If our XslElement parent redeclares the default NS, and this
-             * element doesn't, it must be redeclared one more time.
-             */
-            if (!declaresDefaultNS && (_parent instanceof XslElement)
-                    && ((XslElement) _parent).declaresDefaultNS())
-            {
                 il.append(methodGen.loadHandler());
-                il.append(new PUSH(cpg, Constants.EMPTYSTRING));
-                il.append(new PUSH(cpg, Constants.EMPTYSTRING));
+                il.append(new PUSH(cpg, prefix));
+                il.append(new PUSH(cpg, uri));
                 il.append(methodGen.namespace());
             }
         }

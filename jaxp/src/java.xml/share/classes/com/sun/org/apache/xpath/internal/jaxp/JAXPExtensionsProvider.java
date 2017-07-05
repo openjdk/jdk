@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,27 +18,21 @@
  * limitations under the License.
  */
 
-// $Id: JAXPExtensionsProvider.java,v 1.1.2.1 2005/08/01 01:30:17 jeffsuttor Exp $
-
 package com.sun.org.apache.xpath.internal.jaxp;
 
-import javax.xml.transform.TransformerException;
-import javax.xml.xpath.XPathFunctionResolver;
+import com.sun.org.apache.xalan.internal.res.XSLMessages;
+import com.sun.org.apache.xpath.internal.ExtensionsProvider;
+import com.sun.org.apache.xpath.internal.functions.FuncExtFunction;
+import com.sun.org.apache.xpath.internal.objects.XNodeSet;
+import com.sun.org.apache.xpath.internal.objects.XObject;
+import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.ArrayList;
+import java.util.Vector;
+import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathFunction;
 import javax.xml.xpath.XPathFunctionException;
-
-import com.sun.org.apache.xpath.internal.ExtensionsProvider;
-import com.sun.org.apache.xpath.internal.XPathContext;
-import com.sun.org.apache.xpath.internal.objects.XObject;
-import com.sun.org.apache.xpath.internal.objects.XNodeSet;
-import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-import com.sun.org.apache.xalan.internal.res.XSLMessages;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
-
-import com.sun.org.apache.xpath.internal.functions.FuncExtFunction;
-import java.util.Vector;
-import java.util.ArrayList;
-import javax.xml.namespace.QName;
+import javax.xml.xpath.XPathFunctionResolver;
+import jdk.xml.internal.JdkXmlFeatures;
 
 /**
  *
@@ -55,10 +49,10 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
     }
 
     public JAXPExtensionsProvider(XPathFunctionResolver resolver,
-        boolean featureSecureProcessing, FeatureManager featureManager ) {
+        boolean featureSecureProcessing, JdkXmlFeatures featureManager ) {
         this.resolver = resolver;
         if (featureSecureProcessing &&
-                !featureManager.isFeatureEnabled(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION)) {
+                !featureManager.getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION)) {
             this.extensionInvocationDisabled = true;
         }
     }

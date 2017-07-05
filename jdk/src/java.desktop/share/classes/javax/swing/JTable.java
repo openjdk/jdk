@@ -455,6 +455,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private transient DropLocation dropLocation;
 
     /**
+     * Flag to indicate UI update is in progress
+     */
+    private transient boolean updateInProgress;
+
+    /**
      * A subclass of <code>TransferHandler.DropLocation</code> representing
      * a drop location for a <code>JTable</code>.
      *
@@ -3621,36 +3626,46 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see JComponent#updateUI
      */
     public void updateUI() {
-        // Update the UIs of the cell renderers, cell editors and header renderers.
-        TableColumnModel cm = getColumnModel();
-        for(int column = 0; column < cm.getColumnCount(); column++) {
-            TableColumn aColumn = cm.getColumn(column);
-            SwingUtilities.updateRendererOrEditorUI(aColumn.getCellRenderer());
-            SwingUtilities.updateRendererOrEditorUI(aColumn.getCellEditor());
-            SwingUtilities.updateRendererOrEditorUI(aColumn.getHeaderRenderer());
+        if (updateInProgress) {
+            return;
         }
 
-        // Update the UIs of all the default renderers.
-        Enumeration<?> defaultRenderers = defaultRenderersByColumnClass.elements();
-        while (defaultRenderers.hasMoreElements()) {
-            SwingUtilities.updateRendererOrEditorUI(defaultRenderers.nextElement());
+        updateInProgress = true;
+
+        try {
+            // Update the UIs of the cell renderers, cell editors and header renderers.
+            TableColumnModel cm = getColumnModel();
+            for(int column = 0; column < cm.getColumnCount(); column++) {
+                TableColumn aColumn = cm.getColumn(column);
+                SwingUtilities.updateRendererOrEditorUI(aColumn.getCellRenderer());
+                SwingUtilities.updateRendererOrEditorUI(aColumn.getCellEditor());
+                SwingUtilities.updateRendererOrEditorUI(aColumn.getHeaderRenderer());
+            }
+
+            // Update the UIs of all the default renderers.
+            Enumeration<?> defaultRenderers = defaultRenderersByColumnClass.elements();
+            while (defaultRenderers.hasMoreElements()) {
+                SwingUtilities.updateRendererOrEditorUI(defaultRenderers.nextElement());
+            }
+
+            // Update the UIs of all the default editors.
+            Enumeration<?> defaultEditors = defaultEditorsByColumnClass.elements();
+            while (defaultEditors.hasMoreElements()) {
+                SwingUtilities.updateRendererOrEditorUI(defaultEditors.nextElement());
+            }
+
+            // Update the UI of the table header
+            if (tableHeader != null && tableHeader.getParent() == null) {
+                tableHeader.updateUI();
+            }
+
+            // Update UI applied to parent ScrollPane
+            configureEnclosingScrollPaneUI();
+
+            setUI((TableUI)UIManager.getUI(this));
+        } finally {
+            updateInProgress = false;
         }
-
-        // Update the UIs of all the default editors.
-        Enumeration<?> defaultEditors = defaultEditorsByColumnClass.elements();
-        while (defaultEditors.hasMoreElements()) {
-            SwingUtilities.updateRendererOrEditorUI(defaultEditors.nextElement());
-        }
-
-        // Update the UI of the table header
-        if (tableHeader != null && tableHeader.getParent() == null) {
-            tableHeader.updateUI();
-        }
-
-        // Update UI applied to parent ScrollPane
-        configureEnclosingScrollPaneUI();
-
-        setUI((TableUI)UIManager.getUI(this));
     }
 
     /**

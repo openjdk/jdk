@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     @DataProvider(name="bigOffsets")
     Object[][] provider_bigOffsets() {
         return new Object[][] {
-            {"+HH", "+59", 59 * 3600},
+            {"+HH", "+19", 19 * 3600},
             {"+HH", "-19", -(19 * 3600)},
 
             {"+HHMM", "+1801", 18 * 3600 + 1 * 60},

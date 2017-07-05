@@ -28,6 +28,7 @@ package sun.font;
 import java.awt.Font;
 import java.awt.font.GlyphVector;
 import java.awt.font.FontRenderContext;
+import java.util.concurrent.atomic.AtomicBoolean;
 import sun.java2d.loops.FontInfo;
 
 /*
@@ -151,8 +152,8 @@ public final class GlyphList {
      * occur and if it did, it would just lead to some extra garbage being
      * created.
      */
-    private static GlyphList reusableGL = new GlyphList();
-    private static boolean inUse;
+    private static final GlyphList reusableGL = new GlyphList();
+    private static final AtomicBoolean inUse = new AtomicBoolean();
 
 
     void ensureCapacity(int len) {
@@ -184,24 +185,10 @@ public final class GlyphList {
 //     }
 
     public static GlyphList getInstance() {
-        /* The following heuristic is that if the reusable instance is
-         * in use, it probably still will be in a micro-second, so avoid
-         * synchronising on the class and just allocate a new instance.
-         * The cost is one extra boolean test for the normal case, and some
-         * small number of cases where we allocate an extra object when
-         * in fact the reusable one would be freed very soon.
-         */
-        if (inUse) {
-            return new GlyphList();
+        if (inUse.compareAndSet(false, true)) {
+            return reusableGL;
         } else {
-            synchronized(GlyphList.class) {
-                if (inUse) {
-                    return new GlyphList();
-                } else {
-                    inUse = true;
-                    return reusableGL;
-                }
-            }
+            return new GlyphList();
         }
     }
 
@@ -212,17 +199,10 @@ public final class GlyphList {
      * will be discarded so the re-allocation overhead is high.
      */
 //     public static GlyphList getInstance(int sz) {
-//      if (inUse) {
-//          return new GlyphList(sz);
+//      if (inUse.compareAndSet(false, true) {
+//          return reusableGL;
 //      } else {
-//          synchronized(GlyphList.class) {
-//              if (inUse) {
-//                  return new GlyphList();
-//              } else {
-//                  inUse = true;
-//                  return reusableGL;
-//              }
-//          }
+//          return new GlyphList(sz);
 //      }
 //     }
 
@@ -423,7 +403,7 @@ public final class GlyphList {
             }
             usePositions = false;
             strikelist = null; // remove reference to the strike list
-            inUse = false;
+            inUse.set(false);
         }
     }
 

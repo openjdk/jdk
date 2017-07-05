@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ BOOL containsAxState(JNIEnv *env, jobject axContext, jobject axState, jobject co
 BOOL isVertical(JNIEnv *env, jobject axContext, jobject component);
 BOOL isHorizontal(JNIEnv *env, jobject axContext, jobject component);
 BOOL isShowing(JNIEnv *env, jobject axContext, jobject component);
+BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component);
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component);
 jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component);
 

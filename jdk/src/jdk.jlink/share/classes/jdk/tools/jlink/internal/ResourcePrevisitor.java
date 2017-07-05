@@ -24,7 +24,7 @@
  */
 package jdk.tools.jlink.internal;
 
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
 
 /**
  * Plugin wishing to pre-visit the resources must implement this interface.
@@ -43,5 +43,5 @@ public interface ResourcePrevisitor {
      * @param strings StringTable instance. Add string to the StringTable to track string
      * usage.
      */
-    public void previsit(ModulePool resources, StringTable strings);
+    public void previsit(ResourcePool resources, StringTable strings);
 }

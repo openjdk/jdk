@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,6 +60,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogManager;
+import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -80,6 +83,8 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -217,6 +222,14 @@ public final class TransformerImpl extends Transformer
      */
     private Map<String, Object> _parameters = null;
 
+    // Catalog features
+    CatalogFeatures _catalogFeatures;
+    CatalogUriResolver _catalogUriResolver;
+
+    // Catalog is enabled by default
+    boolean _useCatalog = true;
+
+
     /**
      * This class wraps an ErrorListener into a MessageHandler in order to
      * capture messages reported via xsl:message.
@@ -270,6 +283,16 @@ public final class TransformerImpl extends Transformer
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
         _readerManager.setProperty(XalanConstants.SECURITY_MANAGER, _securityManager);
+
+        _useCatalog = _tfactory.getFeature(XMLConstants.USE_CATALOG);
+        if (_useCatalog) {
+            _catalogFeatures = (CatalogFeatures)_tfactory.getAttribute(JdkXmlFeatures.CATALOG_FEATURES);
+            String catalogFiles = _catalogFeatures.get(CatalogFeatures.Feature.DEFER);
+            if (catalogFiles != null) {
+                _readerManager.setFeature(XMLConstants.USE_CATALOG, _useCatalog);
+                _readerManager.setProperty(JdkXmlFeatures.CATALOG_FEATURES, _catalogFeatures);
+            }
+        }
         //_isIncremental = tfactory._incremental;
     }
 
@@ -339,7 +362,8 @@ public final class TransformerImpl extends Transformer
             throw new TransformerException(err.toString());
         }
 
-        if (_uriResolver != null && !_isIdentity) {
+        if (!_isIdentity && (_uriResolver != null || (_tfactory.getFeature(XMLConstants.USE_CATALOG)
+                    && _tfactory.getAttribute(JdkXmlUtils.CATALOG_FILES) != null))) {
             _translet.setDOMCache(this);
         }
 
@@ -723,15 +747,33 @@ public final class TransformerImpl extends Transformer
                 ((SAXSource)source).getXMLReader()==null )||
                 (source instanceof DOMSource &&
                 ((DOMSource)source).getNode()==null)){
-                        DocumentBuilderFactory builderF = FactoryImpl.getDOMFactory(_useServicesMechanism);
-                        DocumentBuilder builder = builderF.newDocumentBuilder();
-                        String systemID = source.getSystemId();
-                        source = new DOMSource(builder.newDocument());
 
-                        // Copy system ID from original, empty Source to new
-                        if (systemID != null) {
-                          source.setSystemId(systemID);
+                boolean supportCatalog = true;
+
+                DocumentBuilderFactory builderF = FactoryImpl.getDOMFactory(_useServicesMechanism);
+                try {
+                    builderF.setFeature(XMLConstants.USE_CATALOG, _useCatalog);
+                } catch (ParserConfigurationException e) {
+                    supportCatalog = false;
+                }
+
+                if (supportCatalog && _useCatalog) {
+                    CatalogFeatures cf = (CatalogFeatures)_tfactory.getAttribute(JdkXmlFeatures.CATALOG_FEATURES);
+                    if (cf != null) {
+                        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                            builderF.setAttribute(f.getPropertyName(), cf.get(f));
                         }
+                    }
+                }
+
+                DocumentBuilder builder = builderF.newDocumentBuilder();
+                String systemID = source.getSystemId();
+                source = new DOMSource(builder.newDocument());
+
+                // Copy system ID from original, empty Source to new
+                if (systemID != null) {
+                  source.setSystemId(systemID);
+                }
             }
             if (_isIdentity) {
                 transformIdentity(source, handler);
@@ -1287,7 +1329,19 @@ public final class TransformerImpl extends Transformer
              *  com.sun.org.apache.xalan.internal.xsltc.dom.LoadDocument
              *
              */
-            Source resolvedSource = _uriResolver.resolve(href, baseURI);
+            Source resolvedSource = null;
+            if (_uriResolver != null) {
+                resolvedSource = _uriResolver.resolve(href, baseURI);
+            }
+
+            if (resolvedSource == null && _useCatalog &&
+                    _catalogFeatures.get(CatalogFeatures.Feature.FILES) != null)  {
+                if (_catalogUriResolver == null) {
+                    _catalogUriResolver = CatalogManager.catalogUriResolver(_catalogFeatures);
+                }
+                resolvedSource = _catalogUriResolver.resolve(href, baseURI);
+            }
+
             if (resolvedSource == null)  {
                 StreamSource streamSource = new StreamSource(
                      SystemIDResolver.getAbsoluteURI(href, baseURI));
