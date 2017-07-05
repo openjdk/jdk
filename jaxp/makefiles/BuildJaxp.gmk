@@ -30,8 +30,6 @@ default: all
 include MakeBase.gmk
 include JavaCompilation.gmk
 
-JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
 DISABLE_JAXP_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough
 
 # The generate new bytecode uses the new compiler for to generate bytecode
@@ -39,7 +37,7 @@ DISABLE_JAXP_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-seria
 # cannot necessarily be run with the boot jdk.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
      JVM:=$(JAVA),\
-     JAVAC:=$(JAVAC_JARS),\
+     JAVAC:=$(NEW_JAVAC),\
      FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g,\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
