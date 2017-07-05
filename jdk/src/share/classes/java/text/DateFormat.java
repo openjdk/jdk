@@ -439,7 +439,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the time formatter with the default formatting style
-     * for the default locale.
+     * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getTimeInstance(int, Locale) getTimeInstance(DEFAULT,
+     *     Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @return a time formatter.
      */
     public final static DateFormat getTimeInstance()
@@ -449,7 +454,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the time formatter with the given formatting style
-     * for the default locale.
+     * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getTimeInstance(int, Locale) getTimeInstance(style,
+     *     Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @param style the given formatting style. For example,
      * SHORT for "h:mm a" in the US locale.
      * @return a time formatter.
@@ -475,7 +485,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the date formatter with the default formatting style
-     * for the default locale.
+     * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getDateInstance(int, Locale) getDateInstance(DEFAULT,
+     *     Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @return a date formatter.
      */
     public final static DateFormat getDateInstance()
@@ -485,7 +500,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the date formatter with the given formatting style
-     * for the default locale.
+     * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getDateInstance(int, Locale) getDateInstance(style,
+     *     Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @param style the given formatting style. For example,
      * SHORT for "M/d/yy" in the US locale.
      * @return a date formatter.
@@ -511,7 +531,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the date/time formatter with the default formatting style
-     * for the default locale.
+     * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getDateTimeInstance(int, int, Locale) getDateTimeInstance(DEFAULT,
+     *     DEFAULT, Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @return a date/time formatter.
      */
     public final static DateFormat getDateTimeInstance()
@@ -521,7 +546,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Gets the date/time formatter with the given date and time
-     * formatting styles for the default locale.
+     * formatting styles for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getDateTimeInstance(int, int, Locale) getDateTimeInstance(dateStyle,
+     *     timeStyle, Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @param dateStyle the given date formatting style. For example,
      * SHORT for "M/d/yy" in the US locale.
      * @param timeStyle the given time formatting style. For example,

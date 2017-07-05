@@ -71,31 +71,6 @@ public final class SecurityConstants {
     public static final AllPermission ALL_PERMISSION = new AllPermission();
 
     /**
-     * Permission type used when AWT is not present.
-     */
-    private static class FakeAWTPermission extends BasicPermission {
-        private static final long serialVersionUID = -1L;
-        public FakeAWTPermission(String name) {
-            super(name);
-        }
-        public String toString() {
-            return "(\"java.awt.AWTPermission\" \"" + getName() + "\")";
-        }
-    }
-
-    /**
-     * Permission factory used when AWT is not present.
-     */
-    private static class FakeAWTPermissionFactory
-        implements PermissionFactory<FakeAWTPermission>
-    {
-        @Override
-        public FakeAWTPermission newPermission(String name) {
-            return new FakeAWTPermission(name);
-        }
-    }
-
-    /**
      * AWT Permissions used in the JDK.
      */
     public static class AWT {
@@ -107,37 +82,29 @@ public final class SecurityConstants {
         private static final String AWTFactory = "sun.awt.AWTPermissionFactory";
 
         /**
-         * The PermissionFactory to create AWT permissions (or fake permissions
-         * if AWT is not present).
+         * The PermissionFactory to create AWT permissions (or null if AWT is
+         * not present)
          */
         private static final PermissionFactory<?> factory = permissionFactory();
 
         private static PermissionFactory<?> permissionFactory() {
-            Class<?> c = AccessController
-                .doPrivileged(new PrivilegedAction<Class<?>>() {
-                    public Class<?> run() {
-                        try {
-                           return Class.forName(AWTFactory, true, null);
-                        } catch (ClassNotFoundException e) {
-                            // not available
-                            return null;
-                        }
-                    }});
-            if (c != null) {
-                // AWT present
-                try {
-                    return (PermissionFactory<?>)c.newInstance();
-                } catch (ReflectiveOperationException x) {
-                    throw new InternalError(x.getMessage(), x);
-                }
-            } else {
-                // AWT not present
-                return new FakeAWTPermissionFactory();
+            Class<?> c;
+            try {
+                c = Class.forName(AWTFactory, false, AWT.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                // not available
+                return null;
+            }
+            // AWT present
+            try {
+                return (PermissionFactory<?>)c.newInstance();
+            } catch (ReflectiveOperationException x) {
+                throw new InternalError(x);
             }
         }
 
         private static Permission newAWTPermission(String name) {
-            return factory.newPermission(name);
+            return (factory == null) ? null : factory.newPermission(name);
         }
 
         // java.lang.SecurityManager

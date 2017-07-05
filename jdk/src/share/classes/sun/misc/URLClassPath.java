@@ -808,9 +808,6 @@ public class URLClassPath {
         /**
          * If the Profile attribute is present then this method checks that the runtime
          * supports that profile.
-         *
-         * ## Add a fast path like Class-Path to avoid reading the manifest when the attribute
-         *    is not present.
          */
         void checkProfileAttribute() throws IOException {
             Manifest man = jar.getManifest();
@@ -998,7 +995,8 @@ public class URLClassPath {
             parseExtensionsDependencies();
 
             // check Profile attribute if present
-            if (!profileCheckSuppressedByLauncher) {
+            if (!profileCheckSuppressedByLauncher &&
+                    SharedSecrets.javaUtilJarAccess().jarFileHasProfileAttribute(jar)) {
                 checkProfileAttribute();
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.swing.border.Border;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
-import com.apple.laf.ClientPropertyApplicator;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import apple.laf.JRSUIConstants.Size;
 
@@ -142,35 +141,46 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return new AquaComboBoxEditor();
     }
 
-    class AquaComboBoxEditor extends BasicComboBoxEditor implements UIResource, DocumentListener {
-        protected AquaComboBoxEditor() {
+    final class AquaComboBoxEditor extends BasicComboBoxEditor
+            implements UIResource, DocumentListener {
+
+        AquaComboBoxEditor() {
             super();
             editor = new AquaCustomComboTextField();
             editor.addFocusListener(this);
             editor.getDocument().addDocumentListener(this);
         }
 
+        @Override
         public void focusGained(final FocusEvent e) {
-            arrowButton.repaint();
+            if (arrowButton != null) {
+                arrowButton.repaint();
+            }
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
-            arrowButton.repaint();
+            if (arrowButton != null) {
+                arrowButton.repaint();
+            }
         }
 
+        @Override
         public void changedUpdate(final DocumentEvent e) {
             editorTextChanged();
         }
 
+        @Override
         public void insertUpdate(final DocumentEvent e) {
             editorTextChanged();
         }
 
+        @Override
         public void removeUpdate(final DocumentEvent e) {
             editorTextChanged();
         }
 
-        protected void editorTextChanged() {
+        private void editorTextChanged() {
             if (!popup.isVisible()) return;
 
             final Object text = editor.getText();

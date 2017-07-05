@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package sun.awt;
 
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.Window;
 import java.awt.AWTPermission;
 import java.awt.DisplayMode;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.Insets;
+import java.awt.Window;
 import java.util.Objects;
 
 import sun.java2d.opengl.CGLGraphicsConfig;
@@ -58,9 +59,12 @@ public final class CGraphicsDevice extends GraphicsDevice {
     }
 
     /**
+     * Returns CGDirectDisplayID, which is the same id as @"NSScreenNumber" in
+     * NSScreen.
+     *
      * @return CoreGraphics display id.
      */
-    public int getCoreGraphicsScreen() {
+    public int getCGDisplayID() {
         return displayID;
     }
 
@@ -107,8 +111,9 @@ public final class CGraphicsDevice extends GraphicsDevice {
         return nativeGetYResolution(displayID);
     }
 
-    private static native double nativeGetXResolution(int displayID);
-    private static native double nativeGetYResolution(int displayID);
+    public Insets getScreenInsets() {
+        return nativeGetScreenInsets(displayID);
+    }
 
     /**
      * Enters full-screen mode, or returns to windowed mode.
@@ -214,9 +219,15 @@ public final class CGraphicsDevice extends GraphicsDevice {
         return nativeGetDisplayModes(displayID);
     }
 
-    private native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
+    private static native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
 
-    private native DisplayMode nativeGetDisplayMode(int displayID);
+    private static native DisplayMode nativeGetDisplayMode(int displayID);
 
-    private native DisplayMode[] nativeGetDisplayModes(int displayID);
+    private static native DisplayMode[] nativeGetDisplayModes(int displayID);
+
+    private static native double nativeGetXResolution(int displayID);
+
+    private static native double nativeGetYResolution(int displayID);
+
+    private static native Insets nativeGetScreenInsets(int displayID);
 }

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6869617
- * @summary RhinoScriptEngine bug : ScriptException cause not set (with fix)
+ * @summary ScriptEngine bug : ScriptException cause not set (with fix)
  */
 
 import javax.script.*;
@@ -33,12 +33,12 @@ import java.io.*;
 public class CauseExceptionTest {
     public static void main(String[] args) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
-        ScriptEngine engine = sem.getEngineByName("js");
+        ScriptEngine engine = sem.getEngineByName("nashorn");
         if (engine == null) {
             System.out.println("Warning: No js engine found; test vacuously passes.");
             return;
         }
-        engine.eval("function hello_world() { println('hello world'); throw 'out of here'; } ");
+        engine.eval("function hello_world() { print('hello world'); throw 'out of here'; } ");
         Invocable invocable = (Invocable) engine;
         try {
             invocable.invokeFunction("hello_world", (Object[])null);

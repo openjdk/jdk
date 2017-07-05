@@ -29,7 +29,7 @@ import javax.net.*;
 import javax.net.ssl.*;
 import java.lang.reflect.*;
 
-import sun.security.util.KeyLength;
+import sun.security.util.KeyUtil;
 
 public class ShortRSAKeyWithinTLS {
 
@@ -175,13 +175,13 @@ public class ShortRSAKeyWithinTLS {
             privateKey = (PrivateKey)ks.getKey(keyAlias, null);
             publicKey = (PublicKey)ks.getCertificate(keyAlias).getPublicKey();
 
-            int privateKeySize = KeyLength.getKeySize(privateKey);
+            int privateKeySize = KeyUtil.getKeySize(privateKey);
             if (privateKeySize != keySize) {
                 throw new Exception("Expected key size is " + keySize +
                         ", but the private key size is " + privateKeySize);
             }
 
-            int publicKeySize = KeyLength.getKeySize(publicKey);
+            int publicKeySize = KeyUtil.getKeySize(publicKey);
             if (publicKeySize != keySize) {
                 throw new Exception("Expected key size is " + keySize +
                         ", but the public key size is " + publicKeySize);

@@ -1521,7 +1521,7 @@ class PackageReader extends BandStructure {
         //        *method_Exceptions_RC :UNSIGNED5  (cp_Class)
         //        *method_MethodParameters_NB: BYTE1
         //        *method_MethodParameters_RUN: UNSIGNED5 (cp_Utf8)
-        //        *method_MethodParameters_I:  UNSIGNED5 (flag)
+        //        *method_MethodParameters_FH:  UNSIGNED5 (flag)
         //
         //  code_attr_bands:
         //        *code_flags :UNSIGNED5
@@ -2256,6 +2256,12 @@ class PackageReader extends BandStructure {
                         int origBC = bc;
                         int size = 2;
                         switch (bc) {
+                        case _invokestatic_int:
+                            origBC = _invokestatic;
+                            break;
+                        case _invokespecial_int:
+                            origBC = _invokespecial;
+                            break;
                         case _ildc:
                         case _cldc:
                         case _fldc:
