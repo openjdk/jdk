@@ -24,7 +24,7 @@
  */
 
 /**
- * Implementation of the edit pad service.
+ * Provides the implementation of the edit pad service used by {@link jdk.jshell}.
  *
  * @moduleGraph
  * @since 9
