@@ -324,7 +324,7 @@ public class GopherClient extends NetworkClient implements Runnable {
            }
 
        } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding+ " encoding not found");
+            throw new InternalError(encoding+ " encoding not found", e);
        } catch (IOException e) {
        } finally {
            try {

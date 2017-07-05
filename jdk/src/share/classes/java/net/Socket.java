@@ -28,7 +28,6 @@ package java.net;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -421,10 +420,13 @@ class Socket implements java.io.Closeable {
             createImpl(stream);
             if (localAddr != null)
                 bind(localAddr);
-            if (address != null)
-                connect(address);
-        } catch (IOException e) {
-            close();
+            connect(address);
+        } catch (IOException | IllegalArgumentException | SecurityException e) {
+            try {
+                close();
+            } catch (IOException ce) {
+                e.addSuppressed(ce);
+            }
             throw e;
         }
     }
@@ -1436,8 +1438,9 @@ class Socket implements java.io.Closeable {
      * Any data sent to the input stream side of the socket is acknowledged
      * and then silently discarded.
      * <p>
-     * If you read from a socket input stream after invoking
-     * shutdownInput() on the socket, the stream will return EOF.
+     * If you read from a socket input stream after invoking this method on the
+     * socket, the stream's {@code available} method will return 0, and its
+     * {@code read} methods will return {@code -1} (end of stream).
      *
      * @exception IOException if an I/O error occurs when shutting down this
      * socket.

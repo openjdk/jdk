@@ -93,7 +93,7 @@ class PerfDataType {
             this.value = b[0];
         } catch (UnsupportedEncodingException e) {
             // ignore, "UTF-8" is always a known encoding
-            throw new InternalError("Unknown encoding");
+            throw new InternalError("Unknown encoding", e);
         }
     }
 }

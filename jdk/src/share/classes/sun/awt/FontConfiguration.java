@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,10 +266,19 @@ public abstract class FontConfiguration {
     private File findFontConfigFile(String javaLib) {
         String baseName = javaLib + File.separator + "fontconfig";
         File configFile;
+        String osMajorVersion = null;
         if (osVersion != null && osName != null) {
             configFile = findImpl(baseName + "." + osName + "." + osVersion);
             if (configFile != null) {
                 return configFile;
+            }
+            int decimalPointIndex = osVersion.indexOf(".");
+            if (decimalPointIndex != -1) {
+                osMajorVersion = osVersion.substring(0, osVersion.indexOf("."));
+                configFile = findImpl(baseName + "." + osName + "." + osMajorVersion);
+                if (configFile != null) {
+                    return configFile;
+                }
             }
         }
         if (osName != null) {
@@ -282,6 +291,12 @@ public abstract class FontConfiguration {
             configFile = findImpl(baseName + "." + osVersion);
             if (configFile != null) {
                 return configFile;
+            }
+            if (osMajorVersion != null) {
+                configFile = findImpl(baseName + "." + osMajorVersion);
+                if (configFile != null) {
+                    return configFile;
+                }
             }
         }
         foundOsSpecificFile = false;

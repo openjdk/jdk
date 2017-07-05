@@ -151,11 +151,36 @@ public class EncryptionKey
     }
 
     /**
+     * Obtains a key for a given etype of a principal with possible new salt
+     * and s2kparams
+     * @param cname NOT null
+     * @param password NOT null
+     * @param etype
+     * @param snp can be NULL
+     * @returns never null
+     */
+    public static EncryptionKey acquireSecretKey(PrincipalName cname,
+            char[] password, int etype, PAData.SaltAndParams snp)
+            throws KrbException {
+        String salt;
+        byte[] s2kparams;
+        if (snp != null) {
+            salt = snp.salt != null ? snp.salt : cname.getSalt();
+            s2kparams = snp.params;
+        } else {
+            salt = cname.getSalt();
+            s2kparams = null;
+        }
+        return acquireSecretKey(password, salt, etype, s2kparams);
+    }
+
+    /**
      * Obtains a key for a given etype with salt and optional s2kparams
      * @param password NOT null
      * @param salt NOT null
      * @param etype
      * @param s2kparams can be NULL
+     * @returns never null
      */
     public static EncryptionKey acquireSecretKey(char[] password,
             String salt, int etype, byte[] s2kparams)

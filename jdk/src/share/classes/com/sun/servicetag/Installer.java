@@ -61,8 +61,8 @@ public class Installer {
     private static RegistrationData registration;
     private static boolean supportRegistration;
     private static String registerHtmlParent;
-    private static Set<Locale> supportedLocales = new HashSet<Locale>();
-    private static Properties swordfishProps = null;
+    private static Set<Locale> supportedLocales = new HashSet<>();
+    private static Properties svcTagProps = null;
     private static String[] jreArchs = null;
     static {
         String dir = System.getProperty(SVCTAG_DIR_PATH);
@@ -94,7 +94,7 @@ public class Installer {
         boolean cleanup = false;
         try {
             // Check if we have the swordfish entries for this JRE version
-            if (loadSwordfishEntries() == null) {
+            if (loadServiceTagProps() == null) {
                 return null;
             }
 
@@ -144,18 +144,14 @@ public class Installer {
             return registration;
         }
         if (regXmlFile.exists()) {
-            BufferedInputStream in = null;
-            try {
-                in = new BufferedInputStream(new FileInputStream(regXmlFile));
+            try (BufferedInputStream in =
+                    new BufferedInputStream(new FileInputStream(regXmlFile)))
+            {
                 registration = RegistrationData.loadFromXML(in);
             } catch (IllegalArgumentException ex) {
                 System.err.println("Error: Bad registration data \"" +
                                     regXmlFile + "\":" + ex.getMessage());
                 throw ex;
-            } finally {
-                if (in != null) {
-                    in.close();
-                }
             }
         } else {
             registration = new RegistrationData();
@@ -186,18 +182,14 @@ public class Installer {
         deleteRegistrationHtmlPage();
         getRegistrationHtmlPage();
 
-        BufferedOutputStream out = null;
-        try {
-            out = new BufferedOutputStream(new FileOutputStream(regXmlFile));
+        try (BufferedOutputStream out =
+                new BufferedOutputStream(new FileOutputStream(regXmlFile)))
+        {
             getRegistrationData().storeToXML(out);
         } catch (IllegalArgumentException ex) {
             System.err.println("Error: Bad registration data \"" +
                                 regXmlFile + "\":" + ex.getMessage());
             throw ex;
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 
@@ -206,21 +198,15 @@ public class Installer {
      * or empty set if file not exists.
      */
     private static Set<String> getInstalledURNs() throws IOException {
-        Set<String> urnSet = new HashSet<String>();
+        Set<String> urnSet = new HashSet<>();
         if (serviceTagFile.exists()) {
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new FileReader(serviceTagFile));
+            try (BufferedReader in = new BufferedReader(new FileReader(serviceTagFile))) {
                 String urn;
                 while ((urn = in.readLine()) != null) {
                     urn = urn.trim();
                     if (urn.length() > 0) {
                         urnSet.add(urn);
                     }
-                }
-            } finally {
-                if (in != null) {
-                    in.close();
                 }
             }
         }
@@ -237,9 +223,9 @@ public class Installer {
     private static ServiceTag[] getJavaServiceTagArray() throws IOException {
         RegistrationData regData = getRegistrationData();
         Set<ServiceTag> svcTags = regData.getServiceTags();
-        Set<ServiceTag> result = new HashSet<ServiceTag>();
+        Set<ServiceTag> result = new HashSet<>();
 
-        Properties props = loadSwordfishEntries();
+        Properties props = loadServiceTagProps();
         String jdkUrn = props.getProperty("servicetag.jdk.urn");
         String jreUrn = props.getProperty("servicetag.jre.urn");
         for (ServiceTag st : svcTags) {
@@ -343,8 +329,7 @@ public class Installer {
     }
 
     private static ServiceTag newServiceTag(String svcTagSource) throws IOException {
-        // Load the swoRDFish information for the service tag creation
-        Properties props = loadSwordfishEntries();
+        Properties props = loadServiceTagProps();
 
         // Determine the product URN and name
         String productURN;
@@ -442,52 +427,35 @@ public class Installer {
             return;
         }
 
-        PrintWriter out = null;
-        try {
-            out = new PrintWriter(serviceTagFile);
-
+        try (PrintWriter out = new PrintWriter(serviceTagFile)) {
             ServiceTag[] javaSvcTags = getJavaServiceTagArray();
             for (ServiceTag st : javaSvcTags) {
                 // Write the instance_run to the servicetag file
                 String instanceURN = st.getInstanceURN();
                 out.println(instanceURN);
             }
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 
     /**
-     * Load the values associated with the swoRDFish metadata entries
-     * for Java SE. The swoRDFish metadata entries are different for
-     * different release.
+     * Load the properties for generating Java SE service tags.
      *
      * @param version Version of Java SE
      */
-    private static synchronized Properties loadSwordfishEntries() throws IOException {
-        if (swordfishProps != null) {
-            return swordfishProps;
+    private static synchronized Properties loadServiceTagProps() throws IOException {
+        if (svcTagProps != null) {
+            return svcTagProps;
         }
 
-        // The version string for Java SE 6 is 1.6.0
-        // We just need the minor number in the version string
-        int version = Util.getJdkVersion();
-
-        String filename = "/com/sun/servicetag/resources/javase_" +
-                version + "_swordfish.properties";
-        InputStream in = Installer.class.getResourceAsStream(filename);
-        if (in == null) {
-            return null;
+        // For Java SE 8 and later releases, JDK and JRE both use
+        // the same product number.  The sworRDFish metadata were
+        // for legacy Sun part number.
+        String filename = "/com/sun/servicetag/resources/javase_servicetag.properties";
+        try (InputStream in = Installer.class.getResourceAsStream(filename)) {
+            svcTagProps = new Properties();
+            svcTagProps.load(in);
         }
-        swordfishProps = new Properties();
-        try {
-            swordfishProps.load(in);
-        } finally {
-            in.close();
-        }
-        return swordfishProps;
+        return svcTagProps;
     }
 
     /**
@@ -546,7 +514,7 @@ public class Installer {
             return jreArchs;
         }
 
-        Set<String> archs = new HashSet<String>();
+        Set<String> archs = new HashSet<>();
 
         String os = System.getProperty("os.name");
         if (os.equals("SunOS") || os.equals("Linux")) {
@@ -681,16 +649,16 @@ public class Installer {
         String country = locale.getCountry();
         String variant = locale.getVariant();
 
-        List<Locale> locales = new ArrayList<Locale>(3);
+        List<Locale> locales = new ArrayList<>(3);
         if (variant.length() > 0) {
             locales.add(locale);
         }
         if (country.length() > 0) {
-            locales.add((locales.size() == 0) ?
+            locales.add((locales.isEmpty()) ?
                         locale : new Locale(language, country, ""));
         }
         if (language.length() > 0) {
-            locales.add((locales.size() == 0) ?
+            locales.add((locales.isEmpty()) ?
                         locale : new Locale(language, "", ""));
         }
         return locales;
@@ -788,14 +756,11 @@ public class Installer {
         // Format the registration data in one single line
         StringBuilder payload = new StringBuilder();
         String xml = regData.toString().replaceAll("\"", "%22");
-        BufferedReader reader = new BufferedReader(new StringReader(xml));
-        try {
+        try (BufferedReader reader = new BufferedReader(new StringReader(xml))) {
             String line = null;
             while ((line = reader.readLine()) != null) {
                 payload.append(line.trim());
             }
-        } finally {
-            reader.close();
         }
 
         String resourceFilename = "/com/sun/servicetag/resources/register";
