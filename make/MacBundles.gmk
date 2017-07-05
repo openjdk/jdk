@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,32 +33,13 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   bundles: jre-bundle jdk-bundle
 
-  # JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
+  # JDK_MACOSX_BUNDLE_DIR and JRE_MACOSX_BUNDLE_DIR are defined in SPEC.
 
   MACOSX_PLIST_SRC := $(JDK_TOPDIR)/make/data/bundle
 
-  # All these OPENJDK checks are needed since there is no coherency between
-  # these values in open and closed. Should probably be fixed.
-  ifndef OPENJDK
-    BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE).$(JDK_MINOR_VERSION)u$(JDK_UPDATE_VERSION)
-  else
-    BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE)
-  endif
-  BUNDLE_ID_JRE := $(BUNDLE_ID).jre
-  BUNDLE_ID_JDK := $(BUNDLE_ID).jdk
-
+  BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE).$(JDK_MINOR_VERSION)u$(JDK_UPDATE_VERSION)
   BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_MINOR_VERSION)
-  BUNDLE_NAME_JRE := $(BUNDLE_NAME)
-  BUNDLE_NAME_JDK := $(BUNDLE_NAME)
-
-  ifndef OPENJDK
-    BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_VERSION)
-  else
-    BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) ($(JDK_VERSION))
-  endif
-  BUNDLE_INFO_JRE := $(BUNDLE_INFO)
-  BUNDLE_INFO_JDK := $(BUNDLE_INFO)
-
+  BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_VERSION)
   BUNDLE_PLATFORM_VERSION := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION)
   BUNDLE_VERSION := $(JDK_VERSION)
   ifeq ($(COMPANY_NAME), N/A)
@@ -67,65 +48,66 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
     BUNDLE_VENDOR := $(COMPANY_NAME)
   endif
 
-
   JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
   JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
 
-  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
-  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
+  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_MACOSX_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
+  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_MACOSX_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
 
   # Copy empty directories (jre/lib/applet).
-  $(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
+  $(JDK_MACOSX_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
-  $(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
+  $(JRE_MACOSX_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
-  $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JDK_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@
 
-  $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JRE_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@
 
-  $(JDK_BUNDLE_DIR)/Info.plist: $(SPEC)
-	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(MKDIR) -p $(@D)
-	$(SED) -e "s/@@ID@@/$(BUNDLE_ID_JDK)/g" \
-	    -e "s/@@NAME@@/$(BUNDLE_NAME_JDK)/g" \
-	    -e "s/@@INFO@@/$(BUNDLE_INFO_JDK)/g" \
-	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
-	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
-	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-	    < $(MACOSX_PLIST_SRC)/JDK-Info.plist > $@
+  $(eval $(call SetupTextFileProcessing, BUILD_JDK_PLIST, \
+      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist, \
+      OUTPUT_FILE := $(JDK_MACOSX_BUNDLE_DIR)/Info.plist, \
+      REPLACEMENTS := \
+          @@ID@@ => $(BUNDLE_ID).jdk ; \
+          @@NAME@@ => $(BUNDLE_NAME) ; \
+          @@INFO@@ => $(BUNDLE_INFO) ; \
+          @@PLATFORM_VERSION@@ => $(BUNDLE_PLATFORM_VERSION) ; \
+          @@VERSION@@ => $(BUNDLE_VERSION) ; \
+          @@VENDOR@@ => $(BUNDLE_VENDOR) , \
+  ))
 
-  $(JRE_BUNDLE_DIR)/Info.plist: $(SPEC)
-	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(MKDIR) -p $(@D)
-	$(SED) -e "s/@@ID@@/$(BUNDLE_ID_JRE)/g" \
-	    -e "s/@@NAME@@/$(BUNDLE_NAME_JRE)/g" \
-	    -e "s/@@INFO@@/$(BUNDLE_INFO_JRE)/g" \
-	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
-	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
-	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-	    < $(MACOSX_PLIST_SRC)/JRE-Info.plist > $@
+  $(eval $(call SetupTextFileProcessing, BUILD_JRE_PLIST, \
+      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JRE-Info.plist, \
+      OUTPUT_FILE := $(JRE_MACOSX_BUNDLE_DIR)/Info.plist, \
+      REPLACEMENTS := \
+          @@ID@@ => $(BUNDLE_ID).jre ; \
+          @@NAME@@ => $(BUNDLE_NAME) ; \
+          @@INFO@@ => $(BUNDLE_INFO) ; \
+          @@PLATFORM_VERSION@@ => $(BUNDLE_PLATFORM_VERSION) ; \
+          @@VERSION@@ => $(BUNDLE_VERSION) ; \
+          @@VENDOR@@ => $(BUNDLE_VENDOR) , \
+  ))
 
-  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib \
-      $(JDK_BUNDLE_DIR)/Info.plist
-	$(SETFILE) -a B $(dir $(JDK_BUNDLE_DIR))
+  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib \
+      $(BUILD_JDK_PLIST)
+	$(SETFILE) -a B $(dir $(JDK_MACOSX_BUNDLE_DIR))
 
-  jre-bundle: $(JRE_TARGET_LIST) $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib \
-      $(JRE_BUNDLE_DIR)/Info.plist
-	$(SETFILE) -a B $(dir $(JRE_BUNDLE_DIR))
+  jre-bundle: $(JRE_TARGET_LIST) $(JRE_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib \
+      $(BUILD_JRE_PLIST)
+	$(SETFILE) -a B $(dir $(JRE_MACOSX_BUNDLE_DIR))
 
 else # Not macosx
 
