@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.nio.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SSLEngineBadBufferArrayAccess {
 
@@ -103,9 +105,6 @@ public class SSLEngineBadBufferArrayAccess {
     private static boolean debug = false;
     private SSLContext sslc;
     private SSLEngine serverEngine;     // server-side SSLEngine
-    private SSLSocket sslSocket;        // client-side socket
-    private ServerSocket serverSocket;  // server-side Socket, generates the...
-    private Socket socket;              // server-side socket that will read
 
     private final byte[] serverMsg = "Hi there Client, I'm a Server".getBytes();
     private final byte[] clientMsg = "Hello Server, I'm a Client".getBytes();
@@ -135,6 +134,21 @@ public class SSLEngineBadBufferArrayAccess {
     private static String trustFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores
             + "/" + trustStoreFile;
+
+    /*
+     * Is the server ready to serve?
+     */
+    private static final CountDownLatch serverCondition = new CountDownLatch(1);
+
+    /*
+     * Is the client ready to handshake?
+     */
+    private static final CountDownLatch clientCondition = new CountDownLatch(1);
+
+    /*
+     * What's the server port?  Use any free port by default
+     */
+    private volatile int serverPort = 0;
 
     /*
      * Main entry point for this test.
@@ -171,8 +185,13 @@ public class SSLEngineBadBufferArrayAccess {
 
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
+        try (FileInputStream fis = new FileInputStream(keyFilename)) {
+            ks.load(fis, passphrase);
+        }
+
+        try (FileInputStream fis = new FileInputStream(trustFilename)) {
+            ts.load(fis, passphrase);
+        }
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -207,127 +226,177 @@ public class SSLEngineBadBufferArrayAccess {
     private void runTest(boolean direct) throws Exception {
         boolean serverClose = direct;
 
-        serverSocket = new ServerSocket(0);
-        int port = serverSocket.getLocalPort();
-        Thread thread = createClientThread(port, serverClose);
+        ServerSocket serverSocket = new ServerSocket(0);
+        serverPort = serverSocket.getLocalPort();
 
-        socket = serverSocket.accept();
+        // Signal the client, the server is ready to accept connection.
+        serverCondition.countDown();
+
+        Thread clientThread = runClient(serverClose);
+
+        // Try to accept a connection in 30 seconds.
+        Socket socket;
+        try {
+            serverSocket.setSoTimeout(30000);
+            socket = (Socket) serverSocket.accept();
+        } catch (SocketTimeoutException ste) {
+            serverSocket.close();
+
+            // Ignore the test case if no connection within 30 seconds.
+            System.out.println(
+                "No incoming client connection in 30 seconds. " +
+                "Ignore in server side.");
+            return;
+        }
+
+        // handle the connection
+        try {
+            // Is it the expected client connection?
+            //
+            // Naughty test cases or third party routines may try to
+            // connection to this server port unintentionally.  In
+            // order to mitigate the impact of unexpected client
+            // connections and avoid intermittent failure, it should
+            // be checked that the accepted connection is really linked
+            // to the expected client.
+            boolean clientIsReady =
+                    clientCondition.await(30L, TimeUnit.SECONDS);
+
+            if (clientIsReady) {
+                // Run the application in server side.
+                runServerApplication(socket, direct, serverClose);
+            } else {    // Otherwise, ignore
+                // We don't actually care about plain socket connections
+                // for TLS communication testing generally.  Just ignore
+                // the test if the accepted connection is not linked to
+                // the expected client or the client connection timeout
+                // in 30 seconds.
+                System.out.println(
+                        "The client is not the expected one or timeout. " +
+                        "Ignore in server side.");
+            }
+        } catch (Exception e) {
+            System.out.println("Server died ...");
+            e.printStackTrace(System.out);
+            serverException = e;
+        } finally {
+            socket.close();
+            serverSocket.close();
+        }
+
+        clientThread.join();
+
+        if (clientException != null || serverException != null) {
+            throw new RuntimeException("Test failed");
+        }
+    }
+
+    /*
+     * Define the server side application of the test for the specified socket.
+     */
+    void runServerApplication(Socket socket, boolean direct,
+            boolean serverClose) throws Exception {
+
         socket.setSoTimeout(500);
-        serverSocket.close();
 
         createSSLEngine();
         createBuffers(direct);
 
-        try {
-            boolean closed = false;
+        boolean closed = false;
 
-            InputStream is = socket.getInputStream();
-            OutputStream os = socket.getOutputStream();
+        InputStream is = socket.getInputStream();
+        OutputStream os = socket.getOutputStream();
 
-            SSLEngineResult serverResult;   // results from last operation
+        SSLEngineResult serverResult;   // results from last operation
 
-            /*
-             * Examining the SSLEngineResults could be much more involved,
-             * and may alter the overall flow of the application.
-             *
-             * For example, if we received a BUFFER_OVERFLOW when trying
-             * to write to the output pipe, we could reallocate a larger
-             * pipe, but instead we wait for the peer to drain it.
-             */
-            byte[] inbound = new byte[8192];
-            byte[] outbound = new byte[8192];
+        /*
+         * Examining the SSLEngineResults could be much more involved,
+         * and may alter the overall flow of the application.
+         *
+         * For example, if we received a BUFFER_OVERFLOW when trying
+         * to write to the output pipe, we could reallocate a larger
+         * pipe, but instead we wait for the peer to drain it.
+         */
+        byte[] inbound = new byte[8192];
+        byte[] outbound = new byte[8192];
 
-            while (!isEngineClosed(serverEngine)) {
-                int len = 0;
+        while (!isEngineClosed(serverEngine)) {
+            int len = 0;
 
-                // Inbound data
-                log("================");
+            // Inbound data
+            log("================");
 
-                // Read from the Client side.
-                try {
-                    len = is.read(inbound);
-                    if (len == -1) {
-                        throw new Exception("Unexpected EOF");
-                    }
-                    cTOs.put(inbound, 0, len);
-                } catch (SocketTimeoutException ste) {
-                    // swallow.  Nothing yet, probably waiting on us.
+            // Read from the Client side.
+            try {
+                len = is.read(inbound);
+                if (len == -1) {
+                    throw new Exception("Unexpected EOF");
                 }
+                cTOs.put(inbound, 0, len);
+            } catch (SocketTimeoutException ste) {
+                // swallow.  Nothing yet, probably waiting on us.
+                System.out.println("Warning: " + ste);
+            }
 
-                cTOs.flip();
+            cTOs.flip();
 
-                serverResult = serverEngine.unwrap(cTOs, serverIn);
-                log("server unwrap: ", serverResult);
-                runDelegatedTasks(serverResult, serverEngine);
-                cTOs.compact();
+            serverResult = serverEngine.unwrap(cTOs, serverIn);
+            log("server unwrap: ", serverResult);
+            runDelegatedTasks(serverResult, serverEngine);
+            cTOs.compact();
 
-                // Outbound data
-                log("----");
+            // Outbound data
+            log("----");
 
-                serverResult = serverEngine.wrap(serverOut, sTOc);
-                log("server wrap: ", serverResult);
-                runDelegatedTasks(serverResult, serverEngine);
+            serverResult = serverEngine.wrap(serverOut, sTOc);
+            log("server wrap: ", serverResult);
+            runDelegatedTasks(serverResult, serverEngine);
 
-                sTOc.flip();
+            sTOc.flip();
 
-                if ((len = sTOc.remaining()) != 0) {
-                    sTOc.get(outbound, 0, len);
-                    os.write(outbound, 0, len);
-                    // Give the other side a chance to process
-                }
+            if ((len = sTOc.remaining()) != 0) {
+                sTOc.get(outbound, 0, len);
+                os.write(outbound, 0, len);
+                // Give the other side a chance to process
+            }
 
-                sTOc.compact();
+            sTOc.compact();
 
-                if (!closed && (serverOut.remaining() == 0)) {
-                    closed = true;
+            if (!closed && (serverOut.remaining() == 0)) {
+                closed = true;
 
-                    /*
-                     * We'll alternate initiatating the shutdown.
-                     * When the server initiates, it will take one more
-                     * loop, but tests the orderly shutdown.
-                     */
-                    if (serverClose) {
-                        serverEngine.closeOutbound();
-                    }
-                }
-
-                if (closed && isEngineClosed(serverEngine)) {
-                    serverIn.flip();
-
-                    /*
-                     * A sanity check to ensure we got what was sent.
-                     */
-                    if (serverIn.remaining() != clientMsg.length) {
-                        throw new Exception("Client: Data length error -" +
-                            " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
-                            " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
-                            " RELIABLY DUPLICATE.");
-                    }
-
-                    for (int i = 0; i < clientMsg.length; i++) {
-                        if (clientMsg[i] != serverIn.get()) {
-                            throw new Exception("Client: Data content error -" +
-                            " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
-                            " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
-                            " RELIABLY DUPLICATE.");
-                        }
-                    }
-                    serverIn.compact();
+                /*
+                 * We'll alternate initiatating the shutdown.
+                 * When the server initiates, it will take one more
+                 * loop, but tests the orderly shutdown.
+                 */
+                if (serverClose) {
+                    serverEngine.closeOutbound();
                 }
             }
-            return;
-        } catch (Exception e) {
-            serverException = e;
-        } finally {
-            socket.close();
 
-            // Wait for the client to join up with us.
-            thread.join();
-            if (serverException != null) {
-                throw serverException;
-            }
-            if (clientException != null) {
-                throw clientException;
+            if (closed && isEngineClosed(serverEngine)) {
+                serverIn.flip();
+
+                /*
+                 * A sanity check to ensure we got what was sent.
+                 */
+                if (serverIn.remaining() != clientMsg.length) {
+                    throw new Exception("Client: Data length error -" +
+                        " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
+                        " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
+                        " RELIABLY DUPLICATE.");
+                }
+
+                for (int i = 0; i < clientMsg.length; i++) {
+                    if (clientMsg[i] != serverIn.get()) {
+                        throw new Exception("Client: Data content error -" +
+                        " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
+                        " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
+                        " RELIABLY DUPLICATE.");
+                    }
+                }
+                serverIn.compact();
             }
         }
     }
@@ -336,54 +405,111 @@ public class SSLEngineBadBufferArrayAccess {
      * Create a client thread which does simple SSLSocket operations.
      * We'll write and read one data packet.
      */
-    private Thread createClientThread(final int port,
-            final boolean serverClose) throws Exception {
+    private Thread runClient(final boolean serverClose)
+            throws Exception {
 
         Thread t = new Thread("ClientThread") {
 
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1000);  // Give server time to finish setup.
-
-                    sslSocket = (SSLSocket) sslc.getSocketFactory().
-                            createSocket("localhost", port);
-                    OutputStream os = sslSocket.getOutputStream();
-                    InputStream is = sslSocket.getInputStream();
-
-                    // write(byte[]) goes in one shot.
-                    os.write(clientMsg);
-
-                    byte[] inbound = new byte[2048];
-                    int pos = 0;
-
-                    int len;
-done:
-                    while ((len = is.read(inbound, pos, 2048 - pos)) != -1) {
-                        pos += len;
-                        // Let the client do the closing.
-                        if ((pos == serverMsg.length) && !serverClose) {
-                            sslSocket.close();
-                            break done;
-                        }
-                    }
-
-                    if (pos != serverMsg.length) {
-                        throw new Exception("Client:  Data length error");
-                    }
-
-                    for (int i = 0; i < serverMsg.length; i++) {
-                        if (inbound[i] != serverMsg[i]) {
-                            throw new Exception("Client:  Data content error");
-                        }
-                    }
+                    doClientSide(serverClose);
                 } catch (Exception e) {
+                    System.out.println("Client died ...");
+                    e.printStackTrace(System.out);
                     clientException = e;
                 }
             }
         };
+
         t.start();
         return t;
+    }
+
+    /*
+     * Define the client side of the test.
+     */
+    void doClientSide(boolean serverClose) throws Exception {
+        // Wait for server to get started.
+        //
+        // The server side takes care of the issue if the server cannot
+        // get started in 90 seconds.  The client side would just ignore
+        // the test case if the serer is not ready.
+        boolean serverIsReady =
+                serverCondition.await(90L, TimeUnit.SECONDS);
+        if (!serverIsReady) {
+            System.out.println(
+                    "The server is not ready yet in 90 seconds. " +
+                    "Ignore in client side.");
+            return;
+        }
+
+        SSLSocketFactory sslsf = sslc.getSocketFactory();
+        try (SSLSocket sslSocket = (SSLSocket)sslsf.createSocket()) {
+            try {
+                sslSocket.connect(
+                        new InetSocketAddress("localhost", serverPort), 15000);
+            } catch (IOException ioe) {
+                // The server side may be impacted by naughty test cases or
+                // third party routines, and cannot accept connections.
+                //
+                // Just ignore the test if the connection cannot be
+                // established.
+                System.out.println(
+                        "Cannot make a connection in 15 seconds. " +
+                        "Ignore in client side.");
+                return;
+            }
+
+            // OK, here the client and server get connected.
+
+            // Signal the server, the client is ready to communicate.
+            clientCondition.countDown();
+
+            // There is still a chance in theory that the server thread may
+            // wait client-ready timeout and then quit.  The chance should
+            // be really rare so we don't consider it until it becomes a
+            // real problem.
+
+            // Run the application in client side.
+            runClientApplication(sslSocket, serverClose);
+        }
+    }
+
+    /*
+     * Define the server side application of the test for the specified socket.
+     */
+    void runClientApplication(SSLSocket sslSocket, boolean serverClose)
+            throws Exception {
+
+        OutputStream os = sslSocket.getOutputStream();
+        InputStream is = sslSocket.getInputStream();
+
+        // write(byte[]) goes in one shot.
+        os.write(clientMsg);
+
+        byte[] inbound = new byte[2048];
+        int pos = 0;
+
+        int len;
+        while ((len = is.read(inbound, pos, 2048 - pos)) != -1) {
+            pos += len;
+            // Let the client do the closing.
+            if ((pos == serverMsg.length) && !serverClose) {
+                sslSocket.close();
+                break;
+            }
+        }
+
+        if (pos != serverMsg.length) {
+            throw new Exception("Client:  Data length error");
+        }
+
+        for (int i = 0; i < serverMsg.length; i++) {
+            if (inbound[i] != serverMsg[i]) {
+                throw new Exception("Client:  Data content error");
+            }
+        }
     }
 
     /*

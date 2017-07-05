@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 8059556
+ * @bug 8059556 8158639
  *
  * @run main/othervm -Xbatch compiler.jsr292.NullConstantReceiver
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::run compiler.jsr292.NullConstantReceiver
  */
 
 package compiler.jsr292;

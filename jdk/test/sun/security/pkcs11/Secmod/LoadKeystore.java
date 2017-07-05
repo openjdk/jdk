@@ -21,6 +21,16 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8048622 8134232
+ * @summary Checks that PKCS#11 keystore can't be loaded with wrong password
+ * @library ../
+ * @modules jdk.crypto.pkcs11
+ * @run main/othervm LoadKeystore
+ * @run main/othervm LoadKeystore sm policy
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
@@ -30,14 +40,6 @@ import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.util.Collections;
 
-/*
- * @test
- * @bug 8048622 8134232
- * @summary Checks that PKCS#11 keystore can't be loaded with wrong password
- * @library ../
- * @run main/othervm LoadKeystore
- * @run main/othervm LoadKeystore sm policy
- */
 public class LoadKeystore extends SecmodTest {
 
     public static void main(String[] args) throws Exception {

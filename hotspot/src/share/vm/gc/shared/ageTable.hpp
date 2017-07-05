@@ -29,8 +29,6 @@
 #include "oops/oop.hpp"
 #include "runtime/perfData.hpp"
 
-class GCPolicyCounters;
-
 /* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
@@ -67,10 +65,12 @@ class AgeTable VALUE_OBJ_CLASS_SPEC {
   // for parallel young generation gc.
   void merge(AgeTable* subTable);
 
-  // calculate new tenuring threshold based on age information
-  uint compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters);
+  // Calculate new tenuring threshold based on age information.
+  uint compute_tenuring_threshold(size_t desired_survivor_size);
+  void print_age_table(uint tenuring_threshold);
 
  private:
+
   PerfVariable* _perf_sizes[table_size];
 };
 

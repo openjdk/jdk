@@ -290,7 +290,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                       VoidClosure*       complete_gc);
 
   // Enqueue references with a certain reachability level
-  void enqueue_discovered_reflist(DiscoveredList& refs_list, HeapWord* pending_list_addr);
+  void enqueue_discovered_reflist(DiscoveredList& refs_list);
 
   // "Preclean" all the discovered reference lists
   // by removing references with strongly reachable referents.
@@ -311,7 +311,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // occupying the i / _num_q slot.
   const char* list_name(uint i);
 
-  void enqueue_discovered_reflists(HeapWord* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
+  void enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor);
 
  protected:
   // "Preclean" the given discovered reference list
@@ -424,7 +424,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                 GCTimer *gc_timer);
 
   // Enqueue references at end of GC (called by the garbage collector)
-  bool enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
+  void enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
 
   // If a discovery is in process that is being superceded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
@@ -613,11 +613,9 @@ class AbstractRefProcTaskExecutor::EnqueueTask {
 protected:
   EnqueueTask(ReferenceProcessor& ref_processor,
               DiscoveredList      refs_lists[],
-              HeapWord*           pending_list_addr,
               int                 n_queues)
     : _ref_processor(ref_processor),
       _refs_lists(refs_lists),
-      _pending_list_addr(pending_list_addr),
       _n_queues(n_queues)
   { }
 
@@ -627,7 +625,6 @@ public:
 protected:
   ReferenceProcessor& _ref_processor;
   DiscoveredList*     _refs_lists;
-  HeapWord*           _pending_list_addr;
   int                 _n_queues;
 };
 

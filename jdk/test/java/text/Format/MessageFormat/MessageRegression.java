@@ -136,7 +136,7 @@ public class MessageRegression extends IntlTest {
         try {
             logln("Apply with pattern : " + pattern1);
             messageFormatter.applyPattern(pattern1);
-            Object[] params = {new Integer(7)};
+            Object[] params = {7};
             String tempBuffer = messageFormatter.format(params);
             if (!tempBuffer.equals("Impossible {1} has occurred -- status code is 7 and message is {2}."))
                 errln("Tests arguments < substitution failed. Formatted text=" +
@@ -455,7 +455,7 @@ public class MessageRegression extends IntlTest {
             errln("argument0: \"" + objs[0] + "\"");
         mf.setLocale(Locale.US);
         mf.applyPattern("{0,number,#.##}, {0,number,#.#}");
-        Object[] oldobjs = {new Double(3.1415)};
+        Object[] oldobjs = {3.1415};
         String result = mf.format( oldobjs );
         logln("pattern: \"" + mf.toPattern() + "\"");
         logln("text for parsing: \"" + result + "\"");
@@ -481,7 +481,7 @@ public class MessageRegression extends IntlTest {
         ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
         form1.setFormat(1, fileform);
         form2.setFormat(0, fileform);
-        Object[] testArgs = {new Long(12373), "MyDisk"};
+        Object[] testArgs = {12373L, "MyDisk"};
         logln(form1.format(testArgs));
         logln(form2.format(testArgs));
     }
@@ -531,7 +531,7 @@ public class MessageRegression extends IntlTest {
         };
 
         for (int i=0; i<3; i++) {
-            String out = mf.format(new Object[]{new Integer(i)});
+            String out = mf.format(new Object[]{i});
             if (SUFFIX[i] == null) {
                 if (!out.equals(PREFIX[i]))
                     errln("" + i + ": Got \"" + out + "\"; Want \"" + PREFIX[i] + "\"");
@@ -607,8 +607,7 @@ public class MessageRegression extends IntlTest {
      */
     public void Test4169959() {
         // This works
-        logln(MessageFormat.format( "This will {0}",
-                                    new String[]{"work"} ) );
+        logln(MessageFormat.format( "This will {0}", "work"));
 
         // This fails
         logln(MessageFormat.format( "This will {0}",

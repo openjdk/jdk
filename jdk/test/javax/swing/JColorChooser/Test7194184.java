@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,15 @@
  * Portions Copyright (c) 2012 IBM Corporation
  */
 
-/*
- * @test
- * @key headful
- * @bug 7194184
+/* @test
+   @key headful
+ * @bug 7194184 8163274
  * @summary Tests JColorChooser Swatch keyboard accessibility.
- * @author Sean Chou
  * @library ../regtesthelpers
  * @build Util
- * @run main Test7194184
+ * @run main/timeout=500 Test7194184
  */
-
 import java.awt.Component;
-import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -46,66 +42,81 @@ import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import java.util.concurrent.Callable;
+public class Test7194184 {
 
-public class Test7194184 implements Runnable {
     private static JFrame frame;
     private static JColorChooser colorChooser;
-    private static Color selectedColor;
+    private static Color testColor;
+    private static Color newColor;
+
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        testKeyBoardAccess();
+        robot = new Robot();
+        robot.setAutoWaitForIdle(true);
+        createUI();
+        accessRecentSwatch();
+        runRobot();
+        testColorChooser();
+        cleanUpUI();
     }
 
-    private static void testKeyBoardAccess() throws Exception {
-        Robot robot = new Robot();
-
-        SwingUtilities.invokeLater(new Test7194184());
-        robot.waitForIdle();
-
+    private static void createUI() throws Exception {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                selectedColor = colorChooser.getColor();
+                String title = getClass().getName();
+                frame = new JFrame(title);
+                colorChooser = new JColorChooser();
+                frame.add(colorChooser);
+                frame.pack();
+                frame.setVisible(true);
+            }
+        });
+    }
 
+    private static void accessRecentSwatch() throws Exception {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
                 Component recentSwatchPanel = Util.findSubComponent(colorChooser, "RecentSwatchPanel");
                 if (recentSwatchPanel == null) {
                     throw new RuntimeException("RecentSwatchPanel not found");
                 }
                 recentSwatchPanel.requestFocusInWindow();
+                testColor = colorChooser.getColor();
+
             }
         });
+    }
 
-        robot.waitForIdle();
-
+    private static void runRobot() {
         // Tab to move the focus to MainSwatch
         Util.hitKeys(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
-
         // Select the color on right
         Util.hitKeys(robot, KeyEvent.VK_RIGHT);
         Util.hitKeys(robot, KeyEvent.VK_RIGHT);
         Util.hitKeys(robot, KeyEvent.VK_SPACE);
-        robot.waitForIdle();
+    }
 
+    private static void testColorChooser() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
-                frame.dispose();
-                if (selectedColor == colorChooser.getColor()) {
+                newColor = colorChooser.getColor();
+                if (newColor == testColor) {
                     throw new RuntimeException("JColorChooser misses keyboard accessibility");
                 }
             }
         });
     }
 
-    public void run() {
-        String title = getClass().getName();
-        frame = new JFrame(title);
-        colorChooser = new JColorChooser();
-
-        frame.add(colorChooser);
-        frame.pack();
-        frame.setVisible(true);
+    private static void cleanUpUI() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                frame.dispose();
+            }
+        });
     }
-
 }

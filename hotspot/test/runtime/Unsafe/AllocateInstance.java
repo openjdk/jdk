@@ -30,12 +30,12 @@
  * @run main AllocateInstance
  */
 
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class AllocateInstance {
-    static final Unsafe UNSAFE = Utils.getUnsafe();
+    static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
 
     class TestClass {
         public boolean calledConstructor = false;
