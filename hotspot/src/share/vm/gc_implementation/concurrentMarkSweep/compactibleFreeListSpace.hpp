@@ -396,7 +396,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // iteration support for promotion
   void save_marks();
   bool no_allocs_since_save_marks();
-  void object_iterate_since_last_GC(ObjectClosure* cl);
 
   // iteration support for sweeping
   void save_sweep_limit() {

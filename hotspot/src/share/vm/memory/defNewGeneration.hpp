@@ -252,7 +252,6 @@ protected:
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-  void object_iterate_since_last_GC(ObjectClosure* cl);
 
   void younger_refs_iterate(OopsInGenClosure* cl);
 

@@ -3130,26 +3130,6 @@ oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
 ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DEFN)
 
 void
-ConcurrentMarkSweepGeneration::object_iterate_since_last_GC(ObjectClosure* blk)
-{
-  // Not currently implemented; need to do the following. -- ysr.
-  // dld -- I think that is used for some sort of allocation profiler.  So it
-  // really means the objects allocated by the mutator since the last
-  // GC.  We could potentially implement this cheaply by recording only
-  // the direct allocations in a side data structure.
-  //
-  // I think we probably ought not to be required to support these
-  // iterations at any arbitrary point; I think there ought to be some
-  // call to enable/disable allocation profiling in a generation/space,
-  // and the iterator ought to return the objects allocated in the
-  // gen/space since the enable call, or the last iterator call (which
-  // will probably be at a GC.)  That way, for gens like CM&S that would
-  // require some extra data structure to support this, we only pay the
-  // cost when it's in use...
-  cmsSpace()->object_iterate_since_last_GC(blk);
-}
-
-void
 ConcurrentMarkSweepGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
   cl->set_generation(this);
   younger_refs_in_space_iterate(_cmsSpace, cl);
