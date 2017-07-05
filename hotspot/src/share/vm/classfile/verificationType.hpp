@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
 
   // For reference types, store the actual Symbol
   static VerificationType reference_type(Symbol* sh) {
-      assert(((uintptr_t)sh & 0x3) == 0, "Oops must be aligned");
+      assert(((uintptr_t)sh & 0x3) == 0, "Symbols must be aligned");
       // If the above assert fails in the future because oop* isn't aligned,
       // then this type encoding system will have to change to have a tag value
       // to descriminate between oops and primitives.
@@ -303,7 +303,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     return index;
   }
 
-  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
 
  private:
 
