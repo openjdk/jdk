@@ -3222,7 +3222,7 @@ public class ConsoleReader
     }
     //where:
         private Pattern CURSOR_COLUMN_PATTERN =
-                Pattern.compile("(?<prefix>.*)\033\\[[0-9]+;(?<column>[0-9]+)R");
+                Pattern.compile("(?<prefix>.*)\033\\[[0-9]+;(?<column>[0-9]+)R", Pattern.DOTALL);
 
     /**
      * Read a line for unsupported terminals.

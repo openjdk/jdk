@@ -397,7 +397,7 @@ public final class PrintVisitor extends SimpleNodeVisitor {
 
     @Override
     public boolean enterVarNode(final VarNode varNode) {
-        sb.append("var ");
+        sb.append(varNode.isConst() ? "const " : varNode.isLet() ? "let " : "var ");
         varNode.getName().toString(sb, printTypes);
         printLocalVariableConversion(varNode.getName());
         final Node init = varNode.getInit();

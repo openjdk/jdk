@@ -176,7 +176,10 @@ public class DTLSOverDatagram {
                         boolean finished = onReceiveTimeout(
                                 engine, peerAddr, side, packets);
 
+                        log(side, "Reproduced " + packets.size() + " packets");
                         for (DatagramPacket p : packets) {
+                            printHex("Reproduced packet",
+                                p.getData(), p.getOffset(), p.getLength());
                             socket.send(p);
                         }
 
@@ -334,7 +337,7 @@ public class DTLSOverDatagram {
             String side, List<DatagramPacket> packets) throws Exception {
 
         boolean endLoops = false;
-        int loops = MAX_HANDSHAKE_LOOPS;
+        int loops = MAX_HANDSHAKE_LOOPS / 2;
         while (!endLoops &&
                 (serverException == null) && (clientException == null)) {
 
@@ -350,7 +353,8 @@ public class DTLSOverDatagram {
 
             SSLEngineResult.Status rs = r.getStatus();
             SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
-            log(side, "====packet(" + loops + ", " + rs + ", " + hs + ")====");
+            log(side, "----produce handshake packet(" +
+                    loops + ", " + rs + ", " + hs + ")----");
             if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
                 // the client maximum fragment size config does not work?
                 throw new Exception("Buffer overflow: " +

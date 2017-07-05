@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,20 +21,31 @@
  * questions.
  */
 
-#ifndef _ERGO_H
-#define _ERGO_H
+/**
+ * Tests to check representation of ES6 catch parameter as binding pattern.
+ *
+ * @test
+ * @option -scripting
+ * @run
+ */
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/types.h>
+load(__DIR__ + "utils.js")
 
-#include "java.h"
+var code = <<EOF
 
-jboolean ServerClassMachineImpl(void);
-uint64_t physical_memory(void);
+try { throw null;} catch({}) { }
+try { throw {} } catch ({}) { }
+try { throw [] } catch ([,]) { }
+try { throw { w: [7, undefined, ] }} catch ({ w: [x, y, z] = [4, 5, 6] }) { }
+try { throw { a: 2, b: 3} } catch ({a, b}) { }
+try { throw [null] } catch ([[x]]) { }
+try { throw { w: undefined } } catch ({ w: { x, y, z } = { x: 4, y: 5, z: 6 } }) { }
 
-#endif /* _ERGO_H */
+EOF
+
+parse("destructuring_catch.js", code, "--language=es6", new (Java.extend(visitor_es6, {
+    visitCatch : function (node, obj) {
+        obj.push(convert(node))
+    }
+})))
+
