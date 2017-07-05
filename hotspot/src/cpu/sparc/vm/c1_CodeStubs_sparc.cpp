@@ -472,7 +472,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
   __ load_klass(src_reg, tmp_reg);
 
   Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset());
-  __ ld(ref_type_adr, tmp_reg);
+  __ ldub(ref_type_adr, tmp_reg);
 
   // _reference_type field is of type ReferenceType (enum)
   assert(REF_NONE == 0, "check this code");

@@ -52,10 +52,10 @@ else
   LIBS_LAUNCHER             += -l$(JVM) $(LIBS)
 endif
 
-LINK_LAUNCHER = $(LINK.CC)
+LINK_LAUNCHER = $(LINK.CXX)
 
-LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CC/PRE_HOOK)
-LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CC/POST_HOOK)
+LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CXX/PRE_HOOK)
+LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CXX/POST_HOOK)
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 # Enable the following LAUNCHERFLAGS addition if you need to compare the
@@ -86,11 +86,11 @@ DEPFILES := $(patsubst %.o,%.d,$(OBJS))
 
 $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR_SHARE)/%.c
 	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
-	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CXXFLAGS)
 
 $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR)/%.c
 	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
-	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CXXFLAGS)
 
 $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)

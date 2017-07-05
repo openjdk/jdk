@@ -30,8 +30,8 @@ default:: $(SUBDIRS)
 DIR=.
 !endif
 
-!ifndef CPP
-CPP=cl.exe
+!ifndef CXX
+CXX=cl.exe
 !endif
 
 

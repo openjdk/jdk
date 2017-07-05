@@ -82,18 +82,22 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
-CPPFLAGS =           \
+CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
   ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
-  ${JRE_VERSION}     \
   ${VM_DISTRO}
 
+# This is VERY important! The version define must only be supplied to vm_version.o
+# If not, ccache will not re-use the cache at all, since the version string might contain
+# a time and date. 
+vm_version.o: CXXFLAGS += ${JRE_VERSION} 
+
 ifdef DEFAULT_LIBPATH
-CPPFLAGS += -DDEFAULT_LIBPATH="\"$(DEFAULT_LIBPATH)\""
+CXXFLAGS += -DDEFAULT_LIBPATH="\"$(DEFAULT_LIBPATH)\""
 endif
 
 ifndef JAVASE_EMBEDDED
@@ -260,9 +264,9 @@ else
   ifeq ($(STATIC_CXX), true)
     LFLAGS_VM              += $(STATIC_LIBGCC)
     LIBS_VM                += $(STATIC_STDCXX)
-    LINK_VM                = $(LINK_LIB.c)
-  else
     LINK_VM                = $(LINK_LIB.CC)
+  else
+    LINK_VM                = $(LINK_LIB.CXX)
   endif
 
   LIBS_VM                  += $(LIBS)
@@ -280,7 +284,7 @@ endif
 $(PRECOMPILED_HEADER):
 	$(QUIETLY) echo Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
-	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
+	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
 # making the library:
 
@@ -305,10 +309,10 @@ endif
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
 	    echo Linking vm...;                                         \
-	    $(LINK_LIB.CC/PRE_HOOK)                                     \
+	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
 	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
 		       $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);       \
-	    $(LINK_LIB.CC/POST_HOOK)                                    \
+	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
 	}
