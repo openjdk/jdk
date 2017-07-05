@@ -103,7 +103,7 @@ public class BasicLayerTest {
 
 
     /**
-     * Exercise Layer.create, created on an empty layer
+     * Exercise Layer defineModules, created with empty layer as parent
      */
     public void testLayerOnEmpty() {
         ModuleDescriptor descriptor1
@@ -184,7 +184,7 @@ public class BasicLayerTest {
 
 
     /**
-     * Exercise Layer.create, created over the boot layer
+     * Exercise Layer defineModules, created with boot layer as parent
      */
     public void testLayerOnBoot() {
         ModuleDescriptor descriptor1
@@ -247,8 +247,8 @@ public class BasicLayerTest {
 
 
     /**
-     * Layer.create with a configuration of two modules that have the same
-     * module-private package.
+     * Exercise Layer defineModules with a configuration of two modules that
+     * have the same module-private package.
      */
     public void testSameConcealedPackage() {
         ModuleDescriptor descriptor1
@@ -281,8 +281,8 @@ public class BasicLayerTest {
 
 
     /**
-     * Layer.create with a configuration with a partitioned graph. The same
-     * package is exported in both partitions.
+     * Exercise Layer defineModules with a configuration that is a partitioned
+     * graph. The same package is exported in both partitions.
      */
     public void testSameExportInPartitionedGraph() {
 
@@ -338,9 +338,9 @@ public class BasicLayerTest {
 
 
     /**
-     * Layer.create with a configuration that contains a module that has a
-     * concealed package that is the same name as a non-exported package
-     * in a parent layer.
+     * Exercise Layer defineModules with a configuration that contains a module
+     * that has a concealed package that is the same name as a non-exported
+     * package in a parent layer.
      */
     public void testConcealSamePackageAsBootLayer() {
 
@@ -667,9 +667,9 @@ public class BasicLayerTest {
 
 
     /**
-     * Attempt to use Layer.create to create a layer with a module defined to a
-     * class loader that already has a module of the same name defined to the
-     * class loader.
+     * Attempt to use Layer defineModules to create a layer with a module
+     * defined to a class loader that already has a module of the same name
+     * defined to the class loader.
      */
     @Test(expectedExceptions = { LayerInstantiationException.class })
     public void testModuleAlreadyDefinedToLoader() {
@@ -696,9 +696,9 @@ public class BasicLayerTest {
 
 
     /**
-     * Attempt to use Layer.create to create a Layer with a module containing
-     * package {@code p} where the class loader already has a module defined
-     * to it containing package {@code p}.
+     * Attempt to use Layer defineModules to create a Layer with a module
+     * containing package {@code p} where the class loader already has a module
+     * defined to it containing package {@code p}.
      */
     @Test(expectedExceptions = { LayerInstantiationException.class })
     public void testPackageAlreadyInNamedModule() {
@@ -738,8 +738,9 @@ public class BasicLayerTest {
 
 
     /**
-     * Attempt to use Layer.create to create a Layer with a module containing
-     * a package in which a type is already loaded by the class loader.
+     * Attempt to use Layer defineModules to create a Layer with a module
+     * containing a package in which a type is already loaded by the class
+     * loader.
      */
     @Test(expectedExceptions = { LayerInstantiationException.class })
     public void testPackageAlreadyInUnnamedModule() throws Exception {
@@ -759,6 +760,46 @@ public class BasicLayerTest {
         Configuration cf = parent.resolveRequires(finder, ModuleFinder.of(), Set.of("m"));
 
         Layer.boot().defineModules(cf, mn -> c.getClassLoader());
+    }
+
+
+    /**
+     * Attempt to create a Layer with a module named "java.base".
+     */
+    public void testLayerWithJavaBase() {
+        ModuleDescriptor descriptor
+            = new ModuleDescriptor.Builder("java.base")
+                .exports("java.lang")
+                .build();
+
+        ModuleFinder finder = ModuleUtils.finderOf(descriptor);
+
+        Configuration cf = Layer.boot()
+            .configuration()
+            .resolveRequires(finder, ModuleFinder.of(), Set.of("java.base"));
+        assertTrue(cf.modules().size() == 1);
+
+        ClassLoader scl = ClassLoader.getSystemClassLoader();
+
+        try {
+            Layer.boot().defineModules(cf, loader -> null );
+            assertTrue(false);
+        } catch (LayerInstantiationException e) { }
+
+        try {
+            Layer.boot().defineModules(cf, loader -> new ClassLoader() { });
+            assertTrue(false);
+        } catch (LayerInstantiationException e) { }
+
+        try {
+            Layer.boot().defineModulesWithOneLoader(cf, scl);
+            assertTrue(false);
+        } catch (LayerInstantiationException e) { }
+
+        try {
+            Layer.boot().defineModulesWithManyLoaders(cf, scl);
+            assertTrue(false);
+        } catch (LayerInstantiationException e) { }
     }
 
 
@@ -812,7 +853,6 @@ public class BasicLayerTest {
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testCreateWithNull2() {
-        ClassLoader loader = new ClassLoader() { };
         Configuration cf = resolveRequires(Layer.boot().configuration(), ModuleFinder.of());
         Layer.boot().defineModules(cf, null);
     }

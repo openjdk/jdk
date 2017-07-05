@@ -186,7 +186,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             if (iface.isAnnotationPresent(FunctionalInterface.class)) {
                 // return the first abstract method
                 for (final Method m : iface.getMethods()) {
-                    if (Modifier.isAbstract(m.getModifiers())) {
+                    if (Modifier.isAbstract(m.getModifiers()) && !isOverridableObjectMethod(m)) {
                         return m.getName();
                     }
                 }
@@ -195,6 +195,23 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
 
         // did not find here, try super class
         return findFunctionalInterfaceMethodName(clazz.getSuperclass());
+    }
+
+    // is this an overridable java.lang.Object method?
+    private static boolean isOverridableObjectMethod(final Method m) {
+        switch (m.getName()) {
+            case "equals":
+                if (m.getReturnType() == boolean.class) {
+                    final Class<?>[] params = m.getParameterTypes();
+                    return params.length == 1 && params[0] == Object.class;
+                }
+                return false;
+            case "hashCode":
+                return m.getReturnType() == int.class && m.getParameterCount() == 0;
+            case "toString":
+                return m.getReturnType() == String.class && m.getParameterCount() == 0;
+        }
+        return false;
     }
 
     // Returns @FunctionalInterface annotated interface's single abstract
