@@ -375,57 +375,108 @@ class WindowsPath implements Path {
         return (WindowsPath)path;
     }
 
+    // return true if this path has "." or ".."
+    private boolean hasDotOrDotDot() {
+        int n = getNameCount();
+        for (int i=0; i<n; i++) {
+            String name = elementAsString(i);
+            if (name.length() == 1 && name.charAt(0) == '.')
+                return true;
+            if (name.length() == 2
+                    && name.charAt(0) == '.' && name.charAt(1) == '.')
+                return true;
+        }
+        return false;
+    }
+
     @Override
     public WindowsPath relativize(Path obj) {
-        WindowsPath other = toWindowsPath(obj);
-        if (this.equals(other))
+        WindowsPath child = toWindowsPath(obj);
+        if (this.equals(child))
             return emptyPath();
 
         // can only relativize paths of the same type
-        if (this.type != other.type)
+        if (this.type != child.type)
             throw new IllegalArgumentException("'other' is different type of Path");
 
         // can only relativize paths if root component matches
-        if (!this.root.equalsIgnoreCase(other.root))
+        if (!this.root.equalsIgnoreCase(child.root))
             throw new IllegalArgumentException("'other' has different root");
 
         // this path is the empty path
         if (this.isEmpty())
-            return other;
+            return child;
 
-        int bn = this.getNameCount();
-        int cn = other.getNameCount();
+
+        WindowsPath base = this;
+        if (base.hasDotOrDotDot() || child.hasDotOrDotDot()) {
+            base = base.normalize();
+            child = child.normalize();
+        }
+
+        int baseCount = base.getNameCount();
+        int childCount = child.getNameCount();
 
         // skip matching names
-        int n = (bn > cn) ? cn : bn;
+        int n = Math.min(baseCount, childCount);
         int i = 0;
         while (i < n) {
-            if (!this.getName(i).equals(other.getName(i)))
+            if (!base.getName(i).equals(child.getName(i)))
                 break;
             i++;
         }
 
-        // append ..\ for remaining names in the base
+        // remaining elements in child
+        WindowsPath childRemaining;
+        boolean isChildEmpty;
+        if (i == childCount) {
+            childRemaining = emptyPath();
+            isChildEmpty = true;
+        } else {
+            childRemaining = child.subpath(i, childCount);
+            isChildEmpty = childRemaining.isEmpty();
+        }
+
+        // matched all of base
+        if (i == baseCount) {
+            return childRemaining;
+        }
+
+        // the remainder of base cannot contain ".."
+        WindowsPath baseRemaining = base.subpath(i, baseCount);
+        if (baseRemaining.hasDotOrDotDot()) {
+            throw new IllegalArgumentException("Unable to compute relative "
+                    + " path from " + this + " to " + obj);
+        }
+        if (baseRemaining.isEmpty())
+            return childRemaining;
+
+        // number of ".." needed
+        int dotdots = baseRemaining.getNameCount();
+        if (dotdots == 0) {
+            return childRemaining;
+        }
+
         StringBuilder result = new StringBuilder();
-        for (int j=i; j<bn; j++) {
+        for (int j=0; j<dotdots; j++) {
             result.append("..\\");
         }
 
         // append remaining names in child
-        if (!other.isEmpty()) {
-            for (int j=i; j<cn; j++) {
-                result.append(other.getName(j).toString());
+        if (!isChildEmpty) {
+            for (int j=0; j<childRemaining.getNameCount(); j++) {
+                result.append(childRemaining.getName(j).toString());
                 result.append("\\");
             }
         }
 
-        // drop trailing slash in result
+        // drop trailing slash
         result.setLength(result.length()-1);
         return createFromNormalizedPath(getFileSystem(), result.toString());
     }
 
     @Override
-    public Path normalize() {
+    public WindowsPath normalize() {
         final int count = getNameCount();
         if (count == 0 || isEmpty())
             return this;

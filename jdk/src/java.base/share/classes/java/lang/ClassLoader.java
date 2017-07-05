@@ -1537,22 +1537,13 @@ public abstract class ClassLoader {
      * will return <tt>null</tt> in such implementations if this class loader's
      * parent is the bootstrap class loader.
      *
-     * <p> If a security manager is present, and the invoker's class loader is
-     * not <tt>null</tt> and is not an ancestor of this class loader, then this
-     * method invokes the security manager's {@link
-     * SecurityManager#checkPermission(java.security.Permission)
-     * <tt>checkPermission</tt>} method with a {@link
-     * RuntimePermission#RuntimePermission(String)
-     * <tt>RuntimePermission("getClassLoader")</tt>} permission to verify
-     * access to the parent class loader is permitted.  If not, a
-     * <tt>SecurityException</tt> will be thrown.  </p>
-     *
      * @return  The parent <tt>ClassLoader</tt>
      *
      * @throws  SecurityException
-     *          If a security manager exists and its <tt>checkPermission</tt>
-     *          method doesn't allow access to this class loader's parent class
-     *          loader.
+     *          If a security manager is present, and the caller's class loader
+     *          is not {@code null} and is not an ancestor of this class loader,
+     *          and the caller does not have the
+     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since  1.2
      */
@@ -1590,12 +1581,11 @@ public abstract class ClassLoader {
      * @return  The platform {@code ClassLoader}.
      *
      * @throws  SecurityException
-     *          If a security manager exists and the caller's class loader is
-     *          not {@code null} and the caller's class loader is not the same
+     *          If a security manager is present, and the caller's class loader is
+     *          not {@code null}, and the caller's class loader is not the same
      *          as or an ancestor of the platform class loader,
-     *          and the {@link SecurityManager#checkPermission(java.security.Permission)
-     *          checkPermission} method denies {@code RuntimePermission("getClassLoader")}
-     *          to access the platform class loader.
+     *          and the caller does not have the
+     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since 9
      */
@@ -1636,17 +1626,6 @@ public abstract class ClassLoader {
      * If circular initialization of the system class loader is detected then
      * an unspecified error or exception is thrown.
      *
-     * <p> If a security manager is present, and the invoker's class loader is
-     * not <tt>null</tt> and the invoker's class loader is not the same as or
-     * an ancestor of the system class loader, then this method invokes the
-     * security manager's {@link
-     * SecurityManager#checkPermission(java.security.Permission)
-     * <tt>checkPermission</tt>} method with a {@link
-     * RuntimePermission#RuntimePermission(String)
-     * <tt>RuntimePermission("getClassLoader")</tt>} permission to verify
-     * access to the system class loader.  If not, a
-     * <tt>SecurityException</tt> will be thrown.  </p>
-     *
      * @implNote The system property to override the system class loader is not
      * examined until the VM is almost fully initialized. Code that executes
      * this method during startup should take care not to cache the return
@@ -1656,8 +1635,10 @@ public abstract class ClassLoader {
      *          <tt>null</tt> if none
      *
      * @throws  SecurityException
-     *          If a security manager exists and its <tt>checkPermission</tt>
-     *          method doesn't allow access to the system class loader.
+     *          If a security manager is present, and the caller's class loader
+     *          is not {@code null} and is not the same as or an ancestor of the
+     *          system class loader, and the caller does not have the
+     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @throws  IllegalStateException
      *          If invoked recursively during the construction of the class

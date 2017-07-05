@@ -986,8 +986,9 @@ final class CipherCore {
             if (padding != null) {
                 int padStart = padding.unpad(outWithPadding, 0, outLen);
                 if (padStart < 0) {
-                    throw new BadPaddingException("Given final block not "
-                                                  + "properly padded");
+                    throw new BadPaddingException("Given final block not " +
+                    "properly padded. Such issues can arise if a bad key " +
+                    "is used during decryption.");
                 }
                 outLen = padStart;
             }

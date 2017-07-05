@@ -353,7 +353,7 @@ class JarFile extends ZipFile {
         if (isMultiRelease) {
             return true;
         }
-        if (MULTI_RELEASE_ENABLED && versionMajor != BASE_VERSION_MAJOR) {
+        if (MULTI_RELEASE_ENABLED) {
             try {
                 checkForSpecialAttributes();
             } catch (IOException io) {
@@ -644,7 +644,7 @@ class JarFile extends ZipFile {
             return signers == null ? null : signers.clone();
         }
         JarFileEntry realEntry() {
-            if (isMultiRelease()) {
+            if (isMultiRelease() && versionMajor != BASE_VERSION_MAJOR) {
                 String entryName = super.getName();
                 return entryName.equals(this.name) ? this : new JarFileEntry(entryName, this);
             }
@@ -960,7 +960,7 @@ class JarFile extends ZipFile {
                 hasClassPathAttribute = match(CLASSPATH_CHARS, b,
                         CLASSPATH_LASTOCC) != -1;
                 // is this a multi-release jar file
-                if (MULTI_RELEASE_ENABLED && versionMajor != BASE_VERSION_MAJOR) {
+                if (MULTI_RELEASE_ENABLED) {
                     int i = match(MULTIRELEASE_CHARS, b, MULTIRELEASE_LASTOCC);
                     if (i != -1) {
                         i += MULTIRELEASE_CHARS.length;
