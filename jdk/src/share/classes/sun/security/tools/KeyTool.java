@@ -281,7 +281,7 @@ public final class KeyTool {
         RFC("rfc", null, "output in RFC style"),
         SIGALG("sigalg", "<sigalg>", "signature algorithm name"),
         SRCALIAS("srcalias", "<srcalias>", "source alias"),
-        SRCKEYPASS("srckeypass", "<arg>", "source keystore password"),
+        SRCKEYPASS("srckeypass", "<arg>", "source key password"),
         SRCKEYSTORE("srckeystore", "<srckeystore>", "source keystore name"),
         SRCPROTECTED("srcprotected", null, "source keystore password protected"),
         SRCPROVIDERNAME("srcprovidername", "<srcprovidername>", "source keystore provider name"),

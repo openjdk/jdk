@@ -250,6 +250,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
           return proxy;
         }
       }
+    } else {
+      /* ProxyEnable == 0 or Query failed      */
+      /* close the handle to the registry key  */
+      RegCloseKey(hKey);
     }
   }
 

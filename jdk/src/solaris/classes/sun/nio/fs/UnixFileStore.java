@@ -76,12 +76,6 @@ abstract class UnixFileStore
      */
     abstract UnixMountEntry findMountEntry() throws IOException;
 
-    /**
-     * Returns true if this file store represents a loopback file system that
-     * will have the same device ID as underlying file system.
-     */
-    abstract boolean isLoopback();
-
     UnixPath file() {
         return file;
     }
@@ -169,22 +163,13 @@ abstract class UnixFileStore
         if (!(ob instanceof UnixFileStore))
             return false;
         UnixFileStore other = (UnixFileStore)ob;
-        if (dev != other.dev)
-            return false;
-        // deviceIDs are equal but they may not be equal if one or both of
-        // them is a loopback file system
-        boolean thisIsLoopback = isLoopback();
-        if (thisIsLoopback != other.isLoopback())
-            return false;  // one, but not both, are lofs
-        if (!thisIsLoopback)
-            return true;    // neither is lofs
-        // both are lofs so compare mount points
-        return Arrays.equals(this.entry.dir(), other.entry.dir());
+        return (this.dev == other.dev) &&
+               Arrays.equals(this.entry.dir(), other.entry.dir());
     }
 
     @Override
     public int hashCode() {
-        return (int)(dev ^ (dev >>> 32));
+        return (int)(dev ^ (dev >>> 32)) ^ Arrays.hashCode(entry.dir());
     }
 
     @Override

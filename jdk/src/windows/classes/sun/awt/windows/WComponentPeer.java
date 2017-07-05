@@ -556,24 +556,26 @@ public abstract class WComponentPeer extends WObjectPeer
 
         Component target = (Component)getTarget();
         Window window = SunToolkit.getContainingWindow(target);
-        if (window != null && !window.isOpaque()) {
-            // Non-opaque windows do not support heavyweight children.
-            // Redirect all painting to the Window's Graphics instead.
-            // The caller is responsible for calling the
-            // WindowPeer.updateWindow() after painting has finished.
-            int x = 0, y = 0;
-            for (Component c = target; c != window; c = c.getParent()) {
-                x += c.getX();
-                y += c.getY();
-            }
-
+        if (window != null) {
             Graphics g =
                 ((WWindowPeer)window.getPeer()).getTranslucentGraphics();
+            // getTranslucentGraphics() returns non-null value for non-opaque windows only
+            if (g != null) {
+                // Non-opaque windows do not support heavyweight children.
+                // Redirect all painting to the Window's Graphics instead.
+                // The caller is responsible for calling the
+                // WindowPeer.updateWindow() after painting has finished.
+                int x = 0, y = 0;
+                for (Component c = target; c != window; c = c.getParent()) {
+                    x += c.getX();
+                    y += c.getY();
+                }
 
-            g.translate(x, y);
-            g.clipRect(0, 0, target.getWidth(), target.getHeight());
+                g.translate(x, y);
+                g.clipRect(0, 0, target.getWidth(), target.getHeight());
 
-            return g;
+                return g;
+            }
         }
 
         SurfaceData surfaceData = this.surfaceData;

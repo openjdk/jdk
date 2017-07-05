@@ -30,6 +30,7 @@
 
 import java.nio.file.*;
 import java.nio.file.attribute.Attributes;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.io.IOException;
 import java.util.*;
 
@@ -117,25 +118,25 @@ public class Misc {
 
         SimpleFileVisitor<Path> visitor = new SimpleFileVisitor<Path>() { };
         boolean ranTheGauntlet = false;
-        try { visitor.preVisitDirectory(null);
+        BasicFileAttributes attrs = Attributes.readBasicFileAttributes(Paths.get("."));
+
+        try { visitor.preVisitDirectory(null, attrs);
         } catch (NullPointerException x0) {
-        try { visitor.preVisitDirectoryFailed(null, new IOException());
+        try { visitor.preVisitDirectory(dir, null);
         } catch (NullPointerException x1) {
-        try { visitor.preVisitDirectoryFailed(dir, null);
+        try { visitor.visitFile(null, attrs);
         } catch (NullPointerException x2) {
-        try { visitor.visitFile(null, Attributes.readBasicFileAttributes(Paths.get(".")));
-        } catch (NullPointerException x3) {
         try {  visitor.visitFile(dir, null);
-        } catch (NullPointerException x4) {
+        } catch (NullPointerException x3) {
         try { visitor.visitFileFailed(null, new IOException());
-        } catch (NullPointerException x5) {
+        } catch (NullPointerException x4) {
         try { visitor.visitFileFailed(dir, null);
-        } catch (NullPointerException x6) {
+        } catch (NullPointerException x5) {
         try { visitor.postVisitDirectory(null, new IOException());
-        } catch (NullPointerException x7) {
+        } catch (NullPointerException x6) {
             // if we get here then all visit* methods threw NPE as expected
             ranTheGauntlet = true;
-        }}}}}}}}
+        }}}}}}}
         if (!ranTheGauntlet)
             throw new RuntimeException("A visit method did not throw NPE");
     }

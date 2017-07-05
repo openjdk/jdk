@@ -44,6 +44,7 @@ import java.io.*;
  * Solaris implementation of the SystemEnvironment class.
  */
 class SolarisSystemEnvironment extends SystemEnvironment {
+    private static final String ORACLE = "Oracle Corporation";
     SolarisSystemEnvironment() {
         setHostId(getCommandOutput("/usr/bin/hostid"));
         setSystemModel(getCommandOutput("/usr/bin/uname", "-i"));
@@ -59,7 +60,7 @@ class SolarisSystemEnvironment extends SystemEnvironment {
     private String getSolarisCpuManufacturer() {
         // not fully accurate, this could be another manufacturer (fujitsu for example)
         if ("sparc".equalsIgnoreCase(System.getProperty("os.arch"))) {
-            return "Sun Microsystems, Inc";
+            return ORACLE;
         }
 
         // if we're here, then we'll try smbios (type 4)
@@ -73,7 +74,7 @@ class SolarisSystemEnvironment extends SystemEnvironment {
     private String getSolarisSystemManufacturer() {
         // not fully accurate, this could be another manufacturer (fujitsu for example)
         if ("sparc".equalsIgnoreCase(System.getProperty("os.arch"))) {
-            return "Sun Microsystems, Inc";
+            return ORACLE;
         }
 
         // if we're here, then we'll try smbios (type 1)
@@ -117,7 +118,7 @@ class SolarisSystemEnvironment extends SystemEnvironment {
     // ID    SIZE TYPE
     // 1     150  SMB_TYPE_SYSTEM (system information)
     //
-    //   Manufacturer: Sun Microsystems
+    //   Manufacturer: Oracle Corporation
     //   Product: Sun Fire X4600
     //   Version: To Be Filled By O.E.M.
     //   Serial Number: 00:14:4F:45:0C:2A

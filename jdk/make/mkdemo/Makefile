@@ -31,7 +31,7 @@ BUILDDIR = ..
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS            = jni
+SUBDIRS            = jni nio
 SUBDIRS_desktop    = applets jfc
 SUBDIRS_management = management
 SUBDIRS_misc       = scripting

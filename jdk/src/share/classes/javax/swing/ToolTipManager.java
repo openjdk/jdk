@@ -459,7 +459,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         if (insideComponent == null) {
             // Drag exit
         }
-        if (window != null && event.getSource() == window) {
+        if (window != null && event.getSource() == window && insideComponent != null) {
           // if we get an exit and have a heavy window
           // we need to check if it if overlapping the inside component
             Container insideComponentWindow = insideComponent.getTopLevelAncestor();

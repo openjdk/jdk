@@ -1825,6 +1825,64 @@ public class Basic {
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
+        // Check that subprocesses which create subprocesses of their
+        // own do not cause parent to hang waiting for file
+        // descriptors to be closed.
+        //----------------------------------------------------------------
+        try {
+            if (Unix.is()
+                && new File("/bin/bash").exists()
+                && new File("/bin/sleep").exists()) {
+                final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 6666)" };
+                final ProcessBuilder pb = new ProcessBuilder(cmd);
+                final Process p = pb.start();
+                final InputStream stdout = p.getInputStream();
+                final InputStream stderr = p.getErrorStream();
+                final OutputStream stdin = p.getOutputStream();
+                final Thread reader = new Thread() {
+                    public void run() {
+                        try { stdout.read(); }
+                        catch (IOException e) {
+                            // e.printStackTrace();
+                            if (EnglishUnix.is() &&
+                                ! (e.getMessage().matches(".*Bad file descriptor.*")))
+                                unexpected(e);
+                        }
+                        catch (Throwable t) { unexpected(t); }}};
+                reader.setDaemon(true);
+                reader.start();
+                Thread.sleep(100);
+                p.destroy();
+                // Subprocess is now dead, but file descriptors remain open.
+                check(p.waitFor() != 0);
+                check(p.exitValue() != 0);
+                stdout.close();
+                stderr.close();
+                stdin.close();
+                //----------------------------------------------------------
+                // There remain unsolved issues with asynchronous close.
+                // Here's a highly non-portable experiment to demonstrate:
+                //----------------------------------------------------------
+                if (Boolean.getBoolean("wakeupJeff!")) {
+                    System.out.println("wakeupJeff!");
+                    // Initialize signal handler for INTERRUPT_SIGNAL.
+                    new FileInputStream("/bin/sleep").getChannel().close();
+                    // Send INTERRUPT_SIGNAL to every thread in this java.
+                    String[] wakeupJeff = {
+                        "/bin/bash", "-c",
+                        "/bin/ps --noheaders -Lfp $PPID | " +
+                        "/usr/bin/perl -nale 'print $F[3]' | " +
+                        // INTERRUPT_SIGNAL == 62 on my machine du jour.
+                        "/usr/bin/xargs kill -62"
+                    };
+                    new ProcessBuilder(wakeupJeff).start().waitFor();
+                    // If wakeupJeff worked, reader probably got EBADF.
+                    reader.join();
+                }
+            }
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
         // Attempt to start process with insufficient permissions fails.
         //----------------------------------------------------------------
         try {

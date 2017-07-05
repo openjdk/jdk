@@ -191,9 +191,20 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     public void activateEmbeddingTopLevel() {
     }
 
-    public void synthesizeWindowActivation(boolean doActivate) {
-        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+    public void synthesizeWindowActivation(final boolean doActivate) {
+        if (!doActivate || EventQueue.isDispatchThread()) {
+            ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+        } else {
+            // To avoid focus concurrence b/w IE and EmbeddedFrame
+            // activation is postponed by means of posting it to EDT.
+            EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(true);
+                    }
+                });
+        }
     }
+
     public void registerAccelerator(AWTKeyStroke stroke) {}
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
