@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package javax.xml.soap;
 
 /**
  * A representation of the contents in
- * a <code>SOAPFault</code> object.  The <code>Detail</code> interface
- * is a <code>SOAPFaultElement</code>.
+ * a {@code SOAPFault} object.  The {@code Detail} interface
+ * is a {@code SOAPFaultElement}.
  * <P>
- * Content is added to a <code>SOAPFaultElement</code> using the
- * <code>SOAPElement</code> method <code>addTextNode</code>.
+ * Content is added to a {@code SOAPFaultElement} using the
+ * {@code SOAPElement} method {@code addTextNode}.
  *
  * @since 1.6
  */

@@ -2270,17 +2270,21 @@ public:
   }
 
   // CRC32 instructions
-#define INSN(NAME, sf, sz)                                                \
+#define INSN(NAME, c, sf, sz)                                             \
   void NAME(Register Rd, Register Rn, Register Rm) {                      \
     starti;                                                               \
-    f(sf, 31), f(0b0011010110, 30, 21), f(0b0100, 15, 12), f(sz, 11, 10); \
-    rf(Rm, 16), rf(Rn, 5), rf(Rd, 0);                                     \
+    f(sf, 31), f(0b0011010110, 30, 21), f(0b010, 15, 13), f(c, 12);       \
+    f(sz, 11, 10), rf(Rm, 16), rf(Rn, 5), rf(Rd, 0);                      \
   }
 
-  INSN(crc32b, 0, 0b00);
-  INSN(crc32h, 0, 0b01);
-  INSN(crc32w, 0, 0b10);
-  INSN(crc32x, 1, 0b11);
+  INSN(crc32b,  0, 0, 0b00);
+  INSN(crc32h,  0, 0, 0b01);
+  INSN(crc32w,  0, 0, 0b10);
+  INSN(crc32x,  0, 1, 0b11);
+  INSN(crc32cb, 1, 0, 0b00);
+  INSN(crc32ch, 1, 0, 0b01);
+  INSN(crc32cw, 1, 0, 0b10);
+  INSN(crc32cx, 1, 1, 0b11);
 
 #undef INSN
 

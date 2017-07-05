@@ -25,7 +25,10 @@
 
 package sun.net.util;
 
+import java.io.IOException;
 import java.net.URL;
+import java.net.URLPermission;
+import java.security.Permission;
 
 /**
  * URL Utility class.
@@ -75,6 +78,27 @@ public class URLUtil {
         }
 
         return strForm.toString();
+    }
+
+    public static Permission getConnectPermission(URL url) throws IOException {
+        String urlStringLowerCase = url.toString().toLowerCase();
+        if (urlStringLowerCase.startsWith("http:") || urlStringLowerCase.startsWith("https:")) {
+            return getURLConnectPermission(url);
+        } else if (urlStringLowerCase.startsWith("jar:http:") || urlStringLowerCase.startsWith("jar:https:")) {
+            String urlString = url.toString();
+            int bangPos = urlString.indexOf("!/");
+            urlString = urlString.substring(4, bangPos > -1 ? bangPos : urlString.length());
+            URL u = new URL(urlString);
+            return getURLConnectPermission(u);
+            // If protocol is HTTP or HTTPS than use URLPermission object
+        } else {
+            return url.openConnection().getPermission();
+        }
+    }
+
+    private static Permission getURLConnectPermission(URL url) {
+        String urlString = url.getProtocol() + "://" + url.getAuthority() + url.getPath();
+        return new URLPermission(urlString);
     }
 }
 

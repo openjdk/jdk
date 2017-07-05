@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import sun.awt.FontConfiguration;
 import sun.awt.HeadlessToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 public final class CFontManager extends SunFontManager {
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();
@@ -213,17 +213,12 @@ public final class CFontManager extends SunFontManager {
                     }
                 };
                 AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                            if (System.getSecurityManager() == null) {
-                                /* The thread must be a member of a thread group
-                                 * which will not get GCed before VM exit.
-                                 * Make its parent the top-level thread group.
-                                 */
-                                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                                fileCloser = new Thread(rootTG, fileCloserRunnable);
-                            } else {
-                                /* InnocuousThread is a member of a correct TG by default */
-                                fileCloser = new InnocuousThread(fileCloserRunnable);
-                            }
+                            /* The thread must be a member of a thread group
+                             * which will not get GCed before VM exit.
+                             * Make its parent the top-level thread group.
+                             */
+                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                            fileCloser = new ManagedLocalsThread(rootTG, fileCloserRunnable);
                             fileCloser.setContextClassLoader(null);
                             Runtime.getRuntime().addShutdownHook(fileCloser);
                             return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 
 /* @test
+ * @bug 8065570
  * @summary Unit test for X-Buffer.order methods
  */
 
-import java.io.*;
 import java.nio.*;
 
 
@@ -34,6 +34,8 @@ public class Order {
     static final ByteOrder be = ByteOrder.BIG_ENDIAN;
     static final ByteOrder le = ByteOrder.LITTLE_ENDIAN;
     static final ByteOrder nord = ByteOrder.nativeOrder();
+
+    protected static final int LENGTH = 16;
 
     static void ck(ByteOrder ord, ByteOrder expected) {
         if (ord != expected)
@@ -55,18 +57,33 @@ public class Order {
         ckViews(bb, be);
         bb.order(le);
         ckViews(bb, le);
+
+        if (bb.hasArray()) {
+            byte[] array = bb.array();
+            ck(ByteBuffer.wrap(array, LENGTH/2, LENGTH/2).order(), be);
+            ck(ByteBuffer.wrap(array).order(), be);
+            ck(bb.asReadOnlyBuffer().order(), be);
+            ck(bb.duplicate().order(), be);
+            ck(bb.slice().order(), be);
+        }
     }
 
     public static void main(String args[]) throws Exception {
 
-        ck(ByteBuffer.allocate(10).order(), be);
-        ck(ByteBuffer.allocateDirect(10).order(), be);
-        ck(ByteBuffer.allocate(10).order(be).order(), be);
-        ck(ByteBuffer.allocate(10).order(le).order(), le);
+        ck(ByteBuffer.allocate(LENGTH).order(), be);
+        ck(ByteBuffer.allocateDirect(LENGTH).order(), be);
+        ck(ByteBuffer.allocate(LENGTH).order(be).order(), be);
+        ck(ByteBuffer.allocate(LENGTH).order(le).order(), le);
 
-        ckByteBuffer(ByteBuffer.allocate(10));
-        ckByteBuffer(ByteBuffer.allocateDirect(10));
+        ckByteBuffer(ByteBuffer.allocate(LENGTH));
+        ckByteBuffer(ByteBuffer.allocateDirect(LENGTH));
 
+        OrderChar.ckCharBuffer();
+        OrderShort.ckShortBuffer();
+        OrderInt.ckIntBuffer();
+        OrderLong.ckLongBuffer();
+        OrderFloat.ckFloatBuffer();
+        OrderDouble.ckDoubleBuffer();
     }
 
 }

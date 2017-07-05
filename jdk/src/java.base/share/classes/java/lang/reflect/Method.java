@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.reflect.CallerSensitive;
 import sun.reflect.MethodAccessor;
 import sun.reflect.Reflection;
@@ -485,6 +486,7 @@ public final class Method extends Executable {
      * provoked by this method fails.
      */
     @CallerSensitive
+    @HotSpotIntrinsicCandidate
     public Object invoke(Object obj, Object... args)
         throws IllegalAccessException, IllegalArgumentException,
            InvocationTargetException

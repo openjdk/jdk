@@ -24,42 +24,95 @@
  */
 package jdk.internal.jimage;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * An Archive of all content, classes, resources, configuration files, and
  * other, for a module.
  */
 public interface Archive {
+
+    /**
+     * Entry is contained in an Archive
+     */
+    public abstract class Entry {
+
+        public static enum EntryType {
+
+            MODULE_NAME,
+            CLASS_OR_RESOURCE,
+            NATIVE_LIB,
+            NATIVE_CMD,
+            CONFIG,
+            SERVICE;
+        }
+
+        private final String name;
+        private final EntryType type;
+        private final Archive archive;
+        private final String path;
+
+        public Entry(Archive archive, String path, String name, EntryType type) {
+            this.archive = archive;
+            this.path = path;
+            this.name = name;
+            this.type = type;
+        }
+
+        public Archive archive() {
+            return archive;
+        }
+
+        public String path() {
+            return path;
+        }
+
+        public EntryType type() {
+            return type;
+        }
+
+        /**
+         * Returns the name of this entry.
+         */
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return "type " + type.name() + " path " + path;
+        }
+
+        /**
+         * Returns the number of uncompressed bytes for this entry.
+         */
+        public abstract long size();
+
+        public abstract InputStream stream() throws IOException;
+    }
+
     /**
      * The module name.
      */
     String moduleName();
 
     /**
-     * Visits all classes and resources.
+     * Stream of Entry.
+     * The stream of entries needs to be closed after use
+     * since it might cover lazy I/O based resources.
+     * So callers need to use a try-with-resources block.
      */
-    void visitResources(Consumer<Resource> consumer);
+    Stream<Entry> entries();
 
     /**
-     * Visits all entries in the Archive.
+     * Open the archive
      */
-    void visitEntries(Consumer<Entry> consumer) ;
+    void open() throws IOException;
 
     /**
-     * An entries in the Archive.
+     * Close the archive
      */
-    interface Entry {
-        String getName();
-        InputStream getInputStream();
-        boolean isDirectory();
-    }
-
-    /**
-     * A Consumer suitable for writing Entries from this Archive.
-     */
-    Consumer<Entry> defaultImageWriter(Path path, OutputStream out);
+    void close() throws IOException;
 }

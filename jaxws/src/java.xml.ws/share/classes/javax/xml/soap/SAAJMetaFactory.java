@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package javax.xml.soap;
 
 /**
 * The access point for the implementation classes of the factories defined in the
-* SAAJ API. All of the <code>newInstance</code> methods defined on factories in
+* SAAJ API. All of the {@code newInstance} methods defined on factories in
 * SAAJ 1.3 defer to instances of this class to do the actual object creation.
-* The implementations of <code>newInstance()</code> methods (in SOAPFactory and MessageFactory)
+* The implementations of {@code newInstance()} methods (in SOAPFactory and MessageFactory)
 * that existed in SAAJ 1.2 have been updated to also delegate to the SAAJMetaFactory when the SAAJ 1.2
 * defined lookup fails to locate the Factory implementation class name.
 *
@@ -48,10 +48,10 @@ public abstract class SAAJMetaFactory {
         "com.sun.xml.internal.messaging.saaj.soap.SAAJMetaFactoryImpl";
 
     /**
-     * Creates a new instance of a concrete <code>SAAJMetaFactory</code> object.
+     * Creates a new instance of a concrete {@code SAAJMetaFactory} object.
      * The SAAJMetaFactory is an SPI, it pulls the creation of the other factories together into a
      * single place. Changing out the SAAJMetaFactory has the effect of changing out the entire SAAJ
-     * implementation. Service providers provide the name of their <code>SAAJMetaFactory</code>
+     * implementation. Service providers provide the name of their {@code SAAJMetaFactory}
      * implementation.
      *
      * This method uses the following ordered lookup procedure to determine the SAAJMetaFactory implementation class to load:
@@ -65,8 +65,8 @@ public abstract class SAAJMetaFactory {
      *  <LI> Default to com.sun.xml.internal.messaging.saaj.soap.SAAJMetaFactoryImpl.
      * </UL>
      *
-     * @return a concrete <code>SAAJMetaFactory</code> object
-     * @exception SOAPException if there is an error in creating the <code>SAAJMetaFactory</code>
+     * @return a concrete {@code SAAJMetaFactory} object
+     * @exception SOAPException if there is an error in creating the {@code SAAJMetaFactory}
      */
     static SAAJMetaFactory getInstance() throws SOAPException {
             try {
@@ -84,10 +84,10 @@ public abstract class SAAJMetaFactory {
     protected SAAJMetaFactory() { }
 
      /**
-      * Creates a <code>MessageFactory</code> object for
-      * the given <code>String</code> protocol.
+      * Creates a {@code MessageFactory} object for
+      * the given {@code String} protocol.
       *
-      * @param protocol a <code>String</code> indicating the protocol
+      * @param protocol a {@code String} indicating the protocol
       * @exception SOAPException if there is an error in creating the
       *            MessageFactory
       * @see SOAPConstants#SOAP_1_1_PROTOCOL
@@ -98,10 +98,10 @@ public abstract class SAAJMetaFactory {
         throws SOAPException;
 
      /**
-      * Creates a <code>SOAPFactory</code> object for
-      * the given <code>String</code> protocol.
+      * Creates a {@code SOAPFactory} object for
+      * the given {@code String} protocol.
       *
-      * @param protocol a <code>String</code> indicating the protocol
+      * @param protocol a {@code String} indicating the protocol
       * @exception SOAPException if there is an error in creating the
       *            SOAPFactory
       * @see SOAPConstants#SOAP_1_1_PROTOCOL

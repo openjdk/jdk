@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,11 +383,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             this.currentDirectory = currentDirectory;
             this.fid = fid;
             String name = "Aqua L&F File Loading Thread";
-            if (System.getSecurityManager() == null) {
-                this.loadThread = new Thread(FilesLoader.this, name);
-            } else {
-                this.loadThread = new ManagedLocalsThread(FilesLoader.this, name);
-            }
+            this.loadThread = new ManagedLocalsThread(this, name);
             this.loadThread.start();
         }
 

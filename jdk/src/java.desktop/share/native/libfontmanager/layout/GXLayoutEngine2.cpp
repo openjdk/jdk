@@ -69,7 +69,7 @@ le_int32 GXLayoutEngine2::computeGlyphs(const LEUnicode chars[], le_int32 offset
     }
 
     fMorphTable->process(fMorphTable, glyphStorage, fTypoFlags, success);
-    return count;
+    return glyphStorage.getGlyphCount();
 }
 
 // apply positional tables

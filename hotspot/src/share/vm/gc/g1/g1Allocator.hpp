@@ -53,7 +53,7 @@ public:
    virtual void release_mutator_alloc_region() = 0;
 
    virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
-   virtual void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info) = 0;
+   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
    virtual void abandon_gc_alloc_regions() = 0;
 
    virtual MutatorAllocRegion*    mutator_alloc_region(AllocationContext_t context) = 0;
@@ -76,7 +76,7 @@ public:
 
    void decrease_used(size_t bytes) {
      assert(_summary_bytes_used >= bytes,
-            err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" should be >= bytes: "SIZE_FORMAT,
+            err_msg("invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
                 _summary_bytes_used, bytes));
      _summary_bytes_used -= bytes;
    }
@@ -114,7 +114,7 @@ public:
   virtual void release_mutator_alloc_region();
 
   virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
-  virtual void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info);
+  virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info);
   virtual void abandon_gc_alloc_regions();
 
   virtual bool is_retained_old_region(HeapRegion* hr) {

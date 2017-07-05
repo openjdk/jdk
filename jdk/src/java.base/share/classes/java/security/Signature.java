@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1324,7 +1324,7 @@ public abstract class Signature extends SignatureSpi {
                 byte[] out = cipher.doFinal(sigBytes);
                 byte[] dataBytes = data.toByteArray();
                 data.reset();
-                return Arrays.equals(out, dataBytes);
+                return MessageDigest.isEqual(out, dataBytes);
             } catch (BadPaddingException e) {
                 // e.g. wrong public key used
                 // return false rather than throwing exception

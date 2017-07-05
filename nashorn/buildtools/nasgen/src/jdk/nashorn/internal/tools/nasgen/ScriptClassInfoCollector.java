@@ -118,7 +118,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                     addScriptMember(memInfo);
 
                     return new AnnotationVisitor(Main.ASM_VERSION, delegateAV) {
-                        // These could be "null" if values are not suppiled,
+                        // These could be "null" if values are not supplied,
                         // in which case we have to use the default values.
                         private String  name;
                         private Integer attributes;
@@ -194,7 +194,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
 
                     final MemberInfo memInfo = new MemberInfo();
 
-                    //annokind == e.g. GETTER or SPECIALIZED_FUNCTION
+                    // annoKind == GETTER or SPECIALIZED_FUNCTION
                     memInfo.setKind(annoKind);
                     memInfo.setJavaName(methodName);
                     memInfo.setJavaDesc(methodDesc);
@@ -203,7 +203,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                     addScriptMember(memInfo);
 
                     return new AnnotationVisitor(Main.ASM_VERSION, delegateAV) {
-                        // These could be "null" if values are not suppiled,
+                        // These could be "null" if values are not supplied,
                         // in which case we have to use the default values.
                         private String  name;
                         private Integer attributes;

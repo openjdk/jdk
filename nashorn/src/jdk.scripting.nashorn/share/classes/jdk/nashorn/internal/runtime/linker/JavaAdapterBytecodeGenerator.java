@@ -571,7 +571,7 @@ final class JavaAdapterBytecodeGenerator {
             mv.visitVarInsn(ALOAD, 0);
             if (fromFunction && !mi.getName().equals(samName)) {
                 // Constructors initializing from a ScriptFunction only initialize methods with the SAM name.
-                // NOTE: if there's a concrete overloaded method sharing the SAM name, it'll be overriden too. This
+                // NOTE: if there's a concrete overloaded method sharing the SAM name, it'll be overridden too. This
                 // is a deliberate design choice. All other method handles are initialized to null.
                 mv.visitInsn(ACONST_NULL);
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class FactoryFinder {
 
     /**
      * Creates an instance of the specified class using the specified
-     * <code>ClassLoader</code> object.
+     * {@code ClassLoader} object.
      *
      * @exception SOAPException if the given class could not be found
      *            or could not be instantiated
@@ -54,13 +54,13 @@ class FactoryFinder {
     }
 
     /**
-     * Finds the implementation <code>Class</code> object for the given
+     * Finds the implementation {@code Class} object for the given
      * factory name, or null if that fails.
      * <P>
      * This method is package private so that this code can be shared.
      *
-     * @return the <code>Class</code> object of the specified message factory;
-     *         or <code>null</code>
+     * @return the {@code Class} object of the specified message factory;
+     *         or {@code null}
      *
      * @param factoryId             the name of the factory to find, which is
      *                              a system property
@@ -73,22 +73,22 @@ class FactoryFinder {
     }
 
     /**
-     * Finds the implementation <code>Class</code> object for the given
-     * factory name, or if that fails, finds the <code>Class</code> object
+     * Finds the implementation {@code Class} object for the given
+     * factory name, or if that fails, finds the {@code Class} object
      * for the given fallback class name. The arguments supplied must be
      * used in order. If using the first argument is successful, the second
      * one will not be used.
      * <P>
      * This method is package private so that this code can be shared.
      *
-     * @return the <code>Class</code> object of the specified message factory;
-     *         may be <code>null</code>
+     * @return the {@code Class} object of the specified message factory;
+     *         may be {@code null}
      *
      * @param factoryId             the name of the factory to find, which is
      *                              a system property
      * @param fallbackClassName     the implementation class name, which is
      *                              to be used only if nothing else
-     *                              is found; <code>null</code> to indicate that
+     *                              is found; {@code null} to indicate that
      *                              there is no fallback class name
      * @exception SOAPException if there is a SOAP error
      */
@@ -99,24 +99,24 @@ class FactoryFinder {
     }
 
     /**
-     * Finds the implementation <code>Class</code> object for the given
-     * factory name, or if that fails, finds the <code>Class</code> object
-     * for the given default class name, but only if <code>tryFallback</code>
-     * is <code>true</code>.  The arguments supplied must be used in order
+     * Finds the implementation {@code Class} object for the given
+     * factory name, or if that fails, finds the {@code Class} object
+     * for the given default class name, but only if {@code tryFallback}
+     * is {@code true}.  The arguments supplied must be used in order
      * If using the first argument is successful, the second one will not
      * be used.  Note the default class name may be needed even if fallback
      * is not to be attempted, so certain error conditions can be handled.
      * <P>
      * This method is package private so that this code can be shared.
      *
-     * @return the <code>Class</code> object of the specified message factory;
-     *         may not be <code>null</code>
+     * @return the {@code Class} object of the specified message factory;
+     *         may not be {@code null}
      *
      * @param factoryId             the name of the factory to find, which is
      *                              a system property
      * @param defaultClassName      the implementation class name, which is
      *                              to be used only if nothing else
-     *                              is found; <code>null</code> to indicate
+     *                              is found; {@code null} to indicate
      *                              that there is no default class name
      * @param tryFallback           whether to try the default class as a
      *                              fallback

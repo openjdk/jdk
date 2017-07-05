@@ -2118,17 +2118,18 @@ public final class Global extends Scope {
             }
         }
 
+        final boolean extensible = isExtensible();
         for (final jdk.nashorn.internal.runtime.Property property : properties) {
             if (property.isLexicalBinding()) {
                 assert lexScope != null;
-                lexicalMap = lexScope.addBoundProperty(lexicalMap, source, property);
+                lexicalMap = lexScope.addBoundProperty(lexicalMap, source, property, true);
 
                 if (ownMap.findProperty(property.getKey()) != null) {
                     // If property exists in the global object invalidate any global constant call sites.
                     invalidateGlobalConstant(property.getKey());
                 }
             } else {
-                ownMap = addBoundProperty(ownMap, source, property);
+                ownMap = addBoundProperty(ownMap, source, property, extensible);
             }
         }
 
@@ -2730,9 +2731,9 @@ public final class Global extends Scope {
         }
 
         @Override
-        protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final jdk.nashorn.internal.runtime.Property property) {
+        protected PropertyMap addBoundProperty(final PropertyMap propMap, final ScriptObject source, final jdk.nashorn.internal.runtime.Property property, final boolean extensible) {
             // We override this method just to make it callable by Global
-            return super.addBoundProperty(propMap, source, property);
+            return super.addBoundProperty(propMap, source, property, extensible);
         }
 
         private static GuardedInvocation filterInvocation(final GuardedInvocation invocation) {

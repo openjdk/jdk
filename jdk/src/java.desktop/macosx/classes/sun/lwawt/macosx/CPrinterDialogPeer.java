@@ -59,11 +59,7 @@ public class CPrinterDialogPeer extends LWWindowPeer {
                 printerDialog.setRetVal(printerDialog.showDialog());
                 printerDialog.setVisible(false);
             };
-            if (System.getSecurityManager() == null) {
-                new Thread(task).start();
-            } else {
-                new ManagedLocalsThread(task).start();
-            }
+            new ManagedLocalsThread(task).start();
         }
     }
 

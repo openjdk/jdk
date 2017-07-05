@@ -557,7 +557,7 @@ void ProtectionDomainCacheTable::print() {
 }
 
 void ProtectionDomainCacheEntry::print() {
-  tty->print_cr("entry "PTR_FORMAT" value "PTR_FORMAT" strongly_reachable %d next "PTR_FORMAT,
+  tty->print_cr("entry " PTR_FORMAT " value " PTR_FORMAT " strongly_reachable %d next " PTR_FORMAT,
                 this, (void*)literal(), _strongly_reachable, next());
 }
 #endif

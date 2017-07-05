@@ -500,7 +500,7 @@ public class LinkerCallSite extends ChainedCallSite {
          * @param desc callsite descriptor string
          * @param args arguments to function
          *
-         * @throws Throwable if invocation failes or throws exception/error
+         * @throws Throwable if invocation fails or throws exception/error
          */
         @SuppressWarnings("unused")
         public void traceMiss(final String desc, final Object... args) throws Throwable {

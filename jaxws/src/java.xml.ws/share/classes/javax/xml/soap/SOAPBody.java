@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ public interface SOAPBody extends SOAPElement {
     public SOAPBodyElement addBodyElement(QName qname) throws SOAPException;
 
     /**
-     * Adds the root node of the DOM <code>{@link org.w3c.dom.Document}</code>
+     * Adds the root node of the DOM {@link org.w3c.dom.Document}
      * to this {@code SOAPBody} object.
      * <p>
      * Calling this method invalidates the {@code document} parameter.
@@ -279,12 +279,12 @@ public interface SOAPBody extends SOAPElement {
         throws SOAPException;
 
     /**
-     * Creates a new DOM <code>{@link org.w3c.dom.Document}</code> and sets
+     * Creates a new DOM {@link org.w3c.dom.Document} and sets
      * the first child of this {@code SOAPBody} as it's document
      * element. The child {@code SOAPElement} is removed as part of the
      * process.
      *
-     * @return the <code>{@link org.w3c.dom.Document}</code> representation
+     * @return the {@link org.w3c.dom.Document} representation
      *         of the {@code SOAPBody} content.
      *
      * @exception SOAPException

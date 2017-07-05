@@ -221,6 +221,12 @@ void OldGCTracer::report_concurrent_mode_failure() {
 }
 
 #if INCLUDE_ALL_GCS
+void G1MMUTracer::report_mmu(const GCId& gcId, double timeSlice, double gcTime, double maxTime) {
+  assert(!gcId.is_undefined(), "Undefined GC id");
+
+  send_g1_mmu_event(gcId, timeSlice, gcTime, maxTime);
+}
+
 void G1NewTracer::report_yc_type(G1YCType type) {
   assert_set_gc_id();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
 
     private native void initOps(long pConfigInfo, WComponentPeer peer,
                                 long hwnd);
-    protected native boolean initPbuffer(long pData, long pConfigInfo,
-                                         boolean isOpaque,
-                                         int width, int height);
 
     protected WGLSurfaceData(WComponentPeer peer, WGLGraphicsConfig gc,
                              ColorModel cm, int type)

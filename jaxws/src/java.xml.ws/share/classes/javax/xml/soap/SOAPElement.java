@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ import javax.xml.namespace.QName;
  * Methods in this interface that are required to return SAAJ specific objects
  * may "silently" replace nodes in the tree as required to successfully return
  * objects of the correct type. See {@link #getChildElements()} and
- * {@link <a HREF="package-summary.html#package_description">javax.xml.soap</a>}
- * for details.
+ * {@link javax.xml.soap} for details.
  *
  * @since 1.6
  */
@@ -345,7 +344,7 @@ public interface SOAPElement extends Node, org.w3c.dom.Element {
      *          with the {@code prefix} in the context of this
      *          {@code SOAPElement}. This namespace will be the same as
      *          the one that would be returned by
-     *          <code>{@link #getNamespaceURI(String)}</code> if it were given
+     *          {@link #getNamespaceURI(String)} if it were given
      *          {@code prefix} as it's parameter.
      *
      * @exception SOAPException if the {@code QName} cannot be created.
@@ -439,7 +438,7 @@ public interface SOAPElement extends Node, org.w3c.dom.Element {
      * have been obtained through DOM APIs as invalid and either discard them or
      * refresh them with the values returned by this {@code Iterator}. This
      * behavior can be avoided by calling the equivalent DOM APIs. See
-     * {@link <a HREF="package-summary.html#package_description">javax.xml.soap</a>}
+     * {@link javax.xml.soap}
      * for more details.
      *
      * @return an iterator with the content of this {@code SOAPElement}
@@ -461,7 +460,7 @@ public interface SOAPElement extends Node, org.w3c.dom.Element {
      * have been obtained through DOM APIs as invalid and either discard them or
      * refresh them with the values returned by this {@code Iterator}. This
      * behavior can be avoided by calling the equivalent DOM APIs. See
-     * {@link <a HREF="package-summary.html#package_description">javax.xml.soap</a>}
+     * {@link javax.xml.soap}
      * for more details.
      *
      * @param name a {@code Name} object with the name of the child
@@ -488,7 +487,7 @@ public interface SOAPElement extends Node, org.w3c.dom.Element {
      * have been obtained through DOM APIs as invalid and either discard them or
      * refresh them with the values returned by this {@code Iterator}. This
      * behavior can be avoided by calling the equivalent DOM APIs. See
-     * {@link <a HREF="package-summary.html#package_description">javax.xml.soap</a>}
+     * {@link javax.xml.soap}
      * for more details.
      *
      * @param qname a {@code QName} object with the qname of the child
