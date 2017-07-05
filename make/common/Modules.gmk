@@ -67,7 +67,8 @@ $(eval $(call SetupJavaCompilation,BUILD_GENMODULESLIST, \
     SETUP := BOOT_JAVAC, \
     SRC := $(JDK_TOPDIR)/make/src/classes, \
     INCLUDES := build/tools/module, \
-    BIN := $(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist))
+    BIN := $(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist, \
+    DISABLE_SJAVAC := true))
 
 TOOL_GENMODULESLIST = $(JAVA_SMALL) \
     -cp "$(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist" \
