@@ -22,8 +22,8 @@
 #
 
 # @test
-# @bug 6890876
-# @summary jarsigner can add CRL info into signed jar
+# @bug 6890876 6950931
+# @summary jarsigner can add CRL info into signed jar (updated)
 #
 
 if [ "${TESTJAVA}" = "" ] ; then
@@ -53,7 +53,7 @@ KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystor
 JAR=$TESTJAVA${FS}bin${FS}jar
 JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
 
-rm $KS $JFILE
+rm $KS $JFILE 2> /dev/null
 
 # Generates some crl files, each containing two entries
 
@@ -63,8 +63,9 @@ $KT -alias a -gencrl -id 3:3 -id 4:4 -file crl2
 $KT -alias b -dname CN=b -keyalg rsa -genkey -validity 300
 $KT -alias b -gencrl -id 5:1 -id 6:2 -file crl3
 
+$TESTJAVA${FS}bin${FS}jrunscript -e 'println(new File("crl1").toURI())' > uri
 $KT -alias c -dname CN=c -keyalg rsa -genkey -validity 300 \
-    -ext crl=uri:file://`pwd`/crl1
+    -ext crl=uri:`cat uri`
 
 echo A > A
 
@@ -80,9 +81,9 @@ $KT -printcert -jarfile $JFILE | grep CRLs || exit 7
 
 $JAR cvf $JFILE A
 $JARSIGNER -keystore $KS -storepass changeit $JFILE a \
-        -crl crl1 -crl crl2 || exit 1
+        -crl crl1 -crl crl2 || exit 2
 $JARSIGNER -keystore $KS -storepass changeit $JFILE b \
-        -crl crl3 -crl crl2 || exit 1
+        -crl crl3 -crl crl2 || exit 3
 $JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 3
 $KT -printcert -jarfile $JFILE | grep CRLs || exit 4
 CRLCOUNT=`$KT -printcert -jarfile $JFILE | grep SerialNumber | wc -l`

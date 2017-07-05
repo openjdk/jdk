@@ -80,4 +80,6 @@ FILES_c = \
         swing_GTKEngine.c \
         swing_GTKStyle.c \
         rect.c \
-	sun_awt_X11_GtkFileDialogPeer.c
+	sun_awt_X11_GtkFileDialogPeer.c \
+	XRSurfaceData.c \
+	XRBackendNative.c

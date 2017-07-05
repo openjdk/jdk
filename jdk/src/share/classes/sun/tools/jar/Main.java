@@ -306,28 +306,28 @@ class Main {
             for (int i = 0; i < flags.length(); i++) {
                 switch (flags.charAt(i)) {
                 case 'c':
-                    if (xflag || tflag || uflag) {
+                    if (xflag || tflag || uflag || iflag) {
                         usageError();
                         return false;
                     }
                     cflag = true;
                     break;
                 case 'u':
-                    if (cflag || xflag || tflag) {
+                    if (cflag || xflag || tflag || iflag) {
                         usageError();
                         return false;
                     }
                     uflag = true;
                     break;
                 case 'x':
-                    if (cflag || uflag || tflag) {
+                    if (cflag || uflag || tflag || iflag) {
                         usageError();
                         return false;
                     }
                     xflag = true;
                     break;
                 case 't':
-                    if (cflag || uflag || xflag) {
+                    if (cflag || uflag || xflag || iflag) {
                         usageError();
                         return false;
                     }
@@ -349,6 +349,10 @@ class Main {
                     flag0 = true;
                     break;
                 case 'i':
+                    if (cflag || uflag || xflag || tflag) {
+                        usageError();
+                        return false;
+                    }
                     // do not increase the counter, files will contain rootjar
                     rootjar = args[count++];
                     iflag = true;

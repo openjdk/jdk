@@ -55,7 +55,6 @@ public final class java_awt_GridBagConstraints extends AbstractTest<GridBagConst
     }
 
     protected GridBagConstraints getAnotherObject() {
-        return null; // TODO: could not update property
-        // return new GridBagConstraints();
+        return new GridBagConstraints();
     }
 }

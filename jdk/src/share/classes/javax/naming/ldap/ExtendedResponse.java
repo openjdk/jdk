@@ -27,7 +27,7 @@ package javax.naming.ldap;
 
 /**
   * This interface represents an LDAP extended operation response as defined in
-  * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2251.txt">RFC 2251</A>.
+  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
   * <pre>
   *     ExtendedResponse ::= [APPLICATION 24] SEQUENCE {
   *          COMPONENTS OF LDAPResult,
