@@ -437,7 +437,7 @@ public class FileLoginModule implements LoginModule {
         // get the username and password
         getUsernamePassword(usePasswdFromSharedState);
 
-        String localPassword = null;
+        String localPassword;
 
         // userCredentials is initialized in login()
         if (((localPassword = userCredentials.getProperty(username)) == null) ||
@@ -487,10 +487,14 @@ public class FileLoginModule implements LoginModule {
                 throw ace;
             }
         }
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        userCredentials = new Properties();
-        userCredentials.load(bis);
-        bis.close();
+        try {
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            userCredentials = new Properties();
+            userCredentials.load(bis);
+            bis.close();
+        } finally {
+            fis.close();
+        }
     }
 
     /**

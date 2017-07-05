@@ -42,6 +42,8 @@ import sun.awt.windows.WPrinterJob;
 import sun.awt.windows.WToolkit;
 import sun.font.FontManager;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.SurfaceManagerFactory;
+import sun.java2d.WindowsSurfaceManagerFactory;
 import sun.java2d.windows.WindowsFlags;
 
 /**
@@ -64,6 +66,9 @@ public class Win32GraphicsEnvironment
         WindowsFlags.initFlags();
         initDisplayWrapper();
         eudcFontFileName = getEUDCFontFile();
+
+        // Install correct surface manager factory.
+        SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
     }
 
     /**
@@ -260,6 +265,7 @@ public class Win32GraphicsEnvironment
         try {
             while (!found && parser.hasMoreTokens()) {
                 String newPath = parser.nextToken();
+                boolean ujr = newPath.equals(jreFontDirName);
                 File theFile = new File(newPath, fontFileName);
                 if (theFile.canRead()) {
                     found = true;
@@ -267,11 +273,11 @@ public class Win32GraphicsEnvironment
                     if (defer) {
                         FontManager.registerDeferredFont(fontFileName, path,
                                                          nativeNames,
-                                                         fontFormat, true,
+                                                         fontFormat, ujr,
                                                          fontRank);
                     } else {
                         FontManager.registerFontFile(path, nativeNames,
-                                                     fontFormat, true,
+                                                     fontFormat, ujr,
                                                      fontRank);
                     }
                     break;
@@ -296,7 +302,7 @@ public class Win32GraphicsEnvironment
     }
 
     public static void registerJREFontsForPrinting() {
-        String pathName = null;
+        final String pathName;
         synchronized (Win32GraphicsEnvironment.class) {
             GraphicsEnvironment.getLocalGraphicsEnvironment();
             if (fontsForPrinting == null) {
@@ -305,15 +311,21 @@ public class Win32GraphicsEnvironment
             pathName = fontsForPrinting;
             fontsForPrinting = null;
         }
-        File f1 = new File(pathName);
-        String[] ls = f1.list(new TTFilter());
-        if (ls == null) {
-          return;
-        }
-        for (int i=0; i <ls.length; i++ ) {
-          File fontFile = new File(f1, ls[i]);
-          registerFontWithPlatform(fontFile.getAbsolutePath());
-        }
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction() {
+                public Object run() {
+                    File f1 = new File(pathName);
+                    String[] ls = f1.list(new TTFilter());
+                    if (ls == null) {
+                        return null;
+                    }
+                    for (int i=0; i <ls.length; i++ ) {
+                        File fontFile = new File(f1, ls[i]);
+                        registerFontWithPlatform(fontFile.getAbsolutePath());
+                    }
+                    return null;
+                }
+         });
     }
 
     protected static native void registerFontWithPlatform(String fontName);

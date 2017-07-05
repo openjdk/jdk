@@ -231,10 +231,13 @@ public class MBeanServerFileAccessController
     private static Properties propertiesFromFile(String fname)
         throws IOException {
         FileInputStream fin = new FileInputStream(fname);
-        Properties p = new Properties();
-        p.load(fin);
-        fin.close();
-        return p;
+        try {
+            Properties p = new Properties();
+            p.load(fin);
+            return p;
+        } finally {
+            fin.close();
+        }
     }
 
     private void checkAccessLevel(String accessLevel) {

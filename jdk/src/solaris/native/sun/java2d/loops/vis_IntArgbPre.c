@@ -1193,10 +1193,6 @@ void ADD_SUFF(IntArgbPreDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
                 dst++;
             }
 
-            ADD_SUFF(IntArgbToIntArgbPreConvert)(dstBase, dstBase, width, 1,
-                                                 pRasInfo, pRasInfo,
-                                                 pPrim, pCompInfo);
-
             PTR_ADD(dstBase, scan);
             pixels += rowBytes;
         }
