@@ -76,21 +76,6 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       ])
     fi
     if test "x$CUPS_FOUND" = xno; then
-      # Getting nervous now? Lets poke around for standard Solaris third-party
-      # package installation locations.
-      AC_MSG_CHECKING([for cups headers])
-      if test -s $SYSROOT/opt/sfw/cups/include/cups/cups.h; then
-        # An SFW package seems to be installed!
-        CUPS_FOUND=yes
-        CUPS_CFLAGS="-I$SYSROOT/opt/sfw/cups/include"
-      elif test -s $SYSROOT/opt/csw/include/cups/cups.h; then
-        # A CSW package seems to be installed!
-        CUPS_FOUND=yes
-        CUPS_CFLAGS="-I$SYSROOT/opt/csw/include"
-      fi
-      AC_MSG_RESULT([$CUPS_FOUND])
-    fi
-    if test "x$CUPS_FOUND" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([cups])
       AC_MSG_ERROR([Could not find cups! $HELP_MSG ])
     fi
