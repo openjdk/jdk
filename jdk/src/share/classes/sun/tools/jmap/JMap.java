@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class JMap {
 
     // These options imply the use of a SA tool
     private static String SA_TOOL_OPTIONS =
-      "-heap|-heap:format=b|-permstat|-finalizerinfo";
+      "-heap|-heap:format=b|-clstats|-finalizerinfo";
 
     // The -F (force) option is currently not passed through to SA
     private static String FORCE_SA_OPTION = "-F";
@@ -147,12 +147,12 @@ public class JMap {
     // Invoke SA tool  with the given arguments
     private static void runTool(String option, String args[]) throws Exception {
         String[][] tools = {
-            { "-pmap",           "sun.jvm.hotspot.tools.PMap"     },
-            { "-heap",           "sun.jvm.hotspot.tools.HeapSummary"     },
-            { "-heap:format=b",  "sun.jvm.hotspot.tools.HeapDumper"      },
-            { "-histo",          "sun.jvm.hotspot.tools.ObjectHistogram" },
-            { "-permstat",       "sun.jvm.hotspot.tools.PermStat"        },
-            { "-finalizerinfo",  "sun.jvm.hotspot.tools.FinalizerInfo"   },
+            { "-pmap",          "sun.jvm.hotspot.tools.PMap"             },
+            { "-heap",          "sun.jvm.hotspot.tools.HeapSummary"      },
+            { "-heap:format=b", "sun.jvm.hotspot.tools.HeapDumper"       },
+            { "-histo",         "sun.jvm.hotspot.tools.ObjectHistogram"  },
+            { "-clstats",       "sun.jvm.hotspot.tools.ClassLoaderStats" },
+            { "-finalizerinfo", "sun.jvm.hotspot.tools.FinalizerInfo"    },
         };
 
         String tool = null;
@@ -356,7 +356,7 @@ public class JMap {
             System.out.println("    -heap                to print java heap summary");
             System.out.println("    -histo[:live]        to print histogram of java object heap; if the \"live\"");
             System.out.println("                         suboption is specified, only count live objects");
-            System.out.println("    -permstat            to print permanent generation statistics");
+            System.out.println("    -clstats             to print class loader statistics");
             System.out.println("    -finalizerinfo       to print information on objects awaiting finalization");
             System.out.println("    -dump:<dump-options> to dump java heap in hprof binary format");
             System.out.println("                         dump-options:");

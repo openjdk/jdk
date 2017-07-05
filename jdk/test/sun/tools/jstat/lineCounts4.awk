@@ -3,7 +3,7 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT   
+#  S0     S1     E      O      M     YGC     YGCT    FGC    FGCT     GCT   
 #  0.00  99.99  66.81   1.24  26.55      1    0.028     0    0.000    0.028
 #  0.00  99.99  68.81   1.24  27.84      1    0.028     0    0.000    0.028
 #  0.00  99.99  70.81   1.24  27.84      1    0.028     0    0.000    0.028
@@ -22,7 +22,7 @@ BEGIN	{
 	    datalines2=0;
         }
 
-/^  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT   $/	{
+/^  S0     S1     E      O      M     YGC     YGCT    FGC    FGCT     GCT   $/	{
 	    headerlines++;
 	}
 

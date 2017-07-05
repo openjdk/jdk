@@ -2196,8 +2196,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
                                       true,     // is LVTT
                                       CHECK_(nullHandle));
           lvtt_cnt++;
-        } else if (UseSplitVerifier &&
-                   _major_version >= Verifier::STACKMAP_ATTRIBUTE_MAJOR_VERSION &&
+        } else if (_major_version >= Verifier::STACKMAP_ATTRIBUTE_MAJOR_VERSION &&
                    _cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_stack_map_table()) {
           // Stack map is only needed by the new verifier in JDK1.5.
           if (parsed_stackmap_attribute) {

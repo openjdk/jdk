@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,15 @@
 #include "io_util.h"
 #include "io_util_md.h"
 #include <string.h>
+#include <unistd.h>
+
+#ifdef __solaris__
+#include <sys/filio.h>
+#endif
+
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+#include <sys/ioctl.h>
+#endif
 
 #ifdef MACOSX
 
@@ -62,6 +71,28 @@ jstring newStringPlatform(JNIEnv *env, const char* str)
 }
 #endif
 
+FD
+handleOpen(const char *path, int oflag, int mode) {
+    FD fd;
+    RESTARTABLE(open64(path, oflag, mode), fd);
+    if (fd != -1) {
+        struct stat64 buf64;
+        int result;
+        RESTARTABLE(fstat64(fd, &buf64), result);
+        if (result != -1) {
+            if (S_ISDIR(buf64.st_mode)) {
+                close(fd);
+                errno = EISDIR;
+                fd = -1;
+            }
+        } else {
+            close(fd);
+            fd = -1;
+        }
+    }
+    return fd;
+}
+
 void
 fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 {
@@ -74,15 +105,14 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
         while ((p > ps) && (*p == '/'))
             *p-- = '\0';
 #endif
-        fd = JVM_Open(ps, flags, 0666);
-        if (fd >= 0) {
+        fd = handleOpen(ps, flags, 0666);
+        if (fd != -1) {
             SET_FD(this, fd, fid);
         } else {
             throwFileNotFoundException(env, path);
         }
     } END_PLATFORM_STRING(env, ps);
 }
-
 
 void
 fileClose(JNIEnv *env, jobject this, jfieldID fid)
@@ -114,7 +144,89 @@ fileClose(JNIEnv *env, jobject this, jfieldID fid)
             dup2(devnull, fd);
             close(devnull);
         }
-    } else if (JVM_Close(fd) == -1) {
+    } else if (close(fd) == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
+}
+
+ssize_t
+handleRead(FD fd, void *buf, jint len)
+{
+    ssize_t result;
+    RESTARTABLE(read(fd, buf, len), result);
+    return result;
+}
+
+ssize_t
+handleWrite(FD fd, const void *buf, jint len)
+{
+    ssize_t result;
+    RESTARTABLE(write(fd, buf, len), result);
+    return result;
+}
+
+jint
+handleAvailable(FD fd, jlong *pbytes)
+{
+    int mode;
+    struct stat64 buf64;
+    jlong size = -1, current = -1;
+
+    int result;
+    RESTARTABLE(fstat64(fd, &buf64), result);
+    if (result != -1) {
+        mode = buf64.st_mode;
+        if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
+            int n;
+            int result;
+            RESTARTABLE(ioctl(fd, FIONREAD, &n), result);
+            if (result >= 0) {
+                *pbytes = n;
+                return 1;
+            }
+        } else if (S_ISREG(mode)) {
+            size = buf64.st_size;
+        }
+    }
+
+    if ((current = lseek64(fd, 0, SEEK_CUR)) == -1) {
+        return 0;
+    }
+
+    if (size < current) {
+        if ((size = lseek64(fd, 0, SEEK_END)) == -1)
+            return 0;
+        else if (lseek64(fd, current, SEEK_SET) == -1)
+            return 0;
+    }
+
+    if (size >= current) {
+        *pbytes = size - current;
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+jint
+handleSetLength(FD fd, jlong length)
+{
+    int result;
+    RESTARTABLE(ftruncate64(fd, length), result);
+    return result;
+}
+
+size_t
+getLastErrorString(char *buf, size_t len)
+{
+    if (errno == 0 || len < 1) return 0;
+
+    const char *err = strerror(errno);
+    size_t n = strlen(err);
+    if (n >= len)
+        n = len - 1;
+
+    strncpy(buf, err, n);
+    buf[n] = '\0';
+    return n;
 }
