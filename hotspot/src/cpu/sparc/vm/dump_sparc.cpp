@@ -80,13 +80,19 @@ void CompactingPermGenGen::generate_vtable_methods(void** vtbl_list,
     for (int j = 0; j < num_virtuals; ++j) {
       dummy_vtable[num_virtuals * i + j] = (void*)masm->pc();
       __ save(SP, -256, SP);
+      int offset = (i << 8) + j;
+      Register src = G0;
+      if (!Assembler::is_simm13(offset)) {
+        __ sethi(offset, L0);
+        src = L0;
+        offset = offset & ((1 << 10) - 1);
+      }
       __ brx(Assembler::always, false, Assembler::pt, common_code);
 
       // Load L0 with a value indicating vtable/offset pair.
       // -- bits[ 7..0]  (8 bits) which virtual method in table?
-      // -- bits[12..8]  (5 bits) which virtual method table?
-      // -- must fit in 13-bit instruction immediate field.
-      __ delayed()->set((i << 8) + j, L0);
+      // -- bits[13..8]  (6 bits) which virtual method table?
+      __ delayed()->or3(src, offset, L0);
     }
   }
 

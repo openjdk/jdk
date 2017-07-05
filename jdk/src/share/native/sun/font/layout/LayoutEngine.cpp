@@ -251,6 +251,10 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
         return 0;
     }
 
+    if ((fTypoFlags & 0x4) == 0) { // no canonical processing
+      return count;
+    }
+
     const GlyphSubstitutionTableHeader *canonGSUBTable = (GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable;
     LETag scriptTag  = OpenTypeLayoutEngine::getScriptTag(fScriptCode);
     LETag langSysTag = OpenTypeLayoutEngine::getLangSysTag(fLanguageCode);

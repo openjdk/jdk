@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ EXCLUDE_PKGS =             \
 # This is a list of regular expressions. So foo.* matches "foo" and "foo.bar".
 #
 ACTIVE_JSR_PKGS= \
-  java.dyn \
+  java.lang.invoke \
   java.sql  \
   javax.activation  \
   javax.annotation.*  \
@@ -97,11 +97,11 @@ CORE_PKGS =                                      \
   java.awt.print                                 \
   java.beans                                     \
   java.beans.beancontext                         \
-  java.dyn                                       \
   java.io                                        \
   java.lang                                      \
   java.lang.annotation                           \
   java.lang.instrument                           \
+  java.lang.invoke                               \
   java.lang.management                           \
   java.lang.ref                                  \
   java.lang.reflect                              \

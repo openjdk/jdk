@@ -213,7 +213,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     //    may change.  The three examples are java.lang.System.in,
     //    java.lang.System.out, and java.lang.System.err.
 
-    Handle k = _holder->get_klassOop();
+    KlassHandle k = _holder->get_klassOop();
     assert( SystemDictionary::System_klass() != NULL, "Check once per vm");
     if( k() == SystemDictionary::System_klass() ) {
       // Check offsets for case 2: System.in, System.out, or System.err
@@ -225,36 +225,38 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       }
     }
 
+    Handle mirror = k->java_mirror();
+
     _is_constant = true;
     switch(type()->basic_type()) {
     case T_BYTE:
-      _constant_value = ciConstant(type()->basic_type(), k->byte_field(_offset));
+      _constant_value = ciConstant(type()->basic_type(), mirror->byte_field(_offset));
       break;
     case T_CHAR:
-      _constant_value = ciConstant(type()->basic_type(), k->char_field(_offset));
+      _constant_value = ciConstant(type()->basic_type(), mirror->char_field(_offset));
       break;
     case T_SHORT:
-      _constant_value = ciConstant(type()->basic_type(), k->short_field(_offset));
+      _constant_value = ciConstant(type()->basic_type(), mirror->short_field(_offset));
       break;
     case T_BOOLEAN:
-      _constant_value = ciConstant(type()->basic_type(), k->bool_field(_offset));
+      _constant_value = ciConstant(type()->basic_type(), mirror->bool_field(_offset));
       break;
     case T_INT:
-      _constant_value = ciConstant(type()->basic_type(), k->int_field(_offset));
+      _constant_value = ciConstant(type()->basic_type(), mirror->int_field(_offset));
       break;
     case T_FLOAT:
-      _constant_value = ciConstant(k->float_field(_offset));
+      _constant_value = ciConstant(mirror->float_field(_offset));
       break;
     case T_DOUBLE:
-      _constant_value = ciConstant(k->double_field(_offset));
+      _constant_value = ciConstant(mirror->double_field(_offset));
       break;
     case T_LONG:
-      _constant_value = ciConstant(k->long_field(_offset));
+      _constant_value = ciConstant(mirror->long_field(_offset));
       break;
     case T_OBJECT:
     case T_ARRAY:
       {
-        oop o = k->obj_field(_offset);
+        oop o = mirror->obj_field(_offset);
 
         // A field will be "constant" if it is known always to be
         // a non-null reference to an instance of a particular class,

@@ -1712,10 +1712,10 @@ public final class Files {
      * @return  the {@code path} parameter
      *
      * @throws  UnsupportedOperationException
-     *          if the attribute view is not available or it does not support
-     *          updating the attribute
+     *          if the attribute view is not available
      * @throws  IllegalArgumentException
-     *          if the attribute value is of the correct type but has an
+     *          if the attribute name is not specified, or is not recognized, or
+     *          the attribute value is of the correct type but has an
      *          inappropriate value
      * @throws  ClassCastException
      *          if the attribute value is not of the expected type or is a
@@ -1776,9 +1776,12 @@ public final class Files {
      * @param   options
      *          options indicating how symbolic links are handled
      *
-     * @return  the attribute value or {@code null} if the attribute view
-     *          is not available or it does not support reading the attribute
+     * @return  the attribute value
      *
+     * @throws  UnsupportedOperationException
+     *          if the attribute view is not available
+     * @throws  IllegalArgumentException
+     *          if the attribute name is not specified or is not recognized
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -1794,8 +1797,9 @@ public final class Files {
     {
         // only one attribute should be read
         if (attribute.indexOf('*') >= 0 || attribute.indexOf(',') >= 0)
-            return null;
+            throw new IllegalArgumentException(attribute);
         Map<String,Object> map = readAttributes(path, attribute, options);
+        assert map.size() == 1;
         String name;
         int pos = attribute.indexOf(':');
         if (pos == -1) {
@@ -1868,9 +1872,14 @@ public final class Files {
      * @param   options
      *          options indicating how symbolic links are handled
      *
-     * @return  a map of the attributes returned; may be empty. The map's keys
-     *          are the attribute names, its values are the attribute values
+     * @return  a map of the attributes returned; The map's keys are the
+     *          attribute names, its values are the attribute values
      *
+     * @throws  UnsupportedOperationException
+     *          if the attribute view is not available
+     * @throws  IllegalArgumentException
+     *          if no attributes are specified or an unrecognized attributes is
+     *          specified
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException

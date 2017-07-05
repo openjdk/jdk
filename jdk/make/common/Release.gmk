@@ -54,9 +54,6 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 
-# This is a stopgap until 6839872 is fixed.
-EXCLUDE_PROPWARN_PKGS += sun.dyn
-
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced
@@ -910,11 +907,6 @@ initial-image-jdk:: initial-image-jdk-setup \
 	$(CP) $(BINDIR)/jli.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
     ifeq ($(COMPILER_VERSION), VS2010)
 	$(CP) $(BINDIR)/msvc*100.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
-    endif
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      ifeq ($(COMPILER_VERSION), VS2003)
-	$(CP) $(BINDIR)/msvc*71.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
-      endif
     endif
   else # PLATFORM
 	@#

@@ -679,6 +679,14 @@ public class ExtendedCharsets
                     "1124"
                 });
 
+        charset("x-IBM1364", "IBM1364",
+                new String[] {
+                    "cp1364",
+                    "ibm1364",
+                    "ibm-1364",
+                    "1364"
+                });
+
         charset("IBM273", "IBM273",
                 new String[] {
                     "cp273", // JDK historical

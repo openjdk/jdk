@@ -46,6 +46,18 @@ abstract class AbstractBasicFileAttributeView
     private static final String IS_SYMBOLIC_LINK_NAME = "isSymbolicLink";
     private static final String IS_OTHER_NAME = "isOther";
 
+    // the names of the basic attributes
+    static final Set<String> basicAttributeNames =
+        Util.newSet(SIZE_NAME,
+                    CREATION_TIME_NAME,
+                    LAST_ACCESS_TIME_NAME,
+                    LAST_MODIFIED_TIME_NAME,
+                    FILE_KEY_NAME,
+                    IS_DIRECTORY_NAME,
+                    IS_REGULAR_FILE_NAME,
+                    IS_SYMBOLIC_LINK_NAME,
+                    IS_OTHER_NAME);
+
     protected AbstractBasicFileAttributeView() { }
 
     @Override
@@ -69,24 +81,26 @@ abstract class AbstractBasicFileAttributeView
             setTimes(null, null, (FileTime)value);
             return;
         }
-        throw new UnsupportedOperationException("'" + attribute +
-            "' is unknown or read-only attribute");
+        throw new IllegalArgumentException("'" + name() + ":" +
+            attribute + "' not recognized");
     }
 
     /**
      * Used to build a map of attribute name/values.
      */
     static class AttributesBuilder {
-        private Set<String> set = new HashSet<>();
+        private Set<String> names = new HashSet<>();
         private Map<String,Object> map = new HashMap<>();
         private boolean copyAll;
 
-        private AttributesBuilder(String[] attributes) {
-            for (String attribute: attributes) {
-                if (attribute.equals("*")) {
+        private AttributesBuilder(Set<String> allowed, String[] requested) {
+            for (String name: requested) {
+                if (name.equals("*")) {
                     copyAll = true;
                 } else {
-                    set.add(attribute);
+                    if (!allowed.contains(name))
+                        throw new IllegalArgumentException("'" + name + "' not recognized");
+                    names.add(name);
                 }
             }
         }
@@ -94,21 +108,19 @@ abstract class AbstractBasicFileAttributeView
         /**
          * Creates builder to build up a map of the matching attributes
          */
-        static AttributesBuilder create(String[] attributes) {
-            return new AttributesBuilder(attributes);
+        static AttributesBuilder create(Set<String> allowed, String[] requested) {
+            return new AttributesBuilder(allowed, requested);
         }
 
         /**
          * Returns true if the attribute should be returned in the map
          */
-        boolean match(String attribute) {
-            if (copyAll)
-                return true;
-            return set.contains(attribute);
+        boolean match(String name) {
+            return copyAll || names.contains(name);
         }
 
-        void add(String attribute, Object value) {
-            map.put(attribute, value);
+        void add(String name, Object value) {
+            map.put(name, value);
         }
 
         /**
@@ -124,7 +136,7 @@ abstract class AbstractBasicFileAttributeView
      * Invoked by readAttributes or sub-classes to add all matching basic
      * attributes to the builder
      */
-    final void addBasicAttributesToBuilder(BasicFileAttributes attrs,
+    final void addRequestedBasicAttributes(BasicFileAttributes attrs,
                                            AttributesBuilder builder)
     {
         if (builder.match(SIZE_NAME))
@@ -148,9 +160,12 @@ abstract class AbstractBasicFileAttributeView
     }
 
     @Override
-    public Map<String,Object> readAttributes(String[] attributes) throws IOException {
-        AttributesBuilder builder = AttributesBuilder.create(attributes);
-        addBasicAttributesToBuilder(readAttributes(), builder);
+    public Map<String,Object> readAttributes(String[] requested)
+        throws IOException
+    {
+        AttributesBuilder builder =
+            AttributesBuilder.create(basicAttributeNames, requested);
+        addRequestedBasicAttributes(readAttributes(), builder);
         return builder.unmodifiableMap();
     }
 }

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4527345
+ * @bug 4527345 7026376
  * @summary Unit test for DatagramChannel's multicast support
  * @build MulticastSendReceiveTests NetworkConfiguration
  * @run main MulticastSendReceiveTests
@@ -31,12 +31,19 @@
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.net.*;
+import static java.net.StandardProtocolFamily.*;
 import java.util.*;
 import java.io.IOException;
 
 public class MulticastSendReceiveTests {
 
-    static Random rand = new Random();
+    static final Random rand = new Random();
+
+    static final ProtocolFamily UNSPEC = new ProtocolFamily() {
+        public String name() {
+            return "UNSPEC";
+        }
+    };
 
     /**
      * Send datagram from given local address to given multicast
@@ -130,75 +137,84 @@ public class MulticastSendReceiveTests {
     /**
      * Exercise multicast send/receive on given group/interface
      */
-    static void test(NetworkInterface nif, InetAddress group, InetAddress source)
+    static void test(ProtocolFamily family,
+                     NetworkInterface nif,
+                     InetAddress group,
+                     InetAddress source)
         throws IOException
     {
-        ProtocolFamily family = (group instanceof Inet6Address) ?
-            StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-        System.out.format("create channel to %s socket\n", family.name());
-        DatagramChannel dc = DatagramChannel.open(family)
-            .setOption(StandardSocketOption.SO_REUSEADDR, true)
-            .bind(new InetSocketAddress(0));
+        System.out.format("\nTest DatagramChannel to %s socket\n", family.name());
+        try (DatagramChannel dc = (family == UNSPEC) ?
+                DatagramChannel.open() : DatagramChannel.open(family)) {
+            dc.setOption(StandardSocketOption.SO_REUSEADDR, true)
+              .bind(new InetSocketAddress(0));
 
-        // join group
-        System.out.format("join %s @ %s\n", group.getHostAddress(),
-            nif.getName());
-        MembershipKey key = dc.join(group, nif);
+            // join group
+            System.out.format("join %s @ %s\n", group.getHostAddress(),
+                nif.getName());
+            MembershipKey key;
+            try {
+                key = dc.join(group, nif);
+            } catch (IllegalArgumentException iae) {
+                if (family == UNSPEC) {
+                    System.out.println("Not supported");
+                    return;
+                }
+                throw iae;
+            }
 
-        // send message to group
-        int port = ((InetSocketAddress)dc.getLocalAddress()).getPort();
-        int id = sendDatagram(source, nif, group, port);
+            // send message to group
+            int port = ((InetSocketAddress)dc.getLocalAddress()).getPort();
+            int id = sendDatagram(source, nif, group, port);
 
-        // receive message and check id matches
-        receiveDatagram(dc, source, id);
-
-        // exclude-mode filtering
-
-        try {
-            System.out.format("block %s\n", source.getHostAddress());
-
-            // may throw UOE
-            key.block(source);
-            id = sendDatagram(source, nif, group, port);
-            receiveDatagram(dc, null, id);
-
-            // unblock source, send message, message should be received
-            System.out.format("unblock %s\n", source.getHostAddress());
-            key.unblock(source);
-            id = sendDatagram(source, nif, group, port);
+            // receive message and check id matches
             receiveDatagram(dc, source, id);
-        } catch (UnsupportedOperationException x) {
-            System.out.println("Exclude-mode filtering not supported!");
-        }
 
-        key.drop();
+            // exclude-mode filtering
 
-        // include-mode filtering
+            try {
+                System.out.format("block %s\n", source.getHostAddress());
 
-        InetAddress bogus = (group instanceof Inet6Address) ?
-            InetAddress.getByName("fe80::1234") :
-            InetAddress.getByName("1.2.3.4");
-        System.out.format("join %s @ %s only-source %s\n", group.getHostAddress(),
-            nif.getName(), bogus.getHostAddress());
-        try {
-            // may throw UOE
-            key = dc.join(group, nif, bogus);
+                // may throw UOE
+                key.block(source);
+                id = sendDatagram(source, nif, group, port);
+                receiveDatagram(dc, null, id);
 
-            id = sendDatagram(source, nif, group, port);
-            receiveDatagram(dc, null, id);
+                // unblock source, send message, message should be received
+                System.out.format("unblock %s\n", source.getHostAddress());
+                key.unblock(source);
+                id = sendDatagram(source, nif, group, port);
+                receiveDatagram(dc, source, id);
+            } catch (UnsupportedOperationException x) {
+                System.out.println("Exclude-mode filtering not supported!");
+            }
 
+            key.drop();
+
+            // include-mode filtering
+
+            InetAddress bogus = (group instanceof Inet6Address) ?
+                InetAddress.getByName("fe80::1234") :
+                InetAddress.getByName("1.2.3.4");
             System.out.format("join %s @ %s only-source %s\n", group.getHostAddress(),
-                nif.getName(), source.getHostAddress());
-            key = dc.join(group, nif, source);
+                nif.getName(), bogus.getHostAddress());
+            try {
+                // may throw UOE
+                key = dc.join(group, nif, bogus);
 
-            id = sendDatagram(source, nif, group, port);
-            receiveDatagram(dc, source, id);
-        } catch (UnsupportedOperationException x) {
-            System.out.println("Include-mode filtering not supported!");
+                id = sendDatagram(source, nif, group, port);
+                receiveDatagram(dc, null, id);
+
+                System.out.format("join %s @ %s only-source %s\n", group.getHostAddress(),
+                    nif.getName(), source.getHostAddress());
+                key = dc.join(group, nif, source);
+
+                id = sendDatagram(source, nif, group, port);
+                receiveDatagram(dc, source, id);
+            } catch (UnsupportedOperationException x) {
+                System.out.println("Include-mode filtering not supported!");
+            }
         }
-
-        // done
-        dc.close();
     }
 
     public static void main(String[] args) throws IOException {
@@ -210,12 +226,14 @@ public class MulticastSendReceiveTests {
 
         for (NetworkInterface nif: config.ip4Interfaces()) {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
-            test(nif, ip4Group, source);
+            test(INET,   nif, ip4Group, source);
+            test(UNSPEC, nif, ip4Group, source);
         }
 
         for (NetworkInterface nif: config.ip6Interfaces()) {
             InetAddress source = config.ip6Addresses(nif).iterator().next();
-            test(nif, ip6Group, source);
+            test(INET6,  nif, ip6Group, source);
+            test(UNSPEC, nif, ip6Group, source);
         }
     }
 }
