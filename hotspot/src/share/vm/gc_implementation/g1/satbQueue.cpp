@@ -39,7 +39,7 @@ void ObjPtrQueue::flush() {
   // first before we flush it, otherwise we might end up with an
   // enqueued buffer with refs into the CSet which breaks our invariants.
   filter();
-  PtrQueue::flush();
+  flush_impl();
 }
 
 // This method removes entries from an SATB buffer that will not be

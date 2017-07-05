@@ -1229,7 +1229,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
-      double start = os::elapsedTime();
       g1_policy()->record_full_collection_start();
 
       // Note: When we have a more flexible GC logging framework that
@@ -1436,7 +1435,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       _allocator->init_mutator_alloc_region();
 
-      double end = os::elapsedTime();
       g1_policy()->record_full_collection_end();
 
       if (G1Log::fine()) {
