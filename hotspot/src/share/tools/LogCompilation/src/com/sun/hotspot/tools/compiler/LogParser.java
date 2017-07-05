@@ -478,9 +478,17 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 } else if (scopes.peek().getCalls().size() > 2 && m == scopes.peek().last(-2).getMethod()) {
                     scopes.push(scopes.peek().last(-2));
                 } else {
-                    System.out.println(site.getMethod());
-                    System.out.println(m);
-                    throw new InternalError("call site and parse don't match");
+                    // C1 prints multiple method tags during inlining when it narrows method being inlinied.
+                    // Example:
+                    //   ...
+                    //   <method id="813" holder="694" name="toString" return="695" flags="1" bytes="36" iicount="1"/>
+                    //   <call method="813" instr="invokevirtual"/>
+                    //   <inline_success reason="receiver is statically known"/>
+                    //   <method id="814" holder="792" name="toString" return="695" flags="1" bytes="5" iicount="3"/>
+                    //   <parse method="814">
+                    //   ...
+                    site.setMethod(m);
+                    scopes.push(site);
                 }
             }
         } else if (qname.equals("parse_done")) {
