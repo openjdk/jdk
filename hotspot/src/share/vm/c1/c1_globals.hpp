@@ -341,9 +341,6 @@
   diagnostic(bool, C1PatchInvokeDynamic, true,                              \
              "Patch invokedynamic appendix not known at compile time")      \
                                                                             \
-  develop(intx, MaxForceInlineLevel, 100,                                   \
-          "maximum number of nested @ForceInline calls that are inlined")   \
-                                                                            \
 
 
 // Read default values for c1 globals

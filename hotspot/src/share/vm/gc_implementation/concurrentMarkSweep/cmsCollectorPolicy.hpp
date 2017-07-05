@@ -29,10 +29,11 @@
 
 class ConcurrentMarkSweepPolicy : public TwoGenerationCollectorPolicy {
  protected:
+  void initialize_alignments();
   void initialize_generations();
 
  public:
-  ConcurrentMarkSweepPolicy();
+  ConcurrentMarkSweepPolicy() {}
 
   ConcurrentMarkSweepPolicy* as_concurrent_mark_sweep_policy() { return this; }
 
