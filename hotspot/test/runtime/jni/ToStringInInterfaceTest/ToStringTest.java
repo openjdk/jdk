@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,21 @@
  * questions.
  */
 
-package sun.misc;
-
-/*
- * Exception when installation of an extension has failed for
- * any reason
- *
- * @deprecated this class will be removed in a future release.
- * @author  Jerome Dochez
+/* @test
+ * @bug 8072588
+ * @build InterfaceWithToString
+ * @build ImplementationOfWithToString
+ * @run main/native ToStringTest
  */
-@Deprecated
-public class ExtensionInstallationException extends Exception {
+public final class ToStringTest {
 
-    static final long serialVersionUID = 3139688306909345924L;
+    static {
+        System.loadLibrary("ToStringTest");
+    }
 
-    /*
-     * <p>
-     * Construct a new exception with an exception reason
-     * </p>
-     */
-    public ExtensionInstallationException(String s) {
-        super(s);
+    native static void nTest();
+
+    public static void main(String[] args) throws Exception {
+        nTest();
     }
 }

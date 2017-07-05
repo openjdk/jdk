@@ -304,9 +304,16 @@ bool GenCollectedHeap::must_clear_all_soft_refs() {
 }
 
 bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
-  return UseConcMarkSweepGC &&
-         ((cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
-          (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
+  if (!UseConcMarkSweepGC) {
+    return false;
+  }
+
+  switch (cause) {
+    case GCCause::_gc_locker:           return GCLockerInvokesConcurrent;
+    case GCCause::_java_lang_system_gc:
+    case GCCause::_dcmd_gc_run:         return ExplicitGCInvokesConcurrent;
+    default:                            return false;
+  }
 }
 
 void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t size,

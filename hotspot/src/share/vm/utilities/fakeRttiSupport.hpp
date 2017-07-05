@@ -89,11 +89,11 @@ private:
     return ((uintx)1) << validate_tag(tag);
   }
 
-  static TagType validate_tag(uintx tag) {
-    // Type of tag is not TagType to dodge useless MacOSX compiler warning.
-    assert(tag < (sizeof(uintx) * BitsPerByte),
-           err_msg("Tag " UINTX_FORMAT " is too large", tag));
-    return static_cast<TagType>(tag);
+  static TagType validate_tag(TagType tag) {
+    assert(0 <= tag, err_msg("Tag " INTX_FORMAT " is negative", (intx)tag));
+    assert(tag < BitsPerWord,
+           err_msg("Tag " UINTX_FORMAT " is too large", (uintx)tag));
+    return tag;
   }
 };
 
