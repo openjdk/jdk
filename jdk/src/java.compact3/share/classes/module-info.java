@@ -23,6 +23,10 @@
  * questions.
  */
 
+/**
+ * Supplements {@code java.compact2} with JDBC RowSet, JMX, JNDI, Compiler,
+ * Instrumentation, Preferences, Security, and XML cryptography APIs.
+ */
 module java.compact3 {
     requires public java.compact2;
     requires public java.compiler;

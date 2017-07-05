@@ -445,7 +445,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
              * operating on the latest one and that HotSpotResolvedJavaMethodImpls will be able to
              * use the shared copy instead of creating their own instance.
              */
-            constantPool = compilerToVM().getConstantPool(this, config().instanceKlassConstantsOffset);
+            constantPool = compilerToVM().getConstantPool(this);
         }
         return constantPool;
     }

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.Arrays;
@@ -210,6 +211,7 @@ public final class SoftReverb implements SoftAudioProcessor {
     private float samplerate;
     private boolean light = true;
 
+    @Override
     public void init(float samplerate, float controlrate) {
         this.samplerate = samplerate;
 
@@ -260,11 +262,13 @@ public final class SoftReverb implements SoftAudioProcessor {
 
     }
 
+    @Override
     public void setInput(int pin, SoftAudioBuffer input) {
         if (pin == 0)
             inputA = input;
     }
 
+    @Override
     public void setOutput(int pin, SoftAudioBuffer output) {
         if (pin == 0)
             left = output;
@@ -272,12 +276,14 @@ public final class SoftReverb implements SoftAudioProcessor {
             right = output;
     }
 
+    @Override
     public void setMixMode(boolean mix) {
         this.mix = mix;
     }
 
     private boolean silent = true;
 
+    @Override
     public void processAudio() {
         boolean silent_input = this.inputA.isSilent();
         if(!silent_input)
@@ -330,7 +336,7 @@ public final class SoftReverb implements SoftAudioProcessor {
             for (int i = 4; i < combL.length-2; i+=2)
                 combL[i].processMix(input, pre1);
 
-            combL[3].processReplace(input, pre2);;
+            combL[3].processReplace(input, pre2);
             for (int i = 5; i < combL.length-2; i+=2)
                 combL[i].processMix(input, pre2);
 
@@ -376,11 +382,6 @@ public final class SoftReverb implements SoftAudioProcessor {
                 combL[i].processMix(out, left);
         }
 
-
-
-
-
-
         if (silent_input) {
             silent = true;
             for (int i = 0; i < numsamples; i++)
@@ -396,8 +397,9 @@ public final class SoftReverb implements SoftAudioProcessor {
 
     }
 
+    @Override
     public void globalParameterControlChange(int[] slothpath, long param,
-            long value) {
+                                             long value) {
         if (slothpath.length == 1) {
             if (slothpath[0] == 0x01 * 128 + 0x01) {
 
@@ -463,6 +465,7 @@ public final class SoftReverb implements SoftAudioProcessor {
         }
     }
 
+    @Override
     public void processControlLogic() {
         if (dirty) {
             dirty = false;
@@ -504,7 +507,6 @@ public final class SoftReverb implements SoftAudioProcessor {
             combL[i].setDamp(damp);
             combR[i].setDamp(damp);
         }
-
     }
 
     public void setLightMode(boolean light)

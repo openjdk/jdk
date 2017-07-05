@@ -25,7 +25,7 @@
 /*
  * @test
  * @key headful
- * @bug 8054143
+ * @bug 8054143 8163583
  * @summary Check if toBack method works correctly for a non-modal dialog
  *          having a visible Frame constructor.
  *

@@ -121,7 +121,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (metaspaceConstantPool == holder.getConstantPool().getMetaspaceConstantPool()) {
             this.constantPool = holder.getConstantPool();
         } else {
-            this.constantPool = compilerToVM().getConstantPool(null, constMethod + config.constMethodConstantsOffset);
+            this.constantPool = compilerToVM().getConstantPool(this);
         }
 
         final int nameIndex = UNSAFE.getChar(constMethod + config.constMethodNameIndexOffset);

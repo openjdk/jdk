@@ -93,10 +93,6 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
 }
 
 int os::get_native_stack(address* stack, int frames, int toSkip) {
-#ifdef _NMT_NOINLINE_
-  toSkip++;
-#endif
-
   int frame_idx = 0;
   int num_of_frames;  // number of frames captured
   frame fr = os::current_frame();

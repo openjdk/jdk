@@ -72,7 +72,6 @@ public class DateFormatRegression extends IntlTest {
     }
 
     public void Test4052408() {
-
         DateFormat fmt = DateFormat.getDateTimeInstance(DateFormat.SHORT,
                                                         DateFormat.SHORT, Locale.US);
         Date date = new Date(97, Calendar.MAY, 3, 8, 55);
@@ -164,7 +163,9 @@ public class DateFormatRegression extends IntlTest {
     }
 
     public void Test4059917() {
-        if (Locale.getDefault().equals(new Locale("hi", "IN"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesAsciiDigits(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -619,25 +620,6 @@ public class DateFormatRegression extends IntlTest {
                 logln("No way Jose");
             }
         }
-    }
-
-    /*
-      Synopsis: Chinese time zone CTT is not recogonized correctly.
-      Description: Platform Chinese Windows 95 - ** Time zone set to CST **
-      */
-    public void Test4108407() {
-
-        long l = System.currentTimeMillis();
-        logln("user.timezone = " + System.getProperty("user.timezone", "?"));
-        logln("Time Zone :" +
-                           DateFormat.getDateInstance().getTimeZone().getID());
-        logln("Default format :" +
-                           DateFormat.getDateInstance().format(new Date(l)));
-        logln("Full format :" +
-                           DateFormat.getDateInstance(DateFormat.FULL).format(new
-                                                                              Date(l)));
-        logln("*** Set host TZ to CST ***");
-        logln("*** THE RESULTS OF THIS TEST MUST BE VERIFIED MANUALLY ***");
     }
 
     /**

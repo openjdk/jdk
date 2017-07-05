@@ -28,7 +28,7 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: XMLDSigRI.java 1400021 2012-10-19 10:16:04Z coheigea $
@@ -58,6 +58,13 @@ public final class XMLDSigRI extends Provider {
         "(DOM XMLSignatureFactory; DOM KeyInfoFactory; " +
         "C14N 1.0, C14N 1.1, Exclusive C14N, Base64, Enveloped, XPath, " +
         "XPath2, XSLT TransformServices)";
+
+    private static final String VER =
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            public String run() {
+                return System.getProperty("java.specification.version");
+            }
+        });
 
     private static final class ProviderService extends Provider.Service {
 
@@ -129,7 +136,7 @@ public final class XMLDSigRI extends Provider {
 
     public XMLDSigRI() {
         /* We are the XMLDSig provider */
-        super("XMLDSig", 9.0d, INFO);
+        super("XMLDSig", VER, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

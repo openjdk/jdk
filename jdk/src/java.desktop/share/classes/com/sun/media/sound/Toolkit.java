@@ -52,7 +52,6 @@ public final class Toolkit {
         }
     }
 
-
     /**
      * Swaps bytes.
      * @throws ArrayOutOfBoundsException if len is not a multiple of 2.
@@ -68,7 +67,6 @@ public final class Toolkit {
         }
     }
 
-
     /**
      * Linear to DB scale conversion.
      */
@@ -77,7 +75,6 @@ public final class Toolkit {
         float dB = (float) (Math.log(((linear==0.0)?0.0001:linear))/Math.log(10.0) * 20.0);
         return dB;
     }
-
 
     /**
      * DB to linear scale conversion.
@@ -107,7 +104,6 @@ public final class Toolkit {
         }
         return bytes - (bytes % blockSize);
     }
-
 
     /*
      * gets the number of bytes needed to play the specified number of milliseconds
@@ -188,7 +184,6 @@ public final class Toolkit {
         }
     }
 
-
     static boolean isFullySpecifiedPCMFormat(AudioFormat format) {
         if (!format.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED)
             && !format.getEncoding().equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
@@ -203,7 +198,6 @@ public final class Toolkit {
         }
         return true;
     }
-
 
     public static AudioInputStream getPCMConvertedAudioInputStream(AudioInputStream ais) {
         // we can't open the device for non-PCM playback, so we have
@@ -231,5 +225,4 @@ public final class Toolkit {
 
         return ais;
     }
-
 }

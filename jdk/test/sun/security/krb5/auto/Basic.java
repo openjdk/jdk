@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 7152176
+ * @bug 7152176 8164437
  * @summary More krb5 tests
  * @compile -XDignore.symbol.file Basic.java
- * @run main/othervm Basic
+ * @run main/othervm
+ *      Basic jdk.security.jgss
+ * @run main/othervm --limit-modules java.security.jgss,jdk.security.auth
+ *      Basic java.security.jgss
  */
 
 import sun.security.jgss.GSSUtil;
@@ -60,5 +63,12 @@ public class Basic {
         b.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
         Context.handshake(s2, b);
+
+        // Bonus test for 8164437.
+        String moduleName = c.x().getClass().getModule().getName();
+        if (!moduleName.equals(args[0])) {
+            throw new Exception("Expected: " + args[0]
+                    + ". Actual: " + moduleName);
+        }
     }
 }

@@ -1478,7 +1478,7 @@ public class TIFFImageWriter extends ImageWriter {
                 (ExifParentTIFFTagSet.TAG_EXIF_IFD_POINTER);
             if(f != null && f.hasDirectory()) {
                 // Retrieve the Exif IFD.
-                exifIFD = (TIFFIFD)f.getDirectory();
+                exifIFD = TIFFIFD.getDirectoryAsIFD(f.getDirectory());
             } else if(isPrimaryIFD) {
                 // Create the Exif IFD.
                 List<TIFFTagSet> exifTagSets = new ArrayList<TIFFTagSet>(1);
@@ -3621,6 +3621,8 @@ public class TIFFImageWriter extends ImageWriter {
         colorConverter = null;
         streamMetadata = null;
         imageMetadata = null;
+
+        isRescaling = false;
 
         isWritingSequence = false;
         isWritingEmpty = false;

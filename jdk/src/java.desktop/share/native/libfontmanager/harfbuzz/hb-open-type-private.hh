@@ -101,10 +101,8 @@ static inline Type& StructAfter(TObject &X)
 #define DEFINE_SIZE_STATIC(size) \
   DEFINE_INSTANCE_ASSERTION (sizeof (*this) == (size)); \
   static const unsigned int static_size = (size); \
-  static const unsigned int min_size = (size)
-
-/* Size signifying variable-sized array */
-#define VAR 1
+  static const unsigned int min_size = (size); \
+  inline unsigned int get_size (void) const { return (size); }
 
 #define DEFINE_SIZE_UNION(size, _member) \
   DEFINE_INSTANCE_ASSERTION (this->u._member.static_size == (size)); \
@@ -185,7 +183,7 @@ struct hb_dispatch_context_t
 
 /* This limits sanitizing time on really broken fonts. */
 #ifndef HB_SANITIZE_MAX_EDITS
-#define HB_SANITIZE_MAX_EDITS 100
+#define HB_SANITIZE_MAX_EDITS 32
 #endif
 
 struct hb_sanitize_context_t :
@@ -399,9 +397,9 @@ struct Sanitizer
 
 struct hb_serialize_context_t
 {
-  inline hb_serialize_context_t (void *start, unsigned int size)
+  inline hb_serialize_context_t (void *start_, unsigned int size)
   {
-    this->start = (char *) start;
+    this->start = (char *) start_;
     this->end = this->start + size;
 
     this->ran_out_of_room = false;
@@ -495,10 +493,10 @@ struct hb_serialize_context_t
     return reinterpret_cast<Type *> (&obj);
   }
 
-  inline void truncate (void *head)
+  inline void truncate (void *new_head)
   {
-    assert (this->start < head && head <= this->head);
-    this->head = (char *) head;
+    assert (this->start < new_head && new_head <= this->head);
+    this->head = (char *) new_head;
   }
 
   unsigned int debug_depth;
@@ -665,6 +663,24 @@ typedef SHORT FWORD;
 /* 16-bit unsigned integer (USHORT) that describes a quantity in FUnits. */
 typedef USHORT UFWORD;
 
+/* 16-bit signed fixed number with the low 14 bits of fraction (2.14). */
+struct F2DOT14 : SHORT
+{
+  //inline float to_float (void) const { return ???; }
+  //inline void set_float (float f) { v.set (f * ???); }
+  public:
+  DEFINE_SIZE_STATIC (2);
+};
+
+/* 32-bit signed fixed-point number (16.16). */
+struct Fixed: LONG
+{
+  //inline float to_float (void) const { return ???; }
+  //inline void set_float (float f) { v.set (f * ???); }
+  public:
+  DEFINE_SIZE_STATIC (4);
+};
+
 /* Date represented in number of seconds since 12:00 midnight, January 1,
  * 1904. The value is represented as a signed 64-bit integer. */
 struct LONGDATETIME
@@ -742,9 +758,10 @@ struct CheckSum : ULONG
  * Version Numbers
  */
 
+template <typename FixedType=USHORT>
 struct FixedVersion
 {
-  inline uint32_t to_int (void) const { return (major << 16) + minor; }
+  inline uint32_t to_int (void) const { return (major << (sizeof(FixedType) * 8)) + minor; }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -752,10 +769,10 @@ struct FixedVersion
     return_trace (c->check_struct (this));
   }
 
-  USHORT major;
-  USHORT minor;
+  FixedType major;
+  FixedType minor;
   public:
-  DEFINE_SIZE_STATIC (4);
+  DEFINE_SIZE_STATIC (2 * sizeof(FixedType));
 };
 
 

@@ -56,9 +56,7 @@ public interface Port extends Line {
      */
     class Info extends Line.Info {
 
-
         // AUDIO PORT TYPE DEFINES
-
 
         // SOURCE PORTS
 
@@ -78,7 +76,6 @@ public interface Port extends Line {
          */
         public static final Info COMPACT_DISC = new Info(Port.class,"COMPACT_DISC", true);
 
-
         // TARGET PORTS
 
         /**
@@ -97,18 +94,14 @@ public interface Port extends Line {
          */
         public static final Info LINE_OUT = new Info(Port.class,"LINE_OUT", false);
 
-
         // FUTURE DIRECTIONS...
 
         // telephone
         // DAT
         // DVD
 
-
-        // INSTANCE VARIABLES
-
-        private String name;
-        private boolean isSource;
+        private final String name;
+        private final boolean isSource;
 
         /**
          * Constructs a port's info object from the information given. This

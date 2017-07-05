@@ -126,13 +126,17 @@ bool ClassLoaderData::claim() {
 // ClassLoaderData, no other non-GC thread has knowledge of the anonymous class while
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
-  assert(_keep_alive >= 0, "Invalid keep alive count");
-  _keep_alive++;
+  if (is_anonymous()) {
+    assert(_keep_alive >= 0, "Invalid keep alive increment count");
+    _keep_alive++;
+  }
 }
 
 void ClassLoaderData::dec_keep_alive() {
-  assert(_keep_alive > 0, "Invalid keep alive count");
-  _keep_alive--;
+  if (is_anonymous()) {
+    assert(_keep_alive > 0, "Invalid keep alive decrement count");
+    _keep_alive--;
+  }
 }
 
 void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
@@ -1173,7 +1177,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
     out->print("NULL class_loader");
   } else {
-    out->print("class loader " INTPTR_FORMAT, p2i(this));
+    out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_value_on(out);
   }
 }
