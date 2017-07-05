@@ -1353,6 +1353,16 @@ void Arguments::set_g1_gc_flags() {
       MarkStackSize / K, MarkStackSizeMax / K);
     tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
+
+  if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
+    // In G1, we want the default GC overhead goal to be higher than
+    // say in PS. So we set it here to 10%. Otherwise the heap might
+    // be expanded more aggressively than we would like it to. In
+    // fact, even 10% seems to not be high enough in some cases
+    // (especially small GC stress tests that the main thing they do
+    // is allocation). We might consider increase it further.
+    FLAG_SET_DEFAULT(GCTimeRatio, 9);
+  }
 }
 
 void Arguments::set_heap_size() {

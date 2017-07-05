@@ -363,7 +363,7 @@ bool defaultStream::has_log_file() {
   return _log_file != NULL;
 }
 
-static const char* make_log_name(const char* log_name, const char* force_directory, char* buf) {
+static const char* make_log_name(const char* log_name, const char* force_directory) {
   const char* basename = log_name;
   char file_sep = os::file_separator()[0];
   const char* cp;
@@ -374,6 +374,27 @@ static const char* make_log_name(const char* log_name, const char* force_directo
   }
   const char* nametail = log_name;
 
+  // Compute buffer length
+  size_t buffer_length;
+  if (force_directory != NULL) {
+    buffer_length = strlen(force_directory) + strlen(os::file_separator()) +
+                    strlen(basename) + 1;
+  } else {
+    buffer_length = strlen(log_name) + 1;
+  }
+
+  const char* star = strchr(basename, '*');
+  int star_pos = (star == NULL) ? -1 : (star - nametail);
+
+  char pid[32];
+  if (star_pos >= 0) {
+    jio_snprintf(pid, sizeof(pid), "%u", os::current_process_id());
+    buffer_length += strlen(pid);
+  }
+
+  // Create big enough buffer.
+  char *buf = NEW_C_HEAP_ARRAY(char, buffer_length);
+
   strcpy(buf, "");
   if (force_directory != NULL) {
     strcat(buf, force_directory);
@@ -381,14 +402,11 @@ static const char* make_log_name(const char* log_name, const char* force_directo
     nametail = basename;       // completely skip directory prefix
   }
 
-  const char* star = strchr(basename, '*');
-  int star_pos = (star == NULL) ? -1 : (star - nametail);
-
   if (star_pos >= 0) {
     // convert foo*bar.log to foo123bar.log
     int buf_pos = (int) strlen(buf);
     strncpy(&buf[buf_pos], nametail, star_pos);
-    sprintf(&buf[buf_pos + star_pos], "%u", os::current_process_id());
+    strcpy(&buf[buf_pos + star_pos], pid);
     nametail += star_pos + 1;  // skip prefix and star
   }
 
@@ -399,20 +417,23 @@ static const char* make_log_name(const char* log_name, const char* force_directo
 void defaultStream::init_log() {
   // %%% Need a MutexLocker?
   const char* log_name = LogFile != NULL ? LogFile : "hotspot.log";
-  char buf[O_BUFLEN*2];
-  const char* try_name = make_log_name(log_name, NULL, buf);
+  const char* try_name = make_log_name(log_name, NULL);
   fileStream* file = new(ResourceObj::C_HEAP) fileStream(try_name);
   if (!file->is_open()) {
     // Try again to open the file.
     char warnbuf[O_BUFLEN*2];
-    sprintf(warnbuf, "Warning:  Cannot open log file: %s\n", try_name);
+    jio_snprintf(warnbuf, sizeof(warnbuf),
+                 "Warning:  Cannot open log file: %s\n", try_name);
     // Note:  This feature is for maintainer use only.  No need for L10N.
     jio_print(warnbuf);
-    try_name = make_log_name("hs_pid*.log", os::get_temp_directory(), buf);
-    sprintf(warnbuf, "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
+    FREE_C_HEAP_ARRAY(char, try_name);
+    try_name = make_log_name("hs_pid*.log", os::get_temp_directory());
+    jio_snprintf(warnbuf, sizeof(warnbuf),
+                 "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
     jio_print(warnbuf);
     delete file;
     file = new(ResourceObj::C_HEAP) fileStream(try_name);
+    FREE_C_HEAP_ARRAY(char, try_name);
   }
   if (file->is_open()) {
     _log_file = file;

@@ -1487,11 +1487,11 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
                                         Node*& contended_phi_rawmem,
                                         Node* old_eden_top, Node* new_eden_top,
                                         Node* length) {
+   enum { fall_in_path = 1, pf_path = 2 };
    if( UseTLAB && AllocatePrefetchStyle == 2 ) {
       // Generate prefetch allocation with watermark check.
       // As an allocation hits the watermark, we will prefetch starting
       // at a "distance" away from watermark.
-      enum { fall_in_path = 1, pf_path = 2 };
 
       Node *pf_region = new (C, 3) RegionNode(3);
       Node *pf_phi_rawmem = new (C, 3) PhiNode( pf_region, Type::MEMORY,
@@ -1570,6 +1570,45 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       needgc_false = pf_region;
       contended_phi_rawmem = pf_phi_rawmem;
       i_o = pf_phi_abio;
+   } else if( UseTLAB && AllocatePrefetchStyle == 3 ) {
+      // Insert a prefetch for each allocation only on the fast-path
+      Node *pf_region = new (C, 3) RegionNode(3);
+      Node *pf_phi_rawmem = new (C, 3) PhiNode( pf_region, Type::MEMORY,
+                                                TypeRawPtr::BOTTOM );
+
+      // Generate several prefetch instructions only for arrays.
+      uint lines = (length != NULL) ? AllocatePrefetchLines : 1;
+      uint step_size = AllocatePrefetchStepSize;
+      uint distance = AllocatePrefetchDistance;
+
+      // Next cache address.
+      Node *cache_adr = new (C, 4) AddPNode(old_eden_top, old_eden_top,
+                                            _igvn.MakeConX(distance));
+      transform_later(cache_adr);
+      cache_adr = new (C, 2) CastP2XNode(needgc_false, cache_adr);
+      transform_later(cache_adr);
+      Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
+      cache_adr = new (C, 3) AndXNode(cache_adr, mask);
+      transform_later(cache_adr);
+      cache_adr = new (C, 2) CastX2PNode(cache_adr);
+      transform_later(cache_adr);
+
+      // Prefetch
+      Node *prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, cache_adr );
+      prefetch->set_req(0, needgc_false);
+      transform_later(prefetch);
+      contended_phi_rawmem = prefetch;
+      Node *prefetch_adr;
+      distance = step_size;
+      for ( uint i = 1; i < lines; i++ ) {
+        prefetch_adr = new (C, 4) AddPNode( cache_adr, cache_adr,
+                                            _igvn.MakeConX(distance) );
+        transform_later(prefetch_adr);
+        prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, prefetch_adr );
+        transform_later(prefetch);
+        distance += step_size;
+        contended_phi_rawmem = prefetch;
+      }
    } else if( AllocatePrefetchStyle > 0 ) {
       // Insert a prefetch for each allocation only on the fast-path
       Node *prefetch_adr;
