@@ -338,6 +338,10 @@ public class JImageGenerator {
     }
 
     public static class JModTask {
+        static final java.util.spi.ToolProvider JMOD_TOOL =
+            java.util.spi.ToolProvider.findFirst("jmod").orElseThrow(() ->
+                new RuntimeException("jmod tool not found")
+            );
 
         private final List<Path> classpath = new ArrayList<>();
         private final List<Path> libs = new ArrayList<>();
@@ -477,7 +481,8 @@ public class JImageGenerator {
             String[] args = optionsJMod(cmd);
             System.err.println("jmod options: " + optionsPrettyPrint(args));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            int exitCode = jdk.tools.jmod.Main.run(args, new PrintStream(baos));
+            PrintStream ps = new PrintStream(baos);
+            int exitCode = JMOD_TOOL.run(ps, ps, args);
             String msg = new String(baos.toByteArray());
             return new Result(exitCode, msg, output);
         }
@@ -556,6 +561,10 @@ public class JImageGenerator {
     }
 
     public static class JLinkTask {
+        static final java.util.spi.ToolProvider JLINK_TOOL =
+            java.util.spi.ToolProvider.findFirst("jlink").orElseThrow(() ->
+                new RuntimeException("jlink tool not found")
+            );
 
         private final List<Path> jars = new ArrayList<>();
         private final List<Path> jmods = new ArrayList<>();
@@ -691,7 +700,8 @@ public class JImageGenerator {
             String[] args = optionsJLink();
             System.err.println("jlink options: " + optionsPrettyPrint(args));
             StringWriter writer = new StringWriter();
-            int exitCode = jdk.tools.jlink.internal.Main.run(args, new PrintWriter(writer));
+            PrintWriter pw = new PrintWriter(writer);
+            int exitCode = JLINK_TOOL.run(pw, pw, args);
             return new Result(exitCode, writer.toString(), output);
         }
 
@@ -699,7 +709,8 @@ public class JImageGenerator {
             String[] args = optionsPostProcessJLink();
             System.err.println("jlink options: " + optionsPrettyPrint(args));
             StringWriter writer = new StringWriter();
-            int exitCode = jdk.tools.jlink.internal.Main.run(args, new PrintWriter(writer));
+            PrintWriter pw = new PrintWriter(writer);
+            int exitCode = JLINK_TOOL.run(pw, pw, args);
             return new Result(exitCode, writer.toString(), output);
         }
     }

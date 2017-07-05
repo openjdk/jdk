@@ -154,7 +154,6 @@ module java.base {
     exports jdk.internal.module to
         java.instrument,
         java.management,
-        jdk.dynalink,
         jdk.jartool,
         jdk.jlink;
     exports jdk.internal.misc to
