@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import common.ToolResults;
  * tool options
  */
 abstract public class JstatResults extends ToolResults {
+
+    private static final float FLOAT_COMPARISON_TOLERANCE = 0.0011f;
 
     public JstatResults(ToolResults rawResults) {
         super(rawResults);
@@ -110,38 +112,61 @@ abstract public class JstatResults extends ToolResults {
      * space has been utilized
      */
     public static void assertSpaceUtilization(JstatResults measurement, float targetMemoryUsagePercent) {
+        assertSpaceUtilization(measurement, targetMemoryUsagePercent, targetMemoryUsagePercent);
+    }
+
+    /**
+     * Helper function to assert the utilization of the space
+     *
+     * @param measurement - measurement results to analyze
+     * @param targetMetaspaceUsagePercent -assert that not less than this amount
+     * of metaspace has been utilized
+     * @param targetOldSpaceUsagePercent -assert that not less than this amount
+     * of old space has been utilized
+     */
+    public static void assertSpaceUtilization(JstatResults measurement, float targetMetaspaceUsagePercent,
+            float targetOldSpaceUsagePercent) {
 
         if (measurement.valueExists("OU")) {
             float OC = measurement.getFloatValue("OC");
             float OU = measurement.getFloatValue("OU");
-            assertThat((OU / OC) > targetMemoryUsagePercent, "Old space utilization should be > "
-                    + (targetMemoryUsagePercent * 100) + "%, actually OU / OC = " + (OU / OC));
+            assertThat((OU / OC) > targetOldSpaceUsagePercent, "Old space utilization should be > "
+                    + (targetOldSpaceUsagePercent * 100) + "%, actually OU / OC = " + (OU / OC));
         }
 
         if (measurement.valueExists("MU")) {
             float MC = measurement.getFloatValue("MC");
             float MU = measurement.getFloatValue("MU");
-            assertThat((MU / MC) > targetMemoryUsagePercent, "Metaspace utilization should be > "
-                    + (targetMemoryUsagePercent * 100) + "%, actually MU / MC = " + (MU / MC));
+            assertThat((MU / MC) > targetMetaspaceUsagePercent, "Metaspace utilization should be > "
+                    + (targetMetaspaceUsagePercent * 100) + "%, actually MU / MC = " + (MU / MC));
         }
 
         if (measurement.valueExists("O")) {
             float O = measurement.getFloatValue("O");
-            assertThat(O > targetMemoryUsagePercent * 100, "Old space utilization should be > "
-                    + (targetMemoryUsagePercent * 100) + "%, actually O = " + O);
+            assertThat(O > targetOldSpaceUsagePercent * 100, "Old space utilization should be > "
+                    + (targetOldSpaceUsagePercent * 100) + "%, actually O = " + O);
         }
 
         if (measurement.valueExists("M")) {
             float M = measurement.getFloatValue("M");
-            assertThat(M > targetMemoryUsagePercent * 100, "Metaspace utilization should be > "
-                    + (targetMemoryUsagePercent * 100) + "%, actually M = " + M);
+            assertThat(M > targetMetaspaceUsagePercent * 100, "Metaspace utilization should be > "
+                    + (targetMetaspaceUsagePercent * 100) + "%, actually M = " + M);
         }
     }
 
-    private static void assertThat(boolean result, String message) {
+    public static void assertThat(boolean result, String message) {
         if (!result) {
             throw new RuntimeException(message);
         }
     }
 
+    public static boolean checkFloatIsSum(float sum, float... floats) {
+        for (float f : floats) {
+            sum -= f;
+        }
+
+        return Math.abs(sum) <= FLOAT_COMPARISON_TOLERANCE;
+    }
+
+    abstract public void assertConsistency();
 }

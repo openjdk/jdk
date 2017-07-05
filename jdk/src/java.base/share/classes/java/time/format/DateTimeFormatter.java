@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,105 +150,106 @@ import java.util.Set;
  * implementation of {@code java.text.Format}.
  *
  * <h3 id="predefined">Predefined Formatters</h3>
- * <table summary="Predefined Formatters" cellpadding="2" cellspacing="3" border="0" >
+ * <table class="striped">
+ * <caption>Predefined Formatters</caption>
  * <thead>
- * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left">Formatter</th>
- * <th class="colFirst" align="left">Description</th>
- * <th class="colLast" align="left">Example</th>
+ * <tr>
+ * <th style="text-align:left">Formatter</th>
+ * <th style="text-align:left">Description</th>
+ * <th style="text-align:left">Example</th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr class="rowColor">
+ * <tr>
  * <td>{@link #ofLocalizedDate ofLocalizedDate(dateStyle)} </td>
  * <td> Formatter with date style from the locale </td>
  * <td> '2011-12-03'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ofLocalizedTime ofLocalizedTime(timeStyle)} </td>
  * <td> Formatter with time style from the locale </td>
  * <td> '10:15:30'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateTimeStyle)} </td>
  * <td> Formatter with a style for date and time from the locale</td>
  * <td> '3 Jun 2008 11:05:30'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateStyle,timeStyle)}
  * </td>
  * <td> Formatter with date and time styles from the locale </td>
  * <td> '3 Jun 2008 11:05'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #BASIC_ISO_DATE}</td>
  * <td>Basic ISO date </td> <td>'20111203'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_LOCAL_DATE}</td>
  * <td> ISO Local Date </td>
  * <td>'2011-12-03'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_OFFSET_DATE}</td>
  * <td> ISO Date with offset </td>
  * <td>'2011-12-03+01:00'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_DATE}</td>
  * <td> ISO Date with or without offset </td>
  * <td> '2011-12-03+01:00'; '2011-12-03'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_LOCAL_TIME}</td>
  * <td> Time without offset </td>
  * <td>'10:15:30'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_OFFSET_TIME}</td>
  * <td> Time with offset </td>
  * <td>'10:15:30+01:00'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_TIME}</td>
  * <td> Time with or without offset </td>
  * <td>'10:15:30+01:00'; '10:15:30'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_LOCAL_DATE_TIME}</td>
  * <td> ISO Local Date and Time </td>
  * <td>'2011-12-03T10:15:30'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_OFFSET_DATE_TIME}</td>
  * <td> Date Time with Offset
  * </td><td>2011-12-03T10:15:30+01:00'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_ZONED_DATE_TIME}</td>
  * <td> Zoned Date Time </td>
  * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_DATE_TIME}</td>
  * <td> Date and time with ZoneId </td>
  * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_ORDINAL_DATE}</td>
  * <td> Year and day of year </td>
  * <td>'2012-337'</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #ISO_WEEK_DATE}</td>
  * <td> Year and Week </td>
  * <td>2012-W48-6'</td></tr>
- * <tr class="altColor">
+ * <tr>
  * <td> {@link #ISO_INSTANT}</td>
  * <td> Date and Time of an Instant </td>
  * <td>'2011-12-03T10:15:30Z' </td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td> {@link #RFC_1123_DATE_TIME}</td>
  * <td> RFC 1123 / RFC 822 </td>
  * <td>'Tue, 3 Jun 2008 11:05:30 GMT'</td>

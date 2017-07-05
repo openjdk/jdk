@@ -50,7 +50,7 @@ public class CallerSensitiveTest {
         if (args.length > 0 && args[0].equals("sm")) {
             sm = true;
             PermissionCollection perms = new Permissions();
-            perms.add(new StackFramePermission("retainClassReference"));
+            perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
             Policy.setPolicy(new Policy() {
                 @Override
                 public boolean implies(ProtectionDomain domain, Permission p) {

@@ -40,10 +40,8 @@ import sun.nio.cs.StreamEncoder;
  *
  * <p> Each invocation of a write() method causes the encoding converter to be
  * invoked on the given character(s).  The resulting bytes are accumulated in a
- * buffer before being written to the underlying output stream.  The size of
- * this buffer may be specified, but by default it is large enough for most
- * purposes.  Note that the characters passed to the write() methods are not
- * buffered.
+ * buffer before being written to the underlying output stream.  Note that the
+ * characters passed to the write() methods are not buffered.
  *
  * <p> For top efficiency, consider wrapping an OutputStreamWriter within a
  * BufferedWriter so as to avoid frequent converter invocations.  For example:
