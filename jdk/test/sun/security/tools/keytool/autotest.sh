@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ case "$OS" in
     ARCH=`isainfo`
     case "$ARCH" in
       sparc* )
-        PF="solaris-sparc"
+        NSSDIR="/usr/lib/mps"
         ;;
       * )
         echo "Will not run test on: Solaris ${ARCH}"
@@ -64,7 +64,7 @@ case "$OS" in
     FS="/"
     case "$ARCH" in
       i[3-6]86 )
-        PF="linux-i586"
+        NSSDIR="/usr/lib"
         ;;
       * )
         echo "Will not run test on: Linux ${ARCH}"
@@ -91,7 +91,7 @@ chmod u+w key3.db
 chmod u+w cert8.db
 
 echo | ${TESTJAVA}${FS}bin${FS}java -Dnss \
-   -Dnss.lib=${NSS}${FS}lib${FS}${PF}${FS}${LIBNAME} \
+   -Dnss.lib=${NSSDIR}${FS}${LIBNAME} \
    KeyToolTest
 status=$?
 

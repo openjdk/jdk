@@ -1142,9 +1142,26 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # For now, assume all of DST-observing Canada will fall into line with the
 # new US DST rules,
 
+# From Chris Walton (2011-12-01)
+# In the first of Tammy Hardwick's articles
+# <a href="http://www.ilovecreston.com/?p=articles&t=spec&ar=260">
+# http://www.ilovecreston.com/?p=articles&t=spec&ar=260
+# </a>
+# she quotes the Friday November 1/1918 edition of the Creston Review.
+# The quote includes these two statements:
+# 'Sunday the CPR went back to the old system of time...'
+# '... The daylight saving scheme was dropped all over Canada at the same time,'
+# These statements refer to a transition from daylight time to standard time
+# that occurred nationally on Sunday October 27/1918.  This transition was
+# also documented in the Saturday October 26/1918 edition of the Toronto Star.
+
+# In light of that evidence, we alter the date from the earlier believed
+# Oct 31, to Oct 27, 1918 (and Sunday is a more likely transition day
+# than Thursday) in all Canadian rulesets.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Canada	1918	only	-	Apr	14	2:00	1:00	D
-Rule	Canada	1918	only	-	Oct	31	2:00	0	S
+Rule	Canada	1918	only	-	Oct	27	2:00	0	S
 Rule	Canada	1942	only	-	Feb	 9	2:00	1:00	W # War
 Rule	Canada	1945	only	-	Aug	14	23:00u	1:00	P # Peace
 Rule	Canada	1945	only	-	Sep	30	2:00	0	S
@@ -1667,7 +1684,7 @@ Zone America/Atikokan	-6:06:28 -	LMT	1895
 Rule	Winn	1916	only	-	Apr	23	0:00	1:00	D
 Rule	Winn	1916	only	-	Sep	17	0:00	0	S
 Rule	Winn	1918	only	-	Apr	14	2:00	1:00	D
-Rule	Winn	1918	only	-	Oct	31	2:00	0	S
+Rule	Winn	1918	only	-	Oct	27	2:00	0	S
 Rule	Winn	1937	only	-	May	16	2:00	1:00	D
 Rule	Winn	1937	only	-	Sep	26	2:00	0	S
 Rule	Winn	1942	only	-	Feb	 9	2:00	1:00	W # War
@@ -1750,7 +1767,7 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Regina	1918	only	-	Apr	14	2:00	1:00	D
-Rule	Regina	1918	only	-	Oct	31	2:00	0	S
+Rule	Regina	1918	only	-	Oct	27	2:00	0	S
 Rule	Regina	1930	1934	-	May	Sun>=1	0:00	1:00	D
 Rule	Regina	1930	1934	-	Oct	Sun>=1	0:00	0	S
 Rule	Regina	1937	1941	-	Apr	Sun>=8	0:00	1:00	D
@@ -1787,7 +1804,7 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Edm	1918	1919	-	Apr	Sun>=8	2:00	1:00	D
-Rule	Edm	1918	only	-	Oct	31	2:00	0	S
+Rule	Edm	1918	only	-	Oct	27	2:00	0	S
 Rule	Edm	1919	only	-	May	27	2:00	0	S
 Rule	Edm	1920	1923	-	Apr	lastSun	2:00	1:00	D
 Rule	Edm	1920	only	-	Oct	lastSun	2:00	0	S
@@ -1817,9 +1834,68 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # Dawson Creek uses MST.  Much of east BC is like Edmonton.
 # Matthews and Vincent (1998) write that Creston is like Dawson Creek.
 
+# It seems though that (re: Creston) is not entirely correct:
+
+# From Chris Walton (2011-12-01):
+# There are two areas within the Canadian province of British Columbia
+# that do not currently observe daylight saving:
+# a) The Creston Valley (includes the town of Creston and surrounding area)
+# b) The eastern half of the Peace River Regional District
+# (includes the cities of Dawson Creek and Fort St. John)
+
+# Earlier this year I stumbled across a detailed article about the time
+# keeping history of Creston; it was written by Tammy Hardwick who is the
+# manager of the Creston & District Museum. The article was written in May 2009.
+# <a href="http://www.ilovecreston.com/?p=articles&t=spec&ar=260">
+# http://www.ilovecreston.com/?p=articles&t=spec&ar=260
+# </a>
+# According to the article, Creston has not changed its clocks since June 1918.
+# i.e. Creston has been stuck on UTC-7 for 93 years.
+# Dawson Creek, on the other hand, changed its clocks as recently as April 1972.
+
+# Unfortunately the exact date for the time change in June 1918 remains
+# unknown and will be difficult to ascertain.  I e-mailed Tammy a few months
+# ago to ask if Sunday June 2 was a reasonable guess.  She said it was just
+# as plausible as any other date (in June).  She also said that after writing the
+# article she had discovered another time change in 1916; this is the subject
+# of another article which she wrote in October 2010.
+# <a href="http://www.creston.museum.bc.ca/index.php?module=comments&uop=view_comment&cm+id=56">
+# http://www.creston.museum.bc.ca/index.php?module=comments&uop=view_comment&cm+id=56
+# </a>
+
+# Here is a summary of the three clock change events in Creston's history:
+# 1. 1884 or 1885: adoption of Mountain Standard Time (GMT-7)
+# Exact date unknown
+# 2. Oct 1916: switch to Pacific Standard Time (GMT-8) 
+# Exact date in October unknown;  Sunday October 1 is a reasonable guess.
+# 3. June 1918: switch to Pacific Daylight Time (GMT-7)
+# Exact date in June unknown; Sunday June 2 is a reasonable guess.
+# note#1:
+# On Oct 27/1918 when daylight saving ended in the rest of Canada,
+# Creston did not change its clocks.
+# note#2:
+# During WWII when the Federal Government legislated a mandatory clock change,
+# Creston did not oblige.
+# note#3:
+# There is no guarantee that Creston will remain on Mountain Standard Time
+# (UTC-7) forever.
+# The subject was debated at least once this year by the town Council.
+# <a href="http://www.bclocalnews.com/kootenay_rockies/crestonvalleyadvance/news/116760809.html">
+# http://www.bclocalnews.com/kootenay_rockies/crestonvalleyadvance/news/116760809.html
+# </a>
+
+# During a period WWII, summer time (Daylight saying) was mandatory in Canada.
+# In Creston, that was handled by shifting the area to PST (-8:00) then applying
+# summer time to cause the offset to be -7:00, the same as it had been before
+# the change.  It can be argued that the timezone abbreviation during this
+# period should be PDT rather than MST, but that doesn't seem important enough
+# (to anyone) to further complicate the rules.
+
+# The transition dates (and times) are guesses.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
-Rule	Vanc	1918	only	-	Oct	31	2:00	0	S
+Rule	Vanc	1918	only	-	Oct	27	2:00	0	S
 Rule	Vanc	1942	only	-	Feb	 9	2:00	1:00	W # War
 Rule	Vanc	1945	only	-	Aug	14	23:00u	1:00	P # Peace
 Rule	Vanc	1945	only	-	Sep	30	2:00	0	S
@@ -1835,7 +1911,10 @@ Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 			-8:00	Canada	P%sT	1947
 			-8:00	Vanc	P%sT	1972 Aug 30 2:00
 			-7:00	-	MST
-
+Zone America/Creston	-7:46:04 -	LMT	1884
+			-7:00	-	MST	1916 Oct 1
+			-8:00	-	PST	1918 Jun 2
+			-7:00	-	MST
 
 # Northwest Territories, Nunavut, Yukon
 
@@ -2712,6 +2791,34 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # <a href="http://www.timeanddate.com/news/time/cuba-starts-dst-2011.html">
 # http://www.timeanddate.com/news/time/cuba-starts-dst-2011.html
 # </a>
+#
+# From Steffen Thorsen (2011-10-30)
+# Cuba will end DST two weeks later this year. Instead of going back 
+# tonight, it has been delayed to 2011-11-13 at 01:00.
+#
+# One source (Spanish)
+# <a href="http://www.radioangulo.cu/noticias/cuba/17105-cuba-restablecera-el-horario-del-meridiano-de-greenwich.html">
+# http://www.radioangulo.cu/noticias/cuba/17105-cuba-restablecera-el-horario-del-meridiano-de-greenwich.html
+# </a>
+#
+# Our page:
+# <a href="http://www.timeanddate.com/news/time/cuba-time-changes-2011.html">
+# http://www.timeanddate.com/news/time/cuba-time-changes-2011.html
+# </a>
+# 
+# From Steffen Thorsen (2012-03-01)
+# According to Radio Reloj, Cuba will start DST on Midnight between March 
+# 31 and April 1.
+# 
+# Radio Reloj has the following info (Spanish):
+# <a href="http://www.radioreloj.cu/index.php/noticias-radio-reloj/71-miscelaneas/7529-cuba-aplicara-el-horario-de-verano-desde-el-1-de-abril">
+# http://www.radioreloj.cu/index.php/noticias-radio-reloj/71-miscelaneas/7529-cuba-aplicara-el-horario-de-verano-desde-el-1-de-abril
+# </a>
+#
+# Our info on it:
+# <a href="http://www.timeanddate.com/news/time/cuba-starts-dst-2012.html">
+# http://www.timeanddate.com/news/time/cuba-starts-dst-2012.html
+# </a>
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
@@ -2743,12 +2850,15 @@ Rule	Cuba	1997	only	-	Oct	12	0:00s	0	S
 Rule	Cuba	1998	1999	-	Mar	lastSun	0:00s	1:00	D
 Rule	Cuba	1998	2003	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2000	2004	-	Apr	Sun>=1	0:00s	1:00	D
-Rule	Cuba	2006	max	-	Oct	lastSun	0:00s	0	S
+Rule	Cuba	2006	2010	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2008	only	-	Mar	Sun>=15	0:00s	1:00	D
 Rule	Cuba	2009	2010	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2011	only	-	Mar	Sun>=15	0:00s	1:00	D
-Rule	Cuba	2012	max	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2011	only	-	Nov	13	0:00s	0	S
+Rule	Cuba	2012	only	-	Apr	1	0:00s	1:00	D
+Rule	Cuba	2012	max	-	Oct	lastSun	0:00s	0	S
+Rule	Cuba	2013	max	-	Mar	Sun>=8	0:00s	1:00	D
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890
@@ -2882,6 +2992,29 @@ Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 # From Stephen Colebourne (2007-02-22):
 # Some IATA info: Haiti won't be having DST in 2007.
 
+# From Steffen Thorsen (2012-03-11):
+# According to several news sources, Haiti will observe DST this year,
+# apparently using the same start and end date as USA/Canada.
+# So this means they have already changed their time.
+#
+# (Sources in French):
+# <a href="http://www.alterpresse.org/spip.php?article12510">
+# http://www.alterpresse.org/spip.php?article12510
+# </a>
+# <a href="http://radiovision2000haiti.net/home/?p=13253">
+# http://radiovision2000haiti.net/home/?p=13253
+# </a>
+#
+# Our coverage:
+# <a href="http://www.timeanddate.com/news/time/haiti-dst-2012.html">
+# http://www.timeanddate.com/news/time/haiti-dst-2012.html
+# </a>
+
+# From Arthur David Olson (2012-03-11):
+# The alterpresse.org source seems to show a US-style leap from 2:00 a.m. to
+# 3:00 a.m. rather than the traditional Haitian jump at midnight.
+# Assume a US-style fall back as well XXX.
+# Do not yet assume that the change carries forward past 2012 XXX.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Haiti	1983	only	-	May	8	0:00	1:00	D
@@ -2893,6 +3026,8 @@ Rule	Haiti	1988	1997	-	Apr	Sun>=1	1:00s	1:00	D
 Rule	Haiti	1988	1997	-	Oct	lastSun	1:00s	0	S
 Rule	Haiti	2005	2006	-	Apr	Sun>=1	0:00	1:00	D
 Rule	Haiti	2005	2006	-	Oct	lastSun	0:00	0	S
+Rule	Haiti	2012	only	-	Mar	Sun>=8	2:00	1:00	D
+Rule	Haiti	2012	only	-	Nov	Sun>=1	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 			-4:49	-	PPMT	1917 Jan 24 12:00 # P-a-P MT

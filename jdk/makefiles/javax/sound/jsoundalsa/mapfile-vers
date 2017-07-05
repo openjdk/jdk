@@ -1,0 +1,82 @@
+#
+# Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define library interface.
+
+SUNWprivate_1.1 {
+	global:
+            Java_com_sun_media_sound_DirectAudioDeviceProvider_nGetNumDevices;
+            Java_com_sun_media_sound_DirectAudioDeviceProvider_nNewDirectAudioDeviceInfo;
+            Java_com_sun_media_sound_DirectAudioDevice_nAvailable;
+            Java_com_sun_media_sound_DirectAudioDevice_nClose;
+            Java_com_sun_media_sound_DirectAudioDevice_nFlush;
+            Java_com_sun_media_sound_DirectAudioDevice_nGetBufferSize;
+            Java_com_sun_media_sound_DirectAudioDevice_nGetBytePosition;
+            Java_com_sun_media_sound_DirectAudioDevice_nGetFormats;
+            Java_com_sun_media_sound_DirectAudioDevice_nIsStillDraining;
+            Java_com_sun_media_sound_DirectAudioDevice_nOpen;
+            Java_com_sun_media_sound_DirectAudioDevice_nRead;
+            Java_com_sun_media_sound_DirectAudioDevice_nRequiresServicing;
+            Java_com_sun_media_sound_DirectAudioDevice_nService;
+            Java_com_sun_media_sound_DirectAudioDevice_nSetBytePosition;
+            Java_com_sun_media_sound_DirectAudioDevice_nStart;
+            Java_com_sun_media_sound_DirectAudioDevice_nStop;
+            Java_com_sun_media_sound_DirectAudioDevice_nWrite;
+            Java_com_sun_media_sound_MidiInDeviceProvider_nGetDescription;
+            Java_com_sun_media_sound_MidiInDeviceProvider_nGetName;
+            Java_com_sun_media_sound_MidiInDeviceProvider_nGetNumDevices;
+            Java_com_sun_media_sound_MidiInDeviceProvider_nGetVendor;
+            Java_com_sun_media_sound_MidiInDeviceProvider_nGetVersion;
+            Java_com_sun_media_sound_MidiInDevice_nClose;
+            Java_com_sun_media_sound_MidiInDevice_nGetMessages;
+            Java_com_sun_media_sound_MidiInDevice_nGetTimeStamp;
+            Java_com_sun_media_sound_MidiInDevice_nOpen;
+            Java_com_sun_media_sound_MidiInDevice_nStart;
+            Java_com_sun_media_sound_MidiInDevice_nStop;
+            Java_com_sun_media_sound_MidiOutDeviceProvider_nGetDescription;
+            Java_com_sun_media_sound_MidiOutDeviceProvider_nGetName;
+            Java_com_sun_media_sound_MidiOutDeviceProvider_nGetNumDevices;
+            Java_com_sun_media_sound_MidiOutDeviceProvider_nGetVendor;
+            Java_com_sun_media_sound_MidiOutDeviceProvider_nGetVersion;
+            Java_com_sun_media_sound_MidiOutDevice_nClose;
+            Java_com_sun_media_sound_MidiOutDevice_nGetTimeStamp;
+            Java_com_sun_media_sound_MidiOutDevice_nOpen;
+            Java_com_sun_media_sound_MidiOutDevice_nSendLongMessage;
+            Java_com_sun_media_sound_MidiOutDevice_nSendShortMessage;
+            Java_com_sun_media_sound_PortMixerProvider_nGetNumDevices;
+            Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo;
+            Java_com_sun_media_sound_PortMixer_nClose;
+            Java_com_sun_media_sound_PortMixer_nControlGetFloatValue;
+            Java_com_sun_media_sound_PortMixer_nControlGetIntValue;
+            Java_com_sun_media_sound_PortMixer_nControlSetFloatValue;
+            Java_com_sun_media_sound_PortMixer_nControlSetIntValue;
+            Java_com_sun_media_sound_PortMixer_nGetControls;
+            Java_com_sun_media_sound_PortMixer_nGetPortCount;
+            Java_com_sun_media_sound_PortMixer_nGetPortName;
+            Java_com_sun_media_sound_PortMixer_nGetPortType;
+            Java_com_sun_media_sound_PortMixer_nOpen;
+	local:
+	    *;
+};

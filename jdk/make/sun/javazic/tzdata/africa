@@ -790,6 +790,37 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # wall clock time (i.e. 11pm UTC), but that's what I would assume. It has
 # also been like that in the past.
 
+# From Alexander Krivenyshev (2012-03-09):
+# According to Infom&eacute;diaire web site from Morocco (infomediaire.ma),
+# on March 9, 2012, (in French) Heure l&eacute;gale:
+# Le Maroc adopte officiellement l'heure d'&eacute;t&eacute;
+# <a href="http://www.infomediaire.ma/news/maroc/heure-l%C3%A9gale-le-maroc-adopte-officiellement-lheure-d%C3%A9t%C3%A9">
+# http://www.infomediaire.ma/news/maroc/heure-l%C3%A9gale-le-maroc-adopte-officiellement-lheure-d%C3%A9t%C3%A9
+# </a>
+# Governing Council adopted draft decree, that Morocco DST starts on
+# the last Sunday of March (March 25, 2012) and ends on
+# last Sunday of September (September 30, 2012)
+# except the month of Ramadan.
+# or (brief)
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_morocco06.html">
+# http://www.worldtimezone.com/dst_news/dst_news_morocco06.html
+# </a>
+
+# From Arthur David Olson (2012-03-10):
+# The infomediaire.ma source indicates that the system is to be in
+# effect every year. It gives 03H00 as the "fall back" time of day;
+# it lacks a "spring forward" time of day; assume 2:00 XXX.
+# Wait on specifying the Ramadan exception for details about
+# start date, start time of day, end date, and end time of day XXX.
+
+# From Christophe Tropamer (2012-03-16):
+# Seen Morocco change again:
+# <a href="http://www.le2uminutes.com/actualite.php">
+# http://www.le2uminutes.com/actualite.php
+# </a>
+# "...&agrave; partir du dernier dimance d'avril et non fins mars,
+# comme annonc&eacute; pr&eacute;c&eacute;demment."
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
@@ -815,6 +846,9 @@ Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
 Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
 Rule	Morocco	2011	only	-	Jul	 31	 0	0	-
+Rule	Morocco	2012	max	-	Apr	 lastSun 2:00	1:00	S
+Rule	Morocco	2012	max	-	Sep	 lastSun 3:00	0	-
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	WE%sT	1984 Mar 16

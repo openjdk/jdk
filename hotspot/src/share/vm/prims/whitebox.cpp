@@ -24,11 +24,14 @@
 
 #include "precompiled.hpp"
 
-#include "jni.h"
-
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+
+#include "classfile/symbolTable.hpp"
+
 #include "prims/whitebox.hpp"
+#include "prims/wbtestmethods/parserTests.hpp"
+
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -40,13 +43,6 @@
 #endif // !SERIALGC
 
 bool WhiteBox::_used = false;
-
-// Entry macro to transition from JNI to VM state.
-
-#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header)
-#define WB_END JNI_END
-
-// Definitions of functions exposed via Whitebox API
 
 WB_ENTRY(jlong, WB_GetObjectAddress(JNIEnv* env, jobject o, jobject obj))
   return (jlong)(void*)JNIHandles::resolve(obj);
@@ -81,11 +77,63 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
 WB_END
 #endif // !SERIALGC
 
+//Some convenience methods to deal with objects from java
+int WhiteBox::offset_for_field(const char* field_name, oop object,
+    Symbol* signature_symbol) {
+  assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
+  Thread* THREAD = Thread::current();
+
+  //Get the class of our object
+  klassOop arg_klass = object->klass();
+  //Turn it into an instance-klass
+  instanceKlass* ik = instanceKlass::cast(arg_klass);
+
+  //Create symbols to look for in the class
+  TempNewSymbol name_symbol = SymbolTable::lookup(field_name, (int) strlen(field_name),
+      THREAD);
+
+  //To be filled in with an offset of the field we're looking for
+  fieldDescriptor fd;
+
+  klassOop res = ik->find_field(name_symbol, signature_symbol, &fd);
+  if (res == NULL) {
+    tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
+        name_symbol->as_C_string());
+    fatal("Invalid layout of preloaded class");
+  }
+
+  //fetch the field at the offset we've found
+  int dest_offset = fd.offset();
+
+  return dest_offset;
+}
+
+
+const char* WhiteBox::lookup_jstring(const char* field_name, oop object) {
+  int offset = offset_for_field(field_name, object,
+      vmSymbols::string_signature());
+  oop string = object->obj_field(offset);
+  const char* ret = java_lang_String::as_utf8_string(string);
+  return ret;
+}
+
+bool WhiteBox::lookup_bool(const char* field_name, oop object) {
+  int offset =
+      offset_for_field(field_name, object, vmSymbols::bool_signature());
+  bool ret = (object->bool_field(offset) == JNI_TRUE);
+  return ret;
+}
+
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
   {CC"getObjectAddress",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC "parseCommandLine",
+      CC "(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
+      (void*) &WB_ParseCommandLine
+  },
 #ifndef SERIALGC
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
