@@ -60,10 +60,10 @@ ciType* ciInstance::java_mirror_type() {
 //
 // Constant value of a field.
 ciConstant ciInstance::field_value(ciField* field) {
-  assert(is_loaded() &&
-         field->holder()->is_loaded() &&
-         klass()->is_subclass_of(field->holder()),
-         "invalid access");
+  assert(is_loaded(), "invalid access - must be loaded");
+  assert(field->holder()->is_loaded(), "invalid access - holder must be loaded");
+  assert(klass()->is_subclass_of(field->holder()), "invalid access - must be subclass");
+
   VM_ENTRY_MARK;
   ciConstant result;
   Handle obj = get_oop();

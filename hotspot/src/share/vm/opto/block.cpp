@@ -112,9 +112,9 @@ uint Block::compute_loop_alignment() {
 // exceeds OptoLoopAlignment.
 uint Block::compute_first_inst_size(uint& sum_size, uint inst_cnt,
                                     PhaseRegAlloc* ra) {
-  uint last_inst = _nodes.size();
+  uint last_inst = number_of_nodes();
   for( uint j = 0; j < last_inst && inst_cnt > 0; j++ ) {
-    uint inst_size = _nodes[j]->size(ra);
+    uint inst_size = get_node(j)->size(ra);
     if( inst_size > 0 ) {
       inst_cnt--;
       uint sz = sum_size + inst_size;
@@ -131,8 +131,8 @@ uint Block::compute_first_inst_size(uint& sum_size, uint inst_cnt,
 }
 
 uint Block::find_node( const Node *n ) const {
-  for( uint i = 0; i < _nodes.size(); i++ ) {
-    if( _nodes[i] == n )
+  for( uint i = 0; i < number_of_nodes(); i++ ) {
+    if( get_node(i) == n )
       return i;
   }
   ShouldNotReachHere();
@@ -141,7 +141,7 @@ uint Block::find_node( const Node *n ) const {
 
 // Find and remove n from block list
 void Block::find_remove( const Node *n ) {
-  _nodes.remove(find_node(n));
+  remove_node(find_node(n));
 }
 
 // Return empty status of a block.  Empty blocks contain only the head, other
@@ -154,10 +154,10 @@ int Block::is_Empty() const {
   }
 
   int success_result = completely_empty;
-  int end_idx = _nodes.size()-1;
+  int end_idx = number_of_nodes() - 1;
 
   // Check for ending goto
-  if ((end_idx > 0) && (_nodes[end_idx]->is_MachGoto())) {
+  if ((end_idx > 0) && (get_node(end_idx)->is_MachGoto())) {
     success_result = empty_with_goto;
     end_idx--;
   }
@@ -170,7 +170,7 @@ int Block::is_Empty() const {
   // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
   // turn directly into code, because only MachNodes have non-trivial
   // emit() functions.
-  while ((end_idx > 0) && !_nodes[end_idx]->is_Mach()) {
+  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
     end_idx--;
   }
 
@@ -209,15 +209,15 @@ bool Block::has_uncommon_code() const {
 
 // True if block is low enough frequency or guarded by a test which
 // mostly does not go here.
-bool Block::is_uncommon(PhaseCFG* cfg) const {
+bool PhaseCFG::is_uncommon(const Block* block) {
   // Initial blocks must never be moved, so are never uncommon.
-  if (head()->is_Root() || head()->is_Start())  return false;
+  if (block->head()->is_Root() || block->head()->is_Start())  return false;
 
   // Check for way-low freq
-  if( _freq < BLOCK_FREQUENCY(0.00001f) ) return true;
+  if(block->_freq < BLOCK_FREQUENCY(0.00001f) ) return true;
 
   // Look for code shape indicating uncommon_trap or slow path
-  if (has_uncommon_code()) return true;
+  if (block->has_uncommon_code()) return true;
 
   const float epsilon = 0.05f;
   const float guard_factor = PROB_UNLIKELY_MAG(4) / (1.f - epsilon);
@@ -225,8 +225,8 @@ bool Block::is_uncommon(PhaseCFG* cfg) const {
   uint freq_preds = 0;
   uint uncommon_for_freq_preds = 0;
 
-  for( uint i=1; i<num_preds(); i++ ) {
-    Block* guard = cfg->get_block_for_node(pred(i));
+  for( uint i=1; i< block->num_preds(); i++ ) {
+    Block* guard = get_block_for_node(block->pred(i));
     // Check to see if this block follows its guard 1 time out of 10000
     // or less.
     //
@@ -244,14 +244,14 @@ bool Block::is_uncommon(PhaseCFG* cfg) const {
       uncommon_preds++;
     } else {
       freq_preds++;
-      if( _freq < guard->_freq * guard_factor ) {
+      if(block->_freq < guard->_freq * guard_factor ) {
         uncommon_for_freq_preds++;
       }
     }
   }
-  if( num_preds() > 1 &&
+  if( block->num_preds() > 1 &&
       // The block is uncommon if all preds are uncommon or
-      (uncommon_preds == (num_preds()-1) ||
+      (uncommon_preds == (block->num_preds()-1) ||
       // it is uncommon for all frequent preds.
        uncommon_for_freq_preds == freq_preds) ) {
     return true;
@@ -344,8 +344,8 @@ void Block::dump() const {
 
 void Block::dump(const PhaseCFG* cfg) const {
   dump_head(cfg);
-  for (uint i=0; i< _nodes.size(); i++) {
-    _nodes[i]->dump();
+  for (uint i=0; i< number_of_nodes(); i++) {
+    get_node(i)->dump();
   }
   tty->print("\n");
 }
@@ -434,7 +434,7 @@ uint PhaseCFG::build_cfg() {
       map_node_to_block(p, bb);
       map_node_to_block(x, bb);
       if( x != p ) {                // Only for root is x == p
-        bb->_nodes.push((Node*)x);
+        bb->push_node((Node*)x);
       }
       // Now handle predecessors
       ++sum;                        // Count 1 for self block
@@ -469,11 +469,11 @@ uint PhaseCFG::build_cfg() {
         assert( x != proj, "" );
         // Map basic block of projection
         map_node_to_block(proj, pb);
-        pb->_nodes.push(proj);
+        pb->push_node(proj);
       }
       // Insert self as a child of my predecessor block
       pb->_succs.map(pb->_num_succs++, get_block_for_node(np));
-      assert( pb->_nodes[ pb->_nodes.size() - pb->_num_succs ]->is_block_proj(),
+      assert( pb->get_node(pb->number_of_nodes() - pb->_num_succs)->is_block_proj(),
               "too many control users, not a CFG?" );
     }
   }
@@ -495,7 +495,7 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // surrounding blocks.
   float freq = in->_freq * in->succ_prob(succ_no);
   // get ProjNode corresponding to the succ_no'th successor of the in block
-  ProjNode* proj = in->_nodes[in->_nodes.size() - in->_num_succs + succ_no]->as_Proj();
+  ProjNode* proj = in->get_node(in->number_of_nodes() - in->_num_succs + succ_no)->as_Proj();
   // create region for basic block
   RegionNode* region = new (C) RegionNode(2);
   region->init_req(1, proj);
@@ -507,7 +507,7 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, region);
   // add it to the basic block
-  block->_nodes.push(gto);
+  block->push_node(gto);
   map_node_to_block(gto, block);
   C->regalloc()->set_bad(gto->_idx);
   // hook up successor block
@@ -527,9 +527,9 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
 // Does this block end in a multiway branch that cannot have the default case
 // flipped for another case?
 static bool no_flip_branch( Block *b ) {
-  int branch_idx = b->_nodes.size() - b->_num_succs-1;
+  int branch_idx = b->number_of_nodes() - b->_num_succs-1;
   if( branch_idx < 1 ) return false;
-  Node *bra = b->_nodes[branch_idx];
+  Node *bra = b->get_node(branch_idx);
   if( bra->is_Catch() )
     return true;
   if( bra->is_Mach() ) {
@@ -550,16 +550,16 @@ static bool no_flip_branch( Block *b ) {
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   // Find true target
   int end_idx = b->end_idx();
-  int idx = b->_nodes[end_idx+1]->as_Proj()->_con;
+  int idx = b->get_node(end_idx+1)->as_Proj()->_con;
   Block *succ = b->_succs[idx];
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, b->head());
-  Node *bp = b->_nodes[end_idx];
-  b->_nodes.map(end_idx,gto); // Slam over NeverBranch
+  Node *bp = b->get_node(end_idx);
+  b->map_node(gto, end_idx); // Slam over NeverBranch
   map_node_to_block(gto, b);
   C->regalloc()->set_bad(gto->_idx);
-  b->_nodes.pop();              // Yank projections
-  b->_nodes.pop();              // Yank projections
+  b->pop_node();              // Yank projections
+  b->pop_node();              // Yank projections
   b->_succs.map(0,succ);        // Map only successor
   b->_num_succs = 1;
   // remap successor's predecessors if necessary
@@ -575,8 +575,8 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   // Scan through block, yanking dead path from
   // all regions and phis.
   dead->head()->del_req(j);
-  for( int k = 1; dead->_nodes[k]->is_Phi(); k++ )
-    dead->_nodes[k]->del_req(j);
+  for( int k = 1; dead->get_node(k)->is_Phi(); k++ )
+    dead->get_node(k)->del_req(j);
 }
 
 // Helper function to move block bx to the slot following b_index. Return
@@ -620,7 +620,7 @@ void PhaseCFG::move_to_end(Block *b, uint i) {
   if (e != Block::not_empty) {
     if (e == Block::empty_with_goto) {
       // Remove the goto, but leave the block.
-      b->_nodes.pop();
+      b->pop_node();
     }
     // Mark this block as a connector block, which will cause it to be
     // ignored in certain functions such as non_connector_successor().
@@ -663,13 +663,13 @@ void PhaseCFG::remove_empty_blocks() {
     // to give a fake exit path to infinite loops.  At this late stage they
     // need to turn into Goto's so that when you enter the infinite loop you
     // indeed hang.
-    if (block->_nodes[block->end_idx()]->Opcode() == Op_NeverBranch) {
+    if (block->get_node(block->end_idx())->Opcode() == Op_NeverBranch) {
       convert_NeverBranch_to_Goto(block);
     }
 
     // Look for uncommon blocks and move to end.
     if (!C->do_freq_based_layout()) {
-      if (block->is_uncommon(this)) {
+      if (is_uncommon(block)) {
         move_to_end(block, i);
         last--;                   // No longer check for being uncommon!
         if (no_flip_branch(block)) { // Fall-thru case must follow?
@@ -720,9 +720,9 @@ void PhaseCFG::fixup_flow() {
     // exchange the true and false targets.
     if (no_flip_branch(block)) {
       // Find fall through case - if must fall into its target
-      int branch_idx = block->_nodes.size() - block->_num_succs;
+      int branch_idx = block->number_of_nodes() - block->_num_succs;
       for (uint j2 = 0; j2 < block->_num_succs; j2++) {
-        const ProjNode* p = block->_nodes[branch_idx + j2]->as_Proj();
+        const ProjNode* p = block->get_node(branch_idx + j2)->as_Proj();
         if (p->_con == 0) {
           // successor j2 is fall through case
           if (block->non_connector_successor(j2) != bnext) {
@@ -743,14 +743,14 @@ void PhaseCFG::fixup_flow() {
 
       // Remove all CatchProjs
       for (uint j = 0; j < block->_num_succs; j++) {
-        block->_nodes.pop();
+        block->pop_node();
       }
 
     } else if (block->_num_succs == 1) {
       // Block ends in a Goto?
       if (bnext == bs0) {
         // We fall into next block; remove the Goto
-        block->_nodes.pop();
+        block->pop_node();
       }
 
     } else if(block->_num_succs == 2) { // Block ends in a If?
@@ -759,9 +759,9 @@ void PhaseCFG::fixup_flow() {
       //       be projections (in any order), the 3rd last node must be
       //       the IfNode (we have excluded other 2-way exits such as
       //       CatchNodes already).
-      MachNode* iff   = block->_nodes[block->_nodes.size() - 3]->as_Mach();
-      ProjNode* proj0 = block->_nodes[block->_nodes.size() - 2]->as_Proj();
-      ProjNode* proj1 = block->_nodes[block->_nodes.size() - 1]->as_Proj();
+      MachNode* iff   = block->get_node(block->number_of_nodes() - 3)->as_Mach();
+      ProjNode* proj0 = block->get_node(block->number_of_nodes() - 2)->as_Proj();
+      ProjNode* proj1 = block->get_node(block->number_of_nodes() - 1)->as_Proj();
 
       // Assert that proj0 and succs[0] match up. Similarly for proj1 and succs[1].
       assert(proj0->raw_out(0) == block->_succs[0]->head(), "Mismatch successor 0");
@@ -833,8 +833,8 @@ void PhaseCFG::fixup_flow() {
         iff->as_MachIf()->negate();
       }
 
-      block->_nodes.pop();          // Remove IfFalse & IfTrue projections
-      block->_nodes.pop();
+      block->pop_node();          // Remove IfFalse & IfTrue projections
+      block->pop_node();
 
     } else {
       // Multi-exit block, e.g. a switch statement
@@ -895,13 +895,13 @@ void PhaseCFG::verify() const {
   // Verify sane CFG
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
-    uint cnt = block->_nodes.size();
+    uint cnt = block->number_of_nodes();
     uint j;
     for (j = 0; j < cnt; j++)  {
-      Node *n = block->_nodes[j];
+      Node *n = block->get_node(j);
       assert(get_block_for_node(n) == block, "");
       if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-        assert(j == 1 || block->_nodes[j-1]->is_Phi(), "CreateEx must be first instruction in block");
+        assert(j == 1 || block->get_node(j-1)->is_Phi(), "CreateEx must be first instruction in block");
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -930,14 +930,14 @@ void PhaseCFG::verify() const {
     }
 
     j = block->end_idx();
-    Node* bp = (Node*)block->_nodes[block->_nodes.size() - 1]->is_block_proj();
+    Node* bp = (Node*)block->get_node(block->number_of_nodes() - 1)->is_block_proj();
     assert(bp, "last instruction must be a block proj");
-    assert(bp == block->_nodes[j], "wrong number of successors for this block");
+    assert(bp == block->get_node(j), "wrong number of successors for this block");
     if (bp->is_Catch()) {
-      while (block->_nodes[--j]->is_MachProj()) {
+      while (block->get_node(--j)->is_MachProj()) {
         ;
       }
-      assert(block->_nodes[j]->is_MachCall(), "CatchProj must follow call");
+      assert(block->get_node(j)->is_MachCall(), "CatchProj must follow call");
     } else if (bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If) {
       assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
@@ -1440,9 +1440,9 @@ void Trace::fixup_blocks(PhaseCFG &cfg) {
           Block *bnext = next(b);
           Block *bs0 = b->non_connector_successor(0);
 
-          MachNode *iff = b->_nodes[b->_nodes.size()-3]->as_Mach();
-          ProjNode *proj0 = b->_nodes[b->_nodes.size()-2]->as_Proj();
-          ProjNode *proj1 = b->_nodes[b->_nodes.size()-1]->as_Proj();
+          MachNode *iff = b->get_node(b->number_of_nodes() - 3)->as_Mach();
+          ProjNode *proj0 = b->get_node(b->number_of_nodes() - 2)->as_Proj();
+          ProjNode *proj1 = b->get_node(b->number_of_nodes() - 1)->as_Proj();
 
           if (bnext == bs0) {
             // Fall-thru case in succs[0], should be in succs[1]
@@ -1454,8 +1454,8 @@ void Trace::fixup_blocks(PhaseCFG &cfg) {
             b->_succs.map( 1, tbs0 );
 
             // Flip projections to match targets
-            b->_nodes.map(b->_nodes.size()-2, proj1);
-            b->_nodes.map(b->_nodes.size()-1, proj0);
+            b->map_node(proj1, b->number_of_nodes() - 2);
+            b->map_node(proj0, b->number_of_nodes() - 1);
           }
         }
       }
