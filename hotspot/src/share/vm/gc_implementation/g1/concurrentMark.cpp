@@ -1233,6 +1233,41 @@ public:
                CardTableModRefBS::card_shift);
   }
 
+  // It takes a region that's not empty (i.e., it has at least one
+  // live object in it and sets its corresponding bit on the region
+  // bitmap to 1. If the region is "starts humongous" it will also set
+  // to 1 the bits on the region bitmap that correspond to its
+  // associated "continues humongous" regions.
+  void set_bit_for_region(HeapRegion* hr) {
+    assert(!hr->continuesHumongous(), "should have filtered those out");
+
+    size_t index = hr->hrs_index();
+    if (!hr->startsHumongous()) {
+      // Normal (non-humongous) case: just set the bit.
+      _region_bm->par_at_put((BitMap::idx_t) index, true);
+    } else {
+      // Starts humongous case: calculate how many regions are part of
+      // this humongous region and then set the bit range. It might
+      // have been a bit more efficient to look at the object that
+      // spans these humongous regions to calculate their number from
+      // the object's size. However, it's a good idea to calculate
+      // this based on the metadata itself, and not the region
+      // contents, so that this code is not aware of what goes into
+      // the humongous regions (in case this changes in the future).
+      G1CollectedHeap* g1h = G1CollectedHeap::heap();
+      size_t end_index = index + 1;
+      while (end_index < g1h->n_regions()) {
+        HeapRegion* chr = g1h->region_at(end_index);
+        if (!chr->continuesHumongous()) {
+          break;
+        }
+        end_index += 1;
+      }
+      _region_bm->par_at_put_range((BitMap::idx_t) index,
+                                   (BitMap::idx_t) end_index, true);
+    }
+  }
+
   bool doHeapRegion(HeapRegion* hr) {
     if (_co_tracker != NULL)
       _co_tracker->update();
@@ -1241,13 +1276,13 @@ public:
       _start_vtime_sec = os::elapsedVTime();
 
     if (hr->continuesHumongous()) {
-      HeapRegion* hum_start = hr->humongous_start_region();
-      // If the head region of the humongous region has been determined
-      // to be alive, then all the tail regions should be marked
-      // such as well.
-      if (_region_bm->at(hum_start->hrs_index())) {
-        _region_bm->par_at_put(hr->hrs_index(), 1);
-      }
+      // We will ignore these here and process them when their
+      // associated "starts humongous" region is processed (see
+      // set_bit_for_heap_region()). Note that we cannot rely on their
+      // associated "starts humongous" region to have their bit set to
+      // 1 since, due to the region chunking in the parallel region
+      // iteration, a "continues humongous" region might be visited
+      // before its associated "starts humongous".
       return false;
     }
 
@@ -1343,14 +1378,14 @@ public:
           intptr_t(uintptr_t(tp) >> CardTableModRefBS::card_shift);
         mark_card_num_range(start_card_num, last_card_num);
         // This definitely means the region has live objects.
-        _region_bm->par_at_put(hr->hrs_index(), 1);
+        set_bit_for_region(hr);
       }
     }
 
     hr->add_to_marked_bytes(marked_bytes);
     // Update the live region bitmap.
     if (marked_bytes > 0) {
-      _region_bm->par_at_put(hr->hrs_index(), 1);
+      set_bit_for_region(hr);
     }
     hr->set_top_at_conc_mark_count(nextTop);
     _tot_live += hr->next_live_bytes();

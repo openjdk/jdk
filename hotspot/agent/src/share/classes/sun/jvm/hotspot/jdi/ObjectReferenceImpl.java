@@ -249,6 +249,7 @@ public class ObjectReferenceImpl extends ValueImpl implements ObjectReference {
             OopHandle givenHandle = obj.getHandle();
             for (Iterator itr = monitors.iterator(); itr.hasNext();) {
                 MonitorInfo mi = (MonitorInfo) itr.next();
+                if (mi.eliminated() && frame.isCompiledFrame()) continue; // skip eliminated monitor
                 if (givenHandle.equals(mi.owner())) {
                     res++;
                 }
