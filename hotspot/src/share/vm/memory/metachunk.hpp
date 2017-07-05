@@ -123,9 +123,7 @@ class Metachunk VALUE_OBJ_CLASS_SPEC {
 
   void assert_is_mangled() const {/* Don't check "\*/}
 
-#ifdef ASSERT
-  void mangle();
-#endif // ASSERT
+  NOT_PRODUCT(void mangle();)
 
   void print_on(outputStream* st) const;
   void verify();

@@ -409,6 +409,8 @@ class Arguments : AllStatic {
  public:
   // Parses the arguments
   static jint parse(const JavaVMInitArgs* args);
+  // Adjusts the arguments after the OS have adjusted the arguments
+  static jint adjust_after_os();
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();
   // Check consistecy or otherwise of VM argument settings

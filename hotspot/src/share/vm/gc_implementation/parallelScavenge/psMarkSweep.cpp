@@ -495,8 +495,9 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     ParallelScavengeHeap::ParStrongRootsScope psrs;
     Universe::oops_do(mark_and_push_closure());
     JNIHandles::oops_do(mark_and_push_closure());   // Global (strong) JNI handles
+    CLDToOopClosure mark_and_push_from_cld(mark_and_push_closure());
     CodeBlobToOopClosure each_active_code_blob(mark_and_push_closure(), /*do_marking=*/ true);
-    Threads::oops_do(mark_and_push_closure(), &each_active_code_blob);
+    Threads::oops_do(mark_and_push_closure(), &mark_and_push_from_cld, &each_active_code_blob);
     ObjectSynchronizer::oops_do(mark_and_push_closure());
     FlatProfiler::oops_do(mark_and_push_closure());
     Management::oops_do(mark_and_push_closure());
@@ -584,7 +585,8 @@ void PSMarkSweep::mark_sweep_phase3() {
   // General strong roots.
   Universe::oops_do(adjust_root_pointer_closure());
   JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
-  Threads::oops_do(adjust_root_pointer_closure(), NULL);
+  CLDToOopClosure adjust_from_cld(adjust_root_pointer_closure());
+  Threads::oops_do(adjust_root_pointer_closure(), &adjust_from_cld, NULL);
   ObjectSynchronizer::oops_do(adjust_root_pointer_closure());
   FlatProfiler::oops_do(adjust_root_pointer_closure());
   Management::oops_do(adjust_root_pointer_closure());

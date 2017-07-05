@@ -194,15 +194,6 @@ endif
 
 ##################################################################################################
 
-# Why do we install a demo jar into the main jre/lib/ext????????????????
-$(JDK_OUTPUTDIR)/lib/ext/zipfs.jar : $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.jar
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-
-BUILD_DEMOS += $(JDK_OUTPUTDIR)/lib/ext/zipfs.jar
-
-##################################################################################################
-
 # In the old makefiles, j2dbench was not compiled. 
 #$(eval $(call SetupDemo,J2DBench,java2d,/src,,j2dbench/J2DBench))
 

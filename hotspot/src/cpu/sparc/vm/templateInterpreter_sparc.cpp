@@ -496,7 +496,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   const Address size_of_parameters(G5_method, Method::size_of_parameters_offset());
   const Address size_of_locals    (G5_method, Method::size_of_locals_offset());
-  const Address max_stack         (G5_method, Method::max_stack_offset());
+  const Address constMethod       (G5_method, Method::const_offset());
   int rounded_vm_local_words = round_to( frame::interpreter_frame_vm_local_words, WordsPerLong );
 
   const int extra_space =
@@ -538,7 +538,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // see if the frame is greater than one page in size. If so,
     // then we need to verify there is enough stack space remaining
     // Frame_size = (max_stack + extra_space) * BytesPerWord;
-    __ lduh( max_stack, Gframe_size );
+    __ ld_ptr( constMethod, Gframe_size );
+    __ lduh( Gframe_size, in_bytes(ConstMethod::max_stack_offset()), Gframe_size );
     __ add( Gframe_size, extra_space, Gframe_size );
     __ round_to( Gframe_size, WordsPerLong );
     __ sll( Gframe_size, Interpreter::logStackElementSize, Gframe_size);
