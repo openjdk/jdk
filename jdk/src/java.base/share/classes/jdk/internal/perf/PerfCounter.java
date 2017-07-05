@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.perf;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

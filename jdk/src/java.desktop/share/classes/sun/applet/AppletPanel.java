@@ -43,8 +43,8 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.EmbeddedFrame;
 import sun.awt.SunToolkit;
+import sun.awt.util.PerformanceLogger;
 import sun.misc.ManagedLocalsThread;
-import sun.misc.PerformanceLogger;
 import sun.security.util.SecurityConstants;
 
 /**

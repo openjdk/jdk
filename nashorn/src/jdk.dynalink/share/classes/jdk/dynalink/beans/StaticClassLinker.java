@@ -91,6 +91,7 @@ import java.util.Arrays;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -156,6 +157,27 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
                 final MethodHandle ctorInvocation = constructor.getInvocation(desc, linkerServices);
                 if(ctorInvocation != null) {
                     return new GuardedInvocation(ctorInvocation, getClassGuard(desc.getMethodType()));
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req) throws Exception {
+            final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(req);
+            if (superGic != null) {
+                return superGic;
+            }
+            if (!req.operations.isEmpty()) {
+                final Operation op = req.operations.get(0);
+                if (op instanceof StandardOperation) {
+                    switch ((StandardOperation)op) {
+                    case GET_ELEMENT:
+                    case SET_ELEMENT:
+                        // StaticClass doesn't behave as a collection
+                        return getNextComponent(req.popOperations());
+                    default:
+                    }
                 }
             }
             return null;

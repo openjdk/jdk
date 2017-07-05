@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,7 @@ public class SAXSource implements Source {
      *
      * @param systemId The system identifier as a URI string.
      */
+    @Override
     public void setSystemId(String systemId) {
 
         if (null == inputSource) {
@@ -162,6 +163,7 @@ public class SAXSource implements Source {
      *
      * @return Base URL for the <code>Source</code>, or <code>null</code>.
      */
+    @Override
     public String getSystemId() {
 
         if (inputSource == null) {
@@ -206,5 +208,23 @@ public class SAXSource implements Source {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Indicates whether the {@code SAXSource} object is empty. Empty is
+     * defined as follows:
+     * <ul>
+     * <li>if the system identifier and {@code InputSource} are {@code null};
+     * </li>
+     * <li>if the system identifier is {@code null}, and the {@code InputSource}
+     * is empty.
+     * </li>
+     * </ul>
+     *
+     * @return true if the {@code SAXSource} object is empty, false otherwise
+     */
+    @Override
+    public boolean isEmpty() {
+        return getSystemId() == null && (inputSource == null || inputSource.isEmpty());
     }
 }

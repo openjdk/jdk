@@ -29,12 +29,13 @@
  */
 
 // Make sure index access on Java objects is working as expected.
-var map = new java.util.HashMap();
+var map = new java.util.LinkedHashMap();
 
 map["foo"] = "bar";
 map[1] = 2;
 map[false] = true;
 map[null] = 0;
+map["a"] = null;
 
 print(map);
 
@@ -49,10 +50,12 @@ print(typeof map["foo"], map["foo"]);
 print(typeof map[1], map[1]);
 print(typeof map[false], map[false]);
 print(typeof map[null], map[null]);
+print(typeof map["a"], map["a"]);
 
-print(map.foo);
-print(map.false);
-print(map.null);
+print("map.foo=" + map.foo);
+print("map.false=" + map.false);
+print("map.null=" + map.null);
+print("map.a=" + map.a);
 
 map.foo = "baz";
 print(map);

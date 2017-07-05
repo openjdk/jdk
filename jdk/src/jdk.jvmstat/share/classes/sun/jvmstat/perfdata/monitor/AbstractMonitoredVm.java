@@ -95,7 +95,7 @@ public abstract class AbstractMonitoredVm implements BufferedMonitoredVm {
     public void detach() {
         /*
          * no default action required because the detach operation for the
-         * native byte buffer is managed by the sun.misc.Perf class.
+         * native byte buffer is managed by the Perf class.
          */
     }
 
