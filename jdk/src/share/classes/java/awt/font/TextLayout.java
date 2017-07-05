@@ -753,7 +753,7 @@ public final class TextLayout implements Cloneable {
             return super.clone();
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

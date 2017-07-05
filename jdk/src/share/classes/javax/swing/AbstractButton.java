@@ -981,6 +981,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param exception the message to use in the
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
+     * @return the {@code key} argument
      * @exception IllegalArgumentException if key is not one of the legal
      *            values listed above
      * @see #setHorizontalTextPosition
@@ -1011,6 +1012,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param exception the message to use in the
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
+     * @return the {@code key} argument
      * @exception IllegalArgumentException if key is not one of the legal
      *            values listed above
      */

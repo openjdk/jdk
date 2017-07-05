@@ -194,8 +194,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     while (curr != NULL) {
         netaddr *netaddrP;
         ret = enumAddresses_win(env, curr, &netaddrP);
-        if ((*env)->ExceptionOccurred(env)) {
-            free_netaddr(netaddrP);
+        if (ret == -1) {
             return -1;
         }
         curr->addrs = netaddrP;
@@ -449,8 +448,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
      */
     if (netaddrCount < 0) {
         netaddrCount = enumAddresses_win(env, ifs, &netaddrP);
-        if ((*env)->ExceptionOccurred(env)) {
-            free_netaddr(netaddrP);
+        if (netaddrCount == -1) {
             return NULL;
         }
     }

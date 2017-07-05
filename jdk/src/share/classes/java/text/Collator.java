@@ -461,7 +461,7 @@ public abstract class Collator
         try {
             return (Collator)super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

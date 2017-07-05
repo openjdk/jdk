@@ -139,9 +139,56 @@ public class PAData {
     }
 
     /**
+     * Gets the preferred etype from the PAData array.
+     * 1. ETYPE-INFO2-ENTRY with unknown s2kparams ignored
+     * 2. ETYPE-INFO2 preferred to ETYPE-INFO
+     * 3. multiple entries for same etype in one PA-DATA, use the first one.
+     * 4. Multiple PA-DATA with same type, choose the last one
+     * (This is useful when PA-DATAs from KRB-ERROR and AS-REP are combined).
+     * @return the etype, or defaultEType if not enough info
+     * @throws Asn1Exception|IOException if there is an encoding error
+     */
+    public static int getPreferredEType(PAData[] pas, int defaultEType)
+            throws IOException, Asn1Exception {
+
+        if (pas == null) return defaultEType;
+
+        DerValue d = null, d2 = null;
+        for (PAData p: pas) {
+            if (p.getValue() == null) continue;
+            switch (p.getType()) {
+                case Krb5.PA_ETYPE_INFO:
+                    d = new DerValue(p.getValue());
+                    break;
+                case Krb5.PA_ETYPE_INFO2:
+                    d2 = new DerValue(p.getValue());
+                    break;
+            }
+        }
+        if (d2 != null) {
+            while (d2.data.available() > 0) {
+                DerValue value = d2.data.getDerValue();
+                ETypeInfo2 tmp = new ETypeInfo2(value);
+                if (tmp.getParams() == null) {
+                    // we don't support non-null s2kparams
+                    return tmp.getEType();
+                }
+            }
+        }
+        if (d != null) {
+            while (d.data.available() > 0) {
+                DerValue value = d.data.getDerValue();
+                ETypeInfo tmp = new ETypeInfo(value);
+                return tmp.getEType();
+            }
+        }
+        return defaultEType;
+    }
+
+    /**
      * A place to store a pair of salt and s2kparams.
-     * An empty salt is changed to null, to be interopable
-     * with Windows 2000 server.
+     * An empty salt is changed to null, to be interoperable
+     * with Windows 2000 server. This is in fact not correct.
      */
     public static class SaltAndParams {
         public final String salt;
@@ -155,57 +202,120 @@ public class PAData {
 
     /**
      * Fetches salt and s2kparams value for eType in a series of PA-DATAs.
-     * The preference order is PA-ETYPE-INFO2 > PA-ETYPE-INFO > PA-PW-SALT.
-     * If multiple PA-DATA for the same etype appears, use the last one.
+     * 1. ETYPE-INFO2-ENTRY with unknown s2kparams ignored
+     * 2. PA-ETYPE-INFO2 preferred to PA-ETYPE-INFO preferred to PA-PW-SALT.
+     * 3. multiple entries for same etype in one PA-DATA, use the first one.
+     * 4. Multiple PA-DATA with same type, choose the last one
      * (This is useful when PA-DATAs from KRB-ERROR and AS-REP are combined).
-     * @return salt and s2kparams. never null, its field might be null.
+     * @return salt and s2kparams. can be null if not found
      */
     public static SaltAndParams getSaltAndParams(int eType, PAData[] pas)
-            throws Asn1Exception, KrbException {
+            throws Asn1Exception, IOException {
 
-        if (pas == null || pas.length == 0) {
-            return new SaltAndParams(null, null);
-        }
+        if (pas == null) return null;
 
+        DerValue d = null, d2 = null;
         String paPwSalt = null;
-        ETypeInfo2 info2 = null;
-        ETypeInfo info = null;
 
         for (PAData p: pas) {
-            if (p.getValue() != null) {
-                try {
-                    switch (p.getType()) {
-                        case Krb5.PA_PW_SALT:
-                            paPwSalt = new String(p.getValue(),
-                                    KerberosString.MSNAME?"UTF8":"8859_1");
-                            break;
-                        case Krb5.PA_ETYPE_INFO:
-                            DerValue der = new DerValue(p.getValue());
-                            while (der.data.available() > 0) {
-                                DerValue value = der.data.getDerValue();
-                                ETypeInfo tmp = new ETypeInfo(value);
-                                if (tmp.getEType() == eType) info = tmp;
-                            }
-                            break;
-                        case Krb5.PA_ETYPE_INFO2:
-                            der = new DerValue(p.getValue());
-                            while (der.data.available() > 0) {
-                                DerValue value = der.data.getDerValue();
-                                ETypeInfo2 tmp = new ETypeInfo2(value);
-                                if (tmp.getEType() == eType) info2 = tmp;
-                            }
-                            break;
-                    }
-                } catch (IOException ioe) {
-                    // Ignored
+            if (p.getValue() == null) continue;
+            switch (p.getType()) {
+                case Krb5.PA_PW_SALT:
+                    paPwSalt = new String(p.getValue(),
+                            KerberosString.MSNAME?"UTF8":"8859_1");
+                    break;
+                case Krb5.PA_ETYPE_INFO:
+                    d = new DerValue(p.getValue());
+                    break;
+                case Krb5.PA_ETYPE_INFO2:
+                    d2 = new DerValue(p.getValue());
+                    break;
+            }
+        }
+        if (d2 != null) {
+            while (d2.data.available() > 0) {
+                DerValue value = d2.data.getDerValue();
+                ETypeInfo2 tmp = new ETypeInfo2(value);
+                if (tmp.getParams() == null && tmp.getEType() == eType) {
+                    // we don't support non-null s2kparams
+                    return new SaltAndParams(tmp.getSalt(), tmp.getParams());
                 }
             }
         }
-        if (info2 != null) {
-            return new SaltAndParams(info2.getSalt(), info2.getParams());
-        } else if (info != null) {
-            return new SaltAndParams(info.getSalt(), null);
+        if (d != null) {
+            while (d.data.available() > 0) {
+                DerValue value = d.data.getDerValue();
+                ETypeInfo tmp = new ETypeInfo(value);
+                if (tmp.getEType() == eType) {
+                    return new SaltAndParams(tmp.getSalt(), null);
+                }
+            }
         }
-        return new SaltAndParams(paPwSalt, null);
+        if (paPwSalt != null) {
+            return new SaltAndParams(paPwSalt, null);
+        }
+        return null;
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append(">>>Pre-Authentication Data:\n\t PA-DATA type = ")
+                .append(pADataType).append('\n');
+
+        switch(pADataType) {
+            case Krb5.PA_ENC_TIMESTAMP:
+                sb.append("\t PA-ENC-TIMESTAMP");
+                break;
+            case Krb5.PA_ETYPE_INFO:
+                if (pADataValue != null) {
+                    try {
+                        DerValue der = new DerValue(pADataValue);
+                        while (der.data.available() > 0) {
+                            DerValue value = der.data.getDerValue();
+                            ETypeInfo info = new ETypeInfo(value);
+                            sb.append("\t PA-ETYPE-INFO etype = ")
+                                    .append(info.getEType())
+                                    .append(", salt = ")
+                                    .append(info.getSalt())
+                                    .append('\n');
+                        }
+                    } catch (IOException|Asn1Exception e) {
+                        sb.append("\t <Unparseable PA-ETYPE-INFO>\n");
+                    }
+                }
+                break;
+            case Krb5.PA_ETYPE_INFO2:
+                if (pADataValue != null) {
+                    try {
+                        DerValue der = new DerValue(pADataValue);
+                        while (der.data.available() > 0) {
+                            DerValue value = der.data.getDerValue();
+                            ETypeInfo2 info2 = new ETypeInfo2(value);
+                            sb.append("\t PA-ETYPE-INFO2 etype = ")
+                                    .append(info2.getEType())
+                                    .append(", salt = ")
+                                    .append(info2.getSalt())
+                                    .append(", s2kparams = ");
+                            byte[] s2kparams = info2.getParams();
+                            if (s2kparams == null) {
+                                sb.append("null\n");
+                            } else if (s2kparams.length == 0) {
+                                sb.append("empty\n");
+                            } else {
+                                sb.append(new sun.misc.HexDumpEncoder()
+                                        .encodeBuffer(s2kparams));
+                            }
+                        }
+                    } catch (IOException|Asn1Exception e) {
+                        sb.append("\t <Unparseable PA-ETYPE-INFO>\n");
+                    }
+                }
+                break;
+            default:
+                // Unknown Pre-auth type
+                break;
+        }
+        return sb.toString();
     }
 }

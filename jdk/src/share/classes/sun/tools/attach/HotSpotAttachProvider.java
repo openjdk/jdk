@@ -89,7 +89,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
             if (t instanceof SecurityException) {
                 return result;
             }
-            throw new InternalError();          // shouldn't happen
+            throw new InternalError(t);          // shouldn't happen
         }
 
         for (Object vmid: vms) {

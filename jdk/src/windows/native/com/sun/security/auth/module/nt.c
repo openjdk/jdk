@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,19 @@ BOOL getImpersonationToken(PHANDLE impersonationToken);
 BOOL getTextualSid(PSID pSid, LPTSTR TextualSid, LPDWORD lpdwBufferLen);
 void DisplayErrorText(DWORD dwLastError);
 
+JNIEXPORT jlong JNICALL
+Java_com_sun_security_auth_module_NTSystem_getImpersonationToken0
+        (JNIEnv *env, jobject obj) {
+    HANDLE impersonationToken = 0;      // impersonation token
+    if (debug) {
+        printf("getting impersonation token\n");
+    }
+    if (getImpersonationToken(&impersonationToken) == FALSE) {
+        return 0;
+    }
+    return (jlong)impersonationToken;
+}
+
 JNIEXPORT void JNICALL
 Java_com_sun_security_auth_module_NTSystem_getCurrent
     (JNIEnv *env, jobject obj, jboolean debugNative) {
@@ -59,7 +72,6 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
     DWORD numGroups = 0;                // num groups
     LPTSTR *groups = NULL;              // groups array
     long pIndex = -1;                   // index of primaryGroup in groups array
-    HANDLE impersonationToken = 0;      // impersonation token
 
     jfieldID fid;
     jstring jstr;
@@ -97,13 +109,6 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
         printf("getting supplementary groups\n");
     }
     if (getGroups(tokenHandle, &numGroups, &groups) == FALSE) {
-        return;
-    }
-
-    if (debug) {
-        printf("getting impersonation token\n");
-    }
-    if (getImpersonationToken(&impersonationToken) == FALSE) {
         return;
     }
 
@@ -233,18 +238,6 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
         (*env)->SetObjectField(env, obj, fid, jgroups);
     }
 
-    fid = (*env)->GetFieldID(env, cls, "impersonationToken", "J");
-    if (fid == 0) {
-        jclass newExcCls =
-            (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        if (newExcCls == 0) {
-            systemError = TRUE;
-            goto out;
-        }
-        (*env)->ThrowNew(env, newExcCls, "invalid field: impersonationToken");
-    }
-    (*env)->SetLongField(env, obj, fid, (jlong)impersonationToken);
-
 out:
     if (userName != NULL) {
         HeapFree(GetProcessHeap(), 0, userName);
@@ -269,6 +262,7 @@ out:
         }
         HeapFree(GetProcessHeap(), 0, groups);
     }
+    CloseHandle(tokenHandle);
 
     if (systemError && debug) {
         printf("  [getCurrent] System Error: ");
@@ -592,6 +586,7 @@ BOOL getImpersonationToken(PHANDLE impersonationToken) {
         }
         return FALSE;
     }
+    CloseHandle(dupToken);
 
     if (debug) {
         printf("  [getImpersonationToken] token = %d\n", *impersonationToken);
@@ -802,6 +797,8 @@ void main(int argc, char *argv[]) {
         }
         HeapFree(GetProcessHeap(), 0, groups);
     }
+    CloseHandle(impersonationToken);
+    CloseHandle(tokenHandle);
 }
 */
 

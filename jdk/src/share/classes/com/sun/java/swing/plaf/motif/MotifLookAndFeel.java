@@ -1215,11 +1215,6 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "EditorPane.focusInputMap", multilineInputMap,
 
 
-            "FileChooser.pathLabelMnemonic", new Integer(KeyEvent.VK_P), // 'p'
-            "FileChooser.filterLabelMnemonic", new Integer (KeyEvent.VK_R), // 'r'
-            "FileChooser.foldersLabelMnemonic", new Integer (KeyEvent.VK_L), // 'l'
-            "FileChooser.filesLabelMnemonic", new Integer (KeyEvent.VK_I), // 'i'
-            "FileChooser.enterFileNameLabelMnemonic", new Integer (KeyEvent.VK_N), // 'n'
             "FileChooser.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                      "ESCAPE", "cancelSelection"

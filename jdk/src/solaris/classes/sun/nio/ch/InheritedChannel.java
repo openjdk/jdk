@@ -64,7 +64,7 @@ class InheritedChannel {
             dup2(devnull, 2);
         } catch (IOException ioe) {
             // this shouldn't happen
-            throw new InternalError();
+            throw new InternalError(ioe);
         }
     }
 

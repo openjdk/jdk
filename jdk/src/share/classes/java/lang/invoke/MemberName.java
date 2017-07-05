@@ -382,7 +382,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
         try {
             return (MemberName) super.clone();
         } catch (CloneNotSupportedException ex) {
-            throw new InternalError();
+            throw new InternalError(ex);
         }
      }
 

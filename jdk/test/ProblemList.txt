@@ -526,6 +526,16 @@ sun/security/tools/jarsigner/ec.sh                             solaris-all
 # 7081817
 sun/security/provider/certpath/X509CertPath/IllegalCertiticates.java 	generic-all
 
+# 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
+java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
+sun/security/tools/jarsigner/onlymanifest.sh                    solaris-all
+sun/security/tools/jarsigner/ts.sh                              solaris-all
+sun/security/tools/keytool/emptysubject.sh                      solaris-all
+sun/security/tools/keytool/importreadall.sh                     solaris-all
+sun/security/tools/keytool/readjar.sh                           solaris-all
+sun/security/tools/keytool/selfissued.sh                        solaris-all
+sun/security/tools/keytool/standard.sh                          solaris-all
+
 ############################################################################
 
 # jdk_swing (not using samevm)
@@ -585,6 +595,9 @@ java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+
+# 7041639, Solaris DSA keypair generation bug
+java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
 
 ############################################################################
 

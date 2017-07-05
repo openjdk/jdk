@@ -2512,7 +2512,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
         catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 
