@@ -150,6 +150,11 @@ class os: AllStatic {
 
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
+  // Get summary strings for system information in buffer provided
+  static bool  get_host_name(char* buf, size_t buflen) PRODUCT_RETURN_(return false;);  // true if available
+  static void  get_summary_cpu_info(char* buf, size_t buflen);
+  static void  get_summary_os_info(char* buf, size_t buflen);
+
  public:
   static void init(void);                      // Called before command line parsing
   static void init_before_ergo(void);          // Called after command line parsing
@@ -590,6 +595,7 @@ class os: AllStatic {
   static void print_os_info_brief(outputStream* st);
   static void print_cpu_info(outputStream* st, char* buf, size_t buflen);
   static void pd_print_cpu_info(outputStream* st, char* buf, size_t buflen);
+  static void print_summary_info(outputStream* st, char* buf, size_t buflen);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);

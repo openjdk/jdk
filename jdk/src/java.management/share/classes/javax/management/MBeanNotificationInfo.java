@@ -32,29 +32,29 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * <p>The <CODE>MBeanNotificationInfo</CODE> class is used to describe the
+ * <p>The {@code MBeanNotificationInfo} class is used to describe the
  * characteristics of the different notification instances
  * emitted by an MBean, for a given Java class of notification.
  * If an MBean emits notifications that can be instances of different Java classes,
- * then the metadata for that MBean should provide an <CODE>MBeanNotificationInfo</CODE>
+ * then the metadata for that MBean should provide an {@code MBeanNotificationInfo}
  * object for each of these notification Java classes.</p>
  *
  * <p>Instances of this class are immutable.  Subclasses may be
  * mutable but this is not recommended.</p>
  *
- * <p>This class extends <CODE>javax.management.MBeanFeatureInfo</CODE>
- * and thus provides <CODE>name</CODE> and <CODE>description</CODE> fields.
- * The <CODE>name</CODE> field should be the fully qualified Java class name of
+ * <p>This class extends {@code javax.management.MBeanFeatureInfo}
+ * and thus provides {@code name} and {@code description} fields.
+ * The {@code name} field should be the fully qualified Java class name of
  * the notification objects described by this class.</p>
  *
- * <p>The <CODE>getNotifTypes</CODE> method returns an array of
+ * <p>The {@code getNotifTypes} method returns an array of
  * strings containing the notification types that the MBean may
  * emit. The notification type is a dot-notation string which
  * describes what the emitted notification is about, not the Java
  * class of the notification.  A single generic notification class can
  * be used to send notifications of several types.  All of these types
  * are returned in the string array result of the
- * <CODE>getNotifTypes</CODE> method.
+ * {@code getNotifTypes} method.
  *
  * @since 1.5
  */
@@ -77,7 +77,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
     private final transient boolean arrayGettersSafe;
 
     /**
-     * Constructs an <CODE>MBeanNotificationInfo</CODE> object.
+     * Constructs an {@code MBeanNotificationInfo} object.
      *
      * @param notifTypes The array of strings (in dot notation)
      * containing the notification types that the MBean may emit.
@@ -93,7 +93,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
     }
 
     /**
-     * Constructs an <CODE>MBeanNotificationInfo</CODE> object.
+     * Constructs an {@code MBeanNotificationInfo} object.
      *
      * @param notifTypes The array of strings (in dot notation)
      * containing the notification types that the MBean may emit.
@@ -128,9 +128,9 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
 
     /**
      * Returns a shallow clone of this instance.
-     * The clone is obtained by simply calling <tt>super.clone()</tt>,
+     * The clone is obtained by simply calling {@code super.clone()},
      * thus calling the default native shallow cloning mechanism
-     * implemented by <tt>Object.clone()</tt>.
+     * implemented by {@code Object.clone()}.
      * No deeper cloning of any internal field is made.
      */
      public Object clone () {
@@ -179,7 +179,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanNotificationInfo
+     * @return true if and only if {@code o} is an MBeanNotificationInfo
      * such that its {@link #getName()}, {@link #getDescription()},
      * {@link #getDescriptor()},
      * and {@link #getNotifTypes()} values are equal (not necessarily

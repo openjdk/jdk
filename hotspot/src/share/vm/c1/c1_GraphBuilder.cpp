@@ -3372,231 +3372,85 @@ const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
   return NULL;
 }
 
-
-bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
-  if (callee->is_synchronized()) {
-    // We don't currently support any synchronized intrinsics
-    return false;
-  }
-
-  // callee seems like a good candidate
-  // determine id
+void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
   vmIntrinsics::ID id = callee->intrinsic_id();
-  if (!InlineNatives && id != vmIntrinsics::_Reference_get) {
-    // InlineNatives does not control Reference.get
-    INLINE_BAILOUT("intrinsic method inlining disabled");
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+
+  // Some intrinsics need special IR nodes.
+  switch(id) {
+  case vmIntrinsics::_getObject          : append_unsafe_get_obj(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_getBoolean         : append_unsafe_get_obj(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_getByte            : append_unsafe_get_obj(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_getShort           : append_unsafe_get_obj(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getChar            : append_unsafe_get_obj(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getInt             : append_unsafe_get_obj(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLong            : append_unsafe_get_obj(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getFloat           : append_unsafe_get_obj(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_getDouble          : append_unsafe_get_obj(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_putObject          : append_unsafe_put_obj(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_putBoolean         : append_unsafe_put_obj(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_putByte            : append_unsafe_put_obj(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_putShort           : append_unsafe_put_obj(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putChar            : append_unsafe_put_obj(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putInt             : append_unsafe_put_obj(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLong            : append_unsafe_put_obj(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putFloat           : append_unsafe_put_obj(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_putDouble          : append_unsafe_put_obj(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_getShortUnaligned  : append_unsafe_get_obj(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getCharUnaligned   : append_unsafe_get_obj(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getIntUnaligned    : append_unsafe_get_obj(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLongUnaligned   : append_unsafe_get_obj(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putShortUnaligned  : append_unsafe_put_obj(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putCharUnaligned   : append_unsafe_put_obj(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putIntUnaligned    : append_unsafe_put_obj(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLongUnaligned   : append_unsafe_put_obj(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getObjectVolatile  : append_unsafe_get_obj(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_getBooleanVolatile : append_unsafe_get_obj(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_getByteVolatile    : append_unsafe_get_obj(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_getShortVolatile   : append_unsafe_get_obj(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_getCharVolatile    : append_unsafe_get_obj(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_getIntVolatile     : append_unsafe_get_obj(callee, T_INT,     true); return;
+  case vmIntrinsics::_getLongVolatile    : append_unsafe_get_obj(callee, T_LONG,    true); return;
+  case vmIntrinsics::_getFloatVolatile   : append_unsafe_get_obj(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_getDoubleVolatile  : append_unsafe_get_obj(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_putObjectVolatile  : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_putBooleanVolatile : append_unsafe_put_obj(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_putByteVolatile    : append_unsafe_put_obj(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_putShortVolatile   : append_unsafe_put_obj(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_putCharVolatile    : append_unsafe_put_obj(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_putIntVolatile     : append_unsafe_put_obj(callee, T_INT,     true); return;
+  case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
+  case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_getByte_raw        : append_unsafe_get_raw(callee, T_BYTE  ); return;
+  case vmIntrinsics::_getShort_raw       : append_unsafe_get_raw(callee, T_SHORT ); return;
+  case vmIntrinsics::_getChar_raw        : append_unsafe_get_raw(callee, T_CHAR  ); return;
+  case vmIntrinsics::_getInt_raw         : append_unsafe_get_raw(callee, T_INT   ); return;
+  case vmIntrinsics::_getLong_raw        : append_unsafe_get_raw(callee, T_LONG  ); return;
+  case vmIntrinsics::_getFloat_raw       : append_unsafe_get_raw(callee, T_FLOAT ); return;
+  case vmIntrinsics::_getDouble_raw      : append_unsafe_get_raw(callee, T_DOUBLE); return;
+  case vmIntrinsics::_putByte_raw        : append_unsafe_put_raw(callee, T_BYTE  ); return;
+  case vmIntrinsics::_putShort_raw       : append_unsafe_put_raw(callee, T_SHORT ); return;
+  case vmIntrinsics::_putChar_raw        : append_unsafe_put_raw(callee, T_CHAR  ); return;
+  case vmIntrinsics::_putInt_raw         : append_unsafe_put_raw(callee, T_INT   ); return;
+  case vmIntrinsics::_putLong_raw        : append_unsafe_put_raw(callee, T_LONG  ); return;
+  case vmIntrinsics::_putFloat_raw       : append_unsafe_put_raw(callee, T_FLOAT ); return;
+  case vmIntrinsics::_putDouble_raw      : append_unsafe_put_raw(callee, T_DOUBLE);  return;
+  case vmIntrinsics::_putOrderedObject   : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_putOrderedInt      : append_unsafe_put_obj(callee, T_INT,     true); return;
+  case vmIntrinsics::_putOrderedLong     : append_unsafe_put_obj(callee, T_LONG,    true); return;
+  case vmIntrinsics::_compareAndSwapLong:
+  case vmIntrinsics::_compareAndSwapInt:
+  case vmIntrinsics::_compareAndSwapObject: append_unsafe_CAS(callee); return;
+  case vmIntrinsics::_getAndAddInt:
+  case vmIntrinsics::_getAndAddLong      : append_unsafe_get_and_set_obj(callee, true); return;
+  case vmIntrinsics::_getAndSetInt       :
+  case vmIntrinsics::_getAndSetLong      :
+  case vmIntrinsics::_getAndSetObject    : append_unsafe_get_and_set_obj(callee, false); return;
+  default:
+    break;
   }
-  bool preserves_state = false;
-  bool cantrap = true;
-  switch (id) {
-    case vmIntrinsics::_arraycopy:
-      if (!InlineArrayCopy) return false;
-      break;
 
-#ifdef TRACE_HAVE_INTRINSICS
-    case vmIntrinsics::_classID:
-    case vmIntrinsics::_threadID:
-      preserves_state = true;
-      cantrap = true;
-      break;
-
-    case vmIntrinsics::_counterTime:
-      preserves_state = true;
-      cantrap = false;
-      break;
-#endif
-
-    case vmIntrinsics::_currentTimeMillis:
-    case vmIntrinsics::_nanoTime:
-      preserves_state = true;
-      cantrap = false;
-      break;
-
-    case vmIntrinsics::_floatToRawIntBits   :
-    case vmIntrinsics::_intBitsToFloat      :
-    case vmIntrinsics::_doubleToRawLongBits :
-    case vmIntrinsics::_longBitsToDouble    :
-      if (!InlineMathNatives) return false;
-      preserves_state = true;
-      cantrap = false;
-      break;
-
-    case vmIntrinsics::_getClass      :
-    case vmIntrinsics::_isInstance    :
-      if (!InlineClassNatives) return false;
-      preserves_state = true;
-      break;
-
-    case vmIntrinsics::_currentThread :
-      if (!InlineThreadNatives) return false;
-      preserves_state = true;
-      cantrap = false;
-      break;
-
-    case vmIntrinsics::_dabs          : // fall through
-    case vmIntrinsics::_dsqrt         : // fall through
-    case vmIntrinsics::_dsin          : // fall through
-    case vmIntrinsics::_dcos          : // fall through
-    case vmIntrinsics::_dtan          : // fall through
-    case vmIntrinsics::_dlog          : // fall through
-    case vmIntrinsics::_dlog10        : // fall through
-    case vmIntrinsics::_dexp          : // fall through
-    case vmIntrinsics::_dpow          : // fall through
-      if (!InlineMathNatives) return false;
-      cantrap = false;
-      preserves_state = true;
-      break;
-
-    // Use special nodes for Unsafe instructions so we can more easily
-    // perform an address-mode optimization on the raw variants
-    case vmIntrinsics::_getObject : return append_unsafe_get_obj(callee, T_OBJECT,  false);
-    case vmIntrinsics::_getBoolean: return append_unsafe_get_obj(callee, T_BOOLEAN, false);
-    case vmIntrinsics::_getByte   : return append_unsafe_get_obj(callee, T_BYTE,    false);
-    case vmIntrinsics::_getShort  : return append_unsafe_get_obj(callee, T_SHORT,   false);
-    case vmIntrinsics::_getChar   : return append_unsafe_get_obj(callee, T_CHAR,    false);
-    case vmIntrinsics::_getInt    : return append_unsafe_get_obj(callee, T_INT,     false);
-    case vmIntrinsics::_getLong   : return append_unsafe_get_obj(callee, T_LONG,    false);
-    case vmIntrinsics::_getFloat  : return append_unsafe_get_obj(callee, T_FLOAT,   false);
-    case vmIntrinsics::_getDouble : return append_unsafe_get_obj(callee, T_DOUBLE,  false);
-
-    case vmIntrinsics::_putObject : return append_unsafe_put_obj(callee, T_OBJECT,  false);
-    case vmIntrinsics::_putBoolean: return append_unsafe_put_obj(callee, T_BOOLEAN, false);
-    case vmIntrinsics::_putByte   : return append_unsafe_put_obj(callee, T_BYTE,    false);
-    case vmIntrinsics::_putShort  : return append_unsafe_put_obj(callee, T_SHORT,   false);
-    case vmIntrinsics::_putChar   : return append_unsafe_put_obj(callee, T_CHAR,    false);
-    case vmIntrinsics::_putInt    : return append_unsafe_put_obj(callee, T_INT,     false);
-    case vmIntrinsics::_putLong   : return append_unsafe_put_obj(callee, T_LONG,    false);
-    case vmIntrinsics::_putFloat  : return append_unsafe_put_obj(callee, T_FLOAT,   false);
-    case vmIntrinsics::_putDouble : return append_unsafe_put_obj(callee, T_DOUBLE,  false);
-
-    case vmIntrinsics::_getShortUnaligned  :
-      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_SHORT,   false) : false;
-    case vmIntrinsics::_getCharUnaligned   :
-      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_CHAR,    false) : false;
-    case vmIntrinsics::_getIntUnaligned    :
-      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_INT,     false) : false;
-    case vmIntrinsics::_getLongUnaligned   :
-      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_LONG,    false) : false;
-
-    case vmIntrinsics::_putShortUnaligned  :
-      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_SHORT,   false) : false;
-    case vmIntrinsics::_putCharUnaligned   :
-      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_CHAR,    false) : false;
-    case vmIntrinsics::_putIntUnaligned    :
-      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_INT,     false) : false;
-    case vmIntrinsics::_putLongUnaligned   :
-      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_LONG,    false) : false;
-
-    case vmIntrinsics::_getObjectVolatile : return append_unsafe_get_obj(callee, T_OBJECT,  true);
-    case vmIntrinsics::_getBooleanVolatile: return append_unsafe_get_obj(callee, T_BOOLEAN, true);
-    case vmIntrinsics::_getByteVolatile   : return append_unsafe_get_obj(callee, T_BYTE,    true);
-    case vmIntrinsics::_getShortVolatile  : return append_unsafe_get_obj(callee, T_SHORT,   true);
-    case vmIntrinsics::_getCharVolatile   : return append_unsafe_get_obj(callee, T_CHAR,    true);
-    case vmIntrinsics::_getIntVolatile    : return append_unsafe_get_obj(callee, T_INT,     true);
-    case vmIntrinsics::_getLongVolatile   : return append_unsafe_get_obj(callee, T_LONG,    true);
-    case vmIntrinsics::_getFloatVolatile  : return append_unsafe_get_obj(callee, T_FLOAT,   true);
-    case vmIntrinsics::_getDoubleVolatile : return append_unsafe_get_obj(callee, T_DOUBLE,  true);
-
-    case vmIntrinsics::_putObjectVolatile : return append_unsafe_put_obj(callee, T_OBJECT,  true);
-    case vmIntrinsics::_putBooleanVolatile: return append_unsafe_put_obj(callee, T_BOOLEAN, true);
-    case vmIntrinsics::_putByteVolatile   : return append_unsafe_put_obj(callee, T_BYTE,    true);
-    case vmIntrinsics::_putShortVolatile  : return append_unsafe_put_obj(callee, T_SHORT,   true);
-    case vmIntrinsics::_putCharVolatile   : return append_unsafe_put_obj(callee, T_CHAR,    true);
-    case vmIntrinsics::_putIntVolatile    : return append_unsafe_put_obj(callee, T_INT,     true);
-    case vmIntrinsics::_putLongVolatile   : return append_unsafe_put_obj(callee, T_LONG,    true);
-    case vmIntrinsics::_putFloatVolatile  : return append_unsafe_put_obj(callee, T_FLOAT,   true);
-    case vmIntrinsics::_putDoubleVolatile : return append_unsafe_put_obj(callee, T_DOUBLE,  true);
-
-    case vmIntrinsics::_getByte_raw   : return append_unsafe_get_raw(callee, T_BYTE);
-    case vmIntrinsics::_getShort_raw  : return append_unsafe_get_raw(callee, T_SHORT);
-    case vmIntrinsics::_getChar_raw   : return append_unsafe_get_raw(callee, T_CHAR);
-    case vmIntrinsics::_getInt_raw    : return append_unsafe_get_raw(callee, T_INT);
-    case vmIntrinsics::_getLong_raw   : return append_unsafe_get_raw(callee, T_LONG);
-    case vmIntrinsics::_getFloat_raw  : return append_unsafe_get_raw(callee, T_FLOAT);
-    case vmIntrinsics::_getDouble_raw : return append_unsafe_get_raw(callee, T_DOUBLE);
-
-    case vmIntrinsics::_putByte_raw   : return append_unsafe_put_raw(callee, T_BYTE);
-    case vmIntrinsics::_putShort_raw  : return append_unsafe_put_raw(callee, T_SHORT);
-    case vmIntrinsics::_putChar_raw   : return append_unsafe_put_raw(callee, T_CHAR);
-    case vmIntrinsics::_putInt_raw    : return append_unsafe_put_raw(callee, T_INT);
-    case vmIntrinsics::_putLong_raw   : return append_unsafe_put_raw(callee, T_LONG);
-    case vmIntrinsics::_putFloat_raw  : return append_unsafe_put_raw(callee, T_FLOAT);
-    case vmIntrinsics::_putDouble_raw : return append_unsafe_put_raw(callee, T_DOUBLE);
-
-    case vmIntrinsics::_checkIndex    :
-      if (!InlineNIOCheckIndex) return false;
-      preserves_state = true;
-      break;
-    case vmIntrinsics::_putOrderedObject : return append_unsafe_put_obj(callee, T_OBJECT,  true);
-    case vmIntrinsics::_putOrderedInt    : return append_unsafe_put_obj(callee, T_INT,     true);
-    case vmIntrinsics::_putOrderedLong   : return append_unsafe_put_obj(callee, T_LONG,    true);
-
-    case vmIntrinsics::_compareAndSwapLong:
-      if (!VM_Version::supports_cx8()) return false;
-      // fall through
-    case vmIntrinsics::_compareAndSwapInt:
-    case vmIntrinsics::_compareAndSwapObject:
-      append_unsafe_CAS(callee);
-      return true;
-
-    case vmIntrinsics::_getAndAddInt:
-      if (!VM_Version::supports_atomic_getadd4()) {
-        return false;
-      }
-      return append_unsafe_get_and_set_obj(callee, true);
-    case vmIntrinsics::_getAndAddLong:
-      if (!VM_Version::supports_atomic_getadd8()) {
-        return false;
-      }
-      return append_unsafe_get_and_set_obj(callee, true);
-    case vmIntrinsics::_getAndSetInt:
-      if (!VM_Version::supports_atomic_getset4()) {
-        return false;
-      }
-      return append_unsafe_get_and_set_obj(callee, false);
-    case vmIntrinsics::_getAndSetLong:
-      if (!VM_Version::supports_atomic_getset8()) {
-        return false;
-      }
-      return append_unsafe_get_and_set_obj(callee, false);
-    case vmIntrinsics::_getAndSetObject:
-#ifdef _LP64
-      if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) {
-        return false;
-      }
-      if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) {
-        return false;
-      }
-#else
-      if (!VM_Version::supports_atomic_getset4()) {
-        return false;
-      }
-#endif
-      return append_unsafe_get_and_set_obj(callee, false);
-
-    case vmIntrinsics::_Reference_get:
-      // Use the intrinsic version of Reference.get() so that the value in
-      // the referent field can be registered by the G1 pre-barrier code.
-      // Also to prevent commoning reads from this field across safepoint
-      // since GC can change its value.
-      preserves_state = true;
-      break;
-
-    case vmIntrinsics::_updateCRC32:
-    case vmIntrinsics::_updateBytesCRC32:
-    case vmIntrinsics::_updateByteBufferCRC32:
-      if (!UseCRC32Intrinsics) return false;
-      cantrap = false;
-      preserves_state = true;
-      break;
-
-    case vmIntrinsics::_loadFence :
-    case vmIntrinsics::_storeFence:
-    case vmIntrinsics::_fullFence :
-      break;
-
-    default                       : return false; // do not inline
-  }
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
   ValueType* result_type = as_ValueType(callee->return_type());
@@ -3621,8 +3475,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     }
   }
 
-  Intrinsic* result = new Intrinsic(result_type, id, args, has_receiver, state_before,
-                                    preserves_state, cantrap);
+  Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(),
+                                    args, has_receiver, state_before,
+                                    vmIntrinsics::preserves_state(id),
+                                    vmIntrinsics::can_trap(id));
   // append instruction & push result
   Value value = append_split(result);
   if (result_type != voidType) push(result_type, value);
@@ -3630,8 +3486,22 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   if (callee != method() && profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, callee);
   }
+}
 
-  // done
+bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
+  // For calling is_intrinsic_available we need to transition to
+  // the '_thread_in_vm' state because is_intrinsic_available()
+  // does not accesses critical VM-internal data.
+  if (!_compilation->compiler()->is_intrinsic_available(callee->get_Method(), NULL)) {
+    if (!InlineNatives) {
+      // Return false and also set message that the inlining of
+      // intrinsics has been disabled in general.
+      INLINE_BAILOUT("intrinsic method inlining disabled");
+    } else {
+      return false;
+    }
+  }
+  build_graph_for_intrinsic(callee);
   return true;
 }
 
@@ -4224,58 +4094,46 @@ void GraphBuilder::pop_scope_for_jsr() {
   _scope_data = scope_data()->parent();
 }
 
-bool GraphBuilder::append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    null_check(args->at(0));
-    Instruction* offset = args->at(2);
+void GraphBuilder::append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+  null_check(args->at(0));
+  Instruction* offset = args->at(2);
 #ifndef _LP64
-    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-    Instruction* op = append(new UnsafeGetObject(t, args->at(1), offset, is_volatile));
-    push(op->type(), op);
-    compilation()->set_has_unsafe_access(true);
-  }
-  return InlineUnsafeOps;
+  Instruction* op = append(new UnsafeGetObject(t, args->at(1), offset, is_volatile));
+  push(op->type(), op);
+  compilation()->set_has_unsafe_access(true);
 }
 
 
-bool GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    null_check(args->at(0));
-    Instruction* offset = args->at(2);
+void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+  null_check(args->at(0));
+  Instruction* offset = args->at(2);
 #ifndef _LP64
-    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-    Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, args->at(3), is_volatile));
-    compilation()->set_has_unsafe_access(true);
-    kill_all();
-  }
-  return InlineUnsafeOps;
+  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, args->at(3), is_volatile));
+  compilation()->set_has_unsafe_access(true);
+  kill_all();
 }
 
 
-bool GraphBuilder::append_unsafe_get_raw(ciMethod* callee, BasicType t) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    null_check(args->at(0));
-    Instruction* op = append(new UnsafeGetRaw(t, args->at(1), false));
-    push(op->type(), op);
-    compilation()->set_has_unsafe_access(true);
-  }
-  return InlineUnsafeOps;
+void GraphBuilder::append_unsafe_get_raw(ciMethod* callee, BasicType t) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+  null_check(args->at(0));
+  Instruction* op = append(new UnsafeGetRaw(t, args->at(1), false));
+  push(op->type(), op);
+  compilation()->set_has_unsafe_access(true);
 }
 
 
-bool GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    null_check(args->at(0));
-    Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
-    compilation()->set_has_unsafe_access(true);
-  }
-  return InlineUnsafeOps;
+void GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+  null_check(args->at(0));
+  Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
+  compilation()->set_has_unsafe_access(true);
 }
 
 
@@ -4352,21 +4210,18 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 }
 
-bool GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    BasicType t = callee->return_type()->basic_type();
-    null_check(args->at(0));
-    Instruction* offset = args->at(2);
+void GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+  BasicType t = callee->return_type()->basic_type();
+  null_check(args->at(0));
+  Instruction* offset = args->at(2);
 #ifndef _LP64
-    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-    Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
-    compilation()->set_has_unsafe_access(true);
-    kill_all();
-    push(op->type(), op);
-  }
-  return InlineUnsafeOps;
+  Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
+  compilation()->set_has_unsafe_access(true);
+  kill_all();
+  push(op->type(), op);
 }
 
 #ifndef PRODUCT

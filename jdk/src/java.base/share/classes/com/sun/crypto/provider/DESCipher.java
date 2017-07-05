@@ -77,7 +77,7 @@ public final class DESCipher extends CipherSpi {
     /**
      * Sets the padding mechanism of this cipher.
      *
-     * @param padding the padding mechanism
+     * @param paddingScheme the padding mechanism
      *
      * @exception NoSuchPaddingException if the requested padding mechanism
      * does not exist

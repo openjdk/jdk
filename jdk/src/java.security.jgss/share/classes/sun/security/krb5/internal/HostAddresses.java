@@ -45,7 +45,7 @@ import sun.security.krb5.internal.ccache.CCacheOutputStream;
 /**
  * Implements the ASN.1 HostAddresses type.
  *
- * <xmp>
+ * <pre>{@code
  * HostAddresses   -- NOTE: subtly different from rfc1510,
  *                 -- but has a value mapping and encodes the same
  *         ::= SEQUENCE OF HostAddress
@@ -54,7 +54,7 @@ import sun.security.krb5.internal.ccache.CCacheOutputStream;
  *         addr-type       [0] Int32,
  *         address         [1] OCTET STRING
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
@@ -337,5 +337,10 @@ public class HostAddresses implements Cloneable {
         addresses = new HostAddress[inetAddresses.length];
         for (int i = 0; i < inetAddresses.length; i++)
             addresses[i] = new HostAddress(inetAddresses[i]);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(addresses);
     }
 }

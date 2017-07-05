@@ -198,8 +198,8 @@ public class Krb5NameElement
      * If either name denotes an anonymous principal, the call should
      * return false.
      *
-     * @param name to be compared with
-     * @returns true if they both refer to the same entity, else false
+     * @param other to be compared with
+     * @return true if they both refer to the same entity, else false
      * @exception GSSException with major codes of BAD_NAMETYPE,
      *  BAD_NAME, FAILURE
      */
@@ -224,7 +224,7 @@ public class Krb5NameElement
      * situation where an error occurs.
      *
      * @param another the object to be compared to
-     * @returns true if they both refer to the same entity, else false
+     * @return true if they both refer to the same entity, else false
      * @see #equals(GSSNameSpi)
      */
     public boolean equals(Object another) {

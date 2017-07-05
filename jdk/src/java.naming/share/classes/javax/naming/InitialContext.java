@@ -49,13 +49,13 @@ import com.sun.naming.internal.ResourceManager;
  * The first occurrence of the property from the constructor's
  * environment parameter and system properties.
  * <li>
- * The application resource files (<tt>jndi.properties</tt>).
+ * The application resource files ({@code jndi.properties}).
  * </ol>
  * For each property found in both of these two sources, or in
  * more than one application resource file, the property's value
  * is determined as follows.  If the property is
  * one of the standard JNDI properties that specify a list of JNDI
- * factories (see <a href=Context.html#LISTPROPS><tt>Context</tt></a>),
+ * factories (see <a href=Context.html#LISTPROPS>{@code Context}</a>),
  * all of the values are
  * concatenated into a single colon-separated list.  For other
  * properties, only the first value found is used.
@@ -68,23 +68,23 @@ import com.sun.naming.internal.ResourceManager;
  * An exception to this policy is made when resolving URL strings, as described
  * below.
  *<p>
- * When a URL string (a <tt>String</tt> of the form
+ * When a URL string (a {@code String} of the form
  * <em>scheme_id:rest_of_name</em>) is passed as a name parameter to
  * any method, a URL context factory for handling that scheme is
  * located and used to resolve the URL.  If no such factory is found,
  * the initial context specified by
- * <tt>"java.naming.factory.initial"</tt> is used.  Similarly, when a
- * <tt>CompositeName</tt> object whose first component is a URL string is
+ * {@code "java.naming.factory.initial"} is used.  Similarly, when a
+ * {@code CompositeName} object whose first component is a URL string is
  * passed as a name parameter to any method, a URL context factory is
  * located and used to resolve the first name component.
  * See {@link NamingManager#getURLContext
- * <tt>NamingManager.getURLContext()</tt>} for a description of how URL
+ * NamingManager.getURLContext()} for a description of how URL
  * context factories are located.
  *<p>
  * This default policy of locating the initial context and URL context
  * factories may be overridden
  * by calling
- * <tt>NamingManager.setInitialContextFactoryBuilder()</tt>.
+ * {@code NamingManager.setInitialContextFactoryBuilder()}.
  *<p>
  * NoInitialContextException is thrown when an initial context cannot
  * be instantiated. This exception can be thrown during any interaction
@@ -125,7 +125,7 @@ public class InitialContext implements Context {
     /**
      * The environment associated with this InitialContext.
      * It is initialized to null and is updated by the constructor
-     * that accepts an environment or by the <tt>init()</tt> method.
+     * that accepts an environment or by the {@code init()} method.
      * @see #addToEnvironment
      * @see #removeFromEnvironment
      * @see #getEnvironment
@@ -152,14 +152,14 @@ public class InitialContext implements Context {
      * Constructs an initial context with the option of not
      * initializing it.  This may be used by a constructor in
      * a subclass when the value of the environment parameter
-     * is not yet known at the time the <tt>InitialContext</tt>
+     * is not yet known at the time the {@code InitialContext}
      * constructor is called.  The subclass's constructor will
      * call this constructor, compute the value of the environment,
-     * and then call <tt>init()</tt> before returning.
+     * and then call {@code init()} before returning.
      *
      * @param lazy
      *          true means do not initialize the initial context; false
-     *          is equivalent to calling <tt>new InitialContext()</tt>
+     *          is equivalent to calling {@code new InitialContext()}
      * @throws  NamingException if a naming exception is encountered
      *
      * @see #init(Hashtable)
@@ -174,7 +174,7 @@ public class InitialContext implements Context {
     /**
      * Constructs an initial context.
      * No environment properties are supplied.
-     * Equivalent to <tt>new InitialContext(null)</tt>.
+     * Equivalent to {@code new InitialContext(null)}.
      *
      * @throws  NamingException if a naming exception is encountered
      *
@@ -188,10 +188,10 @@ public class InitialContext implements Context {
      * Constructs an initial context using the supplied environment.
      * Environment properties are discussed in the class description.
      *
-     * <p> This constructor will not modify <tt>environment</tt>
+     * <p> This constructor will not modify {@code environment}
      * or save a reference to it, but may save a clone.
      * Caller should not modify mutable keys and values in
-     * <tt>environment</tt> after it has been passed to the constructor.
+     * {@code environment} after it has been passed to the constructor.
      *
      * @param environment
      *          environment used to create the initial context.
@@ -212,7 +212,7 @@ public class InitialContext implements Context {
      * Initializes the initial context using the supplied environment.
      * Environment properties are discussed in the class description.
      *
-     * <p> This method will modify <tt>environment</tt> and save
+     * <p> This method will modify {@code environment} and save
      * a reference to it.  The caller may no longer modify it.
      *
      * @param environment
@@ -245,7 +245,7 @@ public class InitialContext implements Context {
      *        InitialContext ic = new InitialContext();
      *        Object obj = ic.lookup();
      * </code>
-     * <p> If <tt>name</tt> is empty, returns a new instance of this context
+     * <p> If {@code name} is empty, returns a new instance of this context
      * (which represents the same naming context as this context, but its
      * environment may be modified independently and it may be accessed
      * concurrently).
@@ -253,7 +253,7 @@ public class InitialContext implements Context {
      * @param <T> the type of the returned object
      * @param name
      *          the name of the object to look up
-     * @return  the object bound to <tt>name</tt>
+     * @return  the object bound to {@code name}
      * @throws  NamingException if a naming exception is encountered
      *
      * @see #doLookup(String)
@@ -272,7 +272,7 @@ public class InitialContext implements Context {
      * @param <T> the type of the returned object
      * @param name
      *          the name of the object to look up
-     * @return  the object bound to <tt>name</tt>
+     * @return  the object bound to {@code name}
      * @throws  NamingException if a naming exception is encountered
      * @since 1.6
      */
@@ -506,7 +506,7 @@ public class InitialContext implements Context {
      * this context.
      * Since an initial context may never be named relative
      * to any context other than itself, the value of the
-     * <tt>prefix</tt> parameter must be an empty name (<tt>""</tt>).
+     * {@code prefix} parameter must be an empty name ({@code ""}).
      */
     public String composeName(String name, String prefix)
             throws NamingException {
@@ -518,7 +518,7 @@ public class InitialContext implements Context {
      * this context.
      * Since an initial context may never be named relative
      * to any context other than itself, the value of the
-     * <tt>prefix</tt> parameter must be an empty name.
+     * {@code prefix} parameter must be an empty name.
      */
     public Name composeName(Name name, Name prefix)
         throws NamingException

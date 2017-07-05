@@ -513,7 +513,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Creates key table file version.
      * @param file the key table file.
-     * @exception IOException.
+     * @exception IOException
      */
     public synchronized void createVersion(File file) throws IOException {
         try (KeyTabOutputStream kos =

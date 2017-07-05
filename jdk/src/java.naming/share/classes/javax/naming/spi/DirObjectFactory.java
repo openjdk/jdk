@@ -35,12 +35,12 @@ import javax.naming.directory.Attributes;
   *<p>
   * The JNDI framework allows for object implementations to
   * be loaded in dynamically via <em>object factories</em>. See
-  * <tt>ObjectFactory</tt> for details.
+  * {@code ObjectFactory} for details.
   * <p>
-  * A <tt>DirObjectFactory</tt> extends <tt>ObjectFactory</tt> by allowing
-  * an <tt>Attributes</tt> instance
-  * to be supplied to the <tt>getObjectInstance()</tt> method.
-  * <tt>DirObjectFactory</tt> implementations are intended to be used by <tt>DirContext</tt>
+  * A {@code DirObjectFactory} extends {@code ObjectFactory} by allowing
+  * an {@code Attributes} instance
+  * to be supplied to the {@code getObjectInstance()} method.
+  * {@code DirObjectFactory} implementations are intended to be used by {@code DirContext}
   * service providers. The service provider, in addition reading an
   * object from the directory, might already have attributes that
   * are useful for the object factory to check to see whether the
@@ -71,34 +71,34 @@ public interface DirObjectFactory extends ObjectFactory {
  * An example of such an environment property is user identity
  * information.
  *<p>
- * <tt>DirectoryManager.getObjectInstance()</tt>
- * successively loads in object factories. If it encounters a <tt>DirObjectFactory</tt>,
- * it will invoke <tt>DirObjectFactory.getObjectInstance()</tt>;
+ * {@code DirectoryManager.getObjectInstance()}
+ * successively loads in object factories. If it encounters a {@code DirObjectFactory},
+ * it will invoke {@code DirObjectFactory.getObjectInstance()};
  * otherwise, it invokes
- * <tt>ObjectFactory.getObjectInstance()</tt>. It does this until a factory
+ * {@code ObjectFactory.getObjectInstance()}. It does this until a factory
  * produces a non-null answer.
  * <p> When an exception
  * is thrown by an object factory, the exception is passed on to the caller
- * of <tt>DirectoryManager.getObjectInstance()</tt>. The search for other factories
+ * of {@code DirectoryManager.getObjectInstance()}. The search for other factories
  * that may produce a non-null answer is halted.
  * An object factory should only throw an exception if it is sure that
  * it is the only intended factory and that no other object factories
  * should be tried.
  * If this factory cannot create an object using the arguments supplied,
  * it should return null.
-  *<p>Since <tt>DirObjectFactory</tt> extends <tt>ObjectFactory</tt>, it
+  *<p>Since {@code DirObjectFactory} extends {@code ObjectFactory}, it
   * effectively
-  * has two <tt>getObjectInstance()</tt> methods, where one differs from the other by
-  * the attributes argument. Given a factory that implements <tt>DirObjectFactory</tt>,
-  * <tt>DirectoryManager.getObjectInstance()</tt> will only
+  * has two {@code getObjectInstance()} methods, where one differs from the other by
+  * the attributes argument. Given a factory that implements {@code DirObjectFactory},
+  * {@code DirectoryManager.getObjectInstance()} will only
   * use the method that accepts the attributes argument, while
-  * <tt>NamingManager.getObjectInstance()</tt> will only use the one that does not accept
+  * {@code NamingManager.getObjectInstance()} will only use the one that does not accept
   * the attributes argument.
  *<p>
- * See <tt>ObjectFactory</tt> for a description URL context factories and other
- * properties of object factories that apply equally to <tt>DirObjectFactory</tt>.
+ * See {@code ObjectFactory} for a description URL context factories and other
+ * properties of object factories that apply equally to {@code DirObjectFactory}.
  *<p>
- * The <tt>name</tt>, <tt>attrs</tt>, and <tt>environment</tt> parameters
+ * The {@code name}, {@code attrs}, and {@code environment} parameters
  * are owned by the caller.
  * The implementation will not modify these objects or keep references
  * to them, although it may keep references to clones or copies.
@@ -112,10 +112,10 @@ public interface DirObjectFactory extends ObjectFactory {
  *              relative to the default initial context.
  * @param environment The possibly null environment that is used in
  *              creating the object.
- * @param attrs The possibly null attributes containing some of <tt>obj</tt>'s
- * attributes. <tt>attrs</tt> might not necessarily have all of <tt>obj</tt>'s
+ * @param attrs The possibly null attributes containing some of {@code obj}'s
+ * attributes. {@code attrs} might not necessarily have all of {@code obj}'s
  * attributes. If the object factory requires more attributes, it needs
- * to get it, either using <tt>obj</tt>, or <tt>name</tt> and <tt>nameCtx</tt>.
+ * to get it, either using {@code obj}, or {@code name} and {@code nameCtx}.
  *      The factory must not modify attrs.
  * @return The object created; null if an object cannot be created.
  * @exception Exception If this object factory encountered an exception

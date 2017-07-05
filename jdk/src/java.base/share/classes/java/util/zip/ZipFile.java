@@ -50,7 +50,7 @@ import static java.util.zip.ZipConstants64.*;
 /**
  * This class is used to read entries from a zip file.
  *
- * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
@@ -76,7 +76,7 @@ class ZipFile implements ZipConstants, Closeable {
      * Mode flag to open a zip file and mark it for deletion.  The file will be
      * deleted some time between the moment that it is opened and the moment
      * that it is closed, but its contents will remain accessible via the
-     * <tt>ZipFile</tt> object until either the close method is invoked or the
+     * {@code ZipFile} object until either the close method is invoked or the
      * virtual machine exits.
      */
     public static final int OPEN_DELETE = 0x4;
@@ -101,8 +101,8 @@ class ZipFile implements ZipConstants, Closeable {
     /**
      * Opens a zip file for reading.
      *
-     * <p>First, if there is a security manager, its <code>checkRead</code>
-     * method is called with the <code>name</code> argument as its argument
+     * <p>First, if there is a security manager, its {@code checkRead}
+     * method is called with the {@code name} argument as its argument
      * to ensure the read is allowed.
      *
      * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used to
@@ -112,7 +112,7 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException if a security manager exists and its
-     *         <code>checkRead</code> method doesn't allow read access to the file.
+     *         {@code checkRead} method doesn't allow read access to the file.
      *
      * @see SecurityManager#checkRead(java.lang.String)
      */
@@ -121,12 +121,12 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Opens a new <code>ZipFile</code> to read from the specified
-     * <code>File</code> object in the specified mode.  The mode argument
-     * must be either <tt>OPEN_READ</tt> or <tt>OPEN_READ | OPEN_DELETE</tt>.
+     * Opens a new {@code ZipFile} to read from the specified
+     * {@code File} object in the specified mode.  The mode argument
+     * must be either {@code OPEN_READ} or {@code OPEN_READ | OPEN_DELETE}.
      *
-     * <p>First, if there is a security manager, its <code>checkRead</code>
-     * method is called with the <code>name</code> argument as its argument to
+     * <p>First, if there is a security manager, its {@code checkRead}
+     * method is called with the {@code name} argument as its argument to
      * ensure the read is allowed.
      *
      * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used to
@@ -137,11 +137,11 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException if a security manager exists and
-     *         its <code>checkRead</code> method
+     *         its {@code checkRead} method
      *         doesn't allow read access to the file,
-     *         or its <code>checkDelete</code> method doesn't allow deleting
-     *         the file when the <tt>OPEN_DELETE</tt> flag is set.
-     * @throws IllegalArgumentException if the <tt>mode</tt> argument is invalid
+     *         or its {@code checkDelete} method doesn't allow deleting
+     *         the file when the {@code OPEN_DELETE} flag is set.
+     * @throws IllegalArgumentException if the {@code mode} argument is invalid
      * @see SecurityManager#checkRead(java.lang.String)
      * @since 1.3
      */
@@ -166,12 +166,12 @@ class ZipFile implements ZipConstants, Closeable {
     private ZipCoder zc;
 
     /**
-     * Opens a new <code>ZipFile</code> to read from the specified
-     * <code>File</code> object in the specified mode.  The mode argument
-     * must be either <tt>OPEN_READ</tt> or <tt>OPEN_READ | OPEN_DELETE</tt>.
+     * Opens a new {@code ZipFile} to read from the specified
+     * {@code File} object in the specified mode.  The mode argument
+     * must be either {@code OPEN_READ} or {@code OPEN_READ | OPEN_DELETE}.
      *
-     * <p>First, if there is a security manager, its <code>checkRead</code>
-     * method is called with the <code>name</code> argument as its argument to
+     * <p>First, if there is a security manager, its {@code checkRead}
+     * method is called with the {@code name} argument as its argument to
      * ensure the read is allowed.
      *
      * @param file the ZIP file to be opened for reading
@@ -186,12 +186,12 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws IOException if an I/O error has occurred
      *
      * @throws SecurityException
-     *         if a security manager exists and its <code>checkRead</code>
+     *         if a security manager exists and its {@code checkRead}
      *         method doesn't allow read access to the file,or its
-     *         <code>checkDelete</code> method doesn't allow deleting the
-     *         file when the <tt>OPEN_DELETE</tt> flag is set
+     *         {@code checkDelete} method doesn't allow deleting the
+     *         file when the {@code OPEN_DELETE} flag is set
      *
-     * @throws IllegalArgumentException if the <tt>mode</tt> argument is invalid
+     * @throws IllegalArgumentException if the {@code mode} argument is invalid
      *
      * @see SecurityManager#checkRead(java.lang.String)
      *
@@ -227,8 +227,8 @@ class ZipFile implements ZipConstants, Closeable {
     /**
      * Opens a zip file for reading.
      *
-     * <p>First, if there is a security manager, its <code>checkRead</code>
-     * method is called with the <code>name</code> argument as its argument
+     * <p>First, if there is a security manager, its {@code checkRead}
+     * method is called with the {@code name} argument as its argument
      * to ensure the read is allowed.
      *
      * @param name the name of the zip file
@@ -241,7 +241,7 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException
-     *         if a security manager exists and its <code>checkRead</code>
+     *         if a security manager exists and its {@code checkRead}
      *         method doesn't allow read access to the file
      *
      * @see SecurityManager#checkRead(java.lang.String)
@@ -654,8 +654,8 @@ class ZipFile implements ZipConstants, Closeable {
      *
      * <p>
      * Since the time when GC would invoke this method is undetermined,
-     * it is strongly recommended that applications invoke the <code>close</code>
-     * method as soon they have finished accessing this <code>ZipFile</code>.
+     * it is strongly recommended that applications invoke the {@code close}
+     * method as soon they have finished accessing this {@code ZipFile}.
      * This will prevent holding up system resources for an undetermined
      * length of time.
      *

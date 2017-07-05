@@ -25,11 +25,11 @@
 
 package sun.security.ssl;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.LinkedList;
 import java.util.HashMap;
 import javax.net.ssl.SSLProtocolException;
-
-import sun.security.ssl.HandshakeMessage.*;
 
 import static sun.security.ssl.CipherSuite.KeyExchange;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
@@ -311,7 +311,7 @@ final class HandshakeStateManager {
         HS_SERVER_CHANGE_CIPHER_SPEC(
                 "server change_cipher_spec",
                 HandshakeMessage.ht_not_applicable),
-        HS_SERVER_FINISHDE(
+        HS_SERVER_FINISHED(
                 "server finished",
                 HandshakeMessage.ht_finished);
 
@@ -343,7 +343,8 @@ final class HandshakeStateManager {
         return upcomingStates.isEmpty();
     }
 
-    void check(byte handshakeType) throws SSLProtocolException {
+    List<Byte> check(byte handshakeType) throws SSLProtocolException {
+        List<Byte> ignoredOptional = new LinkedList<>();
         String exceptionMsg =
                  "Handshake message sequence violation, " + handshakeType;
 
@@ -362,27 +363,28 @@ final class HandshakeStateManager {
             }
 
             // It is a kickstart message.
-            return;
+            return Collections.emptyList();
         }
 
-        // Ignore the checking for HelloRequest messages as they are
+        // Ignore the checking for HelloRequest messages as they
         // may be sent by the server at any time.
         if (handshakeType == HandshakeMessage.ht_hello_request) {
-            return;
+            return Collections.emptyList();
         }
 
         for (HandshakeState handshakeState : upcomingStates) {
             if (handshakeState.handshakeType == handshakeType) {
                 // It's the expected next handshake type.
-                return;
+                return ignoredOptional;
             }
 
             if (handshakeState.isOptional) {
+                ignoredOptional.add(handshakeState.handshakeType);
                 continue;
             } else {
                 for (HandshakeState alternative : alternatives) {
                     if (alternative.handshakeType == handshakeType) {
-                        return;
+                        return ignoredOptional;
                     }
 
                     if (alternative.isOptional) {
@@ -541,7 +543,7 @@ final class HandshakeStateManager {
             //              (Server Finished Flight)
             //              HS_NEW_SESSION_TICKET
             //          --> HS_SERVER_CHANGE_CIPHER_SPEC
-            //          --> HS_SERVER_FINISHDE
+            //          --> HS_SERVER_FINISHED
             //              (Client Finished Flight)
             //          --> HS_CLIENT_CHANGE_CIPHER_SPEC
             //          --> HS_CLEINT_FINISHED
@@ -587,7 +589,7 @@ final class HandshakeStateManager {
 
                 // Mandatory server ChangeCipherSpec and Finished messages
                 upcomingStates.add(HS_SERVER_CHANGE_CIPHER_SPEC);
-                upcomingStates.add(HS_SERVER_FINISHDE);
+                upcomingStates.add(HS_SERVER_FINISHED);
 
                 // Mandatory client ChangeCipherSpec and Finished messages
                 upcomingStates.add(HS_CLIENT_CHANGE_CIPHER_SPEC);
@@ -598,15 +600,11 @@ final class HandshakeStateManager {
                 // boolean hasSupplementalDataExt =
                 //     (hes.get(HandshakeMessage.ht_supplemental_data) != null);
 
-                // Not support CertificateStatus extension yet.
-                //
-                // boolean hasCertificateStatusExt =
-                //    (hes.get(HandshakeMessage.ht_certificate_status) != null);
-
                 // Not support CertificateURL extension yet.
                 //
                 // boolean hasCertificateUrlExt =
-                //     (hes.get(HandshakeMessage.ht_certificate_url) != null);
+                //     (hes.get(ExtensionType EXT_CLIENT_CERTIFICATE_URL)
+                //          != null);
 
                 // Not support SupplementalData extension yet.
                 //
@@ -625,12 +623,11 @@ final class HandshakeStateManager {
                     upcomingStates.add(HS_SERVER_CERTIFICATE);
                 }
 
-                // Not support CertificateStatus extension yet.
-                //
-                // // Optional CertificateStatus message
-                // if (hasCertificateStatusExt) {
-                //     upcomingStates.add(HS_CERTIFICATE_STATUS);
-                // }
+                // Optional CertificateStatus message
+                if (hes.get(ExtensionType.EXT_STATUS_REQUEST) != null ||
+                        hes.get(ExtensionType.EXT_STATUS_REQUEST_V2) != null) {
+                    upcomingStates.add(HS_CERTIFICATE_STATUS);
+                }
 
                 // Need ServerKeyExchange message or not?
                 if ((keyExchange == K_RSA_EXPORT) ||
@@ -690,7 +687,7 @@ final class HandshakeStateManager {
 
                 // Mandatory server ChangeCipherSpec and Finished messages
                 upcomingStates.add(HS_SERVER_CHANGE_CIPHER_SPEC);
-                upcomingStates.add(HS_SERVER_FINISHDE);
+                upcomingStates.add(HS_SERVER_FINISHED);
             }
 
             break;

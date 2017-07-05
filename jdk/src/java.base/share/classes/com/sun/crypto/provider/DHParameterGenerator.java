@@ -92,7 +92,7 @@ extends AlgorithmParameterGeneratorSpi {
      * generation values, which specify the size of the prime modulus and
      * the size of the random exponent, both in bits.
      *
-     * @param params the set of parameter generation values
+     * @param genParamSpec the set of parameter generation values
      * @param random the source of randomness
      *
      * @exception InvalidAlgorithmParameterException if the given parameter

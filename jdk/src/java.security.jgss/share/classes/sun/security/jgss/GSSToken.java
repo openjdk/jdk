@@ -84,7 +84,7 @@ public abstract class GSSToken {
      *
      * @param data the array containing the bytes of the integer value
      * @param pos the offset in the array
-     * @size the number of bytes to read from the array.
+     * @param size the number of bytes to read from the array.
      * @return the integer value
      */
     public static final int readLittleEndian(byte[] data, int pos, int size) {
@@ -141,7 +141,7 @@ public abstract class GSSToken {
      * Reads a two byte integer value from an InputStream.
      *
      * @param is the InputStream to read from
-     * @returns the integer value
+     * @return the integer value
      * @throws IOException if some errors occurs while reading the integer
      * bytes.
      */
@@ -155,7 +155,7 @@ public abstract class GSSToken {
      *
      * @param src the byte arra to read from
      * @param pos the offset to start reading from
-     * @returns the integer value
+     * @return the integer value
      */
     public static final int readInt(byte[] src, int pos) {
         return ((0xFF & src[pos])<<8 | (0xFF & src[pos+1]));
@@ -167,8 +167,8 @@ public abstract class GSSToken {
      *
      * @param is the InputStream to read from
      * @param buffer the buffer to store the bytes into
-     * @param throws EOFException if EOF is reached before all bytes are
-     * read.
+     * @throws EOFException if EOF is reached before all bytes are
+     *         read.
      * @throws IOException is an error occurs while reading
      */
     public static final void readFully(InputStream is, byte[] buffer)
@@ -184,8 +184,8 @@ public abstract class GSSToken {
      * @param buffer the buffer to store the bytes into
      * @param offset the offset to start storing at
      * @param len the number of bytes to read
-     * @param throws EOFException if EOF is reached before all bytes are
-     * read.
+     * @throws EOFException if EOF is reached before all bytes are
+     *         read.
      * @throws IOException is an error occurs while reading
      */
     public static final void readFully(InputStream is,

@@ -34,24 +34,24 @@ import java.util.Hashtable;
   * This class is the starting context for performing
   * LDAPv3-style extended operations and controls.
   *<p>
-  * See <tt>javax.naming.InitialContext</tt> and
-  * <tt>javax.naming.InitialDirContext</tt> for details on synchronization,
+  * See {@code javax.naming.InitialContext} and
+  * {@code javax.naming.InitialDirContext} for details on synchronization,
   * and the policy for how an initial context is created.
   *
   * <h1>Request Controls</h1>
-  * When you create an initial context (<tt>InitialLdapContext</tt>),
+  * When you create an initial context ({@code InitialLdapContext}),
   * you can specify a list of request controls.
   * These controls will be used as the request controls for any
   * implicit LDAP "bind" operation performed by the context or contexts
   * derived from the context. These are called <em>connection request controls</em>.
-  * Use <tt>getConnectControls()</tt> to get a context's connection request
+  * Use {@code getConnectControls()} to get a context's connection request
   * controls.
   *<p>
   * The request controls supplied to the initial context constructor
   * are <em>not</em> used as the context request controls
   * for subsequent context operations such as searches and lookups.
   * Context request controls are set and updated by using
-  * <tt>setRequestControls()</tt>.
+  * {@code setRequestControls()}.
   *<p>
   * As shown, there can be two different sets of request controls
   * associated with a context: connection request controls and context
@@ -67,14 +67,14 @@ import java.util.Hashtable;
   * Controls[] respCtls =  lctx.getResponseControls();
   *</pre></blockquote>
   * It specifies first the critical controls for creating the initial context
-  * (<tt>critConnCtls</tt>), and then sets the context's request controls
-  * (<tt>critModCtls</tt>) for the context operation. If for some reason
-  * <tt>lctx</tt> needs to reconnect to the server, it will use
-  * <tt>critConnCtls</tt>. See the <tt>LdapContext</tt> interface for
+  * ({@code critConnCtls}), and then sets the context's request controls
+  * ({@code critModCtls}) for the context operation. If for some reason
+  * {@code lctx} needs to reconnect to the server, it will use
+  * {@code critConnCtls}. See the {@code LdapContext} interface for
   * more discussion about request controls.
   *<p>
   * Service provider implementors should read the "Service Provider" section
-  * in the <tt>LdapContext</tt> class description for implementation details.
+  * in the {@code LdapContext} class description for implementation details.
   *
   * @author Rosanna Lee
   * @author Scott Seligman
@@ -94,7 +94,7 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
     /**
      * Constructs an initial context using no environment properties or
      * connection request controls.
-     * Equivalent to <tt>new InitialLdapContext(null, null)</tt>.
+     * Equivalent to {@code new InitialLdapContext(null, null)}.
      *
      * @throws  NamingException if a naming exception is encountered
      */
@@ -105,15 +105,15 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
     /**
      * Constructs an initial context
      * using environment properties and connection request controls.
-     * See <tt>javax.naming.InitialContext</tt> for a discussion of
+     * See {@code javax.naming.InitialContext} for a discussion of
      * environment properties.
      *
      * <p> This constructor will not modify its parameters or
      * save references to them, but may save a clone or copy.
      * Caller should not modify mutable keys and values in
-     * <tt>environment</tt> after it has been passed to the constructor.
+     * {@code environment} after it has been passed to the constructor.
      *
-     * <p> <tt>connCtls</tt> is used as the underlying context instance's
+     * <p> {@code connCtls} is used as the underlying context instance's
      * connection request controls.  See the class description
      * for details.
      *
@@ -159,7 +159,7 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
      *
      * @return The non-null cached initial context.
      * @exception NotContextException If the initial context is not an
-     * instance of <tt>LdapContext</tt>.
+     * instance of {@code LdapContext}.
      * @exception NamingException If a naming exception was encountered.
      */
     private LdapContext getDefaultLdapInitCtx() throws NamingException{

@@ -42,7 +42,7 @@ package java.lang.ref;
  *
  * <p> All soft references to softly-reachable objects are guaranteed to have
  * been cleared before the virtual machine throws an
- * <code>OutOfMemoryError</code>.  Otherwise no constraints are placed upon the
+ * {@code OutOfMemoryError}.  Otherwise no constraints are placed upon the
  * time at which a soft reference will be cleared or the order in which a set
  * of such references to different objects will be cleared.  Virtual machine
  * implementations are, however, encouraged to bias against clearing
@@ -92,7 +92,7 @@ public class SoftReference<T> extends Reference<T> {
      *
      * @param referent object the new soft reference will refer to
      * @param q the queue with which the reference is to be registered,
-     *          or <tt>null</tt> if registration is not required
+     *          or {@code null} if registration is not required
      *
      */
     public SoftReference(T referent, ReferenceQueue<? super T> q) {
@@ -103,10 +103,10 @@ public class SoftReference<T> extends Reference<T> {
     /**
      * Returns this reference object's referent.  If this reference object has
      * been cleared, either by the program or by the garbage collector, then
-     * this method returns <code>null</code>.
+     * this method returns {@code null}.
      *
      * @return   The object to which this reference refers, or
-     *           <code>null</code> if this reference object has been cleared
+     *           {@code null} if this reference object has been cleared
      */
     public T get() {
         T o = super.get();

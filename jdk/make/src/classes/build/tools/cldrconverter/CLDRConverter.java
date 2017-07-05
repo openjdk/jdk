@@ -433,35 +433,35 @@ public class CLDRConverter {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, bundle.getID());
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("LocaleNames").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getID(), true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getJavaID(), true, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, bundle.getID(), bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CurrencyNames").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getID(), true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getJavaID(), true, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, bundle.getID());
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("TimeZoneNames").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getID(), true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getJavaID(), true, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, bundle.getID());
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CalendarData").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getID(), true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getJavaID(), true, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, bundle.getID());
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("FormatData").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("text", "FormatData", bundle.getID(), true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", bundle.getJavaID(), true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
