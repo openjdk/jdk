@@ -60,11 +60,10 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+
 public class MultiReleaseJarProperties {
+    final static int BASE_VERSION = JarFile.baseVersion().major();
 
-    static final int MAJOR_VERSION = Runtime.version().major();
-
-    final static int ROOTVERSION = 8; // magic number from knowledge of internals
     final static String userdir = System.getProperty("user.dir", ".");
     final static File multirelease = new File(userdir, "multi-release.jar");
     protected int rtVersion;
@@ -77,15 +76,15 @@ public class MultiReleaseJarProperties {
         CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildMultiReleaseJar();
-
-        rtVersion = Integer.getInteger("jdk.util.jar.version", MAJOR_VERSION);
+        int RUNTIME_VERSION = Runtime.version().major();
+        rtVersion = Integer.getInteger("jdk.util.jar.version", RUNTIME_VERSION);
         String mrprop = System.getProperty("jdk.util.jar.enableMultiRelease", "");
         if (mrprop.equals("false")) {
-            rtVersion = ROOTVERSION;
-        } else if (rtVersion < ROOTVERSION) {
-            rtVersion = ROOTVERSION;
-        } else if (rtVersion > MAJOR_VERSION) {
-            rtVersion = MAJOR_VERSION;
+            rtVersion = BASE_VERSION;
+        } else if (rtVersion < BASE_VERSION) {
+            rtVersion = BASE_VERSION;
+        } else if (rtVersion > RUNTIME_VERSION) {
+            rtVersion = RUNTIME_VERSION;
         }
         force = mrprop.equals("force");
 
@@ -135,7 +134,7 @@ public class MultiReleaseJarProperties {
                     if (force) throw x;
                 }
             }
-            invokeMethod(vcls, force ? rtVersion : ROOTVERSION);
+            invokeMethod(vcls, force ? rtVersion : BASE_VERSION);
         }
     }
 

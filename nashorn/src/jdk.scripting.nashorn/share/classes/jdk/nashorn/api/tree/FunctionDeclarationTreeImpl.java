@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.nashorn.internal.ir.VarNode;
 final class FunctionDeclarationTreeImpl extends StatementTreeImpl
     implements FunctionDeclarationTree {
     private final FunctionNode funcNode;
-    private final String funcName;
+    private final IdentifierTree funcName;
     private final List<? extends ExpressionTree> params;
     private final BlockTree body;
 
@@ -43,7 +43,7 @@ final class FunctionDeclarationTreeImpl extends StatementTreeImpl
         assert node.getInit() instanceof FunctionNode : "function expected";
         funcNode = (FunctionNode)node.getInit();
         assert funcNode.isDeclared() : "function declaration expected";
-        funcName = funcNode.isAnonymous()? null : node.getName().getName();
+        funcName = funcNode.isAnonymous()? null : new IdentifierTreeImpl(node.getName());
         this.params = params;
         this.body = body;
     }
@@ -54,7 +54,7 @@ final class FunctionDeclarationTreeImpl extends StatementTreeImpl
     }
 
     @Override
-    public String getName() {
+    public IdentifierTree getName() {
         return funcName;
     }
 
@@ -71,6 +71,11 @@ final class FunctionDeclarationTreeImpl extends StatementTreeImpl
     @Override
     public boolean isStrict() {
         return funcNode.isStrict();
+    }
+
+    @Override
+    public boolean isGenerator() {
+        return funcNode.getKind() == FunctionNode.Kind.GENERATOR;
     }
 
     @Override

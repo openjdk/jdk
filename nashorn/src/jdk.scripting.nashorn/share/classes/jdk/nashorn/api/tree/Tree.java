@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,16 @@ public interface Tree {
          * Used for instances of {@link BreakTree}.
          */
         BREAK(BreakTree.class),
+
+        /**
+         * Used for instances of {@link ClassDeclarationTree}.
+         */
+        CLASS(ClassDeclarationTree.class),
+
+        /**
+         * Used for instances of {@link ClassExpressionTree}.
+         */
+        CLASS_EXPRESSION(ClassExpressionTree.class),
 
         /**
          * Used for instances of {@link CaseTree}.
@@ -150,6 +160,21 @@ public interface Tree {
         LABELED_STATEMENT(LabeledStatementTree.class),
 
         /**
+         * Used for instances of {@link ModuleTree}.
+         */
+        MODULE(ModuleTree.class),
+
+        /**
+         * Used for instances of {@link ExportEntryTree}.
+         */
+        EXPORT_ENTRY(ExportEntryTree.class),
+
+        /**
+         * Used for instances of {@link ImportEntryTree}.
+         */
+        IMPORT_ENTRY(ImportEntryTree.class),
+
+        /**
          * Used for instances of {@link FunctionDeclarationTree}.
          */
         FUNCTION(FunctionDeclarationTree.class),
@@ -183,6 +208,11 @@ public interface Tree {
          * Used for instances of {@link RegExpLiteralTree}.
          */
         REGEXP_LITERAL(RegExpLiteralTree.class),
+
+        /**
+         * Used for instances of {@link TemplateLiteralTree}.
+         */
+        TEMPLATE_LITERAL(TemplateLiteralTree.class),
 
         /**
          * Used for instances of {@link ReturnTree}.
@@ -286,7 +316,7 @@ public interface Tree {
 
         /**
          * Used for instances of {@link UnaryTree} representing logical
-         * void operator {@code typeof}.
+         * void operator {@code void}.
          */
         VOID(UnaryTree.class),
 
@@ -493,6 +523,18 @@ public interface Tree {
          * bitwise and logical "or" assignment {@code |=}.
          */
         OR_ASSIGNMENT(CompoundAssignmentTree.class),
+
+        /**
+         * Used for instances of {@link SpreadTree} representing
+         * spread "operator" for arrays and function call arguments.
+         */
+        SPREAD(SpreadTree.class),
+
+        /**
+         * Used for instances of {@link YieldTree} representing (generator)
+         * yield expression {@code yield expr}.
+         */
+        YIELD(YieldTree.class),
 
         /**
          * Used for instances of {@link LiteralTree} representing

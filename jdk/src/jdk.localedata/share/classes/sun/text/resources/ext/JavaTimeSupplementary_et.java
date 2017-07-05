@@ -280,6 +280,8 @@ public class JavaTimeSupplementary_et extends OpenListResourceBundle {
                 sharedTimePatterns },
             { "roc.narrow.AmPmMarkers",
                 sharedNarrowAmPmMarkers },
+            { "timezone.hourFormat",
+                "+HH:mm;\u2212HH:mm" },
         };
     }
 }

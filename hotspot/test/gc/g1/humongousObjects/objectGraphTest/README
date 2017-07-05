@@ -38,6 +38,9 @@ The test checks that after different type of GC unreachable objects behave as ex
                         non-humongous and humongous objects are not collected since we make 2 Young GC to promote all
                         weak references to Old Gen.
 
+6. Mixed GC - weakly referenced non-humongous and humongous objects are collected, softly referenced non-humongous and
+              humongous objects are not collected.
+
 The test gets gc type as a command line argument.
 Then the test allocates object graph in heap (currently testing scenarios are pre-generated and stored in
 TestcaseData.getPregeneratedTestcases()) with TestObjectGraphAfterGC::allocateObjectGraph.

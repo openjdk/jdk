@@ -64,8 +64,8 @@ import sun.security.util.SignatureFileVerifier;
  * file, and as such an entry name is associated with at most one base entry.
  * The {@code JarFile} may be configured to process a multi-release jar file by
  * creating the {@code JarFile} with the
- * {@link JarFile#JarFile(File, boolean, int, Release)} constructor.  The
- * {@code Release} object sets a maximum version used when searching for
+ * {@link JarFile#JarFile(File, boolean, int, Runtime.Version)} constructor.  The
+ * {@code Runtime.Version} object sets a maximum version used when searching for
  * versioned entries.  When so configured, an entry name
  * can correspond with at most one base entry and zero or more versioned
  * entries. A search is required to associate the entry name with the latest
@@ -74,8 +74,8 @@ import sun.security.util.SignatureFileVerifier;
  *
  * <p>Class loaders that utilize {@code JarFile} to load classes from the
  * contents of {@code JarFile} entries should construct the {@code JarFile}
- * by invoking the {@link JarFile#JarFile(File, boolean, int, Release)}
- * constructor with the value {@code Release.RUNTIME} assigned to the last
+ * by invoking the {@link JarFile#JarFile(File, boolean, int, Runtime.Version)}
+ * constructor with the value {@code Runtime.version()} assigned to the last
  * argument.  This assures that classes compatible with the major
  * version of the running JVM are loaded from multi-release jar files.
  *
@@ -99,12 +99,12 @@ import sun.security.util.SignatureFileVerifier;
  * <li>
  * {@code jdk.util.jar.version} can be assigned a value that is the
  * {@code String} representation of a non-negative integer
- * {@code <= Version.current().major()}.  The value is used to set the effective
+ * {@code <= Runtime.version().major()}.  The value is used to set the effective
  * runtime version to something other than the default value obtained by
- * evaluating {@code Version.current().major()}. The effective runtime version
- * is the version that the {@link JarFile#JarFile(File, boolean, int, Release)}
+ * evaluating {@code Runtime.version().major()}. The effective runtime version
+ * is the version that the {@link JarFile#JarFile(File, boolean, int, Runtime.Version)}
  * constructor uses when the value of the last argument is
- * {@code Release.RUNTIME}.
+ * {@code JarFile.runtimeVersion()}.
  * </li>
  * <li>
  * {@code jdk.util.jar.enableMultiRelease} can be assigned one of the three
@@ -116,7 +116,7 @@ import sun.security.util.SignatureFileVerifier;
  * the method {@link JarFile#isMultiRelease()} returns <em>false</em>. The value
  * <em>force</em> causes the {@code JarFile} to be initialized to runtime
  * versioning after construction.  It effectively does the same as this code:
- * {@code (new JarFile(File, boolean, int, Release.RUNTIME)}.
+ * {@code (new JarFile(File, boolean, int, JarFile.runtimeVersion())}.
  * </li>
  * </ul>
  * </div>
@@ -129,8 +129,9 @@ import sun.security.util.SignatureFileVerifier;
  */
 public
 class JarFile extends ZipFile {
-    private final static int BASE_VERSION;
-    private final static int RUNTIME_VERSION;
+    private final static Runtime.Version BASE_VERSION;
+    private final static int BASE_VERSION_MAJOR;
+    private final static Runtime.Version RUNTIME_VERSION;
     private final static boolean MULTI_RELEASE_ENABLED;
     private final static boolean MULTI_RELEASE_FORCED;
     private SoftReference<Manifest> manRef;
@@ -138,10 +139,10 @@ class JarFile extends ZipFile {
     private JarVerifier jv;
     private boolean jvInitialized;
     private boolean verify;
-    private final int version;
-    private boolean notVersioned;
-    private final boolean runtimeVersioned;
-    private boolean isMultiRelease;    // is jar multi-release?
+    private final Runtime.Version version;  // current version
+    private final int versionMajor;         // version.major()
+    private boolean notVersioned;           // legacy constructor called
+    private boolean isMultiRelease;         // is jar multi-release?
 
     // indicates if Class-Path attribute present
     private boolean hasClassPathAttribute;
@@ -151,17 +152,18 @@ class JarFile extends ZipFile {
     static {
         // Set up JavaUtilJarAccess in SharedSecrets
         SharedSecrets.setJavaUtilJarAccess(new JavaUtilJarAccessImpl());
-
-        BASE_VERSION = 8;  // one less than lowest version for versioned entries
+        // multi-release jar file versions >= 9
+        BASE_VERSION = Runtime.Version.parse(Integer.toString(8));
+        BASE_VERSION_MAJOR = BASE_VERSION.major();
+        String jarVersion = GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
         int runtimeVersion = Runtime.version().major();
-        String jarVersion =
-                GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
         if (jarVersion != null) {
             int jarVer = Integer.parseInt(jarVersion);
             runtimeVersion = (jarVer > runtimeVersion)
-                    ? runtimeVersion : Math.max(jarVer, 0);
+                    ? runtimeVersion
+                    : Math.max(jarVer, BASE_VERSION_MAJOR);
         }
-        RUNTIME_VERSION = runtimeVersion;
+        RUNTIME_VERSION = Runtime.Version.parse(Integer.toString(runtimeVersion));
         String enableMultiRelease = GetPropertyAction
                 .privilegedGetProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
@@ -181,61 +183,6 @@ class JarFile extends ZipFile {
         }
     }
 
-    /**
-     * A set of constants that represent the entries in either the base directory
-     * or one of the versioned directories in a multi-release jar file.  It's
-     * possible for a multi-release jar file to contain versioned directories
-     * that are not represented by the constants of the {@code Release} enum.
-     * In those cases, the entries will not be located by this {@code JarFile}
-     * through the aliasing mechanism, but they can be directly accessed by
-     * specifying the full path name of the entry.
-     *
-     * @since 9
-     */
-    public enum Release {
-        /**
-         * Represents unversioned entries, or entries in "regular", as opposed
-         * to multi-release jar files.
-         */
-        BASE(BASE_VERSION),
-
-        /**
-         * Represents entries found in the META-INF/versions/9 directory of a
-         * multi-release jar file.
-         */
-        VERSION_9(9),
-
-        // fill in the "blanks" for future releases
-
-        /**
-         * Represents entries found in the META-INF/versions/{n} directory of a
-         * multi-release jar file, where {@code n} is the effective runtime
-         * version of the jar file.
-         *
-         * @implNote
-         * <div class="block">
-         * The effective runtime version is determined
-         * by evaluating {@code Version.current().major()} or by using the value
-         * of the {@code jdk.util.jar.version} System property if it exists.
-         * </div>
-         */
-        RUNTIME(RUNTIME_VERSION);
-
-        Release(int version) {
-            this.version = version;
-        }
-
-        private static Release valueOf(int version) {
-            return version <= BASE.value() ? BASE : valueOf("VERSION_" + version);
-        }
-
-        private final int version;
-
-        private int value() {
-            return this.version;
-        }
-    }
-
     private static final String META_INF = "META-INF/";
 
     private static final String META_INF_VERSIONS = META_INF + "versions/";
@@ -244,6 +191,32 @@ class JarFile extends ZipFile {
      * The JAR manifest file name.
      */
     public static final String MANIFEST_NAME = META_INF + "MANIFEST.MF";
+
+    /**
+     * The version that represents the unversioned configuration of a multi-release jar file.
+     *
+     * @return Runtime.Version that represents the unversioned configuration
+     *
+     * @since 9
+     */
+    public static Runtime.Version baseVersion() {
+        return BASE_VERSION;
+    }
+
+    /**
+     * The version that represents the effective runtime versioned configuration of a
+     * multi-release jar file.  In most cases, {@code runtimeVersion()} is equal to
+     * {@code Runtime.version()}.  However, if the {@code jdk.util.jar.version} property is set,
+     * {@code runtimeVersion()} is derived from that property and may not be equal to
+     * {@code Runtime.version()}.
+     *
+     * @return Runtime.Version that represents the runtime versioned configuration
+     *
+     * @since 9
+     */
+    public static Runtime.Version runtimeVersion() {
+        return RUNTIME_VERSION;
+    }
 
     /**
      * Creates a new {@code JarFile} to read from the specified
@@ -316,7 +289,7 @@ class JarFile extends ZipFile {
      * @since 1.3
      */
     public JarFile(File file, boolean verify, int mode) throws IOException {
-        this(file, verify, mode, Release.BASE);
+        this(file, verify, mode, BASE_VERSION);
         this.notVersioned = true;
     }
 
@@ -324,8 +297,13 @@ class JarFile extends ZipFile {
      * Creates a new {@code JarFile} to read from the specified
      * {@code File} object in the specified mode.  The mode argument
      * must be either {@code OPEN_READ} or {@code OPEN_READ | OPEN_DELETE}.
-     * The version argument configures the {@code JarFile} for processing
+     * The version argument, after being converted to a canonical form, is
+     * used to configure the {@code JarFile} for processing
      * multi-release jar files.
+     * <p>
+     * The canonical form derived from the version parameter is
+     * {@code Runtime.Version.parse(Integer.toString(n))} where {@code n} is
+     * {@code Math.max(version.major(), JarFile.baseVersion().major())}.
      *
      * @param file the jar file to be opened for reading
      * @param verify whether or not to verify the jar file if
@@ -340,47 +318,31 @@ class JarFile extends ZipFile {
      * @throws NullPointerException if {@code version} is {@code null}
      * @since 9
      */
-    public JarFile(File file, boolean verify, int mode, Release version) throws IOException {
+    public JarFile(File file, boolean verify, int mode, Runtime.Version version) throws IOException {
         super(file, mode);
-        Objects.requireNonNull(version);
         this.verify = verify;
-        // version applies to multi-release jar files, ignored for regular jar files
-        if (MULTI_RELEASE_FORCED) {
+        Objects.requireNonNull(version);
+        if (MULTI_RELEASE_FORCED || version.major() == RUNTIME_VERSION.major()) {
+            // This deals with the common case where the value from JarFile.runtimeVersion() is passed
             this.version = RUNTIME_VERSION;
-            version = Release.RUNTIME;
+        } else if (version.major() <= BASE_VERSION_MAJOR) {
+            // This also deals with the common case where the value from JarFile.baseVersion() is passed
+            this.version = BASE_VERSION;
         } else {
-            this.version = version.value();
+            // Canonicalize
+            this.version = Runtime.Version.parse(Integer.toString(version.major()));
         }
-        this.runtimeVersioned = version == Release.RUNTIME;
-
-        assert runtimeVersionExists();
-    }
-
-    private boolean runtimeVersionExists() {
-        int version = Runtime.version().major();
-        try {
-            Release.valueOf(version);
-            return true;
-        } catch (IllegalArgumentException x) {
-            System.err.println("No JarFile.Release object for release " + version);
-            return false;
-        }
+        this.versionMajor = this.version.major();
     }
 
     /**
      * Returns the maximum version used when searching for versioned entries.
      *
-     * @return the maximum version, or {@code Release.BASE} if this jar file is
-     *         processed as if it is an unversioned jar file or is not a
-     *         multi-release jar file
+     * @return the maximum version
      * @since 9
      */
-    public final Release getVersion() {
-        if (isMultiRelease()) {
-            return runtimeVersioned ? Release.RUNTIME : Release.valueOf(version);
-        } else {
-            return Release.BASE;
-        }
+    public final Runtime.Version getVersion() {
+        return isMultiRelease() ? this.version : BASE_VERSION;
     }
 
     /**
@@ -393,7 +355,7 @@ class JarFile extends ZipFile {
         if (isMultiRelease) {
             return true;
         }
-        if (MULTI_RELEASE_ENABLED && version != BASE_VERSION) {
+        if (MULTI_RELEASE_ENABLED && versionMajor != BASE_VERSION_MAJOR) {
             try {
                 checkForSpecialAttributes();
             } catch (IOException io) {
@@ -639,7 +601,7 @@ class JarFile extends ZipFile {
         ZipEntry vze = null;
         String sname = "/" + name;
         int i = version;
-        while (i > BASE_VERSION) {
+        while (i > BASE_VERSION_MAJOR) {
             vze = super.getEntry(META_INF_VERSIONS + i + sname);
             if (vze != null) break;
             i--;
@@ -649,10 +611,10 @@ class JarFile extends ZipFile {
 
     private ZipEntry getVersionedEntry(ZipEntry ze) {
         ZipEntry vze = null;
-        if (version > BASE_VERSION && !ze.isDirectory()) {
+        if (BASE_VERSION_MAJOR < versionMajor && !ze.isDirectory()) {
             String name = ze.getName();
             if (!name.startsWith(META_INF)) {
-                vze = searchForVersionedEntry(version, name);
+                vze = searchForVersionedEntry(versionMajor, name);
             }
         }
         return vze == null ? ze : vze;
@@ -1038,7 +1000,7 @@ class JarFile extends ZipFile {
                 hasClassPathAttribute = match(CLASSPATH_CHARS, b,
                         CLASSPATH_LASTOCC) != -1;
                 // is this a multi-release jar file
-                if (MULTI_RELEASE_ENABLED && version != BASE_VERSION) {
+                if (MULTI_RELEASE_ENABLED && versionMajor != BASE_VERSION_MAJOR) {
                     int i = match(MULTIRELEASE_CHARS, b, MULTIRELEASE_LASTOCC);
                     if (i != -1) {
                         i += MULTIRELEASE_CHARS.length;
