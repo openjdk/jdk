@@ -177,7 +177,7 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
     // Never trust strangely unstable finals:  System.out, etc.
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
-  if (holder->is_in_package("java/dyn") || holder->is_in_package("sun/dyn"))
+  if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke"))
     return true;
   return TrustFinalNonStaticFields;
 }
@@ -191,8 +191,9 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   // Check to see if the field is constant.
   if (_holder->is_initialized() && this->is_final()) {
     if (!this->is_static()) {
-      // A field can be constant if it's a final static field or if it's
-      // a final non-static field of a trusted class ({java,sun}.dyn).
+      // A field can be constant if it's a final static field or if
+      // it's a final non-static field of a trusted class (classes in
+      // java.lang.invoke and sun.invoke packages and subpackages).
       if (trust_final_non_static_fields(_holder)) {
         _is_constant = true;
         return;

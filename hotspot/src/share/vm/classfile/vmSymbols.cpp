@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,12 @@ vmSymbols::SID vmSymbols::find_sid(Symbol* symbol) {
 #endif //ASSERT
 
   return sid;
+}
+
+vmSymbols::SID vmSymbols::find_sid(const char* symbol_name) {
+  Symbol* symbol = SymbolTable::probe(symbol_name, (int) strlen(symbol_name));
+  if (symbol == NULL)  return NO_SID;
+  return find_sid(symbol);
 }
 
 static vmIntrinsics::ID wrapper_intrinsic(BasicType type, bool unboxing) {

@@ -112,8 +112,8 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   // given the MethodType, find out where the MH argument is buried
-  __ load_heap_oop(Address(O0_mtype,   __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,        O1_scratch)), O4_argslot);
-  __ ldsw(         Address(O4_argslot, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O4_argslot);
+  __ load_heap_oop(Address(O0_mtype,   __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes,        O1_scratch)), O4_argslot);
+  __ ldsw(         Address(O4_argslot, __ delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, O1_scratch)), O4_argslot);
   __ add(Gargs, __ argument_offset(O4_argslot, 1), O4_argbase);
   // Note: argument_address uses its input as a scratch register!
   __ ld_ptr(Address(O4_argbase, -Interpreter::stackElementSize), G3_method_handle);
@@ -141,10 +141,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   // load up an adapter from the calling type (Java weaves this)
   Register O2_form    = O2_scratch;
   Register O3_adapter = O3_scratch;
-  __ load_heap_oop(Address(O0_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes,               O1_scratch)), O2_form);
-  // load_heap_oop(Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  __ load_heap_oop(Address(O0_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes,               O1_scratch)), O2_form);
+  // load_heap_oop(Address(O2_form,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
   // deal with old JDK versions:
-  __ add(          Address(O2_form,  __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  __ add(          Address(O2_form,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
   __ cmp(O3_adapter, O2_form);
   Label sorry_no_invoke_generic;
   __ brx(Assembler::lessUnsigned, false, Assembler::pn, sorry_no_invoke_generic);
@@ -376,16 +376,16 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
 
 // which conversion op types are implemented here?
 int MethodHandles::adapter_conversion_ops_supported_mask() {
-  return ((1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_CHECK_CAST)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_SWAP_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_ROT_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_DUP_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_DROP_ARGS)
-         //|(1<<sun_dyn_AdapterMethodHandle::OP_SPREAD_ARGS) //BUG!
+  return ((1<<java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_DUP_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS)
+         //|(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS) //BUG!
          );
   // FIXME: MethodHandlesTest gets a crash if we enable OP_SPREAD_ARGS.
 }
@@ -413,22 +413,22 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   const Register O1_actual   = O1;
   const Register O2_required = O2;
 
-  guarantee(java_dyn_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
+  guarantee(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
   // Some handy addresses:
   Address G5_method_fie(    G5_method,        in_bytes(methodOopDesc::from_interpreted_offset()));
   Address G5_method_fce(    G5_method,        in_bytes(methodOopDesc::from_compiled_offset()));
 
-  Address G3_mh_vmtarget(   G3_method_handle, java_dyn_MethodHandle::vmtarget_offset_in_bytes());
+  Address G3_mh_vmtarget(   G3_method_handle, java_lang_invoke_MethodHandle::vmtarget_offset_in_bytes());
 
-  Address G3_dmh_vmindex(   G3_method_handle, sun_dyn_DirectMethodHandle::vmindex_offset_in_bytes());
+  Address G3_dmh_vmindex(   G3_method_handle, java_lang_invoke_DirectMethodHandle::vmindex_offset_in_bytes());
 
-  Address G3_bmh_vmargslot( G3_method_handle, sun_dyn_BoundMethodHandle::vmargslot_offset_in_bytes());
-  Address G3_bmh_argument(  G3_method_handle, sun_dyn_BoundMethodHandle::argument_offset_in_bytes());
+  Address G3_bmh_vmargslot( G3_method_handle, java_lang_invoke_BoundMethodHandle::vmargslot_offset_in_bytes());
+  Address G3_bmh_argument(  G3_method_handle, java_lang_invoke_BoundMethodHandle::argument_offset_in_bytes());
 
-  Address G3_amh_vmargslot( G3_method_handle, sun_dyn_AdapterMethodHandle::vmargslot_offset_in_bytes());
-  Address G3_amh_argument ( G3_method_handle, sun_dyn_AdapterMethodHandle::argument_offset_in_bytes());
-  Address G3_amh_conversion(G3_method_handle, sun_dyn_AdapterMethodHandle::conversion_offset_in_bytes());
+  Address G3_amh_vmargslot( G3_method_handle, java_lang_invoke_AdapterMethodHandle::vmargslot_offset_in_bytes());
+  Address G3_amh_argument ( G3_method_handle, java_lang_invoke_AdapterMethodHandle::argument_offset_in_bytes());
+  Address G3_amh_conversion(G3_method_handle, java_lang_invoke_AdapterMethodHandle::conversion_offset_in_bytes());
 
   const int java_mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
 
@@ -453,7 +453,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ mov(O5_savedSP, SP);  // Cut the stack back to where the caller started.
 
       Label L_no_method;
-      // FIXME: fill in _raise_exception_method with a suitable sun.dyn method
+      // FIXME: fill in _raise_exception_method with a suitable java.lang.invoke method
       __ set(AddressLiteral((address) &_raise_exception_method), G5_method);
       __ ld_ptr(Address(G5_method, 0), G5_method);
       __ tst(G5_method);

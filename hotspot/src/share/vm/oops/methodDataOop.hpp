@@ -228,7 +228,7 @@ public:
     return byte_offset_of(DataLayout, _header._struct._bci);
   }
   static ByteSize cell_offset(int index) {
-    return byte_offset_of(DataLayout, _cells[index]);
+    return byte_offset_of(DataLayout, _cells) + in_ByteSize(index * cell_size);
   }
   // Return a value which, when or-ed as a byte into _flags, sets the flag.
   static int flag_number_to_byte_constant(int flag_number) {

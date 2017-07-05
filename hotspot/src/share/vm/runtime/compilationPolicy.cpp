@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/advancedThresholdPolicy.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.inline.hpp"
@@ -72,8 +73,15 @@ void compilationPolicy_init() {
     Unimplemented();
 #endif
     break;
+  case 3:
+#ifdef TIERED
+    CompilationPolicy::set_policy(new AdvancedThresholdPolicy());
+#else
+    Unimplemented();
+#endif
+    break;
   default:
-    fatal("CompilationPolicyChoice must be in the range: [0-2]");
+    fatal("CompilationPolicyChoice must be in the range: [0-3]");
   }
   CompilationPolicy::policy()->initialize();
 }
