@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8142968 8173381
+ * @bug 8142968 8173381 8174740
  * @library /lib/testlibrary
  * @modules jdk.compiler jdk.jlink
  * @build UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
