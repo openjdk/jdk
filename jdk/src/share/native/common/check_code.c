@@ -338,7 +338,8 @@ static void read_all_code(context_type *context, jclass cb, int num_methods,
                           int** code_lengths, unsigned char*** code);
 static void verify_method(context_type *context, jclass cb, int index,
                           int code_length, unsigned char* code);
-static void free_all_code(int num_methods, int* lengths, unsigned char** code);
+static void free_all_code(context_type* context, int num_methods,
+                          unsigned char** code);
 static void verify_field(context_type *context, jclass cb, int index);
 
 static void verify_opcode_operands (context_type *, unsigned int inumber, int offset);
@@ -813,11 +814,11 @@ VerifyClassForMajorVersion(JNIEnv *env, jclass cb, char *buffer, jint len,
         /* Look at each method */
         for (i = JVM_GetClassFieldsCount(env, cb); --i >= 0;)
             verify_field(context, cb, i);
-  num_methods = JVM_GetClassMethodsCount(env, cb);
-  read_all_code(context, cb, num_methods, &code_lengths, &code);
-  for (i = num_methods - 1; i >= 0; --i)
+        num_methods = JVM_GetClassMethodsCount(env, cb);
+        read_all_code(context, cb, num_methods, &code_lengths, &code);
+        for (i = num_methods - 1; i >= 0; --i)
             verify_method(context, cb, i, code_lengths[i], code[i]);
-  free_all_code(num_methods, code_lengths, code);
+        free_all_code(context, num_methods, code);
         result = CC_OK;
     } else {
         result = context->err_code;
@@ -835,9 +836,6 @@ VerifyClassForMajorVersion(JNIEnv *env, jclass cb, char *buffer, jint len,
 
     if (context->exceptions)
         free(context->exceptions);
-
-    if (context->code)
-        free(context->code);
 
     if (context->constant_types)
         free(context->constant_types);
@@ -895,41 +893,42 @@ static void
 read_all_code(context_type* context, jclass cb, int num_methods,
               int** lengths_addr, unsigned char*** code_addr)
 {
-  int* lengths = malloc(sizeof(int) * num_methods);
-  unsigned char** code = malloc(sizeof(unsigned char*) * num_methods);
-
-  *(lengths_addr) = lengths;
-  *(code_addr) = code;
-
-  if (lengths == 0 || code == 0) {
-    CCout_of_memory(context);
-  } else {
+    int* lengths;
+    unsigned char** code;
     int i;
+
+    lengths = malloc(sizeof(int) * num_methods);
+    check_and_push(context, lengths, VM_MALLOC_BLK);
+
+    code = malloc(sizeof(unsigned char*) * num_methods);
+    check_and_push(context, code, VM_MALLOC_BLK);
+
+    *(lengths_addr) = lengths;
+    *(code_addr) = code;
+
     for (i = 0; i < num_methods; ++i) {
-      lengths[i] = JVM_GetMethodIxByteCodeLength(context->env, cb, i);
-      if (lengths[i] != 0) {
-        code[i] = malloc(sizeof(unsigned char) * (lengths[i] + 1));
-        if (code[i] == NULL) {
-          CCout_of_memory(context);
+        lengths[i] = JVM_GetMethodIxByteCodeLength(context->env, cb, i);
+        if (lengths[i] > 0) {
+            code[i] = malloc(sizeof(unsigned char) * (lengths[i] + 1));
+            check_and_push(context, code[i], VM_MALLOC_BLK);
+            JVM_GetMethodIxByteCode(context->env, cb, i, code[i]);
         } else {
-          JVM_GetMethodIxByteCode(context->env, cb, i, code[i]);
+            code[i] = NULL;
         }
-      } else {
-        code[i] = NULL;
-      }
     }
-  }
 }
 
 static void
-free_all_code(int num_methods, int* lengths, unsigned char** code)
+free_all_code(context_type* context, int num_methods, unsigned char** code)
 {
   int i;
   for (i = 0; i < num_methods; ++i) {
-    free(code[i]);
+      if (code[i] != NULL) {
+          pop_and_free(context);
+      }
   }
-  free(lengths);
-  free(code);
+  pop_and_free(context); /* code */
+  pop_and_free(context); /* lengths */
 }
 
 /* Verify the code of one method */

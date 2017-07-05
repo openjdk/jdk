@@ -214,12 +214,6 @@ class NegotiateAuthentication extends AuthenticationInfo {
         return negotiator.nextToken(token);
     }
 
-    /**
-     * no-use for Negotiate
-     */
-    public void checkResponse (String header, String method, URL url) throws IOException {
-    }
-
     class B64Encoder extends BASE64Encoder {
         protected int bytesPerLine () {
             return 100000;  // as big as it can be, maybe INT_MAX

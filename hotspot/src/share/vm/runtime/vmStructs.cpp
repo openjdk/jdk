@@ -549,6 +549,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /********************************/                                                                                                 \
                                                                                                                                      \
      static_field(CodeCache,                   _heap,                                         CodeHeap*)                             \
+     static_field(CodeCache,                   _scavenge_root_nmethods,                       nmethod*)                              \
                                                                                                                                      \
   /*******************************/                                                                                                  \
   /* CodeHeap (NOTE: incomplete) */                                                                                                  \
@@ -618,7 +619,9 @@ static inline uint64_t cast_uint64_t(size_t x)
      static_field(nmethod,             _zombie_instruction_size,                      int)                                   \
   nonstatic_field(nmethod,             _method,                                       methodOop)                             \
   nonstatic_field(nmethod,             _entry_bci,                                    int)                                   \
-  nonstatic_field(nmethod,             _link,                                         nmethod*)                              \
+  nonstatic_field(nmethod,             _osr_link,                                     nmethod*)                              \
+  nonstatic_field(nmethod,             _scavenge_root_link,                           nmethod*)                              \
+  nonstatic_field(nmethod,             _scavenge_root_state,                          jbyte)                                 \
   nonstatic_field(nmethod,             _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
   nonstatic_field(nmethod,             _orig_pc_offset,                               int)                                   \

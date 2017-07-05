@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,10 @@ class VerifierWrapper implements javax.net.ssl.HostnameVerifier {
         try {
             String serverName;
             Principal principal = getPeerPrincipal(session);
-            if (principal instanceof KerberosPrincipal) {
+            // X.500 principal or Kerberos principal.
+            // (Use ciphersuite check to determine whether Kerberos is present.)
+            if (session.getCipherSuite().startsWith("TLS_KRB5") &&
+                    principal instanceof KerberosPrincipal) {
                 serverName =
                     HostnameChecker.getServerName((KerberosPrincipal)principal);
             } else {

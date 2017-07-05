@@ -32,9 +32,16 @@
 #ifndef __CURSIVEATTACHMENTSUBTABLES_H
 #define __CURSIVEATTACHMENTSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 #include "GlyphPositioningTables.h"
+
+U_NAMESPACE_BEGIN
 
 class LEFontInstance;
 class GlyphIterator;
@@ -53,4 +60,7 @@ struct CursiveAttachmentSubtable : GlyphPositioningSubtable
     le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 };
 
+U_NAMESPACE_END
 #endif
+
+

@@ -179,13 +179,6 @@ class BasicAuthentication extends AuthenticationInfo {
     }
 
     /**
-     * For Basic Authentication, there is no security information in the
-     * response
-     */
-    void checkResponse (String header, String method, URL url) {
-    }
-
-    /**
      * @return the common root path between npath and path.
      * This is used to detect when we have an authentication for two
      * paths and the root of th authentication space is the common root.

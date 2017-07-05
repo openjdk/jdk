@@ -39,6 +39,10 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(IndicRearrangementProcessor)
+
 IndicRearrangementProcessor::IndicRearrangementProcessor(const MorphSubtableHeader *morphSubtableHeader)
   : StateTableProcessor(morphSubtableHeader)
 {
@@ -56,8 +60,7 @@ void IndicRearrangementProcessor::beginStateTable()
     lastGlyph = 0;
 }
 
-ByteOffset IndicRearrangementProcessor::processStateEntry(LEGlyphStorage &glyphStorage,
-    le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset IndicRearrangementProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
 {
     const IndicRearrangementStateEntry *entry = &entryTable[index];
     ByteOffset newState = SWAPW(entry->newStateOffset);
@@ -416,3 +419,5 @@ void IndicRearrangementProcessor::doRearrangementAction(LEGlyphStorage &glyphSto
         break;
     }
 }
+
+U_NAMESPACE_END

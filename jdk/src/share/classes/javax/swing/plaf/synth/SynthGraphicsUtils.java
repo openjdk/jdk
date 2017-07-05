@@ -475,11 +475,11 @@ public class SynthGraphicsUtils {
          return result;
      }
 
-    static void applyInsets(Rectangle rect, Insets insets) {
+    static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
         if (insets != null) {
-            rect.x += insets.left;
+            rect.x += (leftToRight ? insets.left : insets.right);
             rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
+            rect.width -= (leftToRight ? insets.right : insets.left) + rect.x;
             rect.height -= (insets.bottom + rect.y);
         }
     }
@@ -492,12 +492,12 @@ public class SynthGraphicsUtils {
         g.setFont(style.getFont(context));
 
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
-        applyInsets(viewRect, mi.getInsets());
+        boolean leftToRight = SynthLookAndFeel.isLeftToRight(mi);
+        applyInsets(viewRect, mi.getInsets(), leftToRight);
 
         SynthMenuItemLayoutHelper lh = new SynthMenuItemLayoutHelper(
-                context, accContext, mi, checkIcon,
-                arrowIcon, viewRect, defaultTextIconGap, acceleratorDelimiter,
-                SynthLookAndFeel.isLeftToRight(mi),
+                context, accContext, mi, checkIcon, arrowIcon, viewRect,
+                defaultTextIconGap, acceleratorDelimiter, leftToRight,
                 MenuItemLayoutHelper.useCheckAndArrow(mi), propertyPrefix);
         MenuItemLayoutHelper.LayoutResult lr = lh.layoutMenuItem();
 

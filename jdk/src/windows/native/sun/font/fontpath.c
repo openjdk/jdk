@@ -28,12 +28,12 @@
 
 #include <jni.h>
 #include <jni_util.h>
-#include <sun_font_FontManager.h>
+#include <sun_awt_Win32FontManager.h>
 
 #define BSIZE (max(512, MAX_PATH+1))
 
 
-JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath(JNIEnv *env, jclass obj, jboolean noType1)
+JNIEXPORT jstring JNICALL Java_sun_awt_Win32FontManager_getFontPath(JNIEnv *env, jobject thiz, jboolean noType1)
 {
     char windir[BSIZE];
     char sysdir[BSIZE];
@@ -66,15 +66,6 @@ JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath(JNIEnv *env, jcl
     }
 
     return JNU_NewStringPlatform(env, fontpath);
-}
-
-/* This isn't used on windows, the implementation is added in case shared
- * code accidentally calls this method to prevent an UnsatisfiedLinkError
- */
-JNIEXPORT void JNICALL Java_sun_font_FontManager_setNativeFontPath
-(JNIEnv *env, jclass obj, jstring theString)
-{
-    return;
 }
 
 /* The code below is used to obtain information from the windows font APIS
@@ -546,7 +537,7 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
  * use it for lookups to reduce or avoid the need to search font files.
  */
 JNIEXPORT void JNICALL
-Java_sun_font_FontManager_populateFontFileNameMap
+Java_sun_awt_Win32FontManager_populateFontFileNameMap0
 (JNIEnv *env, jclass obj, jobject fontToFileMap,
  jobject fontToFamilyMap, jobject familyToFontListMap, jobject locale)
 {

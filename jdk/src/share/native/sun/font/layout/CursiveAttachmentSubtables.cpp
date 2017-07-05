@@ -37,6 +37,8 @@
 #include "OpenTypeUtilities.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_uint32 CursiveAttachmentSubtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
 {
     LEGlyphID glyphID       = glyphIterator->getCurrGlyphID();
@@ -68,3 +70,5 @@ le_uint32 CursiveAttachmentSubtable::process(GlyphIterator *glyphIterator, const
 
     return 1;
 }
+
+U_NAMESPACE_END

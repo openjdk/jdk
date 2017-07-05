@@ -30,6 +30,7 @@ import java.text.AttributedCharacterIterator;
 import java.text.BreakIterator;
 import java.awt.font.*;
 import java.awt.geom.AffineTransform;
+import javax.swing.JComponent;
 import javax.swing.event.DocumentEvent;
 import sun.font.BidiUtils;
 
@@ -301,6 +302,13 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
             iter = BreakIterator.getLineInstance();
         }
 
+        Object shaper = null;
+        if (c instanceof JComponent) {
+            shaper = ((JComponent) c).getClientProperty(
+                                            TextAttribute.NUMERIC_SHAPING);
+        }
+        text.setShaper(shaper);
+
         measurer = new LineBreakMeasurer(text, iter, frc);
 
         // If the children of the FlowView's logical view are GlyphViews, they
@@ -397,6 +405,10 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
 
         int toIteratorIndex(int pos) {
             return pos - v.getStartOffset() + getBeginIndex();
+        }
+
+        private void setShaper(Object shaper) {
+            this.shaper = shaper;
         }
 
         // --- AttributedCharacterIterator methods -------------------------
@@ -511,6 +523,8 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
             } else if( attribute == TextAttribute.RUN_DIRECTION ) {
                 return
                     v.getDocument().getProperty(TextAttribute.RUN_DIRECTION);
+            } else if (attribute == TextAttribute.NUMERIC_SHAPING) {
+                return shaper;
             }
             return null;
         }
@@ -532,8 +546,10 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
             keys = new HashSet<Attribute>();
             keys.add(TextAttribute.FONT);
             keys.add(TextAttribute.RUN_DIRECTION);
+            keys.add(TextAttribute.NUMERIC_SHAPING);
         }
 
+        private Object shaper = null;
     }
 
 }

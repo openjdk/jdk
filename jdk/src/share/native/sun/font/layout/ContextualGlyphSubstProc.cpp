@@ -39,6 +39,10 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(ContextualGlyphSubstitutionProcessor)
+
 ContextualGlyphSubstitutionProcessor::ContextualGlyphSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader)
   : StateTableProcessor(morphSubtableHeader)
 {
@@ -57,8 +61,7 @@ void ContextualGlyphSubstitutionProcessor::beginStateTable()
     markGlyph = 0;
 }
 
-ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage,
-    le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
 {
     const ContextualGlyphSubstitutionStateEntry *entry = &entryTable[index];
     ByteOffset newState = SWAPW(entry->newStateOffset);
@@ -97,3 +100,5 @@ ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorag
 void ContextualGlyphSubstitutionProcessor::endStateTable()
 {
 }
+
+U_NAMESPACE_END

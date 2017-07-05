@@ -26,10 +26,10 @@
 package sun.awt.X11;
 
 // This class serves as the base class for all the wrappers.
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 abstract class XWrapperBase {
-    static final Logger log = Logger.getLogger("sun.awt.X11.wrappers");
+    static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.wrappers");
 
     public String toString() {
         String ret = "";

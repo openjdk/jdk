@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998 - 2005 - All Rights Reserved
  *
  */
@@ -33,6 +34,8 @@
 #include "OpenTypeTables.h"
 #include "DeviceTables.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
 
 const le_uint16 DeviceTable::fieldMasks[]    = {0x0003, 0x000F, 0x00FF};
 const le_uint16 DeviceTable::fieldSignBits[] = {0x0002, 0x0008, 0x0080};
@@ -62,3 +65,5 @@ le_int16 DeviceTable::getAdjustment(le_uint16 ppem) const
 
     return result;
 }
+
+U_NAMESPACE_END

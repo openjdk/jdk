@@ -38,6 +38,7 @@ import java.util.Vector;
 import java.io.IOException;
 import java.math.BigInteger;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
+import sun.security.krb5.internal.util.KerberosString;
 
 
 /**
@@ -246,7 +247,7 @@ public class PrincipalName
             DerValue subSubDer;
             while(subDer.getData().available() > 0) {
                 subSubDer = subDer.getData().getDerValue();
-                v.addElement(subSubDer.getGeneralString());
+                v.addElement(new KerberosString(subSubDer).toString());
             }
             if (v.size() > 0) {
                 nameStrings = new String[v.size()];
@@ -554,7 +555,7 @@ public class PrincipalName
         temp = new DerOutputStream();
         DerValue der[] = new DerValue[nameStrings.length];
         for (int i = 0; i < nameStrings.length; i++) {
-            der[i] = new DerValue(DerValue.tag_GeneralString, nameStrings[i]);
+            der[i] = new KerberosString(nameStrings[i]).toDerValue();
         }
         temp.putSequence(der);
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), temp);

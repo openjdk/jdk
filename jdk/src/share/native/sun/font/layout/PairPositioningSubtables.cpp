@@ -39,6 +39,8 @@
 #include "OpenTypeUtilities.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_uint32 PairPositioningSubtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
 {
     switch(SWAPW(subtableFormat))
@@ -82,8 +84,7 @@ le_uint32 PairPositioningFormat1Subtable::process(GlyphIterator *glyphIterator, 
         const PairValueRecord *pairValueRecord = NULL;
 
         if (pairValueCount != 0) {
-            pairValueRecord = findPairValueRecord((TTGlyphID) LE_GET_GLYPH(secondGlyph),
-                pairSetTable->pairValueRecordArray, pairValueCount, recordSize);
+            pairValueRecord = findPairValueRecord((TTGlyphID) LE_GET_GLYPH(secondGlyph), pairSetTable->pairValueRecordArray, pairValueCount, recordSize);
         }
 
         if (pairValueRecord == NULL) {
@@ -91,8 +92,7 @@ le_uint32 PairPositioningFormat1Subtable::process(GlyphIterator *glyphIterator, 
         }
 
         if (valueFormat1 != 0) {
-            pairValueRecord->valueRecord1.adjustPosition(SWAPW(valueFormat1), (char *) this,
-                tempIterator, fontInstance);
+            pairValueRecord->valueRecord1.adjustPosition(SWAPW(valueFormat1), (char *) this, tempIterator, fontInstance);
         }
 
         if (valueFormat2 != 0) {
@@ -171,3 +171,5 @@ const PairValueRecord *PairPositioningFormat1Subtable::findPairValueRecord(TTGly
 
     return NULL;
 }
+
+U_NAMESPACE_END

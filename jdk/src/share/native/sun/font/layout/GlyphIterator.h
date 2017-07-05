@@ -32,26 +32,24 @@
 #ifndef __GLYPHITERATOR_H
 #define __GLYPHITERATOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 #include "GlyphDefinitionTables.h"
 
-struct InsertionRecord
-{
-    InsertionRecord *next;
-    le_int32 position;
-    le_int32 count;
-    LEGlyphID glyphs[ANY_NUMBER];
-};
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 class GlyphPositionAdjustments;
 
-class GlyphIterator {
+class GlyphIterator : public UMemory {
 public:
-    GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjustments *theGlyphPositionAdjustments,
-        le_bool rightToLeft, le_uint16 theLookupFlags, FeatureMask theFeatureMask,
-        const GlyphDefinitionTableHeader *theGlyphDefinitionTableHeader);
+    GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjustments *theGlyphPositionAdjustments, le_bool rightToLeft, le_uint16 theLookupFlags,
+        FeatureMask theFeatureMask, const GlyphDefinitionTableHeader *theGlyphDefinitionTableHeader);
 
     GlyphIterator(GlyphIterator &that);
 
@@ -122,4 +120,5 @@ private:
     GlyphIterator &operator=(const GlyphIterator &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif

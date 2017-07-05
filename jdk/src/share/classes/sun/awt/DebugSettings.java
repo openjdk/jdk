@@ -28,7 +28,7 @@ package sun.awt;
 import java.io.*;
 
 import java.util.*;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /*
  * Internal class that manages sun.awt.Debug settings.
@@ -72,7 +72,7 @@ import java.util.logging.*;
  * the fix for 4638447).
  */
 final class DebugSettings {
-    private static final Logger log = Logger.getLogger("sun.awt.debug.DebugSettings");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.debug.DebugSettings");
 
     /* standard debug property key names */
     static final String PREFIX = "awtdebug";
@@ -128,8 +128,8 @@ final class DebugSettings {
         });
 
         // echo the initial property settings to stdout
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "DebugSettings:\n{0}", this);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("DebugSettings:\n{0}" + this);
         }
     }
 
@@ -258,8 +258,8 @@ final class DebugSettings {
     }
 
     private void println(Object object) {
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, object.toString());
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer(object.toString());
         }
     }
 

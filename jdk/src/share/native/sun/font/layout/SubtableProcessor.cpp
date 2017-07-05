@@ -34,6 +34,8 @@
 #include "SubtableProcessor.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 SubtableProcessor::SubtableProcessor()
 {
 }
@@ -50,3 +52,5 @@ SubtableProcessor::SubtableProcessor(const MorphSubtableHeader *morphSubtableHea
 SubtableProcessor::~SubtableProcessor()
 {
 }
+
+U_NAMESPACE_END

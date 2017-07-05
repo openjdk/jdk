@@ -79,7 +79,7 @@ class FreetypeFontScaler extends FontScaler {
                                             pScalerContext,
                                             nativeScaler);
         }
-        return FontManager.getNullScaler().getFontMetrics(0L);
+        return FontScaler.getNullScaler().getFontMetrics(0L);
     }
 
     synchronized float getGlyphAdvance(long pScalerContext, int glyphCode)
@@ -90,7 +90,8 @@ class FreetypeFontScaler extends FontScaler {
                                          nativeScaler,
                                          glyphCode);
         }
-        return FontManager.getNullScaler().getGlyphAdvance(0L, glyphCode);
+        return FontScaler.getNullScaler().
+            getGlyphAdvance(0L, glyphCode);
     }
 
     synchronized void getGlyphMetrics(long pScalerContext,
@@ -104,7 +105,8 @@ class FreetypeFontScaler extends FontScaler {
                                   metrics);
             return;
         }
-        FontManager.getNullScaler().getGlyphMetrics(0L, glyphCode, metrics);
+        FontScaler.getNullScaler().
+            getGlyphMetrics(0L, glyphCode, metrics);
     }
 
     synchronized long getGlyphImage(long pScalerContext, int glyphCode)
@@ -115,7 +117,8 @@ class FreetypeFontScaler extends FontScaler {
                                        nativeScaler,
                                        glyphCode);
         }
-        return FontManager.getNullScaler().getGlyphImage(0L, glyphCode);
+        return FontScaler.getNullScaler().
+            getGlyphImage(0L, glyphCode);
     }
 
     synchronized Rectangle2D.Float getGlyphOutlineBounds(
@@ -127,7 +130,8 @@ class FreetypeFontScaler extends FontScaler {
                                                nativeScaler,
                                                glyphCode);
         }
-        return FontManager.getNullScaler().getGlyphOutlineBounds(0L,glyphCode);
+        return FontScaler.getNullScaler().
+            getGlyphOutlineBounds(0L,glyphCode);
     }
 
     synchronized GeneralPath getGlyphOutline(
@@ -140,7 +144,8 @@ class FreetypeFontScaler extends FontScaler {
                                          glyphCode,
                                          x, y);
         }
-        return FontManager.getNullScaler().getGlyphOutline(0L, glyphCode, x,y);
+        return FontScaler.getNullScaler().
+            getGlyphOutline(0L, glyphCode, x,y);
     }
 
     synchronized GeneralPath getGlyphVectorOutline(
@@ -154,8 +159,8 @@ class FreetypeFontScaler extends FontScaler {
                                                numGlyphs,
                                                x, y);
         }
-        return FontManager.getNullScaler().getGlyphVectorOutline(
-                   0L, glyphs, numGlyphs, x, y);
+        return FontScaler
+            .getNullScaler().getGlyphVectorOutline(0L, glyphs, numGlyphs, x, y);
     }
 
     synchronized long getLayoutTableCache() throws FontScalerException {
@@ -173,21 +178,21 @@ class FreetypeFontScaler extends FontScaler {
         if (nativeScaler != 0L) {
             return getNumGlyphsNative(nativeScaler);
         }
-        return FontManager.getNullScaler().getNumGlyphs();
+        return FontScaler.getNullScaler().getNumGlyphs();
     }
 
     synchronized int getMissingGlyphCode()  throws FontScalerException {
         if (nativeScaler != 0L) {
             return getMissingGlyphCodeNative(nativeScaler);
         }
-        return FontManager.getNullScaler().getMissingGlyphCode();
+        return FontScaler.getNullScaler().getMissingGlyphCode();
     }
 
     synchronized int getGlyphCode(char charCode) throws FontScalerException {
         if (nativeScaler != 0L) {
             return getGlyphCodeNative(nativeScaler, charCode);
         }
-        return FontManager.getNullScaler().getGlyphCode(charCode);
+        return FontScaler.getNullScaler().getGlyphCode(charCode);
     }
 
     synchronized Point2D.Float getGlyphPoint(long pScalerContext,
@@ -197,7 +202,7 @@ class FreetypeFontScaler extends FontScaler {
             return getGlyphPointNative(font.get(), pScalerContext,
                                       nativeScaler, glyphCode, ptNumber);
         }
-        return FontManager.getNullScaler().getGlyphPoint(
+        return FontScaler.getNullScaler().getGlyphPoint(
                    pScalerContext, glyphCode,  ptNumber);
     }
 
