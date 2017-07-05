@@ -164,6 +164,7 @@ class Http1Response<T> {
 
     private void onFinished() {
         if (return2Cache) {
+            Log.logTrace("Returning connection to the pool: {0}", connection);
             connection.returnToCache(headers);
         }
     }
