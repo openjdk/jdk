@@ -127,14 +127,6 @@ Java_java_lang_StrictMath_tanh(JNIEnv *env, jclass unused, jdouble d)
 }
 
 JNIEXPORT jdouble JNICALL
-Java_java_lang_StrictMath_hypot(JNIEnv *env, jclass unused, jdouble x, jdouble y)
-{
-    return (jdouble) jhypot((double)x, (double)y);
-}
-
-
-
-JNIEXPORT jdouble JNICALL
 Java_java_lang_StrictMath_log1p(JNIEnv *env, jclass unused, jdouble d)
 {
     return (jdouble) jlog1p((double)d);
