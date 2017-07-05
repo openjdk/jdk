@@ -35,7 +35,7 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getClassLoadingMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform <tt>MBeanServer</tt>}.
  *
  * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
  * the class loading system within an <tt>MBeanServer</tt> is:
@@ -44,6 +44,10 @@ package java.lang.management;
  *        <tt>java.lang:type=ClassLoading</tt>}
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -52,7 +56,7 @@ package java.lang.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface ClassLoadingMXBean {
+public interface ClassLoadingMXBean extends PlatformManagedObject {
 
     /**
      * Returns the total number of classes that have been loaded since

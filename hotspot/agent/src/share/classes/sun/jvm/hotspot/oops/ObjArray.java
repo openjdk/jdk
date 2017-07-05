@@ -43,7 +43,7 @@ public class ObjArray extends Array {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type   = db.lookupType("objArrayOopDesc");
-    elementSize = db.getOopSize();
+    elementSize = VM.getVM().getHeapOopSize();
   }
 
   ObjArray(OopHandle handle, ObjectHeap heap) {
@@ -54,9 +54,17 @@ public class ObjArray extends Array {
 
   private static long elementSize;
 
-  public Oop getObjAt(long index) {
+  public OopHandle getOopHandleAt(long index) {
     long offset = baseOffsetInBytes(BasicType.T_OBJECT) + (index * elementSize);
-    return getHeap().newOop(getHandle().getOopHandleAt(offset));
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      return getHandle().getCompOopHandleAt(offset);
+    } else {
+      return getHandle().getOopHandleAt(offset);
+    }
+  }
+
+  public Oop getObjAt(long index) {
+      return getHeap().newOop(getOopHandleAt(index));
   }
 
   public void printValueOn(PrintStream tty) {
@@ -69,7 +77,13 @@ public class ObjArray extends Array {
     long baseOffset = baseOffsetInBytes(BasicType.T_OBJECT);
     for (int index = 0; index < length; index++) {
       long offset = baseOffset + (index * elementSize);
-      visitor.doOop(new OopField(new IndexableFieldIdentifier(index), offset, false), false);
+      OopField field;
+      if (VM.getVM().isCompressedOopsEnabled()) {
+        field = new NarrowOopField(new IndexableFieldIdentifier(index), offset, false);
+      } else {
+        field = new OopField(new IndexableFieldIdentifier(index), offset, false);
+      }
+      visitor.doOop(field, false);
     }
   }
 }

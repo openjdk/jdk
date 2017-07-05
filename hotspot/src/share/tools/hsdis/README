@@ -1,0 +1,95 @@
+Copyright (c) 2008 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.
+  
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+ 
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+  
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+
+________________________________________________________________________
+
+'hsdis':  A HotSpot plugin for disassembling dynamically generated code.
+
+The files in this directory (Makefile, hsdis.[ch], hsdis-demo.c)
+are built independently of the HotSpot JVM.
+
+To use the plugin with a JVM, you need a new version that can load it.
+If the product mode of your JVM does not accept -XX:+PrintAssembly,
+you do not have a version that is new enough.
+
+* Building
+
+To build this project you need a build of Gnu binutils to link against.
+It is known to work with binutils 2.17.
+
+The makefile looks for this build in $BINUTILS, or (if that is not set),
+in  .../binutils-2.17-$LIBARCH, where LIBARCH (as in HotSpot) is one of
+the jre subdirectory keywords i386, amd64, sparc, sparcv9, etc.
+
+To build Gnu binutils, first download a copy of the software:
+  http://directory.fsf.org/project/binutils/
+
+Unpack the binutils tarball into an empty directory:
+  chdir ../../../../..
+  tar -xzf - < ../binutils-2.17.tar.gz
+  mv binutils-2.17 binutils-2.17-i386  #or binutils-2.17-sparc
+  cd binutils-2.17-i386
+
+From inside that directory, run configure and make:
+  ( export CFLAGS='-fPIC'
+    ./configure i386-pc-elf )
+  gnumake
+
+(Leave out or change the argument to configure if not on an i386 system.)
+
+Next, untar again into another empty directory for the LP64 version:
+  chdir ..
+  tar -xzf - < ../binutils-2.17.tar.gz
+  mv binutils-2.17 binutils-2.17-amd64  #or binutils-2.17-sparcv9
+  cd binutils-2.17-amd64
+
+From inside that directory, run configure for LP64 and make:
+  ( export ac_cv_c_bigendian=no CFLAGS='-m64 -fPIC' LDFLAGS=-m64
+    ./configure amd64-pc-elf )
+  gnumake
+
+The -fPIC option is needed because the generated code will be
+linked into the hsdid-$LIBARCH.so binary.  If you miss the
+option, the JVM will fail to load the disassembler.
+
+You probably want two builds, one for 32 and one for 64 bits.
+To build the 64-bit variation of a platforn, add LP64=1 to
+the make command line for hsdis.
+
+So, go back to the hsdis project and build:
+  chdir .../hsdis
+  gnumake
+  gnumake LP64=1
+
+* Installing
+
+Products are named like bin/$OS/hsdis-$LIBARCH.so.
+You can install them on your LD_LIBRARY_PATH,
+or inside of your JRE next to $LIBARCH/libjvm.so.
+
+Now test:
+  export LD_LIBRARY_PATH .../hsdis/bin/solaris:$LD_LIBRARY_PATH
+  dargs='-XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly'
+  dargs=$dargs' -XX:PrintAssemblyOptions=hsdis-print-bytes'
+  java $dargs -Xbatch CompileCommand=print,*String.hashCode HelloWorld
+
+If the product mode of the JVM does not accept -XX:+PrintAssembly,
+you do not have a version new enough to use the hsdis plugin.

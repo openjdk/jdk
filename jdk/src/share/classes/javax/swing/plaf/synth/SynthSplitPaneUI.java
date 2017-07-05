@@ -127,7 +127,7 @@ class SynthSplitPaneUI extends BasicSplitPaneUI implements
         if (style != oldStyle) {
             Object value = style.get(context, "SplitPane.size");
             if (value == null) {
-                value = new Integer(6);
+                value = Integer.valueOf(6);
             }
             LookAndFeel.installProperty(splitPane, "dividerSize", value);
 

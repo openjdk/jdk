@@ -123,7 +123,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer {
     public void setTitle(String title) {
         // allow a null title to pass as an empty string.
         if (title == null) {
-            title = new String("");
+            title = "";
         }
         _setTitle(title);
     }

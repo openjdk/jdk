@@ -64,6 +64,15 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseInlineCaches)) {
       UseInlineCaches         = false;
     }
+#ifdef _LP64
+    // Single issue niagara1 is slower for CompressedOops
+    // but niagaras after that it's fine.
+    if (!is_niagara1_plus()) {
+      if (FLAG_IS_DEFAULT(UseCompressedOops)) {
+        FLAG_SET_ERGO(bool, UseCompressedOops, false);
+      }
+    }
+#endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseJumpTables)) {

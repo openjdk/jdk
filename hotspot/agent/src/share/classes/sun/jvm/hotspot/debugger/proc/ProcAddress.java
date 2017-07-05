@@ -72,6 +72,10 @@ class ProcAddress implements Address {
     return debugger.readAddress(addr + offset);
   }
 
+  public Address getCompOopAddressAt(long offset) throws UnalignedAddressException, UnmappedAddressException {
+    return debugger.readCompOopAddress(addr + offset);
+  }
+
   //
   // Java-related routines
   //
@@ -111,6 +115,10 @@ class ProcAddress implements Address {
   public OopHandle getOopHandleAt(long offset)
     throws UnalignedAddressException, UnmappedAddressException, NotInHeapException {
     return debugger.readOopHandle(addr + offset);
+  }
+  public OopHandle getCompOopHandleAt(long offset)
+    throws UnalignedAddressException, UnmappedAddressException, NotInHeapException {
+    return debugger.readCompOopHandle(addr + offset);
   }
 
   // Mutators -- not implemented for now (FIXME)

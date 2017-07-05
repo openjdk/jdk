@@ -35,15 +35,16 @@ class ciInstanceKlass : public ciKlass {
   friend class ciBytecodeStream;
 
 private:
-  bool                   _is_shared;
-
   jobject                _loader;
   jobject                _protection_domain;
 
+  bool                   _is_shared;
   bool                   _is_initialized;
   bool                   _is_linked;
   bool                   _has_finalizer;
   bool                   _has_subklass;
+  bool                   _has_nonstatic_fields;
+
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
   jint                   _nonstatic_oop_map_size;
@@ -132,6 +133,9 @@ public:
   jint                   nonstatic_field_size()  {
     assert(is_loaded(), "must be loaded");
     return _nonstatic_field_size; }
+  jint                   has_nonstatic_fields()  {
+    assert(is_loaded(), "must be loaded");
+    return _has_nonstatic_fields; }
   jint                   nonstatic_oop_map_size()  {
     assert(is_loaded(), "must be loaded");
     return _nonstatic_oop_map_size; }
@@ -164,8 +168,7 @@ public:
   bool has_finalizable_subclass();
 
   bool contains_field_offset(int offset) {
-      return (offset/wordSize) >= instanceOopDesc::header_size()
-             && (offset/wordSize)-instanceOopDesc::header_size() < nonstatic_field_size();
+    return instanceOopDesc::contains_field_offset(offset, nonstatic_field_size());
   }
 
   // Get the instance of java.lang.Class corresponding to

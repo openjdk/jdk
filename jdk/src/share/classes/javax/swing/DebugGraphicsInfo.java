@@ -49,7 +49,7 @@ class DebugGraphicsInfo {
             componentToDebug = new Hashtable();
         }
         if (debug > 0) {
-            componentToDebug.put(component, new Integer(debug));
+            componentToDebug.put(component, Integer.valueOf(debug));
         } else {
             componentToDebug.remove(component);
         }

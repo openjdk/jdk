@@ -31,4 +31,5 @@ import sun.jvm.hotspot.debugger.*;
 
 public interface AddressVisitor {
   public void visitAddress(Address addr);
+  public void visitCompOopAddress(Address addr);
 }

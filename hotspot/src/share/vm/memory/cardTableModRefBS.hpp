@@ -273,7 +273,7 @@ public:
 
   // *** Barrier set functions.
 
-  inline bool write_ref_needs_barrier(oop* field, oop new_val) {
+  inline bool write_ref_needs_barrier(void* field, oop new_val) {
     // Note that this assumes the perm gen is the highest generation
     // in the address space
     return new_val != NULL && !new_val->is_perm();
@@ -285,7 +285,7 @@ public:
   // these functions here for performance.
 protected:
   void write_ref_field_work(oop obj, size_t offset, oop newVal);
-  void write_ref_field_work(oop* field, oop newVal);
+  void write_ref_field_work(void* field, oop newVal);
 public:
 
   bool has_write_ref_array_opt() { return true; }
@@ -315,7 +315,7 @@ public:
 
   // *** Card-table-barrier-specific things.
 
-  inline void inline_write_ref_field(oop* field, oop newVal) {
+  inline void inline_write_ref_field(void* field, oop newVal) {
     jbyte* byte = byte_for(field);
     *byte = dirty_card;
   }

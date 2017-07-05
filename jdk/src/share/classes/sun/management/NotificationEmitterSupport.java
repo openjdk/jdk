@@ -156,7 +156,7 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
                     li.listener.handleNotification(notification, li.handback);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    throw new InternalError("Error in invoking listener");
+                    throw new AssertionError("Error in invoking listener");
                 }
             }
         }

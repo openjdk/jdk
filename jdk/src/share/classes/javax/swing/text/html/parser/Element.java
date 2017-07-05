@@ -162,10 +162,10 @@ class Element implements DTDConstants, Serializable {
     static Hashtable contentTypes = new Hashtable();
 
     static {
-        contentTypes.put("CDATA", new Integer(CDATA));
-        contentTypes.put("RCDATA", new Integer(RCDATA));
-        contentTypes.put("EMPTY", new Integer(EMPTY));
-        contentTypes.put("ANY", new Integer(ANY));
+        contentTypes.put("CDATA", Integer.valueOf(CDATA));
+        contentTypes.put("RCDATA", Integer.valueOf(RCDATA));
+        contentTypes.put("EMPTY", Integer.valueOf(EMPTY));
+        contentTypes.put("ANY", Integer.valueOf(ANY));
     }
 
     public static int name2type(String nm) {

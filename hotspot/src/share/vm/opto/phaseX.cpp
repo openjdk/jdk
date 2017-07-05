@@ -744,20 +744,23 @@ void PhaseGVN::dead_loop_check( Node *n ) {
 //=============================================================================
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize hash table to fresh and clean for +VerifyOpto
-PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy), _worklist( ) {
+PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy), _worklist( ),
+                                                                      _delay_transform(false) {
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn ) : PhaseGVN(igvn),
-  _worklist( igvn->_worklist )
+                                                   _worklist( igvn->_worklist ),
+                                                   _delay_transform(igvn->_delay_transform)
 {
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
-  _worklist(*C->for_igvn())
+                                              _worklist(*C->for_igvn()),
+                                              _delay_transform(false)
 {
   uint max;
 
@@ -953,6 +956,12 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
+  if (_delay_transform) {
+    // Register the node but don't optimize for now
+    register_new_node_with_optimizer(n);
+    return n;
+  }
+
   // If brand new node, make space in type array, and give it a type.
   ensure_type_or_null(n);
   if (type_or_null(n) == NULL) {

@@ -89,7 +89,7 @@ public class PlainDocument extends AbstractDocument {
      */
     public PlainDocument(Content c) {
         super(c);
-        putProperty(tabSizeAttribute, new Integer(8));
+        putProperty(tabSizeAttribute, Integer.valueOf(8));
         defaultRoot = createDefaultRoot();
     }
 

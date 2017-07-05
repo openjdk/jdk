@@ -26,7 +26,7 @@
 // performance-critical call when when the rem set is the most common
 // card-table kind.
 
-void GenRemSet::write_ref_field_gc(oop* field, oop new_val) {
+void GenRemSet::write_ref_field_gc(void* field, oop new_val) {
   if (kind() == CardTableModRef) {
     ((CardTableRS*)this)->inline_write_ref_field_gc(field, new_val);
   } else {

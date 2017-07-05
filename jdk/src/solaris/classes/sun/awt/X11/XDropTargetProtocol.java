@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ abstract class XDropTargetProtocol {
         XToolkit.awtLock();
         try {
             XlibWrapper.XSendEvent(XToolkit.getDisplay(), proxy, false,
-                                   XlibWrapper.NoEventMask, xclient.pData);
+                                   XConstants.NoEventMask, xclient.pData);
         } finally {
             XToolkit.awtUnlock();
         }
@@ -317,7 +317,7 @@ abstract class XDropTargetProtocol {
 
     protected final void removeEmbedderRegistryEntry(long embedder) {
         synchronized (this) {
-            embedderRegistry.remove(new Long(embedder));
+            embedderRegistry.remove(Long.valueOf(embedder));
         }
     }
 }

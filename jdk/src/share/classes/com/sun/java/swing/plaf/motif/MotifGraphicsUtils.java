@@ -225,15 +225,15 @@ public class MotifGraphicsUtils implements SwingConstants
         if(b.getIcon() != null) {
             Icon icon;
             if(!model.isEnabled()) {
-                icon = (Icon) b.getDisabledIcon();
+                icon = b.getDisabledIcon();
             } else if(model.isPressed() && model.isArmed()) {
-                icon = (Icon) b.getPressedIcon();
+                icon = b.getPressedIcon();
                 if(icon == null) {
                     // Use default icon
-                    icon = (Icon) b.getIcon();
+                    icon = b.getIcon();
                 }
             } else {
-                icon = (Icon) b.getIcon();
+                icon = b.getIcon();
             }
 
             if (icon!=null) {

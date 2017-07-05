@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public class XIconWindow extends XBaseWindow {
             long dst = XlibWrapper.XCreateImage(XToolkit.getDisplay(),
                                                 visInfo.get_visual(),
                                                 (int)awtImage.get_Depth(),
-                                                (int)XlibWrapper.ZPixmap,
+                                                (int)XConstants.ZPixmap,
                                                 0,
                                                 bytes,
                                                 iconWidth,
@@ -470,9 +470,9 @@ public class XIconWindow extends XBaseWindow {
                 params.add(BACKGROUND_PIXMAP, iconPixmap);
                 params.add(COLORMAP, adata.get_awt_cmap());
                 params.add(DEPTH, awtImage.get_Depth());
-                params.add(VISUAL_CLASS, (int)XlibWrapper.InputOutput);
+                params.add(VISUAL_CLASS, (int)XConstants.InputOutput);
                 params.add(VISUAL, visInfo.get_visual());
-                params.add(VALUE_MASK, XlibWrapper.CWBorderPixel | XlibWrapper.CWColormap | XlibWrapper.CWBackPixmap);
+                params.add(VALUE_MASK, XConstants.CWBorderPixel | XConstants.CWColormap | XConstants.CWBackPixmap);
                 params.add(PARENT_WINDOW, XlibWrapper.RootWindow(XToolkit.getDisplay(), visInfo.get_screen()));
                 params.add(BOUNDS, new Rectangle(0, 0, iconWidth, iconHeight));
                 params.remove(DELAYED);
@@ -488,9 +488,9 @@ public class XIconWindow extends XBaseWindow {
                 XlibWrapper.XClearWindow(XToolkit.getDisplay(), getWindow());
             }
             // Provide both pixmap and window, WM or Taskbar will use the one they find more appropriate
-            long newFlags = hints.get_flags() | XlibWrapper.IconPixmapHint | XlibWrapper.IconMaskHint;
+            long newFlags = hints.get_flags() | XUtilConstants.IconPixmapHint | XUtilConstants.IconMaskHint;
             if (getWindow()  != 0) {
-                newFlags |= XlibWrapper.IconWindowHint;
+                newFlags |= XUtilConstants.IconWindowHint;
             }
             hints.set_flags(newFlags);
             hints.set_icon_pixmap(iconPixmap);

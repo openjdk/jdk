@@ -32,18 +32,19 @@ ParGCAllocBuffer::ParGCAllocBuffer(size_t desired_plab_sz_) :
   _allocated(0), _wasted(0)
 {
   assert (min_size() > AlignmentReserve, "Inconsistency!");
+  // arrayOopDesc::header_size depends on command line initialization.
+  FillerHeaderSize = align_object_size(arrayOopDesc::header_size(T_INT));
+  AlignmentReserve = oopDesc::header_size() > MinObjAlignment ? FillerHeaderSize : 0;
 }
 
-const size_t ParGCAllocBuffer::FillerHeaderSize =
-             align_object_size(arrayOopDesc::header_size(T_INT));
+size_t ParGCAllocBuffer::FillerHeaderSize;
 
 // If the minimum object size is greater than MinObjAlignment, we can
 // end up with a shard at the end of the buffer that's smaller than
 // the smallest object.  We can't allow that because the buffer must
 // look like it's full of objects when we retire it, so we make
 // sure we have enough space for a filler int array object.
-const size_t ParGCAllocBuffer::AlignmentReserve =
-             oopDesc::header_size() > MinObjAlignment ? FillerHeaderSize : 0;
+size_t ParGCAllocBuffer::AlignmentReserve;
 
 void ParGCAllocBuffer::retire(bool end_of_gc, bool retain) {
   assert(!retain || end_of_gc, "Can only retain at GC end.");

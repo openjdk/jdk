@@ -100,7 +100,7 @@ inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
     if (byte_offset == (jint)byte_offset) {
       void* ptr_plus_disp = (address)p + byte_offset;
-      assert((void*)p->obj_field_addr((jint)byte_offset) == ptr_plus_disp,
+      assert((void*)p->obj_field_addr<oop>((jint)byte_offset) == ptr_plus_disp,
              "raw [ptr+disp] must be consistent with oop::field_base");
     }
   }
@@ -146,13 +146,36 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
   *(volatile type_name*)index_oop_from_field_offset_long(p, offset) = x; \
   OrderAccess::fence();
 
+// Macros for oops that check UseCompressedOops
+
+#define GET_OOP_FIELD(obj, offset, v) \
+  oop p = JNIHandles::resolve(obj);   \
+  oop v;                              \
+  if (UseCompressedOops) {            \
+    narrowOop n = *(narrowOop*)index_oop_from_field_offset_long(p, offset); \
+    v = oopDesc::decode_heap_oop(n);                                \
+  } else {                            \
+    v = *(oop*)index_oop_from_field_offset_long(p, offset);                 \
+  }
+
+#define GET_OOP_FIELD_VOLATILE(obj, offset, v) \
+  oop p = JNIHandles::resolve(obj);   \
+  volatile oop v;                     \
+  if (UseCompressedOops) {            \
+    volatile narrowOop n = *(volatile narrowOop*)index_oop_from_field_offset_long(p, offset); \
+    v = oopDesc::decode_heap_oop(n);                               \
+  } else {                            \
+    v = *(volatile oop*)index_oop_from_field_offset_long(p, offset);       \
+  }
+
+
 // Get/SetObject must be special-cased, since it works with handles.
 
 // The xxx140 variants for backward compatibility do not allow a full-width offset.
 UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject obj, jint offset))
   UnsafeWrapper("Unsafe_GetObject");
   if (obj == NULL)  THROW_0(vmSymbols::java_lang_NullPointerException());
-  GET_FIELD(obj, offset, oop, v);
+  GET_OOP_FIELD(obj, offset, v)
   return JNIHandles::make_local(env, v);
 UNSAFE_END
 
@@ -162,11 +185,21 @@ UNSAFE_ENTRY(void, Unsafe_SetObject140(JNIEnv *env, jobject unsafe, jobject obj,
   oop x = JNIHandles::resolve(x_h);
   //SET_FIELD(obj, offset, oop, x);
   oop p = JNIHandles::resolve(obj);
-  if (x != NULL) {
-    // If there is a heap base pointer, we are obliged to emit a store barrier.
-    oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  if (UseCompressedOops) {
+    if (x != NULL) {
+      // If there is a heap base pointer, we are obliged to emit a store barrier.
+      oop_store((narrowOop*)index_oop_from_field_offset_long(p, offset), x);
+    } else {
+      narrowOop n = oopDesc::encode_heap_oop_not_null(x);
+      *(narrowOop*)index_oop_from_field_offset_long(p, offset) = n;
+    }
   } else {
-    *(oop*)index_oop_from_field_offset_long(p, offset) = x;
+    if (x != NULL) {
+      // If there is a heap base pointer, we are obliged to emit a store barrier.
+      oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+    } else {
+      *(oop*)index_oop_from_field_offset_long(p, offset) = x;
+    }
   }
 UNSAFE_END
 
@@ -175,7 +208,7 @@ UNSAFE_END
 // That is, it should be in the range [0, MAX_OBJECT_SIZE].
 UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObject");
-  GET_FIELD(obj, offset, oop, v);
+  GET_OOP_FIELD(obj, offset, v)
   return JNIHandles::make_local(env, v);
 UNSAFE_END
 
@@ -183,12 +216,16 @@ UNSAFE_ENTRY(void, Unsafe_SetObject(JNIEnv *env, jobject unsafe, jobject obj, jl
   UnsafeWrapper("Unsafe_SetObject");
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
-  oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  if (UseCompressedOops) {
+    oop_store((narrowOop*)index_oop_from_field_offset_long(p, offset), x);
+  } else {
+    oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  }
 UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObjectVolatile");
-  GET_FIELD_VOLATILE(obj, offset, oop, v);
+  GET_OOP_FIELD_VOLATILE(obj, offset, v)
   return JNIHandles::make_local(env, v);
 UNSAFE_END
 
@@ -196,7 +233,11 @@ UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject
   UnsafeWrapper("Unsafe_SetObjectVolatile");
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
-  oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  if (UseCompressedOops) {
+    oop_store((narrowOop*)index_oop_from_field_offset_long(p, offset), x);
+  } else {
+    oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  }
   OrderAccess::fence();
 UNSAFE_END
 
@@ -311,7 +352,11 @@ UNSAFE_ENTRY(void, Unsafe_SetOrderedObject(JNIEnv *env, jobject unsafe, jobject 
   UnsafeWrapper("Unsafe_SetOrderedObject");
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
-  oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  if (UseCompressedOops) {
+    oop_store((narrowOop*)index_oop_from_field_offset_long(p, offset), x);
+  } else {
+    oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
+  }
   OrderAccess::fence();
 UNSAFE_END
 
@@ -647,7 +692,7 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
     THROW(vmSymbols::java_lang_InvalidClassException());
   } else if (k->klass_part()->oop_is_objArray()) {
     base  = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
-    scale = oopSize;
+    scale = heapOopSize;
   } else if (k->klass_part()->oop_is_typeArray()) {
     typeArrayKlass* tak = typeArrayKlass::cast(k);
     base  = tak->array_header_in_bytes();
@@ -845,11 +890,11 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSwapObject(JNIEnv *env, jobject unsafe, 
   oop x = JNIHandles::resolve(x_h);
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
-  intptr_t* addr = (intptr_t *)index_oop_from_field_offset_long(p, offset);
-  intptr_t res = Atomic::cmpxchg_ptr((intptr_t)x, addr, (intptr_t)e);
-  jboolean success  = (res == (intptr_t)e);
+  HeapWord* addr = (HeapWord *)index_oop_from_field_offset_long(p, offset);
+  oop res = oopDesc::atomic_compare_exchange_oop(x, addr, e);
+  jboolean success  = (res == e);
   if (success)
-    update_barrier_set((oop*)addr, x);
+    update_barrier_set((void*)addr, x);
   return success;
 UNSAFE_END
 

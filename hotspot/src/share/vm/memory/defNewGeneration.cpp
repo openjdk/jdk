@@ -47,31 +47,9 @@ KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
   _rs = (CardTableRS*)rs;
 }
 
-void DefNewGeneration::KeepAliveClosure::do_oop(oop* p) {
-  // We never expect to see a null reference being processed
-  // as a weak reference.
-  assert (*p != NULL, "expected non-null ref");
-  assert ((*p)->is_oop(), "expected an oop while scanning weak refs");
+void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
+void DefNewGeneration::KeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
 
-  _cl->do_oop_nv(p);
-
-  // Card marking is trickier for weak refs.
-  // This oop is a 'next' field which was filled in while we
-  // were discovering weak references. While we might not need
-  // to take a special action to keep this reference alive, we
-  // will need to dirty a card as the field was modified.
-  //
-  // Alternatively, we could create a method which iterates through
-  // each generation, allowing them in turn to examine the modified
-  // field.
-  //
-  // We could check that p is also in an older generation, but
-  // dirty cards in the youngest gen are never scanned, so the
-  // extra check probably isn't worthwhile.
-  if (Universe::heap()->is_in_reserved(p)) {
-    _rs->inline_write_ref_field_gc(p, *p);
-  }
-}
 
 DefNewGeneration::FastKeepAliveClosure::
 FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
@@ -79,19 +57,8 @@ FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
   _boundary = g->reserved().end();
 }
 
-void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p) {
-  assert (*p != NULL, "expected non-null ref");
-  assert ((*p)->is_oop(), "expected an oop while scanning weak refs");
-
-  _cl->do_oop_nv(p);
-
-  // Optimized for Defnew generation if it's the youngest generation:
-  // we set a younger_gen card if we have an older->youngest
-  // generation pointer.
-  if (((HeapWord*)(*p) < _boundary) && Universe::heap()->is_in_reserved(p)) {
-    _rs->inline_write_ref_field_gc(p, *p);
-  }
-}
+void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
+void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 
 DefNewGeneration::EvacuateFollowersClosure::
 EvacuateFollowersClosure(GenCollectedHeap* gch, int level,
@@ -132,12 +99,18 @@ ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
   _boundary = _g->reserved().end();
 }
 
+void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
+void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
+
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
   OopsInGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
 }
+
+void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
+void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
   OopClosure(g->ref_processor()), _g(g)
@@ -146,6 +119,11 @@ ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
   _boundary = _g->reserved().end();
 }
 
+void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
+void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
+
+void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
+void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
@@ -656,7 +634,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   }
 }
 
-oop DefNewGeneration::copy_to_survivor_space(oop old, oop* from) {
+oop DefNewGeneration::copy_to_survivor_space(oop old) {
   assert(is_in_reserved(old) && !old->is_forwarded(),
          "shouldn't be scavenging this oop");
   size_t s = old->size();
@@ -669,7 +647,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old, oop* from) {
 
   // Otherwise try allocating obj tenured
   if (obj == NULL) {
-    obj = _next_gen->promote(old, s, from);
+    obj = _next_gen->promote(old, s);
     if (obj == NULL) {
       if (!HandlePromotionFailure) {
         // A failed promotion likely means the MaxLiveObjectEvacuationRatio flag
@@ -861,4 +839,70 @@ void DefNewGeneration::print_on(outputStream* st) const {
 
 const char* DefNewGeneration::name() const {
   return "def new generation";
+}
+
+// Moved from inline file as they are not called inline
+CompactibleSpace* DefNewGeneration::first_compaction_space() const {
+  return eden();
+}
+
+HeapWord* DefNewGeneration::allocate(size_t word_size,
+                                     bool is_tlab) {
+  // This is the slow-path allocation for the DefNewGeneration.
+  // Most allocations are fast-path in compiled code.
+  // We try to allocate from the eden.  If that works, we are happy.
+  // Note that since DefNewGeneration supports lock-free allocation, we
+  // have to use it here, as well.
+  HeapWord* result = eden()->par_allocate(word_size);
+  if (result != NULL) {
+    return result;
+  }
+  do {
+    HeapWord* old_limit = eden()->soft_end();
+    if (old_limit < eden()->end()) {
+      // Tell the next generation we reached a limit.
+      HeapWord* new_limit =
+        next_gen()->allocation_limit_reached(eden(), eden()->top(), word_size);
+      if (new_limit != NULL) {
+        Atomic::cmpxchg_ptr(new_limit, eden()->soft_end_addr(), old_limit);
+      } else {
+        assert(eden()->soft_end() == eden()->end(),
+               "invalid state after allocation_limit_reached returned null");
+      }
+    } else {
+      // The allocation failed and the soft limit is equal to the hard limit,
+      // there are no reasons to do an attempt to allocate
+      assert(old_limit == eden()->end(), "sanity check");
+      break;
+    }
+    // Try to allocate until succeeded or the soft limit can't be adjusted
+    result = eden()->par_allocate(word_size);
+  } while (result == NULL);
+
+  // If the eden is full and the last collection bailed out, we are running
+  // out of heap space, and we try to allocate the from-space, too.
+  // allocate_from_space can't be inlined because that would introduce a
+  // circular dependency at compile time.
+  if (result == NULL) {
+    result = allocate_from_space(word_size);
+  }
+  return result;
+}
+
+HeapWord* DefNewGeneration::par_allocate(size_t word_size,
+                                         bool is_tlab) {
+  return eden()->par_allocate(word_size);
+}
+
+void DefNewGeneration::gc_prologue(bool full) {
+  // Ensure that _end and _soft_end are the same in eden space.
+  eden()->set_soft_end(eden()->end());
+}
+
+size_t DefNewGeneration::tlab_capacity() const {
+  return eden()->capacity();
+}
+
+size_t DefNewGeneration::unsafe_max_tlab_alloc() const {
+  return unsafe_max_alloc_nogc();
 }

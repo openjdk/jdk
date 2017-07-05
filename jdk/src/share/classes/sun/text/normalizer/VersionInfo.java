@@ -116,7 +116,7 @@ public final class VersionInfo
             throw new IllegalArgumentException(INVALID_VERSION_NUMBER_);
         }
         int     version = getInt(major, minor, milli, micro);
-        Integer key     = new Integer(version);
+        Integer key     = Integer.valueOf(version);
         Object  result  = MAP_.get(key);
         if (result == null) {
             result = new VersionInfo(version);

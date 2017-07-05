@@ -574,6 +574,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                                    throw new RuntimeException(exp);
                                }
                            }
+                           public void visitCompOopAddress(Address handleAddr) {
+                             throw new RuntimeException(
+                                   " Should not reach here. JNIHandles are not compressed \n");
+                           }
                        });
             } catch (RuntimeException re) {
                 handleRuntimeException(re);
@@ -601,8 +605,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         writeObjectID(array.getKlass().getJavaMirror());
         final int length = (int) array.getLength();
         for (int index = 0; index < length; index++) {
-            long offset = OBJECT_BASE_OFFSET + index * OBJ_ID_SIZE;
-            OopHandle handle = array.getHandle().getOopHandleAt(offset);
+            OopHandle handle = array.getOopHandleAt(index);
             writeObjectID(getAddressValue(handle));
         }
     }
@@ -803,8 +806,13 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             break;
         case JVM_SIGNATURE_CLASS:
         case JVM_SIGNATURE_ARRAY: {
-            OopHandle handle = ((OopField)field).getValueAsOopHandle(oop);
-            writeObjectID(getAddressValue(handle));
+            if (VM.getVM().isCompressedOopsEnabled()) {
+              OopHandle handle = ((NarrowOopField)field).getValueAsOopHandle(oop);
+              writeObjectID(getAddressValue(handle));
+            } else {
+              OopHandle handle = ((OopField)field).getValueAsOopHandle(oop);
+              writeObjectID(getAddressValue(handle));
+            }
             break;
         }
         default:
