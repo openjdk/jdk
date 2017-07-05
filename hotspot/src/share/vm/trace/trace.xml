@@ -283,6 +283,7 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="edenUsedSize" label="Eden Used Size" />
       <value type="BYTES64" field="edenTotalSize" label="Eden Total Size" />
       <value type="BYTES64" field="survivorUsedSize" label="Survivor Used Size" />
+      <value type="UINT" field="numberOfRegions" label="Number of Regions" />
     </event>
 
     <event id="GCGarbageCollection" path="vm/gc/collector/garbage_collection" label="Garbage Collection"
@@ -476,6 +477,23 @@ Declares a structure type that can be used in other events.
            has_thread="true" has_stacktrace="true"  is_instant="true">
       <value type="UINT" field="gcId"  label="Pending GC ID" relation="GC_ID" />
       <value type="BYTES64" field="size" label="Allocation Size" />
+    </event>
+
+    <event id="TenuringDistribution" path="vm/gc/detailed/tenuring_distribution" label="Tenuring Distribution"
+           is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UINT" field="age" label="Age" />
+      <value type="BYTES64" field="size" label="Size" />
+    </event>
+
+    <event id="G1HeapRegionTypeChange" path="vm/gc/detailed/g1_heap_region_type_change" label="G1 Heap Region Type Change"
+           description="Information about a G1 heap region type change." is_instant="true">
+      <value type="UINT" field="index" label="Index" />
+      <value type="G1HEAPREGIONTYPE" field="from" label="From Type" />
+      <value type="G1HEAPREGIONTYPE" field="to" label="To Type" />
+      <value type="ADDRESS" field="start" label="Start" />
+      <value type="BYTES64" field="used" label="Used" />
+      <value type="UINT" field="allocContext" label="Allocation Context" />
     </event>
 
     <!-- Compiler events -->

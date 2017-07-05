@@ -182,6 +182,10 @@
           "Unroll loop bodies with node count less than this")              \
           range(0, max_jint / 4)                                            \
                                                                             \
+  product_pd(intx, LoopPercentProfileLimit,                                 \
+             "Unroll loop bodies with % node count of profile limit")       \
+             range(10, 100)                                                 \
+                                                                            \
   product(intx,  LoopMaxUnroll, 16,                                         \
           "Maximum number of unrolls for main loop")                        \
           range(0, max_jint)                                                \

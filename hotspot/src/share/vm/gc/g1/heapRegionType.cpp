@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/heapRegionType.hpp"
 
 bool HeapRegionType::is_valid(Tag tag) {
@@ -69,4 +70,20 @@ const char* HeapRegionType::get_short_str() const {
   ShouldNotReachHere();
   // keep some compilers happy
   return NULL;
+}
+
+G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
+  hrt_assert_is_valid(_tag);
+  switch (_tag) {
+    case FreeTag:               return G1HeapRegionTraceType::Free;
+    case EdenTag:               return G1HeapRegionTraceType::Eden;
+    case SurvTag:               return G1HeapRegionTraceType::Survivor;
+    case StartsHumongousTag:    return G1HeapRegionTraceType::StartsHumongous;
+    case ContinuesHumongousTag: return G1HeapRegionTraceType::ContinuesHumongous;
+    case OldTag:                return G1HeapRegionTraceType::Old;
+    case ArchiveTag:            return G1HeapRegionTraceType::Archive;
+  }
+  ShouldNotReachHere();
+  // keep some compilers happy
+  return G1HeapRegionTraceType::Free;
 }

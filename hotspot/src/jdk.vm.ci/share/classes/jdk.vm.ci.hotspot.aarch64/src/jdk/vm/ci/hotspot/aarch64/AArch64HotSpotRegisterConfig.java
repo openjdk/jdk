@@ -31,6 +31,7 @@ import static jdk.vm.ci.aarch64.AArch64.r27;
 import static jdk.vm.ci.aarch64.AArch64.r28;
 import static jdk.vm.ci.aarch64.AArch64.r29;
 import static jdk.vm.ci.aarch64.AArch64.r3;
+import static jdk.vm.ci.aarch64.AArch64.r31;
 import static jdk.vm.ci.aarch64.AArch64.r4;
 import static jdk.vm.ci.aarch64.AArch64.r5;
 import static jdk.vm.ci.aarch64.AArch64.r6;
@@ -45,11 +46,13 @@ import static jdk.vm.ci.aarch64.AArch64.v4;
 import static jdk.vm.ci.aarch64.AArch64.v5;
 import static jdk.vm.ci.aarch64.AArch64.v6;
 import static jdk.vm.ci.aarch64.AArch64.v7;
+import static jdk.vm.ci.aarch64.AArch64.zr;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.aarch64.AArch64;
@@ -130,16 +133,20 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = r28;
     public static final Register fp = r29;
 
+    private static final Register[] reservedRegisters = {threadRegister, fp, lr, r31, zr, sp};
+
     private static Register[] initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         Register[] allRegisters = arch.getAvailableValueRegisters();
-        Register[] registers = new Register[allRegisters.length - (reserveForHeapBase ? 5 : 4)];
+        Register[] registers = new Register[allRegisters.length - reservedRegisters.length - (reserveForHeapBase ? 1 : 0)];
+        List<Register> reservedRegistersList = Arrays.asList(reservedRegisters);
 
         int idx = 0;
         for (Register reg : allRegisters) {
-            if (reg.equals(threadRegister) || reg.equals(fp) || reg.equals(lr) || reg.equals(sp)) {
-                // skip thread register, frame pointer, link register and stack pointer
+            if (reservedRegistersList.contains(reg)) {
+                // skip reserved registers
                 continue;
             }
+            assert !(reg.equals(threadRegister) || reg.equals(fp) || reg.equals(lr) || reg.equals(r31) || reg.equals(zr) || reg.equals(sp));
             if (reserveForHeapBase && reg.equals(heapBaseRegister)) {
                 // skip heap base register
                 continue;

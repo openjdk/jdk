@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,12 @@ import sun.util.logging.PlatformLogger;
  * and the remainder of entries in file are processed. For instances where duplicate
  * country code entries exist, the behavior of the Currency information for that
  * {@code Currency} is undefined and the remainder of entries in file are processed.
+ * <p>
+ * It is recommended to use {@link java.math.BigDecimal} class while dealing
+ * with {@code Currency} or monetary values as it provides better handling of floating
+ * point numbers and their operations.
  *
+ * @see java.math.BigDecimal
  * @since 1.4
  */
 public final class Currency implements Serializable {
@@ -516,14 +521,16 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Gets the default number of fraction digits used with this currency.
-     * For example, the default number of fraction digits for the Euro is 2,
-     * while for the Japanese Yen it's 0.
-     * In the case of pseudo-currencies, such as IMF Special Drawing Rights,
-     * -1 is returned.
-     *
-     * @return the default number of fraction digits used with this currency
-     */
+    * Gets the default number of fraction digits used with this currency.
+    * Note that the number of fraction digits is the same as ISO 4217's
+    * minor unit for the currency.
+    * For example, the default number of fraction digits for the Euro is 2,
+    * while for the Japanese Yen it's 0.
+    * In the case of pseudo-currencies, such as IMF Special Drawing Rights,
+    * -1 is returned.
+    *
+    * @return the default number of fraction digits used with this currency
+    */
     public int getDefaultFractionDigits() {
         return defaultFractionDigits;
     }

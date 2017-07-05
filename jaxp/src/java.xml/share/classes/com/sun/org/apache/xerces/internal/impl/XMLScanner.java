@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -25,7 +25,6 @@ import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.xml.internal.stream.XMLEntityStorage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import javax.xml.stream.events.XMLEvent;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
@@ -120,8 +119,8 @@ public abstract class XMLScanner
     //we should have a feature when set to true computes this value
     private boolean fNeedNonNormalizedValue = false;
 
-    protected ArrayList attributeValueCache = new ArrayList();
-    protected ArrayList stringBufferCache = new ArrayList();
+    protected ArrayList<XMLString> attributeValueCache = new ArrayList<>();
+    protected ArrayList<XMLStringBuffer> stringBufferCache = new ArrayList<>();
     protected int fStringBufferIndex = 0;
     protected boolean fAttributeCacheInitDone = false;
     protected int fAttributeCacheUsedCount = 0;
@@ -1470,7 +1469,7 @@ public abstract class XMLScanner
 
     XMLStringBuffer getStringBuffer(){
         if((fStringBufferIndex < initialCacheCount )|| (fStringBufferIndex < stringBufferCache.size())){
-            return (XMLStringBuffer)stringBufferCache.get(fStringBufferIndex++);
+            return stringBufferCache.get(fStringBufferIndex++);
         }else{
             XMLStringBuffer tmpObj = new XMLStringBuffer();
             fStringBufferIndex++;
