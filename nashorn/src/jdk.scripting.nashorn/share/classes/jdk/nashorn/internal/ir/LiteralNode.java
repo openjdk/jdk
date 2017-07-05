@@ -603,7 +603,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * An ArrayUnit is a range in an ArrayLiteral. ArrayLiterals can
          * be split if they are too large, for bytecode generation reasons
          */
-        public static final class ArrayUnit {
+        public static final class ArrayUnit implements CompileUnitHolder {
             /** Compile unit associated with the postsets range. */
             private final CompileUnit compileUnit;
 
@@ -642,6 +642,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
              * The array compile unit
              * @return array compile unit
              */
+            @Override
             public CompileUnit getCompileUnit() {
                 return compileUnit;
             }

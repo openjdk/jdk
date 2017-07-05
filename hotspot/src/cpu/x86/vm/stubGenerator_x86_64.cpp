@@ -3677,6 +3677,70 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *    c_rarg0   - x address
+   *    c_rarg1   - x length
+   *    c_rarg2   - y address
+   *    c_rarg3   - y lenth
+   * not Win64
+   *    c_rarg4   - z address
+   *    c_rarg5   - z length
+   * Win64
+   *    rsp+40    - z address
+   *    rsp+48    - z length
+   */
+  address generate_multiplyToLen() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
+
+    address start = __ pc();
+    // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
+    // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
+    const Register x     = rdi;
+    const Register xlen  = rax;
+    const Register y     = rsi;
+    const Register ylen  = rcx;
+    const Register z     = r8;
+    const Register zlen  = r11;
+
+    // Next registers will be saved on stack in multiply_to_len().
+    const Register tmp1  = r12;
+    const Register tmp2  = r13;
+    const Register tmp3  = r14;
+    const Register tmp4  = r15;
+    const Register tmp5  = rbx;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifndef _WIN64
+    __ movptr(zlen, r9); // Save r9 in r11 - zlen
+#endif
+    setup_arg_regs(4); // x => rdi, xlen => rsi, y => rdx
+                       // ylen => rcx, z => r8, zlen => r11
+                       // r9 and r10 may be used to save non-volatile registers
+#ifdef _WIN64
+    // last 2 arguments (#4, #5) are on stack on Win64
+    __ movptr(z, Address(rsp, 6 * wordSize));
+    __ movptr(zlen, Address(rsp, 7 * wordSize));
+#endif
+
+    __ movptr(xlen, rsi);
+    __ movptr(y,    rdx);
+    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5);
+
+    restore_arg_regs();
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+  }
+
 #undef __
 #define __ masm->
 
@@ -3917,6 +3981,11 @@ class StubGenerator: public StubCodeGenerator {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
+#ifdef COMPILER2
+    if (UseMultiplyToLenIntrinsic) {
+      StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
+#endif
   }
 
  public:

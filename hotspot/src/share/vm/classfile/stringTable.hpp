@@ -28,7 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/hashtable.hpp"
 
-class StringTable : public Hashtable<oop, mtSymbol> {
+class StringTable : public RehashableHashtable<oop, mtSymbol> {
   friend class VMStructs;
   friend class Symbol;
 
@@ -55,11 +55,11 @@ private:
   // in the range [start_idx, end_idx).
   static void buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, int* processed, int* removed);
 
-  StringTable() : Hashtable<oop, mtSymbol>((int)StringTableSize,
+  StringTable() : RehashableHashtable<oop, mtSymbol>((int)StringTableSize,
                               sizeof (HashtableEntry<oop, mtSymbol>)) {}
 
   StringTable(HashtableBucket<mtSymbol>* t, int number_of_entries)
-    : Hashtable<oop, mtSymbol>((int)StringTableSize, sizeof (HashtableEntry<oop, mtSymbol>), t,
+    : RehashableHashtable<oop, mtSymbol>((int)StringTableSize, sizeof (HashtableEntry<oop, mtSymbol>), t,
                      number_of_entries) {}
 public:
   // The string table

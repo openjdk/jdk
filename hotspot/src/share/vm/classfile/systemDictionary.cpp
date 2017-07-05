@@ -1243,7 +1243,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       tty->print_cr("]");
     }
 
-#if INCLUDE_CDS
     if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
       // Only dump the classes that can be stored into CDS archive
       if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
@@ -1252,7 +1251,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
         classlist_file->flush();
       }
     }
-#endif
 
     // notify a class loaded from shared object
     ClassLoadingService::notify_class_loaded(InstanceKlass::cast(ik()),
@@ -1260,7 +1258,7 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
   }
   return ik;
 }
-#endif
+#endif // INCLUDE_CDS
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle

@@ -34,7 +34,6 @@
 
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-#include "gc_implementation/g1/g1CodeCacheRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Free list.  A FreeList is used to access a linked list of chunks
@@ -333,5 +332,4 @@ template class FreeList<Metablock>;
 template class FreeList<Metachunk>;
 #if INCLUDE_ALL_GCS
 template class FreeList<FreeChunk>;
-template class FreeList<G1CodeRootChunk>;
 #endif // INCLUDE_ALL_GCS

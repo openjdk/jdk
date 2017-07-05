@@ -69,33 +69,34 @@ class AccessorGenerator implements ClassFileConstants {
     protected short codeIdx;
     protected short exceptionsIdx;
     // Boxing
+    protected short valueOfIdx;
     protected short booleanIdx;
-    protected short booleanCtorIdx;
+    protected short booleanBoxIdx;
     protected short booleanUnboxIdx;
     protected short byteIdx;
-    protected short byteCtorIdx;
+    protected short byteBoxIdx;
     protected short byteUnboxIdx;
     protected short characterIdx;
-    protected short characterCtorIdx;
+    protected short characterBoxIdx;
     protected short characterUnboxIdx;
     protected short doubleIdx;
-    protected short doubleCtorIdx;
+    protected short doubleBoxIdx;
     protected short doubleUnboxIdx;
     protected short floatIdx;
-    protected short floatCtorIdx;
+    protected short floatBoxIdx;
     protected short floatUnboxIdx;
     protected short integerIdx;
-    protected short integerCtorIdx;
+    protected short integerBoxIdx;
     protected short integerUnboxIdx;
     protected short longIdx;
-    protected short longCtorIdx;
+    protected short longBoxIdx;
     protected short longUnboxIdx;
     protected short shortIdx;
-    protected short shortCtorIdx;
+    protected short shortBoxIdx;
     protected short shortUnboxIdx;
 
     protected final short NUM_COMMON_CPOOL_ENTRIES = (short) 30;
-    protected final short NUM_BOXING_CPOOL_ENTRIES = (short) 72;
+    protected final short NUM_BOXING_CPOOL_ENTRIES = (short) 73;
 
     // Requires that superClass has been set up
     protected void emitCommonConstantPoolEntries() {
@@ -181,9 +182,10 @@ class AccessorGenerator implements ClassFileConstants {
     /** Constant pool entries required to be able to box/unbox primitive
         types. Note that we don't emit these if we don't need them. */
     protected void emitBoxingContantPoolEntries() {
+        //  *  [UTF-8] "valueOf"
         //  *  [UTF-8] "java/lang/Boolean"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(Z)V"
+        //  *  [UTF-8] "(Z)Ljava/lang/Boolean;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "booleanValue"
@@ -192,7 +194,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Byte"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(B)V"
+        //  *  [UTF-8] "(B)Ljava/lang/Byte;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "byteValue"
@@ -201,7 +203,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Character"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(C)V"
+        //  *  [UTF-8] "(C)Ljava/lang/Character;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "charValue"
@@ -210,7 +212,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Double"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(D)V"
+        //  *  [UTF-8] "(D)Ljava/lang/Double;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "doubleValue"
@@ -219,7 +221,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Float"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(F)V"
+        //  *  [UTF-8] "(F)Ljava/lang/Float;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "floatValue"
@@ -228,7 +230,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Integer"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(I)V"
+        //  *  [UTF-8] "(I)Ljava/lang/Integer;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "intValue"
@@ -237,7 +239,7 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Long"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(J)V"
+        //  *  [UTF-8] "(J)Ljava/lang/Long;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "longValue"
@@ -246,21 +248,26 @@ class AccessorGenerator implements ClassFileConstants {
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "java/lang/Short"
         //  *  [CONSTANT_Class_info] for above
-        //  *  [UTF-8] "(S)V"
+        //  *  [UTF-8] "(S)Ljava/lang/Short;"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
         //  *  [UTF-8] "shortValue"
         //  *  [UTF-8] "()S"
         //  *  [CONSTANT_NameAndType_info] for above
         //  *  [CONSTANT_Methodref_info] for above
+
+        // valueOf-method name
+        asm.emitConstantPoolUTF8("valueOf");
+        valueOfIdx = asm.cpi();
+
         // Boolean
         asm.emitConstantPoolUTF8("java/lang/Boolean");
         asm.emitConstantPoolClass(asm.cpi());
         booleanIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(Z)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(Z)Ljava/lang/Boolean;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        booleanCtorIdx = asm.cpi();
+        booleanBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("booleanValue");
         asm.emitConstantPoolUTF8("()Z");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -271,10 +278,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Byte");
         asm.emitConstantPoolClass(asm.cpi());
         byteIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(B)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(B)Ljava/lang/Byte;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        byteCtorIdx = asm.cpi();
+        byteBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("byteValue");
         asm.emitConstantPoolUTF8("()B");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -285,10 +292,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Character");
         asm.emitConstantPoolClass(asm.cpi());
         characterIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(C)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(C)Ljava/lang/Character;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        characterCtorIdx = asm.cpi();
+        characterBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("charValue");
         asm.emitConstantPoolUTF8("()C");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -299,10 +306,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Double");
         asm.emitConstantPoolClass(asm.cpi());
         doubleIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(D)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(D)Ljava/lang/Double;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        doubleCtorIdx = asm.cpi();
+        doubleBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("doubleValue");
         asm.emitConstantPoolUTF8("()D");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -313,10 +320,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Float");
         asm.emitConstantPoolClass(asm.cpi());
         floatIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(F)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(F)Ljava/lang/Float;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        floatCtorIdx = asm.cpi();
+        floatBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("floatValue");
         asm.emitConstantPoolUTF8("()F");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -327,10 +334,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Integer");
         asm.emitConstantPoolClass(asm.cpi());
         integerIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(I)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(I)Ljava/lang/Integer;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        integerCtorIdx = asm.cpi();
+        integerBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("intValue");
         asm.emitConstantPoolUTF8("()I");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -341,10 +348,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Long");
         asm.emitConstantPoolClass(asm.cpi());
         longIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(J)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(J)Ljava/lang/Long;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        longCtorIdx = asm.cpi();
+        longBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("longValue");
         asm.emitConstantPoolUTF8("()J");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -355,10 +362,10 @@ class AccessorGenerator implements ClassFileConstants {
         asm.emitConstantPoolUTF8("java/lang/Short");
         asm.emitConstantPoolClass(asm.cpi());
         shortIdx = asm.cpi();
-        asm.emitConstantPoolUTF8("(S)V");
-        asm.emitConstantPoolNameAndType(initIdx, asm.cpi());
+        asm.emitConstantPoolUTF8("(S)Ljava/lang/Short;");
+        asm.emitConstantPoolNameAndType(valueOfIdx, asm.cpi());
         asm.emitConstantPoolMethodref(sub(asm.cpi(), S2), asm.cpi());
-        shortCtorIdx = asm.cpi();
+        shortBoxIdx = asm.cpi();
         asm.emitConstantPoolUTF8("shortValue");
         asm.emitConstantPoolUTF8("()S");
         asm.emitConstantPoolNameAndType(sub(asm.cpi(), S1), asm.cpi());
@@ -515,23 +522,23 @@ class AccessorGenerator implements ClassFileConstants {
         throw new InternalError("Should have found primitive type");
     }
 
-    protected short ctorIndexForPrimitiveType(Class<?> type) {
+    protected short boxingMethodForPrimitiveType(Class<?> type) {
         if (type == Boolean.TYPE) {
-            return booleanCtorIdx;
+            return booleanBoxIdx;
         } else if (type == Byte.TYPE) {
-            return byteCtorIdx;
+            return byteBoxIdx;
         } else if (type == Character.TYPE) {
-            return characterCtorIdx;
+            return characterBoxIdx;
         } else if (type == Double.TYPE) {
-            return doubleCtorIdx;
+            return doubleBoxIdx;
         } else if (type == Float.TYPE) {
-            return floatCtorIdx;
+            return floatBoxIdx;
         } else if (type == Integer.TYPE) {
-            return integerCtorIdx;
+            return integerBoxIdx;
         } else if (type == Long.TYPE) {
-            return longCtorIdx;
+            return longBoxIdx;
         } else if (type == Short.TYPE) {
-            return shortCtorIdx;
+            return shortBoxIdx;
         }
         throw new InternalError("Should have found primitive type");
     }

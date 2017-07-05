@@ -66,7 +66,7 @@ public class ForkJoinWorkerThread extends Thread {
      * owning thread.
      *
      * Support for (non-public) subclass InnocuousForkJoinWorkerThread
-     * requires that we break quite a lot of encapulation (via Unsafe)
+     * requires that we break quite a lot of encapsulation (via Unsafe)
      * both here and in the subclass to access and set Thread fields.
      */
 
@@ -118,7 +118,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @return the index number
      */
     public int getPoolIndex() {
-        return workQueue.poolIndex >>> 1; // ignore odd/even tag bit
+        return workQueue.getPoolIndex();
     }
 
     /**
@@ -171,7 +171,7 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
-     * Erases ThreadLocals by nulling out Thread maps
+     * Erases ThreadLocals by nulling out Thread maps.
      */
     final void eraseThreadLocals() {
         U.putObject(this, THREADLOCALS, null);
@@ -246,8 +246,8 @@ public class ForkJoinWorkerThread extends Thread {
 
         /**
          * Returns a new group with the system ThreadGroup (the
-         * topmost, parentless group) as parent.  Uses Unsafe to
-         * traverse Thread group and ThreadGroup parent fields.
+         * topmost, parent-less group) as parent.  Uses Unsafe to
+         * traverse Thread.group and ThreadGroup.parent fields.
          */
         private static ThreadGroup createThreadGroup() {
             try {
@@ -274,4 +274,3 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
 }
-

@@ -493,6 +493,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
                 }
             }
         } else {
+            /* NET_BindV6() closes both sockets upon a failure */
+            (*env)->SetObjectField(env, this, pdsi_fdID, NULL);
+            (*env)->SetObjectField(env, this, pdsi_fd1ID, NULL);
             NET_ThrowCurrent (env, "Cannot bind");
             return;
         }

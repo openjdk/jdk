@@ -32,9 +32,12 @@
  *    the printf format %ld is correct and use of %lld will cause warning
  *    errors from some compilers (gcc/g++).
  * _LP64 can be explicitly set (used on Linux).
+ * Should be checking for the Visual C++ since the _LP64 is set on the 64-bit
+ * systems but the correct format prefix for 64-bit integers is ll.
  * Solaris compilers will define __sparcv9 or __x86_64 on 64bit compilations.
  */
-#if defined(_LP64) || defined(__sparcv9) || defined(__x86_64)
+#if !defined (_MSC_VER) && \
+    (defined(_LP64) || defined(__sparcv9) || defined(__x86_64))
   #define LONG_LONG_FORMAT "%ld"
   #define LONG_LONG_HEX_FORMAT "%lx"
 #else

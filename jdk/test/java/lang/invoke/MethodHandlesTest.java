@@ -2160,15 +2160,23 @@ public class MethodHandlesTest {
                     else
                         type = type.changeParameterType(j, argType);
                     if (done.add(type))
-                        testInvokers(type);
+                        testInvokersWithCatch(type);
                     MethodType vtype = type.changeReturnType(void.class);
                     if (done.add(vtype))
-                        testInvokers(vtype);
+                        testInvokersWithCatch(vtype);
                 }
             }
         }
     }
 
+    public void testInvokersWithCatch(MethodType type) throws Throwable {
+        try {
+            testInvokers(type);
+        } catch (Throwable ex) {
+            System.out.println("*** testInvokers on "+type+" => ");
+            ex.printStackTrace(System.out);
+        }
+    }
     public void testInvokers(MethodType type) throws Throwable {
         if (verbosity >= 3)
             System.out.println("test invokers for "+type);

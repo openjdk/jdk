@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -189,7 +191,7 @@ public final class Timing implements Loggable {
             maxKeyLength++;
 
             final StringBuilder sb = new StringBuilder();
-            sb.append("Accumulated complation phase Timings:\n\n");
+            sb.append("Accumulated compilation phase timings:\n\n");
             for (final Map.Entry<String, Long> entry : timings.entrySet()) {
                 int len;
 
@@ -223,6 +225,9 @@ public final class Timing implements Loggable {
                 append(" ms [").
                 append((int)(knownTime * 100.0 / total)).
                 append("%])");
+
+            sb.append("\n\nEmitted compile units: ").
+                append(CompileUnit.getEmittedUnitCount());
 
             return sb.toString();
         }
