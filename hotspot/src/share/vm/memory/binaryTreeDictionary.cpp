@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/cms/allocationStats.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/logStream.inline.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
@@ -1190,10 +1191,10 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::end_sweep_dict_census(double spl
   // Does walking the tree 3 times hurt?
   set_tree_surplus(splitSurplusPercent);
   set_tree_hints();
-  LogHandle(gc, freelist, stats) log;
-  if (log.is_trace()) {
-    ResourceMark rm;
-    report_statistics(log.trace_stream());
+  LogTarget(Trace, gc, freelist, stats) log;
+  if (log.is_enabled()) {
+    LogStream out(log);
+    report_statistics(&out);
   }
   clear_tree_census();
 }
@@ -1232,27 +1233,26 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
   FreeList_t* total() { return &_total; }
   size_t total_free() { return _total_free; }
   void do_list(FreeList<Chunk_t>* fl) {
-    LogHandle(gc, freelist, census) log;
-    outputStream* out = log.debug_stream();
+    LogStreamHandle(Debug, gc, freelist, census) out;
+
     if (++_print_line >= 40) {
-      ResourceMark rm;
-      FreeList_t::print_labels_on(out, "size");
+      FreeList_t::print_labels_on(&out, "size");
       _print_line = 0;
     }
-    fl->print_on(out);
+    fl->print_on(&out);
     _total_free += fl->count() * fl->size();
     total()->set_count(total()->count() + fl->count());
   }
 
 #if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    LogHandle(gc, freelist, census) log;
-    outputStream* out = log.debug_stream();
+    LogStreamHandle(Debug, gc, freelist, census) out;
+
     if (++_print_line >= 40) {
-      FreeList_t::print_labels_on(out, "size");
+      FreeList_t::print_labels_on(&out, "size");
       _print_line = 0;
     }
-    fl->print_on(out);
+    fl->print_on(&out);
     _total_free +=           fl->count()             * fl->size()        ;
     total()->set_count(      total()->count()        + fl->count()      );
     total()->set_bfr_surp(   total()->bfr_surp()     + fl->bfr_surp()    );

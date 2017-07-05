@@ -65,10 +65,10 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 /**
  * An {@link AnnotationVisitor} adapter for type remapping.
  *
- * //@deprecated use {@link AnnotationRemapper} instead.
+ * @deprecated use {@link AnnotationRemapper} instead.
  * @author Eugene Kuleshov
  */
-//@Deprecated
+@Deprecated
 public class RemappingAnnotationAdapter extends AnnotationVisitor {
 
     protected final Remapper remapper;

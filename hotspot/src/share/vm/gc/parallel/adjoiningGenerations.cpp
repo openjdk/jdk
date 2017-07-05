@@ -120,7 +120,7 @@ size_t AdjoiningGenerations::reserved_byte_size() {
 }
 
 void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_bytes, size_t max_size) {
-  LogHandle(heap, ergo) log;
+  Log(heap, ergo) log;
   if (!log.is_debug()) {
    return;
   }
@@ -133,7 +133,7 @@ void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_byt
 }
 
 void log_after_expansion(bool old, size_t max_size) {
-  LogHandle(heap, ergo) log;
+  Log(heap, ergo) log;
   if (!log.is_debug()) {
    return;
   }

@@ -153,5 +153,8 @@ public class SAGetoptTest {
 
         String[] optionSet6 = {"--exe", "--core", "bla_core"};
         badOptionsTest(6, optionSet6, "Argument is expected for 'exe'");
+
+        String[] optionSet7 = {"--exe"};
+        badOptionsTest(7, optionSet7, "Argument is expected for 'exe'");
     }
   }

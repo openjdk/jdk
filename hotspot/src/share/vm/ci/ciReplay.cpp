@@ -1,4 +1,5 @@
-/* Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -574,7 +576,7 @@ class CompileReplay : public StackObj {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
     /* just copied from Method, to build interpret data*/
-    if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
+    if (ReferencePendingListLocker::is_locked_by_self()) {
       return;
     }
     // To be properly initialized, some profiling in the MDO needs the

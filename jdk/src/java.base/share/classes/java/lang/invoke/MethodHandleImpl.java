@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
@@ -1055,7 +1055,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (!method.getInvocationType().equals(mh.type()))
             throw new InternalError(method.toString());
         mh = mh.withInternalMemberName(method, false);
-        mh = mh.asVarargsCollector(Object[].class);
+        mh = mh.withVarargs(true);
         assert(method.isVarargs());
         FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
         return mh;
@@ -1754,6 +1754,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     /**
+     * This method is bound as a filter in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle, MethodHandle,
+     * MethodHandle) counting loops} to pass the correct counter value to the body.
+     *
+     * @param counter the loop counter.
+     *
+     * @return the loop counter decremented by 1.
+     */
+    static int decrementCounter(int counter) {
+        return counter - 1;
+    }
+
+    /**
      * This is bound to initialize the loop-local iterator in {@linkplain MethodHandles#iteratedLoop iterating loops}.
      *
      * @param it the {@link Iterable} over which the loop iterates.
@@ -1879,7 +1891,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MH_iterateNext           = 11,
             MH_tryFinallyExec        = 12,
             MH_tryFinallyVoidExec    = 13,
-            MH_LIMIT                 = 14;
+            MH_decrementCounter      = 14,
+            MH_LIMIT                 = 15;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -1949,6 +1962,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 case MH_tryFinallyVoidExec:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "tryFinallyVoidExecutor",
                             MethodType.methodType(void.class, MethodHandle.class, MethodHandle.class, Object[].class));
+                case MH_decrementCounter:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "decrementCounter",
+                            MethodType.methodType(int.class, int.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);

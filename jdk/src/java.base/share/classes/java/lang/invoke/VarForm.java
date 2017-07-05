@@ -69,13 +69,10 @@ class VarForm {
         for (Class<?> c = implClass; c != VarHandle.class; c = c.getSuperclass()) {
             for (Method m : c.getDeclaredMethods()) {
                 if (Modifier.isStatic(m.getModifiers())) {
-                    try {
-                        AccessMode am = AccessMode.valueOf(m.getName());
+                    AccessMode am = AccessMode.methodNameToAccessMode.get(m.getName());
+                    if (am != null) {
                         assert table[am.ordinal()] == null;
                         table[am.ordinal()] = new MemberName(m);
-                    } catch (IllegalArgumentException ex) {
-                        // Ignore. Note the try/catch will be removed when
-                        // AccessMode enum constant names are renamed
                     }
                 }
             }

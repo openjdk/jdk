@@ -122,7 +122,7 @@ void VM_Version::initialize() {
                (has_fcfids()  ? " fcfids"  : ""),
                (has_vand()    ? " vand"    : ""),
                (has_lqarx()   ? " lqarx"   : ""),
-               (has_vcipher() ? " vcipher" : ""),
+               (has_vcipher() ? " aes"     : ""),
                (has_vpmsumb() ? " vpmsumb" : ""),
                (has_tcheck()  ? " tcheck"  : ""),
                (has_mfdscr()  ? " mfdscr"  : "")
@@ -186,6 +186,28 @@ void VM_Version::initialize() {
   }
 
   // The AES intrinsic stubs require AES instruction support.
+#if defined(VM_LITTLE_ENDIAN)
+  if (has_vcipher()) {
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      UseAES = true;
+    }
+  } else if (UseAES) {
+    if (!FLAG_IS_DEFAULT(UseAES))
+      warning("AES instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAES, false);
+  }
+
+  if (UseAES && has_vcipher()) {
+    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      UseAESIntrinsics = true;
+    }
+  } else if (UseAESIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
+      warning("AES intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  }
+
+#else
   if (UseAES) {
     warning("AES instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseAES, false);
@@ -195,6 +217,7 @@ void VM_Version::initialize() {
       warning("AES intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
+#endif
 
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");

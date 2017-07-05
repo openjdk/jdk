@@ -1009,7 +1009,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       (uintx) tid, describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
   } else {
     log_warning(os, thread)("Failed to start thread - thr_create failed (%s) for attributes: %s.",
-      strerror(status), describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
+      os::errno_name(status), describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
   }
 
   if (status != 0) {
@@ -1354,7 +1354,7 @@ jlong getTimeMillis() {
 jlong os::javaTimeMillis() {
   timeval t;
   if (gettimeofday(&t, NULL) == -1) {
-    fatal("os::javaTimeMillis: gettimeofday (%s)", strerror(errno));
+    fatal("os::javaTimeMillis: gettimeofday (%s)", os::strerror(errno));
   }
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
@@ -1362,7 +1362,7 @@ jlong os::javaTimeMillis() {
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   timeval t;
   if (gettimeofday(&t, NULL) == -1) {
-    fatal("os::javaTimeSystemUTC: gettimeofday (%s)", strerror(errno));
+    fatal("os::javaTimeSystemUTC: gettimeofday (%s)", os::strerror(errno));
   }
   seconds = jlong(t.tv_sec);
   nanos = jlong(t.tv_usec) * 1000;
@@ -1892,21 +1892,39 @@ void os::Solaris::print_libversion_info(outputStream* st) {
 
 static bool check_addr0(outputStream* st) {
   jboolean status = false;
+  const int read_chunk = 200;
+  int ret = 0;
+  int nmap = 0;
   int fd = ::open("/proc/self/map",O_RDONLY);
   if (fd >= 0) {
-    prmap_t p;
-    while (::read(fd, &p, sizeof(p)) > 0) {
-      if (p.pr_vaddr == 0x0) {
-        st->print("Warning: Address: 0x%x, Size: %dK, ",p.pr_vaddr, p.pr_size/1024, p.pr_mapname);
-        st->print("Mapped file: %s, ", p.pr_mapname[0] == '\0' ? "None" : p.pr_mapname);
-        st->print("Access:");
-        st->print("%s",(p.pr_mflags & MA_READ)  ? "r" : "-");
-        st->print("%s",(p.pr_mflags & MA_WRITE) ? "w" : "-");
-        st->print("%s",(p.pr_mflags & MA_EXEC)  ? "x" : "-");
-        st->cr();
-        status = true;
+    prmap_t *p = NULL;
+    char *mbuff = (char *) calloc(read_chunk, sizeof(prmap_t));
+    if (NULL == mbuff) {
+      ::close(fd);
+      return status;
+    }
+    while ((ret = ::read(fd, mbuff, read_chunk*sizeof(prmap_t))) > 0) {
+      //check if read() has not read partial data
+      if( 0 != ret % sizeof(prmap_t)){
+        break;
+      }
+      nmap = ret / sizeof(prmap_t);
+      p = (prmap_t *)mbuff;
+      for(int i = 0; i < nmap; i++){
+        if (p->pr_vaddr == 0x0) {
+          st->print("Warning: Address: " PTR_FORMAT ", Size: " SIZE_FORMAT "K, ",p->pr_vaddr, p->pr_size/1024);
+          st->print("Mapped file: %s, ", p->pr_mapname[0] == '\0' ? "None" : p->pr_mapname);
+          st->print("Access: ");
+          st->print("%s",(p->pr_mflags & MA_READ)  ? "r" : "-");
+          st->print("%s",(p->pr_mflags & MA_WRITE) ? "w" : "-");
+          st->print("%s",(p->pr_mflags & MA_EXEC)  ? "x" : "-");
+          st->cr();
+          status = true;
+        }
+        p++;
       }
     }
+    free(mbuff);
     ::close(fd);
   }
   return status;
@@ -2142,7 +2160,7 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 size_t os::lasterror(char *buf, size_t len) {
   if (errno == 0)  return 0;
 
-  const char *s = ::strerror(errno);
+  const char *s = os::strerror(errno);
   size_t n = ::strlen(s);
   if (n >= len) {
     n = len - 1;
@@ -2351,7 +2369,7 @@ static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", %d) failed; error='%s' (errno=%d)", addr, bytes, exec,
-          strerror(err), err);
+          os::strerror(err), err);
 }
 
 static void warn_fail_commit_memory(char* addr, size_t bytes,
@@ -2359,7 +2377,7 @@ static void warn_fail_commit_memory(char* addr, size_t bytes,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", addr, bytes,
-          alignment_hint, exec, strerror(err), err);
+          alignment_hint, exec, os::strerror(err), err);
 }
 
 int os::Solaris::commit_memory_impl(char* addr, size_t bytes, bool exec) {
@@ -2740,7 +2758,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
     char buf[256];
     buf[0] = '\0';
     if (addr == NULL) {
-      jio_snprintf(buf, sizeof(buf), ": %s", strerror(err));
+      jio_snprintf(buf, sizeof(buf), ": %s", os::strerror(err));
     }
     warning("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
             PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
@@ -4354,7 +4372,7 @@ void os::init(void) {
 
   page_size = sysconf(_SC_PAGESIZE);
   if (page_size == -1) {
-    fatal("os_solaris.cpp: os::init: sysconf failed (%s)", strerror(errno));
+    fatal("os_solaris.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
   }
   init_page_sizes((size_t) page_size);
 
@@ -4366,7 +4384,7 @@ void os::init(void) {
 
   int fd = ::open("/dev/zero", O_RDWR);
   if (fd < 0) {
-    fatal("os::init: cannot open /dev/zero (%s)", strerror(errno));
+    fatal("os::init: cannot open /dev/zero (%s)", os::strerror(errno));
   } else {
     Solaris::set_dev_zero_fd(fd);
 
@@ -5607,7 +5625,7 @@ int os::fork_and_exec(char* cmd) {
 
   if (pid < 0) {
     // fork failed
-    warning("fork failed: %s", strerror(errno));
+    warning("fork failed: %s", os::strerror(errno));
     return -1;
 
   } else if (pid == 0) {

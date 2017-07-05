@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,9 @@ public class JavaDocExamplesTest {
         testFindVirtual();
         testFindSpecial();
         testPermuteArguments();
+        testZero();
         testDropArguments();
+        testDropArgumentsToMatch();
         testFilterArguments();
         testFoldArguments();
         testFoldArguments2();
@@ -235,6 +237,17 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             }}
     }
 
+@Test public void testZero() throws Throwable {
+        {{
+{} /// JAVADOC
+Class<?> type = Double.class;
+MethodHandle mh1 = MethodHandles.explicitCastArguments(MethodHandles.constant(Object.class, null), methodType(type));
+assertEquals("()Double", mh1.type().toString());
+MethodHandle mh2 = MethodHandles.empty(methodType(type));
+assertEquals("()Double", mh2.type().toString());
+        }}
+   }
+
     @Test public void testDropArguments() throws Throwable {
         {{
 {} /// JAVADOC
@@ -260,6 +273,24 @@ assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
 MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
 assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             }}
+    }
+
+    @Test public void testDropArgumentsToMatch() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle h0= constant(boolean.class, true);
+MethodHandle h1 = lookup().findVirtual(String.class, "concat", methodType(String.class, String.class));
+MethodType bigType = h1.type().insertParameterTypes(1, String.class, int.class);
+MethodHandle h2 = dropArguments(h1, 0, bigType.parameterList());
+if (h1.type().parameterCount() < h2.type().parameterCount()) {
+    h1 = dropArgumentsToMatch(h1, 0, h2.type().parameterList(), 0);  // lengthen h1
+}
+else {
+    h2 = dropArgumentsToMatch(h2, 0, h1.type().parameterList(), 0);    // lengthen h2
+}
+MethodHandle h3 = guardWithTest(h0, h1, h2);
+assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
+        }}
     }
 
     @Test public void testFilterArguments() throws Throwable {

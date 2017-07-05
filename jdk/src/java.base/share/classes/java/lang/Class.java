@@ -66,10 +66,10 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import sun.reflect.CallerSensitive;
-import sun.reflect.ConstantPool;
-import sun.reflect.Reflection;
-import sun.reflect.ReflectionFactory;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.reflect.ReflectionFactory;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
@@ -3473,7 +3473,7 @@ public final class Class<T> implements java.io.Serializable,
         if (reflectionFactory == null) {
             reflectionFactory =
                 java.security.AccessController.doPrivileged
-                    (new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
+                    (new ReflectionFactory.GetReflectionFactoryAction());
         }
         return reflectionFactory;
     }

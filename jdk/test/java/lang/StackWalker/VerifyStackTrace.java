@@ -101,9 +101,9 @@ public class VerifyStackTrace {
             "2: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:147)\n" +
             "3: VerifyStackTrace$Handle.run(VerifyStackTrace.java:160)\n" +
             "4: VerifyStackTrace.invoke(VerifyStackTrace.java:190)\n" +
-            "5: sun.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
-            "6: sun.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
-            "7: sun.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
+            "5: jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
+            "6: jdk.internal.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
+            "7: jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
             "8: java.lang.reflect.Method.invoke(java.base/Method.java:520)\n" +
             "9: VerifyStackTrace$1.run(VerifyStackTrace.java:220)\n" +
             "10: java.security.AccessController.doPrivileged(java.base/Native Method)\n" +
@@ -138,9 +138,9 @@ public class VerifyStackTrace {
             "5: java.lang.invoke.LambdaForm$MH/1395089624.invoke_MT(java.base/LambdaForm$MH)\n" +
             "6: VerifyStackTrace$Handle.run(VerifyStackTrace.java:162)\n" +
             "7: VerifyStackTrace.invoke(VerifyStackTrace.java:192)\n" +
-            "8: sun.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
-            "9: sun.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
-            "10: sun.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
+            "8: jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
+            "9: jdk.internal.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
+            "10: jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
             "11: java.lang.reflect.Method.invoke(java.base/Method.java:520)\n" +
             "12: VerifyStackTrace$1.run(VerifyStackTrace.java:222)\n" +
             "13: java.security.AccessController.doPrivileged(java.base/Native Method)\n" +
