@@ -217,7 +217,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
     } else {
       hrrs->clear();
     }
-    _claimed = InitialClaimValue;
   }
   zero_marked_bytes();
 
@@ -294,17 +293,6 @@ void HeapRegion::clear_humongous() {
   _humongous_start_region = NULL;
 }
 
-bool HeapRegion::claimHeapRegion(jint claimValue) {
-  jint current = _claimed;
-  if (current != claimValue) {
-    jint res = Atomic::cmpxchg(claimValue, &_claimed, current);
-    if (res == current) {
-      return true;
-    }
-  }
-  return false;
-}
-
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
                        MemRegion mr) :
@@ -314,7 +302,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL),
-    _claimed(InitialClaimValue), _evacuation_failed(false),
+    _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _prev(NULL),

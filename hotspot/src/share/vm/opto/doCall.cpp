@@ -802,10 +802,16 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     // each arm of the Phi.  If I know something clever about the exceptions
     // I'm loading the class from, I can replace the LoadKlass with the
     // klass constant for the exception oop.
-    if( ex_node->is_Phi() ) {
-      ex_klass_node = new PhiNode( ex_node->in(0), TypeKlassPtr::OBJECT );
-      for( uint i = 1; i < ex_node->req(); i++ ) {
-        Node* p = basic_plus_adr( ex_node->in(i), ex_node->in(i), oopDesc::klass_offset_in_bytes() );
+    if (ex_node->is_Phi()) {
+      ex_klass_node = new PhiNode(ex_node->in(0), TypeKlassPtr::OBJECT);
+      for (uint i = 1; i < ex_node->req(); i++) {
+        Node* ex_in = ex_node->in(i);
+        if (ex_in == top() || ex_in == NULL) {
+          // This path was not taken.
+          ex_klass_node->init_req(i, top());
+          continue;
+        }
+        Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
         Node* k = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT) );
         ex_klass_node->init_req( i, k );
       }
