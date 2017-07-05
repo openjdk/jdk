@@ -359,7 +359,9 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
                                                    return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
 
   // Code generation support
-  static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / wordSize); }
+  static WordSize size()                         {
+    return in_WordSize(align_size_up(sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
+  }
   static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }
   static ByteSize f1_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f1); }
