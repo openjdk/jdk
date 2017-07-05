@@ -624,6 +624,7 @@
   do_class(java_lang_StrictMath,          "java/lang/StrictMath")                                                       \
   do_signature(double2_double_signature,  "(DD)D")                                                                      \
   do_signature(int2_int_signature,        "(II)I")                                                                      \
+  do_signature(long2_long_signature,      "(JJ)J")                                                                         \
                                                                                                                         \
   /* here are the math names, all together: */                                                                          \
   do_name(abs_name,"abs")       do_name(sin_name,"sin")         do_name(cos_name,"cos")                                 \
@@ -632,8 +633,11 @@
   do_name(exp_name,"exp")       do_name(min_name,"min")         do_name(max_name,"max")                                 \
                                                                                                                         \
   do_name(addExact_name,"addExact")                                                                                     \
-  do_name(subtractExact_name,"subtractExact")                                                                           \
+  do_name(decrementExact_name,"decrementExact")                                                                         \
+  do_name(incrementExact_name,"incrementExact")                                                                         \
   do_name(multiplyExact_name,"multiplyExact")                                                                           \
+  do_name(negateExact_name,"negateExact")                                                                               \
+  do_name(subtractExact_name,"subtractExact")                                                                           \
                                                                                                                         \
   do_intrinsic(_dabs,                     java_lang_Math,         abs_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dsin,                     java_lang_Math,         sin_name,   double_double_signature,           F_S)   \
@@ -647,7 +651,18 @@
   do_intrinsic(_dexp,                     java_lang_Math,         exp_name,   double_double_signature,           F_S)   \
   do_intrinsic(_min,                      java_lang_Math,         min_name,   int2_int_signature,                F_S)   \
   do_intrinsic(_max,                      java_lang_Math,         max_name,   int2_int_signature,                F_S)   \
-  do_intrinsic(_addExact,                 java_lang_Math,         addExact_name, int2_int_signature,             F_S)   \
+  do_intrinsic(_addExactI,                java_lang_Math,         addExact_name, int2_int_signature,             F_S)   \
+  do_intrinsic(_addExactL,                java_lang_Math,         addExact_name, long2_long_signature,           F_S)   \
+  do_intrinsic(_decrementExactI,          java_lang_Math,         decrementExact_name, int_int_signature,        F_S)   \
+  do_intrinsic(_decrementExactL,          java_lang_Math,         decrementExact_name, long2_long_signature,     F_S)   \
+  do_intrinsic(_incrementExactI,          java_lang_Math,         incrementExact_name, int_int_signature,        F_S)   \
+  do_intrinsic(_incrementExactL,          java_lang_Math,         incrementExact_name, long2_long_signature,     F_S)   \
+  do_intrinsic(_multiplyExactI,           java_lang_Math,         multiplyExact_name, int2_int_signature,        F_S)   \
+  do_intrinsic(_multiplyExactL,           java_lang_Math,         multiplyExact_name, long2_long_signature,      F_S)   \
+  do_intrinsic(_negateExactI,             java_lang_Math,         negateExact_name, int_int_signature,           F_S)   \
+  do_intrinsic(_negateExactL,             java_lang_Math,         negateExact_name, long_long_signature,         F_S)   \
+  do_intrinsic(_subtractExactI,           java_lang_Math,         subtractExact_name, int2_int_signature,        F_S)   \
+  do_intrinsic(_subtractExactL,           java_lang_Math,         subtractExact_name, long2_long_signature,      F_S)   \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_S)   \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \

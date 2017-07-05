@@ -386,9 +386,12 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   bool profile_calls()         { return _compilation->profile_calls();         }
   bool profile_inlined_calls() { return _compilation->profile_inlined_calls(); }
   bool profile_checkcasts()    { return _compilation->profile_checkcasts();    }
+  bool profile_parameters()    { return _compilation->profile_parameters();    }
+  bool profile_arguments()     { return _compilation->profile_arguments();     }
+  bool profile_return()        { return _compilation->profile_return();        }
 
-  Values* args_list_for_profiling(int& start, bool may_have_receiver);
-  Values* collect_args_for_profiling(Values* args, bool may_have_receiver);
+  Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
+  Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);
 
  public:
   NOT_PRODUCT(void print_stats();)

@@ -24,24 +24,15 @@
 /*
  * @test
  * @bug 8024924
- * @summary Test constant addExact
- * @compile ConstantTest.java Verify.java
- * @run main ConstantTest
+ * @summary Test non constant addExact
+ * @compile AddExactILoadTest.java Verify.java
+ * @run main AddExactILoadTest
  *
  */
 
-import java.lang.ArithmeticException;
-
-public class ConstantTest {
+public class AddExactILoadTest {
   public static void main(String[] args) {
-    for (int i = 0; i < 50000; ++i) {
-      Verify.verify(5, 7);
-      Verify.verify(Integer.MAX_VALUE, 1);
-      Verify.verify(Integer.MIN_VALUE, -1);
-      Verify.verify(Integer.MAX_VALUE, -1);
-      Verify.verify(Integer.MIN_VALUE, 1);
-      Verify.verify(Integer.MAX_VALUE / 2, Integer.MAX_VALUE / 2);
-      Verify.verify(Integer.MAX_VALUE / 2, (Integer.MAX_VALUE / 2) + 3);
-    }
+      Verify.LoadTest.init();
+      Verify.LoadTest.verify(new Verify.AddExactI());
   }
 }

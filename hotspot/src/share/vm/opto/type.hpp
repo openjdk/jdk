@@ -159,6 +159,11 @@ private:
   // Table for efficient dualing of base types
   static const TYPES dual_type[lastype];
 
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop_helper(const Type *t) const;
+#endif
+
 protected:
   // Each class of type is also identified by its base.
   const TYPES _base;            // Enum of Types type
@@ -376,6 +381,9 @@ public:
                                         bool require_constant = false,
                                         bool is_autobox_cache = false);
 
+  // Speculative type. See TypeInstPtr
+  virtual ciKlass* speculative_type() const { return NULL; }
+
 private:
   // support arrays
   static const BasicType _basic_type[];
@@ -585,6 +593,7 @@ public:
   static const TypeTuple *INT_PAIR;
   static const TypeTuple *LONG_PAIR;
   static const TypeTuple *INT_CC_PAIR;
+  static const TypeTuple *LONG_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -784,7 +793,7 @@ public:
 // Some kind of oop (Java pointer), either klass or instance or array.
 class TypeOopPtr : public TypePtr {
 protected:
-  TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id );
+  TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative);
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
@@ -810,10 +819,26 @@ protected:
   // This is the the node index of the allocation node creating this instance.
   int           _instance_id;
 
+  // Extra type information profiling gave us. We propagate it the
+  // same way the rest of the type info is propagated. If we want to
+  // use it, then we have to emit a guard: this part of the type is
+  // not something we know but something we speculate about the type.
+  const TypeOopPtr*   _speculative;
+
   static const TypeOopPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact);
 
   int dual_instance_id() const;
   int meet_instance_id(int uid) const;
+
+  // utility methods to work on the speculative part of the type
+  const TypeOopPtr* dual_speculative() const;
+  const TypeOopPtr* meet_speculative(const TypeOopPtr* other) const;
+  bool eq_speculative(const TypeOopPtr* other) const;
+  int hash_speculative() const;
+  const TypeOopPtr* add_offset_speculative(intptr_t offset) const;
+#ifndef PRODUCT
+  void dump_speculative(outputStream *st) const;
+#endif
 
 public:
   // Creates a type given a klass. Correctly handles multi-dimensional arrays
@@ -841,7 +866,7 @@ public:
                                               bool not_null_elements = false);
 
   // Make a generic (unclassed) pointer to an oop.
-  static const TypeOopPtr* make(PTR ptr, int offset, int instance_id);
+  static const TypeOopPtr* make(PTR ptr, int offset, int instance_id, const TypeOopPtr* speculative);
 
   ciObject* const_oop()    const { return _const_oop; }
   virtual ciKlass* klass() const { return _klass;     }
@@ -855,6 +880,7 @@ public:
   bool is_known_instance()       const { return _instance_id > 0; }
   int  instance_id()             const { return _instance_id; }
   bool is_known_instance_field() const { return is_known_instance() && _offset >= 0; }
+  const TypeOopPtr* speculative() const { return _speculative; }
 
   virtual intptr_t get_con() const;
 
@@ -868,9 +894,13 @@ public:
   const TypeKlassPtr* as_klass_type() const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
+  // Return same type without a speculative part
+  virtual const TypeOopPtr* remove_speculative() const;
 
-  virtual const Type *xmeet( const Type *t ) const;
+  virtual const Type *xmeet(const Type *t) const;
   virtual const Type *xdual() const;    // Compute dual right now.
+  // the core of the computation of the meet for TypeOopPtr and for its subclasses
+  virtual const Type *xmeet_helper(const Type *t) const;
 
   // Do not allow interface-vs.-noninterface joins to collapse to top.
   virtual const Type *filter( const Type *kills ) const;
@@ -880,13 +910,24 @@ public:
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
+
+  // Return the speculative type if any
+  ciKlass* speculative_type() const {
+    if (_speculative != NULL) {
+      const TypeOopPtr* speculative = _speculative->join(this)->is_oopptr();
+      if (speculative->klass_is_exact()) {
+       return speculative->klass();
+      }
+    }
+    return NULL;
+  }
 };
 
 //------------------------------TypeInstPtr------------------------------------
 // Class of Java object pointers, pointing either to non-array Java instances
 // or to a Klass* (including array klasses).
 class TypeInstPtr : public TypeOopPtr {
-  TypeInstPtr( PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id );
+  TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative);
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
 
@@ -899,30 +940,30 @@ class TypeInstPtr : public TypeOopPtr {
 
   // Make a pointer to a constant oop.
   static const TypeInstPtr *make(ciObject* o) {
-    return make(TypePtr::Constant, o->klass(), true, o, 0);
+    return make(TypePtr::Constant, o->klass(), true, o, 0, InstanceBot);
   }
   // Make a pointer to a constant oop with offset.
   static const TypeInstPtr *make(ciObject* o, int offset) {
-    return make(TypePtr::Constant, o->klass(), true, o, offset);
+    return make(TypePtr::Constant, o->klass(), true, o, offset, InstanceBot);
   }
 
   // Make a pointer to some value of type klass.
   static const TypeInstPtr *make(PTR ptr, ciKlass* klass) {
-    return make(ptr, klass, false, NULL, 0);
+    return make(ptr, klass, false, NULL, 0, InstanceBot);
   }
 
   // Make a pointer to some non-polymorphic value of exactly type klass.
   static const TypeInstPtr *make_exact(PTR ptr, ciKlass* klass) {
-    return make(ptr, klass, true, NULL, 0);
+    return make(ptr, klass, true, NULL, 0, InstanceBot);
   }
 
   // Make a pointer to some value of type klass with offset.
   static const TypeInstPtr *make(PTR ptr, ciKlass* klass, int offset) {
-    return make(ptr, klass, false, NULL, offset);
+    return make(ptr, klass, false, NULL, offset, InstanceBot);
   }
 
   // Make a pointer to an oop.
-  static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id = InstanceBot );
+  static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL);
 
   /** Create constant type for a constant boxed value */
   const Type* get_const_boxed_value() const;
@@ -939,8 +980,11 @@ class TypeInstPtr : public TypeOopPtr {
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
+  // Return same type without a speculative part
+  virtual const TypeOopPtr* remove_speculative() const;
 
-  virtual const Type *xmeet( const Type *t ) const;
+  // the core of the computation of the meet of 2 types
+  virtual const Type *xmeet_helper(const Type *t) const;
   virtual const TypeInstPtr *xmeet_unloaded( const TypeInstPtr *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
@@ -959,8 +1003,8 @@ class TypeInstPtr : public TypeOopPtr {
 // Class of Java array pointers
 class TypeAryPtr : public TypeOopPtr {
   TypeAryPtr( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk,
-              int offset, int instance_id, bool is_autobox_cache )
-  : TypeOopPtr(AryPtr,ptr,k,xk,o,offset, instance_id),
+              int offset, int instance_id, bool is_autobox_cache, const TypeOopPtr* speculative)
+    : TypeOopPtr(AryPtr,ptr,k,xk,o,offset, instance_id, speculative),
     _ary(ary),
     _is_autobox_cache(is_autobox_cache)
  {
@@ -998,9 +1042,9 @@ public:
 
   bool is_autobox_cache() const { return _is_autobox_cache; }
 
-  static const TypeAryPtr *make( PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot);
+  static const TypeAryPtr *make( PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL);
   // Constant pointer to array
-  static const TypeAryPtr *make( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot, bool is_autobox_cache = false);
+  static const TypeAryPtr *make( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL, bool is_autobox_cache = false);
 
   // Return a 'ptr' version of this type
   virtual const Type *cast_to_ptr_type(PTR ptr) const;
@@ -1014,8 +1058,11 @@ public:
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
   virtual const TypePtr *add_offset( intptr_t offset ) const;
+  // Return same type without a speculative part
+  virtual const TypeOopPtr* remove_speculative() const;
 
-  virtual const Type *xmeet( const Type *t ) const;
+  // the core of the computation of the meet of 2 types
+  virtual const Type *xmeet_helper(const Type *t) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;

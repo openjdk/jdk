@@ -719,7 +719,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
   ELF_PHDR* phbuf;
   ELF_PHDR* lib_php = NULL;
 
-  int page_size=sysconf(_SC_PAGE_SIZE);
+  int page_size = sysconf(_SC_PAGE_SIZE);
 
   if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL) {
     return false;
@@ -736,26 +736,29 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
       if (existing_map == NULL){
         if (add_map_info(ph, lib_fd, lib_php->p_offset,
-                          target_vaddr, lib_php->p_filesz) == NULL) {
+                          target_vaddr, lib_php->p_memsz) == NULL) {
           goto err;
         }
       } else {
+        // Coredump stores value of p_memsz elf field
+        // rounded up to page boundary.
+
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
-            (existing_map->memsz != lib_php->p_filesz)){
+            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
 
-          print_debug("address conflict @ 0x%lx (size = %ld, flags = %d\n)",
-                        target_vaddr, lib_php->p_filesz, lib_php->p_flags);
+          print_debug("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
+                        target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
           goto err;
         }
 
         /* replace PT_LOAD segment with library segment */
         print_debug("overwrote with new address mapping (memsz %ld -> %ld)\n",
-                     existing_map->memsz, lib_php->p_filesz);
+                     existing_map->memsz, ROUNDUP(lib_php->p_memsz, page_size));
 
         existing_map->fd = lib_fd;
         existing_map->offset = lib_php->p_offset;
-        existing_map->memsz = lib_php->p_filesz;
+        existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
       }
     }
 
