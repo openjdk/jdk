@@ -30,6 +30,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
+    ;;
   Windows* )
     PS=";"
     FS="\\"
@@ -39,7 +43,7 @@ case "$OS" in
     exit 1;
     ;;
 esac
-${TESTJAVA}${FS}bin${FS}javac -d . -classpath ${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest ${TESTSRC}${FS}B4933582.java
+${TESTJAVA}${FS}bin${FS}javac -d . -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest" ${TESTSRC}${FS}B4933582.java
 rm -f cache.ser auth.save
-${TESTJAVA}${FS}bin${FS}java -classpath ${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}. B4933582 first
-${TESTJAVA}${FS}bin${FS}java -classpath ${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}. B4933582 second
+${TESTJAVA}${FS}bin${FS}java -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}." B4933582 first
+${TESTJAVA}${FS}bin${FS}java -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}." B4933582 second

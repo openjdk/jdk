@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package sun.security.jgss.krb5;
 
+import com.sun.security.jgss.AuthorizationDataEntry;
 import org.ietf.jgss.*;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.IOException;
 import sun.security.krb5.*;
 import java.net.InetAddress;
+import sun.security.krb5.internal.AuthorizationData;
+import sun.security.krb5.internal.KerberosTime;
 
 class InitSecContextToken extends InitialToken {
 
@@ -59,6 +61,9 @@ class InitSecContextToken extends InitialToken {
 
         Checksum checksum = gssChecksum.getChecksum();
 
+        context.setTktFlags(serviceTicket.getFlags());
+        context.setAuthTime(
+                new KerberosTime(serviceTicket.getAuthTime()).toString());
         apReq = new KrbApReq(serviceTicket,
                              mutualRequired,
                              useSubkey,
@@ -143,6 +148,21 @@ class InitSecContextToken extends InitialToken {
             // Use the same sequence number as the peer
             // (Behaviour exhibited by the Windows SSPI server)
             context.resetMySequenceNumber(peerSeqNumber);
+        context.setAuthTime(
+                new KerberosTime(apReq.getCreds().getAuthTime()).toString());
+        context.setTktFlags(apReq.getCreds().getFlags());
+        AuthorizationData ad = apReq.getCreds().getAuthzData();
+        if (ad == null) {
+            context.setAuthzData(null);
+        } else {
+            AuthorizationDataEntry[] authzData =
+                    new AuthorizationDataEntry[ad.count()];
+            for (int i=0; i<ad.count(); i++) {
+                authzData[i] = new AuthorizationDataEntry(
+                        ad.item(i).adType, ad.item(i).adData);
+            }
+            context.setAuthzData(authzData);
+        }
     }
 
     public final KrbApReq getKrbApReq() {

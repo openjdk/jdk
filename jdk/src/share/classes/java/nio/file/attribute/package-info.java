@@ -102,9 +102,9 @@
  *   <p><li> The {@link java.nio.file.attribute.UserPrincipalLookupService}
  *   interface defines methods to lookup user or group principals. </li>
  *
- *   <p><li> The {@link java.nio.file.attribute.Attribute} interface
+ *   <p><li> The {@link java.nio.file.attribute.FileAttribute} interface
  *   represents the value of an attribute for cases where the attribute value is
- *   require to be set atomically when creating an object in the file system. </li>
+ *   required to be set atomically when creating an object in the file system. </li>
  *
  * </ul>
  *

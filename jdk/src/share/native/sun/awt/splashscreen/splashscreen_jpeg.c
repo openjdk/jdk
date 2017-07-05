@@ -139,21 +139,45 @@ SplashDecodeJpeg(Splash * splash, struct jpeg_decompress_struct *cinfo)
 
     splash->width = cinfo->output_width;
     splash->height = cinfo->output_height;
+
+    if (!SAFE_TO_ALLOC(splash->imageFormat.depthBytes, splash->width)) {
+        return 0;
+    }
     stride = splash->width * splash->imageFormat.depthBytes;
+
+    if (!SAFE_TO_ALLOC(stride, splash->height)) {
+        return 0;
+    }
+    if (!SAFE_TO_ALLOC(cinfo->output_width, cinfo->output_components)) {
+        return 0;
+    }
 
     splash->frameCount = 1;
     splash->frames = (SplashImage *) malloc(sizeof(SplashImage) *
         splash->frameCount);
+    if (splash->frames == NULL) {
+        return 0;
+    }
     memset(splash->frames, 0, sizeof(SplashImage) *
         splash->frameCount);
+
     splash->loopCount = 1;
-    splash->frames[0].bitmapBits = malloc(stride * splash->height);
     splash->frames[0].delay = 0;
+    splash->frames[0].bitmapBits = malloc(stride * splash->height);
+    if (splash->frames[0].bitmapBits == NULL) {
+        free(splash->frames);
+        return 0;
+    }
 
     rowStride = cinfo->output_width * cinfo->output_components;
 
     buffer = (*cinfo->mem->alloc_sarray)
         ((j_common_ptr) cinfo, JPOOL_IMAGE, rowStride, 1);
+    if (buffer == NULL) {
+        free(splash->frames[0].bitmapBits);
+        free(splash->frames);
+        return 0;
+    }
 
     initFormat(&srcFormat, 0x00FF0000, 0x0000FF00, 0x000000FF, 0x00000000);
     srcFormat.byteOrder = BYTE_ORDER_LSBFIRST;

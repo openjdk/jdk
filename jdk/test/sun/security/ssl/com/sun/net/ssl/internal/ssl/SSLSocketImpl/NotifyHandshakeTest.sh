@@ -43,10 +43,17 @@ fi
 OS=`uname -s`
 case "$OS" in
     SunOS | Linux )
+        FILESEP="/"
 	PATHSEP=":"
 	;;
 
+    CYGWIN* )
+        FILESEP="/"
+	PATHSEP=";"
+	;;
+
     Windows* )
+        FILESEP="\\"
 	PATHSEP=";"
 	;;
 esac
@@ -56,11 +63,13 @@ set -ex
 #
 # Compile the tests, package into their respective jars
 #
-${TESTJAVA}/bin/javac -d . \
-    ${TESTSRC}/NotifyHandshakeTest.java \
-    ${TESTSRC}/NotifyHandshakeTestHeyYou.java
-${TESTJAVA}/bin/jar -cvf com.jar com/NotifyHandshakeTest*.class
-${TESTJAVA}/bin/jar -cvf edu.jar edu/NotifyHandshakeTestHeyYou.class
+${TESTJAVA}${FILESEP}bin${FILESEP}javac -d . \
+    ${TESTSRC}${FILESEP}NotifyHandshakeTest.java \
+    ${TESTSRC}${FILESEP}NotifyHandshakeTestHeyYou.java
+${TESTJAVA}${FILESEP}bin${FILESEP}jar -cvf com.jar \
+    com${FILESEP}NotifyHandshakeTest*.class
+${TESTJAVA}${FILESEP}bin${FILESEP}jar -cvf edu.jar \
+    edu${FILESEP}NotifyHandshakeTestHeyYou.class
 
 #
 # Don't want the original class files to be used, because
@@ -73,11 +82,11 @@ rm -rf com edu
 # This is the only thing we really care about as far as
 # test status goes.
 #
-${TESTJAVA}/bin/java \
+${TESTJAVA}${FILESEP}bin${FILESEP}java \
     -Dtest.src=${TESTSRC} \
     -classpath "com.jar${PATHSEP}edu.jar" \
     -Djava.security.manager \
-    -Djava.security.policy=${TESTSRC}/NotifyHandshakeTest.policy \
+    -Djava.security.policy=${TESTSRC}${FILESEP}NotifyHandshakeTest.policy \
     com.NotifyHandshakeTest
 retval=$?
 

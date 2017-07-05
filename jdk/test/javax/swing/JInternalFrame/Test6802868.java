@@ -26,83 +26,73 @@
  * @bug 6802868
  * @summary JInternalFrame is not maximized when maximized parent frame
  * @author Alexander Potochkin
+ * @library ..
  */
-
-import sun.awt.SunToolkit;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.Robot;
-import java.awt.Toolkit;
 import java.beans.PropertyVetoException;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
-import javax.swing.SwingUtilities;
 
 public class Test6802868 {
-    static JInternalFrame jif;
-    static JFrame frame;
-    static Dimension size;
-    static Point location;
 
-    public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(20);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+    public static void main(String[] args) throws Throwable {
+        SwingTest.start(Test6802868.class);
+    }
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                frame = new JFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    private final JFrame frame;
+    private final JInternalFrame internal;
+    private Dimension size;
+    private Point location;
 
-                JDesktopPane jdp = new JDesktopPane();
-                frame.getContentPane().add(jdp);
+    public Test6802868(JFrame frame) {
+        JDesktopPane desktop = new JDesktopPane();
 
-                jif = new JInternalFrame("Title", true, true, true, true);
-                jdp.add(jif);
-                jif.setVisible(true);
+        this.frame = frame;
+        this.frame.add(desktop);
 
-                frame.setSize(200, 200);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+        this.internal = new JInternalFrame(getClass().getName(), true, true, true, true);
+        this.internal.setVisible(true);
 
-                try {
-                    jif.setMaximum(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        toolkit.realSync();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                size = jif.getSize();
-                frame.setSize(300, 300);
-            }
-        });
-        toolkit.realSync();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                if (jif.getSize().equals(size)) {
-                    throw new RuntimeException("InternalFrame hasn't changed its size");
-                }
-                try {
-                    jif.setIcon(true);
-                } catch (PropertyVetoException e) {
-                    e.printStackTrace();
-                }
-                location = jif.getDesktopIcon().getLocation();
-                frame.setSize(400, 400);
-            }
-        });
-        toolkit.realSync();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                if (jif.getDesktopIcon().getLocation().equals(location)) {
-                    throw new RuntimeException("JDesktopIcon hasn't moved");
-                }
-            }
-        });
+        desktop.add(this.internal);
+    }
+
+    public void firstAction() throws PropertyVetoException {
+        this.internal.setMaximum(true);
+    }
+
+    public void firstTest() {
+        this.size = this.internal.getSize();
+        resizeFrame();
+    }
+
+    public void firstValidation() {
+        if (this.internal.getSize().equals(this.size)) {
+            throw new Error("InternalFrame hasn't changed its size");
+        }
+    }
+
+    public void secondAction() throws PropertyVetoException {
+        this.internal.setIcon(true);
+    }
+
+    public void secondTest() {
+        this.location = this.internal.getDesktopIcon().getLocation();
+        resizeFrame();
+    }
+
+    public void secondValidation() {
+        if (this.internal.getDesktopIcon().getLocation().equals(this.location)) {
+            throw new Error("JDesktopIcon hasn't moved");
+        }
+    }
+
+    private void resizeFrame() {
+        Dimension size = this.frame.getSize();
+        size.width += 10;
+        size.height += 10;
+        this.frame.setSize(size);
     }
 }

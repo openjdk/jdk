@@ -92,6 +92,7 @@ class WindowsConstants {
     public static final int ERROR_INVALID_DATA          = 13;
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
+    public static final int ERROR_SHARING_VIOLATION     = 32;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMATER     = 87;
     public static final int ERROR_DISK_FULL             = 112;

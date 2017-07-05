@@ -60,7 +60,7 @@ public class PNGImageReaderSpi extends ImageReaderSpi {
               suffixes,
               MIMETypes,
               readerClassName,
-              STANDARD_INPUT_TYPE,
+              new Class[] { ImageInputStream.class },
               writerSpiNames,
               false,
               null, null,
