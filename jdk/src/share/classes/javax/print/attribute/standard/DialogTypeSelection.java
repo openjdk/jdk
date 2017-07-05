@@ -52,6 +52,8 @@ import javax.print.attribute.PrintRequestAttribute;
 public final class DialogTypeSelection extends EnumSyntax
         implements PrintRequestAttribute {
 
+    private static final long serialVersionUID = 7518682952133256029L;
+
     /**
      *
      */

@@ -232,7 +232,7 @@ public class Proxy implements java.io.Serializable {
 
     /** maps a class loader to the proxy class cache for that loader */
     private static Map<ClassLoader, Map<List<String>, Object>> loaderToCache
-        = new WeakHashMap<ClassLoader, Map<List<String>, Object>>();
+        = new WeakHashMap<>();
 
     /** marks that a particular proxy class is currently being generated */
     private static Object pendingGenerationMarker = new Object();
@@ -356,7 +356,7 @@ public class Proxy implements java.io.Serializable {
         String[] interfaceNames = new String[interfaces.length];
 
         // for detecting duplicates
-        Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
+        Set<Class<?>> interfaceSet = new HashSet<>();
 
         for (int i = 0; i < interfaces.length; i++) {
             /*
@@ -413,7 +413,7 @@ public class Proxy implements java.io.Serializable {
         synchronized (loaderToCache) {
             cache = loaderToCache.get(loader);
             if (cache == null) {
-                cache = new HashMap<List<String>, Object>();
+                cache = new HashMap<>();
                 loaderToCache.put(loader, cache);
             }
             /*

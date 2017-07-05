@@ -155,8 +155,7 @@ public abstract class AbstractPreferences extends Preferences {
      * All known unremoved children of this node.  (This "cache" is consulted
      * prior to calling childSpi() or getChild().
      */
-    private Map<String, AbstractPreferences> kidCache
-        = new HashMap<String, AbstractPreferences>();
+    private Map<String, AbstractPreferences> kidCache = new HashMap<>();
 
     /**
      * This field is used to keep track of whether or not this node has
@@ -713,7 +712,7 @@ public abstract class AbstractPreferences extends Preferences {
             if (removed)
                 throw new IllegalStateException("Node has been removed.");
 
-            Set<String> s = new TreeSet<String>(kidCache.keySet());
+            Set<String> s = new TreeSet<>(kidCache.keySet());
             for (String kid : childrenNamesSpi())
                 s.add(kid);
             return s.toArray(EMPTY_STRING_ARRAY);
@@ -1442,8 +1441,7 @@ public abstract class AbstractPreferences extends Preferences {
      * event delivery from preference activity, greatly simplifying
      * locking and reducing opportunity for deadlock.
      */
-    private static final List<EventObject> eventQueue
-        = new LinkedList<EventObject>();
+    private static final List<EventObject> eventQueue = new LinkedList<>();
 
     /**
      * These two classes are used to distinguish NodeChangeEvents on

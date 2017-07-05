@@ -56,7 +56,7 @@ class FileInputStream extends InputStream
     private volatile boolean closed = false;
 
     private static final ThreadLocal<Boolean> runningFinalize =
-        new ThreadLocal<Boolean>();
+        new ThreadLocal<>();
 
     private static boolean isRunningFinalize() {
         Boolean val;

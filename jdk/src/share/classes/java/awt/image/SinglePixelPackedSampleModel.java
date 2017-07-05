@@ -92,7 +92,8 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * Constructs a SinglePixelPackedSampleModel with bitMasks.length bands.
      * Each sample is stored in a data array element in the position of
      * its corresponding bit mask.  Each bit mask must be contiguous and
-     * masks must not overlap.
+     * masks must not overlap. Bit masks exceeding data type capacity are
+     * truncated.
      * @param dataType  The data type for storing samples.
      * @param w         The width (in pixels) of the region of the
      *                  image data described.
@@ -120,7 +121,8 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * and a scanline stride equal to scanlineStride data array elements.
      * Each sample is stored in a data array element in the position of
      * its corresponding bit mask.  Each bit mask must be contiguous and
-     * masks must not overlap.
+     * masks must not overlap. Bit masks exceeding data type capacity are
+     * truncated.
      * @param dataType  The data type for storing samples.
      * @param w         The width (in pixels) of the region of
      *                  image data described.
@@ -153,11 +155,13 @@ public class SinglePixelPackedSampleModel extends SampleModel
         this.bitOffsets = new int[numBands];
         this.bitSizes = new int[numBands];
 
+        int maxMask = (int)((1L << DataBuffer.getDataTypeSize(dataType)) - 1);
+
         this.maxBitSize = 0;
         for (int i=0; i<numBands; i++) {
             int bitOffset = 0, bitSize = 0, mask;
-            mask = bitMasks[i];
-
+            this.bitMasks[i] &= maxMask;
+            mask = this.bitMasks[i];
             if (mask != 0) {
                 while ((mask & 1) == 0) {
                     mask = mask >>> 1;
@@ -243,30 +247,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
 
     /** Returns the number of bits per sample for all bands. */
     public int[] getSampleSize() {
-        int mask;
-        int sampleSize[] = new int [numBands];
-        for (int i=0; i<numBands; i++) {
-            sampleSize[i] = 0;
-            mask = bitMasks[i] >>> bitOffsets[i];
-            while ((mask & 1) != 0) {
-                sampleSize[i] ++;
-                mask = mask >>> 1;
-            }
-        }
-
-        return sampleSize;
+        return bitSizes.clone();
     }
 
     /** Returns the number of bits per sample for the specified band. */
     public int getSampleSize(int band) {
-        int sampleSize = 0;
-        int mask = bitMasks[band] >>> bitOffsets[band];
-        while ((mask & 1) != 0) {
-            sampleSize ++;
-            mask = mask >>> 1;
-        }
-
-        return sampleSize;
+        return bitSizes[band];
     }
 
     /** Returns the offset (in data array elements) of pixel (x,y).

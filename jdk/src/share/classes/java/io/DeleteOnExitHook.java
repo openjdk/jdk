@@ -34,7 +34,7 @@ import java.io.File;
  */
 
 class DeleteOnExitHook {
-    private static LinkedHashSet<String> files = new LinkedHashSet<String>();
+    private static LinkedHashSet<String> files = new LinkedHashSet<>();
     static {
         // DeleteOnExitHook must be the last shutdown hook to be invoked.
         // Application shutdown hooks may add the first file to the
@@ -71,7 +71,7 @@ class DeleteOnExitHook {
             files = null;
         }
 
-        ArrayList<String> toBeDeleted = new ArrayList<String>(theFiles);
+        ArrayList<String> toBeDeleted = new ArrayList<>(theFiles);
 
         // reverse the list to maintain previous jdk deletion order.
         // Last in first deleted.
