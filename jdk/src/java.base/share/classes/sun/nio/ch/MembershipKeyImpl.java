@@ -184,7 +184,7 @@ class MembershipKeyImpl
 
             // created blocked set if required and add source address
             if (blockedSet == null)
-                blockedSet = new HashSet<InetAddress>();
+                blockedSet = new HashSet<>();
             blockedSet.add(toBlock);
         }
         return this;

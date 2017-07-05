@@ -62,7 +62,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
     static {
         Boolean b = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
+            new PrivilegedAction<>() {
                 public Boolean run() {
                     return NetProperties.getBoolean(compatPropName);
                 }

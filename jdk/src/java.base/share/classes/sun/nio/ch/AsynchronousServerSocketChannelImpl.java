@@ -228,7 +228,7 @@ abstract class AsynchronousServerSocketChannelImpl
         static final Set<SocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SocketOption<?>> defaultOptions() {
-            HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
+            HashSet<SocketOption<?>> set = new HashSet<>(2);
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_REUSEADDR);
             return Collections.unmodifiableSet(set);

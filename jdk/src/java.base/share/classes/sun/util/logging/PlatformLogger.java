@@ -161,7 +161,7 @@ public class PlatformLogger {
     private static boolean loggingEnabled;
     static {
         loggingEnabled = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
+            new PrivilegedAction<>() {
                 public Boolean run() {
                     String cname = System.getProperty("java.util.logging.config.class");
                     String fname = System.getProperty("java.util.logging.config.file");
