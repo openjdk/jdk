@@ -70,11 +70,10 @@ void ServiceThread::initialize() {
     java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
     java_lang_Thread::set_daemon(thread_oop());
     thread->set_threadObj(thread_oop());
+    _instance = thread;
 
     Threads::add(thread);
     Thread::start(thread);
-
-    _instance = thread;
   }
 }
 

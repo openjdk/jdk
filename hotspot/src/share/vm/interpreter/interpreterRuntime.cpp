@@ -369,7 +369,10 @@ IRT_ENTRY(void, InterpreterRuntime::throw_WrongMethodTypeException(JavaThread* t
   }
 
   // create exception
-  THROW_MSG(vmSymbols::java_dyn_WrongMethodTypeException(), message);
+  Symbol* java_lang_invoke_WrongMethodTypeException = vmSymbols::java_lang_invoke_WrongMethodTypeException();
+  if (AllowTransitionalJSR292)
+    java_lang_invoke_WrongMethodTypeException = SystemDictionaryHandles::WrongMethodTypeException_klass()->name();
+  THROW_MSG(java_lang_invoke_WrongMethodTypeException, message);
 }
 IRT_END
 
@@ -794,7 +797,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   Handle info;  // optional argument(s) in JVM_CONSTANT_InvokeDynamic
   Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
                                                          main_index, info, CHECK);
-  if (!java_dyn_MethodHandle::is_instance(bootm())) {
+  if (!java_lang_invoke_MethodHandle::is_instance(bootm())) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
               "no bootstrap method found for invokedynamic");
   }

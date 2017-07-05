@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -827,13 +827,15 @@ void PSParallelCompact::post_initialize() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   MemRegion mr = heap->reserved_region();
-  _ref_processor = ReferenceProcessor::create_ref_processor(
-    mr,                         // span
-    true,                       // atomic_discovery
-    true,                       // mt_discovery
-    &_is_alive_closure,
-    ParallelGCThreads,
-    ParallelRefProcEnabled);
+  _ref_processor =
+    new ReferenceProcessor(mr,            // span
+                           ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
+                           (int) ParallelGCThreads, // mt processing degree
+                           true,          // mt discovery
+                           (int) ParallelGCThreads, // mt discovery degree
+                           true,          // atomic_discovery
+                           &_is_alive_closure, // non-header is alive closure
+                           false);        // write barrier for next field updates
   _counters = new CollectorCounters("PSParallelCompact", 1);
 
   // Initialize static fields in ParCompactionManager.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,12 +146,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
         break;
       case JVM_CONSTANT_MethodHandle :
       case JVM_CONSTANT_MethodType :
-        if (!EnableMethodHandles ||
-            _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+        if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
           classfile_parse_error(
-            (!EnableMethodHandles ?
-             "This JVM does not support constant tag %u in class file %s" :
-             "Class file version does not support constant tag %u in class file %s"),
+            "Class file version does not support constant tag %u in class file %s",
+            tag, CHECK);
+        }
+        if (!EnableMethodHandles) {
+          classfile_parse_error(
+            "This JVM does not support constant tag %u in class file %s",
             tag, CHECK);
         }
         if (tag == JVM_CONSTANT_MethodHandle) {
@@ -170,12 +172,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
       case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
-          if (!EnableInvokeDynamic ||
-              _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+          if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
             classfile_parse_error(
-              (!EnableInvokeDynamic ?
-               "This JVM does not support constant tag %u in class file %s" :
-               "Class file version does not support constant tag %u in class file %s"),
+              "Class file version does not support constant tag %u in class file %s",
+              tag, CHECK);
+          }
+          if (!EnableInvokeDynamic) {
+            classfile_parse_error(
+              "This JVM does not support constant tag %u in class file %s",
               tag, CHECK);
           }
           cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
@@ -1616,8 +1620,13 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
 
   AccessFlags access_flags;
   if (name == vmSymbols::class_initializer_name()) {
-    // We ignore the access flags for a class initializer. (JVM Spec. p. 116)
-    flags = JVM_ACC_STATIC;
+    // We ignore the other access flags for a valid class initializer.
+    // (JVM Spec 2nd ed., chapter 4.6)
+    if (_major_version < 51) { // backward compatibility
+      flags = JVM_ACC_STATIC;
+    } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
+      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+    }
   } else {
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
   }
@@ -2797,11 +2806,11 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 
 // Force MethodHandle.vmentry to be an unmanaged pointer.
 // There is no way for a classfile to express this, so we must help it.
-void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
+void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle cp,
                                                     typeArrayHandle fields,
                                                     FieldAllocationCount *fac_ptr,
                                                     TRAPS) {
-  // Add fake fields for java.dyn.MethodHandle instances
+  // Add fake fields for java.lang.invoke.MethodHandle instances
   //
   // This is not particularly nice, but since there is no way to express
   // a native wordSize field in Java, we must do it at this level.
@@ -2818,9 +2827,10 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && word_sig_index == 0)  return;
   if (word_sig_index == 0)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
+              "missing I or J signature (for vmentry) in java.lang.invoke.MethodHandle");
 
   // Find vmentry field and change the signature.
   bool found_vmentry = false;
@@ -2857,9 +2867,10 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && !found_vmentry)  return;
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing vmentry byte field in java.dyn.MethodHandle");
+              "missing vmentry byte field in java.lang.invoke.MethodHandle");
 }
 
 
@@ -3224,9 +3235,18 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       java_lang_Class_fix_pre(&methods, &fac, CHECK_(nullHandle));
     }
 
-    // adjust the vmentry field declaration in java.dyn.MethodHandle
-    if (EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
-      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    // adjust the vmentry field declaration in java.lang.invoke.MethodHandle
+    if (EnableMethodHandles && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    }
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    }
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
+      // allow vmentry field in MethodHandleImpl also
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 
     // Add a fake "discovered" field if it is not present
