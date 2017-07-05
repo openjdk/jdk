@@ -221,6 +221,7 @@ public final class NativeFunction {
         final StringBuilder sb = new StringBuilder();
 
         sb.append("(function (");
+        final String funcBody;
         if (args.length > 0) {
             final StringBuilder paramListBuf = new StringBuilder();
             for (int i = 0; i < args.length - 1; i++) {
@@ -230,15 +231,20 @@ public final class NativeFunction {
                 }
             }
 
+            // now convert function body to a string
+            funcBody = JSType.toString(args[args.length - 1]);
+
             final String paramList = paramListBuf.toString();
             if (! paramList.isEmpty()) {
                 checkFunctionParameters(paramList);
                 sb.append(paramList);
             }
+        } else {
+            funcBody = null;
         }
+
         sb.append(") {\n");
         if (args.length > 0) {
-            final String funcBody = JSType.toString(args[args.length - 1]);
             checkFunctionBody(funcBody);
             sb.append(funcBody);
             sb.append('\n');

@@ -9,7 +9,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /*
- * $Id: XMLErrorResources_pt_BR.java 3023 2011-03-01 00:53:34Z joehw $
+ * $Id: XMLErrorResources_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:54 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -180,7 +179,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
   // Error messages...
 
   /** The lookup table for error messages.   */
-  public static final Object[][] contents = {
+  private static final Object[][] contents = {
 
   /** Error message ID that has a null message, but takes in a single object.    */
     {"ER0000" , "{0}" },
@@ -216,7 +215,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
       "\nINESPERADO: Parser doTerminate responde {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "o parse n\u00E3o pode ser chamado durante o parse"},
+      "o parsing n\u00E3o pode ser chamado durante o parsing"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
       "Erro: iterador digitado para o eixo {0} n\u00E3o implementado"},
@@ -246,7 +245,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
       "N\u00E3o foi poss\u00EDvel resolver o n\u00F3 para um handle"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "startParse n\u00E3o pode ser chamado durante o parse"},
+       "startParse n\u00E3o pode ser chamado durante o parsing"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
        "startParse requer um SAXParser n\u00E3o nulo"},
@@ -261,7 +260,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
        "O caminho cont\u00E9m uma sequ\u00EAncia inv\u00E1lida de caracteres de escape"},
 
     { ER_SCHEME_REQUIRED,
-       "\u00C9 necess\u00E1rio um esquema!"},
+       "O esquema \u00E9 obrigat\u00F3rio!"},
 
     { ER_NO_SCHEME_IN_URI,
        "Nenhum esquema encontrado no URI: {0}"},
@@ -300,7 +299,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
       "O parser j\u00E1 est\u00E1 sendo usado"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "N\u00E3o \u00E9 poss\u00EDvel alterar {0} {1} durante o parse"},
+      "N\u00E3o \u00E9 poss\u00EDvel alterar {0} {1} durante o parsing"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
       "Autoaverigua\u00E7\u00E3o n\u00E3o permitida"},
@@ -440,16 +439,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
 
 
   };
-  private static final Object[][] msgCopy = new Object[contents.length][2];
-    // return a copy of contents; in theory we want a deep clone
-    // of contents, but since it only contains (immutable) Strings,
-    // this shallow copy is sufficient
-  static {
-        for (int i = 0; i < contents.length; i++) {
-            msgCopy[i][0] = contents[i][0];
-            msgCopy[i][1] = contents[i][1];
-        }
-  }
+
   /**
    * Get the association list.
    *
@@ -457,7 +447,7 @@ public class XMLErrorResources_pt_BR extends ListResourceBundle
    */
 
     protected Object[][] getContents() {
-        return msgCopy;
+        return contents;
     }
 
 }

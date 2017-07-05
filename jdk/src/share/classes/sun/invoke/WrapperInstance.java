@@ -30,7 +30,7 @@ import java.lang.invoke.MethodHandle;
 /**
  * Private API used inside of java.lang.invoke.MethodHandles.
  * Interface implemented by every object which is produced by
- * {@link java.lang.invoke.MethodHandles#asInstance MethodHandles.asInstance}.
+ * {@link java.lang.invoke.MethodHandleProxies#asInterfaceInstance MethodHandleProxies.asInterfaceInstance}.
  * The methods of this interface allow a caller to recover the parameters
  * to {@code asInstance}.
  * This allows applications to repeatedly convert between method handles

@@ -46,7 +46,7 @@ import javax.swing.plaf.basic.*;
  *
  * <table summary="Descriptions of supported hints: Angled, Horizontal, and None">
  *  <tr>
- *    <th><p align="left">Angled</p></th>
+ *    <th><p style="text-align:left">Angled</p></th>
  *    <td>A line is drawn connecting the child to the parent. For handling
  *          of the root node refer to
  *          {@link javax.swing.JTree#setRootVisible} and
@@ -54,11 +54,11 @@ import javax.swing.plaf.basic.*;
  *    </td>
  *  </tr>
  *  <tr>
- *     <th><p align="left">Horizontal</p></th>
+ *     <th><p style="text-align:left">Horizontal</p></th>
  *     <td>A horizontal line is drawn dividing the children of the root node.</td>
  *  </tr>
  *  <tr>
- *      <th><p align="left">None</p></th>
+ *      <th><p style="text-align:left">None</p></th>
  *      <td>Do not draw any visual indication between nodes.</td>
  *  </tr>
  * </table>

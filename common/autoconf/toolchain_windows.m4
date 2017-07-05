@@ -75,7 +75,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     VCVARSFILE="vc/bin/vcvars32.bat"
   else
     VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-  fi 
+  fi
 
   VS_ENV_CMD=""
   VS_ENV_ARGS=""
@@ -89,7 +89,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     AC_MSG_NOTICE([The path given by --with-tools-dir does not contain a valid Visual Studio installation])
     AC_MSG_NOTICE([Please point to the VC/bin directory within the Visual Studio installation])
     AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
-  fi  
+  fi
 
   if test "x$VS100COMNTOOLS" != x; then
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$VS100COMNTOOLS/../..], [VS100COMNTOOLS variable])
@@ -118,7 +118,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
 # the set env variables into the spec file.
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 [
-  # Store path to cygwin link.exe to help excluding it when searching for 
+  # Store path to cygwin link.exe to help excluding it when searching for
   # VS linker. This must be done before changing the PATH when looking for VS.
   AC_PATH_PROG(CYGWIN_LINK, link)
   if test "x$CYGWIN_LINK" != x; then
@@ -187,7 +187,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Cannot continue])
     fi
 
-    # Now set all paths and other env variables. This will allow the rest of 
+    # Now set all paths and other env variables. This will allow the rest of
     # the configure script to find and run the compiler in the proper way.
     AC_MSG_NOTICE([Setting extracted environment variables])
     . $OUTPUT_ROOT/localdevenv.sh
@@ -198,7 +198,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 
   # At this point, we should have corrent variables in the environment, or we can't continue.
   AC_MSG_CHECKING([for Visual Studio variables])
-  
+
   if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x || test "x$WINDOWSSDKDIR" != x; then
     if test "x$INCLUDE" = x || test "x$LIB" = x; then
       AC_MSG_RESULT([present but broken])
@@ -228,7 +228,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
     AC_MSG_ERROR([Cannot continue])
   fi
-  
+
   AC_MSG_CHECKING([for msvcr100.dll])
   AC_ARG_WITH(msvcr-dll, [AS_HELP_STRING([--with-msvcr-dll],
       [copy this msvcr100.dll into the built JDK (Windows only) @<:@probed@:>@])])

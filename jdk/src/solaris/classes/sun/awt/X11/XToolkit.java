@@ -240,9 +240,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 @Override
                 public void dispatchEvent(XEvent ev) {
                     if (ev.get_type() == XConstants.ConfigureNotify) {
-                        ((X11GraphicsEnvironment)GraphicsEnvironment.
-                         getLocalGraphicsEnvironment()).
-                            displayChanged();
+                        awtUnlock();
+                        try {
+                            ((X11GraphicsEnvironment)GraphicsEnvironment.
+                             getLocalGraphicsEnvironment()).
+                                displayChanged();
+                        } finally {
+                            awtLock();
+                        }
                     }
                 }
             });

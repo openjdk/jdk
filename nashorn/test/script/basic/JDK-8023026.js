@@ -48,7 +48,7 @@ function checkIterations(obj) {
         function(x) x*x));
 }
 
-var array = new (Java.type("[I"))(4);
+var array = new (Java.type("int[]"))(4);
 for (var i in array) {
     array[i] = i;
 }

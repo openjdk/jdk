@@ -97,7 +97,7 @@ public class StreamBuilderTest extends OpTestCase {
         checkISE(() -> sb.build());
     }
 
-    @Test(dataProvider = "sizes")
+    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
     public void testStreamBuilder(int size) {
         testStreamBuilder(size, (s) -> {
             Stream.Builder<Integer> sb = Stream.builder();
@@ -159,7 +159,7 @@ public class StreamBuilderTest extends OpTestCase {
         checkISE(() -> sb.build());
     }
 
-    @Test(dataProvider = "sizes")
+    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
     public void testIntStreamBuilder(int size) {
         testIntStreamBuilder(size, (s) -> {
             IntStream.Builder sb = IntStream.builder();
@@ -221,7 +221,7 @@ public class StreamBuilderTest extends OpTestCase {
         checkISE(() -> sb.build());
     }
 
-    @Test(dataProvider = "sizes")
+    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
     public void testLongStreamBuilder(int size) {
         testLongStreamBuilder(size, (s) -> {
             LongStream.Builder sb = LongStream.builder();
@@ -282,7 +282,7 @@ public class StreamBuilderTest extends OpTestCase {
         checkISE(() -> sb.build());
     }
 
-    @Test(dataProvider = "sizes")
+    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
     public void testDoubleStreamBuilder(int size) {
         testDoubleStreamBuilder(size, (s) -> {
             DoubleStream.Builder sb = DoubleStream.builder();

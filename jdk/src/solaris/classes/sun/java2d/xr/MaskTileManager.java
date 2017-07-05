@@ -54,10 +54,6 @@ public class MaskTileManager {
     int maskPixmap;
     int maskPicture;
     long maskGC;
-    int lineMaskPixmap;
-    int lineMaskPicture;
-    long drawLineGC;
-    long clearLineGC;
 
     public MaskTileManager(XRCompositeManager xrMgr, int parentXid) {
         tileList = new ArrayList<MaskTile>();
@@ -71,34 +67,6 @@ public class MaskTileManager {
                             0, 0, MASK_SIZE, MASK_SIZE);
         maskGC = con.createGC(maskPixmap);
         con.setGCExposures(maskGC, false);
-
-        lineMaskPixmap = con.createPixmap(parentXid, 8, MASK_SIZE, MASK_SIZE);
-        lineMaskPicture =
-             con.createPicture(lineMaskPixmap, XRUtils.PictStandardA8);
-        con.renderRectangle(lineMaskPicture, XRUtils.PictOpClear,
-                          new XRColor(Color.black), 0, 0, MASK_SIZE, MASK_SIZE);
-
-        drawLineGC = con.createGC(lineMaskPixmap);
-        con.setGCExposures(drawLineGC, false);
-        con.setGCForeground(drawLineGC, 255);
-
-        clearLineGC = con.createGC(lineMaskPixmap);
-        con.setGCExposures(clearLineGC, false);
-        con.setGCForeground(clearLineGC, 0);
-    }
-
-    /**
-     * Adds a rectangle to the mask.
-     */
-    public void addRect(int x, int y, int width, int height) {
-        mainTile.addRect(x, y, width, height);
-    }
-
-    /**
-     * Adds a line to the mask.
-     */
-    public void addLine(int x1, int y1, int x2, int y2) {
-        mainTile.addLine(x1, y1, x2, y2);
     }
 
     /**
@@ -324,4 +292,11 @@ public class MaskTileManager {
             rects.setY(index, 0);
         }
     }
+
+    /**
+     * @return MainTile to which rectangles are added before composition.
+     */
+    public MaskTile getMainTile() {
+        return mainTile;
+     }
 }

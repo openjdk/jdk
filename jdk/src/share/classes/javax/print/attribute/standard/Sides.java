@@ -134,7 +134,7 @@ public final class Sides extends EnumSyntax
      * sides of consecutive media sheets, such that the orientation of each
      * pair of print-stream pages on the medium would be correct for the
      * reader as if for binding on the long edge. This imposition is also
-     * known as "duplex" (see {@link #DUPLEX <CODE>DUPLEX</CODE>}).
+     * known as "duplex" (see {@link #DUPLEX DUPLEX}).
      */
     public static final Sides TWO_SIDED_LONG_EDGE = new Sides(1);
 
@@ -143,19 +143,19 @@ public final class Sides extends EnumSyntax
      * sides of consecutive media sheets, such that the orientation of each
      * pair of print-stream pages on the medium would be correct for the
      * reader as if for binding on the short edge. This imposition is also
-     * known as "tumble" (see {@link #TUMBLE <CODE>TUMBLE</CODE>}).
+     * known as "tumble" (see {@link #TUMBLE TUMBLE}).
      */
     public static final Sides TWO_SIDED_SHORT_EDGE = new Sides(2);
 
     /**
      * An alias for "two sided long edge" (see {@link #TWO_SIDED_LONG_EDGE
-     * <CODE>TWO_SIDED_LONG_EDGE</CODE>}).
+     * TWO_SIDED_LONG_EDGE}).
      */
     public static final Sides DUPLEX = TWO_SIDED_LONG_EDGE;
 
     /**
      * An alias for "two sided short edge" (see {@link #TWO_SIDED_SHORT_EDGE
-     * <CODE>TWO_SIDED_SHORT_EDGE</CODE>}).
+     * TWO_SIDED_SHORT_EDGE}).
      */
     public static final Sides TUMBLE = TWO_SIDED_SHORT_EDGE;
 

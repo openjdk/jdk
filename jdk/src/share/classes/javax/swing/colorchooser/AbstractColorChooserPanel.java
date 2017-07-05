@@ -40,7 +40,7 @@ import javax.swing.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -85,7 +85,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
     /**
      * Provides a hint to the look and feel as to the
      * <code>KeyEvent.VK</code> constant that can be used as a mnemonic to
-     * access the panel. A return value <= 0 indicates there is no mnemonic.
+     * access the panel. A return value &lt;= 0 indicates there is no mnemonic.
      * <p>
      * The return value here is a hint, it is ultimately up to the look
      * and feel to honor the return value in some meaningful way.
@@ -94,7 +94,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * <code>AbstractColorChooserPanel</code> does not support a mnemonic,
      * subclasses wishing a mnemonic will need to override this.
      *
-     * @return KeyEvent.VK constant identifying the mnemonic; <= 0 for no
+     * @return KeyEvent.VK constant identifying the mnemonic; &lt;= 0 for no
      *         mnemonic
      * @see #getDisplayedMnemonicIndex
      * @since 1.4
@@ -107,7 +107,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * Provides a hint to the look and feel as to the index of the character in
      * <code>getDisplayName</code> that should be visually identified as the
      * mnemonic. The look and feel should only use this if
-     * <code>getMnemonic</code> returns a value > 0.
+     * <code>getMnemonic</code> returns a value &gt; 0.
      * <p>
      * The return value here is a hint, it is ultimately up to the look
      * and feel to honor the return value in some meaningful way. For example,

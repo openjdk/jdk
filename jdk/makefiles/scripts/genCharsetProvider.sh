@@ -28,17 +28,17 @@
 # Generate a charset provider class
 
 # Required environment variables
-#   NAWK	awk tool
-#   TEMPDIR      temporary directory
-#   HASHER	Hasher program
+#   NAWK    awk tool
+#   TEMPDIR temporary directory
+#   HASHER  Hasher program
 
 SPEC=$1; shift
 DST=$1; shift
 
 eval `$NAWK <$SPEC '
-  /^[ \t]*copyright / { printf "COPYRIGHT_YEARS=\"%s %s\"\n", $2, $3; }
-  /^[ \t]*package / { printf "PKG=%s\n", $2; }
-  /^[ \t]*class / { printf "CLASS=%s\n", $2; }
+    /^[ \t]*copyright / { printf "COPYRIGHT_YEARS=\"%s %s\"\n", $2, $3; }
+    /^[ \t]*package / { printf "PKG=%s\n", $2; }
+    /^[ \t]*class / { printf "CLASS=%s\n", $2; }
 '`
 
 OUT=$DST/$CLASS.java
@@ -69,50 +69,50 @@ __END__
 # Alias tables
 #
 $NAWK <$SPEC >>$OUT '
-  BEGIN { n = 1; m = 1; }
+    BEGIN { n = 1; m = 1; }
 
-  /^[ \t]*charset / {
-    csn = $2; cln = $3;
-    lcsn = tolower(csn);
-    lcsns[n++] = lcsn;
-    csns[lcsn] = csn;
-    classMap[lcsn] = cln;
-    if (n > 2)
+    /^[ \t]*charset / {
+      csn = $2; cln = $3;
+      lcsn = tolower(csn);
+      lcsns[n++] = lcsn;
+      csns[lcsn] = csn;
+      classMap[lcsn] = cln;
+      if (n > 2)
+        printf "    };\n\n";
+      printf "    static final String[] aliases_%s = new String[] {\n", cln;
+    }
+
+    /^[ \t]*alias / {
+      acsns[m++] = tolower($2);
+      aliasMap[tolower($2)] = lcsn;
+      printf "        \"%s\",\n", $2;
+    }
+
+    END {
       printf "    };\n\n";
-    printf "    static final String[] aliases_%s = new String[] {\n", cln;
-  }
-
-  /^[ \t]*alias / {
-    acsns[m++] = tolower($2);
-    aliasMap[tolower($2)] = lcsn; 
-    printf "        \"%s\",\n", $2;
-  }
-
-  END {
-    printf "    };\n\n";
-  }
+    }
 '
 
 
 # Prehashed alias and class maps
 #
 $NAWK <$SPEC >$TEMPDIR/aliases '
-  /^[ \t]*charset / {
-    csn = $2;
-    lcsn = tolower(csn);
-  }
-  /^[ \t]*alias / {
-    an = tolower($2);
-    printf "%-20s \"%s\"\n", an, lcsn;
-  }
+    /^[ \t]*charset / {
+      csn = $2;
+      lcsn = tolower(csn);
+    }
+    /^[ \t]*alias / {
+      an = tolower($2);
+      printf "%-20s \"%s\"\n", an, lcsn;
+    }
 '
 
 $NAWK <$SPEC >$TEMPDIR/classes '
-  /^[ \t]*charset / {
-    csn = $2; cln = $3;
-    lcsn = tolower(csn);
-    printf "%-20s \"%s\"\n", lcsn, cln;
-  }
+    /^[ \t]*charset / {
+      csn = $2; cln = $3;
+      lcsn = tolower(csn);
+      printf "%-20s \"%s\"\n", lcsn, cln;
+    }
 '
 
 ${HASHER} -i Aliases <$TEMPDIR/aliases >>$OUT

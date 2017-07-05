@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /*
- * $Id: XSLTErrorResources_pt_BR.java 3023 2011-03-01 00:53:34Z joehw $
+ * $Id: XSLTErrorResources_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:53 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -625,7 +624,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
       "Falha ao processar a folha de estilos!"},
 
     { ER_COULDNT_PARSE_DOC,
-     "N\u00E3o foi poss\u00EDvel fazer parse do documento {0}!"},
+     "N\u00E3o foi poss\u00EDvel fazer parsing do documento {0}!"},
 
     { ER_COULDNT_FIND_FRAGMENT,
      "N\u00E3o foi poss\u00EDvel localizar o fragmento: {0}"},
@@ -929,7 +928,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
         "Handler de erro nulo"},
 
     { ER_CANNOT_CALL_PARSE,
-        "o parse n\u00E3o poder\u00E1 ser chamado se o ContentHandler n\u00E3o tiver sido definido"},
+        "o parsing n\u00E3o poder\u00E1 ser chamado se o ContentHandler n\u00E3o tiver sido definido"},
 
     { ER_NO_PARENT_FOR_FILTER,
         "Nenhum pai para o filtro"},
@@ -963,7 +962,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
   //in locale specific files like XSLTErrorResources_de.java, XSLTErrorResources_fr.java etc.
   //NOTE: Not only the key name but message has also been changed.
     { ER_VALUE_SHOULD_BE_NUMBER,
-        "O valor para {0} deve conter um n\u00FAmero pass\u00EDvel de parse"},
+        "O valor para {0} deve conter um n\u00FAmero pass\u00EDvel de parsing"},
 
     { ER_VALUE_SHOULD_EQUAL,
         "O valor para {0} deve ser igual a sim ou n\u00E3o"},
@@ -1248,7 +1247,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
       "Conflitos de especificidade encontrados: {0} Ser\u00E1 usado o \u00FAltimo encontrado na folha de estilos."},
 
     { WG_PARSING_AND_PREPARING,
-      "========= Fazendo parse e preparando {0} =========="},
+      "========= Fazendo parsing e preparando {0} =========="},
 
     { WG_ATTR_TEMPLATE,
      "Modelo do Atributo, {0}"},
@@ -1360,7 +1359,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
   {  "optionQ", "   [-Q  (Modo Silencioso)]"},
   {  "optionLF", "   [-LF (Usar alimenta\u00E7\u00F5es de linha somente na sa\u00EDda {o default \u00E9 CR/LF})]"},
   {  "optionCR", "   [-CR (Use retornos de carro somente na sa\u00EDda {o default \u00E9 CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (Quais caracteres devem ser identificados como escape {o default \u00E9 <>&\"\'\\r\\n}]"},
+  { "optionESCAPE", "   [-ESCAPE (Quais caracteres devem ser identificados como escape {o default \u00E9 <>&\"'\\r\\n}]"},
   { "optionINDENT", "   [-INDENT (Controla quantos espa\u00E7os devem ser recuados {o default \u00E9 0})]"},
   { "optionTT", "   [-TT (Rastreia os modelos \u00E0 medida que s\u00E3o chamados.)]"},
   { "optionTG", "   [-TG (Rastreia cada evento de gera\u00E7\u00E3o.)]"},
@@ -1396,7 +1395,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
   {   "optionXO",  "   [-XO [transletName] (atribui o nome ao translet gerado)]"},
   {  "optionXD", "   [-XD destinationDirectory (especificar um diret\u00F3rio de destino para translet)]"},
   {  "optionXJ",  "   [-XJ jarfile (empacotar classes do translet em um arquivo jar com o nome <jarfile>)]"},
-  {   "optionXP",  "   [-XP package (especifica um prefixo de nome do pacote para todas as classes translet geradas)]"},
+  {   "optionXP",  "   [-XP pacote (especifica um prefixo de nome do pacote para todas as classes translet geradas)]"},
 
   //AddITIONAL  STRINGS that need L10n
   // Note to translators:  The following message describes usage of a particular
@@ -1449,5 +1448,4 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
   public static final String QUERY_HEADER = "PATTERN ";
 
 
-
-}
+    }

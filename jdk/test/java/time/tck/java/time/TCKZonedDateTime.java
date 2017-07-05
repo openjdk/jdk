@@ -223,54 +223,6 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws ClassNotFoundException, IOException {
-        assertSerializable(TEST_DATE_TIME);
-    }
-
-    @Test
-    public void test_serialization_format_zoneId() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(7);  // zoneId
-            dos.writeUTF("Europe/London");
-        }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneId.of("Europe/London"));
-        assertSerializedBySer(zdt, bytes);
-    }
-
-    @Test
-    public void test_serialization_format_zoneOffset() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(8);  // zoneId
-            dos.writeByte(4);
-        }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneOffset.ofHours(1));
-        assertSerializedBySer(zdt, bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
     @Test
@@ -2049,7 +2001,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     // compare results to OffsetDateTime.until, especially wrt dates
 
     @Test(dataProvider="plusDays")
-    public void test_periodUntil_days(ZonedDateTime base, long expected, ZonedDateTime end) {
+    public void test_until_days(ZonedDateTime base, long expected, ZonedDateTime end) {
         if (base.toLocalTime().equals(end.toLocalTime()) == false) {
             return;  // avoid DST gap input values
         }
@@ -2057,27 +2009,27 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="plusTime")
-    public void test_periodUntil_hours(ZonedDateTime base, long expected, ZonedDateTime end) {
+    public void test_until_hours(ZonedDateTime base, long expected, ZonedDateTime end) {
         assertEquals(base.until(end, HOURS), expected);
     }
 
     @Test(dataProvider="plusTime")
-    public void test_periodUntil_minutes(ZonedDateTime base, long expected, ZonedDateTime end) {
+    public void test_until_minutes(ZonedDateTime base, long expected, ZonedDateTime end) {
         assertEquals(base.until(end, MINUTES), expected * 60);
     }
 
     @Test(dataProvider="plusTime")
-    public void test_periodUntil_seconds(ZonedDateTime base, long expected, ZonedDateTime end) {
+    public void test_until_seconds(ZonedDateTime base, long expected, ZonedDateTime end) {
         assertEquals(base.until(end, SECONDS), expected * 3600);
     }
 
     @Test(dataProvider="plusTime")
-    public void test_periodUntil_nanos(ZonedDateTime base, long expected, ZonedDateTime end) {
+    public void test_until_nanos(ZonedDateTime base, long expected, ZonedDateTime end) {
         assertEquals(base.until(end, NANOS), expected * 3600_000_000_000L);
     }
 
     @Test
-    public void test_periodUntil_parisLondon() {
+    public void test_until_parisLondon() {
         ZonedDateTime midnightLondon = LocalDate.of(2012, 6, 28).atStartOfDay(ZONE_LONDON);
         ZonedDateTime midnightParis1 = LocalDate.of(2012, 6, 29).atStartOfDay(ZONE_PARIS);
         ZonedDateTime oneAm1 = LocalDateTime.of(2012, 6, 29, 1, 0).atZone(ZONE_PARIS);
@@ -2093,7 +2045,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test
-    public void test_periodUntil_gap() {
+    public void test_until_gap() {
         ZonedDateTime before = TEST_PARIS_GAP_2008_03_30_02_30.withHour(0).withMinute(0).atZone(ZONE_PARIS);
         ZonedDateTime after = TEST_PARIS_GAP_2008_03_30_02_30.withHour(0).withMinute(0).plusDays(1).atZone(ZONE_PARIS);
 
@@ -2102,7 +2054,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test
-    public void test_periodUntil_overlap() {
+    public void test_until_overlap() {
         ZonedDateTime before = TEST_PARIS_OVERLAP_2008_10_26_02_30.withHour(0).withMinute(0).atZone(ZONE_PARIS);
         ZonedDateTime after = TEST_PARIS_OVERLAP_2008_10_26_02_30.withHour(0).withMinute(0).plusDays(1).atZone(ZONE_PARIS);
 
@@ -2111,17 +2063,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions=DateTimeException.class)
-    public void test_periodUntil_differentType() {
+    public void test_until_differentType() {
         TEST_DATE_TIME_PARIS.until(TEST_LOCAL_2008_06_30_11_30_59_500, DAYS);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void test_periodUntil_nullTemporal() {
+    public void test_until_nullTemporal() {
         TEST_DATE_TIME_PARIS.until(null, DAYS);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void test_periodUntil_nullUnit() {
+    public void test_until_nullUnit() {
         TEST_DATE_TIME_PARIS.until(TEST_DATE_TIME_PARIS, null);
     }
 
