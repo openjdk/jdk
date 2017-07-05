@@ -193,8 +193,8 @@ class instanceKlass: public Klass {
   typeArrayOop    _inner_classes;
   // Implementors of this interface (not valid if it overflows)
   klassOop        _implementors[implementors_limit];
-  // invokedynamic bootstrap method (a java.dyn.MethodHandle)
-  oop             _bootstrap_method;
+  // invokedynamic bootstrap method (a java.lang.invoke.MethodHandle)
+  oop             _bootstrap_method;  // AllowTransitionalJSR292 ONLY
   // Annotations for this class, or null if none.
   typeArrayOop    _class_annotations;
   // Annotation objects (byte arrays) for fields, or null if no annotations.
@@ -529,7 +529,7 @@ class instanceKlass: public Klass {
                                                         _enclosing_method_method_index = method_index; }
 
   // JSR 292 support
-  oop bootstrap_method() const                        { return _bootstrap_method; }
+  oop bootstrap_method() const                        { return _bootstrap_method; }  // AllowTransitionalJSR292 ONLY
   void set_bootstrap_method(oop mh)                   { oop_store(&_bootstrap_method, mh); }
 
   // jmethodID support
@@ -817,7 +817,7 @@ private:
   oop* adr_signers() const           { return (oop*)&this->_signers;}
   oop* adr_inner_classes() const     { return (oop*)&this->_inner_classes;}
   oop* adr_implementors() const      { return (oop*)&this->_implementors[0];}
-  oop* adr_bootstrap_method() const  { return (oop*)&this->_bootstrap_method;}
+  oop* adr_bootstrap_method() const  { return (oop*)&this->_bootstrap_method;}  // AllowTransitionalJSR292 ONLY
   oop* adr_methods_jmethod_ids() const             { return (oop*)&this->_methods_jmethod_ids;}
   oop* adr_methods_cached_itable_indices() const   { return (oop*)&this->_methods_cached_itable_indices;}
   oop* adr_class_annotations() const   { return (oop*)&this->_class_annotations;}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1133,7 +1133,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     // rare that the cost of the CAS's involved is in the
     // noise. That's a measurement that should be done, and
     // the code simplified if that turns out to be the case.
-    return false;
+    return ConcGCThreads > 1;
   }
 
   // Override

@@ -144,18 +144,18 @@ class SymbolPropertyTable;
   template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
-  template(MethodHandle_klass,           java_dyn_MethodHandle,          Opt) \
-  template(MemberName_klass,             sun_dyn_MemberName,             Opt) \
-  template(MethodHandleImpl_klass,       sun_dyn_MethodHandleImpl,       Opt) \
-  template(MethodHandleNatives_klass,    sun_dyn_MethodHandleNatives,    Opt) \
-  template(AdapterMethodHandle_klass,    sun_dyn_AdapterMethodHandle,    Opt) \
-  template(BoundMethodHandle_klass,      sun_dyn_BoundMethodHandle,      Opt) \
-  template(DirectMethodHandle_klass,     sun_dyn_DirectMethodHandle,     Opt) \
-  template(MethodType_klass,             java_dyn_MethodType,            Opt) \
-  template(MethodTypeForm_klass,         java_dyn_MethodTypeForm,        Opt) \
-  template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
-  template(Linkage_klass,                java_dyn_Linkage,               Opt) \
-  template(CallSite_klass,               java_dyn_CallSite,              Opt) \
+  template(MethodHandle_klass,           java_lang_invoke_MethodHandle,     Pre_JSR292) \
+  template(MemberName_klass,             java_lang_invoke_MemberName,       Pre_JSR292) \
+  template(MethodHandleImpl_klass,       sun_dyn_MethodHandleImpl,          Opt) /* AllowTransitionalJSR292 ONLY */ \
+  template(MethodHandleNatives_klass,    java_lang_invoke_MethodHandleNatives, Pre_JSR292) \
+  template(AdapterMethodHandle_klass,    java_lang_invoke_AdapterMethodHandle, Pre_JSR292) \
+  template(BoundMethodHandle_klass,      java_lang_invoke_BoundMethodHandle, Pre_JSR292) \
+  template(DirectMethodHandle_klass,     java_lang_invoke_DirectMethodHandle, Pre_JSR292) \
+  template(MethodType_klass,             java_lang_invoke_MethodType,       Pre_JSR292) \
+  template(MethodTypeForm_klass,         java_lang_invoke_MethodTypeForm,   Pre_JSR292) \
+  template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
+  template(Linkage_klass,                java_lang_invoke_Linkage,          Opt) /* AllowTransitionalJSR292 ONLY */ \
+  template(CallSite_klass,               java_lang_invoke_CallSite,         Pre_JSR292) \
   /* Note: MethodHandle must be first, and CallSite last in group */          \
                                                                               \
   template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
@@ -207,6 +207,7 @@ class SystemDictionary : AllStatic {
 
   enum InitOption {
     Pre,                        // preloaded; error if not present
+    Pre_JSR292,                 // preloaded if EnableMethodHandles
 
     // Order is significant.  Options before this point require resolve_or_fail.
     // Options after this point will use resolve_or_null instead.
@@ -401,6 +402,7 @@ public:
   }
 
   static klassOop check_klass_Pre(klassOop k) { return check_klass(k); }
+  static klassOop check_klass_Pre_JSR292(klassOop k) { return EnableInvokeDynamic ? check_klass(k) : k; }
   static klassOop check_klass_Opt(klassOop k) { return k; }
   static klassOop check_klass_Opt_Kernel(klassOop k) { return k; } //== Opt
   static klassOop check_klass_Opt_Only_JDK15(klassOop k) {
@@ -419,6 +421,8 @@ public:
     int limit = (int)end_id + 1;
     initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
+
+  static Symbol* find_backup_symbol(Symbol* symbol, const char* from_prefix, const char* to_prefix);
 
 public:
   #define WK_KLASS_DECLARE(name, ignore_symbol, option) \
@@ -440,6 +444,9 @@ public:
   static klassOop abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
 
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
+
+  static Symbol* find_backup_class_name(Symbol* class_name_symbol);
+  static Symbol* find_backup_signature(Symbol* signature_symbol);
 
 private:
   // Tells whether ClassLoader.loadClassInternal is present
@@ -475,18 +482,18 @@ public:
                                        Handle loader2, bool is_method, TRAPS);
 
   // JSR 292
-  // find the java.dyn.MethodHandles::invoke method for a given signature
+  // find the java.lang.invoke.MethodHandles::invoke method for a given signature
   static methodOop find_method_handle_invoke(Symbol* name,
                                              Symbol* signature,
                                              KlassHandle accessing_klass,
                                              TRAPS);
-  // ask Java to compute a java.dyn.MethodType object for a given signature
+  // ask Java to compute a java.lang.invoke.MethodType object for a given signature
   static Handle    find_method_handle_type(Symbol* signature,
                                            KlassHandle accessing_klass,
                                            bool for_invokeGeneric,
                                            bool& return_bcp_flag,
                                            TRAPS);
-  // ask Java to compute a java.dyn.MethodHandle object for a given CP entry
+  // ask Java to compute a java.lang.invoke.MethodHandle object for a given CP entry
   static Handle    link_method_handle_constant(KlassHandle caller,
                                                int ref_kind, //e.g., JVM_REF_invokeVirtual
                                                KlassHandle callee,

@@ -2703,7 +2703,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       assert(_fpu_stack_allocator != NULL, "must be present");
       opr = _fpu_stack_allocator->to_fpu_stack(opr);
 
-      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
+      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
 #endif
 #ifdef SPARC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi() + 1, "assumed in calculation (only fpu_regnrHi is used)");
@@ -2715,7 +2715,12 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
 #endif
 
+#ifdef VM_LITTLE_ENDIAN
+      VMReg rname_first = frame_map()->fpu_regname(opr->fpu_regnrLo());
+#else
       VMReg rname_first = frame_map()->fpu_regname(opr->fpu_regnrHi());
+#endif
+
 #ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
       second = &_int_0_scope_value;
