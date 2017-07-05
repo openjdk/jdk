@@ -26,27 +26,38 @@ package javax.xml.parsers.ptests;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilePermission;
 import java.io.FileReader;
+
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
 import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
 import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+
+import jaxp.library.JAXPDataProvider;
 import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -59,6 +70,52 @@ import org.xml.sax.helpers.DefaultHandler;
  * This checks the methods of DocumentBuilderFactoryImpl.
  */
 public class DocumentBuilderFactoryTest extends JAXPFileBaseTest {
+    /**
+     * DocumentBuilderFactory implementation class name.
+     */
+    private static final String DOCUMENT_BUILDER_FACTORY_CLASSNAME = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
+
+    /**
+     * Provide valid DocumentBuilderFactory instantiation parameters.
+     *
+     * @return a data provider contains DocumentBuilderFactory instantiation parameters.
+     */
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
+        return new Object[][] { { DOCUMENT_BUILDER_FACTORY_CLASSNAME, null }, { DOCUMENT_BUILDER_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test for DocumentBuilderFactory.newInstance(java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName
+     * points to correct implementation of
+     * javax.xml.parsers.DocumentBuilderFactory , should return newInstance of
+     * DocumentBuilderFactory
+     *
+     * @param factoryClassName
+     * @param classLoader
+     * @throws ParserConfigurationException
+     */
+    @Test(dataProvider = "parameters")
+    public void testNewInstance(String factoryClassName, ClassLoader classLoader) throws ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance(factoryClassName, classLoader);
+        DocumentBuilder builder = dbf.newDocumentBuilder();
+        assertNotNull(builder);
+    }
+
+    /**
+     * test for DocumentBuilderFactory.newInstance(java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName is
+     * null , should throw FactoryConfigurationError
+     *
+     * @param factoryClassName
+     * @param classLoader
+     */
+    @Test(expectedExceptions = FactoryConfigurationError.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
+    public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
+        DocumentBuilderFactory.newInstance(factoryClassName, classLoader);
+    }
+
     /**
      * Test the default functionality of schema support method.
      * @throws Exception If any errors occur.

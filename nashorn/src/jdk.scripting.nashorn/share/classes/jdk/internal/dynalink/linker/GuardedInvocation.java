@@ -91,6 +91,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.invoke.WrongMethodTypeException;
 import java.util.List;
+import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.Guards;
 
@@ -170,8 +171,7 @@ public class GuardedInvocation {
      * @throws NullPointerException if invocation is null.
      */
     public GuardedInvocation(final MethodHandle invocation, final MethodHandle guard, final SwitchPoint switchPoint, final Class<? extends Throwable> exception) {
-        invocation.getClass(); // NPE check
-        this.invocation = invocation;
+        this.invocation = Objects.requireNonNull(invocation);
         this.guard = guard;
         this.switchPoints = switchPoint == null ? null : new SwitchPoint[] { switchPoint };
         this.exception = exception;
@@ -190,8 +190,7 @@ public class GuardedInvocation {
      * @throws NullPointerException if invocation is null.
      */
     public GuardedInvocation(final MethodHandle invocation, final MethodHandle guard, final SwitchPoint[] switchPoints, final Class<? extends Throwable> exception) {
-        invocation.getClass(); // NPE check
-        this.invocation = invocation;
+        this.invocation = Objects.requireNonNull(invocation);
         this.guard = guard;
         this.switchPoints = switchPoints == null ? null : switchPoints.clone();
         this.exception = exception;

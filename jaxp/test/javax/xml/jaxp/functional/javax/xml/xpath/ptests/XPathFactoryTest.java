@@ -24,10 +24,16 @@
 package javax.xml.xpath.ptests;
 
 import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
+
+import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
+
+import jaxp.library.JAXPDataProvider;
 import jaxp.library.JAXPBaseTest;
-import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.Assert.assertNotNull;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -43,6 +49,78 @@ public class XPathFactoryTest extends JAXPBaseTest {
      * Invalid URL not able to create a XPath factory.
      */
     private static final String INVALID_URL = "http://java.sun.com/jaxp/xpath/dom1";
+
+    /**
+     * XPathFactory implementation class name.
+     */
+    private static final String XPATH_FACTORY_CLASSNAME = "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl";
+
+
+    /**
+     * Provide valid XPathFactory instantiation parameters.
+     *
+     * @return a data provider contains XPathFactory instantiation parameters.
+     */
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
+        return new Object[][] { { VALID_URL, XPATH_FACTORY_CLASSNAME, null }, { VALID_URL, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    }
+
+    /**
+     * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName
+     * points to correct implementation of javax.xml.xpath.XPathFactory , should
+     * return newInstance of XPathFactory
+     *
+     * @param uri
+     * @param factoryClassName
+     * @param classLoader
+     * @throws XPathFactoryConfigurationException
+     */
+    @Test(dataProvider = "parameters")
+    public void testNewInstance(String uri, String factoryClassName, ClassLoader classLoader) throws XPathFactoryConfigurationException {
+        XPathFactory xpf = XPathFactory.newInstance(uri, factoryClassName, classLoader);
+        XPath xpath = xpf.newXPath();
+        assertNotNull(xpath);
+    }
+
+    /**
+     * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader)
+     *
+     * @param factoryClassName
+     * @param classLoader
+     * @throws XPathFactoryConfigurationException
+     *             is expected when factoryClassName is null
+     */
+    @Test(expectedExceptions = XPathFactoryConfigurationException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
+    public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) throws XPathFactoryConfigurationException {
+        XPathFactory.newInstance(VALID_URL, factoryClassName, classLoader);
+    }
+
+    /**
+     * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader) uri is null , should
+     * throw NPE
+     *
+     * @throws XPathFactoryConfigurationException
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNewInstanceWithNullUri() throws XPathFactoryConfigurationException {
+        XPathFactory.newInstance(null, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    }
+
+    /**
+     * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
+     * factoryClassName, java.lang.ClassLoader classLoader)
+     *
+     * @throws IllegalArgumentException
+     *             is expected when uri is empty
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testNewInstanceWithEmptyUri() throws XPathFactoryConfigurationException {
+        XPathFactory.newInstance("", XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    }
 
     /**
      * Test for constructor - XPathFactory.newInstance().

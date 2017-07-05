@@ -93,9 +93,6 @@ public class Lexer extends Scanner {
     private static final String SPACETAB = " \t";  // ASCII space and tab
     private static final String LFCR     = "\n\r"; // line feed and carriage return (ctrl-m)
 
-    private static final String JSON_WHITESPACE_EOL = LFCR;
-    private static final String JSON_WHITESPACE     = SPACETAB + LFCR;
-
     private static final String JAVASCRIPT_WHITESPACE_EOL =
         LFCR +
         "\u2028" + // line separator
@@ -382,24 +379,6 @@ public class Lexer extends Scanner {
      */
     public static boolean isJSEOL(final char ch) {
         return JAVASCRIPT_WHITESPACE_EOL.indexOf(ch) != -1;
-    }
-
-    /**
-     * Test whether a char is valid JSON whitespace
-     * @param ch a char
-     * @return true if valid JSON whitespace
-     */
-    public static boolean isJsonWhitespace(final char ch) {
-        return JSON_WHITESPACE.indexOf(ch) != -1;
-    }
-
-    /**
-     * Test whether a char is valid JSON end of line
-     * @param ch a char
-     * @return true if valid JSON end of line
-     */
-    public static boolean isJsonEOL(final char ch) {
-        return JSON_WHITESPACE_EOL.indexOf(ch) != -1;
     }
 
     /**

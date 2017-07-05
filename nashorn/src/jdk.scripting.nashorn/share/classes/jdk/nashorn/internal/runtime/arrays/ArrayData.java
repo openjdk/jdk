@@ -118,7 +118,7 @@ public abstract class ArrayData {
                     return new SparseArrayData(this, safeIndex + 1);
                 }
                 //known to fit in int
-                return toRealArrayData((int)safeIndex).ensure(safeIndex);
+                return toRealArrayData((int)safeIndex);
            }
            return this;
         }
@@ -497,7 +497,9 @@ public abstract class ArrayData {
     public abstract ArrayData shiftRight(final int by);
 
     /**
-     * Ensure that the given index exists and won't fail subsequent
+     * Ensure that the given index exists and won't fail in a subsequent access.
+     * If {@code safeIndex} is equal or greater than the current length the length is
+     * updated to {@code safeIndex + 1}.
      *
      * @param safeIndex the index to ensure wont go out of bounds
      * @return new array data (or same)

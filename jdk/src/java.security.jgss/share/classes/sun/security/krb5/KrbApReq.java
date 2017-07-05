@@ -60,16 +60,6 @@ public class KrbApReq {
     private static boolean DEBUG = Krb5.DEBUG;
     private static final char[] hexConst = "0123456789ABCDEF".toCharArray();
 
-    private static final MessageDigest md;
-
-    static {
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("Impossible");
-        }
-    }
-
     /**
      * Constructs an AP-REQ message to send to the peer.
      * @param tgsCred the <code>Credentials</code> to be used to construct the
@@ -99,10 +89,10 @@ public class KrbApReq {
      * @param tgsCred the <code>Credentials</code> to be used to construct the
      *          AP Request  protocol message.
      * @param mutualRequired Whether mutual authentication is required
-     * @param useSubkey Whether the subkey is to be used to protect this
+     * @param useSubKey Whether the subkey is to be used to protect this
      *        specific application session. If this is not set then the
      *        session key from the ticket will be used.
-     * @param checksum checksum of the application data that accompanies
+     * @param cksum checksum of the application data that accompanies
      *        the KRB_AP_REQ.
      * @throws KrbException for any Kerberos protocol specific error
      * @throws IOException for any IO related errors
@@ -142,8 +132,8 @@ public class KrbApReq {
      * Constructs an AP-REQ message from the bytes received from the
      * peer.
      * @param message The message received from the peer
-     * @param keys <code>EncrtyptionKey</code>s to decrypt the message;
-     *       key selected will depend on etype used to encrypte data
+     * @param cred <code>KrbAcceptCredential</code> containing keys to decrypt
+     *    the message; key selected will depend on etype used to encrypt data
      * @throws KrbException for any Kerberos protocol specific error
      * @throws IOException for any IO related errors
      *          (e.g. socket operations)
@@ -311,7 +301,14 @@ public class KrbApReq {
         if (!authenticator.ctime.inClockSkew())
             throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
 
-        byte[] hash = md.digest(apReqMessg.authenticator.cipher);
+        byte[] hash;
+        try {
+            hash = MessageDigest.getInstance("MD5")
+                    .digest(apReqMessg.authenticator.cipher);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new AssertionError("Impossible");
+        }
+
         char[] h = new char[hash.length * 2];
         for (int i=0; i<hash.length; i++) {
             h[2*i] = hexConst[(hash[i]&0xff)>>4];
