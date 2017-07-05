@@ -58,6 +58,7 @@ RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, \
               MATERIALIZE_PD_PRODUCT_FLAG, \
               MATERIALIZE_DIAGNOSTIC_FLAG, \
+              MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
               MATERIALIZE_EXPERIMENTAL_FLAG, \
               MATERIALIZE_NOTPRODUCT_FLAG, \
               MATERIALIZE_MANAGEABLE_FLAG, \
@@ -72,6 +73,7 @@ RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
                  MATERIALIZE_PRODUCT_FLAG, \
                  MATERIALIZE_PD_PRODUCT_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, \
+                 MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
                  MATERIALIZE_NOTPRODUCT_FLAG, \
                  IGNORE_RANGE, \
                  IGNORE_CONSTRAINT, \
@@ -650,6 +652,7 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define RUNTIME_PRODUCT_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_PRODUCT) },
 #define RUNTIME_PD_PRODUCT_FLAG_STRUCT(  type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
 #define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_DIAGNOSTIC) },
+#define RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT(type, name,       doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
 #define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_EXPERIMENTAL) },
 #define RUNTIME_MANAGEABLE_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_MANAGEABLE) },
 #define RUNTIME_PRODUCT_RW_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_PRODUCT | Flag::KIND_READ_WRITE) },
@@ -660,6 +663,7 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define JVMCI_PRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_PRODUCT) },
 #define JVMCI_PD_PRODUCT_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
 #define JVMCI_DIAGNOSTIC_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DIAGNOSTIC) },
+#define JVMCI_PD_DIAGNOSTIC_FLAG_STRUCT( type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
 #define JVMCI_EXPERIMENTAL_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_EXPERIMENTAL) },
 #define JVMCI_DEVELOP_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DEVELOP) },
 #define JVMCI_PD_DEVELOP_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
@@ -674,6 +678,7 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define C1_PRODUCT_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_PRODUCT) },
 #define C1_PD_PRODUCT_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
 #define C1_DIAGNOSTIC_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_DIAGNOSTIC) },
+#define C1_PD_DIAGNOSTIC_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
 #define C1_DEVELOP_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_DEVELOP) },
 #define C1_PD_DEVELOP_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
 #define C1_NOTPRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C1 | Flag::KIND_NOT_PRODUCT) },
@@ -681,6 +686,7 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define C2_PRODUCT_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_PRODUCT) },
 #define C2_PD_PRODUCT_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
 #define C2_DIAGNOSTIC_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_DIAGNOSTIC) },
+#define C2_PD_DIAGNOSTIC_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
 #define C2_EXPERIMENTAL_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_EXPERIMENTAL) },
 #define C2_DEVELOP_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_DEVELOP) },
 #define C2_PD_DEVELOP_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_C2 | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
@@ -695,6 +701,7 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define SHARK_PRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_PRODUCT) },
 #define SHARK_PD_PRODUCT_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
 #define SHARK_DIAGNOSTIC_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DIAGNOSTIC) },
+#define SHARK_PD_DIAGNOSTIC_FLAG_STRUCT( type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
 #define SHARK_DEVELOP_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DEVELOP) },
 #define SHARK_PD_DEVELOP_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
 #define SHARK_NOTPRODUCT_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_NOT_PRODUCT) },
@@ -705,6 +712,7 @@ static Flag flagTable[] = {
                RUNTIME_PRODUCT_FLAG_STRUCT, \
                RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
                RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
+               RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
                RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
                RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
                RUNTIME_MANAGEABLE_FLAG_STRUCT, \
@@ -718,6 +726,7 @@ static Flag flagTable[] = {
                   RUNTIME_PRODUCT_FLAG_STRUCT, \
                   RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
                   RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
+                  RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
                   RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
                   IGNORE_RANGE, \
                   IGNORE_CONSTRAINT, \
@@ -728,6 +737,7 @@ static Flag flagTable[] = {
           RUNTIME_PRODUCT_FLAG_STRUCT, \
           RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
           RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
+          RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
           RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
           RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
           RUNTIME_MANAGEABLE_FLAG_STRUCT, \
@@ -742,6 +752,7 @@ static Flag flagTable[] = {
              JVMCI_PRODUCT_FLAG_STRUCT, \
              JVMCI_PD_PRODUCT_FLAG_STRUCT, \
              JVMCI_DIAGNOSTIC_FLAG_STRUCT, \
+             JVMCI_PD_DIAGNOSTIC_FLAG_STRUCT, \
              JVMCI_EXPERIMENTAL_FLAG_STRUCT, \
              JVMCI_NOTPRODUCT_FLAG_STRUCT, \
              IGNORE_RANGE, \
@@ -754,6 +765,7 @@ static Flag flagTable[] = {
           C1_PRODUCT_FLAG_STRUCT, \
           C1_PD_PRODUCT_FLAG_STRUCT, \
           C1_DIAGNOSTIC_FLAG_STRUCT, \
+          C1_PD_DIAGNOSTIC_FLAG_STRUCT, \
           C1_NOTPRODUCT_FLAG_STRUCT, \
           IGNORE_RANGE, \
           IGNORE_CONSTRAINT, \
@@ -765,6 +777,7 @@ static Flag flagTable[] = {
           C2_PRODUCT_FLAG_STRUCT, \
           C2_PD_PRODUCT_FLAG_STRUCT, \
           C2_DIAGNOSTIC_FLAG_STRUCT, \
+          C2_PD_DIAGNOSTIC_FLAG_STRUCT, \
           C2_EXPERIMENTAL_FLAG_STRUCT, \
           C2_NOTPRODUCT_FLAG_STRUCT, \
           IGNORE_RANGE, \
@@ -777,6 +790,7 @@ static Flag flagTable[] = {
              SHARK_PRODUCT_FLAG_STRUCT, \
              SHARK_PD_PRODUCT_FLAG_STRUCT, \
              SHARK_DIAGNOSTIC_FLAG_STRUCT, \
+             SHARK_PD_DIAGNOSTIC_FLAG_STRUCT, \
              SHARK_NOTPRODUCT_FLAG_STRUCT, \
              IGNORE_RANGE, \
              IGNORE_CONSTRAINT, \

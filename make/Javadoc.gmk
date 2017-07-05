@@ -463,7 +463,7 @@ DOCLETAPI_WINDOWTITLE := Doclet API
 DOCLETAPI_HEADER := <strong>Doclet API</strong>
 DOCLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
 DOCLETAPI_GROUPNAME := Packages
-DOCLETAPI_REGEXP := jdk.javadoc.doclet.*
+DOCLETAPI_REGEXP := jdk.javadoc.doclet*
 # DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files

@@ -335,25 +335,27 @@ endif # HAS_FILE_FUNCTION
 ################################################################################
 # The source tips can come from the Mercurial repository, or in the files
 # $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
-# directory as the original $(HGDIR) directory.
-# These should not be := assignments, only used from the root Makefile.
-HG_VERSION = $(shell $(HG) version 2> /dev/null)
-HG_DIRECTORY=.hg
-HGTIP_FILENAME=.hgtip
-HG_SEARCH = ./REPO ./*/REPO ./*/*/REPO ./*/*/*/REPO
-REPO_LIST = $(patsubst ./%,%,$(patsubst %/,%,$(sort $(dir \
-    $(shell $(CD) $(SRC_ROOT) ; \
-        $(LS) -d $(HG_SEARCH:%/REPO=%/$(HG_DIRECTORY)) \
-            $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) \
-        2> /dev/null)))))
+# directory as the original .hg directory. The hgtip files are created in
+# CreateHgtipFiles.gmk.
+HGTIP_FILENAME := .hgtip
+FindAllReposAbs = \
+    $(strip $(sort $(dir $(filter-out $(SRC_ROOT)/build/%, $(wildcard \
+        $(addprefix $(SRC_ROOT)/, \
+            .hg */.hg */*/.hg */*/.hg */*/*/.hg \
+            .hgtip */.hgtip */*/.hgtip */*/.hgtip */*/*/.hgtip \
+        ) \
+    )))))
+
+FindAllReposRel = \
+    $(strip $(subst $(SRC_ROOT)/,.,$(patsubst $(SRC_ROOT)/%/, %, $(FindAllReposAbs))))
 
 # Emit the repo:tip pairs to $@, but only if they changed since last time
 define GetSourceTips
 	$(CD) $(SRC_ROOT) ; \
-	for i in $(REPO_LIST) IGNORE ; do \
+	for i in $(FindAllReposRel) IGNORE ; do \
 	  if [ "$${i}" = "IGNORE" ] ; then \
 	    continue; \
-	  elif [ -d $${i}/$(HG_DIRECTORY) -a "$(HG_VERSION)" != "" ] ; then \
+	  elif [ -d $${i}/.hg -a "$(HG)" != "" ] ; then \
 	    $(PRINTF) " %s:%s" \
 	        "$${i}" `$(HG) tip --repository $${i} --template '{node|short}\n'` ; \
 	  elif [ -f $${i}/$(HGTIP_FILENAME) ] ; then \
@@ -367,12 +369,6 @@ define GetSourceTips
 	else \
 	  $(RM) $@.tmp ; \
 	fi
-endef
-
-# Create the HGTIP_FILENAME file. Called from closed/make/SourceBundles.gmk
-define CreateHgTip
-	$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME); \
-	$(ECHO) $1/$(HGTIP_FILENAME)
 endef
 
 ################################################################################
