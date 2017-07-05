@@ -28,6 +28,7 @@
 #
 # @key intermittent
 # @modules java.instrument
+#          java.management
 # @run shell MakeJAR4.sh RetransformBigClassAgent SimpleIdentityTransformer 'Can-Retransform-Classes: true'
 # @run build BigClass RetransformBigClassApp NMTHelper
 # @run shell/timeout=600 RetransformBigClass.sh

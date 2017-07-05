@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 include LauncherCommon.gmk
 
 BUILD_LAUNCHER_jconsole_CFLAGS_windows := -DJAVAW
-BUILD_LAUNCHER_jconsole_LDFLAGS_windows := user32.lib
+BUILD_LAUNCHER_jconsole_LIBS_windows := user32.lib
 
 $(eval $(call SetupLauncher,jconsole, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "-J-Djconsole.showOutputViewer"$(COMMA) "sun.tools.jconsole.JConsole"$(COMMA) }' \
     -DAPP_CLASSPATH='{ "/lib/jconsole.jar"$(COMMA) "/lib/tools.jar"$(COMMA) "/classes" }'))
-
