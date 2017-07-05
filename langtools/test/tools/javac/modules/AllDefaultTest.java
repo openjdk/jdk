@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 0000000
+ * @bug 8164590 8170691
  * @summary Test use of ALL-DEFAULT token
  * @library /tools/lib
  * @modules
