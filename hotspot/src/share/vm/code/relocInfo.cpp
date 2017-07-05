@@ -129,9 +129,9 @@ void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit)
   if (nm == NULL && begin != NULL) {
     // allow nmethod to be deduced from beginning address
     CodeBlob* cb = CodeCache::find_blob(begin);
-    nm = cb->as_compiled_method_or_null();
+    nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
   }
-  assert(nm != NULL, "must be able to deduce nmethod from other arguments");
+  guarantee(nm != NULL, "must be able to deduce nmethod from other arguments");
 
   _code    = nm;
   _current = nm->relocation_begin() - 1;

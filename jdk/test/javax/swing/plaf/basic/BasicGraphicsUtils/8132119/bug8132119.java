@@ -41,7 +41,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /**
  * @test
- * @bug 8132119 8168992
+ * @bug 8132119 8168992 8169897
  * @author Alexandr Scherbatiy
  * @summary Provide public API for text related methods in SwingBasicGraphicsUtils2
  */
@@ -158,7 +158,9 @@ public class bug8132119 {
         }
         g2.dispose();
 
-        float xx = (WIDTH - width / 8) / 2;
+        float xx = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "A") +
+                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2;
+
         checkImageContainsSymbol(buffImage, (int) xx, underlined ? 3 : 2);
     }
 
@@ -285,7 +287,7 @@ public class bug8132119 {
                 break;
             }
         }
-        return new Font(fontName, Font.PLAIN, 28);
+        return new Font(fontName, Font.PLAIN, 30);
     }
 
     private static float getLayoutWidth(String text, Font font, NumericShaper shaper) {
@@ -311,6 +313,7 @@ public class bug8132119 {
 
     private static void checkImageContainsSymbol(BufferedImage buffImage,
             int x, int intersections) {
+
         int background = BACKGROUND_COLOR.getRGB();
         boolean isBackground = true;
         int backgroundChangesCount = 0;
@@ -321,6 +324,7 @@ public class bug8132119 {
                 backgroundChangesCount++;
             }
         }
+
         if (backgroundChangesCount != intersections * 2) {
             throw new RuntimeException("String is not properly drawn!");
         }
