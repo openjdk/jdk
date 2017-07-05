@@ -659,11 +659,14 @@ void Matcher::Fixup_Save_On_Entry( ) {
   uint reth_edge_cnt = TypeFunc::Parms+1;
   RegMask *reth_rms  = init_input_masks( reth_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
   // Rethrow takes exception oop only, but in the argument 0 slot.
-  reth_rms[TypeFunc::Parms] = mreg2regmask[find_receiver(false)];
+  OptoReg::Name reg = find_receiver(false);
+  if (reg >= 0) {
+    reth_rms[TypeFunc::Parms] = mreg2regmask[reg];
 #ifdef _LP64
-  // Need two slots for ptrs in 64-bit land
-  reth_rms[TypeFunc::Parms].Insert(OptoReg::add(OptoReg::Name(find_receiver(false)),1));
+    // Need two slots for ptrs in 64-bit land
+    reth_rms[TypeFunc::Parms].Insert(OptoReg::add(OptoReg::Name(reg), 1));
 #endif
+  }
 
   // Input RegMask array shared by all TailCalls
   uint tail_call_edge_cnt = TypeFunc::Parms+2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class CastOperator extends Operator {
-    private final Type resultType;
 
     public CastOperator(Type resultType, IRNode casted) {
-        super(13);
-        this.resultType = resultType;
+        super(null, 13, resultType);
         addChild(casted);
     }
 
@@ -42,9 +40,5 @@ public class CastOperator extends Operator {
     @Override
     public<T> T accept(Visitor<T> v) {
         return v.visit(this);
-    }
-
-    public Type getResultType() {
-        return resultType;
     }
 }

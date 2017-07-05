@@ -34,6 +34,9 @@
 // Makes a string of the macro expansion of a
 #define XSTR(a) STR(a)
 
+// Allow commas in macro arguments.
+#define COMMA ,
+
 // Apply pre-processor token pasting to the expansions of x and y.
 // The token pasting operator (##) prevents its arguments from being
 // expanded.  This macro allows expansion of its arguments before the

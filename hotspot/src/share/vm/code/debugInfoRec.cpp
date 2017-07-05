@@ -37,9 +37,7 @@ private:
   int  _offset; // location in the stream of this scope
   int  _length; // number of bytes in the stream
   int  _hash;   // hash of stream bytes (for quicker reuse)
-#if INCLUDE_JVMCI
   DebugInformationRecorder* _DIR;
-#endif
 
 public:
   int offset() { return _offset; }
@@ -57,9 +55,7 @@ public:
   DIR_Chunk(int offset, int length, DebugInformationRecorder* dir) {
     _offset = offset;
     _length = length;
-#if INCLUDE_JVMCI
     _DIR = dir;
-#endif
     unsigned int hash = 0;
     address p = dir->stream()->buffer() + _offset;
     for (int i = 0; i < length; i++) {
@@ -87,7 +83,6 @@ public:
     return NULL;
   }
 
-#if INCLUDE_JVMCI
   static int compare(DIR_Chunk* const & a, DIR_Chunk* const & b) {
     if (b->_hash > a->_hash) {
       return 1;
@@ -104,7 +99,6 @@ public:
     address buf = a->_DIR->stream()->buffer();
     return memcmp(buf + b->_offset, buf + a->_offset, a->_length);
   }
-#endif
 };
 
 static inline bool compute_recording_non_safepoints() {
@@ -141,9 +135,6 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
   _oop_recorder = oop_recorder;
 
   _all_chunks    = new GrowableArray<DIR_Chunk*>(300);
-#if !INCLUDE_JVMCI
-  _shared_chunks = new GrowableArray<DIR_Chunk*>(30);
-#endif
   _next_chunk = _next_chunk_limit = NULL;
 
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
@@ -265,14 +256,6 @@ struct dir_stats_struct {
 
 
 int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
-#if !INCLUDE_JVMCI
-  // Only pull this trick if non-safepoint recording
-  // is enabled, for now.
-  if (!recording_non_safepoints()) {
-    return serialized_null;
-  }
-#endif // INCLUDE_JVMCI
-
   NOT_PRODUCT(++dir_stats.chunks_queried);
   int stream_length = stream()->position() - stream_offset;
   assert(stream_offset != serialized_null, "should not be null");
@@ -280,7 +263,6 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
 
   DIR_Chunk* ns = new(this) DIR_Chunk(stream_offset, stream_length, this);
 
-#if INCLUDE_JVMCI
   DIR_Chunk* match = _all_chunks->insert_sorted<DIR_Chunk::compare>(ns);
   if (match != ns) {
     // Found an existing chunk
@@ -292,35 +274,6 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
     // Inserted this chunk, so nothing to do
     return serialized_null;
   }
-#else // INCLUDE_JVMCI
-  // Look in previously shared scopes first:
-  DIR_Chunk* ms = ns->find_match(_shared_chunks, 0, this);
-  if (ms != NULL) {
-    NOT_PRODUCT(++dir_stats.chunks_reshared);
-    assert(ns+1 == _next_chunk, "");
-    _next_chunk = ns;
-    return ms->offset();
-  }
-
-  // Look in recently encountered scopes next:
-  const int MAX_RECENT = 50;
-  int start_index = _all_chunks->length() - MAX_RECENT;
-  if (start_index < 0)  start_index = 0;
-  ms = ns->find_match(_all_chunks, start_index, this);
-  if (ms != NULL) {
-    NOT_PRODUCT(++dir_stats.chunks_shared);
-    // Searching in _all_chunks is limited to a window,
-    // but searching in _shared_chunks is unlimited.
-    _shared_chunks->append(ms);
-    assert(ns+1 == _next_chunk, "");
-    _next_chunk = ns;
-    return ms->offset();
-  }
-
-  // No match.  Add this guy to the list, in hopes of future shares.
-  _all_chunks->append(ns);
-  return serialized_null;
-#endif // INCLUDE_JVMCI
 }
 
 

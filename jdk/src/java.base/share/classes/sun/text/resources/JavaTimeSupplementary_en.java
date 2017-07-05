@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -99,8 +99,30 @@ public class JavaTimeSupplementary_en extends OpenListResourceBundle {
                 "Minguo Calendar" },
             { "field.dayperiod",
                 "AM/PM" },
+            { "field.era",
+                "era" },
+            { "field.hour",
+                "hour" },
+            { "field.minute",
+                "minute" },
+            { "field.month",
+                "month" },
+            { "field.second",
+                "second" },
+            { "field.week",
+                "week" },
+            { "field.weekday",
+                "day of the week" },
+            { "field.year",
+                "year" },
             { "field.zone",
-                "Time Zone" },
+                "time zone" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, MMMM d, y GGGG",
@@ -142,6 +164,12 @@ public class JavaTimeSupplementary_en extends OpenListResourceBundle {
                     "h:mm:ss a z",
                     "h:mm:ss a",
                     "h:mm a",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -224,23 +252,6 @@ public class JavaTimeSupplementary_en extends OpenListResourceBundle {
                     "Minguo",
                 }
             },
-            { "roc.MonthAbbreviations",
-                new String[] {
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec",
-                    "",
-                }
-            },
             { "roc.MonthNames",
                 new String[] {
                     "January",
@@ -303,6 +314,12 @@ public class JavaTimeSupplementary_en extends OpenListResourceBundle {
                 new String[] {
                     "Before R.O.C.",
                     "Minguo",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

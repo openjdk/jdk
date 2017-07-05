@@ -1079,7 +1079,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_freturn:
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
-    assert(rsize = -depth, "");
+    assert(rsize == -depth, "");
     inputs = rsize;
     break;
 

@@ -23,21 +23,22 @@
 
 package jdk.test.lib.jittester.factories;
 
+import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.If;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class IfFactory extends SafeFactory {
-    protected long complexityLimit;
-    protected int statementLimit;
-    protected int operatorLimit;
-    protected boolean canHaveBreaks;
-    protected boolean canHaveContinues;
-    protected boolean canHaveReturn;
+class IfFactory extends SafeFactory<If> {
+    protected final long complexityLimit;
+    protected final int statementLimit;
+    protected final int operatorLimit;
+    protected final boolean canHaveBreaks;
+    protected final boolean canHaveContinues;
+    protected final boolean canHaveReturn;
     protected final TypeKlass ownerClass;
     protected final Type returnType;
     protected final int level;
@@ -57,7 +58,7 @@ class IfFactory extends SafeFactory {
     }
 
     @Override
-    public IRNode sproduce() throws ProductionFailedException {
+    public If sproduce() throws ProductionFailedException {
         // resizeUpChildren(If.IfPart.values().length);
         if (statementLimit > 0 && complexityLimit > 0) {
             long conditionComplLimit = (long) (0.01 * PseudoRandom.random() * (complexityLimit - 1));
@@ -65,7 +66,7 @@ class IfFactory extends SafeFactory {
                     .setOwnerKlass(ownerClass)
                     .setOperatorLimit(operatorLimit);
             IRNode condition = builder.setComplexityLimit(conditionComplLimit)
-                    .setResultType(new TypeBoolean())
+                    .setResultType(TypeList.BOOLEAN)
                     .setExceptionSafe(false)
                     .setNoConsts(false)
                     .getLimitedExpressionFactory()
@@ -83,7 +84,7 @@ class IfFactory extends SafeFactory {
                 controlDeviation = PseudoRandom.randomBoolean() ? If.IfPart.THEN : If.IfPart.ELSE;
             }
             if (ifBlockLimit > 0 && ifBlockComplLimit > 0) {
-                IRNode thenBlock = null;
+                Block thenBlock;
                 builder.setResultType(returnType)
                         .setLevel(level)
                         .setComplexityLimit(ifBlockComplLimit)
@@ -104,7 +105,7 @@ class IfFactory extends SafeFactory {
                             .produce();
                 }
                 // setChild(If.IfPart.THEN.ordinal(), thenBlock);
-                IRNode elseBlock = null;
+                Block elseBlock = null;
                 if (elseBlockLimit > 0 && elseBlockComplLimit > 0) {
                     builder.setComplexityLimit(elseBlockComplLimit)
                             .setStatementLimit(elseBlockLimit);
