@@ -80,7 +80,7 @@ void G1StringDedupStat::print_summary(const G1StringDedupStat& last_stat, const 
   log_info(gc, stringdedup)(
     "Concurrent String Deduplication "
     G1_STRDEDUP_BYTES_FORMAT_NS "->" G1_STRDEDUP_BYTES_FORMAT_NS "(" G1_STRDEDUP_BYTES_FORMAT_NS "), avg "
-    G1_STRDEDUP_PERCENT_FORMAT_NS ", " G1_STRDEDUP_TIME_FORMAT "]",
+    G1_STRDEDUP_PERCENT_FORMAT_NS ", " G1_STRDEDUP_TIME_FORMAT,
     G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes),
     G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes - last_stat._deduped_bytes),
     G1_STRDEDUP_BYTES_PARAM(last_stat._deduped_bytes),
