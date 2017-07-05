@@ -81,6 +81,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  *     ResourceBundleProvider Service Providers</a>
  *
  * @since 9
+ * @spec JPMS
  */
 public abstract class AbstractResourceBundleProvider implements ResourceBundleProvider {
     private static final JavaUtilResourceBundleAccess RB_ACCESS =
