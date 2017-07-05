@@ -144,11 +144,11 @@ class Package {
         return null;
     }
 
-    public Enumeration getSourceFiles() {
+    public Enumeration<ClassFile> getSourceFiles() {
         return sourcePath.getFiles(pkg, ".java");
     }
 
-    public Enumeration getBinaryFiles() {
+    public Enumeration<ClassFile> getBinaryFiles() {
         return binaryPath.getFiles(pkg, ".class");
     }
 

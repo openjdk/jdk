@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8047795
+ * @bug     8047795 8053938
  * @summary Ensure that replaceAll operator cannot add bad elements
  * @author  Mike Duigou
  */
@@ -43,6 +43,17 @@ public class CheckedListReplaceAll {
             System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
             throw new RuntimeException("String added to checked List<Integer>");
         } catch (ClassCastException thwarted) {
+            thwarted.printStackTrace(System.out);
+            System.out.println("Curses! Foiled again!");
+        }
+
+        unwrapped = Arrays.asList(new Object[]{});  // Empty list
+        wrapped = Collections.checkedList(unwrapped, Integer.class);
+        try {
+            wrapped.replaceAll((UnaryOperator)null);
+            System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
+            throw new RuntimeException("NPE not thrown when passed a null operator");
+        } catch (NullPointerException thwarted) {
             thwarted.printStackTrace(System.out);
             System.out.println("Curses! Foiled again!");
         }

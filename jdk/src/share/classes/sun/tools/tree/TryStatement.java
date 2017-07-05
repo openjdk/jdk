@@ -57,11 +57,11 @@ class TryStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         checkLabel(env, ctx);
         try {
             vset = reach(env, vset);
-            Hashtable newexp = new Hashtable();
+            Hashtable<Object, Object> newexp = new Hashtable<>();
             CheckContext newctx =  new CheckContext(ctx, this);
 
             // Check 'try' block.  A variable is DA (DU) before the try
@@ -131,7 +131,7 @@ class TryStatement extends Statement {
 
                 // Make sure the exception is actually throw in that part of the code
                 boolean ok = false;
-                for (Enumeration e = newexp.keys() ; e.hasMoreElements() ; ) {
+                for (Enumeration<?> e = newexp.keys() ; e.hasMoreElements() ; ) {
                     ClassDeclaration c = (ClassDeclaration)e.nextElement();
                     if (def.superClassOf(env, c) || def.subClassOf(env, c)) {
                         ok = true;
@@ -149,7 +149,7 @@ class TryStatement extends Statement {
             }
 
             // Only carry over exceptions that are not caught
-            for (Enumeration e = newexp.keys() ; e.hasMoreElements() ; ) {
+            for (Enumeration<?> e = newexp.keys() ; e.hasMoreElements() ; ) {
                 ClassDeclaration c = (ClassDeclaration)e.nextElement();
                 ClassDefinition def = c.getClassDefinition(env);
                 boolean add = true;

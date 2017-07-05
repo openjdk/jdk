@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,11 @@ public interface Icon
      * Draw the icon at the specified location.  Icon implementations
      * may use the Component argument to get properties useful for
      * painting, e.g. the foreground or background color.
+     *
+     * @param c  a {@code Component} to get properties useful for painting
+     * @param g  the graphics context
+     * @param x  the X coordinate of the icon's top-left corner
+     * @param y  the Y coordinate of the icon's top-left corner
      */
     void paintIcon(Component c, Graphics g, int x, int y);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,8 +186,7 @@ REGISTER_DECLARATION(Register, ImethodDataPtr   , I2); // Pointer to the current
 //       the interpreter to work right
 // (These assignments must be compatible with L7_thread_cache; see above.)
 
-// Since Lbcp points into the middle of the method object,
-// it is temporarily converted into a "bcx" during GC.
+// Lbcp points into the middle of the method object.
 
 // Exception processing
 // These registers are passed into exception handlers.

@@ -61,17 +61,17 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
     /**
      * A hashtable of resource contexts.
      */
-    Hashtable packages = new Hashtable(31);
+    Hashtable<Identifier, Package> packages = new Hashtable<>(31);
 
     /**
      * The classes, in order of appearance.
      */
-    Vector classesOrdered = new Vector();
+    Vector<ClassDeclaration> classesOrdered = new Vector<>();
 
     /**
      * The classes, keyed by ClassDeclaration.
      */
-    Hashtable classes = new Hashtable(351);
+    Hashtable<Type, ClassDeclaration> classes = new Hashtable<>(351);
 
     /**
      * flags
@@ -106,7 +106,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
     /**
      * A list of files containing deprecation warnings.
      */
-    Vector deprecationFiles = new Vector();
+    Vector<Object> deprecationFiles = new Vector<>();
 
         /**
          * writes out error messages
@@ -271,7 +271,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
      * Return an enumeration of all the currently defined classes
      * in order of appearance to getClassDeclaration().
      */
-    public Enumeration getClasses() {
+    public Enumeration<ClassDeclaration> getClasses() {
         return classesOrdered.elements();
     }
 
@@ -280,7 +280,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
      * check in Imports#resolve().  These are the current packages for
      * all classes being compiled as of the first call to isExemptPackage.
      */
-    private Set exemptPackages;
+    private Set<Identifier> exemptPackages;
 
     /**
      * Tells whether an Identifier refers to a package which should be
@@ -317,11 +317,11 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
         // will be exempt from the "exists" check in
         // sun.tools.java.Imports#resolve().
 
-        exemptPackages = new HashSet(101);
+        exemptPackages = new HashSet<>(101);
 
         // Add all of the current packages and their prefixes to our set.
-        for (Enumeration e = getClasses(); e.hasMoreElements(); ) {
-            ClassDeclaration c = (ClassDeclaration) e.nextElement();
+        for (Enumeration<ClassDeclaration> e = getClasses(); e.hasMoreElements(); ) {
+            ClassDeclaration c = e.nextElement();
             if (c.getStatus() == CS_PARSED) {
                 SourceClass def = (SourceClass) c.getClassDefinition();
                 if (def.isLocal())
@@ -389,7 +389,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
     }
 
     public ClassDeclaration getClassDeclaration(Type t) {
-        ClassDeclaration c = (ClassDeclaration)classes.get(t);
+        ClassDeclaration c = classes.get(t);
         if (c == null) {
             classes.put(t, c = new ClassDeclaration(t.getClassName()));
             classesOrdered.addElement(c);
@@ -407,7 +407,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
         }
         Type t = Type.tClass(nm);
         try {
-            ClassDeclaration c = (ClassDeclaration)classes.get(t);
+            ClassDeclaration c = classes.get(t);
             return (c != null) ? c.getName().equals(nm) :
                 getPackage(nm.getQualifier()).classExists(nm.getName());
         } catch (IOException e) {
@@ -448,7 +448,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
      * Get the package path for a package
      */
     public Package getPackage(Identifier pkg) throws IOException {
-        Package p = (Package)packages.get(pkg);
+        Package p = packages.get(pkg);
         if (p == null) {
             packages.put(pkg, p = new Package(sourcePath, binaryPath, pkg));
         }
@@ -527,10 +527,10 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
             // (Fix for 4107960).
             //
             // The dependency code was previously in BatchParser.java.
-            Enumeration e = p.classes.elements();
+            Enumeration<SourceClass> e = p.classes.elements();
 
             // first will not be an inner class.
-            ClassDefinition first = (ClassDefinition) e.nextElement();
+            ClassDefinition first = e.nextElement();
             if (first.isInnerClass()) {
                 throw new CompilerError("BatchEnvironment, first is inner");
             }
@@ -538,7 +538,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
             ClassDefinition current = first;
             ClassDefinition next;
             while (e.hasMoreElements()) {
-                next = (ClassDefinition) e.nextElement();
+                next = e.nextElement();
                 // Don't chain in inner classes.
                 if (next.isInnerClass()) {
                     continue;
@@ -607,7 +607,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
     /**
      * Load a binary class
      */
-    boolean needsCompilation(Hashtable check, ClassDeclaration c) {
+    boolean needsCompilation(Hashtable<ClassDeclaration, ClassDeclaration> check, ClassDeclaration c) {
         switch (c.getStatus()) {
 
           case CS_UNDEFINED:
@@ -621,8 +621,8 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
                 check.put(c, c);
 
                 BinaryClass bin = (BinaryClass)c.getClassDefinition();
-                for (Enumeration e = bin.getDependencies() ; e.hasMoreElements() ;) {
-                    ClassDeclaration dep = (ClassDeclaration)e.nextElement();
+                for (Enumeration<ClassDeclaration> e = bin.getDependencies() ; e.hasMoreElements() ;) {
+                    ClassDeclaration dep = e.nextElement();
                     if (needsCompilation(check, dep)) {
                         // It must be source, dependencies need compilation
                         c.setDefinition(bin, CS_SOURCE);
@@ -829,11 +829,11 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
 
           case CS_UNDECIDED: {
             if (tracing) dtEvent("loadDefinition: STATUS IS UNDECIDED");
-            Hashtable tab = new Hashtable();
+            Hashtable<ClassDeclaration, ClassDeclaration> tab = new Hashtable<>();
             if (!needsCompilation(tab, c)) {
                 // All undecided classes that this class depends on must be binary
-                for (Enumeration e = tab.keys() ; e.hasMoreElements() ; ) {
-                    ClassDeclaration dep = (ClassDeclaration)e.nextElement();
+                for (Enumeration<ClassDeclaration> e = tab.keys() ; e.hasMoreElements() ; ) {
+                    ClassDeclaration dep = e.nextElement();
                     if (dep.getStatus() == CS_UNDECIDED) {
                         // must be binary, dependencies need compilation
                         dep.setDefinition(dep.getClassDefinition(), CS_BINARY);
@@ -1015,9 +1015,17 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
         return sourceClass;
     }
 
+    /*
+     * makeMemberDefinition method is left with rawtypes and with lint messages suppressed.
+     * The addition of Generics to com.sun.tools.* has uncovered an inconsistency
+     * in usage though tools still work correctly as long as this function is allowed to
+     * function as is.
+     */
+
     /**
      * Create a new field.
      */
+    @SuppressWarnings({"rawtypes","unchecked"})
     public MemberDefinition makeMemberDefinition(Environment origEnv, long where,
                                                ClassDefinition clazz,
                                                String doc, int modifiers,

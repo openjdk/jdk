@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6405536 6414980
+ * @bug 6405536 6414980 8051972
  * @summary Make sure that we can parse certificates using various named curves
  *   and verify their signatures
  * @author Andreas Sterbenz
@@ -153,8 +153,14 @@ public class ReadCertificates extends PKCS11Test {
                 signer = getRandomCert(certList);
             } while (cert.getIssuerX500Principal().equals(signer.getSubjectX500Principal()));
             try {
-                cert.verify(signer.getPublicKey());
-                throw new Exception("Verified invalid signature");
+                PublicKey signerPublicKey = signer.getPublicKey();
+                cert.verify(signerPublicKey);
+                // Ignore false positives
+                if (cert.getPublicKey().equals(signerPublicKey)) {
+                    System.out.println("OK: self-signed certificate detected");
+                } else {
+                    throw new Exception("Verified invalid signature");
+                }
             } catch (SignatureException e) {
                 System.out.println("OK: " + e);
             } catch (InvalidKeyException e) {

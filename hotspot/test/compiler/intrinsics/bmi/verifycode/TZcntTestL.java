@@ -31,19 +31,12 @@
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountTrailingZerosInstruction TZcntTestL
  */
 
-import com.oracle.java.testlibrary.Platform;
-
 import java.lang.reflect.Method;
 
 public class TZcntTestL extends TZcntTestI {
 
     protected TZcntTestL(Method method) {
         super(method);
-        isLongOperation = true;
-        if (Platform.isX64()) {
-            instrMask = new byte[]{(byte) 0xFF, (byte) 0x00, (byte) 0xFF, (byte) 0xFF};
-            instrPattern = new byte[]{(byte) 0xF3, (byte) 0x00, (byte) 0x0F, (byte) 0xBC};
-        }
         isLongOperation = true;
     }
 

@@ -38,7 +38,7 @@ import sun.tools.asm.Assembler;
  */
 @Deprecated
 final
-class CompilerMember implements Comparable {
+class CompilerMember implements Comparable<Object> {
     MemberDefinition field;
     Assembler asm;
     Object value;

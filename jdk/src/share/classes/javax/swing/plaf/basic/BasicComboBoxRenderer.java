@@ -59,6 +59,9 @@ implements ListCellRenderer<Object>, Serializable {
     protected static Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
     private final static Border SAFE_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
 
+    /**
+     * Constructs a new instance of {@code BasicComboBoxRenderer}.
+     */
     public BasicComboBoxRenderer() {
         super();
         setOpaque(true);

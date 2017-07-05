@@ -49,6 +49,8 @@ import javax.swing.tree.TreePath;
 import sun.print.ProxyPrintGraphics;
 import sun.awt.*;
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import sun.font.FontDesignMetrics;
 import sun.font.FontUtilities;
@@ -1486,9 +1488,60 @@ public class SwingUtilities2 {
     public static Object makeIcon(final Class<?> baseClass,
                                   final Class<?> rootClass,
                                   final String imageFile) {
+        return makeIcon(baseClass, rootClass, imageFile, true);
+    }
 
-        return new UIDefaults.LazyValue() {
-            public Object createValue(UIDefaults table) {
+    /**
+     * Utility method that creates a <code>UIDefaults.LazyValue</code> that
+     * creates an <code>ImageIcon</code> <code>UIResource</code> for the
+     * specified image file name. The image is loaded using
+     * <code>getResourceAsStream</code>, starting with a call to that method
+     * on the base class parameter. If it cannot be found, searching will
+     * continue through the base class' inheritance hierarchy, up to and
+     * including <code>rootClass</code>.
+     *
+     * Finds an image with a given name without privileges enabled.
+     *
+     * @param baseClass the first class to use in searching for the resource
+     * @param rootClass an ancestor of <code>baseClass</code> to finish the
+     *                  search at
+     * @param imageFile the name of the file to be found
+     * @return a lazy value that creates the <code>ImageIcon</code>
+     *         <code>UIResource</code> for the image,
+     *         or null if it cannot be found
+     */
+    public static Object makeIcon_Unprivileged(final Class<?> baseClass,
+                                  final Class<?> rootClass,
+                                  final String imageFile) {
+        return makeIcon(baseClass, rootClass, imageFile, false);
+    }
+
+    private static Object makeIcon(final Class<?> baseClass,
+                                  final Class<?> rootClass,
+                                  final String imageFile,
+                                  final boolean enablePrivileges) {
+        return (UIDefaults.LazyValue) (table) -> {
+            byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
+                    (PrivilegedAction<byte[]>) ()
+                    -> getIconBytes(baseClass, rootClass, imageFile))
+                    : getIconBytes(baseClass, rootClass, imageFile);
+
+            if (buffer == null) {
+                return null;
+            }
+            if (buffer.length == 0) {
+                System.err.println("warning: " + imageFile
+                        + " is zero-length");
+                return null;
+            }
+
+            return new ImageIconUIResource(buffer);
+        };
+    }
+
+    private static byte[] getIconBytes(final Class<?> baseClass,
+                                  final Class<?> rootClass,
+                                  final String imageFile) {
                 /* Copy resource into a byte array.  This is
                  * necessary because several browsers consider
                  * Class.getResource a security risk because it
@@ -1496,60 +1549,38 @@ public class SwingUtilities2 {
                  * Class.getResourceAsStream just returns raw
                  * bytes, which we can convert to an image.
                  */
-                byte[] buffer =
-                    java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction<byte[]>() {
-                    public byte[] run() {
-                        try {
-                            InputStream resource = null;
                             Class<?> srchClass = baseClass;
 
                             while (srchClass != null) {
-                                resource = srchClass.getResourceAsStream(imageFile);
 
-                                if (resource != null || srchClass == rootClass) {
+            try (InputStream resource =
+                    srchClass.getResourceAsStream(imageFile)) {
+                if (resource == null) {
+                    if (srchClass == rootClass) {
                                     break;
                                 }
-
                                 srchClass = srchClass.getSuperclass();
+                    continue;
                             }
 
-                            if (resource == null) {
-                                return null;
-                            }
-
-                            BufferedInputStream in =
-                                new BufferedInputStream(resource);
-                            ByteArrayOutputStream out =
-                                new ByteArrayOutputStream(1024);
+                try (BufferedInputStream in
+                        = new BufferedInputStream(resource);
+                        ByteArrayOutputStream out
+                        = new ByteArrayOutputStream(1024)) {
                             byte[] buffer = new byte[1024];
                             int n;
                             while ((n = in.read(buffer)) > 0) {
                                 out.write(buffer, 0, n);
                             }
-                            in.close();
                             out.flush();
                             return out.toByteArray();
+                }
                         } catch (IOException ioe) {
                             System.err.println(ioe.toString());
                         }
+        }
                         return null;
                     }
-                });
-
-                if (buffer == null) {
-                    return null;
-                }
-                if (buffer.length == 0) {
-                    System.err.println("warning: " + imageFile +
-                                       " is zero-length");
-                    return null;
-                }
-
-                return new ImageIconUIResource(buffer);
-            }
-        };
-    }
 
     /* Used to help decide if AA text rendering should be used, so
      * this local display test should be additionally qualified
