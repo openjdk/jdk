@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,68 +46,9 @@ class G1CollectedHeap;
 // get, as this does affect the performance and behavior of G1. Which
 // is why we introduce the three memory pools implemented here.
 //
-// The above approach inroduces a couple of challenging issues in the
-// implementation of the three memory pools:
+// See comments in g1MonitoringSupport.hpp for additional details
+// on this model.
 //
-// 1) The used space calculation for a pool is not necessarily
-// independent of the others. We can easily get from G1 the overall
-// used space in the entire heap, the number of regions in the young
-// generation (includes both eden and survivors), and the number of
-// survivor regions. So, from that we calculate:
-//
-//  survivor_used = survivor_num * region_size
-//  eden_used     = young_region_num * region_size - survivor_used
-//  old_gen_used  = overall_used - eden_used - survivor_used
-//
-// Note that survivor_used and eden_used are upper bounds. To get the
-// actual value we would have to iterate over the regions and add up
-// ->used(). But that'd be expensive. So, we'll accept some lack of
-// accuracy for those two. But, we have to be careful when calculating
-// old_gen_used, in case we subtract from overall_used more then the
-// actual number and our result goes negative.
-//
-// 2) Calculating the used space is straightforward, as described
-// above. However, how do we calculate the committed space, given that
-// we allocate space for the eden, survivor, and old gen out of the
-// same pool of regions? One way to do this is to use the used value
-// as also the committed value for the eden and survivor spaces and
-// then calculate the old gen committed space as follows:
-//
-//  old_gen_committed = overall_committed - eden_committed - survivor_committed
-//
-// Maybe a better way to do that would be to calculate used for eden
-// and survivor as a sum of ->used() over their regions and then
-// calculate committed as region_num * region_size (i.e., what we use
-// to calculate the used space now). This is something to consider
-// in the future.
-//
-// 3) Another decision that is again not straightforward is what is
-// the max size that each memory pool can grow to. One way to do this
-// would be to use the committed size for the max for the eden and
-// survivors and calculate the old gen max as follows (basically, it's
-// a similar pattern to what we use for the committed space, as
-// described above):
-//
-//  old_gen_max = overall_max - eden_max - survivor_max
-//
-// Unfortunately, the above makes the max of each pool fluctuate over
-// time and, even though this is allowed according to the spec, it
-// broke several assumptions in the M&M framework (there were cases
-// where used would reach a value greater than max). So, for max we
-// use -1, which means "undefined" according to the spec.
-//
-// 4) Now, there is a very subtle issue with all the above. The
-// framework will call get_memory_usage() on the three pools
-// asynchronously. As a result, each call might get a different value
-// for, say, survivor_num which will yield inconsistent values for
-// eden_used, survivor_used, and old_gen_used (as survivor_num is used
-// in the calculation of all three). This would normally be
-// ok. However, it's possible that this might cause the sum of
-// eden_used, survivor_used, and old_gen_used to go over the max heap
-// size and this seems to sometimes cause JConsole (and maybe other
-// clients) to get confused. There's not a really an easy / clean
-// solution to this problem, due to the asynchrounous nature of the
-// framework.
 
 
 // This class is shared by the three G1 memory pool classes
@@ -116,22 +57,6 @@ class G1CollectedHeap;
 // (see comment above), we put the calculations in this class so that
 // we can easily share them among the subclasses.
 class G1MemoryPoolSuper : public CollectedMemoryPool {
-private:
-  // It returns x - y if x > y, 0 otherwise.
-  // As described in the comment above, some of the inputs to the
-  // calculations we have to do are obtained concurrently and hence
-  // may be inconsistent with each other. So, this provides a
-  // defensive way of performing the subtraction and avoids the value
-  // going negative (which would mean a very large result, given that
-  // the parameter are size_t).
-  static size_t subtract_up_to_zero(size_t x, size_t y) {
-    if (x > y) {
-      return x - y;
-    } else {
-      return 0;
-    }
-  }
-
 protected:
   G1CollectedHeap* _g1h;
 
@@ -146,13 +71,6 @@ protected:
 
   static size_t undefined_max() {
     return (size_t) -1;
-  }
-
-  static size_t overall_committed(G1CollectedHeap* g1h) {
-    return g1h->capacity();
-  }
-  static size_t overall_used(G1CollectedHeap* g1h) {
-    return g1h->used_unlocked();
   }
 
   static size_t eden_space_committed(G1CollectedHeap* g1h);
