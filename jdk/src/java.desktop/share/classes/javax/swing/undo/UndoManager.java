@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.swing.undo;
 import javax.swing.event.*;
 import javax.swing.UIManager;
 import java.util.*;
+import sun.swing.text.UndoableEditLockSupport;
 
 /**
  * {@code UndoManager} manages a list of {@code UndoableEdits},
@@ -134,6 +135,11 @@ import java.util.*;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class UndoManager extends CompoundEdit implements UndoableEditListener {
+    private enum Action {
+        UNDO,
+        REDO,
+        ANY
+    }
     int indexOfNextAdd;
     int limit;
 
@@ -369,13 +375,8 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * @throws CannotRedoException if one of the edits throws
      *         <code>CannotRedoException</code>
      */
-    public synchronized void undoOrRedo() throws CannotRedoException,
-        CannotUndoException {
-        if (indexOfNextAdd == edits.size()) {
-            undo();
-        } else {
-            redo();
-        }
+    public void undoOrRedo() throws CannotRedoException, CannotUndoException {
+        tryUndoOrRedo(Action.ANY);
     }
 
     /**
@@ -407,16 +408,8 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * @see #canUndo
      * @see #editToBeUndone
      */
-    public synchronized void undo() throws CannotUndoException {
-        if (inProgress) {
-            UndoableEdit edit = editToBeUndone();
-            if (edit == null) {
-                throw new CannotUndoException();
-            }
-            undoTo(edit);
-        } else {
-            super.undo();
-        }
+    public void undo() throws CannotUndoException {
+        tryUndoOrRedo(Action.UNDO);
     }
 
     /**
@@ -452,16 +445,90 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * @see #canRedo
      * @see #editToBeRedone
      */
-    public synchronized void redo() throws CannotRedoException {
-        if (inProgress) {
-            UndoableEdit edit = editToBeRedone();
-            if (edit == null) {
-                throw new CannotRedoException();
+    public void redo() throws CannotRedoException {
+        tryUndoOrRedo(Action.REDO);
+    }
+
+    private void tryUndoOrRedo(Action action) {
+        UndoableEditLockSupport lockSupport = null;
+        boolean undo;
+        synchronized (this) {
+            if (action == Action.ANY) {
+                undo = indexOfNextAdd == edits.size();
+            } else {
+                undo = action == Action.UNDO;
             }
-            redoTo(edit);
-        } else {
-            super.redo();
+            if (inProgress) {
+                UndoableEdit edit = undo ? editToBeUndone() : editToBeRedone();
+                if (edit == null) {
+                    throw undo ? new CannotUndoException() :
+                            new CannotRedoException();
+                }
+                lockSupport = getEditLockSupport(edit);
+                if (lockSupport == null) {
+                    if (undo) {
+                        undoTo(edit);
+                    } else {
+                        redoTo(edit);
+                    }
+                    return;
+                }
+            } else {
+                if (undo) {
+                    super.undo();
+                } else {
+                    super.redo();
+                }
+                return;
+            }
         }
+        // the edit synchronization is required
+        while (true) {
+            lockSupport.lockEdit();
+            UndoableEditLockSupport editLockSupport = null;
+            try {
+                synchronized (this) {
+                    if (action == Action.ANY) {
+                        undo = indexOfNextAdd == edits.size();
+                    }
+                    if (inProgress) {
+                        UndoableEdit edit = undo ? editToBeUndone() :
+                                editToBeRedone();
+                        if (edit == null) {
+                            throw undo ? new CannotUndoException() :
+                                    new CannotRedoException();
+                        }
+                        editLockSupport = getEditLockSupport(edit);
+                        if (editLockSupport == null ||
+                                editLockSupport == lockSupport) {
+                            if (undo) {
+                                undoTo(edit);
+                            } else {
+                                redoTo(edit);
+                            }
+                            return;
+                        }
+                    } else {
+                        if (undo) {
+                            super.undo();
+                        } else {
+                            super.redo();
+                        }
+                        return;
+                    }
+                }
+            } finally {
+                if (lockSupport != null) {
+                    lockSupport.unlockEdit();
+                }
+                lockSupport = editLockSupport;
+            }
+        }
+    }
+
+    private UndoableEditLockSupport getEditLockSupport(UndoableEdit anEdit) {
+        return anEdit instanceof UndoableEditLockSupport ?
+                (UndoableEditLockSupport)anEdit : null;
     }
 
     /**

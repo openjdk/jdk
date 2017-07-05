@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public abstract class MidiFileWriter {
      *         queried
      * @return array of file types. If no file types are supported, returns an
      *         array of length 0.
+     * @throws NullPointerException if {@code sequence} is {@code null}
      */
     public abstract int[] getMidiFileTypes(Sequence sequence);
 
@@ -88,6 +89,7 @@ public abstract class MidiFileWriter {
      * @param  sequence the sequence for which file writing support is queried
      * @return {@code true} if the file type is supported for this sequence,
      *         otherwise {@code false}
+     * @throws NullPointerException if {@code sequence} is {@code null}
      */
     public boolean isFileTypeSupported(int fileType, Sequence sequence) {
 
@@ -111,6 +113,8 @@ public abstract class MidiFileWriter {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file type is not supported by
      *         this file writer
+     * @throws NullPointerException if {@code in} or {@code out} are
+     *         {@code null}
      * @see #isFileTypeSupported(int, Sequence)
      * @see #getMidiFileTypes(Sequence)
      */
@@ -129,6 +133,8 @@ public abstract class MidiFileWriter {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file type is not supported by
      *         this file writer
+     * @throws NullPointerException if {@code in} or {@code out} are
+     *         {@code null}
      * @see #isFileTypeSupported(int, Sequence)
      * @see #getMidiFileTypes(Sequence)
      */

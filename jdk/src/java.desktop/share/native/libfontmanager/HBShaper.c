@@ -80,15 +80,18 @@ int storeGVData(JNIEnv* env,
     float scale = 1.0f/64.0f;
     unsigned int* glyphs;
     float* positions;
+    int initialCount, glyphArrayLen, posArrayLen, maxGlyphs, storeadv;
+    unsigned int* indices;
+    jarray glyphArray, posArray, inxArray;
 
     if (!init_JNI_IDs(env)) {
         return 0;
     }
 
-    int initialCount = (*env)->GetIntField(env, gvdata, gvdCountFID);
-    jarray glyphArray =
+    initialCount = (*env)->GetIntField(env, gvdata, gvdCountFID);
+    glyphArray =
        (jarray)(*env)->GetObjectField(env, gvdata, gvdGlyphsFID);
-    jarray posArray =
+    posArray =
         (jarray)(*env)->GetObjectField(env, gvdata, gvdPositionsFID);
 
     if (glyphArray == NULL || posArray == NULL)
@@ -101,9 +104,9 @@ int storeGVData(JNIEnv* env,
     // and re-invokes layout. I suppose this is expected to be rare
     // because at least in a single threaded case there should be
     // re-use of the same container, but it is a little wasteful/distateful.
-    int glyphArrayLen = (*env)->GetArrayLength(env, glyphArray);
-    int posArrayLen = (*env)->GetArrayLength(env, posArray);
-    int maxGlyphs = glyphCount + initialCount;
+    glyphArrayLen = (*env)->GetArrayLength(env, glyphArray);
+    posArrayLen = (*env)->GetArrayLength(env, posArray);
+    maxGlyphs = glyphCount + initialCount;
     if ((maxGlyphs >  glyphArrayLen) ||
         (maxGlyphs * 2 + 2 >  posArrayLen))
     {
@@ -125,7 +128,7 @@ int storeGVData(JNIEnv* env,
         x += glyphPos[i].x_advance * scale;
         y += glyphPos[i].y_advance * scale;
     }
-    int storeadv = initialCount+glyphCount;
+    storeadv = initialCount+glyphCount;
     // The final slot in the positions array is important
     // because when the GlyphVector is created from this
     // data it determines the overall advance of the glyphvector
@@ -138,11 +141,10 @@ int storeGVData(JNIEnv* env,
     (*env)->ReleasePrimitiveArrayCritical(env, glyphArray, glyphs, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, posArray, positions, 0);
     putFloat(env, startPt,positions[(storeadv*2)],positions[(storeadv*2)+1] );
-    jarray inxArray =
+    inxArray =
         (jarray)(*env)->GetObjectField(env, gvdata, gvdIndicesFID);
-    unsigned int* indices =
+    indices =
         (unsigned int*)(*env)->GetPrimitiveArrayCritical(env, inxArray, NULL);
-    int prevCluster = -1;
     for (i = 0; i < glyphCount; i++) {
         int cluster = glyphInfo[i].cluster;
         if (direction == HB_DIRECTION_LTR) {

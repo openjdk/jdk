@@ -564,9 +564,12 @@ public final class ImageIO {
                 if (stream != null) {
                     stream.mark();
                 }
-                canDecode = spi.canDecodeInput(input);
-                if (stream != null) {
-                    stream.reset();
+                try {
+                    canDecode = spi.canDecodeInput(input);
+                } finally {
+                    if (stream != null) {
+                        stream.reset();
+                    }
                 }
 
                 return canDecode;

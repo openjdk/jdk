@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.media.sound;
 
+import java.util.Objects;
+
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.spi.MidiDeviceProvider;
-
 
 /**
  * Super class for MIDI input or output device provider.
@@ -127,7 +128,8 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
     }
 
     @Override
-    public final MidiDevice getDevice(MidiDevice.Info info) {
+    public final MidiDevice getDevice(final MidiDevice.Info info) {
+        Objects.requireNonNull(info);
         if (info instanceof Info) {
             readDeviceInfos();
             MidiDevice[] devices = getDeviceCache();

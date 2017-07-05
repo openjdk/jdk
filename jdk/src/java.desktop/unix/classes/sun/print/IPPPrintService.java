@@ -926,7 +926,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return copyflavors;
             }
         }
-        return null;
+        DocFlavor[] flavor = new DocFlavor[2];
+        flavor[0] = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
+        flavor[1] = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
+        return flavor;
     }
 
 

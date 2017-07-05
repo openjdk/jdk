@@ -36,7 +36,7 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
 #if[double]
-import sun.misc.DoubleConsts;
+import jdk.internal.math.DoubleConsts;
 #end[double]
 
 import static java.util.Calendar.*;

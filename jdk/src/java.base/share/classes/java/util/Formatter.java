@@ -60,8 +60,8 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
-import sun.misc.DoubleConsts;
-import sun.misc.FormattedFloatingDecimal;
+import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.FormattedFloatingDecimal;
 
 /**
  * An interpreter for printf-style format strings.  This class provides support
