@@ -51,14 +51,6 @@ AdaptiveFreeList<Chunk>::AdaptiveFreeList() : FreeList<Chunk>(), _hint(0) {
 }
 
 template <class Chunk>
-AdaptiveFreeList<Chunk>::AdaptiveFreeList(Chunk* fc) : FreeList<Chunk>(fc), _hint(0) {
-  init_statistics();
-#ifndef PRODUCT
-  _allocation_stats.set_returned_bytes(size() * HeapWordSize);
-#endif
-}
-
-template <class Chunk>
 void AdaptiveFreeList<Chunk>::initialize() {
   FreeList<Chunk>::initialize();
   set_hint(0);

@@ -48,8 +48,6 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/x86/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/dummy/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/amd64/*.java \
@@ -70,6 +68,8 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/win32/coff/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/x86/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/x86/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/g1/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/parallelScavenge/*.java \
