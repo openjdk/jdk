@@ -172,17 +172,17 @@ public final class Compiler implements Loggable {
                 "Common initial phases",
                 CompilationPhase.CONSTANT_FOLDING_PHASE,
                 CompilationPhase.LOWERING_PHASE,
-                CompilationPhase.TRANSFORM_BUILTINS_PHASE,
+                CompilationPhase.APPLY_SPECIALIZATION_PHASE,
                 CompilationPhase.SPLITTING_PHASE,
                 CompilationPhase.PROGRAM_POINT_PHASE,
                 CompilationPhase.SYMBOL_ASSIGNMENT_PHASE,
                 CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
-                CompilationPhase.CACHE_AST
+                CompilationPhase.CACHE_AST_PHASE
                 );
 
         private final static CompilationPhases COMPILE_CACHED_UPTO_BYTECODE = new CompilationPhases(
                 "After common phases, before bytecode generator",
-                CompilationPhase.DECLARE_LOCAL_SYMBOLS_TO_COMPILER,
+                CompilationPhase.DECLARE_LOCAL_SYMBOLS_PHASE,
                 CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
                 CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE
                 );

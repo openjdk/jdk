@@ -38,7 +38,6 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
@@ -208,7 +207,7 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         neverOptimistic.pop();
-        return functionNode.setState(lc, CompilationState.OPTIMISTIC_TYPES_ASSIGNED);
+        return functionNode;
     }
 
     @Override

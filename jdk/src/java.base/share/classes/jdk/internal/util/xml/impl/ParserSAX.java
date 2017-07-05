@@ -56,9 +56,9 @@ import jdk.internal.org.xml.sax.helpers.DefaultHandler;
 final class ParserSAX
     extends Parser implements XMLReader, Locator
 {
-    public final static String FEATURE_NS =
+    public static final String FEATURE_NS =
             "http://xml.org/sax/features/namespaces";
-    public final static String FEATURE_PREF =
+    public static final String FEATURE_PREF =
             "http://xml.org/sax/features/namespace-prefixes";
     //          SAX feature flags
     private boolean mFNamespaces;

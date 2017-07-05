@@ -98,7 +98,7 @@ final class Norm2AllModes {
 
     // Intermediate class:
     // Has NormalizerImpl and does boilerplate argument checking and setup.
-    public static abstract class Normalizer2WithImpl extends Normalizer2 {
+    public abstract static class Normalizer2WithImpl extends Normalizer2 {
         public Normalizer2WithImpl(NormalizerImpl ni) {
             impl=ni;
         }

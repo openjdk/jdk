@@ -395,13 +395,13 @@ class Inflater {
         }
     }
 
-    private native static void initIDs();
-    private native static long init(boolean nowrap);
-    private native static void setDictionary(long addr, byte[] b, int off,
+    private static native void initIDs();
+    private static native long init(boolean nowrap);
+    private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
     private native int inflateBytes(long addr, byte[] b, int off, int len)
             throws DataFormatException;
-    private native static int getAdler(long addr);
-    private native static void reset(long addr);
-    private native static void end(long addr);
+    private static native int getAdler(long addr);
+    private static native void reset(long addr);
+    private static native void end(long addr);
 }

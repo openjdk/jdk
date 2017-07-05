@@ -244,17 +244,17 @@ class Thread implements Runnable {
     /**
      * The minimum priority that a thread can have.
      */
-    public final static int MIN_PRIORITY = 1;
+    public static final int MIN_PRIORITY = 1;
 
    /**
      * The default priority that is assigned to a thread.
      */
-    public final static int NORM_PRIORITY = 5;
+    public static final int NORM_PRIORITY = 5;
 
     /**
      * The maximum priority that a thread can have.
      */
-    public final static int MAX_PRIORITY = 10;
+    public static final int MAX_PRIORITY = 10;
 
     /**
      * Returns a reference to the currently executing thread object.
@@ -1688,8 +1688,8 @@ class Thread implements Runnable {
         return result.booleanValue();
     }
 
-    private native static StackTraceElement[][] dumpThreads(Thread[] threads);
-    private native static Thread[] getThreads();
+    private static native StackTraceElement[][] dumpThreads(Thread[] threads);
+    private static native Thread[] getThreads();
 
     /**
      * Returns the identifier of this Thread.  The thread ID is a positive

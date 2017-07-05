@@ -54,7 +54,6 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
@@ -1478,7 +1477,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         newFunction = newFunction.setReturnType(lc, returnType);
 
 
-        newFunction = newFunction.setState(lc, CompilationState.LOCAL_VARIABLE_TYPES_CALCULATED);
         newFunction = newFunction.setParameters(lc, newFunction.visitParameters(applyChangesVisitor));
         return newFunction;
     }

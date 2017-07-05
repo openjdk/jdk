@@ -407,7 +407,7 @@ public class CertStore {
      * {@code certstore.type} security property, or the string
      * {@literal "LDAP"} if no such property exists.
      */
-    public final static String getDefaultType() {
+    public static final String getDefaultType() {
         String cstype;
         cstype = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {

@@ -35,7 +35,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public class ClassForNameTest {
-    final static String NAME = ClassForNameTest.class.getName();
+    static final String NAME = ClassForNameTest.class.getName();
 
     public static void main(String[] args) throws Throwable {
         {

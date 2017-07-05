@@ -32,7 +32,6 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -2622,7 +2621,7 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   if (nm != NULL) {
     if (PrintCompilation) {
       ttyLocker ttyl;
-      CompileTask::print_compilation(tty, nm, method->is_static() ? "(static)" : "");
+      CompileTask::print(tty, nm, method->is_static() ? "(static)" : "");
     }
     nm->post_compiled_method_load_event();
   }

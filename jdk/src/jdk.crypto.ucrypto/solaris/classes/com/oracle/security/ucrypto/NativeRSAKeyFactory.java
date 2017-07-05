@@ -56,7 +56,8 @@ public final class NativeRSAKeyFactory extends KeyFactorySpi {
         } else if (keySpec instanceof RSAPrivateKeySpec) {
             return new NativeKey.RSAPrivate(keySpec);
         } else {
-            throw new InvalidKeySpecException("Unsupported key spec");
+            throw new InvalidKeySpecException("Unsupported key spec." +
+                " Received: " + keySpec.getClass().getName());
         }
     }
 

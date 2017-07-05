@@ -31,7 +31,7 @@ import java.awt.image.*;
 
 import java.util.Arrays;
 import java.util.List;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 import sun.awt.image.MultiResolutionCachedImage;
 
 import sun.awt.image.SunWritableRaster;

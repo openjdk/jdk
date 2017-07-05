@@ -26,7 +26,7 @@ package org.omg.CORBA;
 
 
 /**
-* The Stub for <tt>Policy</tt>.  For more information on
+* The Stub for {@code Policy}. For more information on
 * Stub files, see <a href="doc-files/generatedfiles.html#stub">
 * "Generated Files: Stubs"</a>.<P>
 * org/omg/CORBA/_PolicyStub.java
@@ -47,8 +47,8 @@ public class _PolicyStub extends org.omg.CORBA.portable.ObjectImpl implements or
     super ();
   }
 
-  /** Constructs a <code>_PolicyStub</code> object initialized
-   * with the given <code>Delegate</code> object.
+  /** Constructs a {@code _PolicyStub} object initialized
+   * with the given {@code Delegate} object.
    *
    * @param delegate a Delegate Object
    */

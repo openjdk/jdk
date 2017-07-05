@@ -43,7 +43,7 @@ import java.util.logging.SimpleFormatter;
  */
 public class TestAnonymousLogger {
 
-    final public static class TestHandler extends Handler {
+    public static final class TestHandler extends Handler {
         @Override
         public void publish(LogRecord record) {
             System.out.println(new SimpleFormatter().format(record));
@@ -58,14 +58,14 @@ public class TestAnonymousLogger {
         }
     }
 
-    final public static class TestFilter implements Filter {
+    public static final class TestFilter implements Filter {
         @Override
         public boolean isLoggable(LogRecord record) {
             return true;
         }
     }
 
-    final public static class TestBundle extends ResourceBundle {
+    public static final class TestBundle extends ResourceBundle {
         Set<String> keys = Collections.synchronizedSet(new LinkedHashSet<>());
         @Override
         protected Object handleGetObject(String key) {

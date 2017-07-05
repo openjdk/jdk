@@ -63,7 +63,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger coeff;   // CRT coeffcient
 
     // algorithmId used to identify RSA keys
-    final static AlgorithmId rsaId =
+    static final AlgorithmId rsaId =
         new AlgorithmId(AlgorithmId.RSAEncryption_oid);
 
     /**

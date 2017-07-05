@@ -43,7 +43,7 @@ import org.testng.annotations.DataProvider;
  * @run testng FunctionalCMEs
  */
 public class FunctionalCMEs {
-    final static String KEY = "key";
+    static final String KEY = "key";
 
     @DataProvider(name = "Maps", parallel = true)
     private static Iterator<Object[]> makeMaps() {

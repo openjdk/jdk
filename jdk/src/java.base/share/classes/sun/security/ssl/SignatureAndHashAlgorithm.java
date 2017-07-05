@@ -65,15 +65,15 @@ import sun.security.util.KeyUtil;
 final class SignatureAndHashAlgorithm {
 
     // minimum priority for default enabled algorithms
-    final static int SUPPORTED_ALG_PRIORITY_MAX_NUM = 0x00F0;
+    static final int SUPPORTED_ALG_PRIORITY_MAX_NUM = 0x00F0;
 
     // performance optimization
-    private final static Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
+    private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     // supported pairs of signature and hash algorithm
-    private final static Map<Integer, SignatureAndHashAlgorithm> supportedMap;
-    private final static Map<Integer, SignatureAndHashAlgorithm> priorityMap;
+    private static final Map<Integer, SignatureAndHashAlgorithm> supportedMap;
+    private static final Map<Integer, SignatureAndHashAlgorithm> priorityMap;
 
     // the hash algorithm
     private HashAlgorithm hash;

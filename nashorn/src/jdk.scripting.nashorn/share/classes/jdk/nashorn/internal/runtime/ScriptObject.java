@@ -149,7 +149,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** Method handle to retrieve prototype of this object */
     public static final MethodHandle GETPROTO      = findOwnMH_V("getProto", ScriptObject.class);
 
-    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class);
+    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
     static final MethodHandle DECLARE_AND_SET    = findOwnMH_V("declareAndSet", void.class, String.class, Object.class);
 
@@ -809,9 +809,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         if (deep) {
             final ScriptObject myProto = getProto();
-            if (myProto != null) {
-                return myProto.findProperty(key, deep, start);
-            }
+            final FindProperty find = myProto == null ? null : myProto.findProperty(key, true, start);
+            // checkSharedProtoMap must be invoked after myProto.checkSharedProtoMap to propagate
+            // shared proto invalidation up the prototype chain. It also must be invoked when prototype is null.
+            checkSharedProtoMap();
+            return find;
         }
 
         return null;
@@ -832,7 +834,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (deep) {
             final ScriptObject myProto = getProto();
             if (myProto != null) {
-                return myProto.hasProperty(key, deep);
+                return myProto.hasProperty(key, true);
             }
         }
 
@@ -1258,11 +1260,8 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         if (oldProto != newProto) {
             proto = newProto;
 
-            // Let current listeners know that the prototype has changed and set our map
-            final PropertyListeners listeners = getMap().getListeners();
-            if (listeners != null) {
-                listeners.protoChanged();
-            }
+            // Let current listeners know that the prototype has changed
+            getMap().protoChanged(true);
             // Replace our current allocator map with one that is associated with the new prototype.
             setMap(getMap().changeProto(newProto));
         }
@@ -1314,7 +1313,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                 }
                 p = p.getProto();
             }
-            setProto((ScriptObject)newProto);
+            setProto((ScriptObject) newProto);
         } else {
             throw typeError("cant.set.proto.to.non.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(newProto));
         }
@@ -2012,11 +2011,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final ScriptObject owner = find.getOwner();
         final Class<ClassCastException> exception = explicitInstanceOfCheck ? null : ClassCastException.class;
 
-        final SwitchPoint protoSwitchPoint;
+        final SwitchPoint[] protoSwitchPoints;
 
         if (mh == null) {
             mh = Lookup.emptyGetter(returnType);
-            protoSwitchPoint = getProtoSwitchPoint(name, owner);
+            protoSwitchPoints = getProtoSwitchPoints(name, owner);
         } else if (!find.isSelf()) {
             assert mh.type().returnType().equals(returnType) :
                     "return type mismatch for getter " + mh.type().returnType() + " != " + returnType;
@@ -2024,30 +2023,30 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                 // Add a filter that replaces the self object with the prototype owning the property.
                 mh = addProtoFilter(mh, find.getProtoChainLength());
             }
-            protoSwitchPoint = getProtoSwitchPoint(name, owner);
+            protoSwitchPoints = getProtoSwitchPoints(name, owner);
         } else {
-            protoSwitchPoint = null;
+            protoSwitchPoints = null;
         }
 
-        final GuardedInvocation inv = new GuardedInvocation(mh, guard, protoSwitchPoint, exception);
+        final GuardedInvocation inv = new GuardedInvocation(mh, guard, protoSwitchPoints, exception);
         return inv.addSwitchPoint(findBuiltinSwitchPoint(name));
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
         Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
-        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod);
+        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, NashornCallSiteDescriptor.isScope(desc));
         final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
     }
 
     @SuppressWarnings("unused")
-    private Object megamorphicGet(final String key, final boolean isMethod) {
+    private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
         final FindProperty find = findProperty(key, true);
         if (find != null) {
             return find.getObjectValue();
         }
 
-        return isMethod ? getNoSuchMethod(key, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
+        return isMethod ? getNoSuchMethod(key, isScope, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, isScope, INVALID_PROGRAM_POINT);
     }
 
     // Marks a property as declared and sets its value. Used as slow path for block-scoped LET and CONST
@@ -2128,17 +2127,32 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param owner the property owner, null if property is not defined
      * @return a SwitchPoint or null
      */
-    public final SwitchPoint getProtoSwitchPoint(final String name, final ScriptObject owner) {
+    public final SwitchPoint[] getProtoSwitchPoints(final String name, final ScriptObject owner) {
         if (owner == this || getProto() == null) {
             return null;
         }
 
+        final List<SwitchPoint> switchPoints = new ArrayList<>();
         for (ScriptObject obj = this; obj != owner && obj.getProto() != null; obj = obj.getProto()) {
             final ScriptObject parent = obj.getProto();
             parent.getMap().addListener(name, obj.getMap());
+            final SwitchPoint sp = parent.getMap().getSharedProtoSwitchPoint();
+            if (sp != null && !sp.hasBeenInvalidated()) {
+                switchPoints.add(sp);
+            }
         }
 
-        return getMap().getSwitchPoint(name);
+        switchPoints.add(getMap().getSwitchPoint(name));
+        return switchPoints.toArray(new SwitchPoint[switchPoints.size()]);
+    }
+
+    private void checkSharedProtoMap() {
+        // Check if our map has an expected shared prototype property map. If it has, make sure that
+        // the prototype map has not been invalidated, and that it does match the actual map of the prototype.
+        if (getMap().isInvalidSharedMapFor(getProto())) {
+            // Change our own map to one that does not assume a shared prototype map.
+            setMap(getMap().makeUnsharedCopy());
+        }
     }
 
     /**
@@ -2220,7 +2234,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return new GuardedInvocation(
                 Lookup.EMPTY_SETTER,
                 NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
-                getProtoSwitchPoint(name, null),
+                getProtoSwitchPoints(name, null),
                 explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
@@ -2366,7 +2380,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                                 find.getGetter(Object.class, INVALID_PROGRAM_POINT, request),
                                 find.getProtoChainLength(),
                                 func),
-                        getProtoSwitchPoint(NO_SUCH_PROPERTY_NAME, find.getOwner()),
+                        getProtoSwitchPoints(NO_SUCH_PROPERTY_NAME, find.getOwner()),
                         //TODO this doesn't need a ClassCastException as guard always checks script object
                         null);
             }
@@ -2382,20 +2396,21 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Invoke fall back if a property is not found.
      * @param name Name of property.
+     * @param isScope is this a scope access?
      * @param programPoint program point
      * @return Result from call.
      */
-    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+    protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
+        final Object func = (find != null)? find.getObjectValue() : null;
 
         Object ret = UNDEFINED;
-
-        if (find != null) {
-            final Object func = find.getObjectValue();
-
-            if (func instanceof ScriptFunction) {
-                ret = ScriptRuntime.apply((ScriptFunction)func, this, name);
-            }
+        if (func instanceof ScriptFunction) {
+            final ScriptFunction sfunc = (ScriptFunction)func;
+            final Object self = isScope && sfunc.isStrict()? UNDEFINED : this;
+            ret = ScriptRuntime.apply(sfunc, self, name);
+        } else if (isScope) {
+            throw referenceError("not.defined", name);
         }
 
         if (isValid(programPoint)) {
@@ -2409,21 +2424,27 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Get __noSuchMethod__ as a function bound to this object and {@code name} if it is defined.
      * @param name the method name
+     * @param isScope is this a scope access?
      * @return the bound function, or undefined
      */
-    private Object getNoSuchMethod(final String name, final int programPoint) {
+    private Object getNoSuchMethod(final String name, final boolean isScope, final int programPoint) {
         final FindProperty find = findProperty(NO_SUCH_METHOD_NAME, true);
 
         if (find == null) {
-            return invokeNoSuchProperty(name, programPoint);
+            return invokeNoSuchProperty(name, isScope, programPoint);
         }
 
         final Object value = find.getObjectValue();
         if (!(value instanceof ScriptFunction)) {
+            if (isScope) {
+                throw referenceError("not.defined", name);
+            }
             return UNDEFINED;
         }
 
-        return ((ScriptFunction)value).createBound(this, new Object[] {name});
+        final ScriptFunction func = (ScriptFunction)value;
+        final Object self = isScope && func.isStrict()? UNDEFINED : this;
+        return func.createBound(self, new Object[] {name});
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String name) {
@@ -2432,7 +2453,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         return new GuardedInvocation(Lookup.emptyGetter(desc.getMethodType().returnType()),
-                NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck), getProtoSwitchPoint(name, null),
+                NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck), getProtoSwitchPoints(name, null),
                 explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
@@ -2738,7 +2759,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toInt32(invokeNoSuchProperty(key, programPoint));
+        return JSType.toInt32(invokeNoSuchProperty(key, false, programPoint));
     }
 
     @Override
@@ -2820,7 +2841,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toLong(invokeNoSuchProperty(key, programPoint));
+        return JSType.toLong(invokeNoSuchProperty(key, false, programPoint));
     }
 
     @Override
@@ -2902,7 +2923,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return JSType.toNumber(invokeNoSuchProperty(key, INVALID_PROGRAM_POINT));
+        return JSType.toNumber(invokeNoSuchProperty(key, false, INVALID_PROGRAM_POINT));
     }
 
     @Override
@@ -2983,7 +3004,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
         }
 
-        return invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
+        return invokeNoSuchProperty(key, false, INVALID_PROGRAM_POINT);
     }
 
     @Override

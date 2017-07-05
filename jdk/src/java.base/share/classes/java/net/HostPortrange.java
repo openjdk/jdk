@@ -225,9 +225,9 @@ class HostPortrange {
     }
 
     // these shouldn't leak outside the implementation
-    final static int[] HTTP_PORT = {80, 80};
-    final static int[] HTTPS_PORT = {443, 443};
-    final static int[] NO_PORT = {-1, -1};
+    static final int[] HTTP_PORT = {80, 80};
+    static final int[] HTTPS_PORT = {443, 443};
+    static final int[] NO_PORT = {-1, -1};
 
     int[] defaultPort() {
         if (scheme.equals("http")) {

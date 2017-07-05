@@ -61,7 +61,7 @@ class Comparators {
     /**
      * Null-friendly comparators
      */
-    final static class NullComparator<T> implements Comparator<T>, Serializable {
+    static final class NullComparator<T> implements Comparator<T>, Serializable {
         private static final long serialVersionUID = -7569533591570686392L;
         private final boolean nullFirst;
         // if null, non-null Ts are considered equal

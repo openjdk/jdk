@@ -66,7 +66,7 @@ public class SoftReference<T> extends Reference<T> {
     /**
      * Timestamp clock, updated by the garbage collector
      */
-    static private long clock;
+    private static long clock;
 
     /**
      * Timestamp updated by each invocation of the get method.  The VM may use
