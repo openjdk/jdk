@@ -59,7 +59,7 @@ public interface Acceptor
     /**
      * Used to determine if an <code>Acceptor</code> has been initialized.
      *
-     * @return <code>true</code. if the <code>Acceptor</code> has been
+     * @return <code>true</code> if the <code>Acceptor</code> has been
      * initialized.
      */
     public boolean initialized();
@@ -74,7 +74,7 @@ public interface Acceptor
 
     /**
      * Set the
-     * {@link com.sun.corba.se.pept.transport.Inbound.ConnectionCache InboundConnectionCache}
+     * {@link com.sun.corba.se.pept.transport.InboundConnectionCache InboundConnectionCache}
      * to be used by this <code>Acceptor</code>.
      *
      * PEPt uses separate caches for each type of <code>Acceptor</code>
@@ -88,7 +88,7 @@ public interface Acceptor
 
     /**
      * Get the
-     * {@link com.sun.corba.se.pept.transport.Inbound.ConnectionCache InboundConnectionCache}
+     * {@link com.sun.corba.se.pept.transport.InboundConnectionCache InboundConnectionCache}
      * used by this <code>Acceptor</code>
      *
      * PEPt uses separate caches for each type of <code>Acceptor</code>

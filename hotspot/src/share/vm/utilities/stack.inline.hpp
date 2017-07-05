@@ -86,14 +86,6 @@ void Stack<E, F>::clear(bool clear_cache)
 }
 
 template <class E, MEMFLAGS F>
-size_t Stack<E, F>::default_segment_size()
-{
-  // Number of elements that fit in 4K bytes minus the size of two pointers
-  // (link field and malloc header).
-  return (4096 - 2 * sizeof(E*)) / sizeof(E);
-}
-
-template <class E, MEMFLAGS F>
 size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
 {
   const size_t elem_sz = sizeof(E);

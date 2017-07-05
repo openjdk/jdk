@@ -18,8 +18,8 @@ import java.util.*;
     /********** LINE NUMBER SENSITIVE! *****************************************************************/
 class LineNumberOnBraceTarg {
 
-    public final static int stopLine = 28;   // THIS MUST BE THE LINE NUMBER OF THE // stopline LINE
-    public final static int stopLine2 = 34;  // THIS MUST BE THE LINE NUMBER OF THE // stopline2 LINE
+    public final static int stopLine = 29;   // THIS MUST BE THE LINE NUMBER OF THE // stopline LINE
+    public final static int stopLine2 = 35;  // THIS MUST BE THE LINE NUMBER OF THE // stopline2 LINE
 
 
     public static void main(String[] args){

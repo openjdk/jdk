@@ -31,6 +31,7 @@
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/genCollectedHeap.hpp"
+#include "memory/genOopClosures.inline.hpp"
 #include "memory/space.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/universe.inline.hpp"

@@ -7,6 +7,7 @@
  *  @author Robert Field
  *
  *  @library ..
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile SourceDebugExtensionTest.java
  *  @run compile -g SourceDebugExtensionTarg.java

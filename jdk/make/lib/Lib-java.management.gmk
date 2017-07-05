@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,13 @@ $(eval $(call IncludeCustomExtension, jdk, lib/Lib-java.management.gmk))
 
 ################################################################################
 
-BUILD_LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
+LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
     $(JDK_TOPDIR)/src/java.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement
-BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
-    $(addprefix -I,$(BUILD_LIBMANAGEMENT_SRC)) \
+LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
+    $(addprefix -I,$(LIBMANAGEMENT_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.management \
     $(LIBJAVA_HEADER_FLAGS) \
     #
-
-# In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
-# a binary that is compatible with windows versions older than 7/2008R2.
-# See MSDN documentation for GetProcessMemoryInfo for more information.
-BUILD_LIBMANAGEMENT_CFLAGS += -DPSAPI_VERSION=1
-
-BUILD_LIBMANAGEMENT_EXCLUDES :=
-
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  BUILD_LIBMANAGEMENT_EXCLUDES += SolarisOperatingSystem.c
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), linux)
-  BUILD_LIBMANAGEMENT_EXCLUDES += LinuxOperatingSystem.c
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_LIBMANAGEMENT_EXCLUDES += MacosxOperatingSystem.c
-endif
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
@@ -64,17 +45,13 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-# Make it possible to override this variable
-LIBMANAGEMENT_MAPFILE ?= $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers
-
 $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     LIBRARY := management, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(BUILD_LIBMANAGEMENT_SRC), \
-    EXCLUDE_FILES := $(BUILD_LIBMANAGEMENT_EXCLUDES), \
+    SRC := $(LIBMANAGEMENT_SRC), \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(BUILD_LIBMANAGEMENT_CFLAGS), \
-    MAPFILE := $(LIBMANAGEMENT_MAPFILE), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(LIBMANAGEMENT_CFLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_solaris := -lkstat, \

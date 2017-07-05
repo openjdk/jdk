@@ -2,10 +2,10 @@
 .\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: rmic
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Remote Method Invocation (RMI)�ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Remote Method Invocation (RMI)ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "rmic" "1" "2013ǯ11��21��" "JDK 8" "Remote Method Invocation (RMI)"
+.TH "rmic" "1" "2013年11月21日" "JDK 8" "Remote Method Invocation (RMI)"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-rmic \- Java Remote Method Protocol (JRMP)�ޤ���Internet Inter\-Orb protocol (IIOP)����Ѥ����⡼�ȡ����֥������ȤΥ����֡�������ȥ󤪤��Tie���饹���������ޤ���Object Management Group (OMG)���󥿥ե������������(IDL)���������ޤ�
-.SH "����"
+rmic \- Java Remote Method Protocol (JRMP)またはInternet Inter\-Orb protocol (IIOP)を使用するリモート・オブジェクトのスタブ、スケルトンおよびTieクラスを生成します。Object Management Group (OMG)インタフェース定義言語(IDL)も生成します
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,20 +64,20 @@ rmic \- Java Remote Method Protocol (JRMP)�ޤ���Internet Inter\-Orb protocol (II
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤��\fI���ץ����\fR�����ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・\fIオプション\fR。オプションを参照してください。
 .RE
 .PP
 \fIpackage\-qualified\-class\-names\fR
 .RS 4
-�ѥå�������ޤ९�饹̾����:
-\fIjava\&.awt\&.Color\fR��
+パッケージを含むクラス名。例:
+\fIjava\&.awt\&.Color\fR。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fB��侩�˴ؤ�������:\fR
-Java Remote Method Protocol (JRMP)�����֤���ӥ�����ȥ����Ū�������Υ��ݡ��Ȥ���侩�ˤʤ�ޤ�����ưŪ�����������JRMP�����֤򤫤��˻��Ѥ��ơ�JRMP�١����Υ��ץꥱ�������ˤ��Υġ������Ѥ���ɬ������ʤ������Ȥ����ᤷ�ޤ����ܺ٤ϡ�\fIjava\&.rmi\&.server\&.UnicastRemoteObject\fR����(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/server/UnicastRemoteObject\&.html)�򻲾Ȥ��Ƥ���������
+\fB非推奨に関する注意:\fR
+Java Remote Method Protocol (JRMP)スタブおよびスケルトンの静的な生成のサポートは非推奨になりました。動的に生成されるJRMPスタブをかわりに使用して、JRMPベースのアプリケーションにこのツールを使用する必要性をなくすことをお薦めします。詳細は、\fIjava\&.rmi\&.server\&.UnicastRemoteObject\fR仕様(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/server/UnicastRemoteObject\&.html)を参照してください。
 .PP
-\fIrmic\fR����ѥ���ϡ�Java Remote Method Protocol (JRMP)�ȥ����֤����Tie���饹���ե�����(IIOP�ץ��ȥ���)����Ѥ��ơ���⡼�ȡ����֥������ȤΥ����֤���ӥ�����ȥ󡦥��饹���ե�������������ޤ�����⡼�ȡ����֥������Ȥμ������饹�Ǥ��뤳���Υ��饹���ե�����ϡ�Java�ץ�����ߥ󥰸���Υ��饹�򥳥�ѥ��뤷���Ȥ�����������ޤ�����⡼�ȼ������饹�ϡ�\fIjava\&.rmi\&.Remote\fR���󥿥ե�������������륯�饹�Ǥ���\fIrmic\fR���ޥ�ɤǤΥ��饹̾�ϡ����Υ��饹��\fIjavac\fR���ޥ�ɤǥ���ѥ��뤬�������Ƥ��ơ����Ĵ��������ѥå�����̾�Ǥ���ɬ�פ�����ޤ������Ȥ��С����˼������饹���ե�����̾\fIHelloImpl\fR��\fIrmic\fR���ޥ�ɤ�¹Ԥ���ȡ�hello���֥ǥ��쥯�ȥ�(���饹�Υѥå�������̾�����դ���)��\fIHelloImpl_Stub\&.class \fR�ե����뤬��������ޤ���
+\fIrmic\fRコンパイラは、Java Remote Method Protocol (JRMP)とスタブおよびTieクラス・ファイル(IIOPプロトコル)を使用して、リモート・オブジェクトのスタブおよびスケルトン・クラス・ファイルを生成します。リモート・オブジェクトの実装クラスであるこれらのクラス・ファイルは、Javaプログラミング言語のクラスをコンパイルしたときに生成されます。リモート実装クラスは、\fIjava\&.rmi\&.Remote\fRインタフェースを実装するクラスです。\fIrmic\fRコマンドでのクラス名は、そのクラスが\fIjavac\fRコマンドでコンパイルが成功していて、かつ完全修飾パッケージ名である必要があります。たとえば、次に示すクラス・ファイル名\fIHelloImpl\fRで\fIrmic\fRコマンドを実行すると、helloサブディレクトリ(クラスのパッケージの名前の付いた)に\fIHelloImpl_Stub\&.class \fRファイルが作成されます。
 .sp
 .if n \{\
 .RS 4
@@ -89,31 +89,31 @@ rmic hello\&.HelloImpl
 .RE
 .\}
 .PP
-��⡼�ȡ����֥������ȤΥ�����ȥ��JRMP�ץ��ȥ��롦�����С�¦�Υ���ƥ��ƥ��ǡ���⡼�ȡ����֥������ȼ�����ƤӽФ��᥽�åɤ�ޤߤޤ���
+リモート・オブジェクトのスケルトンはJRMPプロトコル・サーバー側のエンティティで、リモート・オブジェクト実装を呼び出すメソッドを含みます。
 .PP
-��⡼�ȡ����֥������Ȥ�Tie�ϡ�������ȥ��Ʊ�ͤ˥����С�¦�Υ���ƥ��ƥ��Ǥ�����IIOP�ץ��ȥ������Ѥ��ƥ��饤����Ȥ��̿����ޤ���
+リモート・オブジェクトのTieは、スケルトンと同様にサーバー側のエンティティですが、IIOPプロトコルを使用してクライアントと通信します。
 .PP
-�����֤Ȥϡ���⡼�ȡ����֥������ȤΥ��饤�����¦�Ǥ������Ǥ��������֤ϡ���⡼�ȡ����֥������ȤΥ᥽�åɸƽФ��򡢼�ʪ�Υ�⡼�ȡ����֥������Ȥ����󤹤륵���С����̿�������������ޤ����������äơ����饤����ȤΥ�⡼�ȡ����֥������Ȥؤλ��Ȥϡ��ºݤϥ������롦�����֤ؤλ��ȤȤʤ�ޤ���
+スタブとは、リモート・オブジェクトのクライアント側での代理です。スタブは、リモート・オブジェクトのメソッド呼出しを、実物のリモート・オブジェクトが常駐するサーバーと通信する役割を持ちます。したがって、クライアントのリモート・オブジェクトへの参照は、実際はローカル・スタブへの参照となります。
 .PP
-�ǥե���Ȥ�\fIrmic\fR���ޥ�ɤϡ�1\&.2 JRMP�����֡��ץ��ȥ��롦�С������Τߤ���Ѥ��륹���֡����饹���������ޤ�������ϡ�\fI\-v1\&.2\fR���ץ�������ꤷ������Ʊ��ư��Ǥ�����꡼��5\&.0�����Ǥ�\fI\-vcompat\fR���ץ���󤬥ǥե���ȤǤ�����IIOP�ץ��ȥ����ѤΥ����֤����Tie���饹����������ˤ�\fI\-iiop\fR���ץ�������Ѥ��ޤ������ץ����򻲾Ȥ��Ƥ���������
+デフォルトで\fIrmic\fRコマンドは、1\&.2 JRMPスタブ・プロトコル・バージョンのみを使用するスタブ・クラスを生成します。これは、\fI\-v1\&.2\fRオプションを指定した場合と同じ動作です。リリース5\&.0以前では\fI\-vcompat\fRオプションがデフォルトでした。IIOPプロトコル用のスタブおよびTieクラスを生成するには\fI\-iiop\fRオプションを使用します。オプションを参照してください。
 .PP
-�����֤ϥ�⡼�ȡ����󥿥ե������Τߤ����������⡼�ȡ����֥������Ȥ���������������롦���󥿥ե������ϼ������Ƥ��ޤ���JRMP�����֤ϥ�⡼�ȡ����֥������Ȥ����������⡼�ȡ����󥿥ե�������Ʊ����Τ�������Ƥ���Τǡ����饤����Ȥϡ����㥹�Ȥ䷿�����å���Java�ץ�����ߥ󥰸�����Ȥ߹��ޤ줿�黻�Ҥ���Ѥ��뤳�Ȥ��Ǥ��ޤ���IIOP�ξ��ϡ�\fIPortableRemoteObject\&.narrow\fR�᥽�åɤ���Ѥ���ɬ�פ�����ޤ���
-.SH "���ץ����"
+スタブはリモート・インタフェースのみを実装し、リモート・オブジェクトが実装するローカル・インタフェースは実装していません。JRMPスタブはリモート・オブジェクトが実装するリモート・インタフェースと同じものを実装しているので、クライアントは、キャストや型チェックにJavaプログラミング言語に組み込まれた演算子を使用することができます。IIOPの場合は、\fIPortableRemoteObject\&.narrow\fRメソッドを使用する必要があります。
+.SH "オプション"
 .PP
 \-bootclasspath \fIpath\fR
 .RS 4
-�֡��ȥ��ȥ�åס����饹���ե�����ΰ��֤򥪡��С��饤�ɤ��ޤ���
+ブートストラップ・クラス・ファイルの位置をオーバーライドします。
 .RE
 .PP
 \-classpath path
 .RS 4
-\fIrmic\fR���ޥ�ɤ����饹��õ������Υѥ�����ꤷ�ޤ������Υ��ץ����ϡ��ǥե���Ȥ�\fICLASSPATH\fR�Ķ��ѿ�����򥪡��С��饤�ɤ��ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ����ѥ��ΰ���Ū�ʷ�����\fI\&.;<your_path>\fR�Ǥ�����:
+\fIrmic\fRコマンドがクラスを探すためのパスを指定します。このオプションは、デフォルトや\fICLASSPATH\fR環境変数設定をオーバーライドします。ディレクトリはコロンで分割します。パスの一般的な形式は\fI\&.;<your_path>\fRです。例:
 \fI\&.;/usr/local/java/classes\fR
 .RE
 .PP
 \-d \fIdirectory\fR
 .RS 4
-�������줿���饹���ؤν�����ǥ��쥯�ȥ�Υ롼�Ȥ���ꤷ�ޤ������Υ��ץ�������Ѥ���ȡ������֡�������ȥ󡢤����Tie�ե�������Ǽ����ǥ��쥯�ȥ�����Ǥ��ޤ������Ȥ��С����Υ��ޥ�ɤ�MyClass����Ƴ�Ф��줿�����֤���ӥ�����ȥ󡦥��饹��ǥ��쥯�ȥ�/java/classes/exampleclass�˳�Ǽ���ޤ���
+生成されたクラス階層の出力先ディレクトリのルートを指定します。このオプションを使用すると、スタブ、スケルトン、およびTieファイルを格納するディレクトリを指定できます。たとえば、次のコマンドはMyClassから導出されたスタブおよびスケルトン・クラスをディレクトリ/java/classes/exampleclassに格納します。
 .sp
 .if n \{\
 .RS 4
@@ -124,25 +124,25 @@ rmic \-d /java/classes exampleclass\&.MyClass
 .if n \{\
 .RE
 .\}
-\fI\-d\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���硢�ǥե���Ȥ�ư���\fI\-d\fR�����ꤵ��Ƥ�������Ʊ���Ǥ����������åȡ����饹�Υѥå��������ؤ����ߤΥǥ��쥯�ȥ�˺������졢stub/tie/skeleton�ե����뤬��Ǽ����ޤ��������Υ�꡼����\fIrmic\fR���ޥ�ɤǤϡ�\fI\-d\fR�����ꤵ��Ƥ��ʤ����ϡ��ѥå��������ؤϺ������줺�����ϥե�����Ϥ��٤Ƹ��ߤΥǥ��쥯�ȥ��ľ�ܳ�Ǽ����Ƥ��ޤ�����
+\fI\-d\fRオプションが指定されていない場合、デフォルトの動作は\fI\-d\fRが指定されていた場合と同じです。ターゲット・クラスのパッケージ階層が現在のディレクトリに作成され、stub/tie/skeletonファイルが格納されます。以前のリリースの\fIrmic\fRコマンドでは、\fI\-d\fRが指定されていない場合は、パッケージ階層は作成されず、出力ファイルはすべて現在のディレクトリに直接格納されていました。
 .RE
 .PP
 \-extdirs \fIpath\fR
 .RS 4
-���󥹥ȡ���ѳ�ĥ��ǽ�ΰ��֤򥪡��С��饤�ɤ��ޤ���
+インストール済拡張機能の位置をオーバーライドします。
 .RE
 .PP
 \-g
 .RS 4
-���������ѿ���ޤह�٤ƤΥǥХå�������������ޤ����ǥե���ȤǤϡ����ֹ����Τ���������ޤ���
+ローカル変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号情報のみ生成されます。
 .RE
 .PP
 \-idl
 .RS 4
-\fIrmic\fR���ޥ�ɤˤ�äơ����ꤷ�����饹����ӻ��Ȥ��줿���饹��OMG IDL����������ޤ���IDL�Ǥϡ��ץ�����ߥ󥰸���˰�¸�����ˡ������������ǥ��֥������Ȥ�API����ꤹ�뤳�Ȥ��Ǥ��ޤ���IDL�ϡ��᥽�åɤ���ӥǡ����λ��ͤȤ��ƻ��Ѥ��ޤ���CORBA�Х���ǥ��󥰤��󶡤���Ǥ�դθ���ǡ��᥽�åɤ���ӥǡ����κ�������ӸƽФ���Ԥ����Ȥ��Ǥ��ޤ��������θ���ˤϡ�Java�����C++���ޤޤ�Ƥ��ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/mapping/jidlMapping\&.html��
-��Java IDL: IDL to Java Language Mapping�פ򻲾Ȥ��Ƥ�������
+\fIrmic\fRコマンドによって、指定したクラスおよび参照されたクラスのOMG IDLが生成されます。IDLでは、プログラミング言語に依存せずに、宣言するだけでオブジェクトのAPIを指定することができます。IDLは、メソッドおよびデータの仕様として使用します。CORBAバインディングを提供する任意の言語で、メソッドおよびデータの作成および呼出しを行うことができます。これらの言語には、JavaおよびC++が含まれています。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/mapping/jidlMapping\&.htmlの
+「Java IDL: IDL to Java Language Mapping」を参照してください
 .sp
-\fI\-idl\fR���ץ�������Ѥ���Ȥ��ˤϡ�¾�Υ��ץ��������Ǥ��ޤ���
+\fI\-idl\fRオプションを使用するときには、他のオプションも指定できます。
 .sp
 .RS 4
 .ie n \{\
@@ -152,7 +152,7 @@ rmic \-d /java/classes exampleclass\&.MyClass
 .sp -1
 .IP \(bu 2.3
 .\}
-��¸�Υ�����/Tie/IDL�����ϥ��饹���⿷�������Ǥ⡢\fI\-always\fR�ޤ���\fI\-alwaysgenerate\fR���ץ����Ϻ������������ޤ���
+既存のスタブ/Tie/IDLが入力クラスよりも新しい場合でも、\fI\-always\fRまたは\fI\-alwaysgenerate\fRオプションは再生成を強制します。
 .RE
 .sp
 .RS 4
@@ -163,7 +163,7 @@ rmic \-d /java/classes exampleclass\&.MyClass
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-factory\fR���ץ����ϡ��������줿IDL��\fIfactory\fR������ɤ���Ѥ��ޤ���
+\fI\-factory\fRオプションは、生成されたIDLで\fIfactory\fRキーワードを使用します。
 .RE
 .sp
 .RS 4
@@ -204,9 +204,9 @@ file mapping, for example:
 .PP
 \-iiop
 .RS 4
-\fIrmic\fR���ޥ�ɤˤ�äơ�JRMP�Υ����֤ȥ�����ȥ󡦥��饹�Τ����ˡ�IIOP�Υ����֤�Tie���饹����������ޤ��������֡����饹�ϡ���⡼�ȡ����֥������ȤΥ������롦�ץ������ǡ����饤����Ȥ��饵���С��˸ƽФ�����������Ȥ��˻��Ѥ���ޤ����ƥ�⡼�ȡ����󥿥ե������ˤϥ����֡����饹��ɬ�פǤ��������֡����饹�ˤ�äƥ�⡼�ȡ����󥿥ե���������������ޤ������饤����Ȥǥ�⡼�ȡ����֥������Ȥ򻲾Ȥ���Ȥ��ϡ������֤򻲾Ȥ��뤳�Ȥˤʤ�ޤ������������饹�ϡ������С�¦����Ƥ�����������θƽФ���Ŭ�ڤʼ������饹�˥ǥ����ѥå�����Ȥ��˻��Ѥ���ޤ����Ƽ������饹�ˤϡ����������饹��ɬ�פǤ���
+\fIrmic\fRコマンドによって、JRMPのスタブとスケルトン・クラスのかわりに、IIOPのスタブとTieクラスが生成されます。スタブ・クラスは、リモート・オブジェクトのローカル・プロキシで、クライアントからサーバーに呼出しを送信するときに使用されます。各リモート・インタフェースにはスタブ・クラスが必要です。スタブ・クラスによってリモート・インタフェースが実装されます。クライアントでリモート・オブジェクトを参照するときは、スタブを参照することになります。タイ・クラスは、サーバー側で着呼を処理し、その呼出しを適切な実装クラスにディスパッチするときに使用されます。各実装クラスには、タイ・クラスが必要です。
 .sp
-\fI\-iiop\fR����Ѥ���\fIrmic\fR���ޥ�ɤ�ƤӽФ��ȡ�����̿̾��§�˽�򤷤������֤�Tie����������ޤ���
+\fI\-iiop\fRを使用して\fIrmic\fRコマンドを呼び出すと、次の命名規則に準拠したスタブとTieが生成されます。
 .sp
 .if n \{\
 .RS 4
@@ -227,7 +227,7 @@ _<interfaceName>_tie\&.class
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-iiop\fR���ץ�������Ѥ���Ȥ��ˤϡ�¾�Υ��ץ��������Ǥ��ޤ���
+\fI\-iiop\fRオプションを使用するときには、他のオプションも指定できます。
 .RE
 .sp
 .RS 4
@@ -238,7 +238,7 @@ _<interfaceName>_tie\&.class
 .sp -1
 .IP \(bu 2.3
 .\}
-��¸�Υ�����/Tie/IDL�����ϥ��饹���⿷�������Ǥ⡢\fI\-always\fR�ޤ���\fI\-alwaysgenerate\fR���ץ����Ϻ������������ޤ���
+既存のスタブ/Tie/IDLが入力クラスよりも新しい場合でも、\fI\-always\fRまたは\fI\-alwaysgenerate\fRオプションは再生成を強制します。
 .RE
 .sp
 .RS 4
@@ -249,7 +249,7 @@ _<interfaceName>_tie\&.class
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-nolocalstubs\fR���ץ����Ǥϡ�Ʊ���ץ������Υ��饤����Ȥȥ����С��˺�Ŭ�����줿�����֤Ϻ�������ޤ���
+\fI\-nolocalstubs\fRオプションでは、同じプロセスのクライアントとサーバーに最適化されたスタブは作成されません。
 .RE
 .sp
 .RS 4
@@ -260,7 +260,7 @@ _<interfaceName>_tie\&.class
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-noValueMethods\fR���ץ�����\fI\-idl\fR���ץ����ȤȤ�˻��Ѥ���ɬ�פ�����ޤ���\fI\-noValueMethods\fR���ץ����ϡ����������IDL��\fIvaluetype\fR�᥽�åɤ���ӽ�����Ҥ��ɲäǤ��ʤ��褦�ˤ��ޤ������Υ᥽�åɤ���ӽ�����Ҥϡ�valuetype�ξ��ϥ��ץ����Ǥ���\fI\-idl\fR���ץ����ȤȤ��\fI\-noValueMethods\fR���ץ�������ꤷ�ʤ���������������ޤ���
+\fI\-noValueMethods\fRオプションは\fI\-idl\fRオプションとともに使用する必要があります。\fI\-noValueMethods\fRオプションは、送信されるIDLに\fIvaluetype\fRメソッドおよび初期化子を追加できないようにします。このメソッドおよび初期化子は、valuetypeの場合はオプションです。\fI\-idl\fRオプションとともに\fI\-noValueMethods\fRオプションを指定しないかぎり生成されます。
 .RE
 .sp
 .RS 4
@@ -271,57 +271,57 @@ _<interfaceName>_tie\&.class
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-poa\fR���ץ����ϷѾ���\fIorg\&.omg\&.CORBA_2_3\&.portable\&.ObjectImpl\fR����\fIorg\&.omg\&.PortableServer\&.Servant\fR���ѹ����ޤ����ݡ����֥롦���֥������ȡ������ץ�(POA)��\fIPortableServer\fR�⥸�塼��ϡ��ͥ��ƥ��֤�\fIServant\fR����������ޤ���Java�ץ�����ߥ󥰸���Ǥϡ�\fIServant\fR����Java��\fIorg\&.omg\&.PortableServer\&.Servant\fR���饹�˥ޥåפ���ޤ�������ϡ����٤Ƥ�POA�����Х�ȼ����Υ١��������饹�Ȥ��Ƶ�ǽ�������ץꥱ������󡦥ץ�����ޤ��ƤӽФ����ȤΤǤ��뤤���Ĥ��Υ᥽�åɡ������POA�ˤ�äƸƤӽФ��졢�����Х�Ȥ�ư������椹�뤿��˥桼�����������С��饤�ɤǤ���᥽�åɤ��󶡤��ޤ���OMG IDL to Java Language Mapping Specification��CORBA V 2\&.3\&.1 ptc/00\-01\-08\&.pdf�˽�򤷤Ƥ��ޤ���
+\fI\-poa\fRオプションは継承を\fIorg\&.omg\&.CORBA_2_3\&.portable\&.ObjectImpl\fRから\fIorg\&.omg\&.PortableServer\&.Servant\fRに変更します。ポータブル・オブジェクト・アダプタ(POA)の\fIPortableServer\fRモジュールは、ネイティブの\fIServant\fR型を定義します。Javaプログラミング言語では、\fIServant\fR型はJavaの\fIorg\&.omg\&.PortableServer\&.Servant\fRクラスにマップされます。これは、すべてのPOAサーバント実装のベース・クラスとして機能し、アプリケーション・プログラマが呼び出すことのできるいくつかのメソッド、およびPOAによって呼び出され、サーバントの動作を制御するためにユーザーがオーバーライドできるメソッドを提供します。OMG IDL to Java Language Mapping Specification、CORBA V 2\&.3\&.1 ptc/00\-01\-08\&.pdfに準拠しています。
 .RE
 .RE
 .PP
 \-J
 .RS 4
-Java���ޥ�ɤȤȤ�˻��Ѥ��ơ�\fI\-J\fR���ץ�����\fI\-J\fR�θ����³��������Java���󥿥ץ꥿���Ϥ��ޤ�(\fI\-J\fR�Ȱ����δ֤˥��ڡ���������ޤ���)��
+Javaコマンドとともに使用して、\fI\-J\fRオプションは\fI\-J\fRの後ろに続く引数をJavaインタプリタに渡します(\fI\-J\fRと引数の間にスペースは入れません)。
 .RE
 .PP
 \-keep or \-keepgenerated
 .RS 4
-�����֡�������ȥ󡢤ޤ���Tie���饹�Τ�����������줿\fI\&.java\fR���������ե�������ݻ�����\fI\&.class\fR�ե������Ʊ���ǥ��쥯�ȥ�˽񤭹��ߤޤ���
+スタブ、スケルトン、またはTieクラスのために生成された\fI\&.java\fRソース・ファイルを保持し、\fI\&.class\fRファイルと同じディレクトリに書き込みます。
 .RE
 .PP
 \-nowarn
 .RS 4
-�ٹ�򥪥դˤ��ޤ���\fI\-nowarn\fR���ץ���󤬻��Ѥ�����硣����ѥ���Ϸٹ��ɽ�����ޤ���
+警告をオフにします。\fI\-nowarn\fRオプションが使用される場合。コンパイラは警告を表示しません。
 .RE
 .PP
 \-nowrite
 .RS 4
-����ѥ��뤷�����饹��ե����롦�����ƥ�˽񤭹��ߤޤ���
+コンパイルしたクラスをファイル・システムに書き込みません。
 .RE
 .PP
-\-vcompat (��侩)
+\-vcompat (非推奨)
 .RS 4
-1\&.1��1\&.2��ξ����JRMP�����֡��ץ��ȥ��롦�С������ȸߴ����Τ��륹���֤���ӥ�����ȥ󡦥��饹��������ޤ���5\&.0�����Υ�꡼���ǤϤ��Υ��ץ���󤬥ǥե���ȤǤ������������줿�����֡����饹�ϡ�JDK 1\&.1���ۥޥ���˥����ɤ�����1\&.1�����֡��ץ��ȥ��롦�С���������Ѥ���JDK 1\&.2�ʹߤβ��ۥޥ���˥����ɤ�����1\&.2�����֡��ץ��ȥ��롦�С���������Ѥ��ޤ����������줿������ȥ󡦥��饹�Ǥϡ�1\&.1��1\&.2��ξ���Υ����֡��ץ��ȥ��롦�С������򥵥ݡ��Ȥ��ޤ����������줿���饹��ξ�������⡼�ɤ򥵥ݡ��Ȥ��뤿��ˡ����������礭���ʤ�ޤ�������:���Υ��ץ�������侩�ˤʤ�ޤ����������򻲾Ȥ��Ƥ���������
+1\&.1と1\&.2の両方のJRMPスタブ・プロトコル・バージョンと互換性のあるスタブおよびスケルトン・クラスを作成します。5\&.0以前のリリースではこのオプションがデフォルトでした。生成されたスタブ・クラスは、JDK 1\&.1仮想マシンにロードされると1\&.1スタブ・プロトコル・バージョンを使用し、JDK 1\&.2以降の仮想マシンにロードされると1\&.2スタブ・プロトコル・バージョンを使用します。生成されたスケルトン・クラスでは、1\&.1と1\&.2の両方のスタブ・プロトコル・バージョンをサポートします。生成されたクラスは両方の操作モードをサポートするために、サイズが大きくなります。注意:このオプションは非推奨になりました。説明を参照してください。
 .RE
 .PP
 \-verbose
 .RS 4
-����ѥ�����󥫡���������ѥ��뤵��Ƥ��륯�饹������ɤ���Ƥ��륯�饹���ե�����ˤĤ��ƤΥ�å�������ɽ������褦�ˤ��ޤ���
+コンパイラやリンカーが、コンパイルされているクラスやロードされているクラス・ファイルについてのメッセージを表示するようにします。
 .RE
 .PP
-\-v1\&.1 (��侩)
+\-v1\&.1 (非推奨)
 .RS 4
-1\&.1 JRMP�����֡��ץ��ȥ��롦�С������ΤߤΥ����֤���ӥ�����ȥ󡦥��饹���������ޤ���\fI\-v1\&.1\fR���ץ�������ѤǤ���Τϡ�JDK 1\&.1����\fIrmic\fR���ޥ�ɤ��������졢���åץ��졼�ɤǤ��ʤ�(����˥����ʥߥå������饹�������ǥ��󥰤���Ѥ��Ƥ��ʤ�)����¸����Ū�ǥץ������줿�����֡����饹���Ф���ľ�󲽸ߴ����Τ��륹���֡����饹������������ΤߤǤ�������:���Υ��ץ�������侩�ˤʤ�ޤ����������򻲾Ȥ��Ƥ���������
+1\&.1 JRMPスタブ・プロトコル・バージョンのみのスタブおよびスケルトン・クラスを生成します。\fI\-v1\&.1\fRオプションを使用できるのは、JDK 1\&.1から\fIrmic\fRコマンドで生成され、アップグレードできない(さらにダイナミック・クラス・ローディングを使用していない)、既存の静的デプロイされたスタブ・クラスに対し、直列化互換性のあるスタブ・クラスを生成する場合のみです。注意:このオプションは非推奨になりました。説明を参照してください。
 .RE
 .PP
-\-v1\&.2 (��侩)
+\-v1\&.2 (非推奨)
 .RS 4
-(�ǥե����)1\&.2 JRMP�����֡��ץ��ȥ��롦�С������ΤߤΥ����֡����饹���������ޤ���������ȥ󡦥��饹��1\&.2�����֡��ץ��ȥ��롦�С������ǻ��ѤǤ��ʤ����ᡢ������ȥ󡦥��饹����������ޤ����������줿�����֡����饹�ϡ�JDK 1\&.1���ۥޥ���˥����ɤ���Ƥ�ư��ޤ�������:���Υ��ץ�������侩�ˤʤ�ޤ����������򻲾Ȥ��Ƥ���������
+(デフォルト)1\&.2 JRMPスタブ・プロトコル・バージョンのみのスタブ・クラスを生成します。スケルトン・クラスは1\&.2スタブ・プロトコル・バージョンで使用できないため、スケルトン・クラスは生成されません。生成されたスタブ・クラスは、JDK 1\&.1仮想マシンにロードされても動作しません。注意:このオプションは非推奨になりました。説明を参照してください。
 .RE
-.SH "�Ķ��ѿ�"
+.SH "環境変数"
 .PP
 CLASSPATH
 .RS 4
-�桼����������饹�ؤΥѥ��򥷥��ƥ�˻��ꤷ�ޤ����ǥ��쥯�ȥ�ϥ�����Ƕ��ڤ��ޤ�����:
+ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで区切られます。例:
 \fI\&.:/usr/local/java/classes\fR
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

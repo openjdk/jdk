@@ -48,6 +48,10 @@ public class Platform {
         return vmName.endsWith(" Graal VM");
     }
 
+    public static boolean isZero() {
+        return vmName.endsWith(" Zero VM");
+    }
+
     public static boolean isMinimal() {
         return vmName.endsWith(" Minimal VM");
     }

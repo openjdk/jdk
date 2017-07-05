@@ -459,7 +459,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         // NOTE: regardless of operator's lexical associativity, lhs is always evaluated first.
         final Expression lhs = binaryNode.lhs();
         final LvarType lhsType;
-        if (!(lhs instanceof IdentNode && binaryNode.tokenType() == TokenType.ASSIGN)) {
+        if (!(lhs instanceof IdentNode && binaryNode.isTokenType(TokenType.ASSIGN))) {
             lhsType = visitExpression(lhs);
         } else {
             // Can't visit IdentNode on LHS of a simple assignment, as visits imply use, and this is def.

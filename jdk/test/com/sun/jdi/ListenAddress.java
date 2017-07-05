@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test that startListening(Map) method of the com.sun.jdi.SocketListen
  *          Connector returns an address that is usable for the address option on
  *          remove debuggees.
+ * @modules jdk.jdi
  */
 import java.net.InetAddress;
 import java.net.Inet4Address;

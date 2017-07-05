@@ -27,6 +27,7 @@
  * @summary test isModifiableClass
  * @author Robert Field, Sun Microsystems
  *
+ * @modules java.instrument
  * @run build IsModifiableClassApp IsModifiableClassAgent
  * @run shell MakeJAR3.sh IsModifiableClassAgent 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:IsModifiableClassAgent.jar IsModifiableClassApp

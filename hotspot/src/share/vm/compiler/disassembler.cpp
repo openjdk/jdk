@@ -300,6 +300,7 @@ address decode_env::handle_event(const char* event, address arg) {
         strlen((const char*)arg) > sizeof(buffer) - 1) {
       // Only print this when the mach changes
       strncpy(buffer, (const char*)arg, sizeof(buffer) - 1);
+      buffer[sizeof(buffer) - 1] = '\0';
       output()->print_cr("[Disassembling for mach='%s']", arg);
     }
   } else if (match(event, "format bytes-per-line")) {

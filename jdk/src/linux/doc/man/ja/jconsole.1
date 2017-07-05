@@ -2,10 +2,10 @@
 .\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jconsole
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java�ȥ�֥륷�塼�ƥ��󥰡��ץ��ե�����󥰡���˥���󥰤���Ӵ����ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Javaトラブルシューティング、プロファイリング、モニタリングおよび管理ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jconsole" "1" "2013ǯ11��21��" "JDK 8" "Java�ȥ�֥륷�塼�ƥ��󥰡��ץ��ե�����󥰡���˥����"
+.TH "jconsole" "1" "2013年11月21日" "JDK 8" "Javaトラブルシューティング、プロファイリング、モニタリン"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jconsole \- Java���ץꥱ��������ƻ뤪��Ӵ������뤿��Υ���ե����롦���󥽡���򳫻Ϥ��ޤ���
-.SH "����"
+jconsole \- Javaアプリケーションを監視および管理するためのグラフィカル・コンソールを開始します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,56 +64,56 @@ jconsole \- Java���ץꥱ��������ƻ뤪��Ӵ������뤿��Υ���ե����롦���󥽡�
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 connection = \fIpid\fR | \fIhost\fR:\fIport\fR | \fIjmxURL\fR
 .RS 4
-\fIpid\fR�ͤϥ��������Java���ۥޥ���(JVM)�Υץ�����ID�Ǥ���JVM��\fIjconsole\fR���ޥ�ɤ�¹Ԥ��Ƥ���桼����ID��Ʊ���桼����ID�Ǽ¹Ԥ���ɬ�פ�����ޤ���\fIhost:port\fR�ͤ�JVM��ư��Ƥ���ۥ��ȡ������ƥ��̾���ȡ�JVM�����Ϥ����Ȥ��˥����ƥࡦ�ץ��ѥƥ�\fIcom\&.sun\&.management\&.jmxremote\&.port\fR�ǻ��ꤷ���ݡ����ֹ�Ǥ���\fIjmxUrl\fR�ͤϡ�JMXServiceURL�ǵ��Ҥ���Ƥ��롢��³�����JMX����������ȤΥ��ɥ쥹�Ǥ���
+\fIpid\fR値はローカルのJava仮想マシン(JVM)のプロセスIDです。JVMは\fIjconsole\fRコマンドを実行しているユーザーIDと同じユーザーIDで実行する必要があります。\fIhost:port\fR値はJVMが動作しているホスト・システムの名前と、JVMが開始したときにシステム・プロパティ\fIcom\&.sun\&.management\&.jmxremote\&.port\fRで指定したポート番号です。\fIjmxUrl\fR値は、JMXServiceURLで記述されている、接続されるJMXエージェントのアドレスです。
 .sp
-\fIconnection\fR�ѥ�᡼���ξܺ٤ϡ�JMX�ƥ��Υ�������Ѥ�����˥���󥰤���Ӵ���
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/agent\&.html)�򻲾Ȥ��Ƥ�������
+\fIconnection\fRパラメータの詳細は、JMXテクノロジを使用したモニタリングおよび管理
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/agent\&.html)を参照してください
 .sp
-\fIJMXServiceURL\fR���饹������(
-http://docs\&.oracle\&.com/javase/8/docs/api/javax/management/remote/JMXServiceURL\&.html)�⻲�Ȥ��Ƥ�������
+\fIJMXServiceURL\fRクラスの説明(
+http://docs\&.oracle\&.com/javase/8/docs/api/javax/management/remote/JMXServiceURL\&.html)も参照してください
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjconsole\fR���ޥ�ɤϡ��������롦�ޥ���ޤ��ϥ�⡼�ȡ��ޥ�����Java���ץꥱ�������Ȳ��ۥޥ���δƻ�ȴ�����Ԥ�����ե����롦���󥽡��롦�ġ����ư���ޤ���
+\fIjconsole\fRコマンドは、ローカル・マシンまたはリモート・マシン上のJavaアプリケーションと仮想マシンの監視と管理を行うグラフィカル・コンソール・ツールを起動します。
 .PP
-Windows��Ǥϡ�\fIjconsole\fR���ޥ�ɤϥ��󥽡��롦������ɥ��ȴ�Ϣ�դ����Ƥ��ޤ��󡣤�������\fIjconsole\fR���ޥ�ɤ����Ԥ���ȡ����顼����򼨤��������������ܥå�����ɽ������ޤ���
-.SH "���ץ����"
+Windows上では、\fIjconsole\fRコマンドはコンソール・ウィンドウと関連付けられていません。ただし、\fIjconsole\fRコマンドが失敗すると、エラー情報を示すダイアログ・ボックスが表示されます。
+.SH "オプション"
 .PP
 \-interval\fI=n\fR
 .RS 4
-�����ֳ֤�\fIn\fR�ä����ꤷ�ޤ�(�ǥե���Ȥ�4��)��
+更新間隔を\fIn\fR秒に設定します(デフォルトは4秒)。
 .RE
 .PP
 \-notile
 .RS 4
-�ǽ�˥�����ɥ��򥿥���󥰤��ޤ���(ʣ����³�ξ��)��
+最初にウィンドウをタイリングしません(複数接続の場合)。
 .RE
 .PP
 \-pluginpath \fIplugins\fR
 .RS 4
-\fIJConsole\fR�ץ饰����򸡺�����ǥ��쥯�ȥ�ޤ���JAR�ե�����Υꥹ�Ȥ���ꤷ�ޤ���\fIplugins\fR�ѥ��ˤ�\fIMETA\-INF/services/com\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fR�Ȥ���̾���Υץ��Х��������ե������ޤ�Ǥ���ɬ�פ����ꡢ����ˤϥץ饰���󤴤Ȥ�1�Ԥ��ޤޤ�Ƥ��ޤ������ιԤ�\fIcom\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fR���饹��������Ƥ��륯�饹�δ����������饹̾����ꤷ�ޤ���
+\fIJConsole\fRプラグインを検索するディレクトリまたはJARファイルのリストを指定します。\fIplugins\fRパスには\fIMETA\-INF/services/com\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fRという名前のプロバイダ構成ファイルを含んでいる必要があり、これにはプラグインごとに1行が含まれています。その行は\fIcom\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fRクラスを実装しているクラスの完全修飾クラス名を指定します。
 .RE
 .PP
 \-version
 .RS 4
-��꡼�������ɽ�����ƽ�λ���ޤ���
+リリース情報を表示して終了します。
 .RE
 .PP
 \-help
 .RS 4
-�إ�ס���å�������ɽ�����ޤ���
+ヘルプ・メッセージを表示します。
 .RE
 .PP
 \-J\fIflag\fR
 .RS 4
-\fIjconsole\fR���ޥ�ɤ�¹Ԥ���JVM��\fIflag\fR���Ϥ��ޤ���
+\fIjconsole\fRコマンドを実行したJVMに\fIflag\fRを渡します。
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -123,7 +123,7 @@ Windows��Ǥϡ�\fIjconsole\fR���ޥ�ɤϥ��󥽡��롦������ɥ��ȴ�Ϣ�դ����Ƥ��
 .sp -1
 .IP \(bu 2.3
 .\}
-JConsole�λ���
+JConsoleの使用
 (http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/jconsole\&.html)
 .RE
 .sp
@@ -135,7 +135,7 @@ JConsole�λ���
 .sp -1
 .IP \(bu 2.3
 .\}
-JMX�ƥ��Υ�������Ѥ�����˥���󥰤���Ӵ���
+JMXテクノロジを使用したモニタリングおよび管理
 
 (http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/agent\&.html)
 .RE
@@ -148,7 +148,7 @@ JMX�ƥ��Υ�������Ѥ�����˥���󥰤���Ӵ���
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIJMXServiceURL\fR���饹������(
+\fIJMXServiceURL\fRクラスの説明(
 http://docs\&.oracle\&.com/javase/8/docs/api/javax/management/remote/JMXServiceURL\&.html)
 .RE
 .br

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,9 +167,8 @@ class MacroAssembler: public Assembler {
 
   // aliases defined in AARCH64 spec
 
-
   template<class T>
-  inline void  cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
+  inline void cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
   inline void cmp(Register Rd, unsigned imm)  { subs(zr, Rd, imm); }
 
   inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
@@ -1121,9 +1120,34 @@ public:
                       Register tmp1, Register tmp2,
                       Register tmp3, Register tmp4,
                       int int_cnt1, Register result);
-
+private:
+  void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
+                       Register src1, Register src2);
+  void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2) {
+    add2_with_carry(dest_hi, dest_hi, dest_lo, src1, src2);
+  }
+  void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
+                             Register y, Register y_idx, Register z,
+                             Register carry, Register product,
+                             Register idx, Register kdx);
+  void multiply_128_x_128_loop(Register y, Register z,
+                               Register carry, Register carry2,
+                               Register idx, Register jdx,
+                               Register yz_idx1, Register yz_idx2,
+                               Register tmp, Register tmp3, Register tmp4,
+                               Register tmp7, Register product_hi);
+public:
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
+                       Register zlen, Register tmp1, Register tmp2, Register tmp3,
+                       Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   // ISB may be needed because of a safepoint
   void maybe_isb() { isb(); }
+
+private:
+  // Return the effective address r + (r1 << ext) + offset.
+  // Uses rscratch2.
+  Address offsetted_address(Register r, Register r1, Address::extend ext,
+                            int offset, int size);
 };
 
 // Used by aarch64.ad to control code generation

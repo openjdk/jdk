@@ -28,7 +28,7 @@
 #include "gc_implementation/concurrentMarkSweep/adaptiveFreeList.hpp"
 #include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
 #include "memory/binaryTreeDictionary.hpp"
-#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/blockOffsetTable.hpp"
 #include "memory/freeList.hpp"
 #include "memory/space.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   assert(has_partial_array_mask(p), "invariant");
   oop from_obj = clear_partial_array_mask(p);
 
-  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
+  assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
   assert(from_obj->is_objArray(), "must be obj array");
   objArrayOop from_obj_array = objArrayOop(from_obj);
   // The from-space object contains the real length.

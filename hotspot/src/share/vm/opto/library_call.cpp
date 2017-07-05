@@ -262,6 +262,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_arraycopy();
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
                                                 RegionNode* slow_region);
+  JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
+  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp);
+
   typedef enum { LS_xadd, LS_xchg, LS_cmpxchg } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind);
   bool inline_unsafe_ordered_store(BasicType type);
@@ -290,6 +293,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_multiplyToLen();
 
   bool inline_profileBoolean();
+  bool inline_isCompileConstant();
 };
 
 
@@ -549,6 +553,17 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!Matcher::match_rule_supported(Op_OverflowMulL) || !UseMathExactIntrinsics) return NULL;
     break;
 
+  case vmIntrinsics::_getShortUnaligned:
+  case vmIntrinsics::_getCharUnaligned:
+  case vmIntrinsics::_getIntUnaligned:
+  case vmIntrinsics::_getLongUnaligned:
+  case vmIntrinsics::_putShortUnaligned:
+  case vmIntrinsics::_putCharUnaligned:
+  case vmIntrinsics::_putIntUnaligned:
+  case vmIntrinsics::_putLongUnaligned:
+    if (!UseUnalignedAccesses) return NULL;
+    break;
+
  default:
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
     assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
@@ -799,6 +814,16 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access(!is_native_ptr,  is_store, T_FLOAT,    is_volatile);
   case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access(!is_native_ptr,  is_store, T_DOUBLE,   is_volatile);
 
+  case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_native_ptr, !is_store, T_SHORT,   !is_volatile);
+  case vmIntrinsics::_getCharUnaligned:         return inline_unsafe_access(!is_native_ptr, !is_store, T_CHAR,    !is_volatile);
+  case vmIntrinsics::_getIntUnaligned:          return inline_unsafe_access(!is_native_ptr, !is_store, T_INT,     !is_volatile);
+  case vmIntrinsics::_getLongUnaligned:         return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,    !is_volatile);
+
+  case vmIntrinsics::_putShortUnaligned:        return inline_unsafe_access(!is_native_ptr,  is_store, T_SHORT,   !is_volatile);
+  case vmIntrinsics::_putCharUnaligned:         return inline_unsafe_access(!is_native_ptr,  is_store, T_CHAR,    !is_volatile);
+  case vmIntrinsics::_putIntUnaligned:          return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,     !is_volatile);
+  case vmIntrinsics::_putLongUnaligned:         return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,    !is_volatile);
+
   case vmIntrinsics::_compareAndSwapObject:     return inline_unsafe_load_store(T_OBJECT, LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapInt:        return inline_unsafe_load_store(T_INT,    LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapLong:       return inline_unsafe_load_store(T_LONG,   LS_cmpxchg);
@@ -900,6 +925,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
+  case vmIntrinsics::_isCompileConstant:
+    return inline_isCompileConstant();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -3664,6 +3691,11 @@ bool LibraryCallKit::inline_native_subtype_check() {
 //---------------------generate_array_guard_common------------------------
 Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
                                                   bool obj_array, bool not_array) {
+
+  if (stopped()) {
+    return NULL;
+  }
+
   // If obj_array/non_array==false/false:
   // Branch around if the given klass is in fact an array (either obj or prim).
   // If obj_array/non_array==false/true:
@@ -3911,21 +3943,23 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
         validated = true;
       }
 
-      newcopy = new_array(klass_node, length, 0);  // no arguments to push
+      if (!stopped()) {
+        newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
-      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
-                                              load_object_klass(original), klass_node);
-      if (!is_copyOfRange) {
-        ac->set_copyof(validated);
-      } else {
-        ac->set_copyofrange(validated);
-      }
-      Node* n = _gvn.transform(ac);
-      if (n == ac) {
-        ac->connect_outputs(this);
-      } else {
-        assert(validated, "shouldn't transform if all arguments not validated");
-        set_all_memory(n);
+        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true,
+                                                load_object_klass(original), klass_node);
+        if (!is_copyOfRange) {
+          ac->set_copyof(validated);
+        } else {
+          ac->set_copyofrange(validated);
+        }
+        Node* n = _gvn.transform(ac);
+        if (n == ac) {
+          ac->connect_outputs(this);
+        } else {
+          assert(validated, "shouldn't transform if all arguments not validated");
+          set_all_memory(n);
+        }
       }
     }
   } // original reexecute is set back here
@@ -4674,6 +4708,141 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   return true;
 }
 
+// If we have a tighly coupled allocation, the arraycopy may take care
+// of the array initialization. If one of the guards we insert between
+// the allocation and the arraycopy causes a deoptimization, an
+// unitialized array will escape the compiled method. To prevent that
+// we set the JVM state for uncommon traps between the allocation and
+// the arraycopy to the state before the allocation so, in case of
+// deoptimization, we'll reexecute the allocation and the
+// initialization.
+JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp) {
+  if (alloc != NULL) {
+    ciMethod* trap_method = alloc->jvms()->method();
+    int trap_bci = alloc->jvms()->bci();
+
+    if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &
+          !C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_null_check)) {
+      // Make sure there's no store between the allocation and the
+      // arraycopy otherwise visible side effects could be rexecuted
+      // in case of deoptimization and cause incorrect execution.
+      bool no_interfering_store = true;
+      Node* mem = alloc->in(TypeFunc::Memory);
+      if (mem->is_MergeMem()) {
+        for (MergeMemStream mms(merged_memory(), mem->as_MergeMem()); mms.next_non_empty2(); ) {
+          Node* n = mms.memory();
+          if (n != mms.memory2() && !(n->is_Proj() && n->in(0) == alloc->initialization())) {
+            assert(n->is_Store(), "what else?");
+            no_interfering_store = false;
+            break;
+          }
+        }
+      } else {
+        for (MergeMemStream mms(merged_memory()); mms.next_non_empty(); ) {
+          Node* n = mms.memory();
+          if (n != mem && !(n->is_Proj() && n->in(0) == alloc->initialization())) {
+            assert(n->is_Store(), "what else?");
+            no_interfering_store = false;
+            break;
+          }
+        }
+      }
+
+      if (no_interfering_store) {
+        JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
+        uint size = alloc->req();
+        SafePointNode* sfpt = new SafePointNode(size, old_jvms);
+        old_jvms->set_map(sfpt);
+        for (uint i = 0; i < size; i++) {
+          sfpt->init_req(i, alloc->in(i));
+        }
+        // re-push array length for deoptimization
+        sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
+        old_jvms->set_sp(old_jvms->sp()+1);
+        old_jvms->set_monoff(old_jvms->monoff()+1);
+        old_jvms->set_scloff(old_jvms->scloff()+1);
+        old_jvms->set_endoff(old_jvms->endoff()+1);
+        old_jvms->set_should_reexecute(true);
+
+        sfpt->set_i_o(map()->i_o());
+        sfpt->set_memory(map()->memory());
+        sfpt->set_control(map()->control());
+
+        JVMState* saved_jvms = jvms();
+        saved_reexecute_sp = _reexecute_sp;
+
+        set_jvms(sfpt->jvms());
+        _reexecute_sp = jvms()->sp();
+
+        return saved_jvms;
+      }
+    }
+  }
+  return NULL;
+}
+
+// In case of a deoptimization, we restart execution at the
+// allocation, allocating a new array. We would leave an uninitialized
+// array in the heap that GCs wouldn't expect. Move the allocation
+// after the traps so we don't allocate the array if we
+// deoptimize. This is possible because tightly_coupled_allocation()
+// guarantees there's no observer of the allocated array at this point
+// and the control flow is simple enough.
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp) {
+  if (saved_jvms != NULL && !stopped()) {
+    assert(alloc != NULL, "only with a tightly coupled allocation");
+    // restore JVM state to the state at the arraycopy
+    saved_jvms->map()->set_control(map()->control());
+    assert(saved_jvms->map()->memory() == map()->memory(), "memory state changed?");
+    assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
+    // If we've improved the types of some nodes (null check) while
+    // emitting the guards, propagate them to the current state
+    map()->replaced_nodes().apply(saved_jvms->map());
+    set_jvms(saved_jvms);
+    _reexecute_sp = saved_reexecute_sp;
+
+    // Remove the allocation from above the guards
+    CallProjections callprojs;
+    alloc->extract_projections(&callprojs, true);
+    InitializeNode* init = alloc->initialization();
+    Node* alloc_mem = alloc->in(TypeFunc::Memory);
+    C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
+    C->gvn_replace_by(init->proj_out(TypeFunc::Memory), alloc_mem);
+    C->gvn_replace_by(init->proj_out(TypeFunc::Control), alloc->in(0));
+
+    // move the allocation here (after the guards)
+    _gvn.hash_delete(alloc);
+    alloc->set_req(TypeFunc::Control, control());
+    alloc->set_req(TypeFunc::I_O, i_o());
+    Node *mem = reset_memory();
+    set_all_memory(mem);
+    alloc->set_req(TypeFunc::Memory, mem);
+    set_control(init->proj_out(TypeFunc::Control));
+    set_i_o(callprojs.fallthrough_ioproj);
+
+    // Update memory as done in GraphKit::set_output_for_allocation()
+    const TypeInt* length_type = _gvn.find_int_type(alloc->in(AllocateNode::ALength));
+    const TypeOopPtr* ary_type = _gvn.type(alloc->in(AllocateNode::KlassNode))->is_klassptr()->as_instance_type();
+    if (ary_type->isa_aryptr() && length_type != NULL) {
+      ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
+    }
+    const TypePtr* telemref = ary_type->add_offset(Type::OffsetBot);
+    int            elemidx  = C->get_alias_index(telemref);
+    set_memory(init->proj_out(TypeFunc::Memory), Compile::AliasIdxRaw);
+    set_memory(init->proj_out(TypeFunc::Memory), elemidx);
+
+    Node* allocx = _gvn.transform(alloc);
+    assert(allocx == alloc, "where has the allocation gone?");
+    assert(dest->is_CheckCastPP(), "not an allocation result?");
+
+    _gvn.hash_delete(dest);
+    dest->set_req(0, control());
+    Node* destx = _gvn.transform(dest);
+    assert(destx == dest, "where has the allocation result gone?");
+  }
+}
+
+
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
 //                                                      Object dest, int destPos,
@@ -4685,6 +4854,19 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest        = argument(2);  // type: oop
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
+
+
+  // Check for allocation before we add nodes that would confuse
+  // tightly_coupled_allocation()
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+
+  int saved_reexecute_sp = -1;
+  JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
+  // See arraycopy_restore_alloc_state() comment
+  // if alloc == NULL we don't have to worry about a tightly coupled allocation so we can emit all needed guards
+  // if saved_jvms != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
+  // if saved_jvms == NULL and alloc != NULL, we can’t emit any guards
+  bool can_emit_guards = (alloc == NULL || saved_jvms != NULL);
 
   // The following tests must be performed
   // (1) src and dest are arrays.
@@ -4699,42 +4881,20 @@ bool LibraryCallKit::inline_arraycopy() {
 
   // (3) src and dest must not be null.
   // always do this here because we need the JVM state for uncommon traps
-  src  = null_check(src,  T_ARRAY);
+  Node* null_ctl = top();
+  src  = saved_jvms != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src,  T_ARRAY);
+  assert(null_ctl->is_top(), "no null control here");
   dest = null_check(dest, T_ARRAY);
 
-  // Check for allocation before we add nodes that would confuse
-  // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
-
-  ciMethod* trap_method = method();
-  int trap_bci = bci();
-  SafePointNode* sfpt = NULL;
-  if (alloc != NULL) {
-    // The JVM state for uncommon traps between the allocation and
-    // arraycopy is set to the state before the allocation: if the
-    // initialization is performed by the array copy, we don't want to
-    // go back to the interpreter with an unitialized array.
-    JVMState* old_jvms = alloc->jvms();
-    JVMState* jvms = old_jvms->clone_shallow(C);
-    uint size = alloc->req();
-    sfpt = new SafePointNode(size, jvms);
-    jvms->set_map(sfpt);
-    for (uint i = 0; i < size; i++) {
-      sfpt->init_req(i, alloc->in(i));
-    }
-    // re-push array length for deoptimization
-    sfpt->ins_req(jvms->stkoff() + jvms->sp(), alloc->in(AllocateNode::ALength));
-    jvms->set_sp(jvms->sp()+1);
-    jvms->set_monoff(jvms->monoff()+1);
-    jvms->set_scloff(jvms->scloff()+1);
-    jvms->set_endoff(jvms->endoff()+1);
-    jvms->set_should_reexecute(true);
-
-    sfpt->set_i_o(map()->i_o());
-    sfpt->set_memory(map()->memory());
-
-    trap_method = jvms->method();
-    trap_bci = jvms->bci();
+  if (!can_emit_guards) {
+    // if saved_jvms == NULL and alloc != NULL, we don't emit any
+    // guards but the arraycopy node could still take advantage of a
+    // tightly allocated allocation. tightly_coupled_allocation() is
+    // called again to make sure it takes the null check above into
+    // account: the null check is mandatory and if it caused an
+    // uncommon trap to be emitted then the allocation can't be
+    // considered tightly coupled in this context.
+    alloc = tightly_coupled_allocation(dest, NULL);
   }
 
   bool validated = false;
@@ -4753,7 +4913,7 @@ bool LibraryCallKit::inline_arraycopy() {
   // Is the type for dest from speculation?
   bool dest_spec = false;
 
-  if (!has_src || !has_dest) {
+  if ((!has_src || !has_dest) && can_emit_guards) {
     // We don't have sufficient type information, let's see if
     // speculative types can help. We need to have types for both src
     // and dest so that it pays off.
@@ -4782,7 +4942,7 @@ bool LibraryCallKit::inline_arraycopy() {
     if (could_have_src && could_have_dest) {
       // This is going to pay off so emit the required guards
       if (!has_src) {
-        src = maybe_cast_profiled_obj(src, src_k, true, sfpt);
+        src = maybe_cast_profiled_obj(src, src_k, true);
         src_type  = _gvn.type(src);
         top_src  = src_type->isa_aryptr();
         has_src = (top_src != NULL && top_src->klass() != NULL);
@@ -4798,7 +4958,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  if (has_src && has_dest) {
+  if (has_src && has_dest && can_emit_guards) {
     BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
     BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
     if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
@@ -4830,7 +4990,7 @@ bool LibraryCallKit::inline_arraycopy() {
       if (could_have_src && could_have_dest) {
         // If we can have both exact types, emit the missing guards
         if (could_have_src && !src_spec) {
-          src = maybe_cast_profiled_obj(src, src_k, true, sfpt);
+          src = maybe_cast_profiled_obj(src, src_k, true);
         }
         if (could_have_dest && !dest_spec) {
           dest = maybe_cast_profiled_obj(dest, dest_k, true);
@@ -4839,7 +4999,16 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
+  ciMethod* trap_method = method();
+  int trap_bci = bci();
+  if (saved_jvms != NULL) {
+    trap_method = alloc->jvms()->method();
+    trap_bci = alloc->jvms()->bci();
+  }
+
+  if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
+      can_emit_guards &&
+      !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode
     validated = true;
 
@@ -4875,28 +5044,13 @@ bool LibraryCallKit::inline_arraycopy() {
     Node* not_subtype_ctrl = gen_subtype_check(src_klass, dest_klass);
 
     if (not_subtype_ctrl != top()) {
-      if (sfpt != NULL) {
-        GraphKit kit(sfpt->jvms());
-        PreserveJVMState pjvms(&kit);
-        kit.set_control(not_subtype_ctrl);
-        kit.uncommon_trap(Deoptimization::Reason_intrinsic,
-                          Deoptimization::Action_make_not_entrant);
-        assert(kit.stopped(), "Should be stopped");
-      } else {
-        PreserveJVMState pjvms(this);
-        set_control(not_subtype_ctrl);
-        uncommon_trap(Deoptimization::Reason_intrinsic,
-                      Deoptimization::Action_make_not_entrant);
-        assert(stopped(), "Should be stopped");
-      }
+      PreserveJVMState pjvms(this);
+      set_control(not_subtype_ctrl);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+      assert(stopped(), "Should be stopped");
     }
-    if (sfpt != NULL) {
-      GraphKit kit(sfpt->jvms());
-      kit.set_control(_gvn.transform(slow_region));
-      kit.uncommon_trap(Deoptimization::Reason_intrinsic,
-                        Deoptimization::Action_make_not_entrant);
-      assert(kit.stopped(), "Should be stopped");
-    } else {
+    {
       PreserveJVMState pjvms(this);
       set_control(_gvn.transform(slow_region));
       uncommon_trap(Deoptimization::Reason_intrinsic,
@@ -4904,6 +5058,8 @@ bool LibraryCallKit::inline_arraycopy() {
       assert(stopped(), "Should be stopped");
     }
   }
+
+  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp);
 
   if (stopped()) {
     return true;
@@ -5870,12 +6026,46 @@ bool LibraryCallKit::inline_profileBoolean() {
                           Deoptimization::Action_reinterpret);
       return true;
     }
+
+    // result is a boolean (0 or 1) and its profile (false_cnt & true_cnt)
+    // is a number of each value occurrences.
+    Node* result = argument(0);
+    if (false_cnt == 0 || true_cnt == 0) {
+      // According to profile, one value has been never seen.
+      int expected_val = (false_cnt == 0) ? 1 : 0;
+
+      Node* cmp  = _gvn.transform(new CmpINode(result, intcon(expected_val)));
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+
+      IfNode* check = create_and_map_if(control(), test, PROB_ALWAYS, COUNT_UNKNOWN);
+      Node* fast_path = _gvn.transform(new IfTrueNode(check));
+      Node* slow_path = _gvn.transform(new IfFalseNode(check));
+
+      { // Slow path: uncommon trap for never seen value and then reexecute
+        // MethodHandleImpl::profileBoolean() to bump the count, so JIT knows
+        // the value has been seen at least once.
+        PreserveJVMState pjvms(this);
+        PreserveReexecuteState preexecs(this);
+        jvms()->set_should_reexecute(true);
+
+        set_control(slow_path);
+        set_i_o(i_o());
+
+        uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                            Deoptimization::Action_reinterpret);
+      }
+      // The guard for never seen value enables sharpening of the result and
+      // returning a constant. It allows to eliminate branches on the same value
+      // later on.
+      set_control(fast_path);
+      result = intcon(expected_val);
+    }
     // Stop profiling.
-    // MethodHandleImpl::profileBoolean() has profiling logic in it's bytecode.
-    // By replacing method's body with profile data (represented as ProfileBooleanNode
+    // MethodHandleImpl::profileBoolean() has profiling logic in its bytecode.
+    // By replacing method body with profile data (represented as ProfileBooleanNode
     // on IR level) we effectively disable profiling.
     // It enables full speed execution once optimized code is generated.
-    Node* profile = _gvn.transform(new ProfileBooleanNode(argument(0), false_cnt, true_cnt));
+    Node* profile = _gvn.transform(new ProfileBooleanNode(result, false_cnt, true_cnt));
     C->record_for_igvn(profile);
     set_result(profile);
     return true;
@@ -5887,4 +6077,10 @@ bool LibraryCallKit::inline_profileBoolean() {
     // isn't a compile-time constant.
     return false;
   }
+}
+
+bool LibraryCallKit::inline_isCompileConstant() {
+  Node* n = argument(0);
+  set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
 }

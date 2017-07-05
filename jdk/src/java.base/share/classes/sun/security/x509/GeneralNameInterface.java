@@ -85,7 +85,7 @@ public interface GeneralNameInterface {
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is same type, but comparison operations are
      *          not supported for this name type.
      */
@@ -96,7 +96,7 @@ public interface GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     int subtreeDepth() throws UnsupportedOperationException;

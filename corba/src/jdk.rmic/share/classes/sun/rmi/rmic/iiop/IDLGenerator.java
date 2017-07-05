@@ -91,8 +91,8 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
 
     /**
      * Create and return a top-level type.
-     * @param env The compiler environment.
      * @param cdef The top-level class definition.
+     * @param stack The context stack.
      * @return An RemoteType or null if is non-conforming.
      */
     protected sun.rmi.rmic.iiop.CompoundType getTopType(ClassDefinition cdef,
@@ -169,7 +169,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
      * Examine and consume command line arguments.
      * @param argv The command line arguments. Ignore null
      * and unknown arguments. Set each consumed argument to null.
-     * @param error Report any errors using the main.error() methods.
+     * @param main Report any errors using the main.error() methods.
      * @return true if no errors, false otherwise.
      */
     public boolean parseArgs(String argv[], Main main) {
@@ -195,11 +195,11 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
                     else if ( argv[i].equalsIgnoreCase( "-init" ) ) {
                         factory = false;
                         argv[i] = null;
-                }
+                    }
                     else if ( argv[i].equalsIgnoreCase( "-factory" ) ) {
                         factory = true;
                         argv[i] = null;
-            }
+                    }
                     else if ( argv[i].equalsIgnoreCase( "-idlfile" ) ) {
                         argv[i] = null;
                         if ( ++i < argv.length && argv[i] != null && !argv[i].startsWith("-") ) {
@@ -210,7 +210,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
                                 argv[i] = null;
                                 ifHash.put( idlFrom,idlTo );
                                 continue nextArg;
-        }
+                            }
                         }
                         main.error("rmic.option.requires.argument", "-idlfile");
                         result = false;
@@ -403,7 +403,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
      * Write the output for the given OutputFileName into the output stream.
      * (The IDL mapping for java.lang.Class is generated from
      * javax.rmi.CORBA.ClassDesc in the tools workspace)
-     * @param OutputType ot One of the items returned by getOutputTypesFor(...)
+     * @param ot One of the items returned by getOutputTypesFor(...)
      * @param alreadyChecked A set of Types which have already been checked.
      *  Intended to be passed to Type.collectMatching(filter,alreadyChecked).
      * @param p The output stream.
@@ -927,7 +927,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
      * Add reference for given type avoiding duplication.
      * Sort into specials, arrays and regular references.
      * Filter out types which are not required.
-     * @param t Given Type
+     * @param ref Given Type
      * @param refHash Hashtable for type references
      * @param spcHash Hashtable for special type references
      * @param arrHash Hashtable for array references
@@ -986,7 +986,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
      * Collect and filter thrown exceptions for a given pre-filtered method.
      * Keep only 'checked' exception classes minus java.rmi.RemoteException
      * and its subclasses
-     * @param method The current method
+     * @param mth The current method
      * @param excHash Hashtable containing non-duplicate thrown exceptions
      */
     protected void getExceptions(
@@ -1077,7 +1077,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
      * order.
      * Non-static, non-transient fields are mapped.
      * If the type is a custom valuetype, only public fields are mapped.
-     * @param ct The current CompoundType
+     * @param t The current CompoundType
      * @return Vector containing the data fields
      */
     protected Vector getData(
@@ -1163,7 +1163,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
     /**
      * Write forward reference for boxed valuetype for single dimension of IDL
      * sequence.
-     * If the dimension is <1 and the element is a CompoundType, write a
+     * If the dimension is {@literal < 1} and the element is a CompoundType, write a
      * forward declare for the element
      * @param at ArrayType for forward declare
      * @param dim The dimension to write
@@ -1276,7 +1276,7 @@ public class IDLGenerator extends sun.rmi.rmic.iiop.Generator {
 
     /**
      * Write #includes
-     * @param incHash Hashtable loaded with Types to include
+     * @param inhHash Hashtable loaded with Types to include
      * @param p The output stream.
      */
     protected void writeInheritedIncludes(

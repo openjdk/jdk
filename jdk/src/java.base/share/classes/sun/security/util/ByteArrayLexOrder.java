@@ -44,8 +44,9 @@ public class ByteArrayLexOrder implements Comparator<byte[]> {
      *
      * @param  bytes1 first byte array to compare.
      * @param  bytes2 second byte array to compare.
-     * @return negative number if bytes1 < bytes2, 0 if bytes1 == bytes2,
-     * positive number if bytes1 > bytes2.
+     * @return negative number if {@code bytes1 < bytes2},
+     *         0 if {@code bytes1 == bytes2},
+     *         positive number if {@code bytes1 > bytes2}.
      *
      * @exception <code>ClassCastException</code>
      * if either argument is not a byte array.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,8 @@ final class ByteArrayAccess {
 
     // Return whether this platform supports full speed int/long memory access
     // at unaligned addresses.
-    // This code was copied from java.nio.Bits because there is no equivalent
-    // public API.
     private static boolean unaligned() {
-        String arch = java.security.AccessController.doPrivileged
-            (new sun.security.action.GetPropertyAction("os.arch", ""));
-        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64")
-            || arch.equals("x86_64");
+        return unsafe.unalignedAccess();
     }
 
     /**

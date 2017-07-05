@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 # @summary Test parallel class loading by parallel transformers.
 # @author Daniel D. Daugherty as modified from the code of Daryl Puryear @ Wily
 #
+# @modules java.instrument
 # @run shell MakeJAR3.sh ParallelTransformerLoaderAgent
 # @run build ParallelTransformerLoaderApp
 # @run shell/timeout=240 ParallelTransformerLoader.sh

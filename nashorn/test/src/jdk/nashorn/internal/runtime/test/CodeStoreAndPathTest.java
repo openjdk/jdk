@@ -162,7 +162,7 @@ public class CodeStoreAndPathTest {
         e.eval(code3);// less than minimum size for storing
         // adding code1 and code2.
         final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
-        checkCompiledScripts(stream, 2);
+        checkCompiledScripts(stream, 4);
     }
 
     private static Path getCodeCachePath(final boolean optimistic) {

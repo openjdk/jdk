@@ -53,17 +53,7 @@ java.base_EXCLUDES += java/lang/doc-files
 java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  JAVA_BASE_UNIX_DIR := $(JDK_TOPDIR)/src/java.base/unix/classes
-  # TODO: make JavaCompilation handle overrides automatically instead of excluding here
-  # These files are overridden in macosx
-  java.base_EXCLUDE_FILES += \
-      $(JAVA_BASE_UNIX_DIR)/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
-      $(JAVA_BASE_UNIX_DIR)/java/net/DefaultInterface.java \
-      $(JAVA_BASE_UNIX_DIR)/java/lang/ClassLoaderHelper.java \
-      $(JAVA_BASE_UNIX_DIR)/sun/nio/ch/DefaultSelectorProvider.java \
-      #
-  # This is just skipped on macosx
-  java.base_EXCLUDE_FILES += $(JAVA_BASE_UNIX_DIR)/sun/nio/fs/GnomeFileTypeDetector.java
+  java.base_EXCLUDE_FILES += sun/nio/fs/GnomeFileTypeDetector.java
 endif
 
 ifneq ($(OPENJDK_TARGET_OS), solaris)
@@ -247,13 +237,6 @@ java.desktop_EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/TabbedPanePainter.java \
     #
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  # These files are duplicated in MACOSX_SRC_DIRS
-  java.desktop_EXCLUDE_FILES += \
-      $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/BackBufferCapsProvider.java \
-      #
-endif
-
 ################################################################################
 
 java.scripting_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
@@ -418,7 +401,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS),aix)
-  # These files are duplicated in AIX_SRC_DIRS
   jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 

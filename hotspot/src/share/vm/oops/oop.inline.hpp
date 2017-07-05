@@ -26,13 +26,11 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc_implementation/shared/ageTable.hpp"
-#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/barrierSet.inline.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/generation.hpp"
-#include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -592,11 +590,6 @@ inline bool oopDesc::is_unlocked_oop() const {
 }
 #endif // PRODUCT
 
-inline void oopDesc::follow_contents(void) {
-  assert (is_gc_marked(), "should be marked");
-  klass()->oop_follow_contents(this);
-}
-
 inline bool oopDesc::is_scavengable() const {
   return Universe::heap()->is_scavengable(this);
 }
@@ -706,21 +699,49 @@ inline intptr_t oopDesc::identity_hash() {
   }
 }
 
-inline int oopDesc::adjust_pointers() {
+inline void oopDesc::ms_follow_contents() {
+  klass()->oop_ms_follow_contents(this);
+}
+
+inline int oopDesc::ms_adjust_pointers() {
   debug_only(int check_size = size());
-  int s = klass()->oop_adjust_pointers(this);
+  int s = klass()->oop_ms_adjust_pointers(this);
   assert(s == check_size, "should be the same");
   return s;
 }
 
-#define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                        \
-                                                                           \
-inline int oopDesc::oop_iterate(OopClosureType* blk) {                     \
-  return klass()->oop_oop_iterate##nv_suffix(this, blk);               \
-}                                                                          \
-                                                                           \
-inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {       \
-  return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);       \
+#if INCLUDE_ALL_GCS
+inline void oopDesc::pc_follow_contents(ParCompactionManager* cm) {
+  klass()->oop_pc_follow_contents(this, cm);
+}
+
+inline void oopDesc::pc_update_contents() {
+  Klass* k = klass();
+  if (!k->oop_is_typeArray()) {
+    // It might contain oops beyond the header, so take the virtual call.
+    k->oop_pc_update_pointers(this);
+  }
+  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
+}
+
+inline void oopDesc::ps_push_contents(PSPromotionManager* pm) {
+  Klass* k = klass();
+  if (!k->oop_is_typeArray()) {
+    // It might contain oops beyond the header, so take the virtual call.
+    k->oop_ps_push_contents(this, pm);
+  }
+  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
+}
+#endif
+
+#define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                   \
+                                                                      \
+inline int oopDesc::oop_iterate(OopClosureType* blk) {                \
+  return klass()->oop_oop_iterate##nv_suffix(this, blk);              \
+}                                                                     \
+                                                                      \
+inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {  \
+  return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);      \
 }
 
 
@@ -736,18 +757,21 @@ inline int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
   return oop_iterate(&cl, mr);
 }
 
-ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
-
 #if INCLUDE_ALL_GCS
-#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-                                                                           \
-inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
-  return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
+#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)       \
+                                                                    \
+inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {    \
+  return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);  \
 }
+#else
+#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+#endif
 
-ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DEFN)
-#endif // INCLUDE_ALL_GCS
+#define ALL_OOPDESC_OOP_ITERATE(OopClosureType, nv_suffix)  \
+  OOP_ITERATE_DEFN(OopClosureType, nv_suffix)               \
+  OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+
+ALL_OOP_OOP_ITERATE_CLOSURES_1(ALL_OOPDESC_OOP_ITERATE)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(ALL_OOPDESC_OOP_ITERATE)
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP

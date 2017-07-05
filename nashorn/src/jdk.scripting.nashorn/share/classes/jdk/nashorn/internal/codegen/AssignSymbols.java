@@ -84,6 +84,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -714,12 +715,10 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public Node leaveBinaryNode(final BinaryNode binaryNode) {
-        switch (binaryNode.tokenType()) {
-        case ASSIGN:
+        if (binaryNode.isTokenType(TokenType.ASSIGN)) {
             return leaveASSIGN(binaryNode);
-        default:
-            return super.leaveBinaryNode(binaryNode);
         }
+        return super.leaveBinaryNode(binaryNode);
     }
 
     private Node leaveASSIGN(final BinaryNode binaryNode) {

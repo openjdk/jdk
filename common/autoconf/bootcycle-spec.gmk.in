@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,5 @@ JAVA_CMD:=$(BOOT_JDK)/bin/java
 JAVAC_CMD:=$(BOOT_JDK)/bin/javac
 JAVAH_CMD:=$(BOOT_JDK)/bin/javah
 JAR_CMD:=$(BOOT_JDK)/bin/jar
-NATIVE2ASCII_CMD:=$(BOOT_JDK)/bin/native2ascii
 JARSIGNER_CMD:=$(BOOT_JDK)/bin/jarsigner
 SJAVAC_SERVER_JAVA_CMD:=$(JAVA_CMD)

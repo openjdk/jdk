@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6332962
  * @summary Test that DescriptorSupport does not serialize targetObject
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean DescriptorSupportSerialTest
  * @run build DescriptorSupportSerialTest
  * @run main DescriptorSupportSerialTest

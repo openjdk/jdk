@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ size_t ASPSOldGen::available_for_expansion() {
   assert(virtual_space()->is_aligned(gen_size_limit()), "not aligned");
   assert(gen_size_limit() >= virtual_space()->committed_size(), "bad gen size");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t result =  gen_size_limit() - virtual_space()->committed_size();
   size_t result_aligned = align_size_down(result, heap->generation_alignment());
   return result_aligned;
@@ -101,7 +101,7 @@ size_t ASPSOldGen::available_for_contraction() {
     return uncommitted_bytes;
   }
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   const size_t gen_alignment = heap->generation_alignment();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   const size_t working_size =
