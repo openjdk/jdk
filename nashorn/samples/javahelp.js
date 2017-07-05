@@ -63,5 +63,3 @@ function fields(jobj) {
         }
     }
 }
-
-undefined;

@@ -279,8 +279,8 @@ public final class NativeFunction {
         sb.append("})");
 
         final Global global = Global.instance();
-
-        return (ScriptFunction)Global.directEval(global, sb.toString(), global, "<function>", global.isStrictContext());
+        final Context context = global.getContext();
+        return (ScriptFunction)context.eval(global, sb.toString(), global, "<function>");
     }
 
     private static void checkFunctionParameters(final String params) {

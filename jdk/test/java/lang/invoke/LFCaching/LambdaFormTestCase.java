@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import com.oracle.testlibrary.jsr292.Helper;
-import com.sun.management.HotSpotDiagnosticMXBean;
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 import java.lang.invoke.MethodHandle;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -44,8 +44,6 @@ import jdk.testlibrary.TimeLimitedRunner;
  */
 public abstract class LambdaFormTestCase {
 
-    private static final double ITERATIONS_TO_CODE_CACHE_SIZE_RATIO
-            = 45 / (128.0 * 1024 * 1024);
     private static final long TIMEOUT = Helper.IS_THOROUGH ? 0L : (long) (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9);
 
     /**
@@ -72,7 +70,7 @@ public abstract class LambdaFormTestCase {
             REF_FIELD = Reference.class.getDeclaredField("referent");
             REF_FIELD.setAccessible(true);
         } catch (Exception ex) {
-            throw new Error("Unexpected exception: ", ex);
+            throw new Error("Unexpected exception", ex);
         }
 
         gcInfo = ManagementFactory.getGarbageCollectorMXBeans();
@@ -101,28 +99,6 @@ public abstract class LambdaFormTestCase {
             long iterations = Math.max(1, Helper.TEST_LIMIT / testCaseNum);
             System.out.printf("Number of iterations according to -DtestLimit is %d (%d cases)%n",
                     iterations, iterations * testCaseNum);
-            HotSpotDiagnosticMXBean hsDiagBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-            long codeCacheSize = Long.parseLong(
-                    hsDiagBean.getVMOption("ReservedCodeCacheSize").getValue());
-            System.out.printf("Code cache size is %d bytes%n", codeCacheSize);
-            long iterationsByCodeCacheSize = (long) (codeCacheSize
-                    * ITERATIONS_TO_CODE_CACHE_SIZE_RATIO);
-            long nonProfiledCodeCacheSize = Long.parseLong(
-                    hsDiagBean.getVMOption("NonProfiledCodeHeapSize").getValue());
-            System.out.printf("Non-profiled code cache size is %d bytes%n", nonProfiledCodeCacheSize);
-            long iterationsByNonProfiledCodeCacheSize = (long) (nonProfiledCodeCacheSize
-                    * ITERATIONS_TO_CODE_CACHE_SIZE_RATIO);
-            System.out.printf("Number of iterations limited by code cache size is %d (%d cases)%n",
-                    iterationsByCodeCacheSize, iterationsByCodeCacheSize * testCaseNum);
-            System.out.printf("Number of iterations limited by non-profiled code cache size is %d (%d cases)%n",
-                    iterationsByNonProfiledCodeCacheSize, iterationsByNonProfiledCodeCacheSize * testCaseNum);
-            iterations = Math.min(iterationsByCodeCacheSize,
-                    Math.min(iterations, iterationsByNonProfiledCodeCacheSize));
-            if (iterations == 0) {
-                System.out.println("Warning: code cache size is too small to provide at"
-                        + " least one iteration! Test will try to do one iteration.");
-                iterations = 1;
-            }
             System.out.printf("Number of iterations is set to %d (%d cases)%n",
                     iterations, iterations * testCaseNum);
             System.out.flush();
@@ -141,22 +117,27 @@ public abstract class LambdaFormTestCase {
             for (TestMethods testMethod : testMethods) {
                 LambdaFormTestCase testCase = ctor.apply(testMethod);
                 try {
-                    System.err.printf("Tested LF caching feature with MethodHandles.%s method.%n",
+                    System.err.printf("Tested LF caching feature"
+                            + " with MethodHandles.%s method.%n",
                             testCase.getTestMethod().name);
-                    testCase.doTest();
+                    Throwable t = CodeCacheOverflowProcessor
+                            .runMHTest(testCase::doTest);
+                    if (t != null) {
+                        return false;
+                    }
                     System.err.println("PASSED");
-                } catch (OutOfMemoryError e) {
+                } catch (OutOfMemoryError oome) {
                     // Don't swallow OOME so a heap dump can be created.
                     System.err.println("FAILED");
-                    throw e;
+                    throw oome;
                 } catch (Throwable t) {
                     t.printStackTrace();
                     System.err.printf("FAILED. Caused by %s%n", t.getMessage());
                     passed = false;
                     failCounter++;
                 }
-                    testCounter++;
-                }
+                testCounter++;
+            }
             doneIterations++;
             return true;
         }
@@ -205,8 +186,8 @@ public abstract class LambdaFormTestCase {
      * @param testMethods list of test methods
      */
     public static void runTests(Function<TestMethods, LambdaFormTestCase> ctor, Collection<TestMethods> testMethods) {
-        LambdaFormTestCase.TestRun run =
-                new LambdaFormTestCase.TestRun(ctor, testMethods);
+        LambdaFormTestCase.TestRun run
+                = new LambdaFormTestCase.TestRun(ctor, testMethods);
         TimeLimitedRunner runner = new TimeLimitedRunner(TIMEOUT, 4.0d, run::doIteration);
         try {
             runner.call();
