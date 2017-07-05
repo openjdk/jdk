@@ -78,7 +78,7 @@ public class SelectorTest {
 
             final RawChannel chan = getARawChannel(port);
 
-            chan.registerEvent(new RawChannel.NonBlockingEvent() {
+            chan.registerEvent(new RawChannel.RawEvent() {
                 @Override
                 public int interestOps() {
                     return SelectionKey.OP_READ;
@@ -95,7 +95,7 @@ public class SelectorTest {
                 }
             });
 
-            chan.registerEvent(new RawChannel.NonBlockingEvent() {
+            chan.registerEvent(new RawChannel.RawEvent() {
                 @Override
                 public int interestOps() {
                     return SelectionKey.OP_WRITE;
@@ -111,7 +111,7 @@ public class SelectorTest {
                         ByteBuffer bb = ByteBuffer.wrap(TestServer.INPUT);
                         counter.incrementAndGet();
                         try {
-                            chan.write(bb);
+                            chan.write(new ByteBuffer[]{bb}, 0, 1);
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }

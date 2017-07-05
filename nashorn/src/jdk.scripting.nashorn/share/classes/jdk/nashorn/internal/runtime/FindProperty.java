@@ -127,7 +127,7 @@ public final class FindProperty {
     // Fold an accessor getter into the method handle of a user accessor property.
     private MethodHandle insertAccessorsGetter(final UserAccessorProperty uap, final LinkRequest request, final MethodHandle mh) {
         MethodHandle superGetter = uap.getAccessorsGetter();
-        if (isInherited()) {
+        if (!isSelf()) {
             superGetter = ScriptObject.addProtoFilter(superGetter, getProtoChainLength());
         }
         if (request != null && !(request.getReceiver() instanceof ScriptObject)) {
@@ -183,11 +183,12 @@ public final class FindProperty {
     }
 
     /**
-     * Check if the property found was inherited, i.e. not directly in the self
-     * @return true if inherited property
+     * Check if the property found was inherited from a prototype and it is an ordinary
+     * property (one that has no accessor function).
+     * @return true if the found property is an inherited ordinary property
      */
-    public boolean isInherited() {
-        return self != prototype;
+    public boolean isInheritedOrdinaryProperty() {
+        return !isSelf() && !getProperty().isAccessorProperty();
     }
 
     /**

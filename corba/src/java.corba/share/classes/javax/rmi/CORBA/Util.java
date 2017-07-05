@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.rmi.CORBA.Tie;
 import java.rmi.Remote;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.SerializablePermission;
 import java.net.MalformedURLException ;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -195,6 +196,8 @@ public class Util {
      */
     public static ValueHandler createValueHandler() {
 
+        isCustomSerializationPermitted();
+
         if (utilDelegate != null) {
             return utilDelegate.createValueHandler();
         }
@@ -337,6 +340,7 @@ public class Util {
     // security reasons. If you know a better solution how to share this code
     // then remove it from PortableRemoteObject. Also in Stub.java
     private static Object createDelegate(String classKey) {
+
         String className = (String)
             AccessController.doPrivileged(new GetPropertyAction(classKey));
         if (className == null) {
@@ -345,7 +349,6 @@ public class Util {
                 className = props.getProperty(classKey);
             }
         }
-
         if (className == null) {
             return new com.sun.corba.se.impl.javax.rmi.CORBA.Util();
         }
@@ -389,4 +392,14 @@ public class Util {
             new GetORBPropertiesFileAction());
     }
 
+    private static void isCustomSerializationPermitted() {
+        SecurityManager sm = System.getSecurityManager();
+        if ( sm != null) {
+            // check that a serialization permission has been
+            // set to allow the loading of the Util delegate
+            // which provides access to custom ValueHandler
+            sm.checkPermission(new SerializablePermission(
+                    "enableCustomValueHandler"));
+}
+    }
 }
