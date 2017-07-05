@@ -182,6 +182,7 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
         AWTAccessor.getFileDialogAccessor().setFile(fileDialog, null);
         AWTAccessor.getFileDialogAccessor().setFiles(fileDialog, null);
+        AWTAccessor.getFileDialogAccessor().setDirectory(fileDialog, null);
 
         WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
              public void run() {

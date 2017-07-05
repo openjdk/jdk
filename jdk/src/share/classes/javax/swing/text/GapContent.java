@@ -107,7 +107,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * Returns the length of the content.
      *
-     * @return the length >= 1
+     * @return the length &gt;= 1
      * @see AbstractDocument.Content#length
      */
     public int length() {
@@ -118,7 +118,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * Inserts a string into the content.
      *
-     * @param where the starting position >= 0, < length()
+     * @param where the starting position &gt;= 0, &lt; length()
      * @param str the non-null string to insert
      * @return an UndoableEdit object for undoing
      * @exception BadLocationException if the specified position is invalid
@@ -136,8 +136,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * Removes part of the content.
      *
-     * @param where the starting position >= 0, where + nitems < length()
-     * @param nitems the number of characters to remove >= 0
+     * @param where the starting position &gt;= 0, where + nitems &lt; length()
+     * @param nitems the number of characters to remove &gt;= 0
      * @return an UndoableEdit object for undoing
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#remove
@@ -156,8 +156,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * Retrieves a portion of the content.
      *
-     * @param where the starting position >= 0
-     * @param len the length to retrieve >= 0
+     * @param where the starting position &gt;= 0
+     * @param len the length to retrieve &gt;= 0
      * @return a string representing the content
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getString
@@ -174,8 +174,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * span the gap, the actual store is returned to avoid the copy since
      * it is contiguous.
      *
-     * @param where the starting position >= 0, where + len <= length()
-     * @param len the number of characters to retrieve >= 0
+     * @param where the starting position &gt;= 0, where + len &lt;= length()
+     * @param len the number of characters to retrieve &gt;= 0
      * @param chars the Segment object to return the characters in
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getChars
@@ -222,7 +222,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * Creates a position within the content that will
      * track change as the content is mutated.
      *
-     * @param offset the offset to track >= 0
+     * @param offset the offset to track &gt;= 0
      * @return the position
      * @exception BadLocationException if the specified position is invalid
      */
@@ -705,8 +705,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * there. The vector with the resulting Positions are returned.
      *
      * @param v the Vector to use, with a new one created on null
-     * @param offset the starting offset >= 0
-     * @param length the length >= 0
+     * @param offset the starting offset &gt;= 0
+     * @param length the length &gt;= 0
      * @return the set of instances
      */
     protected Vector getPositionsInRange(Vector v, int offset, int length) {

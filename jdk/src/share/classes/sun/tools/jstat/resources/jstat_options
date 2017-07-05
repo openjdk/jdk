@@ -208,6 +208,22 @@ option gc {
     format "0.0"
   }
   column {
+    header "^CCSC^"	/* Compressed Class Space Capacity - Current */
+    data sun.gc.compressedclassspace.capacity
+    align center
+    width 6
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^CCSU^"	/* Compressed Class Space Used */
+    data sun.gc.compressedclassspace.used
+    align center
+    width 6
+    scale K
+    format "0.0"
+  }
+  column {
     header "^YGC^"	/* Young Generation Collections */
     data sun.gc.collector.0.invocations
     align right
@@ -354,6 +370,30 @@ option gccapacity {
     format "0.0"
   }
   column {
+    header "^CCSMN^"    /* Compressed Class Space Capacity - Minimum */
+    data sun.gc.compressedclassspace.minCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^CCSMX^"	/* Compressed Class Space Capacity - Maximum */
+    data sun.gc.compressedclassspace.maxCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^CCSC^"	/* Compressed Class Space Capacity - Current */
+    data sun.gc.compressedclassspace.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
     header "^YGC^"	/* Young Generation Collections */
     data sun.gc.collector.0.invocations
     align right
@@ -406,6 +446,14 @@ option gccause {
   column {
     header "^M^"	/* Metaspace - Percent Used */
     data (1-((sun.gc.metaspace.capacity - sun.gc.metaspace.used)/sun.gc.metaspace.capacity)) * 100
+    align right
+    width 6
+    scale raw
+    format "0.00"
+  }
+  column {
+    header "^CCS^"	/* Compressed Class Space - Percent Used */
+    data (1-((sun.gc.compressedclassspace.capacity - sun.gc.compressedclassspace.used)/sun.gc.compressedclassspace.capacity)) * 100
     align right
     width 6
     scale raw
@@ -662,6 +710,22 @@ option gcold {
     format "0.0"
   }
   column {
+    header "^CCSC^"	/* Compressed Class Space Capacity - Current */
+    data sun.gc.compressedclassspace.capacity
+    width 8
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^CCSU^"	/* Compressed Class Space Used */
+    data sun.gc.compressedclassspace.used
+    width 8
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
     header "^OC^"	/* Old Space Capacity - Current */
     data sun.gc.generation.1.space.0.capacity
     width 11
@@ -802,6 +866,30 @@ option gcmetacapacity {
     format "0.0"
   }
   column {
+    header "^CCSMN^"	/* Compressed Class Space Capacity - Minimum */
+    data sun.gc.compressedclassspace.minCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^CCSMX^"	/* Compressed Class Space Capacity - Maximum */
+    data sun.gc.compressedclassspace.maxCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^CCSC^"	/* Compressed Class Space Capacity - Current */
+    data sun.gc.compressedclassspace.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
     header "^YGC^"	/* Young Generation Collections */
     data sun.gc.collector.0.invocations
     align right
@@ -870,6 +958,14 @@ option gcutil {
   column {
     header "^M^"	/* Metaspace Space - Percent Used */
     data (1-((sun.gc.metaspace.capacity - sun.gc.metaspace.used)/sun.gc.metaspace.capacity)) * 100
+    align right
+    width 6
+    scale raw
+    format "0.00"
+  }
+  column {
+    header "^CCS^"	/* Compressed Class Space Space - Percent Used */
+    data (1-((sun.gc.compressedclassspace.capacity - sun.gc.compressedclassspace.used)/sun.gc.compressedclassspace.capacity)) * 100
     align right
     width 6
     scale raw

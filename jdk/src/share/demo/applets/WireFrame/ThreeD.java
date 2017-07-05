@@ -416,7 +416,7 @@ public class ThreeD extends Applet
         InputStream is = null;
         try {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            is = new URL(getDocumentBase(), mdname).openStream();
+            is = getClass().getResourceAsStream(mdname);
             Model3D m = new Model3D(is);
             md = m;
             m.findBB();

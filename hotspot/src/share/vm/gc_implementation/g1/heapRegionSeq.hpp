@@ -25,9 +25,16 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
 
+#include "gc_implementation/g1/g1BiasedArray.hpp"
+
 class HeapRegion;
 class HeapRegionClosure;
 class FreeRegionList;
+
+class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
+ protected:
+   virtual HeapRegion* default_value() const { return NULL; }
+};
 
 // This class keeps track of the region metadata (i.e., HeapRegion
 // instances). They are kept in the _regions array in address
@@ -44,35 +51,21 @@ class FreeRegionList;
 //
 // We keep track of three lengths:
 //
-// * _length (returned by length()) is the number of currently
+// * _committed_length (returned by length()) is the number of currently
 //   committed regions.
 // * _allocated_length (not exposed outside this class) is the
 //   number of regions for which we have HeapRegions.
-// * _max_length (returned by max_length()) is the maximum number of
-//   regions the heap can have.
+// * max_length() returns the maximum number of regions the heap can have.
 //
-// and maintain that: _length <= _allocated_length <= _max_length
+// and maintain that: _committed_length <= _allocated_length <= max_length()
 
 class HeapRegionSeq: public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  // The array that holds the HeapRegions.
-  HeapRegion** _regions;
-
-  // Version of _regions biased to address 0
-  HeapRegion** _regions_biased;
+  G1HeapRegionTable _regions;
 
   // The number of regions committed in the heap.
-  uint _length;
-
-  // The address of the first reserved word in the heap.
-  HeapWord* _heap_bottom;
-
-  // The address of the last reserved word in the heap - 1.
-  HeapWord* _heap_end;
-
-  // The log of the region byte size.
-  uint _region_shift;
+  uint _committed_length;
 
   // A hint for which index to start searching from for humongous
   // allocations.
@@ -81,37 +74,33 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   // The number of regions for which we have allocated HeapRegions for.
   uint _allocated_length;
 
-  // The maximum number of regions in the heap.
-  uint _max_length;
-
   // Find a contiguous set of empty regions of length num, starting
   // from the given index.
   uint find_contiguous_from(uint from, uint num);
 
-  // Map a heap address to a biased region index. Assume that the
-  // address is valid.
-  inline uintx addr_to_index_biased(HeapWord* addr) const;
-
   void increment_allocated_length() {
-    assert(_allocated_length < _max_length, "pre-condition");
+    assert(_allocated_length < max_length(), "pre-condition");
     _allocated_length++;
   }
 
   void increment_length() {
-    assert(_length < _max_length, "pre-condition");
-    _length++;
+    assert(length() < max_length(), "pre-condition");
+    _committed_length++;
   }
 
   void decrement_length() {
-    assert(_length > 0, "pre-condition");
-    _length--;
+    assert(length() > 0, "pre-condition");
+    _committed_length--;
   }
+
+  HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
+  HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
  public:
   // Empty contructor, we'll initialize it with the initialize() method.
-  HeapRegionSeq() { }
+  HeapRegionSeq() : _regions(), _committed_length(0), _next_search_index(0), _allocated_length(0) { }
 
-  void initialize(HeapWord* bottom, HeapWord* end, uint max_length);
+  void initialize(HeapWord* bottom, HeapWord* end);
 
   // Return the HeapRegion at the given index. Assume that the index
   // is valid.
@@ -126,10 +115,10 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   inline HeapRegion* addr_to_region_unsafe(HeapWord* addr) const;
 
   // Return the number of regions that have been committed in the heap.
-  uint length() const { return _length; }
+  uint length() const { return _committed_length; }
 
   // Return the maximum number of regions in the heap.
-  uint max_length() const { return _max_length; }
+  uint max_length() const { return (uint)_regions.length(); }
 
   // Expand the sequence to reflect that the heap has grown from
   // old_end to new_end. Either create new HeapRegions, or re-use

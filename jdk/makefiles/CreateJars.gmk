@@ -953,13 +953,13 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
     ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_32_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/32bit $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/32bit,\
 		INCLUDES:=com/sun/java/accessibility,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-32.jar,\
 		SKIP_METAINF:=true))
 
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_LEGACY_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/legacy $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/legacy,\
 		INCLUDES:=com/sun/java/accessibility,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar,\
 		SKIP_METAINF:=true))
@@ -968,9 +968,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 		$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar
     else
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_64_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/64bit $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/64bit,\
 		INCLUDES:=com/sun/java/accessibility,\
-		EXCLUDES:=com/sun/java/accessibility/util/java,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-64.jar,\
 		SKIP_METAINF:=true))
 

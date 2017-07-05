@@ -211,9 +211,9 @@ public class WDataTransferer extends DataTransferer {
                         DataFlavor.allHtmlFlavor,
                         format);
             } else {
-                // handel other html flavor types, including custom and
+                // handle other html flavor types, including custom and
                 // fragment ones
-                bytes = HTMLCodec.convertToHTMLFormat(bytes);
+                bytes = HTMLCodec.convertToHTMLFormat(super.translateTransferable(contents, flavor, format));
             }
         } else {
             // we handle non-html types basing on  their

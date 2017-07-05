@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.swing.text.JTextComponent;
 
 /**
  * Lightweight implementation of {@link TextAreaPeer}. Delegates most of the
- * work to the {@link JTextArea} inside JScrollPane.
+ * work to the {@link JTextArea} inside {@link JScrollPane}.
  */
 final class LWTextAreaPeer
         extends LWTextComponentPeer<TextArea, LWTextAreaPeer.ScrollableJTextArea>
@@ -66,7 +66,7 @@ final class LWTextAreaPeer
     }
 
     @Override
-    protected ScrollableJTextArea createDelegate() {
+    ScrollableJTextArea createDelegate() {
         return new ScrollableJTextArea();
     }
 
@@ -85,7 +85,7 @@ final class LWTextAreaPeer
     }
 
     @Override
-    protected Cursor getCursor(final Point p) {
+    Cursor getCursor(final Point p) {
         final boolean isContains;
         synchronized (getDelegateLock()) {
             isContains = getDelegate().getViewport().getBounds().contains(p);
@@ -94,7 +94,7 @@ final class LWTextAreaPeer
     }
 
     @Override
-    protected Component getDelegateFocusOwner() {
+    Component getDelegateFocusOwner() {
         return getTextComponent();
     }
 
@@ -200,7 +200,7 @@ final class LWTextAreaPeer
         }
     }
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     final class ScrollableJTextArea extends JScrollPane {
 
         ScrollableJTextArea() {
@@ -218,7 +218,6 @@ final class LWTextAreaPeer
             super.setEnabled(enabled);
         }
 
-        @SuppressWarnings("serial")
         private final class JTextAreaDelegate extends JTextArea {
 
             // Empty non private constructor was added because access to this

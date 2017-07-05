@@ -73,11 +73,11 @@ abstract class TexturePaintContext implements PaintContext {
         WritableRaster raster = bufImg.getRaster();
         ColorModel cm = bufImg.getColorModel();
         int maxw = devBounds.width;
-        Object val = hints.get(hints.KEY_INTERPOLATION);
+        Object val = hints.get(RenderingHints.KEY_INTERPOLATION);
         boolean filter =
             (val == null
-             ? (hints.get(hints.KEY_RENDERING) == hints.VALUE_RENDER_QUALITY)
-             : (val != hints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
+             ? (hints.get(RenderingHints.KEY_RENDERING) == RenderingHints.VALUE_RENDER_QUALITY)
+             : (val != RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
         if (raster instanceof IntegerInterleavedRaster &&
             (!filter || isFilterableDCM(cm)))
         {
@@ -234,8 +234,8 @@ abstract class TexturePaintContext implements PaintContext {
         return outRas;
     }
 
-    private static WeakReference xrgbRasRef;
-    private static WeakReference argbRasRef;
+    private static WeakReference<Raster> xrgbRasRef;
+    private static WeakReference<Raster> argbRasRef;
 
     synchronized static WritableRaster makeRaster(ColorModel cm,
                                                   Raster srcRas,
@@ -278,13 +278,13 @@ abstract class TexturePaintContext implements PaintContext {
             return;
         }
         if (xrgbmodel == cm) {
-            xrgbRasRef = new WeakReference(outRas);
+            xrgbRasRef = new WeakReference<>(outRas);
         } else if (argbmodel == cm) {
-            argbRasRef = new WeakReference(outRas);
+            argbRasRef = new WeakReference<>(outRas);
         }
     }
 
-    private static WeakReference byteRasRef;
+    private static WeakReference<Raster> byteRasRef;
 
     synchronized static WritableRaster makeByteRaster(Raster srcRas,
                                                       int w, int h)
@@ -307,7 +307,7 @@ abstract class TexturePaintContext implements PaintContext {
         if (outRas == null) {
             return;
         }
-        byteRasRef = new WeakReference(outRas);
+        byteRasRef = new WeakReference<>(outRas);
     }
 
     public abstract WritableRaster makeRaster(int w, int h);

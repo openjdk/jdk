@@ -32,7 +32,7 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JMenuBar}.
  *
  * @author Scott Violet
@@ -53,7 +53,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -65,7 +65,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -87,7 +87,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -99,7 +99,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -108,7 +108,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -175,7 +175,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -184,7 +184,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
