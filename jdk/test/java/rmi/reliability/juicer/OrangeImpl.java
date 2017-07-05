@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@ public class OrangeImpl extends UnicastRemoteObject implements Orange {
     private final String name;
 
     public OrangeImpl(String name) throws RemoteException {
-	this.name = name;
+        this.name = name;
     }
 
     /**
@@ -44,31 +44,31 @@ public class OrangeImpl extends UnicastRemoteObject implements Orange {
      * object if not at recursion level zero.
      */
     public int[] recurse(OrangeEcho echo, int[] message, int level)
-	throws RemoteException
+        throws RemoteException
     {
-	String threadName = Thread.currentThread().getName();
-	logger.log(Level.FINEST,
-	    threadName + ": " + toString() + ".recurse(message[" 
-	    + message.length + "], " + level + "): BEGIN");
+        String threadName = Thread.currentThread().getName();
+        logger.log(Level.FINEST,
+            threadName + ": " + toString() + ".recurse(message["
+            + message.length + "], " + level + "): BEGIN");
 
-	int[] response;
-	if (level > 0) {
-	    response = echo.recurse(this, message, level);
-	} else {
-	    for (int i = 0; i < message.length; i++) {
-		message[i] = ~message[i];
-	    }
-	    response = message;
-	}
+        int[] response;
+        if (level > 0) {
+            response = echo.recurse(this, message, level);
+        } else {
+            for (int i = 0; i < message.length; i++) {
+                message[i] = ~message[i];
+            }
+            response = message;
+        }
 
-	logger.log(Level.FINEST,
-	    threadName + ": " + toString() + ".recurse(message[" 
-	    + message.length + "], " + level + "): END");
+        logger.log(Level.FINEST,
+            threadName + ": " + toString() + ".recurse(message["
+            + message.length + "], " + level + "): END");
 
-	return response;
+        return response;
     }
 
     public String toString() {
-	return name;
+        return name;
     }
 }

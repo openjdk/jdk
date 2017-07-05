@@ -1,0 +1,17 @@
+os_family = linux
+
+arch = x86
+
+arch_model = x86_32
+
+os_arch = linux_x86
+
+os_arch_model = linux_x86_32
+
+lib_arch = i386
+
+compiler = sparcWorks
+
+gnu_dis_arch = i386
+
+sysdefs = -DLINUX -DSPARC_WORKS -D_GNU_SOURCE -DIA32

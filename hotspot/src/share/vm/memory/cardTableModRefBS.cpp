@@ -51,7 +51,7 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
   _whole_heap(whole_heap),
   _guard_index(cards_required(whole_heap.word_size()) - 1),
   _last_valid_index(_guard_index - 1),
-  _page_size(os::page_size_for_region(_guard_index + 1, _guard_index + 1, 1)),
+  _page_size(os::vm_page_size()),
   _byte_map_size(compute_byte_map_size())
 {
   _kind = BarrierSet::CardTableModRef;
@@ -196,8 +196,8 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
   assert(_whole_heap.contains(new_region),
            "attempt to cover area not in reserved area");
   debug_only(verify_guard();)
-  int ind = find_covering_region_by_base(new_region.start());
-  MemRegion old_region = _covered[ind];
+  int const ind = find_covering_region_by_base(new_region.start());
+  MemRegion const old_region = _covered[ind];
   assert(old_region.start() == new_region.start(), "just checking");
   if (new_region.word_size() != old_region.word_size()) {
     // Commit new or uncommit old pages, if necessary.
@@ -205,21 +205,21 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // Extend the end of this _commited region
     // to cover the end of any lower _committed regions.
     // This forms overlapping regions, but never interior regions.
-    HeapWord* max_prev_end = largest_prev_committed_end(ind);
+    HeapWord* const max_prev_end = largest_prev_committed_end(ind);
     if (max_prev_end > cur_committed.end()) {
       cur_committed.set_end(max_prev_end);
     }
     // Align the end up to a page size (starts are already aligned).
-    jbyte* new_end = byte_after(new_region.last());
-    HeapWord* new_end_aligned =
-      (HeapWord*)align_size_up((uintptr_t)new_end, _page_size);
+    jbyte* const new_end = byte_after(new_region.last());
+    HeapWord* const new_end_aligned =
+      (HeapWord*) align_size_up((uintptr_t)new_end, _page_size);
     assert(new_end_aligned >= (HeapWord*) new_end,
            "align up, but less");
     // The guard page is always committed and should not be committed over.
-    HeapWord* new_end_for_commit = MIN2(new_end_aligned, _guard_region.start());
+    HeapWord* const new_end_for_commit = MIN2(new_end_aligned, _guard_region.start());
     if (new_end_for_commit > cur_committed.end()) {
       // Must commit new pages.
-      MemRegion new_committed =
+      MemRegion const new_committed =
         MemRegion(cur_committed.end(), new_end_for_commit);
 
       assert(!new_committed.is_empty(), "Region should not be empty here");
@@ -233,7 +233,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // the cur_committed region may include the guard region.
     } else if (new_end_aligned < cur_committed.end()) {
       // Must uncommit pages.
-      MemRegion uncommit_region =
+      MemRegion const uncommit_region =
         committed_unique_to_self(ind, MemRegion(new_end_aligned,
                                                 cur_committed.end()));
       if (!uncommit_region.is_empty()) {
@@ -257,7 +257,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     assert(index_for(new_region.last()) < (int) _guard_index,
       "The guard card will be overwritten");
-    jbyte* end = byte_after(new_region.last());
+    jbyte* const end = byte_after(new_region.last());
     // do nothing if we resized downward.
     if (entry < end) {
       memset(entry, clean_card, pointer_delta(end, entry, sizeof(jbyte)));

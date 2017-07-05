@@ -22,11 +22,10 @@
  */
 
 /*
- *
- *
- * Used by PremainClassTest.sh - dummy "main application" which doesn't do anything
+ * dummy "Hello World"ish application for "premain" tests
  */
 public class DummyMain {
     public static void main(String[] args) {
+        System.out.println("Hello from DummyMain!");
     }
 }

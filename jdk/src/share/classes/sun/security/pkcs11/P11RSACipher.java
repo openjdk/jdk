@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ final class P11RSACipher extends CipherSpi {
         this.token = token;
         this.algorithm = "RSA";
         this.mechanism = mechanism;
-        session = token.getOpSession();
     }
 
     // modes do not make sense for RSA, but allow ECB
@@ -184,7 +183,8 @@ final class P11RSACipher extends CipherSpi {
                 throw new InvalidKeyException
                                 ("Wrap has to be used with public keys");
             }
-            // No further setup needed for C_Wrap(). We remain uninitialized.
+            // No further setup needed for C_Wrap(). We'll initialize later if
+            // we can't use C_Wrap().
             return;
         } else if (opmode == Cipher.UNWRAP_MODE) {
             if (p11Key.isPrivate() == false) {
@@ -383,7 +383,8 @@ final class P11RSACipher extends CipherSpi {
         return implDoFinal(out, outOfs, out.length - outOfs);
     }
 
-    private byte[] doFinal() throws BadPaddingException, IllegalBlockSizeException {
+    private byte[] doFinal() throws BadPaddingException,
+            IllegalBlockSizeException {
         byte[] t = new byte[2048];
         int n = implDoFinal(t, 0, t.length);
         byte[] out = new byte[n];
@@ -394,20 +395,37 @@ final class P11RSACipher extends CipherSpi {
     // see JCE spec
     protected byte[] engineWrap(Key key) throws InvalidKeyException,
             IllegalBlockSizeException {
-        // XXX Note that if we cannot convert key to a key on this token,
-        // we will fail. For example, trying a wrap an AES key on a token that
-        // does not support AES.
-        // We could implement a fallback that just encrypts the encoding
-        // (assuming the key is not sensitive). For now, we are operating under
-        // the assumption that this is not necessary.
         String keyAlg = key.getAlgorithm();
-        P11Key secretKey = P11SecretKeyFactory.convertKey(token, key, keyAlg);
+        P11Key sKey = null;
+        try {
+            // The conversion may fail, e.g. trying to wrap an AES key on
+            // a token that does not support AES, or when the key size is
+            // not within the range supported by the token.
+            sKey = P11SecretKeyFactory.convertKey(token, key, keyAlg);
+        } catch (InvalidKeyException ike) {
+            byte[] toBeWrappedKey = key.getEncoded();
+            if (toBeWrappedKey == null) {
+                throw new InvalidKeyException
+                        ("wrap() failed, no encoding available", ike);
+            }
+            // Directly encrypt the key encoding when key conversion failed
+            implInit(Cipher.ENCRYPT_MODE, p11Key);
+            implUpdate(toBeWrappedKey, 0, toBeWrappedKey.length);
+            try {
+                return doFinal();
+            } catch (BadPaddingException bpe) {
+                // should not occur
+                throw new InvalidKeyException("wrap() failed", bpe);
+            } finally {
+                // Restore original mode
+                implInit(Cipher.WRAP_MODE, p11Key);
+            }
+        }
         Session s = null;
         try {
             s = token.getOpSession();
-            byte[] b = token.p11.C_WrapKey(s.id(), new CK_MECHANISM(mechanism),
-                p11Key.keyID, secretKey.keyID);
-            return b;
+            return token.p11.C_WrapKey(s.id(), new CK_MECHANISM(mechanism),
+                p11Key.keyID, sKey.keyID);
         } catch (PKCS11Exception e) {
             throw new InvalidKeyException("wrap() failed", e);
         } finally {
@@ -431,11 +449,13 @@ final class P11RSACipher extends CipherSpi {
                 };
                 attributes = token.getAttributes
                     (O_IMPORT, CKO_SECRET_KEY, keyType, attributes);
-                long keyID = token.p11.C_UnwrapKey(s.id(), new CK_MECHANISM(mechanism),
-                    p11Key.keyID, wrappedKey, attributes);
-                return P11Key.secretKey(session, keyID, algorithm, 48 << 3, attributes);
+                long keyID = token.p11.C_UnwrapKey(s.id(),
+                        new CK_MECHANISM(mechanism), p11Key.keyID, wrappedKey,
+                        attributes);
+                return P11Key.secretKey(session, keyID, algorithm, 48 << 3,
+                        attributes);
             } catch (PKCS11Exception e) {
-                throw new InvalidKeyException("wrap() failed", e);
+                throw new InvalidKeyException("unwrap() failed", e);
             } finally {
                 token.releaseSession(s);
             }

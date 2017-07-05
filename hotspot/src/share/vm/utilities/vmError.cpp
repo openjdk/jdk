@@ -170,7 +170,8 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
   out->print_raw_cr(Arguments::java_vendor_url_bug());
   // If the crash is in native code, encourage user to submit a bug to the
   // provider of that code.
-  if (thread && thread->is_Java_thread()) {
+  if (thread && thread->is_Java_thread() &&
+      !thread->is_hidden_from_external_view()) {
     JavaThread* jt = (JavaThread*)thread;
     if (jt->thread_state() == _thread_in_native) {
       out->print_cr("# The crash happened outside the Java Virtual Machine in native code.\n# See problematic frame for where to report the bug.");
@@ -249,10 +250,10 @@ void VMError::report(outputStream* st) {
 
   BEGIN
 
-  STEP(10, "(printing unexpected error message)")
+  STEP(10, "(printing fatal error message)")
 
      st->print_cr("#");
-     st->print_cr("# An unexpected error has been detected by Java Runtime Environment:");
+     st->print_cr("# A fatal error has been detected by the Java Runtime Environment:");
 
   STEP(15, "(printing type of error)")
 

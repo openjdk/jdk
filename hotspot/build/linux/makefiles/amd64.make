@@ -35,6 +35,8 @@ CFLAGS += -DVM_LITTLE_ENDIAN
 CFLAGS += -D_LP64=1
 
 # The serviceability agent relies on frame pointer (%rbp) to walk thread stack
-CFLAGS += -fno-omit-frame-pointer
+ifndef USE_SUNCC
+  CFLAGS += -fno-omit-frame-pointer
+endif
 
 OPT_CFLAGS/compactingPermGenGen.o = -O1

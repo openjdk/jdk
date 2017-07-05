@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@ class CompressInputStream extends FilterInputStream
 {
 
     public CompressInputStream(InputStream in) {
-	super(in);
+        super(in);
     }
 
     // buffer of unpacked 6-bit codes from last 32-word read
@@ -41,70 +41,70 @@ class CompressInputStream extends FilterInputStream
     int bufPos = 5;
 
     public int read() throws IOException {
-	try {
-	    int code;
-	    do {
-		code = readCode();
-	    } while (code == NOP);	// ignore NOP codes
+        try {
+            int code;
+            do {
+                code = readCode();
+            } while (code == NOP);      // ignore NOP codes
 
-	    if (code >= BASE)
-		return codeTable.charAt(code - BASE);
-	    else if (code == RAW) {
-		int high = readCode();
-		int low = readCode();
-		return (high << 4) | low;
-	    } else
-		throw new IOException("unknown compression code: " + code);
-	} catch (EOFException e) {
-	    return -1;
-	}
+            if (code >= BASE)
+                return codeTable.charAt(code - BASE);
+            else if (code == RAW) {
+                int high = readCode();
+                int low = readCode();
+                return (high << 4) | low;
+            } else
+                throw new IOException("unknown compression code: " + code);
+        } catch (EOFException e) {
+            return -1;
+        }
     }
 
     public int read(byte b[], int off, int len) throws IOException {
-	if (len <= 0) {
-	    return 0;
-	}
+        if (len <= 0) {
+            return 0;
+        }
 
-	int c = read();
-	if (c == -1) {
-	    return -1;
-	}
-	b[off] = (byte)c;
+        int c = read();
+        if (c == -1) {
+            return -1;
+        }
+        b[off] = (byte)c;
 
-	int i = 1;
+        int i = 1;
 /*****
-	try {
-	    for (; i < len ; i++) {
-		c = read();
-		if (c == -1) {
-		    break;
-		}
-		if (b != null) {
-		    b[off + i] = (byte)c;
-		}
-	    }
-	} catch (IOException ee) {
-	}
+        try {
+            for (; i < len ; i++) {
+                c = read();
+                if (c == -1) {
+                    break;
+                }
+                if (b != null) {
+                    b[off + i] = (byte)c;
+                }
+            }
+        } catch (IOException ee) {
+        }
  *****/
-	return i;
+        return i;
     }
 
     private int readCode() throws IOException {
-	if (bufPos == 5) {
-	    int b1 = in.read();
-	    int b2 = in.read();
-	    int b3 = in.read();
-	    int b4 = in.read();
-	    if ((b1 | b2 | b3 | b4) < 0)
-		throw new EOFException();
-	    int pack = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-	    buf[0] = (pack >>> 24) & 0x3F;
-	    buf[1] = (pack >>> 18) & 0x3F;
-	    buf[2] = (pack >>> 12) & 0x3F;
-	    buf[3] = (pack >>>  6) & 0x3F;
-	    buf[4] = (pack >>>  0) & 0x3F;
-	    bufPos = 0;
-	}
-	return buf[bufPos++];
+        if (bufPos == 5) {
+            int b1 = in.read();
+            int b2 = in.read();
+            int b3 = in.read();
+            int b4 = in.read();
+            if ((b1 | b2 | b3 | b4) < 0)
+                throw new EOFException();
+            int pack = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+            buf[0] = (pack >>> 24) & 0x3F;
+            buf[1] = (pack >>> 18) & 0x3F;
+            buf[2] = (pack >>> 12) & 0x3F;
+            buf[3] = (pack >>>  6) & 0x3F;
+            buf[4] = (pack >>>  0) & 0x3F;
+            bufPos = 0;
+        }
+        return buf[bufPos++];
     }
 }

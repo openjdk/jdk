@@ -27,7 +27,7 @@
  * @summary test retransformClasses
  * @author Robert Field, Sun Microsystems
  *
- * @run shell MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
+ * @run shell/timeout=240 MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
  */
 

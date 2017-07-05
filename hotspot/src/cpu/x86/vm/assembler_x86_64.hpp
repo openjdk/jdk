@@ -922,6 +922,8 @@ class Assembler : public AbstractAssembler  {
   void cvttsd2siq(Register dst, XMMRegister src); // truncates
   void cvtss2sd(XMMRegister dst, XMMRegister src);
   void cvtsd2ss(XMMRegister dst, XMMRegister src);
+  void cvtdq2pd(XMMRegister dst, XMMRegister src);
+  void cvtdq2ps(XMMRegister dst, XMMRegister src);
 
   void pxor(XMMRegister dst, Address src);       // Xor Packed Byte Integer Values
   void pxor(XMMRegister dst, XMMRegister src);   // Xor Packed Byte Integer Values

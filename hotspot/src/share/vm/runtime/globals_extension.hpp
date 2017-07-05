@@ -154,6 +154,8 @@ RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE, RUNTIME_PD_DEVELOP_FLAG_
 } CommandLineFlagWithType;
 
 #define FLAG_IS_DEFAULT(name)         (CommandLineFlagsEx::is_default(FLAG_MEMBER(name)))
+#define FLAG_IS_ERGO(name)            (CommandLineFlagsEx::is_ergo(FLAG_MEMBER(name)))
+#define FLAG_IS_CMDLINE(name)         (CommandLineFlagsEx::is_cmdline(FLAG_MEMBER(name)))
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
@@ -171,4 +173,6 @@ class CommandLineFlagsEx : CommandLineFlags {
   static void ccstrAtPut(CommandLineFlagWithType flag, ccstr value, FlagValueOrigin origin);
 
   static bool is_default(CommandLineFlag flag);
+  static bool is_ergo(CommandLineFlag flag);
+  static bool is_cmdline(CommandLineFlag flag);
 };
