@@ -282,7 +282,7 @@ define SetupLogging
     # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
     # Only use time if it's GNU time which supports format and output file.
     WRAPPER_SHELL := $$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
-    SHELL := $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+    SHELL = $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
   endif
   # The warn level can never be turned off
   LogWarn = $$(info $$(strip $$1))
