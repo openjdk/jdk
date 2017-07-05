@@ -42,7 +42,6 @@ import java.util.*;
 
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
-
 /*
  * ZipFileSystem usage demo
  *
@@ -157,7 +156,6 @@ public class Demo {
             env.put("create", "true");
         try (FileSystem fs = provider.newFileSystem(Paths.get(args[1]), env)) {
             Path path, src, dst;
-            boolean isRename = false;
             switch (action) {
             case rename:
                 src = fs.getPath(args[2]);
@@ -303,6 +301,7 @@ public class Demo {
                 final String fStr = (args.length > 3)?args[3]:"";
                 try (DirectoryStream<Path> ds = Files.newDirectoryStream(path,
                     new DirectoryStream.Filter<Path>() {
+                        @Override
                         public boolean accept(Path path) {
                             return path.toString().contains(fStr);
                         }
@@ -358,10 +357,18 @@ public class Demo {
         return null;
     }
 
+    @SuppressWarnings("unused")
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
     private static byte[] getBytes(String name) {
         return name.getBytes();
     }
 
+    @SuppressWarnings("unused")
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
     private static String getString(byte[] name) {
         return new String(name);
     }
@@ -534,6 +541,10 @@ public class Demo {
         Files.createDirectory(path);
     }
 
+    @SuppressWarnings("unused")
+    /**
+     * Not used in demo, but included for demonstrational purposes.
+     */
     private static void rmdirs(Path path) throws IOException {
         while (path != null && path.getNameCount() != 0) {
             Files.delete(path);
@@ -557,7 +568,11 @@ public class Demo {
         }
     }
 
-    // check the content of two paths are equal
+    @SuppressWarnings("unused")
+    /**
+     * Checks that the content of two paths are equal.
+     * Not used in demo, but included for demonstrational purposes.
+     */
     private static void checkEqual(Path src, Path dst) throws IOException
     {
         //System.out.printf("checking <%s> vs <%s>...%n",

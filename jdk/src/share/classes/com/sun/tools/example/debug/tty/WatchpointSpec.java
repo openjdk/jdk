@@ -25,8 +25,6 @@
 
 package com.sun.tools.example.debug.tty;
 
-import com.sun.jdi.*;
-
 abstract class WatchpointSpec extends EventRequestSpec {
     final String fieldId;
 
@@ -39,11 +37,13 @@ abstract class WatchpointSpec extends EventRequestSpec {
         }
     }
 
+    @Override
     public int hashCode() {
         return refSpec.hashCode() + fieldId.hashCode() +
             getClass().hashCode();
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof WatchpointSpec) {
             WatchpointSpec watchpoint = (WatchpointSpec)obj;
@@ -56,6 +56,7 @@ abstract class WatchpointSpec extends EventRequestSpec {
         }
     }
 
+    @Override
     String errorMessageFor(Exception e) {
         if (e instanceof NoSuchFieldException) {
             return (MessageOutput.format("No field in",

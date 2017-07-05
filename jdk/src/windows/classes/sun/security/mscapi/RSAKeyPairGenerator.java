@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,14 +105,20 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // generate the keypair. See JCA doc
     public KeyPair generateKeyPair() {
 
-        // Generate each keypair in a unique key container
-        RSAKeyPair keys =
-            generateRSAKeyPair(keySize,
-                "{" + UUID.randomUUID().toString() + "}");
+        try {
 
-        return new KeyPair(keys.getPublic(), keys.getPrivate());
+            // Generate each keypair in a unique key container
+            RSAKeyPair keys =
+                generateRSAKeyPair(keySize,
+                    "{" + UUID.randomUUID().toString() + "}");
+
+            return new KeyPair(keys.getPublic(), keys.getPrivate());
+
+        } catch (KeyException e) {
+            throw new ProviderException(e);
+        }
     }
 
     private static native RSAKeyPair generateRSAKeyPair(int keySize,
-        String keyContainerName);
+        String keyContainerName) throws KeyException;
 }

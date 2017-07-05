@@ -2086,6 +2086,13 @@ void Matcher::find_shared( Node *n ) {
         n->del_req(3);
         break;
       }
+      case Op_LoopLimit: {
+        Node *pair1 = new (C, 3) BinaryNode(n->in(1),n->in(2));
+        n->set_req(1,pair1);
+        n->set_req(2,n->in(3));
+        n->del_req(3);
+        break;
+      }
       case Op_StrEquals: {
         Node *pair1 = new (C, 3) BinaryNode(n->in(2),n->in(3));
         n->set_req(2,pair1);

@@ -26,11 +26,7 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.*;
-import com.sun.jdi.request.*;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 
 public class LineBreakpointSpec extends BreakpointSpec {
     int lineNumber;
@@ -44,6 +40,7 @@ public class LineBreakpointSpec extends BreakpointSpec {
     /**
      * The 'refType' is known to match.
      */
+    @Override
     void resolve(ReferenceType refType) throws InvalidTypeException,
                                              LineNotFoundException {
         if (!(refType instanceof ClassType)) {
@@ -81,10 +78,12 @@ public class LineBreakpointSpec extends BreakpointSpec {
         return lineNumber;
     }
 
+    @Override
     public int hashCode() {
         return refSpec.hashCode() + lineNumber;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof LineBreakpointSpec) {
             LineBreakpointSpec breakpoint = (LineBreakpointSpec)obj;
@@ -96,6 +95,7 @@ public class LineBreakpointSpec extends BreakpointSpec {
         }
     }
 
+    @Override
     public String errorMessageFor(Exception e) {
         if (e instanceof LineNotFoundException) {
             return ("No code at line " + lineNumber() + " in " + refSpec);
@@ -107,6 +107,7 @@ public class LineBreakpointSpec extends BreakpointSpec {
         }
     }
 
+    @Override
     public String toString() {
         StringBuffer buffer = new StringBuffer("breakpoint ");
         buffer.append(refSpec.toString());

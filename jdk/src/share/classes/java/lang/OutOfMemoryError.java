@@ -32,7 +32,8 @@ package java.lang;
  *
  * {@code OutOfMemoryError} objects may be constructed by the virtual
  * machine as if {@linkplain Throwable#Throwable(String, Throwable,
- * boolean) suppression were disabled}.
+ * boolean, boolean) suppression were disabled and/or the stack trace was not
+ * writable}.
  *
  * @author  unascribed
  * @since   JDK1.0

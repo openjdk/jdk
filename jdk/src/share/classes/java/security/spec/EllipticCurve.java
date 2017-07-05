@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,7 @@ public class EllipticCurve {
      * specified object.
      * @param obj the object to be compared.
      * @return true if <code>obj</code> is an instance of
-     * EllipticCurve and the field, A, B, and seeding bytes
-     * match, false otherwise.
+     * EllipticCurve and the field, A, and B match, false otherwise.
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -174,9 +173,8 @@ public class EllipticCurve {
             EllipticCurve curve = (EllipticCurve) obj;
             if ((field.equals(curve.field)) &&
                 (a.equals(curve.a)) &&
-                (b.equals(curve.b)) &&
-                (Arrays.equals(seed, curve.seed))) {
-                return true;
+                (b.equals(curve.b))) {
+                    return true;
             }
         }
         return false;
@@ -184,12 +182,15 @@ public class EllipticCurve {
 
     /**
      * Returns a hash code value for this elliptic curve.
-     * @return a hash code value.
+     * @return a hash code value computed from the hash codes of the field, A,
+     * and B, as follows:
+     * <code>
+     *     (field.hashCode() << 6) + (a.hashCode() << 4) + (b.hashCode() << 2)
+     * </code>
      */
     public int hashCode() {
         return (field.hashCode() << 6 +
             (a.hashCode() << 4) +
-            (b.hashCode() << 2) +
-            (seed==null? 0:seed.length));
+            (b.hashCode() << 2));
     }
 }

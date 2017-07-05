@@ -1,4 +1,4 @@
-." Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH wsimport 1 "14 Apr 2011"
+.TH wsimport 1 "07 May 2011"
 .SH "Ì¾Á°"
 wsimport \- XML Web Services (JAX\-WS) 2.0 ¤Î¤¿¤á¤Î Java(TM) API
 .LP
@@ -818,7 +818,7 @@ https://jax\-ws.dev.java.net/nonav/2.1.1/docs/customizations.html¤ò»²¾È¤·¤Æ¤¯¤À¤
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-Ç§¾Ú¾ðÊó¤ò´Þ¤à¥Õ¥¡¥¤¥ë¤ò»ØÄê¤¹¤ë WSDL URI ¤Ç¤¹¡£¤³¤Î URI ¤Î·Á¼°¤Ï¼¡¤Î¤È¤ª¤ê¤Ç¤¹ http://username:password@example.org/stock?wsdl
+Ç§¾Ú¾ðÊó¤ò´Þ¤à¥Õ¥¡¥¤¥ë¤ò»ØÄê¤¹¤ë WSDL URI ¤Ç¤¹¡£¤³¤Î URI ¤Î·Á¼°¤Ï¼¡¤Î¤È¤ª¤ê¤Ç¤¹ http://\f2<¥æ¡¼¥¶¡¼Ì¾>\fP:\f2<¥Ñ¥¹¥ï¡¼¥É>\fP@\f2<¥Û¥¹¥ÈÌ¾>\fP/\f2<Web ¥µ¡¼¥Ó¥¹Ì¾>\fP?wsdl
 .br
 .di
 .nr b| \n(dn
@@ -1057,10 +1057,10 @@ W3C \f2EndpointReferenceType\fP ¤È Java ¤Î¥Ð¥¤¥ó¥Ç¥£¥ó¥°¤òÍ­¸ú¤Ë¤·¤Þ¤¹
 .nf
 \f3
 .fl
-\fP\f3wsimport \-p stockquote http://stockquote.xyz/quote?wsdl\fP
+\fP\f3wsimport \-p stockquote http://stockquote.example.com/quote?wsdl\fP
 .fl
 .fi
 .LP
-Java ¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤òÀ¸À®¤·¡¢ \f2http://stockquote.xyz/quote?wsdl\fP ¤ò¥¤¥ó¥Ý¡¼¥È¤¹¤ë¤³¤È¤Ç¡¢¤½¤ì¤é¤Î¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Þ¤¹¡£
+Java ¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤òÀ¸À®¤·¡¢ \f2http://stockquote.example.com/quote?wsdl\fP ¤ò¥¤¥ó¥Ý¡¼¥È¤·¤Æ¤½¤Î Java ¥¢¡¼¥Æ¥£¥Õ¥¡¥¯¥È¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Þ¤¹
 .br
  

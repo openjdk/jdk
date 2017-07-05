@@ -144,9 +144,11 @@ public interface Map<K,V> {
      * @return <tt>true</tt> if this map contains a mapping for the specified
      *         key
      * @throws ClassCastException if the key is of an inappropriate type for
-     *         this map (optional)
+     *         this map
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key is null and this map
-     *         does not permit null keys (optional)
+     *         does not permit null keys
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     boolean containsKey(Object key);
 
@@ -162,9 +164,11 @@ public interface Map<K,V> {
      * @return <tt>true</tt> if this map maps one or more keys to the
      *         specified value
      * @throws ClassCastException if the value is of an inappropriate type for
-     *         this map (optional)
+     *         this map
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified value is null and this
-     *         map does not permit null values (optional)
+     *         map does not permit null values
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     boolean containsValue(Object value);
 
@@ -187,9 +191,11 @@ public interface Map<K,V> {
      * @return the value to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      * @throws ClassCastException if the key is of an inappropriate type for
-     *         this map (optional)
+     *         this map
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key is null and this map
-     *         does not permit null keys (optional)
+     *         does not permit null keys
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     V get(Object key);
 
@@ -245,9 +251,11 @@ public interface Map<K,V> {
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this map
      * @throws ClassCastException if the key is of an inappropriate type for
-     *         this map (optional)
+     *         this map
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key is null and this
-     *         map does not permit null keys (optional)
+     *         map does not permit null keys
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     V remove(Object key);
 
@@ -466,4 +474,5 @@ public interface Map<K,V> {
      * @see #equals(Object)
      */
     int hashCode();
+
 }

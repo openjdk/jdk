@@ -30,6 +30,8 @@ import com.sun.jdi.event.*;
 
 public abstract class WatchpointEventSet extends LocatableEventSet {
 
+    private static final long serialVersionUID = 5606285209703845409L;
+
     WatchpointEventSet(EventSet jdiEventSet) {
         super(jdiEventSet);
     }

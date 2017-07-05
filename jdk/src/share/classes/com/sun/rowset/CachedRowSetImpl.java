@@ -1666,7 +1666,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     protected void removeCurrentRow() {
         ((Row)getCurrentRow()).setDeleted();
-        rvh.remove(cursorPos);
+        rvh.remove(cursorPos - 1);
         --numRows;
     }
 
@@ -6349,7 +6349,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // this can happen if deleted rows are being shown
         if (row.getDeleted() == true) {
             removeCurrentRow();
-            --numRows;
         }
     }
 

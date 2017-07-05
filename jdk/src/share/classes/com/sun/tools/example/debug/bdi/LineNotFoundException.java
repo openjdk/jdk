@@ -27,6 +27,9 @@ package com.sun.tools.example.debug.bdi;
 
 public class LineNotFoundException extends Exception
 {
+
+    private static final long serialVersionUID = -5630418117861587582L;
+
     public LineNotFoundException()
     {
         super();
