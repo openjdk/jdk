@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import java.util.Base64;
  * @author Roland Schemers
  * @author Jan Luehe
  */
-
+@SuppressWarnings("deprecation")
 public class Main {
 
     // for i18n
@@ -396,9 +396,15 @@ public class Main {
             } else if (collator.compare(flags, "-altsigner") ==0) {
                 if (++n == args.length) usageNoArg();
                 altSignerClass = args[n];
+                System.err.println(
+                        rb.getString("This.option.is.deprecated") +
+                                "-altsigner");
             } else if (collator.compare(flags, "-altsignerpath") ==0) {
                 if (++n == args.length) usageNoArg();
                 altSignerClasspath = args[n];
+                System.err.println(
+                        rb.getString("This.option.is.deprecated") +
+                                "-altsignerpath");
             } else if (collator.compare(flags, "-sectionsonly") ==0) {
                 signManifest = false;
             } else if (collator.compare(flags, "-internalsf") ==0) {
@@ -2306,6 +2312,7 @@ class SignatureFile {
      * @param args The command-line arguments to jarsigner.
      * @param zipFile The original source Zip file.
      */
+    @SuppressWarnings("deprecation")
     public Block generateBlock(PrivateKey privateKey,
                                String sigalg,
                                X509Certificate[] certChain,
@@ -2331,6 +2338,7 @@ class SignatureFile {
         /*
          * Construct a new signature block.
          */
+        @SuppressWarnings("deprecation")
         Block(SignatureFile sfg, PrivateKey privateKey, String sigalg,
             X509Certificate[] certChain, boolean externalSF, String tsaUrl,
             X509Certificate tsaCert, String tSAPolicyID, String tSADigestAlg,
@@ -2451,6 +2459,7 @@ class SignatureFile {
 /*
  * This object encapsulates the parameters used to perform content signing.
  */
+@SuppressWarnings("deprecation")
 class JarSignerParameters implements ContentSignerParameters {
 
     private String[] args;

@@ -28,7 +28,7 @@ package sun.util.calendar;
 import java.util.TimeZone;
 
 /**
- * The <code>BaseCalendar</code> provides basic calendar calculation
+ * The {@code BaseCalendar} provides basic calendar calculation
  * functions to support the Julian, Gregorian, and Gregorian-based
  * calendar systems.
  *
@@ -290,11 +290,11 @@ public abstract class BaseCalendar extends AbstractCalendar {
     /**
      * Returns 366 if the specified date is in a leap year, or 365
      * otherwise This method does not perform the normalization with
-     * the specified <code>CalendarDate</code>. The
-     * <code>CalendarDate</code> must be normalized to get a correct
+     * the specified {@code CalendarDate}. The
+     * {@code CalendarDate} must be normalized to get a correct
      * value.
      *
-     * @param a <code>CalendarDate</code>
+     * @param date a {@code CalendarDate}
      * @return a year length in days
      * @throws ClassCastException if the specified date is not a
      * {@link BaseCalendar.Date}
@@ -412,7 +412,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
 
     /**
      * Calculates calendar fields and store them in the specified
-     * <code>CalendarDate</code>.
+     * {@code CalendarDate}.
      */
     // should be 'protected'
     public void getCalendarDateFromFixedDate(CalendarDate date,
