@@ -1305,9 +1305,12 @@ public class RepaintManager
             if (doubleBufferingEnabled && !nativeDoubleBuffering) {
                 switch (bufferStrategyType) {
                 case BUFFER_STRATEGY_NOT_SPECIFIED:
-                    if (((SunToolkit)Toolkit.getDefaultToolkit()).
-                                                useBufferPerWindow()) {
-                        paintManager = new BufferStrategyPaintManager();
+                    Toolkit tk = Toolkit.getDefaultToolkit();
+                    if (tk instanceof SunToolkit) {
+                        SunToolkit stk = (SunToolkit) tk;
+                        if (stk.useBufferPerWindow()) {
+                            paintManager = new BufferStrategyPaintManager();
+                        }
                     }
                     break;
                 case BUFFER_STRATEGY_SPECIFIED_ON:
@@ -1329,9 +1332,16 @@ public class RepaintManager
 
     private void scheduleProcessingRunnable(AppContext context) {
         if (processingRunnable.markPending()) {
-            SunToolkit.getSystemEventQueueImplPP(context).
-                postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
-                                              processingRunnable));
+            Toolkit tk = Toolkit.getDefaultToolkit();
+            if (tk instanceof SunToolkit) {
+                SunToolkit.getSystemEventQueueImplPP(context).
+                  postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
+                                                processingRunnable));
+            } else {
+                Toolkit.getDefaultToolkit().getSystemEventQueue().
+                      postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
+                                                    processingRunnable));
+            }
         }
     }
 

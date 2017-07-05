@@ -42,8 +42,6 @@ class Platform {
 
     // native library we need to load
     private static final String libNameMain     = "jsound";
-    private static final String libNameMain2    = "jsoundhs";
-
     private static final String libNameALSA     = "jsoundalsa";
     private static final String libNameDSound   = "jsoundds";
 
@@ -158,9 +156,8 @@ class Platform {
         if(Printer.trace)Printer.trace(">>Platform.loadLibraries");
 
         try {
-            // load the main libraries
+            // load the main library
             JSSecurityManager.loadLibrary(libNameMain);
-            JSSecurityManager.loadLibrary(libNameMain2);
             // just for the heck of it...
             loadedLibs |= LIB_MAIN;
         } catch (SecurityException e) {
