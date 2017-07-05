@@ -25,7 +25,7 @@ BEGIN	{
 	{ totallines++; print $0 }
 
 END	{
-	    if ((headerlines == 1) && (datalines == 1) && (totallines == 2)) {
+	    if ((headerlines == 1) && (datalines == 1)) {
 	        exit 0
 	    }
 	    else {

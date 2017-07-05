@@ -75,7 +75,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
 
   // High water mark for allocations.  Typically, the space above
   // this point have been mangle previously and don't need to be
-  // touched again.  Space belows this point has been allocated
+  // touched again.  Space below this point has been allocated
   // and remangling is needed between the current top and this
   // high water mark.
   HeapWord* _top_for_allocations;

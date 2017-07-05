@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,20 +39,32 @@ public class TestAESMain {
     System.out.println(iters + " iterations");
     TestAESEncode etest = new TestAESEncode();
     etest.prepare();
+    // warm-up for 20K iterations
+    System.out.println("Starting encryption warm-up");
+    for (int i=0; i<20000; i++) {
+      etest.run();
+    }
+    System.out.println("Finished encryption warm-up");
     long start = System.nanoTime();
     for (int i=0; i<iters; i++) {
       etest.run();
     }
     long end = System.nanoTime();
-    System.out.println("TestAESEncode runtime was " + (double)((end - start)/1000000000.0) + " ms");
+    System.out.println("TestAESEncode runtime was " + (double)((end - start)/1000000.0) + " ms");
 
     TestAESDecode dtest = new TestAESDecode();
     dtest.prepare();
+    // warm-up for 20K iterations
+    System.out.println("Starting decryption warm-up");
+    for (int i=0; i<20000; i++) {
+      dtest.run();
+    }
+    System.out.println("Finished decryption warm-up");
     start = System.nanoTime();
     for (int i=0; i<iters; i++) {
       dtest.run();
     }
     end = System.nanoTime();
-    System.out.println("TestAESDecode runtime was " + (double)((end - start)/1000000000.0) + " ms");
+    System.out.println("TestAESDecode runtime was " + (double)((end - start)/1000000.0) + " ms");
   }
 }

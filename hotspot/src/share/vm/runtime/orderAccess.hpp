@@ -61,13 +61,13 @@
 //
 // Ensures that Load1 completes before Store2 and any subsequent store
 // operations.  Loads before Load1 may *not* float below Store2 and any
-// subseqeuent store operations.
+// subsequent store operations.
 //
 // StoreLoad:  Store1(s); StoreLoad; Load2
 //
 // Ensures that Store1 completes before Load2 and any subsequent load
 // operations.  Stores before Store1 may *not* float below Load2 and any
-// subseqeuent load operations.
+// subsequent load operations.
 //
 //
 // We define two further operations, 'release' and 'acquire'.  They are
@@ -176,7 +176,7 @@
 // compilers that we currently use (SunStudio, gcc and VC++) respect the
 // semantics of volatile here. If you build HotSpot using other
 // compilers, you may need to verify that no compiler reordering occurs
-// across the sequence point respresented by the volatile access.
+// across the sequence point represented by the volatile access.
 //
 //
 //                os::is_MP Considered Redundant
@@ -311,7 +311,7 @@ class OrderAccess : AllStatic {
  private:
   // This is a helper that invokes the StubRoutines::fence_entry()
   // routine if it exists, It should only be used by platforms that
-  // don't another way to do the inline eassembly.
+  // don't have another way to do the inline assembly.
   static void StubRoutines_fence();
 };
 

@@ -110,7 +110,7 @@ public class FileChannelImpl
             }
         }
 
-        nd.preClose(fd);
+        // signal any threads blocked on this channel
         threads.signalAndWait();
 
         if (parent != null) {

@@ -267,7 +267,7 @@ class HandleArea: public Arena {
 // HandleMarks manually.
 //
 // A HandleMark constructor will record the current handle area top, and the
-// desctructor will reset the top, destroying all handles allocated in between.
+// destructor will reset the top, destroying all handles allocated in between.
 // The following code will therefore NOT work:
 //
 //   Handle h;

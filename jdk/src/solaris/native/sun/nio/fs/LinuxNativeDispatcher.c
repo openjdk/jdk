@@ -68,13 +68,15 @@ Java_sun_nio_fs_LinuxNativeDispatcher_init(JNIEnv *env, jclass clazz)
     my_flistxattr_func = (flistxattr_func*)dlsym(RTLD_DEFAULT, "flistxattr");
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
-    if (clazz == NULL)
-        return;
-
+    CHECK_NULL(clazz);
     entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
+    CHECK_NULL(entry_name);
     entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
+    CHECK_NULL(entry_dir);
     entry_fstype = (*env)->GetFieldID(env, clazz, "fstype", "[B");
+    CHECK_NULL(entry_fstype);
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
+    CHECK_NULL(entry_options);
 }
 
 JNIEXPORT jint JNICALL

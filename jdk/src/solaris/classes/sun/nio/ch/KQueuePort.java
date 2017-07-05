@@ -172,9 +172,9 @@ final class KQueuePort
         // TBD: Measure cost of EV_ONESHOT vs. EV_CLEAR, either will do here.
         int err = 0;
         int flags = (EV_ADD|EV_ONESHOT);
-        if ((events & Port.POLLIN) > 0)
+        if ((events & Net.POLLIN) > 0)
             err = keventRegister(kqfd, fd, EVFILT_READ, flags);
-        if (err == 0 && (events & Port.POLLOUT) > 0)
+        if (err == 0 && (events & Net.POLLOUT) > 0)
             err = keventRegister(kqfd, fd, EVFILT_WRITE, flags);
         if (err != 0)
             throw new InternalError("kevent failed: " + err);  // should not happen
@@ -227,9 +227,9 @@ final class KQueuePort
                                 int filter = getFilter(keventAddress);
                                 int events = 0;
                                 if (filter == EVFILT_READ)
-                                    events = Port.POLLIN;
+                                    events = Net.POLLIN;
                                 else if (filter == EVFILT_WRITE)
-                                    events = Port.POLLOUT;
+                                    events = Net.POLLOUT;
 
                                 Event ev = new Event(channel, events);
 

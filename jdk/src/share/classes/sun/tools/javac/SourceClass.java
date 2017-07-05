@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ class SourceClass extends ClassDefinition {
 
         // maybe define an uplevel "A.this" current instance field
         if (!isTopLevel() && !isLocal()) {
-            LocalMember outerArg = ((SourceClass)outerClass).getThisArgument();
+            LocalMember outerArg = outerClass.getThisArgument();
             UplevelReference r = getReference(outerArg);
             setOuterMember(r.getLocalField(env));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,8 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
                                           XlibWrapper.larg6,
                                           XlibWrapper.larg7);
 
-                p.x = (int) XlibWrapper.unsafe.getInt(XlibWrapper.larg3);
-                p.y = (int) XlibWrapper.unsafe.getInt(XlibWrapper.larg4);
+                p.x = XlibWrapper.unsafe.getInt(XlibWrapper.larg3);
+                p.y = XlibWrapper.unsafe.getInt(XlibWrapper.larg4);
             } finally {
                 XToolkit.awtUnlock();
             }

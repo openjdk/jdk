@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,45 +27,28 @@
  * @summary Basic unit test of the synchronization statistics support:
  *
  * @author  Mandy Chung
+ * @author  Jaroslav Bachorik
  *
- * @ignore  6309226
- * @build Semaphore
  * @run main/othervm SynchronizationStatistics
  */
 
 import java.lang.management.*;
+import java.util.concurrent.Phaser;
 
 public class SynchronizationStatistics {
-    private static ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
-
-    private static boolean blockedTimeCheck =
-        mbean.isThreadContentionMonitoringSupported();
-    private static boolean trace = false;
-
-    private static Object lockA = new Object();
-    private static Object lockB = new Object();
-    private static Object lockC = new Object();
-    private static Object lockD = new Object();
-    private static Object waiter = new Object();
-    private static volatile boolean testFailed = false;
-
-    private static Object go = new Object();
-
-    private static void goSleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Unexpected exception.");
-            testFailed = true;
+    private static class LockerThread extends Thread {
+        public LockerThread(Runnable r) {
+            super(r, "LockerThread");
         }
     }
 
-    public static void main(String args[]) throws Exception {
-        if (args.length > 0 && args[0].equals("trace")) {
-            trace = true;
-        }
+    private static final ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
 
+    private static final boolean blockedTimeCheck =
+        mbean.isThreadContentionMonitoringSupported();
+
+
+    public static void main(String args[]) throws Exception {
         if (blockedTimeCheck) {
             mbean.setThreadContentionMonitoringEnabled(true);
         }
@@ -75,457 +58,317 @@ public class SynchronizationStatistics {
                 "Thread Contention Monitoring is not enabled");
         }
 
-        Examiner examiner = new Examiner("Examiner");
-        BlockedThread blocked = new BlockedThread("BlockedThread");
-        examiner.setThread(blocked);
-
-        // Start the threads and check them in  Blocked and Waiting states
-        examiner.start();
-
-        // wait until the examiner acquires all the locks and waiting
-        // for the BlockedThread to start
-        examiner.waitUntilWaiting();
-
-        System.out.println("Checking the thread state for the examiner thread " +
-                           "is waiting to begin.");
-
-        // The Examiner should be waiting to be notified by the BlockedThread
-        checkThreadState(examiner, Thread.State.WAITING);
-
-        System.out.println("Now starting the blocked thread");
-        blocked.start();
-
-        try {
-            examiner.join();
-            blocked.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Unexpected exception.");
-            testFailed = true;
-        }
-
-        if (testFailed)
-            throw new RuntimeException("TEST FAILED.");
+        testBlockingOnSimpleMonitor();
+        testBlockingOnNestedMonitor();
+        testWaitingOnSimpleMonitor();
+        testMultiWaitingOnSimpleMonitor();
+        testWaitingOnNestedMonitor();
 
         System.out.println("Test passed.");
     }
 
-    private static String INDENT = "    ";
-    private static void printStack(Thread t, StackTraceElement[] stack) {
-        System.out.println(INDENT +  t +
-                           " stack: (length = " + stack.length + ")");
-        if (t != null) {
-            for (int j = 0; j < stack.length; j++) {
-                System.out.println(INDENT + stack[j]);
+    private static LockerThread newLockerThread(Runnable r) {
+        LockerThread t = new LockerThread(r);
+        t.setDaemon(true);
+        return t;
+    }
+
+    private static void waitForThreadState(Thread t, Thread.State state) throws InterruptedException {
+        while (!t.isInterrupted() && t.getState() != state) {
+            Thread.sleep(3);
+        }
+    }
+
+    /**
+     * Tests that blocking on a single monitor properly increases the
+     * blocked count at least by 1. Also asserts that the correct lock name is provided.
+     */
+    private static void testBlockingOnSimpleMonitor() throws Exception {
+        System.out.println("testBlockingOnSimpleMonitor");
+        final Object lock1 = new Object();
+        final Phaser p = new Phaser(2);
+        LockerThread lt = newLockerThread(new Runnable() {
+            @Override
+            public void run() {
+                p.arriveAndAwaitAdvance(); // phase[1]
+                synchronized(lock1) {
+                    System.out.println("[LockerThread obtained Lock1]");
+                    p.arriveAndAwaitAdvance(); // phase[2]
+                }
+                p.arriveAndAwaitAdvance(); // phase[3]
             }
-            System.out.println();
+        });
+
+        lt.start();
+        long tid = lt.getId();
+        ThreadInfo ti = mbean.getThreadInfo(tid);
+        String lockName = null;
+        synchronized(lock1) {
+            p.arriveAndAwaitAdvance(); // phase[1]
+            waitForThreadState(lt, Thread.State.BLOCKED);
+            lockName = mbean.getThreadInfo(tid).getLockName();
         }
+
+        p.arriveAndAwaitAdvance(); // phase[2]
+        testBlocked(ti, mbean.getThreadInfo(tid), lockName, lock1);
+        p.arriveAndDeregister(); // phase[3]
+
+        lt.join();
+
+        System.out.println("OK");
     }
 
-    private static void checkThreadState(Thread thread, Thread.State s)
-        throws Exception {
+    /**
+     * Tests that blocking on a nested monitor properly increases the
+     * blocked count at least by 1 - it is not affected by the nesting depth.
+     * Also asserts that the correct lock name is provided.
+     */
+    private static void testBlockingOnNestedMonitor() throws Exception {
+        System.out.println("testBlockingOnNestedMonitor");
+        final Object lock1 = new Object();
+        final Object lock2 = new Object();
 
-        ThreadInfo ti = mbean.getThreadInfo(thread.getId());
-        if (ti.getThreadState() != s) {
-            ThreadInfo info = mbean.getThreadInfo(thread.getId(),
-                                                  Integer.MAX_VALUE);
-            System.out.println(INDENT + "TEST FAILED:");
-            printStack(thread, info.getStackTrace());
-            System.out.println(INDENT + "Thread state: " + info.getThreadState());
-
-            throw new RuntimeException("TEST FAILED: " +
-                "Thread state for " + thread + " returns " + ti.getThreadState() +
-                ".  Expected to be " + s);
-        }
-    }
-
-    private static void checkThreadState(Thread thread,
-                                         Thread.State s1, Thread.State s2)
-        throws Exception {
-
-        ThreadInfo ti = mbean.getThreadInfo(thread.getId());
-        if (ti.getThreadState() != s1 && ti.getThreadState() != s2) {
-            throw new RuntimeException("TEST FAILED: " +
-                "Thread state for " + thread + " returns " + ti.getThreadState() +
-                ".  Expected to be " + s1 + " or " + s2);
-        }
-    }
-
-    static class StatThread extends Thread {
-        private long blockingBaseTime = 0;
-        private long totalWaitTime = 0;
-        private long totalBlockedEnterTime = 0;
-
-        StatThread(String name) {
-            super(name);
-        }
-
-        void addWaitTime(long ns) {
-            totalWaitTime = totalWaitTime + ns;
-        }
-        void addBlockedEnterTime(long ns) {
-            totalBlockedEnterTime = totalBlockedEnterTime + ns;
-        }
-        void setBlockingBaseTime(long time) {
-            blockingBaseTime = time;
-        }
-
-        long totalBlockedTimeMs() {
-            return totalBlockedEnterTime / 1000000;
-        }
-
-        long totalBlockedTimeMs(long now) {
-            long t = totalBlockedEnterTime + (now - blockingBaseTime);
-            return t / 1000000;
-        }
-
-        long totalWaitTimeMs() {
-            return totalWaitTime / 1000000;
-        }
-
-        long totalWaitTimeMs(long now) {
-            long t = totalWaitTime + (now - blockingBaseTime);
-            return t / 1000000;
-        }
-    }
-
-    static class BlockedThread extends StatThread {
-        private Semaphore handshake = new Semaphore();
-        BlockedThread(String name) {
-            super(name);
-        }
-        void waitUntilBlocked() {
-            handshake.semaP();
-
-            // give a chance for the examiner thread to really wait
-            goSleep(20);
-        }
-
-        void waitUntilWaiting() {
-            waitUntilBlocked();
-        }
-
-        boolean hasWaitersForBlocked() {
-            return (handshake.getWaiterCount() > 0);
-        }
-
-        private void notifyWaiter() {
-            // wait until the examiner waits on the semaphore
-            while (handshake.getWaiterCount() == 0) {
-                goSleep(20);
-            }
-            handshake.semaV();
-        }
-
-        private void waitObj(long ms) {
-            synchronized (waiter) {
-                try {
-                    // notify examinerabout to wait on a monitor
-                    notifyWaiter();
-
-                    long base = System.nanoTime();
-                    setBlockingBaseTime(base);
-                    waiter.wait(ms);
-                    long now = System.nanoTime();
-                    addWaitTime(now - base);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.out.println("Unexpected exception.");
-                    testFailed = true;
+        final Phaser p = new Phaser(2);
+        LockerThread lt = newLockerThread(new Runnable() {
+            @Override
+            public void run() {
+                p.arriveAndAwaitAdvance(); // phase[1]
+                synchronized(lock1) {
+                    System.out.println("[LockerThread obtained Lock1]");
+                    p.arriveAndAwaitAdvance(); // phase[2]
+                    p.arriveAndAwaitAdvance(); // phase[3]
+                    synchronized(lock2) {
+                        System.out.println("[LockerThread obtained Lock2]");
+                        p.arriveAndAwaitAdvance(); // phase[4]
+                    }
+                    p.arriveAndAwaitAdvance(); // phase[5]
                 }
             }
+        });
+
+        lt.start();
+        long tid = lt.getId();
+        ThreadInfo ti = mbean.getThreadInfo(tid);
+        ThreadInfo ti1 = null;
+        String lockName = null;
+        synchronized(lock1) {
+            p.arriveAndAwaitAdvance(); // phase[1]
+            waitForThreadState(lt, Thread.State.BLOCKED);
+            lockName = mbean.getThreadInfo(tid).getLockName();
         }
+        p.arriveAndAwaitAdvance(); // phase[2]
 
-        private void test() {
-            // notify examiner about to block on lockA
-            notifyWaiter();
+        ti1 = mbean.getThreadInfo(tid);
+        testBlocked(ti, ti1, lockName, lock1);
+        ti = ti1;
 
-            long base = System.nanoTime();
-            setBlockingBaseTime(base);
-            synchronized (lockA) {
-                long now = System.nanoTime();
-                addBlockedEnterTime(now - base);
-
-                A(); // Expected blocked count = 1
-            }
-            E();
+        synchronized(lock2) {
+            p.arriveAndAwaitAdvance(); // phase [3]
+            waitForThreadState(lt, Thread.State.BLOCKED);
+            lockName = mbean.getThreadInfo(tid).getLockName();
         }
-        private void A() {
-            // notify examiner about to block on lockB
-            notifyWaiter();
+        p.arriveAndAwaitAdvance(); // phase [4]
+        testBlocked(ti, mbean.getThreadInfo(tid), lockName, lock2);
+        p.arriveAndDeregister();
 
-            long base = System.nanoTime();
-            setBlockingBaseTime(base);
-            synchronized (lockB) {
-                long now = System.nanoTime();
-                addBlockedEnterTime(now - base);
+        lt.join();
 
-                B(); // Expected blocked count = 2
+        System.out.println("OK");
+    }
+
+    /**
+     * Tests that waiting on a single monitor properly increases the waited
+     * count by 1 and the waited time by a positive number.
+     */
+    private static void testWaitingOnSimpleMonitor() throws Exception {
+        System.out.println("testWaitingOnSimpleMonitor");
+        final Object lock1 = new Object();
+        final Phaser p = new Phaser(2);
+        LockerThread lt = newLockerThread(new Runnable() {
+            @Override
+            public void run() {
+                p.arriveAndAwaitAdvance(); // phase[1]
+                synchronized(lock1) {
+                    System.out.println("[LockerThread obtained Lock1]");
+                    try {
+                        lock1.wait(300);
+                    } catch (InterruptedException ex) {
+                        // ignore
+                    }
+                    p.arriveAndAwaitAdvance(); // phase[2]
+                }
+                p.arriveAndAwaitAdvance(); // phase[3]
             }
+        });
+
+        lt.start();
+        ThreadInfo ti1 = mbean.getThreadInfo(lt.getId());
+        synchronized(lock1) {
+            p.arriveAndAwaitAdvance(); // phase[1]
+            waitForThreadState(lt, Thread.State.BLOCKED);
         }
-        private void B() {
-            // notify examiner about to block on lockC
-            notifyWaiter();
+        p.arriveAndAwaitAdvance(); // phase[2]
 
-            long base = System.nanoTime();
-            setBlockingBaseTime(base);
-            synchronized (lockC) {
-                long now = System.nanoTime();
-                addBlockedEnterTime(now - base);
+        ThreadInfo ti2 = mbean.getThreadInfo(lt.getId());
+        p.arriveAndDeregister(); // phase[3]
 
-                C();  // Expected blocked count = 3
+        lt.join();
+
+        testWaited(ti1, ti2, 1);
+        System.out.println("OK");
+    }
+
+    /**
+     * Tests that waiting multiple times on the same monitor subsequently
+     * increases the waited count by the number of subsequent calls and the
+     * waited time by a positive number.
+     */
+    private static void testMultiWaitingOnSimpleMonitor() throws Exception {
+        System.out.println("testWaitingOnMultipleMonitors");
+        final Object lock1 = new Object();
+
+        final Phaser p = new Phaser(2);
+        LockerThread lt = newLockerThread(new Runnable() {
+            @Override
+            public void run() {
+                p.arriveAndAwaitAdvance(); // phase[1]
+                synchronized(lock1) {
+                    System.out.println("[LockerThread obtained Lock1]");
+                    for (int i = 0; i < 3; i++) {
+                        try {
+                            lock1.wait(300);
+                        } catch (InterruptedException ex) {
+                            // ignore
+                        }
+                        p.arriveAndAwaitAdvance(); // phase[2-4]
+                    }
+                }
+                p.arriveAndAwaitAdvance(); // phase[5]
             }
+        });
+
+        lt.start();
+        ThreadInfo ti1 = mbean.getThreadInfo(lt.getId());
+        synchronized(lock1) {
+            p.arriveAndAwaitAdvance(); //phase[1]
+            waitForThreadState(lt, Thread.State.BLOCKED);
         }
-        private void C() {
-            // notify examiner about to block on lockD
-            notifyWaiter();
+        int phase = p.getPhase();
+        while ((p.arriveAndAwaitAdvance() - phase) < 3); // phase[2-4]
 
-            long base = System.nanoTime();
-            setBlockingBaseTime(base);
-            synchronized (lockD) {
-                long now = System.nanoTime();
-                addBlockedEnterTime(now - base);
+        ThreadInfo ti2 = mbean.getThreadInfo(lt.getId());
+        p.arriveAndDeregister(); // phase[5]
 
-                D();  // Expected blocked count = 4
-            }
-        }
-        private void D() {
-            goSleep(50);
-        }
-        private void E() {
-            final int WAIT = 1000;
-            waitObj(WAIT);
-            waitObj(WAIT);
-            waitObj(WAIT);
-        }
+        lt.join();
+        testWaited(ti1, ti2, 3);
+        System.out.println("OK");
+    }
 
-        public void run() {
-            test();
-        } // run()
-    } // BlockedThread
+    /**
+     * Tests that waiting on monitors places in nested synchronized blocks
+     * properly increases the waited count by the number of times the "lock.wait()"
+     * was invoked and the waited time by a positive number.
+     */
+    private static void testWaitingOnNestedMonitor() throws Exception {
+        System.out.println("testWaitingOnNestedMonitor");
+        final Object lock1 = new Object();
+        final Object lock2 = new Object();
+        final Object lock3 = new Object();
 
-    static int blockedCount = 0;
-    static int waitedCount = 0;
-    static class Examiner extends StatThread {
-        private BlockedThread blockedThread;
-        private Semaphore semaphore = new Semaphore();
+        final Phaser p = new Phaser(2);
+        LockerThread lt = newLockerThread(new Runnable() {
+            @Override
+            public void run() {
+                p.arriveAndAwaitAdvance(); // phase[1]
+                synchronized(lock1) {
+                    System.out.println("[LockerThread obtained Lock1]");
+                    try {
+                        lock1.wait(300);
+                    } catch (InterruptedException ex) {
+                        // ignore
+                    }
 
-        Examiner(String name) {
-            super(name);
-        }
-
-        public void setThread(BlockedThread thread) {
-            blockedThread = thread;
-        }
-
-        private void blockedTimeRangeCheck(StatThread t,
-                                           long blockedTime,
-                                           long nowNano)
-            throws Exception {
-            long expected = t.totalBlockedTimeMs(nowNano);
-
-            // accept 5% range
-            timeRangeCheck(blockedTime, expected, 5);
-        }
-        private void waitedTimeRangeCheck(StatThread t,
-                                          long waitedTime,
-                                          long nowNano)
-            throws Exception {
-            long expected = t.totalWaitTimeMs(nowNano);
-
-            // accept 5% range
-            timeRangeCheck(waitedTime, expected, 5);
-        }
-
-        private void timeRangeCheck(long time, long expected, int percent)
-            throws Exception {
-
-            double diff = expected - time;
-
-            if (trace) {
-                 System.out.println("  Time = " + time +
-                    " expected = " + expected +
-                    ".  Diff = " + diff);
-
-            }
-            // throw an exception if blockedTime and expectedTime
-            // differs > percent%
-            if (diff < 0) {
-                diff = diff * -1;
-            }
-
-            long range = (expected * percent) / 100;
-            // minimum range = 2 ms
-            if (range < 2) {
-                range = 2;
-            }
-            if (diff > range) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Time returned = " + time +
-                    " expected = " + expected + ".  Diff = " + diff);
-            }
-        }
-        private void checkInfo(StatThread t, Thread.State s, Object lock,
-                               String lockName, int bcount, int wcount)
-            throws Exception {
-
-            String action = "ERROR";
-            if (s == Thread.State.WAITING || s == Thread.State.TIMED_WAITING) {
-                action = "wait on ";
-            } else if (s == Thread.State.BLOCKED) {
-                action = "block on ";
-            }
-            System.out.println(t + " expected to " + action + lockName +
-                " with blocked count = " + bcount +
-                " and waited count = " + wcount);
-
-            long now = System.nanoTime();
-            ThreadInfo info = mbean.getThreadInfo(t.getId());
-            if (info.getThreadState() != s) {
-                printStack(t, info.getStackTrace());
-                throw new RuntimeException("TEST FAILED: " +
-                    "Thread state returned is " + info.getThreadState() +
-                    ". Expected to be " + s);
-            }
-
-            if (info.getLockName() == null ||
-                !info.getLockName().equals(lock.toString())) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "getLockName() returned " + info.getLockName() +
-                    ". Expected to be " + lockName + " - "  + lock.toString());
-            }
-
-            if (info.getBlockedCount() != bcount) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Blocked Count returned is " + info.getBlockedCount() +
-                    ". Expected to be " + bcount);
-            }
-            if (info.getWaitedCount() != wcount) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Waited Count returned is " + info.getWaitedCount() +
-                    ". Expected to be " + wcount);
-            }
-
-            String lockObj = info.getLockName();
-            if (lockObj == null || !lockObj.equals(lock.toString())) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Object blocked on is " + lockObj  +
-                    ". Expected to be " + lock.toString());
-            }
-
-            if (!blockedTimeCheck) {
-                return;
-            }
-            long blockedTime = info.getBlockedTime();
-            if (blockedTime < 0) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Blocked time returned is negative = " + blockedTime);
-            }
-
-            if (s == Thread.State.BLOCKED) {
-                blockedTimeRangeCheck(t, blockedTime, now);
-            } else {
-                timeRangeCheck(blockedTime, t.totalBlockedTimeMs(), 5);
-            }
-
-            long waitedTime = info.getWaitedTime();
-            if (waitedTime < 0) {
-                throw new RuntimeException("TEST FAILED: " +
-                    "Waited time returned is negative = " + waitedTime);
-            }
-            if (s == Thread.State.WAITING || s == Thread.State.TIMED_WAITING) {
-                waitedTimeRangeCheck(t, waitedTime, now);
-            } else {
-                timeRangeCheck(waitedTime, t.totalWaitTimeMs(), 5);
-            }
-
-        }
-
-        private void examine() {
-            try {
-                synchronized (lockD) {
-                    synchronized (lockC) {
-                        synchronized (lockB) {
-                            synchronized (lockA) {
-                                // notify main thread to continue
-                                semaphore.semaV();
-
-                                // wait until BlockedThread has started
-                                blockedThread.waitUntilBlocked();
-
-                                blockedCount++;
-                                checkInfo(blockedThread, Thread.State.BLOCKED,
-                                          lockA, "lockA",
-                                          blockedCount, waitedCount);
-                            }
-
-                           // wait until BlockedThread to block on lockB
-                            blockedThread.waitUntilBlocked();
-
-                            blockedCount++;
-                            checkInfo(blockedThread, Thread.State.BLOCKED,
-                                      lockB, "lockB",
-                                      blockedCount, waitedCount);
+                    p.arriveAndAwaitAdvance(); // phase[2]
+                    synchronized(lock2) {
+                        System.out.println("[LockerThread obtained Lock2]");
+                        try {
+                            lock2.wait(300);
+                        } catch (InterruptedException ex) {
+                            // ignore
                         }
 
-                        // wait until BlockedThread to block on lockC
-                        blockedThread.waitUntilBlocked();
-
-                        blockedCount++;
-                        checkInfo(blockedThread, Thread.State.BLOCKED,
-                                  lockC, "lockC",
-                                  blockedCount, waitedCount);
+                        p.arriveAndAwaitAdvance(); // phase[3]
+                        synchronized(lock3) {
+                            System.out.println("[LockerThread obtained Lock3]");
+                            try {
+                                lock3.wait(300);
+                            } catch (InterruptedException ex) {
+                                // ignore
+                            }
+                            p.arriveAndAwaitAdvance(); // phase[4]
+                        }
                     }
-                    // wait until BlockedThread to block on lockD
-                    blockedThread.waitUntilBlocked();
-                    blockedCount++;
-
-                    checkInfo(blockedThread, Thread.State.BLOCKED,
-                              lockD, "lockD",
-                              blockedCount, waitedCount);
                 }
-
-                // wait until BlockedThread about to call E()
-                // BlockedThread will wait on waiter for 3 times
-                blockedThread.waitUntilWaiting();
-
-                waitedCount++;
-                checkInfo(blockedThread, Thread.State.TIMED_WAITING,
-                          waiter, "waiter", blockedCount, waitedCount);
-
-                blockedThread.waitUntilWaiting();
-
-                waitedCount++;
-                checkInfo(blockedThread, Thread.State.TIMED_WAITING,
-                          waiter, "waiter", blockedCount, waitedCount);
-
-                blockedThread.waitUntilWaiting();
-
-                waitedCount++;
-                checkInfo(blockedThread, Thread.State.TIMED_WAITING,
-                          waiter, "waiter", blockedCount, waitedCount);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Unexpected exception.");
-                testFailed = true;
+                p.arriveAndAwaitAdvance(); // phase[5]
             }
+        });
+
+        lt.start();
+        ThreadInfo ti1 = mbean.getThreadInfo(lt.getId());
+        synchronized(lock1) {
+            p.arriveAndAwaitAdvance(); // phase[1]
+            waitForThreadState(lt, Thread.State.BLOCKED);
         }
 
-        public void run() {
-            examine();
-        } // run()
-
-        public void waitUntilWaiting() {
-            semaphore.semaP();
-
-            // wait until the examiner is waiting for
-            while (!blockedThread.hasWaitersForBlocked()) {
-                goSleep(50);
-            }
-            // give a chance for the examiner thread to really wait
-            goSleep(20);
-
+        synchronized(lock2) {
+            p.arriveAndAwaitAdvance(); // phase[2]
+            waitForThreadState(lt, Thread.State.BLOCKED);
         }
-    } // Examiner
+
+        synchronized(lock3) {
+            p.arriveAndAwaitAdvance(); // phase[3]
+            waitForThreadState(lt, Thread.State.BLOCKED);
+        }
+
+        p.arriveAndAwaitAdvance(); // phase[4]
+        ThreadInfo ti2 = mbean.getThreadInfo(lt.getId());
+        p.arriveAndDeregister(); // phase[5]
+
+        lt.join();
+        testWaited(ti1, ti2, 3);
+        System.out.println("OK");
+    }
+
+    private static void testWaited(ThreadInfo ti1, ThreadInfo ti2, int waited) throws Error {
+        long waitCntDiff = ti2.getWaitedCount() - ti1.getWaitedCount();
+        long waitTimeDiff = ti2.getWaitedTime() - ti1.getWaitedTime();
+        if (waitCntDiff < waited) {
+            throw new Error("Unexpected diff in waited count. Expecting at least "
+                            + waited + " , got " + waitCntDiff);
+        }
+        if (waitTimeDiff <= 0) {
+            throw new Error("Unexpected diff in waited time. Expecting increasing " +
+                            "value, got " + waitTimeDiff + "ms");
+        }
+    }
+
+    private static void testBlocked(ThreadInfo ti1, ThreadInfo ti2,
+                                    String lockName, final Object lock)
+    throws Error {
+        long blkCntDiff = ti2.getBlockedCount() - ti1.getBlockedCount();
+        long blkTimeDiff = ti2.getBlockedTime() - ti1.getBlockedTime();
+        if (blkCntDiff < 1) {
+            throw new Error("Unexpected diff in blocked count. Expecting at least 1, " +
+                            "got " + blkCntDiff);
+        }
+        if (blkTimeDiff < 0) {
+            throw new Error("Unexpected diff in blocked time. Expecting a positive " +
+                            "number, got " + blkTimeDiff);
+        }
+        if (!lockName.equals(lock.toString())) {
+            throw new Error("Unexpected blocked monitor name. Expecting " +
+                    lock.toString() + ", got " +
+                    lockName);
+        }
+    }
 }

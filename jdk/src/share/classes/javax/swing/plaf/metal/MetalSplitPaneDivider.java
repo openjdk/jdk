@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import javax.swing.plaf.basic.*;
  * @author Steve Wilson
  * @author Ralph kar
  */
+@SuppressWarnings("serial") // Same-version serialization only
 class MetalSplitPaneDivider extends BasicSplitPaneDivider
 {
     private MetalBumps bumps = new MetalBumps(10, 10,
@@ -391,11 +392,11 @@ class MetalSplitPaneDivider extends BasicSplitPaneDivider
      */
 
     int getOneTouchSizeFromSuper() {
-        return super.ONE_TOUCH_SIZE;
+        return BasicSplitPaneDivider.ONE_TOUCH_SIZE;
     }
 
     int getOneTouchOffsetFromSuper() {
-        return super.ONE_TOUCH_OFFSET;
+        return BasicSplitPaneDivider.ONE_TOUCH_OFFSET;
     }
 
     int getOrientationFromSuper() {

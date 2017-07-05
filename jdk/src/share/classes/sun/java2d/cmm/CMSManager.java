@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class CMSManager {
         }
 
         GetPropertyAction gpa = new GetPropertyAction("sun.java2d.cmm.trace");
-        String cmmTrace = (String)AccessController.doPrivileged(gpa);
+        String cmmTrace = AccessController.doPrivileged(gpa);
         if (cmmTrace != null) {
             cmmImpl = new CMMTracer(cmmImpl);
         }

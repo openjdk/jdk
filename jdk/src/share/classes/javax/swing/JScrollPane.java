@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,7 @@ import java.beans.Transient;
  *
  * @author Hans Muller
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JScrollPane extends JComponent implements ScrollPaneConstants, Accessible
 {
     private Border viewportBorder;
@@ -685,6 +686,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @see JScrollPane#createVerticalScrollBar
      * @see JScrollPane#createHorizontalScrollBar
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class ScrollBar extends JScrollBar implements UIResource
     {
         /**
@@ -1441,6 +1443,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJScrollPane extends AccessibleJComponent
         implements ChangeListener, PropertyChangeListener {
 

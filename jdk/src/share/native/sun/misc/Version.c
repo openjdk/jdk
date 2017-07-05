@@ -60,15 +60,15 @@ Java_sun_misc_Version_getJvmVersionInfo(JNIEnv *env, jclass cls)
 
     (*func_p)(env, &info, sizeof(info));
     setStaticIntField(env, cls, "jvm_major_version", JVM_VERSION_MAJOR(info.jvm_version));
-    CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_minor_version", JVM_VERSION_MINOR(info.jvm_version));
-    CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_micro_version", JVM_VERSION_MICRO(info.jvm_version));
-    CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_build_number", JVM_VERSION_BUILD(info.jvm_version));
-    CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     setStaticIntField(env, cls, "jvm_update_version", info.update_version);
-    CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
     jvm_special_version = info.special_update_version;
 
     return JNI_TRUE;
@@ -91,15 +91,15 @@ Java_sun_misc_Version_getJdkVersionInfo(JNIEnv *env, jclass cls)
 
     JDK_GetVersionInfo0(&info, sizeof(info));
     setStaticIntField(env, cls, "jdk_major_version", JDK_VERSION_MAJOR(info.jdk_version));
-    CHECK_EXCEPTION(env);
+    JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_minor_version", JDK_VERSION_MINOR(info.jdk_version));
-    CHECK_EXCEPTION(env);
+    JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_micro_version", JDK_VERSION_MICRO(info.jdk_version));
-    CHECK_EXCEPTION(env);
+    JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_build_number", JDK_VERSION_BUILD(info.jdk_version));
-    CHECK_EXCEPTION(env);
+    JNU_CHECK_EXCEPTION(env);
     setStaticIntField(env, cls, "jdk_update_version", info.update_version);
-    CHECK_EXCEPTION(env);
+    JNU_CHECK_EXCEPTION(env);
     jdk_special_version = info.special_update_version;
 }
 

@@ -76,10 +76,10 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t _heap_alignment;
 
   // Needed to keep information if MaxHeapSize was set on the command line
-  // when the flag value is aligned etc by ergonomics
+  // when the flag value is aligned etc by ergonomics.
   bool _max_heap_size_cmdline;
 
-  // The sizing of the heap are controlled by a sizing policy.
+  // The sizing of the heap is controlled by a sizing policy.
   AdaptiveSizePolicy* _size_policy;
 
   // Set to true when policy wants soft refs cleared.
@@ -102,7 +102,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
     initialize_size_info();
   }
 
-  // Return maximum heap alignment that may be imposed by the policy
+  // Return maximum heap alignment that may be imposed by the policy.
   static size_t compute_heap_alignment();
 
   size_t space_alignment()        { return _space_alignment; }
@@ -180,7 +180,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
                                                        size_t size,
                                                        Metaspace::MetadataType mdtype);
 
-  // Performace Counter support
+  // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   // Create the jstat counters for the GC policy.  By default, policy's
@@ -231,9 +231,8 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   GenerationSpec **_generations;
 
-  // Return true if an allocation should be attempted in the older
-  // generation if it fails in the younger generation.  Return
-  // false, otherwise.
+  // Return true if an allocation should be attempted in the older generation
+  // if it fails in the younger generation.  Return false, otherwise.
   virtual bool should_try_older_generation_allocation(size_t word_size) const;
 
   void initialize_flags();
@@ -245,7 +244,7 @@ class GenCollectorPolicy : public CollectorPolicy {
   // Try to allocate space by expanding the heap.
   virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
-  // Compute max heap alignment
+  // Compute max heap alignment.
   size_t compute_max_alignment();
 
  // Scale the base_size by NewRatio according to
@@ -253,7 +252,7 @@ class GenCollectorPolicy : public CollectorPolicy {
  // and align by min_alignment()
  size_t scale_by_NewRatio_aligned(size_t base_size);
 
- // Bound the value by the given maximum minus the min_alignment
+ // Bound the value by the given maximum minus the min_alignment.
  size_t bound_minus_alignment(size_t desired_size, size_t maximum_size);
 
  public:

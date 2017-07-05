@@ -28,7 +28,7 @@
  * @library ../../../../java/rmi/testlibrary
  *
  * @build StreamPipe
- * @run main RmicDefault
+ * @run main/othervm RmicDefault
  */
 
 /*

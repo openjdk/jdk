@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,23 +110,23 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
         this.hints = hints;
 
         if (hints != null) {
-            Object value = hints.get(hints.KEY_INTERPOLATION);
+            Object value = hints.get(RenderingHints.KEY_INTERPOLATION);
             if (value == null) {
-                value = hints.get(hints.KEY_RENDERING);
-                if (value == hints.VALUE_RENDER_SPEED) {
+                value = hints.get(RenderingHints.KEY_RENDERING);
+                if (value == RenderingHints.VALUE_RENDER_SPEED) {
                     interpolationType = TYPE_NEAREST_NEIGHBOR;
                 }
-                else if (value == hints.VALUE_RENDER_QUALITY) {
+                else if (value == RenderingHints.VALUE_RENDER_QUALITY) {
                     interpolationType = TYPE_BILINEAR;
                 }
             }
-            else if (value == hints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR) {
+            else if (value == RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR) {
                 interpolationType = TYPE_NEAREST_NEIGHBOR;
             }
-            else if (value == hints.VALUE_INTERPOLATION_BILINEAR) {
+            else if (value == RenderingHints.VALUE_INTERPOLATION_BILINEAR) {
                 interpolationType = TYPE_BILINEAR;
             }
-            else if (value == hints.VALUE_INTERPOLATION_BICUBIC) {
+            else if (value == RenderingHints.VALUE_INTERPOLATION_BICUBIC) {
                 interpolationType = TYPE_BICUBIC;
             }
         }
@@ -235,10 +235,12 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
             {
                 int type = xform.getType();
                 boolean needTrans = ((type&
-                                      (xform.TYPE_MASK_ROTATION|
-                                       xform.TYPE_GENERAL_TRANSFORM))
+                                      (AffineTransform.TYPE_MASK_ROTATION|
+                                       AffineTransform.TYPE_GENERAL_TRANSFORM))
                                      != 0);
-                if (! needTrans && type != xform.TYPE_TRANSLATION && type != xform.TYPE_IDENTITY)
+                if (! needTrans &&
+                    type != AffineTransform.TYPE_TRANSLATION &&
+                    type != AffineTransform.TYPE_IDENTITY)
                 {
                     double[] mtx = new double[4];
                     xform.getMatrix(mtx);

@@ -74,7 +74,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   };
 
   // Goal for the fraction of the total time during which application
-  // threads run.
+  // threads run
   const double _throughput_goal;
 
   // Last calculated sizes, in bytes, and aligned
@@ -83,21 +83,21 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   size_t _survivor_size;    // calculated survivor size in bytes
 
-  // This is a hint for the heap:  we've detected that gc times
+  // This is a hint for the heap:  we've detected that GC times
   // are taking longer than GCTimeLimit allows.
   bool _gc_overhead_limit_exceeded;
   // Use for diagnostics only.  If UseGCOverheadLimit is false,
   // this variable is still set.
   bool _print_gc_overhead_limit_would_be_exceeded;
   // Count of consecutive GC that have exceeded the
-  // GC time limit criterion.
+  // GC time limit criterion
   uint _gc_overhead_limit_count;
   // This flag signals that GCTimeLimit is being exceeded
-  // but may not have done so for the required number of consequetive
-  // collections.
+  // but may not have done so for the required number of consecutive
+  // collections
 
   // Minor collection timers used to determine both
-  // pause and interval times for collections.
+  // pause and interval times for collections
   static elapsedTimer _minor_timer;
 
   // Major collection timers, used to determine both
@@ -120,7 +120,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // Statistics for survivor space calculation for young generation
   AdaptivePaddedAverage*   _avg_survived;
 
-  // Objects that have been directly allocated in the old generation.
+  // Objects that have been directly allocated in the old generation
   AdaptivePaddedNoZeroDevAverage*   _avg_pretenured;
 
   // Variable for estimating the major and minor pause times.
@@ -142,33 +142,33 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // for making ergonomic decisions.
   double _latest_minor_mutator_interval_seconds;
 
-  // Allowed difference between major and minor gc times, used
-  // for computing tenuring_threshold.
+  // Allowed difference between major and minor GC times, used
+  // for computing tenuring_threshold
   const double _threshold_tolerance_percent;
 
-  const double _gc_pause_goal_sec; // goal for maximum gc pause
+  const double _gc_pause_goal_sec; // Goal for maximum GC pause
 
   // Flag indicating that the adaptive policy is ready to use
   bool _young_gen_policy_is_ready;
 
-  // decrease/increase the young generation for minor pause time
+  // Decrease/increase the young generation for minor pause time
   int _change_young_gen_for_min_pauses;
 
-  // decrease/increase the old generation for major pause time
+  // Decrease/increase the old generation for major pause time
   int _change_old_gen_for_maj_pauses;
 
-  //   change old geneneration for throughput
+  //   change old generation for throughput
   int _change_old_gen_for_throughput;
 
   //   change young generation for throughput
   int _change_young_gen_for_throughput;
 
   // Flag indicating that the policy would
-  //   increase the tenuring threshold because of the total major gc cost
-  //   is greater than the total minor gc cost
+  //   increase the tenuring threshold because of the total major GC cost
+  //   is greater than the total minor GC cost
   bool _increment_tenuring_threshold_for_gc_cost;
-  //   decrease the tenuring threshold because of the the total minor gc
-  //   cost is greater than the total major gc cost
+  //   decrease the tenuring threshold because of the the total minor GC
+  //   cost is greater than the total major GC cost
   bool _decrement_tenuring_threshold_for_gc_cost;
   //   decrease due to survivor size limit
   bool _decrement_tenuring_threshold_for_survivor_limit;
@@ -182,7 +182,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // Changing the generation sizing depends on the data that is
   // gathered about the effects of changes on the pause times and
   // throughput.  These variable count the number of data points
-  // gathered.  The policy may use these counters as a threshhold
+  // gathered.  The policy may use these counters as a threshold
   // for reliable data.
   julong _young_gen_change_for_minor_throughput;
   julong _old_gen_change_for_major_throughput;
@@ -225,7 +225,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // larger than 1.0 if just the sum of the minor cost the
   // the major cost is used.  Worse than that is the
   // fact that the minor cost and the major cost each
-  // tend toward 1.0 in the extreme of high gc costs.
+  // tend toward 1.0 in the extreme of high GC costs.
   // Limit the value of gc_cost to 1.0 so that the mutator
   // cost stays non-negative.
   virtual double gc_cost() const {
@@ -238,23 +238,23 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   virtual double time_since_major_gc() const;
 
   // Average interval between major collections to be used
-  // in calculating the decaying major gc cost.  An overestimate
+  // in calculating the decaying major GC cost.  An overestimate
   // of this time would be a conservative estimate because
   // this time is used to decide if the major GC cost
   // should be decayed (i.e., if the time since the last
-  // major gc is long compared to the time returned here,
+  // major GC is long compared to the time returned here,
   // then the major GC cost will be decayed).  See the
   // implementations for the specifics.
   virtual double major_gc_interval_average_for_decay() const {
     return _avg_major_interval->average();
   }
 
-  // Return the cost of the GC where the major gc cost
+  // Return the cost of the GC where the major GC cost
   // has been decayed based on the time since the last
   // major collection.
   double decaying_gc_cost() const;
 
-  // Decay the major gc cost.  Use this only for decisions on
+  // Decay the major GC cost.  Use this only for decisions on
   // whether to adjust, not to determine by how much to adjust.
   // This approximation is crude and may not be good enough for the
   // latter.

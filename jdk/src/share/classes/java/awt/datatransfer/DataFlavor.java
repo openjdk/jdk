@@ -730,9 +730,8 @@ public class DataFlavor implements Externalizable, Cloneable {
             textFlavorComparator = new TextFlavorComparator();
         }
 
-        DataFlavor bestFlavor =
-            (DataFlavor)Collections.max(Arrays.asList(availableFlavors),
-                                        textFlavorComparator);
+        DataFlavor bestFlavor = Collections.max(Arrays.asList(availableFlavors),
+                                                textFlavorComparator);
 
         if (!bestFlavor.isFlavorTextType()) {
             return null;
