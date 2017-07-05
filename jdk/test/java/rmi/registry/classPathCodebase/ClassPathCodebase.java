@@ -31,7 +31,8 @@
  *
  * @library ../../testlibrary
  * @build TestLibrary Dummy
- * @run main/othervm/policy=security.policy ClassPathCodebase
+ * @run main/othervm/policy=security.policy
+ *     -Djava.rmi.server.useCodebaseOnly=false ClassPathCodebase
  */
 
 import java.io.*;

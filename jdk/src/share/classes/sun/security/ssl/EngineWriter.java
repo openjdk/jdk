@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ final class EngineWriter {
      * other writeRecord.
      */
     synchronized void writeRecord(EngineOutputRecord outputRecord,
-            MAC writeMAC, CipherBox writeCipher) throws IOException {
+            Authenticator authenticator,
+            CipherBox writeCipher) throws IOException {
 
         /*
          * Only output if we're still open.
@@ -108,7 +109,7 @@ final class EngineWriter {
             throw new IOException("writer side was already closed.");
         }
 
-        outputRecord.write(writeMAC, writeCipher);
+        outputRecord.write(authenticator, writeCipher);
 
         /*
          * Did our handshakers notify that we just sent the
@@ -151,7 +152,8 @@ final class EngineWriter {
      * Return any determined status.
      */
     synchronized HandshakeStatus writeRecord(
-            EngineOutputRecord outputRecord, EngineArgs ea, MAC writeMAC,
+            EngineOutputRecord outputRecord, EngineArgs ea,
+            Authenticator authenticator,
             CipherBox writeCipher) throws IOException {
 
         /*
@@ -181,7 +183,7 @@ final class EngineWriter {
             throw new IOException("The write side was already closed");
         }
 
-        outputRecord.write(ea, writeMAC, writeCipher);
+        outputRecord.write(ea, authenticator, writeCipher);
 
         if (debug != null && Debug.isOn("packet")) {
             dumpPacket(ea, false);

@@ -63,6 +63,7 @@ import  com.sun.org.apache.bcel.internal.util.SyntheticRepository;
 import  com.sun.org.apache.bcel.internal.util.ClassVector;
 import  com.sun.org.apache.bcel.internal.util.ClassQueue;
 import  com.sun.org.apache.bcel.internal.generic.Type;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 import  java.io.*;
 import  java.util.StringTokenizer;
@@ -77,6 +78,7 @@ import  java.util.StringTokenizer;
  * class file.  Those interested in programatically generating classes
  * should see the <a href="../generic/ClassGen.html">ClassGen</a> class.
 
+ * @version $Id: JavaClass.java,v 1.4 2007-07-19 04:34:42 ofung Exp $
  * @see com.sun.org.apache.bcel.internal.generic.ClassGen
  * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
  */
@@ -451,9 +453,9 @@ public class JavaClass extends AccessFlags implements Cloneable, Node {
     String debug = null, sep = null;
 
     try {
-      debug = System.getProperty("JavaClass.debug");
+      debug = SecuritySupport.getSystemProperty("JavaClass.debug");
       // Get path separator either / or \ usually
-      sep = System.getProperty("file.separator");
+      sep = SecuritySupport.getSystemProperty("file.separator");
     }
     catch (SecurityException e) {
         // falls through

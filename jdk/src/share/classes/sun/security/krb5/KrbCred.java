@@ -103,7 +103,7 @@ public class KrbCred {
                                                delegatedCreds.renewTill, tgService,
                                                delegatedCreds.cAddr);
 
-        timeStamp = new KerberosTime(KerberosTime.NOW);
+        timeStamp = KerberosTime.now();
         KrbCredInfo[] credInfos = {credInfo};
         EncKrbCredPart encPart =
             new EncKrbCredPart(credInfos,

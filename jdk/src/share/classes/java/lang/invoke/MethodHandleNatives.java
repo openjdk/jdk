@@ -26,7 +26,6 @@
 package java.lang.invoke;
 
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -34,7 +33,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * The JVM interface for the method handles package is all here.
- * This is an interface internal and private to an implemetantion of JSR 292.
+ * This is an interface internal and private to an implementation of JSR 292.
  * <em>This class is not part of the JSR 292 standard.</em>
  * @author jrose
  */
@@ -101,6 +100,7 @@ class MethodHandleNatives {
                 MN_IS_CONSTRUCTOR      = 0x00020000, // constructor
                 MN_IS_FIELD            = 0x00040000, // field
                 MN_IS_TYPE             = 0x00080000, // nested type
+                MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
                 MN_REFERENCE_KIND_SHIFT = 24, // refKind
                 MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
                 // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
@@ -391,129 +391,24 @@ class MethodHandleNatives {
      * I.e., does it call Reflection.getCallerClass or a similer method
      * to ask about the identity of its caller?
      */
-    // FIXME: Replace this pattern match by an annotation @sun.reflect.CallerSensitive.
     static boolean isCallerSensitive(MemberName mem) {
         if (!mem.isInvocable())  return false;  // fields are not caller sensitive
+
+        return mem.isCallerSensitive() || canBeCalledVirtual(mem);
+    }
+
+    static boolean canBeCalledVirtual(MemberName mem) {
+        assert(mem.isInvocable());
         Class<?> defc = mem.getDeclaringClass();
         switch (mem.getName()) {
-        case "doPrivileged":
-        case "doPrivilegedWithCombiner":
-            return defc == java.security.AccessController.class;
         case "checkMemberAccess":
             return canBeCalledVirtual(mem, java.lang.SecurityManager.class);
-        case "getUnsafe":
-            return defc == sun.misc.Unsafe.class;
-        case "lookup":
-            return defc == java.lang.invoke.MethodHandles.class;
-        case "findStatic":
-        case "findVirtual":
-        case "findConstructor":
-        case "findSpecial":
-        case "findGetter":
-        case "findSetter":
-        case "findStaticGetter":
-        case "findStaticSetter":
-        case "bind":
-        case "unreflect":
-        case "unreflectSpecial":
-        case "unreflectConstructor":
-        case "unreflectGetter":
-        case "unreflectSetter":
-            return defc == java.lang.invoke.MethodHandles.Lookup.class;
-        case "invoke":
-            return defc == java.lang.reflect.Method.class;
-        case "get":
-        case "getBoolean":
-        case "getByte":
-        case "getChar":
-        case "getShort":
-        case "getInt":
-        case "getLong":
-        case "getFloat":
-        case "getDouble":
-        case "set":
-        case "setBoolean":
-        case "setByte":
-        case "setChar":
-        case "setShort":
-        case "setInt":
-        case "setLong":
-        case "setFloat":
-        case "setDouble":
-            return defc == java.lang.reflect.Field.class;
-        case "newInstance":
-            if (defc == java.lang.reflect.Constructor.class)  return true;
-            if (defc == java.lang.Class.class)  return true;
-            break;
-        case "forName":
-        case "getClassLoader":
-        case "getClasses":
-        case "getFields":
-        case "getMethods":
-        case "getConstructors":
-        case "getDeclaredClasses":
-        case "getDeclaredFields":
-        case "getDeclaredMethods":
-        case "getDeclaredConstructors":
-        case "getField":
-        case "getMethod":
-        case "getConstructor":
-        case "getDeclaredField":
-        case "getDeclaredMethod":
-        case "getDeclaredConstructor":
-            return defc == java.lang.Class.class;
-        case "getConnection":
-        case "getDriver":
-        case "getDrivers":
-        case "deregisterDriver":
-            return defc == getClass("java.sql.DriverManager");
-        case "newUpdater":
-            if (defc == java.util.concurrent.atomic.AtomicIntegerFieldUpdater.class)  return true;
-            if (defc == java.util.concurrent.atomic.AtomicLongFieldUpdater.class)  return true;
-            if (defc == java.util.concurrent.atomic.AtomicReferenceFieldUpdater.class)  return true;
-            break;
         case "getContextClassLoader":
             return canBeCalledVirtual(mem, java.lang.Thread.class);
-        case "getPackage":
-        case "getPackages":
-            return defc == java.lang.Package.class;
-        case "getParent":
-        case "getSystemClassLoader":
-            return defc == java.lang.ClassLoader.class;
-        case "load":
-        case "loadLibrary":
-            if (defc == java.lang.Runtime.class)  return true;
-            if (defc == java.lang.System.class)  return true;
-            break;
-        case "getCallerClass":
-            if (defc == sun.reflect.Reflection.class)  return true;
-            if (defc == java.lang.System.class)  return true;
-            break;
-        case "getCallerClassLoader":
-            return defc == java.lang.ClassLoader.class;
-        case "registerAsParallelCapable":
-            return canBeCalledVirtual(mem, java.lang.ClassLoader.class);
-        case "getProxyClass":
-        case "newProxyInstance":
-            return defc == java.lang.reflect.Proxy.class;
-        case "asInterfaceInstance":
-            return defc == java.lang.invoke.MethodHandleProxies.class;
-        case "getBundle":
-        case "clearCache":
-            return defc == java.util.ResourceBundle.class;
         }
         return false;
     }
 
-    // avoid static dependency to a class in other modules
-    private static Class<?> getClass(String cn) {
-        try {
-            return Class.forName(cn, false,
-                                 MethodHandleNatives.class.getClassLoader());
-        } catch (ClassNotFoundException e) {
-            throw new InternalError(e);
-        }
-    }
     static boolean canBeCalledVirtual(MemberName symbolicRef, Class<?> definingClass) {
         Class<?> symbolicRefClass = symbolicRef.getDeclaringClass();
         if (symbolicRefClass == definingClass)  return true;

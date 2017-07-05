@@ -85,6 +85,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -302,31 +303,32 @@ public final class Duration
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains a {@code Duration} representing the duration between two instants.
+     * Obtains an instance of {@code Duration} from a temporal amount.
      * <p>
-     * This calculates the duration between two temporal objects of the same type.
-     * The difference in seconds is calculated using
-     * {@link Temporal#periodUntil(Temporal, TemporalUnit)}.
-     * The difference in nanoseconds is calculated using by querying the
-     * {@link ChronoField#NANO_OF_SECOND NANO_OF_SECOND} field.
+     * This obtains a duration based on the specified amount.
+     * A {@code TemporalAmount} represents an  amount of time, which may be
+     * date-based or time-based, which this factory extracts to a duration.
      * <p>
-     * The result of this method can be a negative period if the end is before the start.
-     * To guarantee to obtain a positive duration call {@link #abs()} on the result.
+     * The conversion loops around the set of units from the amount and uses
+     * the {@linkplain TemporalUnit#getDuration() duration} of the unit to
+     * calculate the total {@code Duration}.
+     * Only a subset of units are accepted by this method. The unit must either
+     * have an {@linkplain TemporalUnit#isDurationEstimated() exact duration}
+     * or be {@link ChronoUnit#DAYS} which is treated as 24 hours.
+     * If any other units are found then an exception is thrown.
      *
-     * @param startInclusive  the start instant, inclusive, not null
-     * @param endExclusive  the end instant, exclusive, not null
-     * @return a {@code Duration}, not null
-     * @throws ArithmeticException if the calculation exceeds the capacity of {@code Duration}
+     * @param amount  the temporal amount to convert, not null
+     * @return the equivalent duration, not null
+     * @throws DateTimeException if unable to convert to a {@code Duration}
+     * @throws ArithmeticException if numeric overflow occurs
      */
-    public static  Duration between(Temporal startInclusive, Temporal endExclusive) {
-        long secs = startInclusive.periodUntil(endExclusive, SECONDS);
-        long nanos;
-        try {
-            nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
-        } catch (DateTimeException ex) {
-            nanos = 0;
+    public static Duration from(TemporalAmount amount) {
+        Objects.requireNonNull(amount, "amount");
+        Duration duration = ZERO;
+        for (TemporalUnit unit : amount.getUnits()) {
+            duration = duration.plus(amount.get(unit), unit);
         }
-        return ofSeconds(secs, nanos);
+        return duration;
     }
 
     //-----------------------------------------------------------------------
@@ -360,14 +362,14 @@ public final class Duration
      * <p>
      * Examples:
      * <pre>
-     *    "PT20.345S" -> parses as "20.345 seconds"
-     *    "PT15M"     -> parses as "15 minutes" (where a minute is 60 seconds)
-     *    "PT10H"     -> parses as "10 hours" (where an hour is 3600 seconds)
-     *    "P2D"       -> parses as "2 days" (where a day is 24 hours or 86400 seconds)
-     *    "P2DT3H4M"  -> parses as "2 days, 3 hours and 4 minutes"
-     *    "P-6H3M"    -> parses as "-6 hours and +3 minutes"
-     *    "-P6H3M"    -> parses as "-6 hours and -3 minutes"
-     *    "-P-6H+3M"  -> parses as "+6 hours and -3 minutes"
+     *    "PT20.345S" -- parses as "20.345 seconds"
+     *    "PT15M"     -- parses as "15 minutes" (where a minute is 60 seconds)
+     *    "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
+     *    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86400 seconds)
+     *    "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
+     *    "P-6H3M"    -- parses as "-6 hours and +3 minutes"
+     *    "-P6H3M"    -- parses as "-6 hours and -3 minutes"
+     *    "-P-6H+3M"  -- parses as "+6 hours and -3 minutes"
      * </pre>
      *
      * @param text  the text to parse, not null
@@ -439,6 +441,44 @@ public final class Duration
 
     //-----------------------------------------------------------------------
     /**
+     * Obtains a {@code Duration} representing the duration between two instants.
+     * <p>
+     * This calculates the duration between two temporal objects of the same type.
+     * The specified temporal objects must support the {@link ChronoUnit#SECONDS SECONDS} unit.
+     * For full accuracy, either the {@link ChronoUnit#NANOS NANOS} unit or the
+     * {@link ChronoField#NANO_OF_SECOND NANO_OF_SECOND} field should be supported.
+     * <p>
+     * The result of this method can be a negative period if the end is before the start.
+     * To guarantee to obtain a positive duration call {@link #abs()} on the result.
+     *
+     * @param startInclusive  the start instant, inclusive, not null
+     * @param endExclusive  the end instant, exclusive, not null
+     * @return a {@code Duration}, not null
+     * @throws DateTimeException if the seconds between the temporals cannot be obtained
+     * @throws ArithmeticException if the calculation exceeds the capacity of {@code Duration}
+     */
+    public static Duration between(Temporal startInclusive, Temporal endExclusive) {
+        try {
+            return ofNanos(startInclusive.periodUntil(endExclusive, NANOS));
+        } catch (DateTimeException | ArithmeticException ex) {
+            long secs = startInclusive.periodUntil(endExclusive, SECONDS);
+            long nanos;
+            try {
+                nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
+                if (secs > 0 && nanos < 0) {
+                    secs++;
+                } else if (secs < 0 && nanos > 0) {
+                    secs--;
+                }
+            } catch (DateTimeException ex2) {
+                nanos = 0;
+            }
+            return ofSeconds(secs, nanos);
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
      * Obtains an instance of {@code Duration} using seconds and nanoseconds.
      *
      * @param seconds  the length of the duration in seconds, positive or negative
@@ -474,6 +514,7 @@ public final class Duration
      * @param unit the {@code TemporalUnit} for which to return the value
      * @return the long value of the unit
      * @throws DateTimeException if the unit is not supported
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     @Override
     public long get(TemporalUnit unit) {
@@ -482,7 +523,7 @@ public final class Duration
         } else if (unit == NANOS) {
             return nanos;
         } else {
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
     }
 
@@ -637,6 +678,7 @@ public final class Duration
      * @param amountToAdd  the amount of the period, measured in terms of the unit, positive or negative
      * @param unit  the unit that the period is measured in, must have an exact duration, not null
      * @return a {@code Duration} based on this duration with the specified duration added, not null
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     public Duration plus(long amountToAdd, TemporalUnit unit) {
@@ -645,7 +687,7 @@ public final class Duration
             return plus(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY), 0);
         }
         if (unit.isDurationEstimated()) {
-            throw new DateTimeException("Unit must not have an estimated duration");
+            throw new UnsupportedTemporalTypeException("Unit must not have an estimated duration");
         }
         if (amountToAdd == 0) {
             return this;
@@ -1130,9 +1172,9 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toNanos() {
-        long millis = Math.multiplyExact(seconds, NANOS_PER_SECOND);
-        millis = Math.addExact(millis, nanos);
-        return millis;
+        long totalNanos = Math.multiplyExact(seconds, NANOS_PER_SECOND);
+        totalNanos = Math.addExact(totalNanos, nanos);
+        return totalNanos;
     }
 
     //-----------------------------------------------------------------------
@@ -1199,10 +1241,10 @@ public final class Duration
      * <p>
      * Examples:
      * <pre>
-     *    "20.345 seconds"                 -> "PT20.345S
-     *    "15 minutes" (15 * 60 seconds)   -> "PT15M"
-     *    "10 hours" (10 * 3600 seconds)   -> "PT10H"
-     *    "2 days" (2 * 86400 seconds)     -> "PT48H"
+     *    "20.345 seconds"                 -- "PT20.345S
+     *    "15 minutes" (15 * 60 seconds)   -- "PT15M"
+     *    "10 hours" (10 * 3600 seconds)   -- "PT10H"
+     *    "2 days" (2 * 86400 seconds)     -- "PT48H"
      * </pre>
      * Note that multiples of 24 hours are not output as days to avoid confusion
      * with {@code Period}.

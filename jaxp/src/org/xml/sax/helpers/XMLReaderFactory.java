@@ -34,8 +34,6 @@ package org.xml.sax.helpers;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import org.xml.sax.XMLReader;
 import org.xml.sax.SAXException;
 
@@ -85,8 +83,8 @@ final public class XMLReaderFactory
     }
 
     private static final String property = "org.xml.sax.driver";
+    private static SecuritySupport ss = new SecuritySupport();
 
-    private static String _clsFromJar = null;
     private static boolean _jarread = false;
     /**
      * Attempt to create an XMLReader from system defaults.
@@ -134,43 +132,45 @@ final public class XMLReaderFactory
         throws SAXException
     {
         String          className = null;
-        ClassLoader     loader = NewInstance.getClassLoader ();
+        ClassLoader     cl = ss.getContextClassLoader();
 
         // 1. try the JVM-instance-wide system property
-        try { className = System.getProperty (property); }
-        catch (RuntimeException e) { /* normally fails for applets */ }
+        try {
+            className = ss.getSystemProperty(property);
+        }
+        catch (RuntimeException e) { /* continue searching */ }
 
         // 2. if that fails, try META-INF/services/
         if (className == null) {
             if (!_jarread) {
-                final ClassLoader       loader1 = loader;
                 _jarread = true;
-                _clsFromJar =  (String)
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        String clsName = null;
-                        try {
-                            String      service = "META-INF/services/" + property;
-                            InputStream in;
-                            BufferedReader      reader;
-                            if (loader1 == null)
-                                in = ClassLoader.getSystemResourceAsStream (service);
-                            else
-                                in = loader1.getResourceAsStream (service);
+                String      service = "META-INF/services/" + property;
+                InputStream in;
+                BufferedReader      reader;
 
-                            if (in != null) {
-                                reader = new BufferedReader (
-                                        new InputStreamReader (in, "UTF8"));
-                                clsName = reader.readLine ();
-                                in.close ();
-                            }
-                        } catch (Exception e) {
+                try {
+                    if (cl != null) {
+                        in = ss.getResourceAsStream(cl, service);
+
+                        // If no provider found then try the current ClassLoader
+                        if (in == null) {
+                            cl = null;
+                            in = ss.getResourceAsStream(cl, service);
                         }
-                        return clsName;
+                    } else {
+                        // No Context ClassLoader, try the current ClassLoader
+                        in = ss.getResourceAsStream(cl, service);
                     }
-                });
+
+                    if (in != null) {
+                        reader = new BufferedReader (
+                                new InputStreamReader (in, "UTF8"));
+                        className = reader.readLine ();
+                        in.close ();
+                    }
+                } catch (Exception e) {
+                }
             }
-            className = _clsFromJar;
         }
 
         // 3. Distro-specific fallback
@@ -187,7 +187,7 @@ final public class XMLReaderFactory
 
         // do we know the XMLReader implementation class yet?
         if (className != null)
-            return loadClass (loader, className);
+            return loadClass (cl, className);
 
         // 4. panic -- adapt any SAX1 parser
         try {
@@ -217,7 +217,7 @@ final public class XMLReaderFactory
     public static XMLReader createXMLReader (String className)
         throws SAXException
     {
-        return loadClass (NewInstance.getClassLoader (), className);
+        return loadClass (ss.getContextClassLoader(), className);
     }
 
     private static XMLReader loadClass (ClassLoader loader, String className)

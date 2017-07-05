@@ -76,11 +76,11 @@
 
 package sun.text.resources.sk;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_sk extends ListResourceBundle {
+public class FormatData_sk extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -152,6 +152,23 @@ public class FormatData_sk extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "j",
+                    "f",
+                    "m",
+                    "a",
+                    "m",
+                    "j",
+                    "j",
+                    "a",
+                    "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Nede\u013ea", // Sunday
@@ -161,6 +178,17 @@ public class FormatData_sk extends ListResourceBundle {
                     "\u0160tvrtok", // Thursday
                     "Piatok", // Friday
                     "Sobota" // Saturday
+                }
+            },
+            { "standalone.DayNames",
+                new String[] {
+                    "nede\u013ea",
+                    "pondelok",
+                    "utorok",
+                    "streda",
+                    "\u0161tvrtok",
+                    "piatok",
+                    "sobota",
                 }
             },
             { "DayAbbreviations",
@@ -174,7 +202,29 @@ public class FormatData_sk extends ListResourceBundle {
                     "So" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "ne",
+                    "po",
+                    "ut",
+                    "st",
+                    "\u0161t",
+                    "pi",
+                    "so",
+                }
+            },
             { "DayNarrows",
+                new String[] {
+                    "N",
+                    "P",
+                    "U",
+                    "S",
+                    "\u0160",
+                    "P",
+                    "S",
+                }
+            },
+            { "standalone.DayNarrows",
                 new String[] {
                     "N",
                     "P",
@@ -228,23 +278,6 @@ public class FormatData_sk extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "calendarname.islamic-civil", "Islamsk\u00fd ob\u010diansky kalend\u00e1r" },
-            { "calendarname.islamicc", "Islamsk\u00fd ob\u010diansky kalend\u00e1r" },
-            { "calendarname.islamic", "Islamsk\u00fd kalend\u00e1r" },
-            { "calendarname.buddhist", "Buddhistick\u00fd kalend\u00e1r" },
-            { "calendarname.japanese", "Japonsk\u00fd kalend\u00e1r" },
-            { "calendarname.gregorian", "Gregori\u00e1nsky kalend\u00e1r" },
-            { "calendarname.gregory", "Gregori\u00e1nsky kalend\u00e1r" },
-            { "field.era", "\u00c9ra" },
-            { "field.year", "Rok" },
-            { "field.month", "Mesiac" },
-            { "field.week", "T\u00fd\u017ede\u0148" },
-            { "field.weekday", "De\u0148 v t\u00fd\u017edni" },
-            { "field.dayperiod", "\u010cas\u0165 d\u0148a" },
-            { "field.hour", "Hodina" },
-            { "field.minute", "Min\u00fata" },
-            { "field.second", "Sekunda" },
-            { "field.zone", "P\u00e1smo" },
         };
     }
 }

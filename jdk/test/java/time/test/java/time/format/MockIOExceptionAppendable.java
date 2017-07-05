@@ -59,8 +59,6 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import java.io.IOException;
 
 /**

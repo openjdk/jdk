@@ -65,11 +65,9 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
 import java.time.Duration;
 
 import org.testng.annotations.Test;
@@ -87,7 +85,7 @@ public class TestDuration extends AbstractTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"implementation"})
+    @Test
     public void test_interfaces() {
         assertTrue(Serializable.class.isAssignableFrom(Duration.class));
         assertTrue(Comparable.class.isAssignableFrom(Duration.class));
@@ -96,7 +94,7 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     // serialization
     //-----------------------------------------------------------------------
-    @Test(groups={"implementation"})
+    @Test
     public void test_deserializationSingleton() throws Exception {
         Duration orginal = Duration.ZERO;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -109,103 +107,103 @@ public class TestDuration extends AbstractTest {
         assertSame(ser, Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plus_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(-1);
         assertSame(t.plus(Duration.ZERO), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plus_zeroSingleton() {
         Duration t = Duration.ofSeconds(-1);
         assertSame(t.plus(Duration.ofSeconds(1)), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusSeconds_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(-1);
         assertSame(t.plusSeconds(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusSeconds_zeroSingleton() {
         Duration t = Duration.ofSeconds(-1);
         assertSame(t.plusSeconds(1), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusMillis_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(-1, 2000000);
         assertSame(t.plusMillis(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusMillis_zeroSingleton() {
         Duration t = Duration.ofSeconds(-1, 2000000);
         assertSame(t.plusMillis(998), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusNanos_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(-1, 2000000);
         assertSame(t.plusNanos(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void plusNanos_zeroSingleton() {
         Duration t = Duration.ofSeconds(-1, 2000000);
         assertSame(t.plusNanos(998000000), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minus_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(1);
         assertSame(t.minus(Duration.ZERO), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minus_zeroSingleton() {
         Duration t = Duration.ofSeconds(1);
         assertSame(t.minus(Duration.ofSeconds(1)), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusSeconds_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(1);
         assertSame(t.minusSeconds(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusSeconds_zeroSingleton() {
         Duration t = Duration.ofSeconds(1);
         assertSame(t.minusSeconds(1), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusMillis_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(1, 2000000);
         assertSame(t.minusMillis(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusMillis_zeroSingleton() {
         Duration t = Duration.ofSeconds(1, 2000000);
         assertSame(t.minusMillis(1002), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusNanos_zeroReturnsThis() {
         Duration t = Duration.ofSeconds(1, 2000000);
         assertSame(t.minusNanos(0), t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void minusNanos_zeroSingleton() {
         Duration t = Duration.ofSeconds(1, 2000000);
         assertSame(t.minusNanos(1002000000), Duration.ZERO);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_abs_same() {
         Duration base = Duration.ofSeconds(12);
         assertSame(base.abs(), base);

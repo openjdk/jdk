@@ -19,16 +19,17 @@
  */
 package com.sun.org.apache.xerces.internal.util;
 
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.PropertyResourceBundle;
 
 /**
  * Used to format SAX error messages using a specified locale.
  *
  * @author Michael Glavassevich, IBM
  *
+ * @version $Id: SAXMessageFormatter.java,v 1.6 2010-11-01 04:40:14 joehw Exp $
  */
 public class SAXMessageFormatter {
 
@@ -54,11 +55,11 @@ public class SAXMessageFormatter {
         ResourceBundle resourceBundle = null;
         if (locale != null) {
             resourceBundle =
-                PropertyResourceBundle.getBundle("com.sun.org.apache.xerces.internal.impl.msg.SAXMessages", locale);
+                SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.msg.SAXMessages", locale);
         }
         else {
             resourceBundle =
-                PropertyResourceBundle.getBundle("com.sun.org.apache.xerces.internal.impl.msg.SAXMessages");
+                SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.msg.SAXMessages");
         }
 
         // format message

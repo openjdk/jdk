@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -227,5 +227,54 @@ FILES_java = \
                 sun/util/resources/sv/TimeZoneNames_sv.java \
 		sun/util/resources/zh/TimeZoneNames_zh_CN.java \
 		sun/util/resources/zh/TimeZoneNames_zh_TW.java \
-		sun/util/resources/zh/TimeZoneNames_zh_HK.java
+		sun/util/resources/zh/TimeZoneNames_zh_HK.java \
+                \
+                sun/text/resources/ar/JavaTimeSupplementary_ar.java \
+                sun/text/resources/be/JavaTimeSupplementary_be.java \
+                sun/text/resources/bg/JavaTimeSupplementary_bg.java \
+                sun/text/resources/ca/JavaTimeSupplementary_ca.java \
+                sun/text/resources/cs/JavaTimeSupplementary_cs.java \
+                sun/text/resources/da/JavaTimeSupplementary_da.java \
+                sun/text/resources/de/JavaTimeSupplementary_de.java \
+                sun/text/resources/el/JavaTimeSupplementary_el.java \
+                sun/text/resources/en/JavaTimeSupplementary_en_GB.java \
+                sun/text/resources/en/JavaTimeSupplementary_en_SG.java \
+                sun/text/resources/es/JavaTimeSupplementary_es.java \
+                sun/text/resources/et/JavaTimeSupplementary_et.java \
+                sun/text/resources/fi/JavaTimeSupplementary_fi.java \
+                sun/text/resources/fr/JavaTimeSupplementary_fr.java \
+                sun/text/resources/ga/JavaTimeSupplementary_ga.java \
+                sun/text/resources/hi/JavaTimeSupplementary_hi_IN.java \
+                sun/text/resources/hr/JavaTimeSupplementary_hr.java \
+                sun/text/resources/hu/JavaTimeSupplementary_hu.java \
+                sun/text/resources/is/JavaTimeSupplementary_is.java \
+                sun/text/resources/it/JavaTimeSupplementary_it.java \
+                sun/text/resources/iw/JavaTimeSupplementary_iw.java \
+                sun/text/resources/iw/JavaTimeSupplementary_iw_IL.java \
+                sun/text/resources/ja/JavaTimeSupplementary_ja.java \
+                sun/text/resources/ko/JavaTimeSupplementary_ko.java \
+                sun/text/resources/lt/JavaTimeSupplementary_lt.java \
+                sun/text/resources/lv/JavaTimeSupplementary_lv.java \
+                sun/text/resources/mk/JavaTimeSupplementary_mk.java \
+                sun/text/resources/ms/JavaTimeSupplementary_ms.java \
+                sun/text/resources/mt/JavaTimeSupplementary_mt.java \
+                sun/text/resources/nl/JavaTimeSupplementary_nl.java \
+                sun/text/resources/no/JavaTimeSupplementary_no.java \
+                sun/text/resources/pl/JavaTimeSupplementary_pl.java \
+                sun/text/resources/pt/JavaTimeSupplementary_pt.java \
+                sun/text/resources/pt/JavaTimeSupplementary_pt_PT.java \
+                sun/text/resources/ro/JavaTimeSupplementary_ro.java \
+                sun/text/resources/ru/JavaTimeSupplementary_ru.java \
+                sun/text/resources/sk/JavaTimeSupplementary_sk.java \
+                sun/text/resources/sl/JavaTimeSupplementary_sl.java \
+                sun/text/resources/sq/JavaTimeSupplementary_sq.java \
+                sun/text/resources/sr/JavaTimeSupplementary_sr.java \
+                sun/text/resources/sr/JavaTimeSupplementary_sr_Latn.java \
+                sun/text/resources/sv/JavaTimeSupplementary_sv.java \
+                sun/text/resources/th/JavaTimeSupplementary_th.java \
+                sun/text/resources/tr/JavaTimeSupplementary_tr.java \
+                sun/text/resources/uk/JavaTimeSupplementary_uk.java \
+                sun/text/resources/vi/JavaTimeSupplementary_vi.java \
+                sun/text/resources/zh/JavaTimeSupplementary_zh.java \
+                sun/text/resources/zh/JavaTimeSupplementary_zh_TW.java
 

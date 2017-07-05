@@ -280,7 +280,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /*
      * Crypto state that's reinitialized when the session changes.
      */
-    private MAC                 readMAC, writeMAC;
+    private Authenticator       readAuthenticator, writeAuthenticator;
     private CipherBox           readCipher, writeCipher;
     // NOTE: compression state would be saved here
 
@@ -377,9 +377,9 @@ final public class SSLEngineImpl extends SSLEngine {
          * Note:  compression support would go here too
          */
         readCipher = CipherBox.NULL;
-        readMAC = MAC.NULL;
+        readAuthenticator = MAC.NULL;
         writeCipher = CipherBox.NULL;
-        writeMAC = MAC.NULL;
+        writeAuthenticator = MAC.NULL;
 
         // default security parameters for secure renegotiation
         secureRenegotiation = false;
@@ -586,7 +586,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
         try {
             readCipher = handshaker.newReadCipher();
-            readMAC = handshaker.newReadMAC();
+            readAuthenticator = handshaker.newReadAuthenticator();
         } catch (GeneralSecurityException e) {
             // "can't happen"
             throw new SSLException("Algorithm missing:  ", e);
@@ -622,7 +622,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
         try {
             writeCipher = handshaker.newWriteCipher();
-            writeMAC = handshaker.newWriteMAC();
+            writeAuthenticator = handshaker.newWriteAuthenticator();
         } catch (GeneralSecurityException e) {
             // "can't happen"
             throw new SSLException("Algorithm missing:  ", e);
@@ -958,7 +958,8 @@ final public class SSLEngineImpl extends SSLEngine {
              * throw a fatal alert if the integrity check fails.
              */
             try {
-                decryptedBB = inputRecord.decrypt(readMAC, readCipher, readBB);
+                decryptedBB = inputRecord.decrypt(
+                                    readAuthenticator, readCipher, readBB);
             } catch (BadPaddingException e) {
                 byte alertType = (inputRecord.contentType() ==
                     Record.ct_handshake) ?
@@ -966,7 +967,6 @@ final public class SSLEngineImpl extends SSLEngine {
                         Alerts.alert_bad_record_mac;
                 fatal(alertType, e.getMessage(), e);
             }
-
 
             // if (!inputRecord.decompress(c))
             //     fatal(Alerts.alert_decompression_failure,
@@ -1117,7 +1117,7 @@ final public class SSLEngineImpl extends SSLEngine {
                 hsStatus = getHSStatus(hsStatus);
                 if (connectionState < cs_ERROR && !isInboundDone() &&
                         (hsStatus == HandshakeStatus.NOT_HANDSHAKING)) {
-                    if (checkSequenceNumber(readMAC,
+                    if (checkSequenceNumber(readAuthenticator,
                             inputRecord.contentType())) {
                         hsStatus = getHSStatus(null);
                     }
@@ -1270,7 +1270,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
         // eventually compress as well.
         HandshakeStatus hsStatus =
-                writer.writeRecord(eor, ea, writeMAC, writeCipher);
+                writer.writeRecord(eor, ea, writeAuthenticator, writeCipher);
 
         /*
          * We only need to check the sequence number state for
@@ -1287,7 +1287,7 @@ final public class SSLEngineImpl extends SSLEngine {
         hsStatus = getHSStatus(hsStatus);
         if (connectionState < cs_ERROR && !isOutboundDone() &&
                 (hsStatus == HandshakeStatus.NOT_HANDSHAKING)) {
-            if (checkSequenceNumber(writeMAC, eor.contentType())) {
+            if (checkSequenceNumber(writeAuthenticator, eor.contentType())) {
                 hsStatus = getHSStatus(null);
             }
         }
@@ -1326,7 +1326,7 @@ final public class SSLEngineImpl extends SSLEngine {
      */
     void writeRecord(EngineOutputRecord eor) throws IOException {
         // eventually compress as well.
-        writer.writeRecord(eor, writeMAC, writeCipher);
+        writer.writeRecord(eor, writeAuthenticator, writeCipher);
 
         /*
          * Check the sequence number state
@@ -1340,7 +1340,7 @@ final public class SSLEngineImpl extends SSLEngine {
          * of the last record cannot be wrapped.
          */
         if ((connectionState < cs_ERROR) && !isOutboundDone()) {
-            checkSequenceNumber(writeMAC, eor.contentType());
+            checkSequenceNumber(writeAuthenticator, eor.contentType());
         }
     }
 
@@ -1358,14 +1358,14 @@ final public class SSLEngineImpl extends SSLEngine {
      *
      * Return true if the handshake status may be changed.
      */
-    private boolean checkSequenceNumber(MAC mac, byte type)
+    private boolean checkSequenceNumber(Authenticator authenticator, byte type)
             throws IOException {
 
         /*
          * Don't bother to check the sequence number for error or
          * closed connections, or NULL MAC
          */
-        if (connectionState >= cs_ERROR || mac == MAC.NULL) {
+        if (connectionState >= cs_ERROR || authenticator == MAC.NULL) {
             return false;
         }
 
@@ -1373,7 +1373,7 @@ final public class SSLEngineImpl extends SSLEngine {
          * Conservatively, close the connection immediately when the
          * sequence number is close to overflow
          */
-        if (mac.seqNumOverflow()) {
+        if (authenticator.seqNumOverflow()) {
             /*
              * TLS protocols do not define a error alert for sequence
              * number overflow. We use handshake_failure error alert
@@ -1396,7 +1396,7 @@ final public class SSLEngineImpl extends SSLEngine {
          * Don't bother to kickstart the renegotiation when the local is
          * asking for it.
          */
-        if ((type != Record.ct_handshake) && mac.seqNumIsHuge()) {
+        if ((type != Record.ct_handshake) && authenticator.seqNumIsHuge()) {
             if (debug != null && Debug.isOn("ssl")) {
                 System.out.println(Thread.currentThread().getName() +
                         ", request renegotiation " +

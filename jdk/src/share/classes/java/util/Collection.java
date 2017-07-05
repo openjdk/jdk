@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,12 @@ package java.util;
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
+ *
+ * @implSpec
+ * The default method implementations (inherited or otherwise) do not apply any
+ * synchronization protocol.  If a {@code Collection} implementation has a
+ * specific synchronization protocol, then it must override default
+ * implementations to apply that protocol.
  *
  * @param <E> the type of elements in this collection
  *
@@ -453,4 +459,28 @@ public interface Collection<E> extends Iterable<E> {
      * @see Object#equals(Object)
      */
     int hashCode();
+
+    /**
+     * Creates a {@link Spliterator} over the elements in this collection.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED}.
+     * Implementations should document the reporting of additional
+     * characteristic values.
+     *
+     * @implSpec
+     * The default implementation creates a
+     * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
+     * from the collections's {@code Iterator}.  The spliterator inherits the
+     * <em>fail-fast</em> properties of the collection's iterator.
+     *
+     * @implNote
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * @return a {@code Spliterator} over the elements in this collection
+     * @since 1.8
+     */
+    default Spliterator<E> spliterator() {
+        return Spliterators.spliterator(this, 0);
+    }
 }

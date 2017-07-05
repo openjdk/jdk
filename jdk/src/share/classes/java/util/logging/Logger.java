@@ -36,6 +36,8 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * A Logger object is used to log messages for a specific
@@ -333,13 +335,10 @@ public class Logger {
         }
     }
 
-    private static Logger demandLogger(String name, String resourceBundleName) {
+    private static Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
         LogManager manager = LogManager.getLogManager();
         SecurityManager sm = System.getSecurityManager();
         if (sm != null && !SystemLoggerHelper.disableCallerCheck) {
-            // 0: Reflection 1: Logger.demandLogger 2: Logger.getLogger 3: caller
-            final int SKIP_FRAMES = 3;
-            Class<?> caller = sun.reflect.Reflection.getCallerClass(SKIP_FRAMES);
             if (caller.getClassLoader() == null) {
                 return manager.demandSystemLogger(name, resourceBundleName);
             }
@@ -377,6 +376,7 @@ public class Logger {
 
     // Synchronization is not required here. All synchronization for
     // adding a new Logger object is handled by LogManager.addLogger().
+    @CallerSensitive
     public static Logger getLogger(String name) {
         // This method is intentionally not a wrapper around a call
         // to getLogger(name, resourceBundleName). If it were then
@@ -388,7 +388,7 @@ public class Logger {
         // would throw an IllegalArgumentException in the second call
         // because the wrapper would result in an attempt to replace
         // the existing "resourceBundleForFoo" with null.
-        return demandLogger(name, null);
+        return demandLogger(name, null, Reflection.getCallerClass());
     }
 
     /**
@@ -434,8 +434,9 @@ public class Logger {
 
     // Synchronization is not required here. All synchronization for
     // adding a new Logger object is handled by LogManager.addLogger().
+    @CallerSensitive
     public static Logger getLogger(String name, String resourceBundleName) {
-        Logger result = demandLogger(name, resourceBundleName);
+        Logger result = demandLogger(name, resourceBundleName, Reflection.getCallerClass());
 
         // MissingResourceException or IllegalArgumentException can be
         // thrown by setupResourceInfo().

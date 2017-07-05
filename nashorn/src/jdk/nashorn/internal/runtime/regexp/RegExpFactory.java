@@ -40,7 +40,7 @@ public class RegExpFactory {
     private final static String JONI = "joni";
 
     static {
-        final String impl = Options.getStringProperty("nashorn.regexp.impl", JDK);
+        final String impl = Options.getStringProperty("nashorn.regexp.impl", JONI);
         switch (impl) {
             case JONI:
                 instance = new JoniRegExp.Factory();
