@@ -1420,11 +1420,57 @@ static void log_loop_tree(IdealLoopTree* root, IdealLoopTree* loop, CompileLog* 
   }
 }
 
+//---------------------collect_potentially_useful_predicates-----------------------
+// Helper function to collect potentially useful predicates to prevent them from
+// being eliminated by PhaseIdealLoop::eliminate_useless_predicates
+void PhaseIdealLoop::collect_potentially_useful_predicates(
+                         IdealLoopTree * loop, Unique_Node_List &useful_predicates) {
+  if (loop->_child) { // child
+    collect_potentially_useful_predicates(loop->_child, useful_predicates);
+  }
+
+  // self (only loops that we can apply loop predication may use their predicates)
+  if (loop->_head->is_Loop()     &&
+      !loop->_irreducible        &&
+      !loop->tail()->is_top()) {
+    LoopNode *lpn  = loop->_head->as_Loop();
+    Node* entry = lpn->in(LoopNode::EntryControl);
+    ProjNode *predicate_proj = find_predicate_insertion_point(entry);
+    if (predicate_proj != NULL ) { // right pattern that can be used by loop predication
+      assert(entry->in(0)->in(1)->in(1)->Opcode()==Op_Opaque1, "must be");
+      useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+    }
+  }
+
+  if ( loop->_next ) { // sibling
+    collect_potentially_useful_predicates(loop->_next, useful_predicates);
+  }
+}
+
+//------------------------eliminate_useless_predicates-----------------------------
+// Eliminate all inserted predicates if they could not be used by loop predication.
+void PhaseIdealLoop::eliminate_useless_predicates() {
+  if (C->predicate_count() == 0) return; // no predicate left
+
+  Unique_Node_List useful_predicates; // to store useful predicates
+  if (C->has_loops()) {
+    collect_potentially_useful_predicates(_ltree_root->_child, useful_predicates);
+  }
+
+  for (int i = C->predicate_count(); i > 0; i--) {
+     Node * n = C->predicate_opaque1_node(i-1);
+     assert(n->Opcode() == Op_Opaque1, "must be");
+     if (!useful_predicates.member(n)) { // not in the useful list
+       _igvn.replace_node(n, n->in(1));
+     }
+  }
+}
+
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
-void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
+void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   int old_progress = C->major_progress();
 
   // Reset major-progress flag for the driver's heuristics
@@ -1577,6 +1623,12 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
     return;
   }
 
+  // some parser-inserted loop predicates could never be used by loop
+  // predication. Eliminate them before loop optimization
+  if (UseLoopPredicate) {
+    eliminate_useless_predicates();
+  }
+
   // clear out the dead code
   while(_deadlist.size()) {
     _igvn.remove_globally_dead_node(_deadlist.pop());
@@ -1603,7 +1655,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
-      if( SplitIfBlocks && do_split_ifs ) {
+      if (SplitIfBlocks && do_split_ifs) {
         if (lpt->policy_range_check(this)) {
           lpt->_rce_candidate = 1; // = true
         }
@@ -1619,12 +1671,17 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
   }
 
+  // Perform loop predication before iteration splitting
+  if (do_loop_pred && C->has_loops() && !C->major_progress()) {
+    _ltree_root->_child->loop_predication(this);
+  }
+
   // Perform iteration-splitting on inner loops.  Split iterations to avoid
   // range checks or one-shot null checks.
 
   // If split-if's didn't hack the graph too bad (no CFG changes)
   // then do loop opts.
-  if( C->has_loops() && !C->major_progress() ) {
+  if (C->has_loops() && !C->major_progress()) {
     memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
     _ltree_root->_child->iteration_split( this, worklist );
     // No verify after peeling!  GCM has hoisted code out of the loop.
@@ -1636,7 +1693,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 
-  if( !do_split_ifs ) {
+  if (!do_split_ifs) {
     // We saw major progress in Split-If to get here.  We forced a
     // pass with unrolling and not split-if, however more split-if's
     // might make progress.  If the unrolling didn't make progress
@@ -2763,6 +2820,22 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
   Node *legal = LCA;            // Walk 'legal' up the IDOM chain
   Node *least = legal;          // Best legal position so far
   while( early != legal ) {     // While not at earliest legal
+#ifdef ASSERT
+    if (legal->is_Start() && !early->is_Root()) {
+      // Bad graph. Print idom path and fail.
+      tty->print_cr( "Bad graph detected in build_loop_late");
+      tty->print("n: ");n->dump(); tty->cr();
+      tty->print("early: ");early->dump(); tty->cr();
+      int ct = 0;
+      Node *dbg_legal = LCA;
+      while(!dbg_legal->is_Start() && ct < 100) {
+        tty->print("idom[%d] ",ct); dbg_legal->dump(); tty->cr();
+        ct++;
+        dbg_legal = idom(dbg_legal);
+      }
+      assert(false, "Bad graph detected in build_loop_late");
+    }
+#endif
     // Find least loop nesting depth
     legal = idom(legal);        // Bump up the IDOM tree
     // Check for lower nesting depth

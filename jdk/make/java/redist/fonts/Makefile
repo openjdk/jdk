@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
+
+BUILDDIR = ../../..
+MODULE   = font
+PRODUCT  = java
+include $(BUILDDIR)/common/Defs.gmk
+
 
 #
 # List of lucida font files that we redistribute.
@@ -54,3 +60,52 @@ OBLIQUE_FONTFILES =                                             \
 	$(LIBDIR)/oblique-fonts/LucidaSansDemiOblique.ttf       \
 
 endif
+
+ifndef OPENJDK
+
+# Lucida font files are not included in the OpenJDK distribution.
+# Get names of font files
+
+# Copy font files into OUTPUTDIR area
+
+FONTFILES = $(SHARED_FONTFILES)
+FONTSDIR  = $(LIBDIR)/fonts
+FONTSDIRFILE  = $(FONTSDIR)/fonts.dir
+INTERNAL_IMPORT_LIST = $(FONTFILES) 
+
+ifneq ($(PLATFORM), windows)
+  INTERNAL_IMPORT_LIST += $(FONTSDIRFILE)
+endif
+
+$(LIBDIR)/fonts/%.ttf: $(CLOSED_SRC)/share/lib/fonts/%.ttf
+	$(install-file)
+
+$(FONTSDIRFILE): $(PLATFORM_SRC)/classes/sun/awt/motif/java.fonts.dir
+	$(install-file)
+
+ifeq ($(PLATFORM), linux)
+
+# The oblique fonts are only needed/wanted on Linux.
+
+OBLFONTSDIR  = $(LIBDIR)/oblique-fonts
+OBLFONTSDIRFILE	 = $(OBLFONTSDIR)/fonts.dir
+INTERNAL_IMPORT_LIST += $(OBLIQUE_FONTFILES) $(OBLFONTSDIRFILE)
+
+$(LIBDIR)/oblique-fonts/%.ttf: $(CLOSED_SRC)/share/lib/fonts/oblique/%.ttf
+	$(install-file)
+
+$(OBLFONTSDIRFILE): $(PLATFORM_SRC)/classes/sun/awt/motif/java.oblique-fonts.dir
+	$(install-file)
+
+endif # linux
+
+all build : $(INTERNAL_IMPORT_LIST)
+
+clean clobber::
+	$(RM) $(INTERNAL_IMPORT_LIST)
+
+else 
+
+all build clean clobber :
+
+endif # !OPENJDK

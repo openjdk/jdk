@@ -73,7 +73,12 @@ void PtrQueue::enqueue_known_active(void* ptr) {
 
 void PtrQueue::locking_enqueue_completed_buffer(void** buf) {
   assert(_lock->owned_by_self(), "Required.");
+
+  // We have to unlock _lock (which may be Shared_DirtyCardQ_lock) before
+  // we acquire DirtyCardQ_CBL_mon inside enqeue_complete_buffer as they
+  // have the same rank and we may get the "possible deadlock" message
   _lock->unlock();
+
   qset()->enqueue_complete_buffer(buf);
   // We must relock only because the caller will unlock, for the normal
   // case.
@@ -140,7 +145,36 @@ void PtrQueue::handle_zero_index() {
   // holding the lock if there is one).
   if (_buf != NULL) {
     if (_lock) {
-      locking_enqueue_completed_buffer(_buf);
+      assert(_lock->owned_by_self(), "Required.");
+
+      // The current PtrQ may be the shared dirty card queue and
+      // may be being manipulated by more than one worker thread
+      // during a pause. Since the enqueuing of the completed
+      // buffer unlocks the Shared_DirtyCardQ_lock more than one
+      // worker thread can 'race' on reading the shared queue attributes
+      // (_buf and _index) and multiple threads can call into this
+      // routine for the same buffer. This will cause the completed
+      // buffer to be added to the CBL multiple times.
+
+      // We "claim" the current buffer by caching value of _buf in
+      // a local and clearing the field while holding _lock. When
+      // _lock is released (while enqueueing the completed buffer)
+      // the thread that acquires _lock will skip this code,
+      // preventing the subsequent the multiple enqueue, and
+      // install a newly allocated buffer below.
+
+      void** buf = _buf;   // local pointer to completed buffer
+      _buf = NULL;         // clear shared _buf field
+
+      locking_enqueue_completed_buffer(buf);  // enqueue completed buffer
+
+      // While the current thread was enqueuing the buffer another thread
+      // may have a allocated a new buffer and inserted it into this pointer
+      // queue. If that happens then we just return so that the current
+      // thread doesn't overwrite the buffer allocated by the other thread
+      // and potentially losing some dirtied cards.
+
+      if (_buf != NULL) return;
     } else {
       if (qset()->process_or_enqueue_complete_buffer(_buf)) {
         // Recycle the buffer. No allocation.

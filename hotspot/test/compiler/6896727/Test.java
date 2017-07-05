@@ -26,7 +26,7 @@
  * @test
  * @bug 6896727
  * @summary nsk/logging/LoggingPermission/LoggingPermission/logperm002 fails with G1, EscapeAnalisys w/o COOPs
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+DoEscapeAnalysis -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC Test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+DoEscapeAnalysis Test
  */
 
 public class Test {

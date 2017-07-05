@@ -51,6 +51,8 @@ static void trace_gen_sizes(const char* const str,
 }
 
 jint ParallelScavengeHeap::initialize() {
+  CollectedHeap::pre_initialize();
+
   // Cannot be initialized until after the flags are parsed
   GenerationSizer flag_parser;
 
@@ -715,10 +717,6 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t size) {
   return young_gen()->allocate(size, true);
-}
-
-void ParallelScavengeHeap::fill_all_tlabs(bool retire) {
-  CollectedHeap::fill_all_tlabs(retire);
 }
 
 void ParallelScavengeHeap::accumulate_statistics_all_tlabs() {

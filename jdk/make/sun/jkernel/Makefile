@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = jkernel
 PACKAGE = sun.jkernel
 LIBRARY = jkernel
 PRODUCT = sun

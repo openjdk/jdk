@@ -46,6 +46,7 @@ class Deoptimization : AllStatic {
     Reason_constraint,            // arbitrary runtime constraint violated
     Reason_div0_check,            // a null_check due to division by zero
     Reason_age,                   // nmethod too old; tier threshold reached
+    Reason_predicate,             // compiler generated predicate failed
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_unloaded   // some are not recorded per bc

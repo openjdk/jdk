@@ -26,22 +26,24 @@
 package java.lang;
 
 /**
- * <code>RuntimeException</code> is the superclass of those
+ * {@code RuntimeException} is the superclass of those
  * exceptions that can be thrown during the normal operation of the
  * Java Virtual Machine.
- * <p>
- * A method is not required to declare in its <code>throws</code>
- * clause any subclasses of <code>RuntimeException</code> that might
- * be thrown during the execution of the method but not caught.
  *
+ * <p>{@code RuntimeException} and its subclasses are <em>unchecked
+ * exceptions</em>.  Unchecked exceptions do <em>not</em> need to be
+ * declared in a method or constructor's {@code throws} clause if they
+ * can be thrown by the execution of the method or constructor and
+ * propagate outside the method or constructor boundary.
  *
  * @author  Frank Yellin
+ * @jls3 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class RuntimeException extends Exception {
     static final long serialVersionUID = -7034897190745766939L;
 
-    /** Constructs a new runtime exception with <code>null</code> as its
+    /** Constructs a new runtime exception with {@code null} as its
      * detail message.  The cause is not initialized, and may subsequently be
      * initialized by a call to {@link #initCause}.
      */
@@ -63,7 +65,7 @@ public class RuntimeException extends Exception {
     /**
      * Constructs a new runtime exception with the specified detail message and
      * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this runtime exception's detail message.
      *
      * @param  message the detail message (which is saved for later retrieval
