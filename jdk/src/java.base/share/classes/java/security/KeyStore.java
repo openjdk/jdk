@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1618,11 +1618,13 @@ public class KeyStore {
      * integrity check.
      *
      * <p>
-     * This method traverses the list of registered security {@link Providers},
-     * starting with the most preferred Provider.
-     * For each {@link KeyStoreSpi} implementation supported by a Provider,
-     * it invokes the {@link engineProbe} method to determine if it supports
-     * the specified keystore.
+     * This method traverses the list of registered security
+     * {@linkplain Provider providers}, starting with the most
+     * preferred Provider.
+     * For each {@link KeyStoreSpi} implementation supported by a
+     * Provider, it invokes the {@link
+     * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
+     * determine if it supports the specified keystore.
      * A new KeyStore object is returned that encapsulates the KeyStoreSpi
      * implementation from the first Provider that supports the specified file.
      *
@@ -1672,11 +1674,12 @@ public class KeyStore {
      * unlock the keystore data or perform an integrity check.
      *
      * <p>
-     * This method traverses the list of registered security {@link Providers},
-     * starting with the most preferred Provider.
-     * For each {@link KeyStoreSpi} implementation supported by a Provider,
-     * it invokes the {@link engineProbe} method to determine if it supports
-     * the specified keystore.
+     * This method traverses the list of registered security {@linkplain
+     * Provider providers}, starting with the most preferred Provider.
+     * For each {@link KeyStoreSpi} implementation supported by a
+     * Provider, it invokes the {@link
+     * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
+     * determine if it supports the specified keystore.
      * A new KeyStore object is returned that encapsulates the KeyStoreSpi
      * implementation from the first Provider that supports the specified file.
      *

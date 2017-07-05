@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4814,14 +4814,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (dividendHi >= divisor) {
             return null;
         }
+
         final int shift = Long.numberOfLeadingZeros(divisor);
         divisor <<= shift;
 
         final long v1 = divisor >>> 32;
         final long v0 = divisor & LONG_MASK;
-
-        long q1, q0;
-        long r_tmp;
 
         long tmp = dividendLo << shift;
         long u1 = tmp >>> 32;
@@ -4829,26 +4827,48 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         tmp = (dividendHi << shift) | (dividendLo >>> 64 - shift);
         long u2 = tmp & LONG_MASK;
-        tmp = divWord(tmp,v1);
-        q1 = tmp & LONG_MASK;
-        r_tmp = tmp >>> 32;
+        long q1, r_tmp;
+        if (v1 == 1) {
+            q1 = tmp;
+            r_tmp = 0;
+        } else if (tmp >= 0) {
+            q1 = tmp / v1;
+            r_tmp = tmp - q1 * v1;
+        } else {
+            long[] rq = divRemNegativeLong(tmp, v1);
+            q1 = rq[1];
+            r_tmp = rq[0];
+        }
+
         while(q1 >= DIV_NUM_BASE || unsignedLongCompare(q1*v0, make64(r_tmp, u1))) {
             q1--;
             r_tmp += v1;
             if (r_tmp >= DIV_NUM_BASE)
                 break;
         }
+
         tmp = mulsub(u2,u1,v1,v0,q1);
         u1 = tmp & LONG_MASK;
-        tmp = divWord(tmp,v1);
-        q0 = tmp & LONG_MASK;
-        r_tmp = tmp >>> 32;
+        long q0;
+        if (v1 == 1) {
+            q0 = tmp;
+            r_tmp = 0;
+        } else if (tmp >= 0) {
+            q0 = tmp / v1;
+            r_tmp = tmp - q0 * v1;
+        } else {
+            long[] rq = divRemNegativeLong(tmp, v1);
+            q0 = rq[1];
+            r_tmp = rq[0];
+        }
+
         while(q0 >= DIV_NUM_BASE || unsignedLongCompare(q0*v0,make64(r_tmp,u0))) {
             q0--;
             r_tmp += v1;
             if (r_tmp >= DIV_NUM_BASE)
                 break;
         }
+
         if((int)q1 < 0) {
             // result (which is positive and unsigned here)
             // can't fit into long due to sign bit is used for value
@@ -4871,10 +4891,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             }
         }
+
         long q = make64(q1,q0);
         q*=sign;
+
         if (roundingMode == ROUND_DOWN && scale == preferredScale)
             return valueOf(q, scale);
+
         long r = mulsub(u1, u0, v1, v0, q0) >>> shift;
         if (r != 0) {
             boolean increment = needIncrement(divisor >>> shift, roundingMode, sign, q, r);
@@ -4917,28 +4940,35 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
-    private static long divWord(long n, long dLong) {
-        long r;
-        long q;
-        if (dLong == 1) {
-            q = (int)n;
-            return (q & LONG_MASK);
-        }
+    /**
+     * Calculate the quotient and remainder of dividing a negative long by
+     * another long.
+     *
+     * @param n the numerator; must be negative
+     * @param d the denominator; must not be unity
+     * @return a two-element {@long} array with the remainder and quotient in
+     *         the initial and final elements, respectively
+     */
+    private static long[] divRemNegativeLong(long n, long d) {
+        assert n < 0 : "Non-negative numerator " + n;
+        assert d != 1 : "Unity denominator";
+
         // Approximate the quotient and remainder
-        q = (n >>> 1) / (dLong >>> 1);
-        r = n - q*dLong;
+        long q = (n >>> 1) / (d >>> 1);
+        long r = n - q * d;
 
         // Correct the approximation
         while (r < 0) {
-            r += dLong;
+            r += d;
             q--;
         }
-        while (r >= dLong) {
-            r -= dLong;
+        while (r >= d) {
+            r -= d;
             q++;
         }
-        // n - q*dlong == r && 0 <= r <dLong, hence we're done.
-        return (r << 32) | (q & LONG_MASK);
+
+        // n - q*d == r && 0 <= r < d, hence we're done.
+        return new long[] {r, q};
     }
 
     private static long make64(long hi, long lo) {
