@@ -725,7 +725,7 @@ public class Krb5LoginModule implements LoginModule {
                         cred = builder.action().getCreds();
                     }
                     if (storeKey) {
-                        encKeys = builder.getKeys();
+                        encKeys = builder.getKeys(isInitiator);
                         // When encKeys is empty, the login actually fails.
                         // For compatibility, exception is thrown in commit().
                     }

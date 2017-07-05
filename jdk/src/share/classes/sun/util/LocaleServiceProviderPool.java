@@ -40,6 +40,7 @@ import java.util.ResourceBundle.Control;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
 
 import sun.util.logging.PlatformLogger;
@@ -57,8 +58,8 @@ public final class LocaleServiceProviderPool {
      * A Map that holds singleton instances of this class.  Each instance holds a
      * set of provider implementations of a particular locale sensitive service.
      */
-    private static Map<Class, LocaleServiceProviderPool> poolOfPools =
-        new ConcurrentHashMap<Class, LocaleServiceProviderPool>();
+    private static ConcurrentMap<Class, LocaleServiceProviderPool> poolOfPools =
+        new ConcurrentHashMap<>();
 
     /**
      * A Set containing locale service providers that implement the
@@ -109,7 +110,7 @@ public final class LocaleServiceProviderPool {
         if (pool == null) {
             LocaleServiceProviderPool newPool =
                 new LocaleServiceProviderPool(providerClass);
-            pool = poolOfPools.put(providerClass, newPool);
+            pool = poolOfPools.putIfAbsent(providerClass, newPool);
             if (pool == null) {
                 pool = newPool;
             }
@@ -257,10 +258,11 @@ public final class LocaleServiceProviderPool {
             synchronized (LocaleServiceProviderPool.class) {
                 if (availableJRELocales == null) {
                     Locale[] allLocales = LocaleData.getAvailableLocales();
-                    availableJRELocales = new ArrayList<Locale>(allLocales.length);
+                    List<Locale> tmpList = new ArrayList<>(allLocales.length);
                     for (Locale locale : allLocales) {
-                        availableJRELocales.add(getLookupLocale(locale));
+                        tmpList.add(getLookupLocale(locale));
                     }
+                    availableJRELocales = tmpList;
                 }
             }
         }

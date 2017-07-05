@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc_interface.*;
+import sun.jvm.hotspot.gc_implementation.g1.G1CollectedHeap;
 import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
@@ -72,6 +73,7 @@ public class Universe {
     heapConstructor = new VirtualConstructor(db);
     heapConstructor.addMapping("GenCollectedHeap", GenCollectedHeap.class);
     heapConstructor.addMapping("ParallelScavengeHeap", ParallelScavengeHeap.class);
+    heapConstructor.addMapping("G1CollectedHeap", G1CollectedHeap.class);
 
     mainThreadGroupField   = type.getOopField("_main_thread_group");
     systemThreadGroupField = type.getOopField("_system_thread_group");

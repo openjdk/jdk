@@ -32,7 +32,7 @@ import org.w3c.dom.Element;
 /**
  * This class is abstract class for a child KeyInfo Elemnet.
  *
- * If you want the your KeyResolver, at firstly you must extand this class, and register
+ * If you want your KeyResolver, at first you must extend this class, and register
  * as following in config.xml
  * <PRE>
  *  &lt;KeyResolver URI="http://www.w3.org/2000/09/xmldsig#KeyValue"
@@ -177,7 +177,7 @@ public abstract class KeyResolverSpi {
    }
 
    /** Field _properties */
-   protected java.util.Map _properties = null;
+   protected java.util.Map<String,String> _properties = null;
 
    protected boolean globalResolver=false;
 
@@ -189,7 +189,7 @@ public abstract class KeyResolverSpi {
     */
    public void engineSetProperty(String key, String value) {
            if (_properties==null)
-                   _properties=new HashMap();
+                   _properties=new HashMap<String,String>();
       this._properties.put(key, value);
    }
 
@@ -203,7 +203,7 @@ public abstract class KeyResolverSpi {
            if (_properties==null)
                    return null;
 
-      return (String) this._properties.get(key);
+      return this._properties.get(key);
    }
 
    /**

@@ -33,6 +33,7 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc_interface.*;
+import sun.jvm.hotspot.gc_implementation.g1.*;
 import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
@@ -514,9 +515,16 @@ public class ObjectHeap {
 
   private void addPermGenLiveRegions(List output, CollectedHeap heap) {
     LiveRegionsCollector lrc = new LiveRegionsCollector(output);
-    if (heap instanceof GenCollectedHeap) {
-       GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-       Generation gen = genHeap.permGen();
+    if (heap instanceof SharedHeap) {
+       if (Assert.ASSERTS_ENABLED) {
+          Assert.that(heap instanceof GenCollectedHeap ||
+                      heap instanceof G1CollectedHeap,
+                      "Expecting GenCollectedHeap or G1CollectedHeap, " +
+                      "but got " + heap.getClass().getName());
+       }
+       // Handles both GenCollectedHeap and G1CollectedHeap
+       SharedHeap sharedHeap = (SharedHeap) heap;
+       Generation gen = sharedHeap.permGen();
        gen.spaceIterate(lrc, true);
     } else if (heap instanceof ParallelScavengeHeap) {
        ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
@@ -524,8 +532,9 @@ public class ObjectHeap {
        addLiveRegions(permGen.objectSpace().getLiveRegions(), output);
     } else {
        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(false, "Expecting GenCollectedHeap or ParallelScavengeHeap, but got " +
-                             heap.getClass().getName());
+          Assert.that(false,
+                      "Expecting SharedHeap or ParallelScavengeHeap, " +
+                      "but got " + heap.getClass().getName());
        }
     }
   }
@@ -588,10 +597,14 @@ public class ObjectHeap {
        addLiveRegions(youngGen.fromSpace().getLiveRegions(), liveRegions);
        PSOldGen oldGen = psh.oldGen();
        addLiveRegions(oldGen.objectSpace().getLiveRegions(), liveRegions);
+    } else if (heap instanceof G1CollectedHeap) {
+        G1CollectedHeap g1h = (G1CollectedHeap) heap;
+        g1h.heapRegionIterate(lrc);
     } else {
        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(false, "Expecting GenCollectedHeap or ParallelScavengeHeap, but got " +
-                              heap.getClass().getName());
+          Assert.that(false, "Expecting GenCollectedHeap, G1CollectedHeap, " +
+                      "or ParallelScavengeHeap, but got " +
+                      heap.getClass().getName());
        }
     }
 

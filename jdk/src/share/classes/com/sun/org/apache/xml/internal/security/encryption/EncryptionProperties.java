@@ -67,7 +67,7 @@ public interface EncryptionProperties {
      *
      * @return an <code>Iterator</code> over all the encryption properties.
      */
-    Iterator getEncryptionProperties();
+    Iterator<EncryptionProperty> getEncryptionProperties();
 
     /**
      * Adds an <code>EncryptionProperty</code>.

@@ -56,6 +56,7 @@ class FreeRegionList;
 // and maintain that: _length <= _allocated_length <= _max_length
 
 class HeapRegionSeq: public CHeapObj {
+  friend class VMStructs;
 
   // The array that holds the HeapRegions.
   HeapRegion** _regions;
