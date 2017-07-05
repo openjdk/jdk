@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URLConnection;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -121,6 +123,32 @@ class URICertStore extends CertStoreSpi {
     private String ldapPath;
 
     /**
+     * Holder class to lazily load LDAPCertStoreHelper if present.
+     */
+    private static class LDAP {
+        private static final String CERT_STORE_HELPER =
+            "sun.security.provider.certpath.ldap.LDAPCertStoreHelper";
+        private static final CertStoreHelper helper =
+            AccessController.doPrivileged(
+                new PrivilegedAction<CertStoreHelper>() {
+                    public CertStoreHelper run() {
+                        try {
+                            Class<?> c = Class.forName(CERT_STORE_HELPER, true, null);
+                            return (CertStoreHelper)c.newInstance();
+                        } catch (ClassNotFoundException cnf) {
+                            return null;
+                        } catch (InstantiationException e) {
+                            throw new AssertionError(e);
+                        } catch (IllegalAccessException e) {
+                            throw new AssertionError(e);
+                        }
+                    }});
+        static CertStoreHelper helper() {
+            return helper;
+        }
+    }
+
+    /**
      * Creates a URICertStore.
      *
      * @param parameters specifying the URI
@@ -135,9 +163,10 @@ class URICertStore extends CertStoreSpi {
         this.uri = ((URICertStoreParameters) params).uri;
         // if ldap URI, use an LDAPCertStore to fetch certs and CRLs
         if (uri.getScheme().toLowerCase().equals("ldap")) {
+            if (LDAP.helper() == null)
+                throw new NoSuchAlgorithmException("LDAP not present");
             ldap = true;
-            ldapCertStore =
-                LDAPCertStore.getInstance(LDAPCertStore.getParameters(uri));
+            ldapCertStore = LDAP.helper().getCertStore(uri);
             ldapPath = uri.getPath();
             // strip off leading '/'
             if (ldapPath.charAt(0) == '/') {
@@ -219,8 +248,7 @@ class URICertStore extends CertStoreSpi {
         if (ldap) {
             X509CertSelector xsel = (X509CertSelector) selector;
             try {
-                xsel = new LDAPCertStore.LDAPCertSelector
-                    (xsel, xsel.getSubject(), ldapPath);
+                xsel = LDAP.helper().wrap(xsel, xsel.getSubject(), ldapPath);
             } catch (IOException ioe) {
                 throw new CertStoreException(ioe);
             }
@@ -340,7 +368,7 @@ class URICertStore extends CertStoreSpi {
         if (ldap) {
             X509CRLSelector xsel = (X509CRLSelector) selector;
             try {
-                xsel = new LDAPCertStore.LDAPCRLSelector(xsel, null, ldapPath);
+                xsel = LDAP.helper().wrap(xsel, null, ldapPath);
             } catch (IOException ioe) {
                 throw new CertStoreException(ioe);
             }

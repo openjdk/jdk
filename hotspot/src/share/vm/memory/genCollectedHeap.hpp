@@ -260,6 +260,20 @@ public:
     return true;
   }
 
+  // We don't need barriers for stores to objects in the
+  // young gen and, a fortiori, for initializing stores to
+  // objects therein. This applies to {DefNew,ParNew}+{Tenured,CMS}
+  // only and may need to be re-examined in case other
+  // kinds of collectors are implemented in the future.
+  virtual bool can_elide_initializing_store_barrier(oop new_obj) {
+    // We wanted to assert that:-
+    // assert(UseParNewGC || UseSerialGC || UseConcMarkSweepGC,
+    //       "Check can_elide_initializing_store_barrier() for this collector");
+    // but unfortunately the flag UseSerialGC need not necessarily always
+    // be set when DefNew+Tenured are being used.
+    return is_in_youngest((void*)new_obj);
+  }
+
   // Can a compiler elide a store barrier when it writes
   // a permanent oop into the heap?  Applies when the compiler
   // is storing x to the heap, where x->is_perm() is true.

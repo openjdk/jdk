@@ -415,9 +415,14 @@ class CollectedHeap : public CHeapObj {
     guarantee(false, "thread-local allocation buffers not supported");
     return 0;
   }
+
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint.
+  // via a TLAB up to the first subsequent safepoint. If such permission
+  // is granted for this heap type, the compiler promises to call
+  // defer_store_barrier() below on any slow path allocation of
+  // a new object for which such initializing store barriers will
+  // have been elided.
   virtual bool can_elide_tlab_store_barriers() const = 0;
 
   // If a compiler is eliding store barriers for TLAB-allocated objects,
@@ -425,8 +430,19 @@ class CollectedHeap : public CHeapObj {
   // an object allocated anywhere.  The compiler's runtime support
   // promises to call this function on such a slow-path-allocated
   // object before performing initializations that have elided
-  // store barriers.  Returns new_obj, or maybe a safer copy thereof.
-  virtual oop new_store_barrier(oop new_obj);
+  // store barriers. Returns new_obj, or maybe a safer copy thereof.
+  virtual oop defer_store_barrier(JavaThread* thread, oop new_obj);
+
+  // Answers whether an initializing store to a new object currently
+  // allocated at the given address doesn't need a (deferred) store
+  // barrier. Returns "true" if it doesn't need an initializing
+  // store barrier; answers "false" if it does.
+  virtual bool can_elide_initializing_store_barrier(oop new_obj) = 0;
+
+  // If the CollectedHeap was asked to defer a store barrier above,
+  // this informs it to flush such a deferred store barrier to the
+  // remembered set.
+  virtual void flush_deferred_store_barrier(JavaThread* thread);
 
   // Can a compiler elide a store barrier when it writes
   // a permanent oop into the heap?  Applies when the compiler

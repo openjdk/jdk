@@ -210,7 +210,7 @@ final class SunEntries {
          * CertStores
          */
         map.put("CertStore.LDAP",
-            "sun.security.provider.certpath.LDAPCertStore");
+            "sun.security.provider.certpath.ldap.LDAPCertStore");
         map.put("CertStore.LDAP LDAPSchema", "RFC2587");
         map.put("CertStore.Collection",
             "sun.security.provider.certpath.CollectionCertStore");
