@@ -24,7 +24,7 @@
 #
 
 # @test
-# @bug 4991526 6514993
+# @bug 4991526 6514993 7197662
 # @summary Unit test for Preferences jar providers
 #
 # @build PrefsSpi
@@ -89,12 +89,16 @@ case "`uname`" in Windows*|CYGWIN* ) CPS=';';; *) CPS=':';; esac
 
 Sys "$java" "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
     -Djava.util.prefs.PreferencesFactory=StubPreferencesFactory \
+    -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
 Sys "$java" "-cp" "$TESTCLASSES" \
+    -Djava.util.prefs.userRoot=. \
     PrefsSpi "java.util.prefs.*"
 Sys "$java" "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
+    -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
 Sys "$java" "-cp" "$TESTCLASSES" "-Djava.ext.dirs=extDir" \
+    -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
 
 rm -rf jarDir extDir

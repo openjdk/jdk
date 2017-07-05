@@ -31,62 +31,101 @@
 # @run shell/manual console.sh
 
 if [ "$ALT_PASS" = "" ]; then
-  export PASS=äöäöäöäö
+	PASSW=äöäöäö
 else
-  export PASS=$ALT_PASS
+  	PASSW=$ALT_PASS
 fi
 
-echo "ATTENTION"
-echo "==============================================================="
-echo
-echo "This test is about console password input compatibility between"
-echo "Tiger and Mustang. Before running the test, make sure that --"
-echo "\$J5 points to a JDK 5.0 installation"
-echo "\$JM points to a JDK 6 installation".
-echo
-echo "The password string used in this test is $PASS. If you find difficulty"
-echo "entering it in in your system, feel free to change it to something else"
-echo "by providing \$ALT_PASS (should be not less than 6 characters)"
-echo
-echo "For all prompt of \"Enter keystore password\", type $PASS and press ENTER"
-echo "For all prompt of \"Enter key password for <mykey> (RETURN if same as keystore password)\", press ENTER"
-echo "If you see both the prompts appear, say --"
-echo "   Enter key password for <mykey>"
-echo "         (RETURN if same as keystore password):  Enter keystore password:"
-echo "only response to the last prompt by typing $PASS and press ENTER"
-echo
-echo "Only if all the command run correctly without showing any error "
-echo "or warning, this test passes."
-echo
+KS=/tmp/kkk.$$
+
+cat <<____
+
+ATTENTION
+===============================================================
+
+This test is about non-ASCII password input compatibility between
+JDK 5.0 and later versions. Before running the test, make sure that --
+
+    \$J5 points to a JDK 5.0 installation
+    \$JM points to the current installation
+
+The password string used in this test is $PASSW. If you find difficulty
+entering it in in your system, feel free to change it to something else
+by providing \$ALT_PASS. It should be no less than 6 characters and include
+some non-ASCII characters.
+
+For each test, type into the characters as described in the test header.
+<R> means the RETURN (or ENTER key). Please wait for a little while
+after <R> is pressed each time.
+
+\$J5 is now $J5
+\$JM is now $JM
+
+____
+
+
+if [ "$J5" = "" -o "$JM" = "" ]; then
+	echo "Define \$J5 and \$JM first"
+	exit 1
+fi
+
 echo "Press ENTER to start the test, or Ctrl-C to stop it"
-read
+read x
+
 echo
-echo "Test #1: 5->6, non-prompt"
-rm kkk
-$J5/bin/keytool -keystore kkk -genkey -dname CN=olala -storepass $PASS
-$JM/bin/keytool -keystore kkk -list -storepass $PASS
-echo "Test #2: 6->5, non-prompt"
-rm kkk
-$JM/bin/keytool -keystore kkk -genkey -dname CN=olala -storepass $PASS
-$J5/bin/keytool -keystore kkk -list -storepass $PASS
-echo "Test #3: 5->6, prompt"
-rm kkk
-$J5/bin/keytool -keystore kkk -genkey -dname CN=olala
-$JM/bin/keytool -keystore kkk -list
-echo $PASS| $J5/bin/keytool -keystore kkk -list
-echo $PASS| $JM/bin/keytool -keystore kkk -list
-echo "Test #4: 6->5, prompt"
-rm kkk
-$JM/bin/keytool -keystore kkk -genkey -dname CN=olala
-$J5/bin/keytool -keystore kkk -list
-echo $PASS| $JM/bin/keytool -keystore kkk -list
-echo $PASS| $J5/bin/keytool -keystore kkk -list
-echo "Test #5: 5->6, pipe"
-rm kkk
-echo $PASS| $J5/bin/keytool -keystore kkk -genkey -dname CN=olala
-$JM/bin/keytool -keystore kkk -list
-echo $PASS| $J5/bin/keytool -keystore kkk -list
-echo $PASS| $JM/bin/keytool -keystore kkk -list
-rm kkk
+echo "=========================================="
+echo "Test #1: 5->6, non-prompt. Please type <R>"
+echo "=========================================="
+echo
+rm $KS 2> /dev/null
+$J5/bin/keytool -keystore $KS -genkey -dname CN=olala -storepass $PASSW || exit 1
+$JM/bin/keytool -keystore $KS -list -storepass $PASSW || exit 2
+
+echo "=========================================="
+echo "Test #2: 6->5, non-prompt. Please type <R>"
+echo "=========================================="
+echo
+
+rm $KS 2> /dev/null
+$JM/bin/keytool -keystore $KS -genkey -dname CN=olala -storepass $PASSW || exit 3
+$J5/bin/keytool -keystore $KS -list -storepass $PASSW || exit 4
+
+echo "============================================================"
+echo "Test #3: 5->6, prompt. Please type $PASSW <R> <R> $PASSW <R>"
+echo "============================================================"
+echo
+
+rm $KS 2> /dev/null
+$J5/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 5
+$JM/bin/keytool -keystore $KS -list || exit 6
+echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 7
+echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 8
+
+echo "======================================================================="
+echo "Test #4: 6->5, prompt. Please type $PASSW <R> $PASSW <R> <R> $PASSW <R>"
+echo "======================================================================="
+echo
+
+rm $KS 2> /dev/null
+$JM/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 9
+$J5/bin/keytool -keystore $KS -list || exit 10
+echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 11
+echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 12
+
+echo "==========================================="
+echo "Test #5: 5->6, pipe. Please type $PASSW <R>"
+echo "==========================================="
+echo
+
+rm $KS 2> /dev/null
+echo $PASSW| $J5/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 13
+$JM/bin/keytool -keystore $KS -list || exit 14
+echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 15
+echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 16
+
+rm $KS 2> /dev/null
+
+echo
+echo "Success"
 
 exit 0

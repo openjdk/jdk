@@ -25,11 +25,9 @@
 package com.sun.jmx.snmp.agent;
 
 import java.util.Vector;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -77,7 +75,7 @@ final class SnmpRequestTree {
         this.request = req;
         this.version  = req.getVersion();
         this.creationflag = creationflag;
-        this.hashtable = new Hashtable<Object, Handler>();
+        this.hashtable = new Hashtable<>();
         setPduType(pdutype);
     }
 
@@ -191,7 +189,7 @@ final class SnmpRequestTree {
     // SnmSubRequest associated with an Handler node.
     //-------------------------------------------------------------------
 
-    static final class Enum implements Enumeration {
+    static final class Enum implements Enumeration<SnmpMibSubRequest> {
         Enum(SnmpRequestTree hlist,Handler h) {
             handler = h;
             this.hlist = hlist;
@@ -203,11 +201,13 @@ final class SnmpRequestTree {
         private int   iter  = 0;
         private int   size  = 0;
 
+        @Override
         public boolean hasMoreElements() {
             return iter < size;
         }
 
-        public Object nextElement() throws NoSuchElementException  {
+        @Override
+        public SnmpMibSubRequest nextElement() throws NoSuchElementException  {
             if (iter == 0) {
                 if (handler.sublist != null) {
                     iter++;
@@ -216,7 +216,7 @@ final class SnmpRequestTree {
             }
             iter ++;
             if (iter > size) throw new NoSuchElementException();
-            Object result = hlist.getSubRequest(handler,entry);
+            SnmpMibSubRequest result = hlist.getSubRequest(handler,entry);
             entry++;
             return result;
         }
@@ -252,7 +252,8 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
-        public Enumeration getElements() {
+        @Override
+        public Enumeration<SnmpVarBind> getElements() {
             return varbinds.elements();
         }
 
@@ -260,6 +261,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public Vector<SnmpVarBind> getSubList() {
             return varbinds;
         }
@@ -268,6 +270,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public final int getSize()  {
             if (varbinds == null) return 0;
             return varbinds.size();
@@ -277,6 +280,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public void addVarBind(SnmpVarBind varbind) {
             // XXX not sure we must also add the varbind in the global
             //     request? or whether we should raise an exception:
@@ -289,6 +293,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibSubRequest interface.
         // See SnmpMibSubRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public boolean isNewEntry() {
             return isnew;
         }
@@ -297,6 +302,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibSubRequest interface.
         // See SnmpMibSubRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public SnmpOid getEntryOid() {
             return entryoid;
         }
@@ -305,6 +311,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public int getVarIndex(SnmpVarBind varbind) {
             if (varbind == null) return 0;
             return global.getVarIndex(varbind);
@@ -314,6 +321,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public Object getUserData() { return global.getUserData(); }
 
 
@@ -322,6 +330,7 @@ final class SnmpRequestTree {
         // See SnmpMibSubRequest for the java doc.
         // -------------------------------------------------------------
 
+        @Override
         public void registerGetException(SnmpVarBind var,
                                          SnmpStatusException exception)
             throws SnmpStatusException {
@@ -364,6 +373,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibSubRequest interface.
         // See SnmpMibSubRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public void registerSetException(SnmpVarBind var,
                                          SnmpStatusException exception)
             throws SnmpStatusException {
@@ -387,6 +397,7 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibSubRequest interface.
         // See SnmpMibSubRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public void registerCheckException(SnmpVarBind var,
                                            SnmpStatusException exception)
             throws SnmpStatusException {
@@ -410,42 +421,52 @@ final class SnmpRequestTree {
         // Implements the method defined in SnmpMibRequest interface.
         // See SnmpMibRequest for the java doc.
         // -------------------------------------------------------------
+        @Override
         public int getVersion() {
             return version;
         }
 
+        @Override
         public SnmpVarBind getRowStatusVarBind() {
             return statusvb;
         }
 
+        @Override
         public SnmpPdu getPdu() {
             return global.getPdu();
         }
 
+        @Override
         public int getRequestPduVersion() {
             return global.getRequestPduVersion();
         }
 
+        @Override
         public SnmpEngine getEngine() {
             return global.getEngine();
         }
 
+        @Override
         public String getPrincipal() {
             return global.getPrincipal();
         }
 
+        @Override
         public int getSecurityLevel() {
             return global.getSecurityLevel();
         }
 
+        @Override
         public int getSecurityModel() {
             return global.getSecurityModel();
         }
 
+        @Override
         public byte[] getContextName() {
             return global.getContextName();
         }
 
+        @Override
         public byte[] getAccessContextName() {
             return global.getAccessContextName();
         }
@@ -485,7 +506,7 @@ final class SnmpRequestTree {
          * Adds a varbind in this node sublist.
          */
         public void addVarbind(SnmpVarBind varbind) {
-            if (sublist == null) sublist = new Vector<SnmpVarBind>();
+            if (sublist == null) sublist = new Vector<>();
             sublist.addElement(varbind);
         }
 
@@ -503,7 +524,7 @@ final class SnmpRequestTree {
                 // Vectors are null: Allocate new vectors
 
                 entryoids  = new SnmpOid[Delta];
-                entrylists = new Vector[Delta];
+                entrylists = (Vector<SnmpVarBind>[])new Vector<?>[Delta];
                 isentrynew = new boolean[Delta];
                 rowstatus  = new SnmpVarBind[Delta];
                 entrysize  = Delta;
@@ -521,7 +542,7 @@ final class SnmpRequestTree {
                 // Allocate larger vectors
                 entrysize += Delta;
                 entryoids =  new SnmpOid[entrysize];
-                entrylists = new Vector[entrysize];
+                entrylists = (Vector<SnmpVarBind>[])new Vector<?>[entrysize];
                 isentrynew = new boolean[entrysize];
                 rowstatus  = new SnmpVarBind[entrysize];
 
@@ -595,7 +616,7 @@ final class SnmpRequestTree {
 //              entryoids = new ArrayList();
 //              entrylists = new ArrayList();
 //              isentrynew = new ArrayList();
-                v = new Vector<SnmpVarBind>();
+                v = new Vector<>();
 //              entryoids.add(entryoid);
 //              entrylists.add(v);
 //              isentrynew.add(new Boolean(isnew));
@@ -614,7 +635,7 @@ final class SnmpRequestTree {
                     // if (pos == -1 || pos >= entrycount ) {
                     // pos = getInsertionPoint(entryoids,entryoid);
                     // pos = getInsertionPoint(entryoids,entrycount,entryoid);
-                    v = new Vector<SnmpVarBind>();
+                    v = new Vector<>();
 //                  entryoids.add(pos,entryoid);
 //                  entrylists.add(pos,v);
 //                  isentrynew.add(pos,new Boolean(isnew));
@@ -775,7 +796,7 @@ final class SnmpRequestTree {
     // If it is a table, there will be one subrequest per entry involved.
     //-------------------------------------------------------------------
 
-    public Enumeration getSubRequests(Handler handler) {
+    public Enumeration<SnmpMibSubRequest> getSubRequests(Handler handler) {
         return new Enum(this,handler);
     }
 
@@ -783,7 +804,7 @@ final class SnmpRequestTree {
     // returns an enumeration of the Handlers stored in the Hashtable.
     //-------------------------------------------------------------------
 
-    public Enumeration getHandlers() {
+    public Enumeration<Handler> getHandlers() {
         return hashtable.elements();
     }
 
@@ -1048,7 +1069,6 @@ final class SnmpRequestTree {
             handler.addVarbind(varbind);
         else
             handler.addVarbind(varbind,entryoid,isnew,statusvb);
-        return ;
     }
 
 

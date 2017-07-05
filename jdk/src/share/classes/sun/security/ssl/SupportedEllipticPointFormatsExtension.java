@@ -67,10 +67,12 @@ final class SupportedEllipticPointFormatsExtension extends HelloExtension {
         }
     }
 
+    @Override
     int length() {
         return 5 + formats.length;
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt16(type.id);
         s.putInt16(formats.length + 1);
@@ -91,6 +93,7 @@ final class SupportedEllipticPointFormatsExtension extends HelloExtension {
         }
     }
 
+    @Override
     public String toString() {
         List<String> list = new ArrayList<String>();
         for (byte format : formats) {

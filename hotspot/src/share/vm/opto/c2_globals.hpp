@@ -115,6 +115,12 @@
   notproduct(bool, VerifyOpto, false,                                       \
           "Apply more time consuming verification during compilation")      \
                                                                             \
+  notproduct(bool, VerifyIdealNodeCount, false,                             \
+          "Verify that tracked dead ideal node count is accurate")          \
+                                                                            \
+  notproduct(bool, PrintIdealNodeCount, false,                              \
+          "Print liveness counts of ideal nodes")                           \
+                                                                            \
   notproduct(bool, VerifyOptoOopOffsets, false,                             \
           "Check types of base addresses in field references")              \
                                                                             \

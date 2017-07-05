@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class LoggingDeadlock2 {
             // This may or may not result in a first call to
             // Runtime.addShutdownHook after shutdown has already
             // commenced.
-            LogManager log = LogManager.getLogManager();
+            LogManager.getLogManager();
 
             if (dojoin) {
                 exiter.join();
@@ -148,7 +148,6 @@ public class LoggingDeadlock2 {
         public String out()          { return out; }
         public String err()          { return err; }
         public int exitValue()       { return exitValue; }
-        public Throwable throwable() { return throwable; }
 
         public String toString() {
             StringBuilder sb = new StringBuilder();

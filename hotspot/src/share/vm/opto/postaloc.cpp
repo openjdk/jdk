@@ -146,7 +146,7 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
       }
     }
     // Disconnect control and remove precedence edges if any exist
-    old->disconnect_inputs(NULL);
+    old->disconnect_inputs(NULL, C);
   }
   return blk_adjust;
 }
@@ -513,7 +513,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         b->_nodes.remove(j--); phi_dex--;
         _cfg._bbs.map(phi->_idx,NULL);
         phi->replace_by(u);
-        phi->disconnect_inputs(NULL);
+        phi->disconnect_inputs(NULL, C);
         continue;
       }
       // Note that if value[pidx] exists, then we merged no new values here

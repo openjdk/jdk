@@ -35,6 +35,7 @@ import java.beans.PropertyChangeEvent;
 
 public class ListenersWithSM {
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         boolean granted = args[0].equals("grant");
 

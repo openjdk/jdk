@@ -41,15 +41,18 @@ final class UnknownExtension extends HelloExtension {
         }
     }
 
+    @Override
     int length() {
         return 4 + data.length;
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt16(type.id);
         s.putBytes16(data);
     }
 
+    @Override
     public String toString() {
         return "Unsupported extension " + type + ", data: " +
             Debug.toString(data);

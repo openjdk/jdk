@@ -747,7 +747,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if( i >= cnt ) {    // Found one unique input
               assert(Find_id(n) == Find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
-              n->disconnect_inputs(NULL);
+              n->disconnect_inputs(NULL, C);
               b->_nodes.remove(insidx);
               insidx--;
               b->_ihrp_index--;

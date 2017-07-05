@@ -199,7 +199,7 @@ public class ThreadService implements TaskServer {
 
                 // re-init
                 this.setPriority(priority);
-                this.interrupted();
+                Thread.interrupted();
                 this.setContextClassLoader(cloader);
             }
         }

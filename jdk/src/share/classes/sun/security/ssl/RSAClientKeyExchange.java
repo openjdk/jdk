@@ -28,10 +28,8 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.security.*;
-import java.security.interfaces.*;
 
 import javax.crypto.*;
-import javax.crypto.spec.*;
 
 import javax.net.ssl.*;
 
