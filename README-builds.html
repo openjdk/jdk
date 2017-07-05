@@ -5,7 +5,7 @@
     </head>
     <body style="background-color:lightcyan">
         <!-- ====================================================== -->
-        +        <table width="100%">
+        <table width="100%">
             <tr>
                 <td align="center">
                     <img alt="OpenJDK" 
@@ -39,6 +39,11 @@
                 <li><a href="#introduction">Introduction</a></li>
                 <li><a href="#MBE">Minimum Build Environments</a></li>
                 <li><a href="#SDBE">Specific Developer Build Environments</a></li>
+                    <ul>
+                        <li><a href="#fedora">Fedora Linux</a> </li>
+                        <li><a href="#centos">CentOS Linux</a> </li>
+                        <li><a href="#ubuntu">Ubuntu Linux</a> </li>
+                    </ul>
                 <li><a href="#directories">Source Directory Structure</a> </li>
                 <li><a href="#building">Build Information</a>
                     <ul>
@@ -182,14 +187,64 @@
             we will try to provide what information we have available to us.
         </blockquote>
         <!-- ------------------------------------------------------ -->
-        <h3><a name="fedora">Fedora</a></h3>
+        <h3><a name="fedora">Fedora 9</a></h3>
         <blockquote>
-            TBD
+            After installing
+            <a href="http://www.fedoraproject.org/">Fedora 9</a>
+            you need to make sure you have
+            the "Software Development" bundle installed, plus the
+            following packages:
+            <blockquote>
+                <ul>
+                    <li>cups devel: Cups Development Package</li>
+                    <li>freetype 2.3+ devel: Freetype 2.3 Development Package</li>
+                    <li>hg: Mercurial, if you need to clone or manage source repositories</li>
+                    <li>ksh: May be needed when using <tt>webrev</tt></li>
+                </ul>
+            </blockquote>
+            <p>
+            Always a good idea to do a complete Software Update/Refresh
+            after you get all the packages installed.
         </blockquote>
         <!-- ------------------------------------------------------ -->
-        <h3><a name="debian">Debian</a></h3>
+        <h3><a name="centos">CentOS 5.2</a></h3>
         <blockquote>
-            TBD
+            After installing
+            <a href="http://www.centos.org/">CentOS 5.2</a>
+            you need to make sure you have
+            the following Development bundles installed:
+            <blockquote>
+                <ul>
+                    <li>Development Libraries</li>
+                    <li>Development Tools</li>
+                    <li>Java Development</li>
+                    <li>X Software Development</li>
+                </ul>
+            </blockquote>
+            <p>
+            Plus the following packages:
+            <blockquote>
+                <ul>
+                    <li>cups devel: Cups Development Package</li>
+                    <li>alsa devel: Alsa Development Package</li>
+                    <li>ant: Ant Package</li>
+                    <li>Xi devel: libXi.so Development Package</li>
+                </ul>
+            </blockquote>
+            <p>
+            The freetype 2.3 packages don't seem to be available,
+            but the freetype 2.3 sources can be downloaded, built,
+            and installed easily enough from
+            <a href="http://downloads.sourceforge.net/freetype">
+            the freetype site</a>.
+            Build and install with something like:
+            <blockquote>
+                <tt>./configure && make && sudo -u root make install</tt>
+            </blockquote>
+            <p>
+            Mercurial packages could not be found easily, but a Google
+            search should find ones, and they usually include Python if
+            it's needed.
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <h3><a name="ubuntu">Ubuntu</a></h3>
@@ -664,8 +719,8 @@
                 </li>
                 <li>
                     Install the
-                    <a href="#msvc">Microsoft Visual Studio .NET 2003 Professional</a> or the 
-                    <a href="#mssdk">Microsoft Platform SDK</a>.
+                    <a href="#msvc">Microsoft Visual Studio .NET 2003 Professional</a> (32bit) or the 
+                    <a href="#mssdk">Microsoft Platform SDK</a> (64bit).
                 </li>
                 <li>
                     Setup all environment variables for compilers 
@@ -871,6 +926,11 @@
                     The Microsoft Visual Studio .NET 2005 (VS2005) compiler
                     will not work at this time due to the new runtime dll
                     and the manifest requirements.
+                    <p>
+                    <b>WARNING:</b> Make sure you check out the
+                    <a href="#cygwin">CYGWIN link.exe WARNING</a>.
+                    The path <tt>/usr/bin</tt> must be after the path to the
+                    Visual Studio product.
                 </blockquote>
                 <strong><a name="mssdk">Windows X64: Microsoft Platform SDK April 2005</a></strong>
                 <blockquote>
@@ -1079,6 +1139,7 @@
                         <thead>
                             <tr>
                                 <td>Binary Name</td>
+                                <td>Category</td>
                                 <td>Package</td>
                                 <td>Description</td>
                             </tr>
@@ -1087,50 +1148,59 @@
                             <tr>
                                 <td>ar.exe</td>
                                 <td>Devel</td>
-                                <td>binutils: The GNU assembler, linker and binary
+                                <td>binutils</td>
+                                <td>The GNU assembler, linker and binary
                                 utilities</td>
                             </tr>
                             <tr>
                                 <td>make.exe</td>
                                 <td>Devel</td>
-                                <td>make: The GNU version of the 'make' utility<br>
+                                <td>make</td>
+                                <td>The GNU version of the 'make' utility built for CYGWIN.<br>
                                 <b>NOTE</b>: See <a href="#gmake">the GNU make section</a></td>
                             </tr>
                             <tr>
                                 <td>m4.exe</td>
                                 <td>Interpreters</td>
-                                <td>m4: GNU implementation of the traditional Unix macro
+                                <td>m4</td>
+                                <td>GNU implementation of the traditional Unix macro
                                 processor</td>
                             </tr>
                             <tr>
                                 <td>cpio.exe</td>
                                 <td>Utils</td>
-                                <td>cpio: A program to manage archives of files</td>
+                                <td>cpio</td>
+                                <td>A program to manage archives of files</td>
                             </tr>
                             <tr>
                                 <td>gawk.exe</td>
                                 <td>Utils</td>
-                                <td>awk: Pattern-directed scanning and processing language</td>
+                                <td>awk</td>
+                                <td>Pattern-directed scanning and processing language</td>
                             </tr>
                             <tr>
                                 <td>file.exe</td>
                                 <td>Utils</td>
-                                <td>file: Determines file type using 'magic' numbers</td>
+                                <td>file</td>
+                                <td>Determines file type using 'magic' numbers</td>
                             </tr>
                             <tr>
                                 <td>zip.exe</td>
                                 <td>Archive</td>
-                                <td>zip: Package and compress (archive) files</td>
+                                <td>zip</td>
+                                <td>Package and compress (archive) files</td>
                             </tr>
                             <tr>
                                 <td>unzip.exe</td>
                                 <td>Archive</td>
-                                <td>unzip: Extract compressed files in a ZIP archive</td>
+                                <td>unzip</td>
+                                <td>Extract compressed files in a ZIP archive</td>
                             </tr>
                             <tr>
                                 <td>free.exe</td>
-                                <td>Procps</td>
-                                <td>free: Display amount of free and used memory in the system</td>
+                                <td>System</td>
+                                <td>procps</td>
+                                <td>Display amount of free and used memory in the system</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1144,6 +1214,13 @@
                 section on
                 <a href="http://cygwin.com/faq/faq.using.html#faq.using.bloda" target="_blank">
                 BLODA (applications that interfere with CYGWIN)</a>.
+                <p>
+                <b>WARNING:</b>
+                Be very careful with <b><tt>link.exe</tt></b>, it will conflict
+                with the Visual Studio version. You need the Visual Studio
+                version of <tt>link.exe</tt>, not the CYGWIN one.
+                So it's important that the Visual Studio paths in PATH preceed
+                the CYGWIN path <tt>/usr/bin</tt>.
             </blockquote>
             <strong><a name="dxsdk">Microsoft DirectX 9.0 SDK header files and libraries</a></strong>
             <blockquote>
@@ -1429,7 +1506,7 @@
                     build output is to go.
                     The default output directory will be build/<i>platform</i>.
                 </dd>
-                <dt><a name="ALT_SLASHJAVA"><tt>ALT_SLASHJAVA</tt></a></dt>
+                <dt><a name="ALT_SLASH_JAVA"><tt>ALT_SLASH_JAVA</tt></a></dt>
                 <dd>
                     The default root location for many of the ALT path locations
                     of the following ALT variables.
