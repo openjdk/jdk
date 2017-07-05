@@ -37,7 +37,7 @@ import javax.swing.text.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 public class AquaHighlighter extends DefaultHighlighter implements UIResource {
-    static final RecyclableSingleton<LayerPainter> instance = new RecyclableSingleton<LayerPainter>() {
+    private static final RecyclableSingleton<LayerPainter> instance = new RecyclableSingleton<LayerPainter>() {
         protected LayerPainter getInstance() {
             return new AquaHighlightPainter(null);
         }

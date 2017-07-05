@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec {
      * the array are copied to protect against subsequent modification.
      * @param algorithm the algorithm name of the encoded private key
      * See the KeyFactory section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.

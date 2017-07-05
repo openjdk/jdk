@@ -64,7 +64,7 @@ import java.nio.channels.spi.SelectorProvider;
  * threads. </p>
  *
  *
- * <a name="bm"></a>
+ * <a id="bm"></a>
  * <h2>Blocking mode</h2>
  *
  * A selectable channel is either in <i>blocking</i> mode or in

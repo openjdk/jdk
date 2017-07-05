@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,9 @@ import sun.security.util.Debug;
  * <li>{@code RSA} (1024, 2048, 4096)</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
+ * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
  * KeyPairGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -142,8 +142,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      */
     protected KeyPairGenerator(String algorithm) {
@@ -153,8 +153,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Returns the standard name of the algorithm for this key pair generator.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the standard string name of the algorithm.
@@ -205,8 +205,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code KeyPairGenerator} object
@@ -264,8 +264,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the string name of the provider.
@@ -306,8 +306,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

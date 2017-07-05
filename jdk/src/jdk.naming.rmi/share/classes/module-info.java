@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * RMI Java Naming provider.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.naming.rmi {
     requires java.naming;
     requires java.rmi;

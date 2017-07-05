@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,12 @@ import java.security.Permission;
  * separated by '/' characters. <i>path</i> may also be empty. The path is specified
  * in a similar way to the path in {@link java.io.FilePermission}. There are
  * three different ways as the following examples show:
- * <table border>
+ * <table class="plain">
  * <caption>URL Examples</caption>
+ * <thead>
  * <tr><th>Example url</th><th>Description</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td style="white-space:nowrap;">http://www.oracle.com/a/b/c.html</td>
  *   <td>A url which identifies a specific (single) resource</td>
  * </tr>
@@ -90,6 +93,7 @@ import java.security.Permission;
  *       example).
  *   </td>
  * </tr>
+ * </tbody>
  * </table>
  * <p>
  * The '*' and '-' may only be specified in the final segment of a path and must be
@@ -246,9 +250,12 @@ public final class URLPermission extends Permission {
      * <li>otherwise, return false</li>
      * </ul>
      * <p>Some examples of how paths are matched are shown below:
-     * <table border>
+     * <table class="plain">
      * <caption>Examples of Path Matching</caption>
+     * <thead>
      * <tr><th>this's path</th><th>p's path</th><th>match</th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td>/a/b</td><td>/a/b</td><td>yes</td></tr>
      * <tr><td>/a/b/*</td><td>/a/b/c</td><td>yes</td></tr>
      * <tr><td>/a/b/*</td><td>/a/b/c/d</td><td>no</td></tr>
@@ -256,6 +263,7 @@ public final class URLPermission extends Permission {
      * <tr><td>/a/b/-</td><td>/a/b/c/d/e</td><td>yes</td></tr>
      * <tr><td>/a/b/-</td><td>/a/b/c/*</td><td>yes</td></tr>
      * <tr><td>/a/b/*</td><td>/a/b/c/-</td><td>no</td></tr>
+     * </tbody>
      * </table>
      */
     public boolean implies(Permission p) {
