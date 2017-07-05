@@ -25,12 +25,10 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.*;
-import java.net.*;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Enumeration;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.util.HashMap;
 
 import sun.net.www.HeaderParser;
@@ -51,12 +49,12 @@ import sun.net.www.HeaderParser;
 //      policy in HttpURLConnection.  A failure on baz.foo.com shouldn't
 //      uncache foo.com!
 
-abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
+public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
     // Constants saying what kind of authroization this is.  This determines
     // the namespace in the hash table lookup.
-    static final char SERVER_AUTHENTICATION = 's';
-    static final char PROXY_AUTHENTICATION = 'p';
+    public static final char SERVER_AUTHENTICATION = 's';
+    public static final char PROXY_AUTHENTICATION = 'p';
 
     /**
      * If true, then simultaneous authentication requests to the same realm/proxy
@@ -188,7 +186,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     String path;
 
     /** Use this constructor only for proxy entries */
-    AuthenticationInfo(char type, AuthScheme authScheme, String host, int port, String realm) {
+    public AuthenticationInfo(char type, AuthScheme authScheme, String host, int port, String realm) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = "";
@@ -211,7 +209,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * Constructor used to limit the authorization to the path within
      * the URL. Use this constructor for origin server entries.
      */
-    AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
+    public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = url.getProtocol().toLowerCase();
@@ -358,13 +356,19 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     /**
      * @return true if this authentication supports preemptive authorization
      */
-    abstract boolean supportsPreemptiveAuthorization();
+    public abstract boolean supportsPreemptiveAuthorization();
 
     /**
      * @return the name of the HTTP header this authentication wants set.
      *          This is used for preemptive authorization.
      */
-    abstract String getHeaderName();
+    public String getHeaderName() {
+        if (type == SERVER_AUTHENTICATION) {
+            return "Authorization";
+        } else {
+            return "Proxy-authorization";
+        }
+    }
 
     /**
      * Calculates and returns the authentication header value based
@@ -375,7 +379,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * @return the value of the HTTP header this authentication wants set.
      *          Used for preemptive authorization.
      */
-    abstract String getHeaderValue(URL url, String method);
+    public abstract String getHeaderValue(URL url, String method);
 
     /**
      * Set header(s) on the given connection.  Subclasses must override
@@ -386,7 +390,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * @param raw The raw header field (if needed)
      * @return true if all goes well, false if no headers were set.
      */
-    abstract boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw);
+    public abstract boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw);
 
     /**
      * Check if the header indicates that the current auth. parameters are stale.
@@ -396,7 +400,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * returning false means we have to go back to the user to ask for a new
      * username password.
      */
-    abstract boolean isAuthorizationStale (String header);
+    public abstract boolean isAuthorizationStale (String header);
 
     /**
      * Give a key for hash table lookups.

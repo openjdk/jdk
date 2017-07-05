@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import javax.management.*;
@@ -90,7 +88,6 @@ import javax.management.remote.*;
  * If the logic for adding the notification buffer's listener is incorrect
  * we could remove zero or two notifications from an MBean.
  */
-import javax.management.remote.rmi.RMIConnectorServer;
 public class NotificationBufferDeadlockTest {
     public static void main(String[] args) throws Exception {
         System.out.println("Check no deadlock if notif sent while initial " +
@@ -112,13 +109,7 @@ public class NotificationBufferDeadlockTest {
     }
 
     private static void test(String proto) throws Exception {
-        test(proto, false);
-        test(proto, true);
-    }
-
-    private static void test(String proto, boolean eventService) throws Exception {
-        System.out.println("Testing protocol " + proto + " with" +
-                (eventService ? "" : "out") + " event service");
+        System.out.println("Testing protocol " + proto);
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         ObjectName testName = newName();
         DeadlockTest test = new DeadlockTest();
@@ -126,11 +117,8 @@ public class NotificationBufferDeadlockTest {
         JMXServiceURL url = new JMXServiceURL("service:jmx:" + proto + ":///");
         JMXConnectorServer cs;
         try {
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                    Boolean.toString(eventService));
             cs =
-                JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
+                JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
         } catch (MalformedURLException e) {
             System.out.println("...protocol not supported, ignoring");
             return;

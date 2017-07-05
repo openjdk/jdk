@@ -171,7 +171,7 @@ public final class FontDesignMetrics extends FontMetrics {
      * out we can clear the keys from the table.
      */
     private static class KeyReference extends SoftReference
-        implements DisposerRecord {
+        implements DisposerRecord, Disposer.PollDisposable {
 
         static ReferenceQueue queue = Disposer.getQueue();
 

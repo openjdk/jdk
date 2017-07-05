@@ -36,7 +36,7 @@ import sun.util.logging.PlatformLogger;
  */
 class NTLMAuthenticationProxy {
     private static Method supportsTA;
-    private static final String clazzStr = "sun.net.www.protocol.http.NTLMAuthentication";
+    private static final String clazzStr = "sun.net.www.protocol.http.ntlm.NTLMAuthentication";
     private static final String supportsTAStr = "supportsTransparentAuth";
 
     static final NTLMAuthenticationProxy proxy = tryLoadNTLMAuthentication();

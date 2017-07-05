@@ -143,4 +143,6 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
                 "Unexpected composite type for MonitorInfo");
         }
     }
+
+    private static final long serialVersionUID = -5825215591822908529L;
 }

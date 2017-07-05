@@ -41,7 +41,6 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
 
     /** The MBean server agent identification.*/
     private String mbeanServerId ;
-    private String mbeanServerName;
 
     /** The NotificationBroadcasterSupport object that sends the
         notifications */
@@ -71,7 +70,6 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
     public MBeanServerDelegate () {
         stamp = getStamp();
         broadcaster = new NotificationBroadcasterSupport() ;
-        mbeanServerName=null;
     }
 
 
@@ -90,96 +88,9 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
                         "using \"localhost\" instead. Cause is: "+e);
                 localHost = "localhost";
             }
-            mbeanServerId =
-                    Util.insertMBeanServerName(localHost + "_" + stamp,
-                    mbeanServerName);
+            mbeanServerId = localHost + "_" + stamp;
         }
         return mbeanServerId;
-    }
-
-    /**
-     * The name of the MBeanServer.
-     * @return The name of the MBeanServer, or {@value
-     * javax.management.MBeanServerFactory#DEFAULT_MBEANSERVER_NAME} if no
-     * name was specified.
-     *
-     * @since 1.7
-     * @see #setMBeanServerName
-     */
-    public synchronized String getMBeanServerName() {
-        if (Util.isMBeanServerNameUndefined(mbeanServerName))
-            return MBeanServerFactory.DEFAULT_MBEANSERVER_NAME;
-        return mbeanServerName;
-    }
-
-    /**
-     * Sets the name of the MBeanServer. The name will be embedded into the
-     * {@link #getMBeanServerId MBeanServerId} using the following format:<br>
-     * {@code mbeanServerId: <mbeanServerId>;mbeanServerName=<mbeanServerName>}
-     * <p>The characters {@code ':'} (colon), {@code ';'} (semicolon ),
-     * {@code '*'} (star) and {@code '?'} (question mark) are not legal in an
-     * MBean Server name.</p>
-     * <p>For instance, if the {@code mbeanServerName} provided is
-     * {@code "com.mycompany.myapp.server1"}, and the original
-     * {@code MBeanServerId} was {@code "myhost_1213353064145"},
-     * then {@code mbeanServerName} will be
-     * embedded in the {@code MBeanServerId} - and the new value of the
-     * {@code MBeanServerId} will be:
-     * </p>
-     * <pre>
-     *       "myhost_1213353064145;mbeanServerName=com.mycompany.myapp.server1"
-     * </pre>
-     * <p>Note: The {@code mbeanServerName} is usually set by the
-     *   {@code MBeanServerFactory}. It is set only once, before the
-     *   MBean Server is returned by the factory. Once the MBean Server name is
-     *   set, it is not possible to change it.
-     * </p>
-     * @param mbeanServerName The MBeanServer name.
-     * @throws IllegalArgumentException if the MBeanServerName is already set
-     *         to a different value, or if the provided name contains
-     *         illegal characters, or if the provided name is {@code ""}
-     *         (the empty string) or "-" (dash).
-     * @throws UnsupportedOperationException if this object is of a legacy
-     *         subclass of MBeanServerDelegate which overrides {@link
-     *         #getMBeanServerId()}
-     *         in a way that doesn't support setting an MBeanServer name.
-     * @see MBeanServerFactory#getMBeanServerName
-     * @since 1.7
-     */
-    public synchronized void setMBeanServerName(String mbeanServerName) {
-        // Sets the name on the delegate. For complex backward
-        // compatibility reasons it is not possible to give the
-        // name to the MBeanServerDelegate constructor.
-        //
-        // The method setMBeanServerName() will call getMBeanServerId()
-        // to check that the name is accurately set in the MBeanServerId.
-        // If not (which could happen if a custom MBeanServerDelegate
-        // implementation overrides getMBeanServerId() and was not updated
-        // with respect to JMX 2.0 spec), this method will throw an
-        // IllegalStateException...
-
-        // will fail if mbeanServerName is illegal
-        final String name = Util.checkServerName(mbeanServerName);
-
-        // can only set mbeanServerDelegate once.
-        if (this.mbeanServerName != null && !this.mbeanServerName.equals(name))
-            throw new IllegalArgumentException(
-                    "MBeanServerName already set to a different value");
-
-        this.mbeanServerName = name;
-
-        // will fail if mbeanServerId already has a different mbeanServerName
-        mbeanServerId =
-           Util.insertMBeanServerName(getMBeanServerId(),name);
-
-        // check that we don't have a subclass which overrides
-        // getMBeanServerId() without setting mbeanServerName
-        if (!name.equals(
-                Util.extractMBeanServerName(getMBeanServerId())))
-            throw new UnsupportedOperationException(
-                    "Can't set MBeanServerName in MBeanServerId - " +
-                    "unsupported by "+this.getClass().getName()+"?");
-        // OK: at this point we know that we have correctly set mbeanServerName.
     }
 
     /**
@@ -304,7 +215,7 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
      * @since 1.6
      */
     public static final ObjectName DELEGATE_NAME =
-            ObjectName.valueOf("JMImplementation:type=MBeanServerDelegate");
+            Util.newObjectName("JMImplementation:type=MBeanServerDelegate");
 
     /* Return a timestamp that is monotonically increasing even if
        System.currentTimeMillis() isn't (for example, if you call this

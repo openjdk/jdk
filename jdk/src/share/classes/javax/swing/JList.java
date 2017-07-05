@@ -2722,7 +2722,7 @@ public class JList extends JComponent implements Scrollable, Accessible
                                       getVisibleRowCount() <= 0) {
             return true;
         }
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             return port.getWidth() > getPreferredSize().width;
         }
@@ -2748,7 +2748,7 @@ public class JList extends JComponent implements Scrollable, Accessible
                      getVisibleRowCount() <= 0) {
             return true;
         }
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             return port.getHeight() > getPreferredSize().height;
         }

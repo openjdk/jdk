@@ -25,6 +25,8 @@
 
 package com.sun.java.swing.plaf.windows;
 
+import sun.awt.AppContext;
+
 import javax.swing.plaf.basic.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
@@ -49,7 +51,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in MetalRadioButtonUI.
 
-    private static final WindowsCheckBoxUI windowsCheckBoxUI = new WindowsCheckBoxUI();
+    private static final Object WINDOWS_CHECK_BOX_UI_KEY = new Object();
 
     private final static String propertyPrefix = "CheckBox" + ".";
 
@@ -59,6 +61,13 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
+        AppContext appContext = AppContext.getAppContext();
+        WindowsCheckBoxUI windowsCheckBoxUI =
+                (WindowsCheckBoxUI) appContext.get(WINDOWS_CHECK_BOX_UI_KEY);
+        if (windowsCheckBoxUI == null) {
+            windowsCheckBoxUI = new WindowsCheckBoxUI();
+            appContext.put(WINDOWS_CHECK_BOX_UI_KEY, windowsCheckBoxUI);
+        }
         return windowsCheckBoxUI;
     }
 

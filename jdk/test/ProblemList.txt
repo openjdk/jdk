@@ -1,0 +1,1211 @@
+###########################################################################
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+###########################################################################
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# It is possible that a test being on this list is a mistake, and that some
+#   other test in samevm mode caused tests to fail, mistakes happen.
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# Tests that explicitly state "@run main/othervm ...", and are not listed here,
+#   will be run in the same batch as the samevm tests.
+#
+# Shell tests are othervm by default.
+#
+# List items  are testnames followed by labels, all MUST BE commented 
+#   as to why they are here and use a label:
+#     generic-all	Problems on all platforms
+#     generic-ARCH	Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
+#     OSNAME-all	Where OSNAME is one of: solaris, linux, windows
+#     OSNAME-ARCH	Specific on to one OSNAME and ARCH, e.g. solaris-x64
+#     OSNAME-REV	Specific on to one OSNAME and REV, e.g. solaris-5.8
+#	 
+# More than one label is allowed but must be on the same line.
+#
+#############################################################################
+#
+# Running the tests:
+#    cd test && make JT_HOME=jtreg_home PRODUCT_HOME=jdk_home jdk_all
+#  Or instead of jdk_all, use any of the jdk_* targets.
+#
+# Samevm Notes:
+#  * Although some tests may have only been seen to fail on some platforms,
+#    they might be flagged as 'generic-all' because the problem they have
+#    could cause hidden slowdowns on other platforms.
+#    Most samevm problems will be generic-all, but windows usually dislikes
+#    them the most.
+#    Address already in use or connection errors indicate a generic port issue.
+#    (this is not necessarily a samevm issue, but an issue for running the tests
+#     on shared machines, two people or two test runs will collide).
+#  * Samevm problem (windows in particular) is not closing all input/output
+#  * Samevm problem when a test calls setSecurityManager()
+#  * Samevm problem with setHttps*() is used? (not exactly sure here)
+#  * Samevm problem when stuffing system properties with non Strings or anything
+#  * Samevm problem when changing vm settings, or registering any vm actions
+#  * Samevm problems with deleteOnExit(), if it must happen at end of test
+#  * Samevm problems with URLClassLoader? (no details here)
+#  * Samevm problems with dependence on predictable GC or finalizations
+#
+# Any of the above problems may mean the test needs to be flagged as "othervm".
+#
+#############################################################################
+#
+# Fixing the tests:
+#
+# Some tests just may need to be run with "othervm", and that can easily be
+#   done my adding a @run line (or modifying any existing @run):
+#      @run main/othervm NameOfMainClass
+#   Make sure this @run follows any use of @library.
+#   Otherwise, if the test is a samevm possibility, make sure the test is
+#     cleaning up after itself, closing all streams, deleting temp files, etc.
+#
+# Keep in mind that the bug could be in many places, and even different per
+#   platform, it could be a bug in any one of:
+#      - the testcase
+#      - the jdk (jdk classes, native code, or hotspot)
+#      - the native compiler
+#      - the javac compiler
+#      - the OS (depends on what the testcase does)
+#
+# If you managed to really fix one of these tests, here is how you can
+#    remove tests from this list:
+#  1. Make sure test passes on all platforms with samevm, or mark it othervm
+#  2. Make sure test passes on all platforms when run with it's entire group
+#  3. Make sure both VMs are tested, -server and -client, if possible
+#  4. Make sure you try the -d64 option on Solaris
+#  5. Use a tool like JPRT or something to verify these results
+#  6. Delete lines in this file, include the changes with your test changes
+#
+# You may need to repeat your testing 2 or even 3 times to verify good
+#   results, some of these samevm failures are not very predictable.
+#
+#############################################################################
+
+############################################################################
+
+# jdk_awt
+
+# None of the awt tests are using samevm, might not be worth the effort due
+#  to the vm overhead not being enough to make a difference.
+# In general, the awt tests are problematic with or without samevm, and there
+#  are issues with using a Xvfb display.
+
+# Fails on solaris sparc, timedout? in othervm mode
+java/awt/event/MouseEvent/AcceptExtraButton/AcceptExtraButton.java generic-all
+
+# Causes hang in samevm mode??? Solaris 11 i586
+java/awt/FullScreen/SetFSWindow/FSFrame.java			generic-all
+
+# Fails on solaris 11 i586, -client, in othervm mode not sure why
+java/awt/Component/PrintAllXcheckJNI/PrintAllXcheckJNI.java	generic-all
+java/awt/Focus/CloseDialogActivateOwnerTest/CloseDialogActivateOwnerTest.java generic-all
+java/awt/FontClass/FontAccess.java				generic-all
+java/awt/Mixing/HWDisappear.java				generic-all
+java/awt/Mixing/MixingInHwPanel.java				generic-all
+java/awt/Mouse/MaximizedFrameTest/MaximizedFrameTest.html	generic-all
+java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java generic-all
+java/awt/Toolkit/SecurityTest/SecurityTest2.java		generic-all
+java/awt/image/mlib/MlibOpsTest.java				generic-all
+
+# Fails on windows, othervm mode, various errors
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java	generic-all
+java/awt/Focus/OwnedWindowFocusIMECrashTest/OwnedWindowFocusIMECrashTest.java	generic-all
+java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java	generic-all
+java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java	generic-all
+java/awt/event/KeyEvent/KeyTyped/CtrlASCII.html			generic-all
+java/awt/font/Threads/FontThread.java				generic-all
+java/awt/print/PrinterJob/PrtException.java			generic-all
+
+# Fails with windows X64, othervm, -server
+com/sun/awt/Translucency/WindowOpacity.java			generic-all
+java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java		generic-all
+java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html	generic-all
+java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.html generic-all
+java/awt/Focus/FocusEmbeddedFrameTest/FocusEmbeddedFrameTest.java generic-all
+java/awt/Frame/LayoutOnMaximizeTest/LayoutOnMaximizeTest.java	generic-all
+java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java	generic-all
+java/awt/Mixing/MixingOnShrinkingHWButton.java			generic-all
+java/awt/Mouse/MouseModifiersUnitTest/ExtraButtonDrag.java	generic-all
+
+############################################################################
+
+# jdk_beans
+
+# A large set of the beans tests set the security manager, which would seem
+#  to indicate that a large number of them should be "othervm", yet are all
+#  very small tests and could greatly benefit from a samevm test run.
+#  So a large batch of beans tests are currently run with othervm mode.
+
+# Linux, some kind of problems with X11 display
+java/beans/PropertyChangeSupport/Test4682386.java		generic-all
+java/beans/PropertyChangeSupport/TestSynchronization.java	generic-all
+java/beans/Statement/Test4653179.java				generic-all
+
+# Runs REALLY slow on Solaris sparc for some reason, both -client and -server
+java/beans/XMLEncoder/Test4625418.java				solaris-sparc
+
+# Problems with samevm and setting security manager (speculation partially)
+java/beans/Beans/Test4080522.java				generic-all
+java/beans/EventHandler/Test6277246.java			generic-all
+java/beans/EventHandler/Test6277266.java			generic-all
+java/beans/Introspector/Test6277246.java			generic-all
+java/beans/Introspector/4168475/Test4168475.java		generic-all
+java/beans/Introspector/4520754/Test4520754.java		generic-all
+java/beans/Introspector/6380849/TestBeanInfo.java		generic-all
+java/beans/Introspector/Test4144543.java			generic-all
+
+# Failed to call method solaris-sparc???
+java/beans/EventHandler/Test6788531.java		 	generic-all
+
+# Jar or class not found???
+java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
+
+############################################################################
+
+# jdk_io
+
+# Many of these tests have a tendency to leave input streams open, which
+#  will cause following tests to be failures when used in samevm mode.
+
+# Should be othervm, or corrected for samevm, fails with samevm:
+java/io/BufferedReader/BigMark.java			 	generic-all
+java/io/BufferedReader/ReadLineSync.java		 	generic-all
+
+# One of these is leaving "a.ser" file open, windows samevm
+java/io/Serializable/duplicateSerialFields/Setup.java		generic-all
+java/io/Serializable/duplicateSerialFields/Test.java		generic-all
+
+# One of these leaving foo.ser open, windows samevm problem
+java/io/Serializable/enum/constantSubclasses/Read.java		generic-all
+java/io/Serializable/enum/constantSubclasses/Write.java		generic-all
+java/io/Serializable/enum/missingConstant/Read.java		generic-all
+java/io/Serializable/enum/missingConstant/Write.java		generic-all
+
+# This is leaving subtest1.tmp open, windows samevm problem
+java/io/Serializable/oldTests/AnnotateClass.java		generic-all
+
+# One or more of these leave a piotest* file open, windows samevm
+java/io/Serializable/oldTests/ArrayFields.java			generic-all
+java/io/Serializable/oldTests/ArraysOfArrays.java		generic-all
+java/io/Serializable/oldTests/BinaryTree.java			generic-all
+java/io/Serializable/oldTests/CircularList.java			generic-all
+java/io/Serializable/oldTests/SerializeWithException.java	generic-all
+java/io/Serializable/oldTests/SimpleArrays.java			generic-all
+java/io/Serializable/oldTests/WritePrimitive.java		generic-all
+
+# Missing close on file 0.ser, windows samevm
+java/io/Serializable/enum/badResolve/Read.java			generic-all
+java/io/Serializable/enum/badResolve/Write.java			generic-all
+
+# One of these tests is leaving parents.ser open, windows samevm
+java/io/Serializable/parents/EvolvedClass.java			generic-all
+java/io/Serializable/parents/OriginalClass.java			generic-all
+
+# One of these tests is leaving file foo.ser and/or bar.ser open, windows samevm
+java/io/Serializable/fieldTypeString/Read.java			generic-all
+java/io/Serializable/fieldTypeString/Write.java			generic-all
+
+# One of these tests is leaving tmp.ser file open, windows samevm
+java/io/Serializable/ClassCastExceptionDetail/Read.java		generic-all
+java/io/Serializable/ClassCastExceptionDetail/Write.java	generic-all
+java/io/Serializable/GetField/Read.java				generic-all
+java/io/Serializable/GetField/Read2.java			generic-all
+java/io/Serializable/GetField/Write.java			generic-all
+java/io/Serializable/PutField/Read.java				generic-all
+java/io/Serializable/PutField/Read2.java			generic-all
+java/io/Serializable/PutField/Write.java			generic-all
+java/io/Serializable/PutField/Write2.java			generic-all
+java/io/Serializable/arraySuidConflict/Read.java		generic-all
+java/io/Serializable/arraySuidConflict/Write.java		generic-all
+java/io/Serializable/backRefCNFException/Read.java		generic-all
+java/io/Serializable/backRefCNFException/Write.java		generic-all
+java/io/Serializable/class/Test.java				generic-all
+java/io/Serializable/evolution/AddedExternField/ReadAddedField.java generic-all
+java/io/Serializable/evolution/AddedExternField/WriteAddedField.java generic-all
+java/io/Serializable/evolution/AddedExternField/run.sh		generic-all
+java/io/Serializable/evolution/AddedField/ReadAddedField.java	generic-all
+java/io/Serializable/evolution/AddedField/WriteAddedField.java	generic-all
+java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass.java	generic-all
+java/io/Serializable/evolution/AddedSuperClass/ReadAddedSuperClass2.java generic-all
+java/io/Serializable/evolution/AddedSuperClass/WriteAddedSuperClass.java generic-all
+java/io/Serializable/proxy/skipMissing/Read.java		generic-all
+java/io/Serializable/proxy/skipMissing/Write.java		generic-all
+java/io/Serializable/readObjectNoData/Read.java			generic-all
+java/io/Serializable/readObjectNoData/Write.java		generic-all
+java/io/Serializable/skipWriteObject/Read.java			generic-all
+java/io/Serializable/skipWriteObject/Write.java			generic-all
+java/io/Serializable/skippedObjCNFException/Read.java		generic-all
+java/io/Serializable/skippedObjCNFException/Write.java		generic-all
+java/io/Serializable/stopCustomDeserialization/Read.java	generic-all
+java/io/Serializable/stopCustomDeserialization/Write.java	generic-all
+java/io/Serializable/unresolvedClassDesc/Read.java		generic-all
+java/io/Serializable/unresolvedClassDesc/Write.java		generic-all
+java/io/Serializable/unshared/Read.java				generic-all
+java/io/Serializable/unshared/Write.java			generic-all
+java/io/Serializable/wrongReturnTypes/Read.java			generic-all
+java/io/Serializable/wrongReturnTypes/Write.java		generic-all
+
+# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
+java/io/DataInputStream/OpsAfterClose.java		 	generic-all
+
+# Windows 32bit samevm failure: RuntimeException: File.getFreeSpace() failed
+java/io/File/MaxPathLength.java					generic-all
+
+# Should be othervm, or corrected for samevm, fails with samevm:
+java/io/File/DeleteOnExit.java				 	generic-all
+java/io/File/DeleteOnExitLong.java			 	generic-all
+java/io/File/DeleteOnExitNPE.java			 	generic-all
+java/io/File/IsHidden.java				 	generic-all
+java/io/FileDescriptor/FileChannelFDTest.java		 	generic-all
+java/io/FileDescriptor/Finalize.java			 	generic-all
+java/io/FileInputStream/FinalizeShdCallClose.java	 	generic-all
+
+# Known to cause samevm issues on windows, other tests fail, missing close()?
+java/io/FileInputStream/OpsAfterClose.java		 	generic-all
+
+# Should be othervm, or corrected for samevm, fails with samevm:
+java/io/FileOutputStream/FinalizeShdCallClose.java	 	generic-all
+
+# Known to cause samevm issues on windows, other tests fail, missing close()?
+java/io/FileOutputStream/OpsAfterClose.java		 	generic-all
+
+# Windows samevm issues? triggers other tests to fail, missing close() on f.txt?
+java/io/InputStream/OpsAfterClose.java			 	generic-all
+
+# Missing close() on x.ReadBounds file? Windows samevm issues
+java/io/InputStream/ReadParams.java			 	generic-all
+
+# Known to cause samevm issues on windows, other tests fail, missing close()?
+java/io/InputStreamReader/GrowAfterEOF.java		 	generic-all
+
+# Should be othervm, or corrected for samevm, fails with samevm:
+java/io/ObjectInputStream/ResolveProxyClass.java	 	generic-all
+
+# Not doing a close() on x.ParameterCheck file? windows samevm cascade error
+java/io/RandomAccessFile/ParameterCheck.java                    generic-all
+
+# Not doing a close on x.ReadLine file? windows cascade samevm problems
+java/io/RandomAccessFile/ReadLine.java				generic-all
+
+# Not doing close on file input x.WriteByteChars, windows samevm problems
+java/io/RandomAccessFile/WriteBytesChars.java			generic-all
+
+# Not doing close on file input x.WriteUTF, windows samevm problems
+java/io/RandomAccessFile/WriteUTF.java                          generic-all
+
+# Possibly, not doing a close() on input.txt, windows samevm issues.
+java/io/RandomAccessFile/skipBytes/SkipBytes.java	 	generic-all
+java/io/readBytes/MemoryLeak.java			 	generic-all
+java/io/readBytes/ReadBytesBounds.java			 	generic-all 
+
+# Missing close on fields.ser, windows samevm
+java/io/Serializable/checkModifiers/CheckModifiers.java		generic-all
+
+# Should be othervm, or corrected for samevm, fails with samevm:
+java/io/Serializable/auditStreamSubclass/AuditStreamSubclass.java generic-all
+java/io/Serializable/proxy/Basic.java			 	generic-all
+
+# Possibly not doing a close() on input.txt, windows samevm issues.
+java/io/StreamTokenizer/Comment.java			 	generic-all
+
+############################################################################
+
+# jdk_lang
+
+# Some of these tests (like java/lang/management) may just need to be marked
+#   othervm, but that is partially speculation.
+
+# Times out on solaris 10 sparc
+java/lang/ClassLoader/Assert.java				generic-all
+
+# Fedora 9 X64, RuntimeException: MyThread expected to be blocked on lock, but got null
+java/lang/management/ThreadMXBean/ThreadStateTest.java 		generic-all
+
+# RuntimeException: Uptime of the JVM is more than 30 minutes (32 minutes).
+java/lang/management/RuntimeMXBean/UpTime.java			generic-all
+
+# Times out on solaris sparc occasionally, in samevm mode
+java/lang/Runtime/exec/ExecWithDir.java				generic-all
+java/lang/ProcessBuilder/Basic.java				generic-all
+
+# Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
+java/lang/Runtime/exec/SleepyCat.java				generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/annotation/ParameterAnnotations.java			generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/ClassLoader/defineClass/DefineClassByteBuffer.java	generic-all
+java/lang/ClassLoader/findSystemClass/Loader.java		generic-all
+
+# Fedora 9 32bit, -client, samevm, Error while cleaning up threads after test
+java/lang/management/ThreadMXBean/Locks.java			generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
+java/lang/management/ManagementFactory/MBeanServerMXBeanUnsupportedTest.java generic-all
+java/lang/management/ManagementFactory/MXBeanProxyTest.java	generic-all
+java/lang/management/ManagementFactory/ThreadMXBeanProxy.java	generic-all
+java/lang/management/MemoryMXBean/CollectionUsageThreshold.java	generic-all
+java/lang/management/MemoryMXBean/GetMBeanInfo.java		generic-all
+java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
+java/lang/management/MemoryMXBean/MemoryManagement.java		generic-all
+java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
+java/lang/management/MemoryMXBean/Pending.java			generic-all
+
+# Problematic on all platforms (even as othervm)
+java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java 	generic-all
+
+# Causes jtreg exit samevm issues due to non-String object in system properties
+java/lang/management/RuntimeMXBean/GetSystemProperties.java 	generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/management/RuntimeMXBean/PropertiesTest.java		generic-all
+java/lang/management/ThreadMXBean/AllThreadIds.java		generic-all
+java/lang/management/ThreadMXBean/EnableTest.java		generic-all
+java/lang/management/ThreadMXBean/FindMonitorDeadlock.java	generic-all
+java/lang/management/ThreadMXBean/LockingThread.java		generic-all
+java/lang/management/ThreadMXBean/MonitorDeadlock.java		generic-all
+java/lang/management/ThreadMXBean/MyOwnSynchronizer.java	generic-all
+java/lang/management/ThreadMXBean/SharedSynchronizer.java	generic-all
+java/lang/management/ThreadMXBean/SynchronizerLockingThread.java generic-all
+java/lang/management/ThreadMXBean/ThreadCounts.java		generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/reflect/Proxy/Boxing.java				generic-all
+java/lang/reflect/Proxy/ClassRestrictions.java			generic-all
+java/lang/reflect/Proxy/returnTypes/Test.java			generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/lang/Runtime/exec/LotsOfOutput.java			generic-all
+java/lang/System/ExitFinalizersAndJIT.java			generic-all
+java/lang/System/finalization/FinThreads.java			generic-all
+java/lang/System/IgnoreNullSecurityManager.java			generic-all
+java/lang/Thread/GenerifyStackTraces.java			generic-all
+java/lang/Thread/StackTraces.java				generic-all
+java/lang/ThreadGroup/Daemon.java				generic-all
+java/lang/ThreadGroup/NullThreadName.java			generic-all
+
+# Times out on solaris sparc -server
+java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
+
+# Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
+java/lang/Thread/ThreadStateTest.java				generic-all
+
+# Timeout on windows 64bit 
+java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
+
+############################################################################
+
+# jdk_management
+
+# Solaris 10 sparc, NPE from org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke
+javax/management/remote/mandatory/threads/ExecutorTest.java 	generic-all
+
+# Linux 32bit Fedora 9, IllegalStateException
+javax/management/monitor/RuntimeExceptionTest.java		generic-all
+
+# Problems with rmi connection, othervm  
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation2Test.java generic-all
+
+# Fails with port already in use
+sun/management/jmxremote/bootstrap/SSLConfigFilePermissionTest.sh generic-all
+
+# Fails with port already in use
+sun/management/jmxremote/bootstrap/RmiRegistrySslTest.sh	generic-all
+
+# Windows, connection can't last that long
+javax/management/eventService/LeaseTest.java			generic-all
+
+# Linux othervm, X64, java.lang.Exception: Failed: ratio=102.4027795593753
+javax/management/remote/mandatory/notif/ListenerScaleTest.java	generic-all
+
+# Windows run seems to have triggered a hotspot gc error (see 6801625)
+com/sun/management/HotSpotDiagnosticMXBean/DumpHeap.sh		generic-all
+
+# rmi problem? othervm, java.lang.reflect.UndeclaredThrowableException
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation3Test.java generic-all
+
+# Linux Fedora 9 32bit NPE in rmi server somehere??? othervm
+javax/management/remote/mandatory/notif/NotificationBufferDeadlockTest.java generic-all
+
+# Times out on solaris sparc, with othervm
+javax/management/eventService/AddRemoveListenerTest.java	generic-all
+
+# Linux i586 and x64 -server, timed out waiting for threads to expire? othervm
+javax/management/eventService/EventClientThreadTest.java	generic-all
+
+# Linux i586 -server, Expected to receive 20, but got 21, othervm
+#   Fails on Linux X64 -server 20!=21
+javax/management/eventService/FetchingTest.java			generic-all
+
+# NPE on windows 2000 i586 -client and -server
+javax/management/eventService/CustomForwarderTest.java	 	windows-all
+
+# Windows i586 failure, callback did not complete
+javax/management/eventService/LeaseManagerDeadlockTest.java 	windows-all
+
+# Port already in use
+sun/management/jmxremote/bootstrap/LocalManagementTest.sh 	generic-all
+
+# Failed to initialize connector (also overflowing jtreg io buffers)
+sun/management/jmxremote/bootstrap/RmiBootstrapTest.sh	 	generic-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh 	generic-all
+
+# Windows X64, java.lang.IllegalStateException
+javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
+
+############################################################################
+
+# jdk_math
+
+# Problems with rounding add failures on solaris-sparcv9 and -server
+java/math/BigDecimal/AddTests.java			 	solaris-sparcv9
+
+# Problems on windows with samevm, missing inputstream close()?
+# Also times out on solaris-sparcv9 -server
+java/math/BigInteger/BigIntegerTest.java		 	generic-all
+
+# Should be samevm? But seems problematic with samevm on windows
+java/math/BigInteger/ModPow65537.java			 	generic-all
+
+############################################################################
+
+# jdk_misc
+
+# On Windows com.sun.java.swing.plaf.gtk does not exist, always fails there
+com/sun/java/swing/plaf/gtk/Test6635110.java		 	windows-all
+
+# Need to be marked othervm, or changed to be samevm safe
+com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
+com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java generic-all
+
+# Solaris sparc and others, exception in initializer
+javax/imageio/CachePremissionsTest/CachePermissionsTest.java 	generic-all
+
+# Leaves file rgba_* open, fails with windows samevm
+javax/imageio/plugins/png/PngOutputTypeTest.java		generic-all
+
+# Suspect test.png file is left open, windows samevm problems
+javax/imageio/plugins/png/ITXtTest.java				generic-all
+
+# Solaris sparc and others, failed to compile testcase
+javax/imageio/metadata/DOML3Node.java			 	generic-all
+
+# One of these tests is leaving file IMGP1001.JPG open, windows samevm
+javax/imageio/plugins/jpeg/ConcurrentReadingTest.java		generic-all
+javax/imageio/plugins/jpeg/ReadingInterruptionTest.java		generic-all
+
+# One of these files is missing a close on writer_* files, windows samevm
+javax/imageio/plugins/jpeg/ConcurrentWritingTest.java		generic-all
+javax/imageio/plugins/jpeg/WritingInterruptionTest.java		generic-all
+
+# Leaving file test.jpg open, windows samevm
+javax/imageio/plugins/jpeg/ReadAsGrayTest.java			generic-all
+
+# Missing close on file wbmp*, windows samevm
+javax/imageio/plugins/wbmp/CanDecodeTest.java			generic-all
+
+# Exclude all javax/print tests, even if they passed, they may need samevm work
+
+# Times out on solaris-sparc, sparcv9, x64 -server, some on i586 -client
+javax/print/attribute/autosense/PrintAutoSenseData.java 	generic-all
+javax/print/attribute/Chroma.java			 	generic-all
+javax/print/attribute/CollateAttr.java			 	generic-all
+javax/print/attribute/PSCopiesFlavorTest.java		 	generic-all
+javax/print/LookupServices.java 			 	generic-all
+javax/print/TestRaceCond.java				 	generic-all
+
+# These tests really require a printer (might all be windows only tests?)
+javax/print/CheckDupFlavor.java					generic-all
+javax/print/PrintSE/PrintSE.sh					generic-all
+javax/print/attribute/ChromaticityValues.java			generic-all
+javax/print/attribute/GetCopiesSupported.java			generic-all
+javax/print/attribute/SidesPageRangesTest.java			generic-all
+javax/print/attribute/SupportedPrintableAreas.java		generic-all
+
+# Only print test left, excluding just because all print tests have been
+javax/print/attribute/MediaMappingsTest.java 			generic-all
+
+############################################################################
+
+# jdk_net
+
+# Suspect many of these tests auffer from using fixed ports, no concrete 
+#   evidence.
+
+# Fails on OpenSolaris, BindException unexpected 
+java/net/BindException/Test.java				generic-all
+
+# Fails on OpenSolaris, times out
+java/net/MulticastSocket/SetOutgoingIf.java			generic-all
+
+# Timed out on Solaris 10 X86.
+com/sun/net/httpserver/Test3.java				generic-all
+
+# Exception in test on windows
+com/sun/net/httpserver/bugs/B6373555.java		 	windows-all
+
+# One of these pollutes the samevm on Linux, too many open files, kills jtreg
+com/sun/net/httpserver/bugs/B6339483.java			generic-all
+com/sun/net/httpserver/bugs/B6341616.java			generic-all
+
+# Suspects in cascading samevm problem, solaris 11 i586 (needs othervm?)
+#   Suspect use of setHttps*()?
+com/sun/net/httpserver/SelCacheTest.java			generic-all
+com/sun/net/httpserver/Test1.java				generic-all
+com/sun/net/httpserver/Test12.java				generic-all
+com/sun/net/httpserver/Test13.java				generic-all
+com/sun/net/httpserver/Test6a.java				generic-all
+com/sun/net/httpserver/Test7a.java				generic-all
+com/sun/net/httpserver/Test8a.java				generic-all
+com/sun/net/httpserver/Test9.java				generic-all
+com/sun/net/httpserver/Test9a.java				generic-all
+
+# 10,000 connections, fails on Linux and makes tests&jtreg fail with samevm
+com/sun/net/httpserver/bugs/B6361557.java			generic-all
+
+# Address already in use with samevm? Always? Solaris sparc, probably ports
+java/net/Authenticator/B4933582.sh				generic-all
+java/net/DatagramSocket/SendSize.java				generic-all
+
+# Solaris 11: exception wrong address???
+java/net/Inet6Address/B6558853.java				generic-all
+
+# Not closing stream on file i6a1, windows samevm problem
+java/net/Inet6Address/serialize/Serialize.java			generic-all
+
+# Linux x64 fails "network unreachable"?
+java/net/ipv6tests/TcpTest.java 			 	generic-all
+
+# Linux i586, fails with unexpected output
+java/net/MulticastSocket/NoLoopbackPackets.java 	 	linux-i586
+
+# Times out on windows x64, fails with samevm on solaris 11 i586
+java/net/ServerSocket/AcceptCauseFileDescriptorLeak.java 	generic-all
+
+# Address already in use
+java/net/DatagramSocket/DatagramTimeout.java			generic-all
+
+# Fails on windows, takes too long and fails
+#   Solaris 10 sparcv9, samevm, java.lang.Exception: Takes too long. Dead lock
+java/net/Socket/DeadlockTest.java				generic-all
+
+# Linux i586 address already in use or connection error, samevm issues
+java/net/Socket/AccurateTimeout.java			 	generic-all
+java/net/Socket/asyncClose/BrokenPipe.java		 	generic-all
+java/net/Socket/CloseAvailable.java			 	generic-all
+java/net/Socket/FDClose.java				 	generic-all
+
+# Linux X64 address already in use, samevm issues
+java/net/Socket/LingerTest.java 			 	generic-all
+java/net/Socket/LinkLocal.java				 	generic-all
+java/net/Socket/NullHost.java				 	generic-all
+java/net/Socket/ProxyCons.java				 	generic-all
+java/net/Socket/ReadTimeout.java			 	generic-all
+
+# Linux X64 address already in use, samevm issues
+java/net/Socket/SetReceiveBufferSize.java		 	generic-all
+
+# Linux i586 address already in use or connection error, samevm issues
+java/net/Socket/setReuseAddress/Basic.java		 	generic-all
+java/net/Socket/setReuseAddress/Restart.java		 	generic-all
+
+# Linux X64 address already in use, samevm issues
+java/net/Socket/SetSoLinger.java			 	generic-all
+
+# Address already in use, windows samevm
+java/net/Socket/Timeout.java					generic-all
+
+# Linux X64 address already in use, samevm issues
+java/net/Socket/ShutdownBoth.java			 	generic-all
+java/net/Socket/SoTimeout.java				 	generic-all
+java/net/Socket/TestClose.java				 	generic-all
+java/net/Socket/UrgentDataTest.java			 	generic-all
+java/net/SocketInputStream/SocketClosedException.java	 	generic-all
+java/net/SocketInputStream/SocketTimeout.java		 	generic-all
+
+# Linux i586, address already in use or timeout, samevm issues
+java/net/URLConnection/B5052093.java			 	generic-all
+java/net/URLConnection/contentHandler/UserContentHandler.java 	generic-all
+java/net/URLConnection/DisconnectAfterEOF.java		 	generic-all
+java/net/URLConnection/HandleContentTypeWithAttrs.java	 	generic-all
+java/net/URLConnection/Responses.java			 	generic-all
+java/net/URLConnection/TimeoutTest.java 		 	generic-all
+java/net/URLConnection/ZeroContentLength.java		 	generic-all
+
+# Solaris 11 i586 fails with samevm, not sure why
+java/net/Authenticator/B4769350.java				generic-all
+java/net/HttpURLConnection/HttpResponseCode.java		generic-all
+java/net/ResponseCache/B6181108.java				generic-all
+java/net/ResponseCache/ResponseCacheTest.java			generic-all
+java/net/URL/GetContent.java					generic-all
+java/net/URL/TestIPv6Addresses.java				generic-all
+java/net/URLClassLoader/HttpTest.java				generic-all
+java/net/URLConnection/HttpContinueStackOverflow.java		generic-all
+java/net/URLConnection/Redirect307Test.java			generic-all
+java/net/URLConnection/RedirectLimit.java			generic-all
+java/net/URLConnection/ResendPostBody.java			generic-all
+java/net/URL/OpenStream.java					generic-all
+java/net/URLClassLoader/ClassLoad.java				generic-all
+java/net/URLConnection/SetIfModifiedSince.java			generic-all
+java/net/URLConnection/URLConnectionHeaders.java		generic-all
+
+# Linux i586 Connection refused or address already in use, samevm issues
+sun/net/ftp/B6427768.java				 	generic-all
+sun/net/ftp/FtpGetContent.java				 	generic-all
+sun/net/ftp/FtpURL.java 				 	generic-all
+
+# Failed on solaris 10 i586, Exception: should have gotten HttpRetryException?
+sun/net/www/http/ChunkedOutputStream/Test.java			generic-all
+
+# Trouble cleaning up threads in samevm mode on solaris 11 i586
+sun/net/www/http/HttpClient/ProxyTest.java			generic-all
+sun/net/www/http/ChunkedInputStream/ChunkedEncodingTest.java	generic-all
+sun/net/www/http/ChunkedInputStream/ChunkedEncodingWithProgressMonitorTest.java	generic-all
+sun/net/www/http/HttpClient/B6726695.java			generic-all
+sun/net/www/http/HttpClient/MultiThreadTest.java		generic-all
+sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java	generic-all
+
+# Connection refused, windows samevm
+sun/net/www/protocol/http/DigestTest.java			generic-all
+
+############################################################################
+
+# jdk_nio
+
+# Suspect many of these tests auffer from using fixed ports, no concrete 
+#   evidence.
+
+# Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
+#    from a channel that is bound to the wildcard address
+com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
+
+# Failed on OpenSolaris, java.lang.AssertionError: Unknown event type
+com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
+
+# Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
+sun/nio/cs/TestUTF8.java					generic-all
+
+# Solaris sparc, socket timeout
+java/nio/channels/spi/SelectorProvider/inheritedChannel/run_tests.sh generic-all
+
+# Runtime exception on windows X64, samevm mode
+java/nio/channels/Selector/WakeupNow.java			generic-all
+
+# Occasional errors, solarix x86, address already in use, othervm mode
+java/nio/channels/Selector/SelectorTest.java			generic-all
+
+# Fails on Linux Fedora 9 X64
+sun/nio/cs/FindDecoderBugs.java					generic-all
+
+# Solaris 11 gave assert error and "connection refused", samevm issues?
+com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java 	generic-all
+
+# Fails with othervm on solaris 11 i586
+com/sun/nio/sctp/SctpChannel/CommUp.java			generic-all
+com/sun/nio/sctp/SctpChannel/Connect.java			generic-all
+com/sun/nio/sctp/SctpMultiChannel/Branch.java			generic-all
+com/sun/nio/sctp/SctpMultiChannel/Send.java			generic-all
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
+
+# Linux 64bit failures. too many files open
+java/nio/channels/Selector/HelperSlowToDie.java			generic-all
+
+# Timeouts etc. on Window
+java/nio/channels/AsyncCloseAndInterrupt.java		 	windows-all
+
+# Gets java.lang.ExceptionInInitializerError on windows: (Windows 2000 only?)
+java/nio/channels/AsynchronousChannelGroup/Basic.java	 	windows-5.0
+java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java 	windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Identity.java 	windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Restart.java 	windows-5.0
+java/nio/channels/AsynchronousDatagramChannel/Basic.java 	windows-5.0
+java/nio/channels/AsynchronousFileChannel/Lock.java	 	windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java 	windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Basic.java	 	windows-5.0
+java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Leaky.java	 	windows-5.0
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
+java/nio/channels/Channels/Basic2.java			 	windows-5.0
+
+# Solaris sparc timeout
+java/nio/channels/DatagramChannel/Connect.java		 	generic-all
+
+# Solaris i586 timeouts
+java/nio/channels/DatagramChannel/EmptyBuffer.java	 	solaris-all
+
+# Failed loopback connection? On windows 32bit? 
+#   Considered a stress test, can consume all resources.
+java/nio/channels/Selector/LotsOfChannels.java		 	generic-all
+
+# Solaris sparcv9, just fails with exception
+java/nio/channels/Selector/OpRead.java			 	solaris-sparc
+
+# Windows i586 client, crashed hotspot? Unpredictable
+#   Considered a stress test, can consume all resources.
+java/nio/channels/Selector/RegAfterPreClose.java	 	generic-all
+
+# Solaris i586, cannot assign address, samevm issues
+java/nio/channels/Selector/SelectorLimit.java		 	generic-all
+
+# Socket timeout windows X64
+java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
+
+# Timeouts etc. on Window
+java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
+java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/nio/channels/SocketChannel/OpenLeak.java			generic-all
+
+# Gets java.net.BindException alot (static port number?)
+java/nio/channels/SocketChannel/VectorIO.java		 	generic-all
+
+# Solaris i586 java.net.BindExceptions
+java/nio/channels/SocketChannel/VectorParams.java	 	solaris-all
+
+# Linux i586 address already in use, samevm issues
+java/nio/channels/SocketChannel/Write.java		 	generic-all
+
+# Fails on all platforms due to overlap of JDK jar file contents:
+sun/nio/cs/Test4200310.sh				 	generic-all
+
+# Depends on motif packages that do not exist all the time:
+sun/nio/cs/TestX11CNS.java				 	generic-all
+
+############################################################################
+
+# jdk_rmi
+
+# Port already in use, fails on sparc, othervm
+java/rmi/reliability/benchmark/runRmiBench.sh			generic-all
+
+# Already in use port issues? othervm solaris
+java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java generic-all
+java/rmi/activation/rmidViaInheritedChannel/RmidViaInheritedChannel.java generic-all
+
+# Address already in use, othervm mode, solaris
+java/rmi/activation/Activatable/elucidateNoSuchMethod/ElucidateNoSuchMethod.java	generic-all
+java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java	generic-all
+
+# Registry already running on port, solaris
+java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java	generic-all
+
+# Fails on Linux 32 and 64bit -server?, impl not garbage collected???
+java/rmi/transport/pinLastArguments/PinLastArguments.java	generic-all
+
+# Times out on solaris sparc
+java/rmi/server/RemoteServer/AddrInUse.java			generic-all
+
+# Connection error on Windows i586 -server
+#  Also connection errors in othervm on Solaris 10 sparc, same port??? 
+sun/rmi/transport/tcp/DeadCachedConnection.java 	 	generic-all
+
+# Connection errors in othervm on Solaris 10 sparc, same port??? 
+java/rmi/activation/Activatable/checkActivateRef/CheckActivateRef.java generic-all
+java/rmi/activation/Activatable/checkAnnotations/CheckAnnotations.java generic-all
+java/rmi/activation/Activatable/checkImplClassLoader/CheckImplClassLoader.java generic-all
+java/rmi/activation/Activatable/checkRegisterInLog/CheckRegisterInLog.java generic-all
+java/rmi/activation/Activatable/createPrivateActivable/CreatePrivateActivatable.java generic-all
+java/rmi/activation/Activatable/downloadParameterClass/DownloadParameterClass.java generic-all
+java/rmi/activation/Activatable/extLoadedImpl/ext.sh generic-all
+java/rmi/activation/Activatable/inactiveGroup/InactiveGroup.java generic-all
+java/rmi/activation/Activatable/lookupActivationSystem/LookupActivationSystem.java generic-all
+java/rmi/activation/Activatable/nestedActivate/NestedActivate.java generic-all
+java/rmi/activation/Activatable/restartCrashedService/RestartCrashedService.java generic-all
+java/rmi/activation/Activatable/restartLatecomer/RestartLatecomer.java generic-all
+java/rmi/activation/Activatable/shutdownGracefully/ShutdownGracefully.java generic-all
+java/rmi/activation/Activatable/unregisterInactive/UnregisterInactive.java generic-all
+java/rmi/activation/ActivateFailedException/activateFails/ActivateFails.java generic-all
+java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java generic-all
+java/rmi/activation/ActivationSystem/activeGroup/IdempotentActiveGroup.java generic-all
+java/rmi/reliability/juicer/AppleUserImpl.java generic-all
+java/rmi/server/RMISocketFactory/useSocketFactory/unicast/UseCustomSocketFactory.java generic-all
+java/rmi/server/UnicastRemoteObject/keepAliveDuringCall/KeepAliveDuringCall.java generic-all
+java/rmi/transport/handshakeTimeout/HandshakeTimeout.java generic-all
+java/rmi/activation/Activatable/restartService/RestartService.java generic-all
+java/rmi/activation/ActivationSystem/modifyDescriptor/ModifyDescriptor.java generic-all
+java/rmi/activation/ActivationSystem/stubClassesPermitted/StubClassesPermitted.java generic-all
+java/rmi/activation/ActivationSystem/unregisterGroup/UnregisterGroup.java generic-all
+java/rmi/activation/CommandEnvironment/SetChildEnv.java generic-all
+java/rmi/registry/classPathCodebase/ClassPathCodebase.java generic-all
+java/rmi/registry/reexport/Reexport.java generic-all
+java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java generic-all
+java/rmi/server/Unreferenced/leaseCheckInterval/LeaseCheckInterval.java generic-all
+java/rmi/server/Unreferenced/unreferencedContext/UnreferencedContext.java generic-all
+java/rmi/server/useCustomRef/UseCustomRef.java generic-all
+java/rmi/transport/checkFQDN/CheckFQDN.java generic-all
+java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java generic-all
+java/rmi/server/RMISocketFactory/useSocketFactory/activatable/UseCustomSocketFactory.java generic-all
+java/rmi/server/RMISocketFactory/useSocketFactory/registry/UseCustomSocketFactory.java generic-all
+java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
+
+############################################################################
+
+# jdk_security
+
+# Run too slow on Solaris 10 sparc
+sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java solaris-sparc
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ServerTimeout.java solaris-sparc
+sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/ReadTimeout.java solaris-sparc
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/NotifyHandshakeTest.sh solaris-sparc
+sun/security/tools/keytool/AltProviderPath.sh 			solaris-sparc
+
+# Solaris 10 sparc, passed/failed confusion? java.security.ProviderException: update() failed
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java generic-all
+
+# Seem really slow on Solaris sparc, being excluded just for timing reasons
+sun/security/tools/jarsigner/AlgOptions.sh			solaris-sparc
+sun/security/tools/jarsigner/nameclash.sh			solaris-sparc
+sun/security/krb5/auto/basic.sh					solaris-sparc
+sun/security/provider/PolicyFile/getinstance/getinstance.sh	solaris-sparc
+sun/security/tools/jarsigner/samename.sh			solaris-sparc
+
+# Timed out, Solaris 10 64bit sparcv9
+com/sun/crypto/provider/Cipher/DES/PaddingTest.java		generic-all
+
+# Othervm, sparc, NoRouteToHostException: Cannot assign requested address
+sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
+
+# ProviderException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_DEVICE_ERROR
+#    Does not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java		generic-all
+
+# Times out on windows X64, othervm mode
+#    Solaris sparc and sparcv9 -server, timeout
+sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java	generic-all
+
+# Failed on solaris 10 sparc, othervm mode,  "js.jks: No such file or directory"
+#  Also, cannot verify signature on solaris i586 -server
+sun/security/tools/jarsigner/concise_jarsigner.sh		generic-all
+
+# Various failures on Linux Fedora 9 X64, othervm mode
+lib/security/cacerts/VerifyCACerts.java				generic-all
+sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/TestAllSuites.java generic-all
+sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java	generic-all
+sun/security/tools/jarsigner/oldsig.sh				generic-all
+
+# Various failures on Linux Fedora 9 X64, othervm mode
+#   Does not seem to run on windows machines? dll missing? 
+sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
+
+# Linux i586 -server, buffer too short to hold shared secret?
+com/sun/crypto/provider/KeyAgreement/DHKeyAgreement2.java	generic-all
+
+# Solaris sparcv9: Failed to parse input emptysubject.jks: No such file or directory
+sun/security/tools/keytool/emptysubject.sh			generic-all
+
+# Timeout on solaris-sparcv9 or exception thrown
+com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
+
+# File 6535697.test input stream left open? windows samevm
+java/security/cert/CertificateFactory/openssl/OpenSSLCert.java	generic-all
+
+# Leaving file open: SerialVersion.current, windows samevm
+java/security/BasicPermission/SerialVersion.java		generic-all
+
+# Solaris 11 i586, these all fail with samevm, need to be othervm???
+java/security/BasicPermission/NullOrEmptyName.java		generic-all
+
+# Suspect missing close() on file PermClass.current, windows samevm cascade
+java/security/BasicPermission/PermClass.java			generic-all
+
+# Solaris 11 i586, these all fail with samevm, need to be othervm???
+java/security/KeyPairGenerator/Failover.java			generic-all
+java/security/Provider/DefaultPKCS11.java			generic-all
+java/security/SecureClassLoader/DefineClassByteBuffer.java	generic-all
+java/security/SecureRandom/GetAlgorithm.java			generic-all
+java/security/Security/removing/RemoveProviders.java		generic-all
+java/security/Signature/ByteBuffers.java			generic-all
+java/security/Signature/NONEwithRSA.java			generic-all
+java/security/Signature/SignWithOutputBuffer.java		generic-all
+java/security/Signature/TestInitSignWithMyOwnRandom.java	generic-all
+java/security/UnresolvedPermission/AccessorMethods.java		generic-all
+java/security/UnresolvedPermission/Equals.java			generic-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/krb5/auto/IgnoreChannelBinding.java	 	windows-all
+
+# Fails on OpenSolaris, missing classes, slow on Solaris sparc
+sun/security/ec/TestEC.java					generic-all
+
+# Problems with windows x64
+sun/security/mscapi/IsSunMSCAPIAvailable.sh		 	windows-x64
+sun/security/mscapi/RSAEncryptDecrypt.sh		 	windows-x64
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/Cipher/ReinitCipher.java		 	windows-all
+sun/security/pkcs11/Cipher/TestRSACipher.java		 	windows-all
+sun/security/pkcs11/Cipher/TestRSACipherWrap.java	 	windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphers.java 	 	windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java	 	windows-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/ec/ReadCertificates.java		 	windows-all
+sun/security/pkcs11/ec/ReadPKCS12.java			 	windows-all
+sun/security/pkcs11/ec/TestCurves.java			 	windows-all
+sun/security/pkcs11/ec/TestECDH.java			 	windows-all
+sun/security/pkcs11/ec/TestECDSA.java			 	windows-all
+sun/security/pkcs11/ec/TestECGenSpec.java		 	windows-all
+sun/security/pkcs11/ec/TestKeyFactory.java		 	windows-all
+sun/security/pkcs11/fips/TrustManagerTest.java		 	windows-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/KeyAgreement/TestShort.java 	 	windows-all
+sun/security/pkcs11/KeyGenerator/DESParity.java 	 	windows-all
+
+# Exception in test solaris-sparc -client -server, no windows
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	windows-all solaris-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/KeyStore/Basic.sh			 	windows-all
+sun/security/pkcs11/KeyStore/ClientAuth.sh		 	windows-all
+
+# Solaris sparc client, fails to compile?
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh 	 	solaris-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/pkcs11/Mac/ReinitMac.java			 	windows-all
+sun/security/pkcs11/MessageDigest/ByteBuffers.java	 	windows-all
+sun/security/pkcs11/MessageDigest/DigestKAT.java	 	windows-all
+sun/security/pkcs11/MessageDigest/ReinitDigest.java	 	windows-all
+sun/security/pkcs11/Provider/ConfigQuotedString.sh	 	windows-all
+sun/security/pkcs11/Provider/Login.sh			 	windows-all
+sun/security/pkcs11/rsa/KeyWrap.java			 	windows-all
+sun/security/pkcs11/rsa/TestCACerts.java		 	windows-all
+sun/security/pkcs11/rsa/TestKeyFactory.java		 	windows-all
+sun/security/pkcs11/rsa/TestSignatures.java		 	windows-all
+sun/security/pkcs11/SampleTest.java			 	windows-all
+sun/security/pkcs11/Secmod/AddPrivateKey.java		 	windows-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java		 	windows-all
+sun/security/pkcs11/Secmod/Crypto.java			 	windows-all
+sun/security/pkcs11/Secmod/GetPrivateKey.java		 	windows-all
+sun/security/pkcs11/Secmod/JksSetPrivateKey.java	 	windows-all
+sun/security/pkcs11/Secmod/TrustAnchors.java		 	windows-all
+sun/security/pkcs11/SecureRandom/Basic.java		 	windows-all
+sun/security/pkcs11/Serialize/SerializeProvider.java	 	windows-all
+sun/security/pkcs11/Signature/ByteBuffers.java		 	windows-all
+sun/security/pkcs11/Signature/ReinitSignature.java	 	windows-all
+sun/security/pkcs11/Signature/TestDSA.java		 	windows-all
+sun/security/pkcs11/tls/TestKeyMaterial.java		 	windows-all
+sun/security/pkcs11/tls/TestMasterSecret.java		 	windows-all
+sun/security/pkcs11/tls/TestPremaster.java		 	windows-all
+sun/security/pkcs11/tls/TestPRF.java			 	windows-all
+
+# Fails on OpenSolaris java.net.BindException: Address already in use
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
+
+# Timeout on solaris-sparcv9 or ArrayIndexOutOfBoundsException?
+sun/security/rsa/TestKeyPairGeneratorLength.java	 	solaris-all
+sun/security/rsa/TestSignatures.java			 	solaris-all
+
+# Timeout on solaris-sparc and i586 and x64, -client and -server
+sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/InterruptedIO.java solaris-all
+
+# Do not seem to run on windows machines? dll missing? 
+sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
+
+# Files does not exist or no encoding? solaris-sparcv9
+sun/security/tools/keytool/importreadall.sh		 	solaris-all
+sun/security/tools/keytool/selfissued.sh		 	solaris-all
+
+############################################################################
+
+# jdk_swing (not using samevm)
+
+# Fails on solaris 10 sparc, throws RuntimeException that just says "failed"
+javax/swing/JLabel/6501991/bug6501991.java			generic-all
+
+# Fails on solaris 11 i586, with othervm
+javax/swing/JFileChooser/6570445/bug6570445.java		generic-all
+javax/swing/JFileChooser/6738668/bug6738668.java		generic-all
+javax/swing/JPopupMenu/6675802/bug6675802.java			generic-all
+javax/swing/system/6799345/TestShutdown.java			generic-all
+
+############################################################################
+
+# jdk_text
+
+# Linux x64 occasional errors, no details
+java/text/Bidi/Bug6665028.java				 	linux-x64
+
+############################################################################
+
+# jdk_tools
+
+# Some of the tools tests kind of require "othervm" or if they don't will
+#  always be firing up another VM anyway due to the nature of tools testing.
+#  So most if not all tools tests are now being run with "othervm" mode.
+#  Some of these tools tests have a tendency to use fixed ports, bad idea.
+
+# Solaris 10 client x86, java.lang.IndexOutOfBoundsException resumer Interrupted
+com/sun/jdi/SimulResumerTest.java				generic-all
+
+# Output of jps differs from expected output.
+#   Invalid argument count on solaris-sparc and x64
+sun/tools/jstatd/jstatdPort.sh					generic-all
+
+# othervm mode, Could not synchronize with target
+sun/tools/jps/jps-l_1.sh					generic-all
+sun/tools/jps/jps-l_2.sh					generic-all
+sun/tools/jps/jps-lm.sh						generic-all
+sun/tools/jps/jps-Vvml_2.sh					generic-all
+sun/tools/jps/jps-m_2.sh					generic-all
+
+# Server name error, port 2098 problem?
+sun/tools/jstatd/jstatdServerName.sh				generic-all
+
+# Solaris, handshake failed, othervm mode
+com/sun/jdi/RedefineException.sh				generic-all
+
+# These tests fail on solaris sparc, all the time
+com/sun/servicetag/DeleteServiceTag.java			generic-all
+com/sun/servicetag/DuplicateNotFound.java			generic-all
+com/sun/servicetag/FindServiceTags.java				generic-all
+com/sun/servicetag/InstanceUrnCheck.java			generic-all
+com/sun/servicetag/InvalidRegistrationData.java			generic-all
+com/sun/servicetag/InvalidServiceTag.java			generic-all
+com/sun/servicetag/JavaServiceTagTest.java			generic-all
+com/sun/servicetag/JavaServiceTagTest1.java			generic-all
+com/sun/servicetag/NewRegistrationData.java			generic-all
+com/sun/servicetag/SystemRegistryTest.java			generic-all
+com/sun/servicetag/TestLoadFromXML.java				generic-all
+com/sun/servicetag/UpdateServiceTagTest.java			generic-all
+com/sun/servicetag/ValidRegistrationData.java			generic-all
+
+# Problems on windows, jmap.exe hangs?
+com/sun/tools/attach/BasicTests.sh				windows-all
+
+# Fails on Solaris 10 sparc, in othervm mode, throws unexpected exception
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
+# Unexpected Monitor Exception, solaris sparc -client
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh	generic-all
+
+# Probably should be samevm, but seem to cause errors even in othervm at times
+sun/tools/jhat/HatHeapDump1Test.java			 	generic-all
+
+# Problems on windows, jmap.exe hangs? (these run jmap)
+sun/tools/jmap/Basic.sh						windows-all
+
+# Invalid argument count on solaris-sparc and x64
+sun/tools/jstatd/jstatdDefaults.sh			 	solaris-all
+
+# Solaris sparcv9, jps output does not match, x64 different
+sun/tools/jstatd/jstatdExternalRegistry.sh		 	solaris-all
+
+# Probably should be samevm, but seem to cause errors even in othervm at times
+sun/tools/native2ascii/NativeErrors.java		 	generic-all
+
+# Solaris 10 sparc 32bit -client, java.lang.AssertionError: Some tests failed
+tools/jar/JarEntryTime.java					generic-all
+
+# Times out on sparc?
+tools/launcher/VersionCheck.java				generic-all
+
+# These tests fail on solaris sparc, all the time
+tools/jar/ChangeDir.java					generic-all
+
+# Cannot write jar
+#  Also, possible problems on windows, jmap.exe hangs? 
+tools/jar/index/MetaInf.java				 	windows-all
+
+############################################################################
+
+# jdk_util
+
+# Assert error, failures, on Linux Fedora 9 -server
+#   Windows samevm failure, assert error "Passed = 134, failed = 2"
+java/util/Arrays/ArrayObjectMethods.java			generic-all
+
+# Windows 2000, -client, samevm, java.lang.Error: Completed != 2
+java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+
+# Windows X64, Executor Stuck samevm mode:
+java/util/concurrent/FutureTask/BlockingTaskExecutor.java	generic-all
+
+# Problems on windows, jmap.exe hangs? (these run jmap), fails on Solaris 10 x86
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java		generic-all
+
+# Solaris sparc client, some failures, "1 not equal to 3"?
+#   also Linux problems with samevm mode, -server linux i586? 1 not equal to 3?
+java/util/concurrent/Executors/AutoShutdown.java		generic-all
+
+# Fails on solaris-sparc -server (Set not equal to copy. 1)
+java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
+
+# Failing to close an input stream? "foo", triggers samevm windows failures
+java/util/Formatter/Constructors.java				generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/util/Locale/Bug4175998Test.java				generic-all
+java/util/Locale/Bug4184873Test.java				generic-all
+java/util/Locale/LocaleTest.java				generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/util/logging/GetGlobalTest.java				generic-all
+java/util/logging/LoggerSubclass.java				generic-all
+java/util/logging/LoggingDeadlock.java				generic-all
+java/util/logging/LoggingDeadlock2.java 			generic-all
+java/util/logging/LoggingMXBeanTest.java			generic-all
+java/util/logging/LoggingMXBeanTest2.java			generic-all
+java/util/logging/LoggingNIOChange.java 			generic-all
+java/util/logging/ParentLoggersTest.java			generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/util/ResourceBundle/Bug4168625Test.java			generic-all
+java/util/ResourceBundle/Bug6359330.java			generic-all
+java/util/ResourceBundle/TestBug4179766.java			generic-all
+
+# Need to be marked othervm, or changed to be samevm safe
+java/util/WeakHashMap/GCDuringIteration.java			generic-all
+
+# Possible missing input stream close()? Causes samevm issues on windows
+java/util/zip/InfoZip.java				 	generic-all
+
+# Missing a close() on file Test0.zip? windows samevm cascade problem
+java/util/zip/ZipFile/Comment.java                              generic-all
+
+# Suspect missing close() on bad*.zip files, windows cascade errors with samevm
+java/util/zip/ZipFile/CorruptedZipFiles.java			generic-all
+
+# Should be samevm but causes problems with samevm, no details:
+java/util/zip/ZipFile/ManyEntries.java			 	generic-all
+
+############################################################################
+

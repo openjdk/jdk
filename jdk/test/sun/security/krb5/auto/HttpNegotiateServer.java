@@ -302,4 +302,3 @@ public class HttpNegotiateServer {
         }
     }
 }
-

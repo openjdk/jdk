@@ -74,7 +74,7 @@ public class OperatingSystemImpl implements OperatingSystemMXBean {
         }
     }
     public ObjectName getObjectName() {
-        return ObjectName.valueOf(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
+        return Util.newObjectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
     }
 
 }

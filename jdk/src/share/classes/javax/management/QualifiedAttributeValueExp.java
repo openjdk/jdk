@@ -113,8 +113,7 @@ class QualifiedAttributeValueExp extends AttributeValueExp   {
     @Override
     public String toString()  {
         if (className != null) {
-            return QueryParser.quoteId(className) + "#" +
-                QueryParser.quoteId(super.toString());
+            return className + "." + super.toString();
         } else {
             return super.toString();
         }

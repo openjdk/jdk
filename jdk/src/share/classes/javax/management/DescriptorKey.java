@@ -33,11 +33,6 @@ import java.lang.annotation.*;
  * an MBean, or for an attribute, operation, or constructor in an
  * MBean, or for a parameter of an operation or constructor.</p>
  *
- * <p>(The {@link DescriptorFields @DescriptorFields} annotation
- * provides another way to add fields to a {@code Descriptor}.  See
- * the documentation for that annotation for a comparison of the
- * two possibilities.)</p>
- *
  * <p>Consider this annotation for example:</p>
  *
  * <pre>
@@ -130,13 +125,12 @@ import java.lang.annotation.*;
  * the method in the child interface are considered.
  *
  * <p>The Descriptor fields contributed in this way by different
- * annotations on the same program element must be consistent with
- * each other and with any fields contributed by a {@link
- * DescriptorFields &#64;DescriptorFields} annotation.  That is, two
- * different annotations, or two members of the same annotation, must
- * not define a different value for the same Descriptor field.  Fields
- * from annotations on a getter method must also be consistent with
- * fields from annotations on the corresponding setter method.</p>
+ * annotations on the same program element must be consistent.  That
+ * is, two different annotations, or two members of the same
+ * annotation, must not define a different value for the same
+ * Descriptor field.  Fields from annotations on a getter method must
+ * also be consistent with fields from annotations on the
+ * corresponding setter method.</p>
  *
  * <p>The Descriptor resulting from these annotations will be merged
  * with any Descriptor fields provided by the implementation, such as
@@ -175,36 +169,4 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface DescriptorKey {
     String value();
-
-    /**
-     * <p>Do not include this field in the Descriptor if the annotation
-     * element has its default value.  For example, suppose {@code @Units} is
-     * defined like this:</p>
-     *
-     * <pre>
-     * &#64;Documented
-     * &#64;Target(ElementType.METHOD)
-     * &#64;Retention(RetentionPolicy.RUNTIME)
-     * public &#64;interface Units {
-     *     &#64;DescriptorKey("units")
-     *     String value();
-     *
-     *     <b>&#64;DescriptorKey(value = "descriptionResourceKey",
-     *                    omitIfDefault = true)</b>
-     *     String resourceKey() default "";
-     *
-     *     <b>&#64;DescriptorKey(value = "descriptionResourceBundleBaseName",
-     *                    omitIfDefault = true)</b>
-     *     String resourceBundleBaseName() default "";
-     * }
-     * </pre>
-     *
-     * <p>Then consider a usage such as {@code @Units("bytes")} or
-     * {@code @Units(value = "bytes", resourceKey = "")}, where the
-     * {@code resourceKey} and {@code resourceBundleBaseNames} elements
-     * have their default values.  In this case the Descriptor resulting
-     * from these annotations will not include a {@code descriptionResourceKey}
-     * or {@code descriptionResourceBundleBaseName} field.</p>
-     */
-    boolean omitIfDefault() default false;
 }

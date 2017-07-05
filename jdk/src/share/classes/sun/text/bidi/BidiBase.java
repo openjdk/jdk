@@ -52,10 +52,11 @@
 
 package sun.text.bidi;
 
-import java.awt.font.TextAttribute;
-import java.awt.font.NumericShaper;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.text.AttributedCharacterIterator;
 import java.text.Bidi;
 import java.util.Arrays;
@@ -2689,12 +2690,13 @@ public class BidiBase {
     public void setPara(AttributedCharacterIterator paragraph)
     {
         byte paraLvl;
-        Boolean runDirection = (Boolean) paragraph.getAttribute(TextAttribute.RUN_DIRECTION);
-        NumericShaper shaper = (NumericShaper) paragraph.getAttribute(TextAttribute.NUMERIC_SHAPING);
+        Boolean runDirection =
+            (Boolean) paragraph.getAttribute(TextAttributeConstants.RUN_DIRECTION);
+        Object shaper = paragraph.getAttribute(TextAttributeConstants.NUMERIC_SHAPING);
         if (runDirection == null) {
             paraLvl = INTERNAL_LEVEL_DEFAULT_LTR;
         } else {
-            paraLvl = (runDirection.equals(TextAttribute.RUN_DIRECTION_LTR)) ?
+            paraLvl = (runDirection.equals(TextAttributeConstants.RUN_DIRECTION_LTR)) ?
                         (byte)Bidi.DIRECTION_LEFT_TO_RIGHT : (byte)Bidi.DIRECTION_RIGHT_TO_LEFT;
         }
 
@@ -2706,7 +2708,8 @@ public class BidiBase {
         char ch = paragraph.first();
         while (ch != AttributedCharacterIterator.DONE) {
             txt[i] = ch;
-            Integer embedding = (Integer) paragraph.getAttribute(TextAttribute.BIDI_EMBEDDING);
+            Integer embedding =
+                (Integer) paragraph.getAttribute(TextAttributeConstants.BIDI_EMBEDDING);
             if (embedding != null) {
                 byte level = embedding.byteValue();
                 if (level == 0) {
@@ -2724,7 +2727,7 @@ public class BidiBase {
         }
 
         if (shaper != null) {
-            shaper.shape(txt, 0, len);
+            NumericShapings.shape(shaper, txt, 0, len);
         }
         setPara(txt, paraLvl, lvls);
     }
@@ -3441,4 +3444,106 @@ public class BidiBase {
         return buf.toString();
     }
 
+    /**
+     * A class that provides access to constants defined by
+     * java.awt.font.TextAttribute without creating a static dependency.
+     */
+    private static class TextAttributeConstants {
+        private static final Class<?> clazz = getClass("java.awt.font.TextAttribute");
+
+        /**
+         * TextAttribute instances (or a fake Attribute type if
+         * java.awt.font.TextAttribute is not present)
+         */
+        static final AttributedCharacterIterator.Attribute RUN_DIRECTION =
+            getTextAttribute("RUN_DIRECTION");
+        static final Boolean RUN_DIRECTION_LTR =
+            (Boolean)getStaticField(clazz, "RUN_DIRECTION_LTR");
+        static final AttributedCharacterIterator.Attribute NUMERIC_SHAPING =
+            getTextAttribute("NUMERIC_SHAPING");
+        static final AttributedCharacterIterator.Attribute BIDI_EMBEDDING =
+            getTextAttribute("BIDI_EMBEDDING");
+
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, null);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+
+        private static Object getStaticField(Class<?> clazz, String name) {
+            if (clazz == null) {
+                // fake attribute
+                return new AttributedCharacterIterator.Attribute(name) { };
+            } else {
+                try {
+                    Field f = clazz.getField(name);
+                    return f.get(null);
+                } catch (NoSuchFieldException x) {
+                    throw new AssertionError(x);
+                } catch (IllegalAccessException x) {
+                    throw new AssertionError(x);
+                }
+            }
+        }
+
+        private static AttributedCharacterIterator.Attribute
+            getTextAttribute(String name)
+        {
+            return (AttributedCharacterIterator.Attribute)getStaticField(clazz, name);
+        }
+    }
+
+    /**
+     * A class that provides access to java.awt.font.NumericShaping without
+     * creating a static dependency.
+     */
+    private static class NumericShapings {
+        private static final Class<?> clazz =
+            getClass("java.awt.font.NumericShaper");
+        private static final Method shapeMethod =
+            getMethod(clazz, "shape", char[].class, int.class, int.class);
+
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, null);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+
+        private static Method getMethod(Class<?> clazz,
+                                        String name,
+                                        Class<?>... paramTypes)
+        {
+            if (clazz != null) {
+                try {
+                    return clazz.getMethod(name, paramTypes);
+                } catch (NoSuchMethodException e) {
+                    throw new AssertionError(e);
+                }
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Invokes NumericShaping shape(text,start,count) method.
+         */
+        static void shape(Object shaper, char[] text, int start, int count) {
+            if (shapeMethod == null)
+                throw new AssertionError("Should not get here");
+            try {
+                shapeMethod.invoke(shaper, text, start, count);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
+        }
+    }
 }

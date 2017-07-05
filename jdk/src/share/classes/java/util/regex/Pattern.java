@@ -484,7 +484,7 @@ import java.util.Arrays;
  * <h5> Group name </h5>
  * <p>A capturing group can also be assigned a "name", a <tt>named-capturing group</tt>,
  * and then be back-referenced later by the "name". Group names are composed of
- * the following characters:
+ * the following characters. The first character must be a <tt>letter</tt>.
  *
  * <ul>
  *   <li> The uppercase letters <tt>'A'</tt> through <tt>'Z'</tt>
@@ -2567,7 +2567,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
-                if (ASCII.isLower(ch) || ASCII.isUpper(ch) || ASCII.isDigit(ch)) {
+                if (ASCII.isLower(ch) || ASCII.isUpper(ch)) {
                     // named captured group
                     String name = groupname(ch);
                     if (namedGroups().containsKey(name))

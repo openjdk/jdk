@@ -78,9 +78,7 @@ import javax.management.RuntimeOperationsException;
  * are meaningless for constructors, but are not considered invalid.</p>
  *
  * <p>The default descriptor will have the {@code name}, {@code
- * descriptorType}, {@code displayName} and {@code role} fields.  The
- * default value of the {@code name} and {@code displayName} fields is
- * the name of the constructor.
+ * descriptorType}, {@code displayName} and {@code role} fields.
  *
  * <p>The <b>serialVersionUID</b> of this class is <code>3862947819818064362L</code>.
  *
@@ -193,14 +191,14 @@ public class ModelMBeanConstructorInfo
         * appropriate metadata for this instance of the
         * ModelMBeanConstructorInfo.  If it is null, then a default
         * descriptor will be created. If the descriptor does not
-        * contain all the following fields, the missing ones are added with
-        * their default values: displayName, name, role, descriptorType.
+        * contain the field "displayName" this field is added in the
+        * descriptor with its default value.
         *
         * @exception RuntimeOperationsException Wraps an
         * IllegalArgumentException. The descriptor is invalid, or
-        * descriptor field "name" is present but not equal to name
-        * parameter, or descriptor field "descriptorType" is present
-        * but not equal to "operation" or descriptor field "role" is
+        * descriptor field "name" is not equal to name
+        * parameter, or descriptor field "descriptorType" is
+        * not equal to "operation" or descriptor field "role" is
         * present but not equal to "constructor".
         */
 
@@ -250,15 +248,14 @@ public class ModelMBeanConstructorInfo
         * @param signature MBeanParameterInfo objects describing the parameters(arguments) of the constructor.
         * @param descriptor An instance of Descriptor containing the appropriate metadata
         *                   for this instance of the MBeanConstructorInfo. If it is null then a default descriptor will be created.
-        * If the descriptor does not
-        * contain all the following fields, the missing ones are added with
-        * their default values: displayName, name, role, descriptorType.
+        * If the descriptor does not contain the field "displayName" this field
+        * is added in the descriptor with its default value.
         *
         * @exception RuntimeOperationsException Wraps an
         * IllegalArgumentException. The descriptor is invalid, or
-        * descriptor field "name" is present but not equal to name
-        * parameter, or descriptor field "descriptorType" is present
-        * but not equal to "operation" or descriptor field "role" is
+        * descriptor field "name" is not equal to name
+        * parameter, or descriptor field "descriptorType" is
+        * not equal to "operation" or descriptor field "role" is
         * present but not equal to "constructor".
         */
 
@@ -300,6 +297,7 @@ public class ModelMBeanConstructorInfo
         * Creates and returns a new ModelMBeanConstructorInfo which is a duplicate of this ModelMBeanConstructorInfo.
         *
         */
+        @Override
         public Object clone ()
         {
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
@@ -320,6 +318,7 @@ public class ModelMBeanConstructorInfo
          */
 
 
+        @Override
         public Descriptor getDescriptor()
         {
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
@@ -368,6 +367,7 @@ public class ModelMBeanConstructorInfo
         /**
         * Returns a string containing the entire contents of the ModelMBeanConstructorInfo in human readable form.
         */
+        @Override
         public String toString()
         {
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
@@ -404,8 +404,9 @@ public class ModelMBeanConstructorInfo
          * @exception RuntimeOperationsException if Descriptor is invalid
          */
         private Descriptor validDescriptor(final Descriptor in) throws RuntimeOperationsException {
-           Descriptor clone;
-            if (in == null) {
+            Descriptor clone;
+            boolean defaulted = (in == null);
+            if (defaulted) {
                 clone = new DescriptorSupport();
                 MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");
             } else {
@@ -413,11 +414,11 @@ public class ModelMBeanConstructorInfo
             }
 
             //Setting defaults.
-            if (clone.getFieldValue("name")==null) {
+            if (defaulted && clone.getFieldValue("name")==null) {
                 clone.setField("name", this.getName());
                 MODELMBEAN_LOGGER.finer("Defaulting Descriptor name to " + this.getName());
             }
-            if (clone.getFieldValue("descriptorType")==null) {
+            if (defaulted && clone.getFieldValue("descriptorType")==null) {
                 clone.setField("descriptorType", "operation");
                 MODELMBEAN_LOGGER.finer("Defaulting descriptorType to \"operation\"");
             }
@@ -436,12 +437,12 @@ public class ModelMBeanConstructorInfo
                     "The isValid() method of the Descriptor object itself returned false,"+
                     "one or more required fields are invalid. Descriptor:" + clone.toString());
             }
-            if (! ((String)clone.getFieldValue("name")).equalsIgnoreCase(this.getName())) {
+            if (!getName().equalsIgnoreCase((String) clone.getFieldValue("name"))) {
                     throw new RuntimeOperationsException(new IllegalArgumentException("Invalid Descriptor argument"),
                     "The Descriptor \"name\" field does not match the object described. " +
                      " Expected: "+ this.getName() + " , was: " + clone.getFieldValue("name"));
             }
-            if (! ((String)clone.getFieldValue("descriptorType")).equalsIgnoreCase("operation")) {
+            if (!"operation".equalsIgnoreCase((String) clone.getFieldValue("descriptorType"))) {
                      throw new RuntimeOperationsException(new IllegalArgumentException("Invalid Descriptor argument"),
                     "The Descriptor \"descriptorType\" field does not match the object described. " +
                      " Expected: \"operation\" ," + " was: " + clone.getFieldValue("descriptorType"));
