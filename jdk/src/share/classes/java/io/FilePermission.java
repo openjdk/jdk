@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.security.*;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Collections;
 import java.io.ObjectStreamField;
@@ -58,7 +57,8 @@ import sun.security.util.SecurityConstants;
  * <P>
  * The actions to be granted are passed to the constructor in a string containing
  * a list of one or more comma-separated keywords. The possible keywords are
- * "read", "write", "execute", and "delete". Their meaning is defined as follows:
+ * "read", "write", "execute", "delete", and "readlink". Their meaning is
+ * defined as follows:
  * <P>
  * <DL>
  *    <DT> read <DD> read permission
@@ -69,6 +69,11 @@ import sun.security.util.SecurityConstants;
  *    <DT> delete
  *    <DD> delete permission. Allows <code>File.delete</code> to
  *         be called. Corresponds to <code>SecurityManager.checkDelete</code>.
+ *    <DT> readlink
+ *    <DD> read link permission. Allows the target of a
+ *         <a href="../nio/file/package-summary.html#links">symbolic link</a>
+ *         to be read by invoking the {@link java.nio.file.Path#readSymbolicLink
+ *         readSymbolicLink } method.
  * </DL>
  * <P>
  * The actions string is converted to lowercase before processing.
@@ -114,11 +119,15 @@ public final class FilePermission extends Permission implements Serializable {
      * Delete action.
      */
     private final static int DELETE  = 0x8;
+    /**
+     * Read link action.
+     */
+    private final static int READLINK    = 0x10;
 
     /**
-     * All actions (read,write,execute,delete)
+     * All actions (read,write,execute,delete,readlink)
      */
-    private final static int ALL     = READ|WRITE|EXECUTE|DELETE;
+    private final static int ALL     = READ|WRITE|EXECUTE|DELETE|READLINK;
     /**
      * No actions.
      */
@@ -235,7 +244,7 @@ public final class FilePermission extends Permission implements Serializable {
      * <i>path</i> is the pathname of a file or directory, and <i>actions</i>
      * contains a comma-separated list of the desired actions granted on the
      * file or directory. Possible actions are
-     * "read", "write", "execute", and "delete".
+     * "read", "write", "execute", "delete", and "readlink".
      *
      * <p>A pathname that ends in "/*" (where "/" is
      * the file separator character, <code>File.separatorChar</code>)
@@ -425,6 +434,8 @@ public final class FilePermission extends Permission implements Serializable {
             return EXECUTE;
         } else if (actions == SecurityConstants.FILE_DELETE_ACTION) {
             return DELETE;
+        } else if (actions == SecurityConstants.FILE_READLINK_ACTION) {
+            return READLINK;
         }
 
         char[] a = actions.toCharArray();
@@ -485,6 +496,18 @@ public final class FilePermission extends Permission implements Serializable {
                 matchlen = 6;
                 mask |= DELETE;
 
+            } else if (i >= 7 && (a[i-7] == 'r' || a[i-7] == 'R') &&
+                                 (a[i-6] == 'e' || a[i-6] == 'E') &&
+                                 (a[i-5] == 'a' || a[i-5] == 'A') &&
+                                 (a[i-4] == 'd' || a[i-4] == 'D') &&
+                                 (a[i-3] == 'l' || a[i-3] == 'L') &&
+                                 (a[i-2] == 'i' || a[i-2] == 'I') &&
+                                 (a[i-1] == 'n' || a[i-1] == 'N') &&
+                                 (a[i] == 'k' || a[i] == 'K'))
+            {
+                matchlen = 8;
+                mask |= READLINK;
+
             } else {
                 // parse error
                 throw new IllegalArgumentException(
@@ -529,7 +552,7 @@ public final class FilePermission extends Permission implements Serializable {
     /**
      * Return the canonical string representation of the actions.
      * Always returns present actions in the following order:
-     * read, write, execute, delete.
+     * read, write, execute, delete, readlink.
      *
      * @return the canonical string representation of the actions.
      */
@@ -561,14 +584,20 @@ public final class FilePermission extends Permission implements Serializable {
             sb.append("delete");
         }
 
+        if ((mask & READLINK) == READLINK) {
+            if (comma) sb.append(',');
+            else comma = true;
+            sb.append("readlink");
+        }
+
         return sb.toString();
     }
 
     /**
      * Returns the "canonical string representation" of the actions.
      * That is, this method always returns present actions in the following order:
-     * read, write, execute, delete. For example, if this FilePermission object
-     * allows both write and read actions, a call to <code>getActions</code>
+     * read, write, execute, delete, readlink. For example, if this FilePermission
+     * object allows both write and read actions, a call to <code>getActions</code>
      * will return the string "read,write".
      *
      * @return the canonical string representation of the actions.
@@ -678,7 +707,7 @@ final class FilePermissionCollection extends PermissionCollection
 implements Serializable {
 
     // Not serialized; see serialization section at end of class
-    private transient List perms;
+    private transient List<Permission> perms;
 
     /**
      * Create an empty FilePermissions object.
@@ -686,7 +715,7 @@ implements Serializable {
      */
 
     public FilePermissionCollection() {
-        perms = new ArrayList();
+        perms = new ArrayList<Permission>();
     }
 
     /**
@@ -791,7 +820,7 @@ implements Serializable {
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector permissions = new Vector(perms.size());
+        Vector<Permission> permissions = new Vector<Permission>(perms.size());
         synchronized (this) {
             permissions.addAll(perms);
         }
@@ -804,6 +833,7 @@ implements Serializable {
     /*
      * Reads in a Vector of FilePermissions and saves them in the perms field.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()
@@ -812,8 +842,8 @@ implements Serializable {
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get the one we want
-        Vector permissions = (Vector)gfields.get("permissions", null);
-        perms = new ArrayList(permissions.size());
+        Vector<Permission> permissions = (Vector<Permission>)gfields.get("permissions", null);
+        perms = new ArrayList<Permission>(permissions.size());
         perms.addAll(permissions);
     }
 }
