@@ -403,6 +403,8 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_abs     :                                                                             break;
     case Interpreter::java_lang_math_log     :                                                                             break;
     case Interpreter::java_lang_math_log10   :                                                                             break;
+    case Interpreter::java_lang_math_pow     :                                                                             break;
+    case Interpreter::java_lang_math_exp     :                                                                             break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
     default                                  : ShouldNotReachHere();                                                       break;

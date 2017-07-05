@@ -572,10 +572,10 @@ public class HotSpotAgent {
 
         if (cpu.equals("x86")) {
             machDesc = new MachineDescriptionIntelX86();
-        } else if (cpu.equals("amd64")) {
+        } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             machDesc = new MachineDescriptionAMD64();
         } else {
-            throw new DebuggerException("BSD only supported on x86/amd64");
+            throw new DebuggerException("BSD only supported on x86/x86_64. Current arch: " + cpu);
         }
 
         BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
