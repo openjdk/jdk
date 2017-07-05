@@ -26,7 +26,7 @@
  * @bug 8154763
  * @summary Tests PostLoopMultiversioning with RangeCheckElimination disabled.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+PostLoopMultiversioning -XX:-RangeCheckElimination
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PostLoopMultiversioning -XX:-RangeCheckElimination
  *                   compiler.rangechecks.TestRangeCheckEliminationDisabled
  */
 
