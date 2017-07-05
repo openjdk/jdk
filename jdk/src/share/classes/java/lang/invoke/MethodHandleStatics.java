@@ -35,6 +35,8 @@ package java.lang.invoke;
 
     private MethodHandleStatics() { }  // do not instantiate
 
+    static final boolean DEBUG_METHOD_HANDLE_NAMES = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
+
     /*non-public*/ static String getNameString(MethodHandle target, MethodType type) {
         if (type == null)
             type = target.type();
