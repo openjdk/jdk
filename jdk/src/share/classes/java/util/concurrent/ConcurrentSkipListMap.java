@@ -895,7 +895,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                 if (n != null) {
                     Node<K,V> f = n.next;
                     if (n != b.next)               // inconsistent read
-                        break;;
+                        break;
                     Object v = n.value;
                     if (v == null) {               // n is deleted
                         n.helpDelete(b, f);

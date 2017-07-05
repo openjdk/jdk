@@ -32,8 +32,7 @@ class MethodHandles: AllStatic {
   // See also  javaClasses for layouts java_dyn_Method{Handle,Type,Type::Form}.
  public:
   enum EntryKind {
-    _check_mtype,               // how a caller calls a MH
-    _wrong_method_type,         // what happens when there is a type mismatch
+    _raise_exception,           // stub for error generation from other stubs
     _invokestatic_mh,           // how a MH emulates invokestatic
     _invokespecial_mh,          // ditto for the other invokes...
     _invokevirtual_mh,
@@ -47,6 +46,7 @@ class MethodHandles: AllStatic {
 
     _adapter_mh_first,     // adapter sequence goes here...
     _adapter_retype_only   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY,
+    _adapter_retype_raw    = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW,
     _adapter_check_cast    = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_CHECK_CAST,
     _adapter_prim_to_prim  = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM,
     _adapter_ref_to_prim   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM,
@@ -113,6 +113,8 @@ class MethodHandles: AllStatic {
   static bool _enabled;
   static MethodHandleEntry* _entries[_EK_LIMIT];
   static const char*        _entry_names[_EK_LIMIT+1];
+  static jobject            _raise_exception_method;
+
   static bool ek_valid(EntryKind ek)            { return (uint)ek < (uint)_EK_LIMIT; }
   static bool conv_op_valid(int op)             { return (uint)op < (uint)CONV_OP_LIMIT; }
 
@@ -129,6 +131,16 @@ class MethodHandles: AllStatic {
     assert(ek_valid(ek), "oob");
     assert(_entries[ek] == NULL, "no double initialization");
     _entries[ek] = me;
+  }
+
+  static methodOop raise_exception_method() {
+    oop rem = JNIHandles::resolve(_raise_exception_method);
+    assert(rem == NULL || rem->is_method(), "");
+    return (methodOop) rem;
+  }
+  static void set_raise_exception_method(methodOop rem) {
+    assert(_raise_exception_method == NULL, "");
+    _raise_exception_method = JNIHandles::make_global(Handle(rem));
   }
 
   static jint adapter_conversion(int conv_op, BasicType src, BasicType dest,
@@ -243,7 +255,7 @@ class MethodHandles: AllStatic {
   enum {
     // format of query to getConstant:
     GC_JVM_PUSH_LIMIT = 0,
-    GC_JVM_STACK_MOVE_LIMIT = 1,
+    GC_JVM_STACK_MOVE_UNIT = 1,
 
     // format of result from getTarget / encode_target:
     ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
@@ -261,7 +273,8 @@ class MethodHandles: AllStatic {
                                               int insert_argnum, oop insert_type,
                                               int change_argnum, oop change_type,
                                               int delete_argnum,
-                                              oop dst_mtype, int dst_beg, int dst_end);
+                                              oop dst_mtype, int dst_beg, int dst_end,
+                                              bool raw = false);
   static const char* check_method_type_insertion(oop src_mtype,
                                                  int insert_argnum, oop insert_type,
                                                  oop dst_mtype) {
@@ -278,29 +291,29 @@ class MethodHandles: AllStatic {
                                     change_argnum, change_type,
                                     -1, dst_mtype, 0, -1);
   }
-  static const char* check_method_type_passthrough(oop src_mtype, oop dst_mtype) {
+  static const char* check_method_type_passthrough(oop src_mtype, oop dst_mtype, bool raw) {
     oop no_ref = NULL;
     return check_method_type_change(src_mtype, 0, -1,
                                     -1, no_ref, -1, no_ref, -1,
-                                    dst_mtype, 0, -1);
+                                    dst_mtype, 0, -1, raw);
   }
 
   // These checkers operate on pairs of argument or return types:
   static const char* check_argument_type_change(BasicType src_type, klassOop src_klass,
                                                 BasicType dst_type, klassOop dst_klass,
-                                                int argnum);
+                                                int argnum, bool raw = false);
 
   static const char* check_argument_type_change(oop src_type, oop dst_type,
-                                                int argnum) {
+                                                int argnum, bool raw = false) {
     klassOop src_klass = NULL, dst_klass = NULL;
     BasicType src_bt = java_lang_Class::as_BasicType(src_type, &src_klass);
     BasicType dst_bt = java_lang_Class::as_BasicType(dst_type, &dst_klass);
     return check_argument_type_change(src_bt, src_klass,
-                                      dst_bt, dst_klass, argnum);
+                                      dst_bt, dst_klass, argnum, raw);
   }
 
-  static const char* check_return_type_change(oop src_type, oop dst_type) {
-    return check_argument_type_change(src_type, dst_type, -1);
+  static const char* check_return_type_change(oop src_type, oop dst_type, bool raw = false) {
+    return check_argument_type_change(src_type, dst_type, -1, raw);
   }
 
   static const char* check_return_type_change(BasicType src_type, klassOop src_klass,
@@ -357,9 +370,10 @@ class MethodHandles: AllStatic {
                                               TRAPS);
 
   static bool same_basic_type_for_arguments(BasicType src, BasicType dst,
+                                            bool raw = false,
                                             bool for_return = false);
-  static bool same_basic_type_for_returns(BasicType src, BasicType dst) {
-    return same_basic_type_for_arguments(src, dst, true);
+  static bool same_basic_type_for_returns(BasicType src, BasicType dst, bool raw = false) {
+    return same_basic_type_for_arguments(src, dst, raw, true);
   }
 
   enum {                        // arg_mask values

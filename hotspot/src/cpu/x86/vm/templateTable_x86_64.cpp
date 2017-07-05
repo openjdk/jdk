@@ -139,7 +139,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         }
         __ g1_write_barrier_pre(rdx, r8, rbx, val != noreg);
         if (val == noreg) {
-          __ store_heap_oop(Address(rdx, 0), NULL_WORD);
+          __ store_heap_oop_null(Address(rdx, 0));
         } else {
           __ store_heap_oop(Address(rdx, 0), val);
           __ g1_write_barrier_post(rdx, val, r8, rbx);
@@ -152,7 +152,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
     case BarrierSet::CardTableExtension:
       {
         if (val == noreg) {
-          __ store_heap_oop(obj, NULL_WORD);
+          __ store_heap_oop_null(obj);
         } else {
           __ store_heap_oop(obj, val);
           // flatten object address if needed
@@ -168,7 +168,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
     case BarrierSet::ModRef:
     case BarrierSet::Other:
       if (val == noreg) {
-        __ store_heap_oop(obj, NULL_WORD);
+        __ store_heap_oop_null(obj);
       } else {
         __ store_heap_oop(obj, val);
       }

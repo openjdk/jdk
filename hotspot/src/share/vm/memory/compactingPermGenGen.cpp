@@ -352,15 +352,19 @@ void CompactingPermGenGen::post_compact() {
 }
 
 
+// Do not use in time-critical operations due to the possibility of paging
+// in otherwise untouched or previously unread portions of the perm gen,
+// for instance, the shared spaces. NOTE: Because CompactingPermGenGen
+// derives from OneContigSpaceCardGeneration which is supposed to have a
+// single space, and does not override its object_iterate() method,
+// object iteration via that interface does not look at the objects in
+// the shared spaces when using CDS. This should be fixed; see CR 6897798.
 void CompactingPermGenGen::space_iterate(SpaceClosure* blk, bool usedOnly) {
   OneContigSpaceCardGeneration::space_iterate(blk, usedOnly);
   if (spec()->enable_shared_spaces()) {
-#ifdef PRODUCT
     // Making the rw_space walkable will page in the entire space, and
-    // is to be avoided. However, this is required for Verify options.
-    ShouldNotReachHere();
-#endif
-
+    // is to be avoided in the case of time-critical operations.
+    // However, this is required for Verify and heap dump operations.
     blk->do_space(ro_space());
     blk->do_space(rw_space());
   }
