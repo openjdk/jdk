@@ -26,56 +26,55 @@
  * @bug     4530538
  * @summary Basic unit test of ThreadInfo.getBlockedCount()
  * @author  Alexei Guibadoulline and Mandy Chung
+ * @author  Jaroslav Bachorik
  *
- * @build ThreadExecutionSynchronizer
  * @run main ThreadBlockedCount
  */
 
 import java.lang.management.*;
+import java.util.concurrent.Phaser;
 
 public class ThreadBlockedCount {
     final static long EXPECTED_BLOCKED_COUNT = 3;
     final static int  DEPTH = 10;
-    private static ThreadMXBean mbean
+    private static final ThreadMXBean mbean
         = ManagementFactory.getThreadMXBean();
 
-    private static Object a = new Object();
-    private static Object b = new Object();
-    private static Object c = new Object();
-    private static boolean aNotified = false;
-    private static boolean bNotified = false;
-    private static boolean cNotified = false;
-    private static Object blockedObj1 = new Object();
-    private static Object blockedObj2 = new Object();
-    private static Object blockedObj3 = new Object();
-    private static volatile boolean testFailed = false;
+    private static final Object a = new Object();
+    private static final Object b = new Object();
+    private static final Object c = new Object();
+
+    private static final Object blockedObj1 = new Object();
+    private static final Object blockedObj2 = new Object();
+    private static final Object blockedObj3 = new Object();
+    private static volatile boolean testOk = false;
     private static BlockingThread blocking;
     private static BlockedThread blocked;
-    private static ThreadExecutionSynchronizer thrsync;
 
 
 
     public static void main(String args[]) throws Exception {
-        // Create the BlockingThread before BlockedThread
-        // to make sure BlockingThread enter the lock before BlockedThread
-        thrsync = new ThreadExecutionSynchronizer();
+        final Phaser p = new Phaser(2);
 
-        blocking = new BlockingThread();
+        blocking = new BlockingThread(p);
         blocking.start();
 
-        blocked = new BlockedThread();
+        blocked = new BlockedThread(p);
         blocked.start();
 
         try {
             blocking.join();
-            blocked.join();
+
+            testOk = checkBlocked();
+            p.arriveAndAwaitAdvance(); // #5
+
         } catch (InterruptedException e) {
             System.err.println("Unexpected exception.");
             e.printStackTrace(System.err);
             throw e;
         }
 
-        if (testFailed) {
+        if (!testOk) {
             throw new RuntimeException("TEST FAILED.");
         }
         System.out.println("Test passed.");
@@ -83,29 +82,19 @@ public class ThreadBlockedCount {
 
 
     static class BlockedThread extends Thread {
-        // NOTE: We can't use a.wait() here because wait() call is counted
-        // as blockedCount.  Instead, we use a boolean flag and sleep.
-        //
+        private final Phaser p;
+
+        BlockedThread(Phaser p) {
+            super("BlockedThread");
+            this.p = p;
+        }
+
         public void run() {
-            // wait Blocking thread
-            thrsync.signal();
+            p.arriveAndAwaitAdvance(); // #1
 
             // Enter lock a without blocking
             synchronized (a) {
-                // wait until BlockingThread holds blockedObj1
-                while (!aNotified) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        System.err.println("Unexpected exception.");
-                        e.printStackTrace(System.err);
-                        testFailed = true;
-                        break;
-                    }
-                }
-
-                // signal BlockingThread.
-                thrsync.signal();
+                p.arriveAndAwaitAdvance(); // #2
 
                 // Block to enter blockedObj1
                 // blockedObj1 should be owned by BlockingThread
@@ -114,25 +103,10 @@ public class ThreadBlockedCount {
                 }
             }
 
-            // signal BlockingThread.
-            thrsync.signal();
-
             // Enter lock a without blocking
             synchronized (b) {
                 // wait until BlockingThread holds blockedObj2
-                while (!bNotified) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        System.err.println("Unexpected exception.");
-                        e.printStackTrace(System.err);
-                        testFailed = true;
-                        break;
-                    }
-                }
-
-                // signal BlockingThread.
-                thrsync.signal();
+                p.arriveAndAwaitAdvance(); // #3
 
                 // Block to enter blockedObj2
                 // blockedObj2 should be owned by BlockingThread
@@ -141,25 +115,10 @@ public class ThreadBlockedCount {
                 }
             }
 
-            // signal BlockingThread.
-            thrsync.signal();
-
             // Enter lock a without blocking
             synchronized (c) {
                 // wait until BlockingThread holds blockedObj3
-                while (!cNotified) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        System.err.println("Unexpected exception.");
-                        e.printStackTrace(System.err);
-                        testFailed = true;
-                        break;
-                    }
-                }
-
-                // signal BlockingThread.
-                thrsync.signal();
+                p.arriveAndAwaitAdvance(); // #4
 
                 // Block to enter blockedObj3
                 // blockedObj3 should be owned by BlockingThread
@@ -168,35 +127,23 @@ public class ThreadBlockedCount {
                 }
             }
 
-            // wait for the thread stats to be updated for 10 seconds
-            for (int i = 0; i < 100; i++) {
-                if (getBlockedCount() == EXPECTED_BLOCKED_COUNT) {
-                    return;
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    System.err.println("Unexpected exception.");
-                    e.printStackTrace(System.err);
-                    testFailed = true;
-                    return;
-                }
-            }
-            long count = getBlockedCount();
-            if (count != EXPECTED_BLOCKED_COUNT) {
-                System.err.println("TEST FAILED: Blocked thread has " + count +
-                                    " blocked counts. Expected " +
-                                    EXPECTED_BLOCKED_COUNT);
-                testFailed = true;
-            }
+            // wait for the main thread to check the blocked count
+            p.arriveAndAwaitAdvance(); // #5
+            // ... and we can leave now
         } // run()
-    } // BlockingThread
+    } // BlockedThread
 
     static class BlockingThread extends Thread {
-        private void waitForSignalToRelease() {
+        private final Phaser p;
 
+        BlockingThread(Phaser p) {
+            super("BlockingThread");
+            this.p = p;
+        }
+
+        private void waitForBlocked() {
             // wait for BlockedThread.
-            thrsync.waitForSignal();
+            p.arriveAndAwaitAdvance();
 
             boolean threadBlocked = false;
             while (!threadBlocked) {
@@ -206,7 +153,7 @@ public class ThreadBlockedCount {
                 } catch (InterruptedException e) {
                     System.err.println("Unexpected exception.");
                     e.printStackTrace(System.err);
-                    testFailed = true;
+                    testOk = false;
                     break;
                 }
                 ThreadInfo info = mbean.getThreadInfo(blocked.getId());
@@ -215,44 +162,55 @@ public class ThreadBlockedCount {
         }
 
         public void run() {
-            // wait for BlockedThread.
-            thrsync.waitForSignal();
+            p.arriveAndAwaitAdvance(); // #1
 
             synchronized (blockedObj1) {
                 System.out.println("BlockingThread attempts to notify a");
-                aNotified = true;
-                waitForSignalToRelease();
+                waitForBlocked(); // #2
             }
-
-            // wait for BlockedThread.
-            thrsync.waitForSignal();
 
             // block until BlockedThread is ready
             synchronized (blockedObj2) {
                 System.out.println("BlockingThread attempts to notify b");
-                bNotified = true;
-                waitForSignalToRelease();
+                waitForBlocked(); // #3
             }
-
-            // wait for BlockedThread.
-            thrsync.waitForSignal();
 
             // block until BlockedThread is ready
             synchronized (blockedObj3) {
                 System.out.println("BlockingThread attempts to notify c");
-                cNotified = true;
-                waitForSignalToRelease();
+                waitForBlocked(); // #4
             }
 
         } // run()
-    } // BlockedThread
+    } // BlockingThread
 
     private static long getBlockedCount() {
         long count;
         // Check the mbean now
-        ThreadInfo ti = mbean.getThreadInfo(Thread.currentThread().
-                getId());
+        ThreadInfo ti = mbean.getThreadInfo(blocked.getId());
         count = ti.getBlockedCount();
         return count;
+    }
+
+    private static boolean checkBlocked() {
+        // wait for the thread stats to be updated for 10 seconds
+        long count = -1;
+        for (int i = 0; i < 100; i++) {
+            count = getBlockedCount();
+            if (count == EXPECTED_BLOCKED_COUNT) {
+                return true;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                System.err.println("Unexpected exception.");
+                e.printStackTrace(System.err);
+                return false;
+            }
+        }
+        System.err.println("TEST FAILED: Blocked thread has " + count +
+                            " blocked counts. Expected " +
+                            EXPECTED_BLOCKED_COUNT);
+        return false;
     }
 }

@@ -66,7 +66,8 @@ public class ActivationLibrary {
         // We do as much as 50 deactivation trials, each separated by
         // at least 100 milliseconds sleep time (max sleep time of 5 secs).
         final long deactivateSleepTime = 100;
-        for (int i = 0; i < 50; i ++) {
+        long stopTime = System.currentTimeMillis() + deactivateSleepTime * 50;
+        while (System.currentTimeMillis() < stopTime) {
             try {
                 if (Activatable.inactive(id) == true) {
                     mesg("inactive successful");

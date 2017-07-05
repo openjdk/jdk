@@ -28,7 +28,6 @@ package java.util;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.io.Serializable;
 import java.io.IOException;
 
 /**
@@ -63,14 +62,17 @@ import java.io.IOException;
  * provided to create a linked hash map whose order of iteration is the order
  * in which its entries were last accessed, from least-recently accessed to
  * most-recently (<i>access-order</i>).  This kind of map is well-suited to
- * building LRU caches.  Invoking the <tt>put</tt> or <tt>get</tt> method
- * results in an access to the corresponding entry (assuming it exists after
- * the invocation completes).  The <tt>putAll</tt> method generates one entry
- * access for each mapping in the specified map, in the order that key-value
- * mappings are provided by the specified map's entry set iterator.  <i>No
- * other methods generate entry accesses.</i> In particular, operations on
- * collection-views do <i>not</i> affect the order of iteration of the backing
- * map.
+ * building LRU caches.  Invoking the {@code put}, {@code putIfAbsent},
+ * {@code get}, {@code getOrDefault}, {@code compute}, {@code computeIfAbsent},
+ * {@code computeIfPresent}, or {@code merge} methods results
+ * in an access to the corresponding entry (assuming it exists after the
+ * invocation completes). The {@code replace} methods only result in an access
+ * of the entry if the value is replaced.  The {@code putAll} method generates one
+ * entry access for each mapping in the specified map, in the order that
+ * key-value mappings are provided by the specified map's entry set iterator.
+ * <i>No other methods generate entry accesses.</i>  In particular, operations
+ * on collection-views do <i>not</i> affect the order of iteration of the
+ * backing map.
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to
  * impose a policy for removing stale mappings automatically when new mappings
@@ -112,8 +114,8 @@ import java.io.IOException;
  * iteration order.  In insertion-ordered linked hash maps, merely changing
  * the value associated with a key that is already contained in the map is not
  * a structural modification.  <strong>In access-ordered linked hash maps,
- * merely querying the map with <tt>get</tt> is a structural
- * modification.</strong>)
+ * merely querying the map with <tt>get</tt> is a structural modification.
+ * </strong>)
  *
  * <p>The iterators returned by the <tt>iterator</tt> method of the collections
  * returned by all of this class's collection view methods are
@@ -252,7 +254,7 @@ public class LinkedHashMap<K,V>
 
     Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
         LinkedHashMap.Entry<K,V> p =
-            new LinkedHashMap.Entry<K,V>(hash, key, value, e);
+            new LinkedHashMap.Entry<>(hash, key, value, e);
         linkNodeLast(p);
         return p;
     }
@@ -260,20 +262,20 @@ public class LinkedHashMap<K,V>
     Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
         LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
         LinkedHashMap.Entry<K,V> t =
-            new LinkedHashMap.Entry<K,V>(q.hash, q.key, q.value, next);
+            new LinkedHashMap.Entry<>(q.hash, q.key, q.value, next);
         transferLinks(q, t);
         return t;
     }
 
     TreeNode<K,V> newTreeNode(int hash, K key, V value, Node<K,V> next) {
-        TreeNode<K,V> p = new TreeNode<K,V>(hash, key, value, next);
+        TreeNode<K,V> p = new TreeNode<>(hash, key, value, next);
         linkNodeLast(p);
         return p;
     }
 
     TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
         LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
-        TreeNode<K,V> t = new TreeNode<K,V>(q.hash, q.key, q.value, next);
+        TreeNode<K,V> t = new TreeNode<>(q.hash, q.key, q.value, next);
         transferLinks(q, t);
         return t;
     }
@@ -443,8 +445,19 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Removes all of the mappings from this map.
-     * The map will be empty after this call returns.
+     * {@inheritDoc}
+     */
+    public V getOrDefault(Object key, V defaultValue) {
+       Node<K,V> e;
+       if ((e = getNode(hash(key), key)) == null)
+           return defaultValue;
+       if (accessOrder)
+           afterNodeAccess(e);
+       return e.value;
+   }
+
+    /**
+     * {@inheritDoc}
      */
     public void clear() {
         super.clear();

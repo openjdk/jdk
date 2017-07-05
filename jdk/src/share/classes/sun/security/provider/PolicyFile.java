@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,9 +285,9 @@ public class PolicyFile extends java.security.Policy {
 
     // for use with the reflection API
 
-    private static final Class[] PARAMS0 = { };
-    private static final Class[] PARAMS1 = { String.class };
-    private static final Class[] PARAMS2 = { String.class, String.class };
+    private static final Class<?>[] PARAMS0 = { };
+    private static final Class<?>[] PARAMS1 = { String.class };
+    private static final Class<?>[] PARAMS2 = { String.class, String.class };
 
     /**
      * Initializes the Policy object and reads the default policy

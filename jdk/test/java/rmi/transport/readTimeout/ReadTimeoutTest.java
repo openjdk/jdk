@@ -44,6 +44,8 @@ import java.rmi.*;
 import java.rmi.server.RMISocketFactory;
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ReadTimeoutTest
 {
@@ -86,23 +88,18 @@ public class ReadTimeoutTest
             InputStream stream = DoS.getInputStream();
 
             // Read on the socket in the background
-            boolean[] successful = new boolean[] { false };
-            (new SomeReader(stream, successful)).start();
+            CountDownLatch done = new CountDownLatch(1);
+            (new SomeReader(stream, done)).start();
 
             // Wait for completion
-            int nretries = 4;
-            while (nretries-- > 0) {
-                if (successful[0])
-                    break;
-                Thread.sleep(DELAY);
-            }
-
-            if (successful[0]) {
+            if (done.await(DELAY * 4, TimeUnit.SECONDS)) {
                 System.err.println("TEST PASSED.");
             } else {
                 throw new Error("TEST FAILED.");
             }
 
+        } catch (InterruptedException ie) {
+            throw new Error("Unexpected interrupt", ie);
         } finally {
             try {
                 if (DoS != null)
@@ -120,6 +117,7 @@ public class ReadTimeoutTest
     {
         private int servport = 0;
 
+        @Override
         public Socket createSocket(String h, int p)
             throws IOException
         {
@@ -130,6 +128,7 @@ public class ReadTimeoutTest
          * Aborts if createServerSocket(0) is called twice, because then
          * it doesn't know whether to remember the first or second port.
          */
+        @Override
         public ServerSocket createServerSocket(int p)
             throws IOException
         {
@@ -155,22 +154,23 @@ public class ReadTimeoutTest
     } // end class SomeFactory
 
     protected static class SomeReader extends Thread {
-        private InputStream readon;
-        private boolean[] vec;
+        private final InputStream readon;
+        private final CountDownLatch done;
 
-        public SomeReader(InputStream s, boolean[] successvec) {
+        public SomeReader(InputStream s, CountDownLatch done) {
             super();
             this.setDaemon(true);
             this.readon = s;
-            this.vec = successvec;
+            this.done = done;
         }
 
+        @Override
         public void run() {
             try {
                 int c = this.readon.read();
                 if (c != -1)
                     throw new Error ("Server returned " + c);
-                this.vec[0] = true;
+                done.countDown();
 
             } catch (IOException e) {
                 e.printStackTrace();

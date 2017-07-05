@@ -66,7 +66,7 @@ else
     # First, find out the valid targets
     # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
     # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
-    all_phony_targets=$(filter-out $(global_targets) bundles bundles-only final-images-only, $(strip $(shell \
+    all_phony_targets=$(filter-out $(global_targets), $(strip $(shell \
         cd $(root_dir) && $(MAKE) -p -q FRC SPEC=$(firstword $(SPEC)) | \
         grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
 
@@ -78,10 +78,6 @@ else
 
   endif
 endif
-
-# Include this after a potential spec file has been included so that the bundles target
-# has access to the spec variables.
-include $(root_dir)/make/Jprt.gmk
 
 # Here are "global" targets, i.e. targets that can be executed without specifying a single configuration.
 # If you addd more global targets, please update the variable global_targets in MakeHelpers.

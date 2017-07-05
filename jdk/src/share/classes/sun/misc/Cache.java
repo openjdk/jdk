@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,11 @@ class CacheEntry extends Ref {
  * @see java.lang.Object#hashCode
  * @see java.lang.Object#equals
  * @see sun.misc.Ref
+ * @deprecated Consider {@link java.util.LinkedHashMap} for LRU caches.
  */
+@Deprecated
 public
-class Cache extends Dictionary {
+    class Cache extends Dictionary<Object, Object> {
     /**
      * The hash table data.
      */
@@ -163,7 +165,7 @@ class Cache extends Dictionary {
      * @see Cache#elements
      * @see Enumeration
      */
-    public synchronized Enumeration keys() {
+    public synchronized Enumeration<Object> keys() {
         return new CacheEnumerator(table, true);
     }
 
@@ -173,7 +175,7 @@ class Cache extends Dictionary {
      * @see Cache#keys
      * @see Enumeration
      */
-    public synchronized Enumeration elements() {
+    public synchronized Enumeration<Object> elements() {
         return new CacheEnumerator(table, false);
     }
 
@@ -305,7 +307,7 @@ class Cache extends Dictionary {
  * A Cache enumerator class.  This class should remain opaque
  * to the client. It will use the Enumeration interface.
  */
-class CacheEnumerator implements Enumeration {
+class CacheEnumerator implements Enumeration<Object> {
     boolean keys;
     int index;
     CacheEntry table[];

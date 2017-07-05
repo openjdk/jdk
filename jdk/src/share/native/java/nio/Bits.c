@@ -51,10 +51,13 @@
 
 #define MBYTE 1048576
 
-#define GETCRITICAL(bytes, env, obj) { \
+#define GETCRITICAL_OR_RETURN(bytes, env, obj) { \
     bytes = (*env)->GetPrimitiveArrayCritical(env, obj, NULL); \
-    if (bytes == NULL) \
-        JNU_ThrowInternalError(env, "Unable to get array"); \
+    if (bytes == NULL)  { \
+        if ((*env)->ExceptionOccurred(env) == NULL) \
+            JNU_ThrowInternalError(env, "Unable to get array"); \
+        return; \
+    } \
 }
 
 #define RELEASECRITICAL(bytes, env, obj, mode) { \
@@ -85,7 +88,7 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, src);
+        GETCRITICAL_OR_RETURN(bytes, env, src);
 
         srcShort = (jshort *)(bytes + srcPos);
         endShort = srcShort + (size / sizeof(jshort));
@@ -120,7 +123,7 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, dst);
+        GETCRITICAL_OR_RETURN(bytes, env, dst);
 
         dstShort = (jshort *)(bytes + dstPos);
         endShort = srcShort + (size / sizeof(jshort));
@@ -155,7 +158,7 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, src);
+        GETCRITICAL_OR_RETURN(bytes, env, src);
 
         srcInt = (jint *)(bytes + srcPos);
         endInt = srcInt + (size / sizeof(jint));
@@ -190,7 +193,7 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, dst);
+        GETCRITICAL_OR_RETURN(bytes, env, dst);
 
         dstInt = (jint *)(bytes + dstPos);
         endInt = srcInt + (size / sizeof(jint));
@@ -225,7 +228,7 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, src);
+        GETCRITICAL_OR_RETURN(bytes, env, src);
 
         srcLong = (jlong *)(bytes + srcPos);
         endLong = srcLong + (size / sizeof(jlong));
@@ -260,7 +263,7 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
         else
             size = (size_t)length;
 
-        GETCRITICAL(bytes, env, dst);
+        GETCRITICAL_OR_RETURN(bytes, env, dst);
 
         dstLong = (jlong *)(bytes + dstPos);
         endLong = srcLong + (size / sizeof(jlong));

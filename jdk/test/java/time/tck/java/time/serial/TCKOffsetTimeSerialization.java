@@ -107,5 +107,9 @@ public class TCKOffsetTimeSerialization extends AbstractTCKTest {
         assertSerializedBySer(OffsetTime.of(22, 17, 59, 464_000_000, ZoneOffset.ofHours(1)), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(OffsetTime.class);
+    }
 
 }

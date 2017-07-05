@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@
  */
 
 import java.io.*;
-import java.nio.*;
 import java.util.Random;
 import java.util.zip.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class FinalizeZipFile {
 
@@ -43,6 +41,7 @@ public class FinalizeZipFile {
             super(f);
             System.out.printf("Using %s%n", f.getPath());
         }
+        @Override
         protected void finalize() throws IOException {
             System.out.printf("Killing %s%n", getName());
             super.finalize();
@@ -81,7 +80,7 @@ public class FinalizeZipFile {
         makeGarbage();
 
         System.gc();
-        finalizersDone.await(5, TimeUnit.SECONDS);
+        finalizersDone.await();
 
         // Not all ZipFiles were collected?
         equal(finalizersDone.getCount(), 0L);

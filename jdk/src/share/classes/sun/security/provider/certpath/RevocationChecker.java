@@ -456,12 +456,13 @@ class RevocationChecker extends PKIXRevocationChecker {
                            PublicKey pubKey, boolean signFlag)
         throws CertPathValidatorException
     {
-        checkCRLs(cert, pubKey, signFlag, true,
+        checkCRLs(cert, pubKey, null, signFlag, true,
                   stackedCerts, params.trustAnchors());
     }
 
     private void checkCRLs(X509Certificate cert, PublicKey prevKey,
-                           boolean signFlag, boolean allowSeparateKey,
+                           X509Certificate prevCert, boolean signFlag,
+                           boolean allowSeparateKey,
                            Set<X509Certificate> stackedCerts,
                            Set<TrustAnchor> anchors)
         throws CertPathValidatorException
@@ -543,7 +544,7 @@ class RevocationChecker extends PKIXRevocationChecker {
             try {
                 if (crlDP) {
                     approvedCRLs.addAll(DistributionPointFetcher.getCRLs(
-                                        sel, signFlag, prevKey,
+                                        sel, signFlag, prevKey, prevCert,
                                         params.sigProvider(), certStores,
                                         reasonsMask, anchors, null));
                 }
@@ -825,7 +826,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                 for (X509CRL crl : crls) {
                     if (DistributionPointFetcher.verifyCRL(
                             certImpl, point, crl, reasonsMask, signFlag,
-                            prevKey, params.sigProvider(), anchors,
+                            prevKey, null, params.sigProvider(), anchors,
                             certStores, params.date()))
                     {
                         results.add(crl);
@@ -1043,7 +1044,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                                           + " index " + i + " checking "
                                           + cert);
                         }
-                        checkCRLs(cert, prevKey2, signFlag, true,
+                        checkCRLs(cert, prevKey2, null, signFlag, true,
                                   stackedCerts, newAnchors);
                         signFlag = certCanSignCrl(cert);
                         prevKey2 = cert.getPublicKey();
@@ -1058,13 +1059,14 @@ class RevocationChecker extends PKIXRevocationChecker {
                     debug.println("RevocationChecker.buildToNewKey()" +
                                   " got key " + cpbr.getPublicKey());
                 }
-                // Now check revocation on the current cert using that key.
+                // Now check revocation on the current cert using that key and
+                // the corresponding certificate.
                 // If it doesn't check out, try to find a different key.
                 // And if we can't find a key, then return false.
                 PublicKey newKey = cpbr.getPublicKey();
                 try {
-                    checkCRLs(currCert, newKey, true, false, null,
-                              params.trustAnchors());
+                    checkCRLs(currCert, newKey, (X509Certificate) cpList.get(0),
+                              true, false, null, params.trustAnchors());
                     // If that passed, the cert is OK!
                     return;
                 } catch (CertPathValidatorException cpve) {
