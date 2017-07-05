@@ -308,6 +308,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Europe/Bucharest", EET},
             {"Asia/Shanghai", CTT},
             {"CTT", CTT},
+            {"UTC", UTC},
             /* Don't change the order of the above zones
              * to keep compatibility with the previous version.
              */
@@ -1036,7 +1037,6 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"US/Pacific", PST},
             {"US/Pacific-New", PST},
             {"US/Samoa", SAMOA},
-            {"UTC", UTC},
             {"VST", ICT},
             {"W-SU", MSK},
             {"WET", WET},

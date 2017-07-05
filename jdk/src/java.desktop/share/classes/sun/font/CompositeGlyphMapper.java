@@ -42,7 +42,7 @@ package sun.font;
  * this appears to cause problems.
  */
 
-public final class CompositeGlyphMapper extends CharToGlyphMapper {
+public class CompositeGlyphMapper extends CharToGlyphMapper {
 
     public static final int SLOTMASK =  0xff000000;
     public static final int GLYPHMASK = 0x00ffffff;

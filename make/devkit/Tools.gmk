@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,11 @@ MPFR := http://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
 GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
 MPC := http://www.multiprecision.org/mpc/download/${mpc_ver}.tar.gz
 
-# RPMs in OEL5.5
-LINUX_VERSION := OEL5.5
+# RPMs in OEL6.4
+LINUX_VERSION := OEL6.4
 RPM_LIST := \
     kernel-headers \
-    glibc-2 glibc-headers glibc-devel \
+    glibc glibc-headers glibc-devel \
     cups-libs cups-devel \
     libX11 libX11-devel \
     xorg-x11-proto-devel \
@@ -87,7 +87,7 @@ RPM_LIST := \
 
 ifeq ($(ARCH),x86_64)
   RPM_DIR ?= $(RPM_DIR_x86_64)
-  RPM_ARCHS := x86_64
+  RPM_ARCHS := x86_64 noarch
   ifeq ($(BUILD),$(HOST))
     ifeq ($(TARGET),$(HOST))
       # When building the native compiler for x86_64, enable mixed mode.
@@ -101,6 +101,8 @@ endif
 
 # Sort to remove duplicates
 RPM_FILE_LIST := $(sort $(foreach a,$(RPM_ARCHS),$(wildcard $(patsubst %,$(RPM_DIR)/%*$a.rpm,$(RPM_LIST)))))
+
+#$(info RPM_FILE_LIST $(RPM_FILE_LIST))
 
 ifeq ($(RPM_FILE_LIST),)
   $(error Found no RPMs, RPM_DIR must point to list of directories to search for RPMs)
@@ -473,13 +475,25 @@ $(PREFIX)/devkit.info: FRC
 
 ##########################################################################################
 
+ifeq ($(TARGET), $(HOST))
+  $(PREFIX)/bin/%:
+	@echo 'Creating missing $* soft link'
+	ln -s $(TARGET)-$* $@
+
+  missing-links := $(addprefix $(PREFIX)/bin/, \
+      addr2line ar as c++ c++filt elfedit g++ gcc gprof ld nm objcopy ranlib readelf \
+      size strings strip)
+endif
+
+##########################################################################################
+
 bfdlib : $(bfdlib)
 binutils : $(binutils)
 rpms : $(rpms)
 libs : $(libs)
 sysroot : rpms libs
 gcc : sysroot $(gcc) $(gccpatch)
-all : binutils gcc bfdlib $(PREFIX)/devkit.info
+all : binutils gcc bfdlib $(PREFIX)/devkit.info $(missing-links)
 
 # this is only built for host. so separate.
 ccache : $(ccache)

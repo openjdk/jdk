@@ -2384,6 +2384,7 @@ void SharedRuntime::generate_deopt_blob() {
   }
 #endif // ASSERT
   __ mov(c_rarg0, rthread);
+  __ mov(c_rarg1, rcpool);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)));
   __ blrt(rscratch1, 1, 0, 1);
   __ bind(retaddr);
@@ -2397,6 +2398,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Load UnrollBlock* into rdi
   __ mov(r5, r0);
 
+  __ ldrw(rcpool, Address(r5, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
    Label noException;
   __ cmpw(rcpool, Deoptimization::Unpack_exception);   // Was exception pending?
   __ br(Assembler::NE, noException);
@@ -2609,6 +2611,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // n.b. 2 gp args, 0 fp args, integral return type
 
   __ mov(c_rarg0, rthread);
+  __ movw(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
   __ lea(rscratch1,
          RuntimeAddress(CAST_FROM_FN_PTR(address,
                                          Deoptimization::uncommon_trap)));
@@ -2627,6 +2630,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // move UnrollBlock* into r4
   __ mov(r4, r0);
+
+#ifdef ASSERT
+  { Label L;
+    __ ldrw(rscratch1, Address(r4, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ cmpw(rscratch1, (unsigned)Deoptimization::Unpack_uncommon_trap);
+    __ br(Assembler::EQ, L);
+    __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
+    __ bind(L);
+  }
+#endif
 
   // Pop all the frames we must move/replace.
   //

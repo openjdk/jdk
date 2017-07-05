@@ -29,7 +29,7 @@ import jdk.testlibrary.ProcessTools;
  * @summary Test for JDWP: -agentlib:jdwp=suspend=n hanging
  * @library /lib/testlibrary
  * @modules java.management
- * @build jdk.testlibarary.*
+ * @build jdk.testlibrary.*
  * @compile -g HelloWorld.java
  * @run driver SuspendNoFlagTest
  */

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /testlibrary /test/lib /compiler/whitebox / ..
  * @modules java.base/sun.misc
  *          java.management
  * @build LZcntTestI
@@ -50,6 +50,8 @@ public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
     public static void main(String[] args) throws Exception {
         // j.l.Integer and Long should be loaded to allow a compilation of the methods that use their methods
         System.out.println("class java.lang.Integer should be loaded. Proof: " + Integer.class);
+        // Avoid uncommon traps.
+        System.out.println("Num leading zeroes: " + new TestLzcntI.LzcntIExpr().intExpr(12341341));
         BmiIntrinsicBase.verifyTestCase(LZcntTestI::new, TestLzcntI.LzcntIExpr.class.getDeclaredMethods());
     }
 

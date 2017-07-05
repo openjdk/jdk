@@ -221,27 +221,4 @@ public final class XalanConstants {
     public static final String FEATURE_TRUE = "true";
     public static final String FEATURE_FALSE = "false";
 
-    /**
-     * Check if we're in jdk8 or above
-     */
-    public static final boolean IS_JDK8_OR_ABOVE = isJavaVersionAtLeast(8);
-
-    /*
-     * Check the major version of the current JDK against that specified
-     * in the parameter
-     *
-     * In JDK9 the java version string was changed to comply with JEP-223
-     * so this method was modified to handle that new format as well
-     *
-     * @param compareTo a JDK major version to be compared to
-     * @return true if the current major version is the same or above
-     * that represented by the parameter
-     */
-    public static boolean isJavaVersionAtLeast(int compareTo) {
-        String javaVersion = SecuritySupport.getSystemProperty("java.version");
-        javaVersion = (javaVersion.matches("[1-9][0-9]*(\\.(0|[1-9][0-9]*))*\\-.*")) ?
-                          javaVersion.split("-|\\.")[0] :
-                          javaVersion.split("\\.", 3)[1];
-        return Integer.parseInt(javaVersion) >= compareTo;
-    }
 } // class Constants

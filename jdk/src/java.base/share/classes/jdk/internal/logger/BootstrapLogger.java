@@ -389,9 +389,9 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             } else {
                 if (msgSupplier != null) {
                     if (thrown != null) {
-                        logger.log(platformLevel, sourceClass, sourceMethod, thrown, msgSupplier);
+                        logger.logp(platformLevel, sourceClass, sourceMethod, thrown, msgSupplier);
                     } else {
-                        logger.log(platformLevel,sourceClass, sourceMethod,  msgSupplier);
+                        logger.logp(platformLevel, sourceClass, sourceMethod, msgSupplier);
                     }
                 } else {
                     // BootstrapLoggers are never localized so we can safely

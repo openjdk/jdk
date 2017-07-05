@@ -29,10 +29,21 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import java.util.Arrays;
+import java.util.Queue;
+import java.util.SplittableRandom;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class OfferRemoveLoops {
@@ -61,10 +72,6 @@ public class OfferRemoveLoops {
         testQueue(new LinkedTransferQueue());
     }
 
-    Random getRandom() {
-        return ThreadLocalRandom.current();
-    }
-
     void testQueue(final Queue q) throws Throwable {
         System.err.println(q.getClass().getSimpleName());
         final long testDurationNanos = testDurationMillis * 1000L * 1000L;
@@ -73,13 +80,17 @@ public class OfferRemoveLoops {
         final int maxChunkSize = 1042;
         final int maxQueueSize = 10 * maxChunkSize;
         final CountDownLatch done = new CountDownLatch(3);
+        final SplittableRandom rnd = new SplittableRandom();
 
         /** Poor man's bounded buffer; prevents unbounded queue expansion. */
         final Semaphore offers = new Semaphore(maxQueueSize);
 
         abstract class CheckedThread extends Thread {
-            CheckedThread(String name) {
+            final SplittableRandom rnd;
+
+            CheckedThread(String name, SplittableRandom rnd) {
                 super(name);
+                this.rnd = rnd;
                 setDaemon(true);
                 start();
             }
@@ -97,9 +108,9 @@ public class OfferRemoveLoops {
             }
         }
 
-        Thread offerer = new CheckedThread("offerer") {
+        Thread offerer = new CheckedThread("offerer", rnd.split()) {
             protected void realRun() throws InterruptedException {
-                final int chunkSize = getRandom().nextInt(maxChunkSize) + 20;
+                final int chunkSize = rnd.nextInt(maxChunkSize) + 20;
                 long c = 0;
                 while (! quittingTime()) {
                     if (q.offer(Long.valueOf(c))) {
@@ -113,9 +124,9 @@ public class OfferRemoveLoops {
                 done.countDown();
             }};
 
-        Thread remover = new CheckedThread("remover") {
+        Thread remover = new CheckedThread("remover", rnd.split()) {
             protected void realRun() {
-                final int chunkSize = getRandom().nextInt(maxChunkSize) + 20;
+                final int chunkSize = rnd.nextInt(maxChunkSize) + 20;
                 long c = 0;
                 while (! quittingTime()) {
                     if (q.remove(Long.valueOf(c))) {
@@ -131,9 +142,8 @@ public class OfferRemoveLoops {
                 done.countDown();
             }};
 
-        Thread scanner = new CheckedThread("scanner") {
+        Thread scanner = new CheckedThread("scanner", rnd.split()) {
             protected void realRun() {
-                final Random rnd = getRandom();
                 while (! quittingTime()) {
                     switch (rnd.nextInt(3)) {
                     case 0: checkNotContainsNull(q); break;

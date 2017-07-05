@@ -36,8 +36,14 @@
  * @summary Ensure that waiting pool threads don't retain refs to tasks.
  */
 
-import java.lang.ref.*;
-import java.util.concurrent.*;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RunnableScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class GCRetention {
     /**
@@ -110,7 +116,7 @@ public class GCRetention {
             Thread.sleep(10);
         }
         pool.shutdown();
-        pool.awaitTermination(10, TimeUnit.SECONDS);
+        pool.awaitTermination(10L, TimeUnit.SECONDS);
         if (cleared < size)
             throw new Error(String.format
                             ("references to %d/%d tasks retained (\"leaked\")",

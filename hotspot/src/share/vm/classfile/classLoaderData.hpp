@@ -187,6 +187,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
 
+  // CDS
+  int _shared_class_loader_id;
+
   // ReadOnly and ReadWrite metaspaces (static because only on the null
   // class loader for now).
   static Metaspace* _ro_metaspace;
@@ -308,6 +311,15 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Metaspace* ro_metaspace();
   Metaspace* rw_metaspace();
   void initialize_shared_metaspaces();
+
+  int shared_class_loader_id() {
+    return _shared_class_loader_id;
+  }
+  void set_shared_class_loader_id(int id) {
+    assert(id >= 0, "sanity");
+    assert(_shared_class_loader_id <0, "cannot be assigned more than once");
+    _shared_class_loader_id = id;
+  }
 };
 
 // An iterator that distributes Klasses to parallel worker threads.

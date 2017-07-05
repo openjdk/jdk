@@ -28,8 +28,8 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ToArray {
     public static void main(String[] args) throws Throwable {

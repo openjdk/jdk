@@ -55,13 +55,15 @@ static const char out_of_nodes[] = "out of nodes during split";
 // Get a SpillCopy node with wide-enough masks.  Use the 'wide-mask', the
 // wide ideal-register spill-mask if possible.  If the 'wide-mask' does
 // not cover the input (or output), use the input (or output) mask instead.
-Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx ) {
+Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx) {
   // If ideal reg doesn't exist we've got a bad schedule happening
   // that is forcing us to spill something that isn't spillable.
   // Bail rather than abort
   int ireg = def->ideal_reg();
-  if( ireg == 0 || ireg == Op_RegFlags ) {
-    assert(false, "attempted to spill a non-spillable item");
+  if (ireg == 0 || ireg == Op_RegFlags) {
+    assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %d, spill_type: %s",
+           def->_idx, def->Name(), use->_idx, use->Name(), ireg,
+           MachSpillCopyNode::spill_type(spill_type));
     C->record_method_not_compilable("attempted to spill a non-spillable item");
     return NULL;
   }
@@ -308,14 +310,16 @@ Node* clone_node(Node* def, Block *b, Compile* C) {
 
 //------------------------------split_Rematerialize----------------------------
 // Clone a local copy of the def.
-Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits, int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru ) {
+Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg,
+                                        GrowableArray<uint> splits, int slidx, uint *lrg2reach,
+                                        Node **Reachblock, bool walkThru) {
   // The input live ranges will be stretched to the site of the new
   // instruction.  They might be stretched past a def and will thus
   // have the old and new values of the same live range alive at the
   // same time - a definite no-no.  Split out private copies of
   // the inputs.
-  if( def->req() > 1 ) {
-    for( uint i = 1; i < def->req(); i++ ) {
+  if (def->req() > 1) {
+    for (uint i = 1; i < def->req(); i++) {
       Node *in = def->in(i);
       uint lidx = _lrg_map.live_range_id(in);
       // We do not need this for live ranges that are only defined once.
@@ -327,12 +331,29 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
 
       Block *b_def = _cfg.get_block_for_node(def);
       int idx_def = b_def->find_node(def);
-      Node *in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i );
-      if( !in_spill ) return 0; // Bailed out
-      insert_proj(b_def,idx_def,in_spill,maxlrg++);
-      if( b_def == b )
-        insidx++;
-      def->set_req(i,in_spill);
+      // Cannot spill Op_RegFlags.
+      Node *in_spill;
+      if (in->ideal_reg() != Op_RegFlags) {
+        in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
+        if (!in_spill) { return 0; } // Bailed out
+        insert_proj(b_def, idx_def, in_spill, maxlrg++);
+        if (b_def == b) {
+          insidx++;
+        }
+        def->set_req(i, in_spill);
+      } else {
+        // The 'in' defines a flag register. Flag registers can not be spilled.
+        // Register allocation handles live ranges with flag registers
+        // by rematerializing the def (in this case 'in'). Thus, this is not
+        // critical if the input can be rematerialized, too.
+        if (!in->rematerialize()) {
+          assert(false, "Can not rematerialize %d: %s. Prolongs RegFlags live"
+                 " range and defining node %d: %s may not be rematerialized.",
+                 def->_idx, def->Name(), in->_idx, in->Name());
+          C->record_method_not_compilable("attempted to spill a non-spillable item with RegFlags input");
+          return 0; // Bailed out
+        }
+      }
     }
   }
 
@@ -506,10 +527,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Initialize the split counts to zero
       splits.append(0);
 #endif
-#ifndef PRODUCT
-      if( PrintOpto && WizardMode && lrgs(bidx)._was_spilled1 )
+      if (PrintOpto && WizardMode && lrgs(bidx)._was_spilled1) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
-#endif
+      }
     }
   }
 

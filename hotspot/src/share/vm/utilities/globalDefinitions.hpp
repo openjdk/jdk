@@ -565,6 +565,13 @@ inline double fabsd(double value) {
   return fabs(value);
 }
 
+// Returns numerator/denominator as percentage value from 0 to 100. If denominator
+// is zero, return 0.0.
+template<typename T>
+inline double percent_of(T numerator, T denominator) {
+  return denominator != 0 ? (double)numerator / denominator * 100.0 : 0.0;
+}
+
 //----------------------------------------------------------------------------------------------------
 // Special casts
 // Cast floats into same-size integers and vice-versa w/o changing bit-pattern

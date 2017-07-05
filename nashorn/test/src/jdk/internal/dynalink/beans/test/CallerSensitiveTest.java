@@ -25,7 +25,7 @@
 
 package jdk.internal.dynalink.beans.test;
 
-import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.dynalink.beans.BeansLinker;
 import jdk.nashorn.test.models.ClassLoaderAware;
 import org.testng.annotations.Test;
 

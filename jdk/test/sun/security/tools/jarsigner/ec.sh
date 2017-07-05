@@ -53,11 +53,20 @@ rm $KS $JFILE
 echo A > A
 $JAR cvf $JFILE A
 
-$KT -alias a -dname CN=a -keyalg ec -genkey -validity 300 || exit 11
-$KT -alias b -dname CN=b -keyalg ec -genkey -validity 300 || exit 12
+$KT -alias ca -dname CN=ca -keyalg ec -genkey -validity 300 || exit 11
+
+$KT -alias a -dname CN=a -keyalg ec -genkey || exit 11
+$KT -alias a -certreq | $KT -gencert -alias ca -validity 300 | $KT -import -alias a || exit 111
+
+$KT -alias b -dname CN=b -keyalg ec -genkey || exit 12
+$KT -alias b -certreq | $KT -gencert -alias ca -validity 300 | $KT -import -alias b || exit 121
+
 # Ensure that key length is sufficient for the intended hash (SHA512withECDSA)
-$KT -alias c -dname CN=c -keyalg ec -genkey -validity 300 -keysize 521 || exit 13
+$KT -alias c -dname CN=c -keyalg ec -genkey -keysize 521 || exit 13
+$KT -alias c -certreq | $KT -gencert -alias ca -validity 300 | $KT -import -alias c || exit 131
+
 $KT -alias x -dname CN=x -keyalg ec -genkey -validity 300 || exit 14
+$KT -alias x -certreq | $KT -gencert -alias ca -validity 300 | $KT -import -alias x || exit 141
 
 $JARSIGNER -keystore $KS -storepass changeit $JFILE a -debug -strict || exit 21
 $JARSIGNER -keystore $KS -storepass changeit $JFILE b -debug -strict -sigalg SHA1withECDSA || exit 22

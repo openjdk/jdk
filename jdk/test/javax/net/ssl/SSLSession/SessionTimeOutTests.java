@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
 import java.security.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Session reuse time-out tests cover the cases below:
@@ -79,7 +80,7 @@ public class SessionTimeOutTests {
     /*
      * Is the server ready to serve?
      */
-    volatile static int serverReady = PORTS;
+    AtomicInteger serverReady = new AtomicInteger(PORTS);
 
     /*
      * Turn on SSL debugging?
@@ -98,7 +99,7 @@ public class SessionTimeOutTests {
     /*
      * Define the server side of the test.
      *
-     * If the server prematurely exits, serverReady will be set to true
+     * If the server prematurely exits, serverReady will be set to zero
      * to avoid infinite hangs.
      */
 
@@ -116,7 +117,7 @@ public class SessionTimeOutTests {
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady--;
+        serverReady.getAndDecrement();
         int read = 0;
         int nConnections = 0;
         SSLSession sessions [] = new SSLSession [serverConns];
@@ -137,7 +138,7 @@ public class SessionTimeOutTests {
     /*
      * Define the client side of the test.
      *
-     * If the server prematurely exits, serverReady will be set to true
+     * If the server prematurely exits, serverReady will be set to zero
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
@@ -145,7 +146,7 @@ public class SessionTimeOutTests {
         /*
          * Wait for server to get started.
          */
-        while (serverReady > 0) {
+        while (serverReady.get() > 0) {
             Thread.sleep(50);
         }
 
@@ -447,7 +448,7 @@ public class SessionTimeOutTests {
                          */
                         System.err.println("Server died...");
                         e.printStackTrace();
-                        serverReady = 0;
+                        serverReady.set(0);
                         serverException = e;
                     }
                 }
@@ -459,7 +460,7 @@ public class SessionTimeOutTests {
             } catch (Exception e) {
                 serverException = e;
             } finally {
-                serverReady = 0;
+                serverReady.set(0);
             }
         }
     }

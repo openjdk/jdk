@@ -258,10 +258,10 @@ class XWarningWindow extends XWindow {
         super.handleExposeEvent(xev);
 
         XExposeEvent xe = xev.get_xexpose();
-        final int x = xe.get_x();
-        final int y = xe.get_y();
-        final int width = xe.get_width();
-        final int height = xe.get_height();
+        final int x = scaleDown(xe.get_x());
+        final int y = scaleDown(xe.get_y());
+        final int width = scaleDown(xe.get_width());
+        final int height = scaleDown(xe.get_height());
         SunToolkit.executeOnEventHandlerThread(target,
                 new Runnable() {
                     public void run() {

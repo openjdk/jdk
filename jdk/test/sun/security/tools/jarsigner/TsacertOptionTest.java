@@ -52,6 +52,7 @@ public class TsacertOptionTest {
             + ".txt";
     private static final String PASSWORD = "changeit";
     private static final String KEYSTORE = "ks.jks";
+    private static final String CA_KEY_ALIAS = "ca";
     private static final String SIGNING_KEY_ALIAS = "sign_alias";
     private static final String TSA_KEY_ALIAS = "ts";
     private static final String KEY_ALG = "RSA";
@@ -79,10 +80,20 @@ public class TsacertOptionTest {
 
         // look for free network port for TSA service
         int port = jdk.testlibrary.Utils.getFreePort();
-        String host = jdk.testlibrary.Utils.getHostname();
+        String host = "127.0.0.1";
         String tsaUrl = "http://" + host + ":" + port;
 
         // create key pair for jar signing
+        ProcessTools.executeCommand(KEYTOOL,
+                "-genkey",
+                "-alias", CA_KEY_ALIAS,
+                "-keyalg", KEY_ALG,
+                "-keysize", Integer.toString(KEY_SIZE),
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-dname", "CN=CA",
+                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
         ProcessTools.executeCommand(KEYTOOL,
                 "-genkey",
                 "-alias", SIGNING_KEY_ALIAS,
@@ -91,8 +102,30 @@ public class TsacertOptionTest {
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
-                "-dname", "CN=Test",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+                "-dname", "CN=Test").shouldHaveExitValue(0);
+        ProcessTools.executeCommand(KEYTOOL,
+                "-certreq",
+                "-alias", SIGNING_KEY_ALIAS,
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-file", "certreq").shouldHaveExitValue(0);
+        ProcessTools.executeCommand(KEYTOOL,
+                "-gencert",
+                "-alias", CA_KEY_ALIAS,
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-validity", Integer.toString(VALIDITY),
+                "-infile", "certreq",
+                "-outfile", "cert").shouldHaveExitValue(0);
+        ProcessTools.executeCommand(KEYTOOL,
+                "-importcert",
+                "-alias", SIGNING_KEY_ALIAS,
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-file", "cert").shouldHaveExitValue(0);
 
         // create key pair for TSA service
         // SubjectInfoAccess extension contains URL to TSA service

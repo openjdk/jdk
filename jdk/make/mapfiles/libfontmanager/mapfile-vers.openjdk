@@ -43,6 +43,7 @@ SUNWprivate_1.1 {
                 Java_sun_font_StrikeCache_freeLongMemory;
                 Java_sun_font_SunLayoutEngine_initGVIDs;
                 Java_sun_font_SunLayoutEngine_nativeLayout;
+                Java_sun_font_SunLayoutEngine_shape;
                 Java_sun_font_X11TextRenderer_doDrawGlyphList;
 		Java_sun_java2d_loops_DrawGlyphListAA_DrawGlyphListAA;
 		Java_sun_java2d_loops_DrawGlyphListLCD_DrawGlyphListLCD;

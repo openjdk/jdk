@@ -27,7 +27,6 @@ package javax.swing.plaf.synth;
 
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.MenuItemLayoutHelper;
-import sun.swing.plaf.synth.SynthIcon;
 
 import javax.swing.*;
 import javax.swing.text.View;
@@ -130,8 +129,8 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
     protected void calcWidthsAndHeights() {
         // iconRect
         if (getIcon() != null) {
-            getIconSize().setWidth(SynthIcon.getIconWidth(getIcon(), context));
-            getIconSize().setHeight(SynthIcon.getIconHeight(getIcon(), context));
+            getIconSize().setWidth(SynthGraphicsUtils.getIconWidth(getIcon(), context));
+            getIconSize().setHeight(SynthGraphicsUtils.getIconHeight(getIcon(), context));
         }
 
         // accRect
@@ -165,16 +164,16 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
             // checkIcon
             if (getCheckIcon() != null) {
                 getCheckSize().setWidth(
-                        SynthIcon.getIconWidth(getCheckIcon(), context));
+                        SynthGraphicsUtils.getIconWidth(getCheckIcon(), context));
                 getCheckSize().setHeight(
-                        SynthIcon.getIconHeight(getCheckIcon(), context));
+                        SynthGraphicsUtils.getIconHeight(getCheckIcon(), context));
             }
             // arrowRect
             if (getArrowIcon() != null) {
                 getArrowSize().setWidth(
-                        SynthIcon.getIconWidth(getArrowIcon(), context));
+                        SynthGraphicsUtils.getIconWidth(getArrowIcon(), context));
                 getArrowSize().setHeight(
-                        SynthIcon.getIconHeight(getArrowIcon(), context));
+                        SynthGraphicsUtils.getIconHeight(getArrowIcon(), context));
             }
         }
 

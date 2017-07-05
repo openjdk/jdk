@@ -41,6 +41,7 @@
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
+import java.util.SplittableRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,7 +50,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
 public final class ParkLoops {
-    static final int THREADS = 4; // must be power of two
+    static final int THREADS = 4;
     // static final int ITERS = 2_000_000;
     // static final int TIMEOUT = 3500;  // in seconds
     static final int ITERS = 100_000;
@@ -64,18 +65,19 @@ public final class ParkLoops {
 
         private final AtomicReferenceArray<Thread> threads;
         private final CountDownLatch done;
+        private final SplittableRandom rnd;
 
-        Parker(AtomicReferenceArray<Thread> threads, CountDownLatch done) {
-            this.threads = threads;
-            this.done = done;
+        Parker(AtomicReferenceArray<Thread> threads,
+                 CountDownLatch done,
+                 SplittableRandom rnd) {
+            this.threads = threads; this.done = done; this.rnd = rnd;
         }
 
         public void run() {
-            final SimpleRandom rng = new SimpleRandom();
             final Thread current = Thread.currentThread();
             for (int k = ITERS, j; k > 0; k--) {
                 do {
-                    j = rng.next() & (THREADS - 1);
+                    j = rnd.nextInt(THREADS);
                 } while (!threads.compareAndSet(j, null, current));
                 do {                    // handle spurious wakeups
                     LockSupport.park();
@@ -94,16 +96,17 @@ public final class ParkLoops {
 
         private final AtomicReferenceArray<Thread> threads;
         private final CountDownLatch done;
+        private final SplittableRandom rnd;
 
-        Unparker(AtomicReferenceArray<Thread> threads, CountDownLatch done) {
-            this.threads = threads;
-            this.done = done;
+        Unparker(AtomicReferenceArray<Thread> threads,
+                 CountDownLatch done,
+                 SplittableRandom rnd) {
+            this.threads = threads; this.done = done; this.rnd = rnd;
         }
 
         public void run() {
-            final SimpleRandom rng = new SimpleRandom();
             for (int n = 0; (n++ & 0xff) != 0 || done.getCount() > 0;) {
-                int j = rng.next() & (THREADS - 1);
+                int j = rnd.nextInt(THREADS);
                 Thread parker = threads.get(j);
                 if (parker != null &&
                     threads.compareAndSet(j, parker, null)) {
@@ -114,12 +117,13 @@ public final class ParkLoops {
     }
 
     public static void main(String[] args) throws Exception {
+        final SplittableRandom rnd = new SplittableRandom();
         final ExecutorService pool = Executors.newCachedThreadPool();
         final AtomicReferenceArray<Thread> threads
             = new AtomicReferenceArray<>(THREADS);
         final CountDownLatch done = new CountDownLatch(THREADS);
-        final Runnable parker = new Parker(threads, done);
-        final Runnable unparker = new Unparker(threads, done);
+        final Runnable parker = new Parker(threads, done, rnd.split());
+        final Runnable unparker = new Unparker(threads, done, rnd.split());
         for (int i = 0; i < THREADS; i++) {
             pool.submit(parker);
             pool.submit(unparker);
@@ -140,24 +144,6 @@ public final class ParkLoops {
             ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
         for (ThreadInfo threadInfo : threadInfos) {
             System.err.print(threadInfo);
-        }
-    }
-
-    /**
-     * An actually useful random number generator, but unsynchronized.
-     * Basically same as java.util.Random.
-     */
-    public static class SimpleRandom {
-        private static final long multiplier = 0x5DEECE66DL;
-        private static final long addend = 0xBL;
-        private static final long mask = (1L << 48) - 1;
-        static final AtomicLong seq = new AtomicLong(1);
-        private long seed = System.nanoTime() + seq.getAndIncrement();
-
-        public int next() {
-            long nextseed = (seed * multiplier + addend) & mask;
-            seed = nextseed;
-            return ((int)(nextseed >>> 17)) & 0x7FFFFFFF;
         }
     }
 }

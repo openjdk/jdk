@@ -33,4 +33,3 @@ include TextFileProcessing.gmk
 include SetupJavaCompilers.gmk
 # We need the tools.
 include Tools.gmk
-

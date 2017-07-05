@@ -85,7 +85,7 @@ import static org.testng.Assert.assertEquals;
 @Test
 public class SpliteratorTraversingAndSplittingTest {
 
-    private static final List<Integer> SIZES = Arrays.asList(0, 1, 10, 100, 1000);
+    private static final List<Integer> SIZES = Arrays.asList(0, 1, 10, 42);
 
     private static final String LOW = new String(new char[] {Character.MIN_LOW_SURROGATE});
     private static final String HIGH = new String(new char[] {Character.MIN_HIGH_SURROGATE});

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,5 +87,8 @@
   // invalidates registers in this window
   void invalidate_registers(bool iregisters, bool lregisters, bool oregisters,
                             Register preserve1 = noreg, Register preserve2 = noreg);
+
+  // This platform only uses signal-based null checks. The Label is not needed.
+  void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
 
 #endif // CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
