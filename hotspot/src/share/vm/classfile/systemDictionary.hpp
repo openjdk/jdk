@@ -32,6 +32,7 @@
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 // The system dictionary stores all loaded classes and maps:
 //
@@ -72,7 +73,7 @@
 class Dictionary;
 class PlaceholderTable;
 class LoaderConstraintTable;
-class HashtableBucket;
+template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
 
@@ -363,7 +364,7 @@ public:
   static void copy_buckets(char** top, char* end);
   static void copy_table(char** top, char* end);
   static void reverse();
-  static void set_shared_dictionary(HashtableBucket* t, int length,
+  static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
   static void print()                   PRODUCT_RETURN;

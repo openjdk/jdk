@@ -152,7 +152,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
 
   // Public methods that get called within the scope of the closure
   void allocate() {
-    _list = NEW_C_HEAP_ARRAY(Handle, _count);
+    _list = NEW_C_HEAP_ARRAY(Handle, _count, mtInternal);
     assert(_list != NULL, "Out of memory");
     if (_list == NULL) {
       _count = 0;

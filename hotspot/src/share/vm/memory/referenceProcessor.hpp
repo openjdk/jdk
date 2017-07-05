@@ -203,7 +203,7 @@ public:
   }
 };
 
-class ReferenceProcessor : public CHeapObj {
+class ReferenceProcessor : public CHeapObj<mtGC> {
  protected:
   // Compatibility with pre-4965777 JDK's
   static bool _pending_list_uses_discovered_field;
