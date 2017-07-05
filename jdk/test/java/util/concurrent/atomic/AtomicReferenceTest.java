@@ -22,7 +22,6 @@
  */
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.UnaryOperator;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
