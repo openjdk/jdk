@@ -135,8 +135,8 @@ HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
 
 #else /* USDT2 */
 
-#define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_PROBE_START
-#define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_PROBE_STOP
+#define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_START
+#define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
 #define DTRACE_THREAD_PROBE(probe, javathread)                             \
   {                                                                        \

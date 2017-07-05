@@ -30,7 +30,7 @@ import java.util.function.IntPredicate;
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=compileonly,TestCase$Helper::*
+ *                   -XX:CompileCommand=compileonly,SimpleTestCase$Helper::*
  *                   NonTieredLevelsTest
  * @summary Verify that only one level can be used
  * @author igor.ignatyev@oracle.com
@@ -59,9 +59,7 @@ public class NonTieredLevelsTest extends CompLevelsTest {
                     + "TieredCompilation. Skip test.");
             return;
         }
-        for (TestCase test : TestCase.values()) {
-            new NonTieredLevelsTest(test).runTest();
-        }
+        CompilerWhiteBoxTest.main(NonTieredLevelsTest::new, args);
     }
 
     private NonTieredLevelsTest(TestCase testCase) {
@@ -80,7 +78,7 @@ public class NonTieredLevelsTest extends CompLevelsTest {
         checkLevel(AVAILABLE_COMP_LEVEL, compLevel);
         int bci = WHITE_BOX.getMethodEntryBci(method);
         deoptimize();
-        if (!testCase.isOsr) {
+        if (!testCase.isOsr()) {
             for (int level = 1; level <= COMP_LEVEL_MAX; ++level) {
                 if (IS_AVAILABLE_COMPLEVEL.test(level)) {
                     testAvailableLevel(level, bci);
@@ -94,3 +92,4 @@ public class NonTieredLevelsTest extends CompLevelsTest {
         }
     }
 }
+

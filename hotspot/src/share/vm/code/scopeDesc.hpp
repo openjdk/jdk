@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,6 @@ class ScopeDesc : public ResourceObj {
 
   // Tells whether sender() returns NULL
   bool is_top() const;
-  // Tells whether sd is equal to this
-  bool is_equal(ScopeDesc* sd) const;
 
  private:
   // Alternative constructor

@@ -64,7 +64,6 @@ public class PrintNMTStatistics {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Java Heap (reserved=");
     output.shouldNotContain("error");
-    output.shouldNotContain("warning");
     output.shouldHaveExitValue(0);
   }
 }

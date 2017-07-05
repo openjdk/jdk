@@ -27,26 +27,17 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* MakeMethodNotCompilableTest
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
     private int bci;
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            for (TestCase test : TestCase.values()) {
-                new MakeMethodNotCompilableTest(test).runTest();
-            }
-        } else {
-            for (String name : args) {
-                new MakeMethodNotCompilableTest(
-                        TestCase.valueOf(name)).runTest();
-            }
-        }
+        CompilerWhiteBoxTest.main(MakeMethodNotCompilableTest::new, args);
     }
 
-    public MakeMethodNotCompilableTest(TestCase testCase) {
+    private MakeMethodNotCompilableTest(TestCase testCase) {
         super(testCase);
         // to prevent inlining of #method
         WHITE_BOX.testSetDontInlineMethod(method, true);
@@ -62,7 +53,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
      */
     @Override
     protected void test() throws Exception {
-        if (testCase.isOsr && CompilerWhiteBoxTest.MODE.startsWith(
+        if (testCase.isOsr() && CompilerWhiteBoxTest.MODE.startsWith(
                 "compiled ")) {
           System.err.printf("Warning: %s is not applicable in %s%n",
                 testCase.name(), CompilerWhiteBoxTest.MODE);

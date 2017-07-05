@@ -1804,34 +1804,34 @@ JNI_END
 
 // the runtime type of subword integral basic types is integer
 DEFINE_CALLMETHODV(jboolean, Boolean, T_BOOLEAN
-                  , HOTSPOT_JNI_CALLBOOLEANMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLBOOLEANMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLBOOLEANMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLBOOLEANMETHODV_RETURN(_ret_ref))
 DEFINE_CALLMETHODV(jbyte,    Byte,    T_BYTE
-                  , HOTSPOT_JNI_CALLBYTEMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLBYTEMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLBYTEMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLBYTEMETHODV_RETURN(_ret_ref))
 DEFINE_CALLMETHODV(jchar,    Char,    T_CHAR
-                  , HOTSPOT_JNI_CALLCHARMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLCHARMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLCHARMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLCHARMETHODV_RETURN(_ret_ref))
 DEFINE_CALLMETHODV(jshort,   Short,   T_SHORT
-                  , HOTSPOT_JNI_CALLSHORTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLSHORTMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLSHORTMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLSHORTMETHODV_RETURN(_ret_ref))
 
 DEFINE_CALLMETHODV(jobject,  Object,  T_OBJECT
-                  , HOTSPOT_JNI_CALLOBJECTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLOBJECTMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLOBJECTMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLOBJECTMETHODV_RETURN(_ret_ref))
 DEFINE_CALLMETHODV(jint,     Int,     T_INT,
-                  HOTSPOT_JNI_CALLINTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLINTMETHOD_RETURN(_ret_ref))
+                  HOTSPOT_JNI_CALLINTMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLINTMETHODV_RETURN(_ret_ref))
 DEFINE_CALLMETHODV(jlong,    Long,    T_LONG
-                  , HOTSPOT_JNI_CALLLONGMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLLONGMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLLONGMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLLONGMETHODV_RETURN(_ret_ref))
 // Float and double probes don't return value because dtrace doesn't currently support it
 DEFINE_CALLMETHODV(jfloat,   Float,   T_FLOAT
-                  , HOTSPOT_JNI_CALLFLOATMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLFLOATMETHOD_RETURN())
+                  , HOTSPOT_JNI_CALLFLOATMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLFLOATMETHODV_RETURN())
 DEFINE_CALLMETHODV(jdouble,  Double,  T_DOUBLE
-                  , HOTSPOT_JNI_CALLDOUBLEMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLDOUBLEMETHOD_RETURN())
+                  , HOTSPOT_JNI_CALLDOUBLEMETHODV_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLDOUBLEMETHODV_RETURN())
 
 #define DEFINE_CALLMETHODA(ResultType, Result, Tag \
                           , EntryProbe, ReturnProbe)    \
@@ -1856,34 +1856,34 @@ JNI_END
 
 // the runtime type of subword integral basic types is integer
 DEFINE_CALLMETHODA(jboolean, Boolean, T_BOOLEAN
-                  , HOTSPOT_JNI_CALLBOOLEANMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLBOOLEANMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLBOOLEANMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLBOOLEANMETHODA_RETURN(_ret_ref))
 DEFINE_CALLMETHODA(jbyte,    Byte,    T_BYTE
-                  , HOTSPOT_JNI_CALLBYTEMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLBYTEMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLBYTEMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLBYTEMETHODA_RETURN(_ret_ref))
 DEFINE_CALLMETHODA(jchar,    Char,    T_CHAR
-                  , HOTSPOT_JNI_CALLCHARMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLCHARMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLCHARMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLCHARMETHODA_RETURN(_ret_ref))
 DEFINE_CALLMETHODA(jshort,   Short,   T_SHORT
-                  , HOTSPOT_JNI_CALLSHORTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLSHORTMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLSHORTMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLSHORTMETHODA_RETURN(_ret_ref))
 
 DEFINE_CALLMETHODA(jobject,  Object,  T_OBJECT
-                  , HOTSPOT_JNI_CALLOBJECTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLOBJECTMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLOBJECTMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLOBJECTMETHODA_RETURN(_ret_ref))
 DEFINE_CALLMETHODA(jint,     Int,     T_INT,
-                  HOTSPOT_JNI_CALLINTMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLINTMETHOD_RETURN(_ret_ref))
+                  HOTSPOT_JNI_CALLINTMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLINTMETHODA_RETURN(_ret_ref))
 DEFINE_CALLMETHODA(jlong,    Long,    T_LONG
-                  , HOTSPOT_JNI_CALLLONGMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLLONGMETHOD_RETURN(_ret_ref))
+                  , HOTSPOT_JNI_CALLLONGMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLLONGMETHODA_RETURN(_ret_ref))
 // Float and double probes don't return value because dtrace doesn't currently support it
 DEFINE_CALLMETHODA(jfloat,   Float,   T_FLOAT
-                  , HOTSPOT_JNI_CALLFLOATMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLFLOATMETHOD_RETURN())
+                  , HOTSPOT_JNI_CALLFLOATMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLFLOATMETHODA_RETURN())
 DEFINE_CALLMETHODA(jdouble,  Double,  T_DOUBLE
-                  , HOTSPOT_JNI_CALLDOUBLEMETHOD_ENTRY(env, obj, (uintptr_t)methodID),
-                  HOTSPOT_JNI_CALLDOUBLEMETHOD_RETURN())
+                  , HOTSPOT_JNI_CALLDOUBLEMETHODA_ENTRY(env, obj, (uintptr_t)methodID),
+                  HOTSPOT_JNI_CALLDOUBLEMETHODA_RETURN())
 
 DT_VOID_RETURN_MARK_DECL(CallVoidMethod, HOTSPOT_JNI_CALLVOIDMETHOD_RETURN());
 DT_VOID_RETURN_MARK_DECL(CallVoidMethodV, HOTSPOT_JNI_CALLVOIDMETHODV_RETURN());
@@ -3145,7 +3145,7 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
 JNI_END
 
 DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, 'Z', z
-                      , HOTSPOT_JNI_SETBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
+                      , HOTSPOT_JNI_SETSTATICBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
                       HOTSPOT_JNI_SETBOOLEANFIELD_RETURN())
 DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    'B', b
                       , HOTSPOT_JNI_SETSTATICBYTEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
