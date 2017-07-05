@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,6 @@ extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 extern Mutex*   MMUTracker_lock;                 // protects the MMU
                                                  // tracker data structures
-extern Mutex*   HotCardCache_lock;               // protects the hot card cache
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* Service_lock;                    // a lock used for service thread operation

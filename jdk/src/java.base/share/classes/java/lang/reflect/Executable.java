@@ -662,7 +662,7 @@ public abstract class Executable extends AccessibleObject
      *
      * If this {@code Executable} object represents a static method or
      * represents a constructor of a top level, static member, local, or
-     * anoymous class, then the return value is null.
+     * anonymous class, then the return value is null.
      *
      * @return an object representing the receiver type of the method or
      * constructor represented by this {@code Executable} or {@code null} if
