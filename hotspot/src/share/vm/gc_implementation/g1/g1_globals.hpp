@@ -163,15 +163,11 @@
           "Select green, yellow and red zones adaptively to meet the "      \
           "the pause requirements.")                                        \
                                                                             \
-  develop(intx, G1ConcRSLogCacheSize, 10,                                   \
+  product(uintx, G1ConcRSLogCacheSize, 10,                                  \
           "Log base 2 of the length of conc RS hot-card cache.")            \
                                                                             \
-  develop(intx, G1ConcRSHotCardLimit, 4,                                    \
+  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
           "The threshold that defines (>=) a hot card.")                    \
-                                                                            \
-  develop(intx, G1MaxHotCardCountSizePercent, 25,                           \
-          "The maximum size of the hot card count cache as a "              \
-          "percentage of the number of cards for the maximum heap.")        \
                                                                             \
   develop(bool, G1PrintOopAppls, false,                                     \
           "When true, print applications of closures to external locs.")    \
@@ -246,10 +242,6 @@
   product(uintx, G1ConcRefinementThreads, 0,                                \
           "If non-0 is the number of parallel rem set update threads, "     \
           "otherwise the value is determined ergonomically.")               \
-                                                                            \
-  develop(intx, G1CardCountCacheExpandThreshold, 16,                        \
-          "Expand the card count cache if the number of collisions for "    \
-          "a particular entry exceeds this value.")                         \
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \

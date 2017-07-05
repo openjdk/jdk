@@ -132,7 +132,7 @@ E* ArrayAllocator<E, F>::allocate(size_t length) {
   int alignment = os::vm_allocation_granularity();
   _size = align_size_up(_size, alignment);
 
-  _addr = os::reserve_memory(_size, NULL, alignment);
+  _addr = os::reserve_memory(_size, NULL, alignment, F);
   if (_addr == NULL) {
     vm_exit_out_of_memory(_size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }

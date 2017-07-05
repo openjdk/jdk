@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,15 @@ class NMTDCmd: public DCmdWithParser {
     return "Print native memory usage";
   }
   static const char* impact() {
-    return "Medium:";
+    return "Medium";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
   }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 #endif // SHARE_VM_SERVICES_NMT_DCMD_HPP
