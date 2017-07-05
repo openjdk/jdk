@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 
 class InvocationCounter VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+  friend class ciReplay;
  private:                             // bit no: |31  3|  2  | 1 0 |
   unsigned int _counter;              // format: [count|carry|state]
 
@@ -84,6 +85,8 @@ class InvocationCounter VALUE_OBJ_CLASS_SPEC {
   inline void decay();                           // decay counter (divide by two)
   void set_carry();                              // set the sticky carry bit
   void set_carry_flag()                          {  _counter |= carry_mask; }
+
+  int raw_counter()                              { return _counter; }
 
   // Accessors
   State  state() const                           { return (State)(_counter & state_mask); }

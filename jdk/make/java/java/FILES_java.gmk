@@ -206,6 +206,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/BreakIteratorProviderImpl.java \
             sun/util/locale/provider/CalendarDataProviderImpl.java \
             sun/util/locale/provider/CalendarDataUtility.java \
+            sun/util/locale/provider/CalendarNameProviderImpl.java \
             sun/util/locale/provider/CollationRules.java \
             sun/util/locale/provider/CollatorProviderImpl.java \
             sun/util/locale/provider/CurrencyNameProviderImpl.java \
@@ -396,6 +397,7 @@ JAVA_JAVA_java = \
     java/util/prefs/Base64.java \
     java/util/prefs/XmlSupport.java \
     java/util/spi/CalendarDataProvider.java \
+    java/util/spi/CalendarNameProvider.java \
     java/util/spi/CurrencyNameProvider.java \
     java/util/spi/LocaleNameProvider.java \
     java/util/spi/LocaleServiceProvider.java \

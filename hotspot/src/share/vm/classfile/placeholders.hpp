@@ -191,8 +191,8 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   Thread*            definer()             const {return _definer; }
   void               set_definer(Thread* definer) { _definer = definer; }
 
-  Klass*             InstanceKlass()     const {return _instanceKlass; }
-  void               set_instanceKlass(Klass* InstanceKlass) { _instanceKlass = InstanceKlass; }
+  Klass*             instance_klass()      const {return _instanceKlass; }
+  void               set_instance_klass(Klass* ik) { _instanceKlass = ik; }
 
   SeenThread*        superThreadQ()        const { return _superThreadQ; }
   void               set_superThreadQ(SeenThread* SeenThread) { _superThreadQ = SeenThread; }

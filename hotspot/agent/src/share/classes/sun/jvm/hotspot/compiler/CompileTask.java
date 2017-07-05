@@ -56,7 +56,7 @@ public class CompileTask extends VMObject {
   }
 
   public Method method() {
-    Address oh =  methodField.getValue(getAddress()).getAddressAt(0);
+    Address oh =  methodField.getValue(getAddress());
     return (Method)Metadata.instantiateWrapperFor(oh);
   }
 

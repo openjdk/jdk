@@ -189,6 +189,8 @@ class Symbol : public MetaspaceObj {
   // Use buf if needed buffer length is <= size.
   char* as_C_string_flexible_buffer(Thread* t, char* buf, int size) const;
 
+  // Returns an escaped form of a Java string.
+  char* as_quoted_ascii() const;
 
   // Returns a null terminated utf8 string in a resource array
   char* as_utf8() const { return as_C_string(); }

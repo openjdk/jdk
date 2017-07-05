@@ -2043,8 +2043,8 @@ run:
             if (objKlassOop != klassOf &&
                 !objKlassOop->is_subtype_of(klassOf)) {
               ResourceMark rm(THREAD);
-              const char* objName = Klass::cast(objKlassOop)->external_name();
-              const char* klassName = Klass::cast(klassOf)->external_name();
+              const char* objName = objKlassOop->external_name();
+              const char* klassName = klassOf->external_name();
               char* message = SharedRuntime::generate_class_cast_message(
                 objName, klassName);
               VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -73,5 +73,30 @@ public class ciEnv extends VMObject {
 
   public CompileTask task() {
     return new CompileTask(taskField.getValue(this.getAddress()));
+  }
+
+  public void dumpReplayData(PrintStream out) {
+    out.println("JvmtiExport can_access_local_variables " +
+                (JvmtiExport.canAccessLocalVariables() ? '1' : '0'));
+    out.println("JvmtiExport can_hotswap_or_post_breakpoint " +
+                (JvmtiExport.canHotswapOrPostBreakpoint() ? '1' : '0'));
+    out.println("JvmtiExport can_post_on_exceptions " +
+                (JvmtiExport.canPostOnExceptions() ? '1' : '0'));
+
+    GrowableArray<ciMetadata> objects = factory().objects();
+    out.println("# " + objects.length() + " ciObject found");
+    for (int i = 0; i < objects.length(); i++) {
+      ciMetadata o = objects.at(i);
+      out.println("# ciMetadata" + i + " @ " + o);
+      o.dumpReplayData(out);
+    }
+    CompileTask task = task();
+    Method method = task.method();
+    int entryBci = task.osrBci();
+    Klass holder = method.getMethodHolder();
+    out.println("compile " + holder.getName().asString() + " " +
+                OopUtilities.escapeString(method.getName().asString()) + " " +
+                method.getSignature().asString() + " " +
+                entryBci);
   }
 }

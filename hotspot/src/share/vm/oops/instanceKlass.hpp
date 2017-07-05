@@ -133,6 +133,7 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
 class InstanceKlass: public Klass {
   friend class VMStructs;
   friend class ClassFileParser;
+  friend class CompileReplay;
 
  protected:
   // Constructor

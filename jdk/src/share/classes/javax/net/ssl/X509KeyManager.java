@@ -25,7 +25,6 @@
 
 package javax.net.ssl;
 
-import java.security.KeyManagementException;
 import java.security.PrivateKey;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
