@@ -67,6 +67,10 @@ class Krb5Context implements GSSContextSpi {
 
     private int state = STATE_NEW;
 
+    public static final int SESSION_KEY = 0;
+    public static final int INITIATOR_SUBKEY = 1;
+    public static final int ACCEPTOR_SUBKEY = 2;
+
     /*
      * Optional features that the application can set and their default
      * values.
@@ -82,6 +86,7 @@ class Krb5Context implements GSSContextSpi {
 
     private int mySeqNumber;
     private int peerSeqNumber;
+    private int keySrc;
     private TokenTracker peerTokenTracker;
 
     private CipherHelper cipherHelper = null;
@@ -384,10 +389,15 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    final void setKey(EncryptionKey key) throws GSSException {
+    final void setKey(int keySrc, EncryptionKey key) throws GSSException {
         this.key = key;
+        this.keySrc = keySrc;
         // %%% to do: should clear old cipherHelper first
         cipherHelper = new CipherHelper(key);  // Need to use new key
+    }
+
+    public final int getKeySrc() {
+        return keySrc;
     }
 
     private final EncryptionKey getKey() {

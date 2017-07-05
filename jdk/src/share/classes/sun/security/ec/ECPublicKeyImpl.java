@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
      * Construct a key from its components. Used by the
      * ECKeyFactory and SunPKCS11.
      */
+    @SuppressWarnings("deprecation")
     public ECPublicKeyImpl(ECPoint w, ECParameterSpec params)
             throws InvalidKeyException {
         this.w = w;
@@ -85,6 +86,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
     // Internal API to get the encoded point. Currently used by SunPKCS11.
     // This may change/go away depending on what we do with the public API.
+    @SuppressWarnings("deprecation")
     public byte[] getEncodedPublicValue() {
         return key.clone();
     }
@@ -92,6 +94,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
     /**
      * Parse the key. Called by X509Key.
      */
+    @SuppressWarnings("deprecation")
     protected void parseKeyBits() throws InvalidKeyException {
         try {
             AlgorithmParameters algParams = this.algid.getParameters();

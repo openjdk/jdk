@@ -33,8 +33,8 @@ public class UnsyncBufferedOutputStream extends OutputStream {
 
         final byte[] buf;
         static final int size=8*1024;
-        private static ThreadLocal bufCahce = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+        private static ThreadLocal<byte[]> bufCahce = new ThreadLocal<byte[]>() {
+        protected synchronized byte[] initialValue() {
             return new byte[size];
         }
     };
@@ -44,7 +44,7 @@ public class UnsyncBufferedOutputStream extends OutputStream {
          * @param out the outputstream to buffer
          */
         public UnsyncBufferedOutputStream(OutputStream out) {
-                buf=(byte[])bufCahce.get();
+                buf=bufCahce.get();
                 this.out=out;
         }
 

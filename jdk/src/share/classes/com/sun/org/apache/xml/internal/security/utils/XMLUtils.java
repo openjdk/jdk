@@ -82,13 +82,15 @@ public class XMLUtils {
     * @param exclude
     * @param com wheather comments or not
     */
-   public static void getSet(Node rootNode,Set result,Node exclude ,boolean com) {
+   public static void getSet(Node rootNode,Set<Node> result,Node exclude ,boolean com) {
           if ((exclude!=null) && isDescendantOrSelf(exclude,rootNode)){
                 return;
       }
       getSetRec(rootNode,result,exclude,com);
    }
-   static final void getSetRec(final Node rootNode,final Set result,
+
+   @SuppressWarnings("fallthrough")
+   static final void getSetRec(final Node rootNode,final Set<Node> result,
         final Node exclude ,final boolean com) {
            //Set result = new HashSet();
        if (rootNode==exclude) {
@@ -104,7 +106,7 @@ public class XMLUtils {
                                         result.add(nl.item(i));
                                 }
                 }
-                //no return keep working
+                //no return keep working - ignore fallthrough warning
                 case Node.DOCUMENT_NODE:
                                 for (Node r=rootNode.getFirstChild();r!=null;r=r.getNextSibling()){
                                         if (r.getNodeType()==Node.TEXT_NODE) {
@@ -230,7 +232,7 @@ public class XMLUtils {
 
 
    static  String dsPrefix=null;
-   static Map namePrefixes=new HashMap();
+   static Map<String, String> namePrefixes=new HashMap<String, String>();
    /**
     * Creates an Element in the XML Signature specification namespace.
     *
@@ -248,7 +250,7 @@ public class XMLUtils {
       if ((dsPrefix == null) || (dsPrefix.length() == 0)) {
          return doc.createElementNS(Constants.SignatureSpecNS, elementName);
       }
-      String namePrefix=(String) namePrefixes.get(elementName);
+      String namePrefix= namePrefixes.get(elementName);
       if (namePrefix==null) {
           StringBuffer tag=new StringBuffer(dsPrefix);
           tag.append(':');
@@ -318,11 +320,9 @@ public class XMLUtils {
      * @param xpathNodeSet
      * @return the owner document
      */
-    public static Document getOwnerDocument(Set xpathNodeSet) {
+    public static Document getOwnerDocument(Set<Node> xpathNodeSet) {
        NullPointerException npe = null;
-       Iterator iterator = xpathNodeSet.iterator();
-       while(iterator.hasNext()) {
-           Node node = (Node) iterator.next();
+       for (Node node : xpathNodeSet) {
            int nodeType =node.getNodeType();
            if (nodeType == Node.DOCUMENT_NODE) {
               return (Document) node;
@@ -397,14 +397,14 @@ public class XMLUtils {
     * @param xpathNodeSet
     * @return the set with the nodelist
     */
-   public static Set convertNodelistToSet(NodeList xpathNodeSet) {
+   public static Set<Node> convertNodelistToSet(NodeList xpathNodeSet) {
 
       if (xpathNodeSet == null) {
-         return new HashSet();
+         return new HashSet<Node>();
       }
 
       int length = xpathNodeSet.getLength();
-      Set set = new HashSet(length);
+      Set<Node> set = new HashSet<Node>(length);
 
       for (int i = 0; i < length; i++) {
          set.add(xpathNodeSet.item(i));
@@ -446,6 +446,7 @@ public class XMLUtils {
     * @param node
     * @see <A HREF="http://nagoya.apache.org/bugzilla/show_bug.cgi?id=2650">Namespace axis resolution is not XPath compliant </A>
     */
+   @SuppressWarnings("fallthrough")
    private static void circumventBug2650internal(Node node) {
            Node parent=null;
            Node sibling=null;
@@ -642,12 +643,12 @@ public class XMLUtils {
     * @param inputSet
     * @return nodes with the constrain
     */
-    public static Set excludeNodeFromSet(Node signatureElement, Set inputSet) {
-          Set resultSet = new HashSet();
-          Iterator iterator = inputSet.iterator();
+    public static Set<Node> excludeNodeFromSet(Node signatureElement, Set<Node> inputSet) {
+          Set<Node> resultSet = new HashSet<Node>();
+          Iterator<Node> iterator = inputSet.iterator();
 
           while (iterator.hasNext()) {
-            Node inputNode = (Node) iterator.next();
+            Node inputNode = iterator.next();
 
             if (!XMLUtils
                     .isDescendantOrSelf(signatureElement, inputNode)) {

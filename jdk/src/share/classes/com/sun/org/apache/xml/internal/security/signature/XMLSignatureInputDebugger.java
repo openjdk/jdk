@@ -47,9 +47,9 @@ public class XMLSignatureInputDebugger {
 
 
         /** Field _xmlSignatureInput */
-        private Set _xpathNodeSet;
+        private Set<Node> _xpathNodeSet;
 
-        private Set _inclusiveNamespaces;
+        private Set<String> _inclusiveNamespaces;
 
         /** Field _doc */
         private Document _doc = null;
@@ -159,7 +159,7 @@ public class XMLSignatureInputDebugger {
          * @param inclusiveNamespace
          */
         public XMLSignatureInputDebugger(
-                        XMLSignatureInput xmlSignatureInput, Set inclusiveNamespace) {
+                        XMLSignatureInput xmlSignatureInput, Set<String> inclusiveNamespace) {
 
                 this(xmlSignatureInput);
 
@@ -182,7 +182,7 @@ public class XMLSignatureInputDebugger {
                 {
 
                         // get only a single node as anchor to fetch the owner document
-                        Node n = (Node) this._xpathNodeSet.iterator().next();
+                        Node n = this._xpathNodeSet.iterator().next();
 
                         this._doc = XMLUtils.getOwnerDocument(n);
                 }
@@ -341,10 +341,10 @@ public class XMLSignatureInputDebugger {
                         // we output all Attrs which are available
                         NamedNodeMap attrs = currentElement.getAttributes();
                         int attrsLength = attrs.getLength();
-                        Object attrs2[] = new Object[attrsLength];
+                        Attr attrs2[] = new Attr[attrsLength];
 
                         for (int i = 0; i < attrsLength; i++) {
-                                attrs2[i] = attrs.item(i);
+                                attrs2[i] = (Attr)attrs.item(i);
                         }
 
                         Arrays.sort(attrs2, ATTR_COMPARE);

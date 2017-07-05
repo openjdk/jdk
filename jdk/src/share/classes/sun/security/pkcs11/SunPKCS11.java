@@ -1335,10 +1335,10 @@ public final class SunPKCS11 extends AuthProvider {
                             return null;
                         }
 
-                        Class c = Class.forName
-                                (defaultHandler,
-                                true,
-                                Thread.currentThread().getContextClassLoader());
+                        Class<?> c = Class.forName
+                                   (defaultHandler,
+                                   true,
+                                   Thread.currentThread().getContextClassLoader());
                         return (CallbackHandler)c.newInstance();
                     }
                 });
