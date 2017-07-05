@@ -69,21 +69,13 @@ endif
 # Add dependencies on other jmod files. Only java.base needs access to other
 # jmods.
 ifeq ($(MODULE), java.base)
+  ALL_UPGRADEABLE_MODULES = $(call FindAllUpgradeableModules)
   # When creating a BUILDJDK, we don't need to add hashes to java.base
   ifneq ($(CREATING_BUILDJDK), true)
     DEPS += $(patsubst %, $(JMODS_DIR)/%.jmod, \
-        $(filter-out java.base, $(call FindAllModules)))
+        $(filter-out java.base $(ALL_UPGRADEABLE_MODULES), $(call FindAllModules)))
 
-    # TODO: find modules that directly and indirectly depend on upgradeable
-    # modules
-    EXCLUDE_HASH_MODULES := $(UPGRADEABLE_MODULES) \
-      java.se.ee \
-      jdk.rmic \
-      jdk.xml.bind \
-      jdk.xml.ws \
-      #
-
-    EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(EXCLUDE_HASH_MODULES))))
+    EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(ALL_UPGRADEABLE_MODULES))))
 
     JMOD_FLAGS += --modulepath $(JMODS_DIR) \
         --hash-modules '^(?!$(EXCLUDE_PATTERN))'

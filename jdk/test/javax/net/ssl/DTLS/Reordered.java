@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,16 +51,17 @@ public class Reordered extends DTLSOverDatagram {
     }
 
     @Override
-    List<DatagramPacket> produceHandshakePackets(
-            SSLEngine engine, SocketAddress socketAddr) throws Exception {
-        List<DatagramPacket> packets =
-                super.produceHandshakePackets(engine, socketAddr);
+    boolean produceHandshakePackets(SSLEngine engine, SocketAddress socketAddr,
+            String side, List<DatagramPacket> packets) throws Exception {
+
+        boolean finished = super.produceHandshakePackets(
+                engine, socketAddr, side, packets);
 
         if (needPacketReorder && (!engine.getUseClientMode())) {
             needPacketReorder = false;
             Collections.reverse(packets);
         }
 
-        return packets;
+        return finished;
     }
 }

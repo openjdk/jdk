@@ -27,7 +27,6 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"

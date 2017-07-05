@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests directives to be able to exclude methods from compilation
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.directives.ExcludeTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

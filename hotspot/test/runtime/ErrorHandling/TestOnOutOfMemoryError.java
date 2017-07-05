@@ -24,6 +24,7 @@
 /*
  * @test TestOnOutOfMemoryError
  * @summary Test using -XX:OnOutOfMemoryError=<cmd>
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build TestOnOutOfMemoryError
  * @run main TestOnOutOfMemoryError

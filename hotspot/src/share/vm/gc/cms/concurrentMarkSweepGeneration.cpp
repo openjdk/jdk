@@ -1019,7 +1019,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
       return NULL;
     }
   }
-  assert(promoInfo->has_spooling_space(), "Control point invariant");
+  assert(!promoInfo->tracking() || promoInfo->has_spooling_space(), "Control point invariant");
   const size_t alloc_sz = CompactibleFreeListSpace::adjustObjectSize(word_sz);
   HeapWord* obj_ptr = ps->lab.alloc(alloc_sz);
   if (obj_ptr == NULL) {
@@ -1094,6 +1094,12 @@ par_oop_since_save_marks_iterate_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
   ParScanWithoutBarrierClosure* dummy_cl = NULL;
   ps->promo.promoted_oops_iterate_nv(dummy_cl);
+
+  // Because card-scanning has been completed, subsequent phases
+  // (e.g., reference processing) will not need to recognize which
+  // objects have been promoted during this GC. So, we can now disable
+  // promotion tracking.
+  ps->promo.stopTrackingPromotions();
 }
 
 bool ConcurrentMarkSweepGeneration::should_collect(bool   full,
@@ -2032,6 +2038,12 @@ void ConcurrentMarkSweepGeneration::gc_prologue(bool full) {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
 
+  // We enable promotion tracking so that card-scanning can recognize
+  // which objects have been promoted during this GC and skip them.
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    _par_gc_thread_states[i]->promo.startTrackingPromotions();
+  }
+
   // Delegate to CMScollector which knows how to coordinate between
   // this and any other CMS generations that it is responsible for
   // collecting.
@@ -2118,9 +2130,15 @@ void CMSCollector::gc_epilogue(bool full) {
 void ConcurrentMarkSweepGeneration::gc_epilogue(bool full) {
   collector()->gc_epilogue(full);
 
-  // Also reset promotion tracking in par gc thread states.
+  // When using ParNew, promotion tracking should have already been
+  // disabled. However, the prologue (which enables promotion
+  // tracking) and epilogue are called irrespective of the type of
+  // GC. So they will also be called before and after Full GCs, during
+  // which promotion tracking will not be explicitly disabled. So,
+  // it's safer to also disable it here too (to be symmetric with
+  // enabling it in the prologue).
   for (uint i = 0; i < ParallelGCThreads; i++) {
-    _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
+    _par_gc_thread_states[i]->promo.stopTrackingPromotions();
   }
 }
 
@@ -2431,9 +2449,6 @@ void CMSCollector::verify_after_remark_work_2() {
 void ConcurrentMarkSweepGeneration::save_marks() {
   // delegate to CMS space
   cmsSpace()->save_marks();
-  for (uint i = 0; i < ParallelGCThreads; i++) {
-    _par_gc_thread_states[i]->promo.startTrackingPromotions();
-  }
 }
 
 bool ConcurrentMarkSweepGeneration::no_allocs_since_save_marks() {
@@ -2769,10 +2784,10 @@ class CMSParMarkTask : public AbstractGangTask {
       _collector(collector),
       _n_workers(n_workers) {}
   // Work method in support of parallel rescan ... of young gen spaces
-  void do_young_space_rescan(uint worker_id, OopsInGenClosure* cl,
+  void do_young_space_rescan(OopsInGenClosure* cl,
                              ContiguousSpace* space,
                              HeapWord** chunk_array, size_t chunk_top);
-  void work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl);
+  void work_on_young_gen_roots(OopsInGenClosure* cl);
 };
 
 // Parallel initial mark task
@@ -4255,7 +4270,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
   // ---------- young gen roots --------------
   {
-    work_on_young_gen_roots(worker_id, &par_mri_cl);
+    work_on_young_gen_roots(&par_mri_cl);
     _timer.stop();
     log_trace(gc, task)("Finished young gen initial mark scan work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
@@ -4346,7 +4361,7 @@ class RemarkKlassClosure : public KlassClosure {
   }
 };
 
-void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* cl) {
+void CMSParMarkTask::work_on_young_gen_roots(OopsInGenClosure* cl) {
   ParNewGeneration* young_gen = _collector->_young_gen;
   ContiguousSpace* eden_space = young_gen->eden();
   ContiguousSpace* from_space = young_gen->from();
@@ -4360,9 +4375,9 @@ void CMSParMarkTask::work_on_young_gen_roots(uint worker_id, OopsInGenClosure* c
   assert(ect <= _collector->_eden_chunk_capacity, "out of bounds");
   assert(sct <= _collector->_survivor_chunk_capacity, "out of bounds");
 
-  do_young_space_rescan(worker_id, cl, to_space, NULL, 0);
-  do_young_space_rescan(worker_id, cl, from_space, sca, sct);
-  do_young_space_rescan(worker_id, cl, eden_space, eca, ect);
+  do_young_space_rescan(cl, to_space, NULL, 0);
+  do_young_space_rescan(cl, from_space, sca, sct);
+  do_young_space_rescan(cl, eden_space, eca, ect);
 }
 
 // work_queue(i) is passed to the closure
@@ -4389,7 +4404,7 @@ void CMSParRemarkTask::work(uint worker_id) {
   // work first.
   // ---------- young gen roots --------------
   {
-    work_on_young_gen_roots(worker_id, &par_mrias_cl);
+    work_on_young_gen_roots(&par_mrias_cl);
     _timer.stop();
     log_trace(gc, task)("Finished young gen rescan work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
@@ -4471,9 +4486,8 @@ void CMSParRemarkTask::work(uint worker_id) {
   log_trace(gc, task)("Finished work stealing in %dth thread: %3.3f sec", worker_id, _timer.seconds());
 }
 
-// Note that parameter "i" is not used.
 void
-CMSParMarkTask::do_young_space_rescan(uint worker_id,
+CMSParMarkTask::do_young_space_rescan(
   OopsInGenClosure* cl, ContiguousSpace* space,
   HeapWord** chunk_array, size_t chunk_top) {
   // Until all tasks completed:
@@ -5667,10 +5681,9 @@ bool CMSBitMap::allocate(MemRegion mr) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of CMS bit map?");
-  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
-  _bm.set_size(_bmWordSize >> _shifter);
+  _bm = BitMapView((BitMap::bm_word_t*)_virtual_space.low(), _bmWordSize >> _shifter);
 
   // bm.clear(); // can we rely on getting zero'd memory? verify below
   assert(isAllClear(),

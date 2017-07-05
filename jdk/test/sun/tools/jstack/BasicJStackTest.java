@@ -29,10 +29,8 @@ import jdk.testlibrary.ProcessTools;
 
 /*
  * @test
- * @bug 6260070
  * @summary Unit test for jstack utility
  * @library /lib/testlibrary
- * @modules java.management
  * @build jdk.testlibrary.*
  * @run main BasicJStackTest
  */

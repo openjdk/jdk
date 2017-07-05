@@ -25,15 +25,17 @@ import java.security.MessageDigest;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
+import java.security.Signature;
 import java.security.Provider;
 import java.util.Arrays;
 import java.util.List;
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 
 /**
  * @test
- * @bug 8076359 8133151 8145344 8150512
+ * @bug 8076359 8133151 8145344 8150512 8155847
  * @summary Test the value for new jdk.security.provider.preferred
  *          security property
  */
@@ -61,8 +63,8 @@ public class PreferredProviderTest {
             //java.security file which will be verified.
             switch (type) {
                 case "sparcv9":
-                    preferredProp = "AES:SunJCE, SHA1:SUN, SHA-224:SUN,"
-                            + " SHA-256:SUN, SHA-384:SUN, SHA-512:SUN";
+                    preferredProp = "AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, " +
+                            "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE";
                     verifyPreferredProviderProperty(os, type, preferredProp);
 
                     verifyDigestProvider(os, type, Arrays.asList(
@@ -71,14 +73,51 @@ public class PreferredProviderTest {
                             new DataTuple("SHA-224", "SUN"),
                             new DataTuple("SHA-256", "SUN"),
                             new DataTuple("SHA-384", "SUN"),
-                            new DataTuple("SHA-512", "SUN")));
+                            new DataTuple("SHA-512", "SUN"),
+                            new DataTuple("SHA-512/224", "SUN"),
+                            new DataTuple("SHA-512/256", "SUN")));
+
+                    verifyMacProvider(os, type, Arrays.asList(
+                            new DataTuple("HmacSHA1", "SunJCE"),
+                            new DataTuple("HmacSHA224", "SunJCE"),
+                            new DataTuple("HmacSHA256", "SunJCE"),
+                            new DataTuple("HmacSHA384", "SunJCE"),
+                            new DataTuple("HmacSHA512", "SunJCE")));
                     break;
                 case "amd64":
-                    preferredProp = "AES:SunJCE, RSA:SunRsaSign";
+                    preferredProp = "AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, " +
+                            "HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, " +
+                            "RSA:SunRsaSign, SHA1withRSA:SunRsaSign, " +
+                            "Group.SHA2RSA:SunRsaSign";
+
                     verifyPreferredProviderProperty(os, type, preferredProp);
 
                     verifyKeyFactoryProvider(os, type, Arrays.asList(
                             new DataTuple("RSA", "SunRsaSign")));
+
+                    verifyDigestProvider(os, type, Arrays.asList(
+                            new DataTuple("SHA1", "SUN"),
+                            new DataTuple("SHA-1", "SUN"),
+                            new DataTuple("SHA-224", "SUN"),
+                            new DataTuple("SHA-256", "SUN"),
+                            new DataTuple("SHA-384", "SUN"),
+                            new DataTuple("SHA-512", "SUN"),
+                            new DataTuple("SHA-512/224", "SUN"),
+                            new DataTuple("SHA-512/256", "SUN")));
+
+                    verifyMacProvider(os, type, Arrays.asList(
+                            new DataTuple("HmacSHA1", "SunJCE"),
+                            new DataTuple("HmacSHA224", "SunJCE"),
+                            new DataTuple("HmacSHA256", "SunJCE"),
+                            new DataTuple("HmacSHA384", "SunJCE"),
+                            new DataTuple("HmacSHA512", "SunJCE")));
+
+                    verifySignatureProvider(os, type, Arrays.asList(
+                            new DataTuple("SHA1withRSA", "SunRsaSign"),
+                            new DataTuple("SHA224withRSA", "SunRsaSign"),
+                            new DataTuple("SHA256withRSA", "SunRsaSign"),
+                            new DataTuple("SHA384withRSA", "SunRsaSign"),
+                            new DataTuple("SHA512withRSA", "SunRsaSign")));
                     break;
             }
             verifyDigestProvider(os, type, Arrays.asList(
@@ -99,6 +138,8 @@ public class PreferredProviderTest {
         String preferredProvider
                 = Security.getProperty("jdk.security.provider.preferred");
         if (!preferredProvider.equals(preferred)) {
+            System.out.println("Expected: " + preferred + "\nResult: " +
+                    preferredProvider);
             throw new RuntimeException(String.format(
                     "Test Failed: wrong jdk.security.provider.preferred value "
                     + "on %s-%s", os, arch));
@@ -120,6 +161,19 @@ public class PreferredProviderTest {
                 "Preferred MessageDigest algorithm verification successful.");
     }
 
+    private static void verifyMacProvider(String os, String arch,
+            List<DataTuple> algoProviders) throws NoSuchAlgorithmException {
+        for (DataTuple dataTuple : algoProviders) {
+            System.out.printf(
+                    "Verifying Mac for '%s'%n", dataTuple.algorithm);
+            Mac mac = Mac.getInstance(dataTuple.algorithm);
+            matchProvider(mac.getProvider(), dataTuple.provider,
+                    dataTuple.algorithm, os, arch);
+        }
+        System.out.println(
+                "Preferred Mac algorithm verification successful.");
+    }
+
     private static void verifyKeyFactoryProvider(String os, String arch,
             List<DataTuple> algoProviders) throws NoSuchAlgorithmException {
         for (DataTuple dataTuple : algoProviders) {
@@ -131,6 +185,19 @@ public class PreferredProviderTest {
         }
         System.out.println(
                 "Preferred KeyFactory algorithm verification successful.");
+    }
+
+    private static void verifySignatureProvider(String os, String arch,
+            List<DataTuple> algoProviders) throws NoSuchAlgorithmException {
+        for (DataTuple dataTuple : algoProviders) {
+            System.out.printf(
+                    "Verifying Signature for '%s'%n", dataTuple.algorithm);
+            Signature si = Signature.getInstance(dataTuple.algorithm);
+            matchProvider(si.getProvider(), dataTuple.provider,
+                    dataTuple.algorithm, os, arch);
+        }
+        System.out.println(
+                "Preferred Signature algorithm verification successful.");
     }
 
     private static void matchProvider(Provider provider, String expected,

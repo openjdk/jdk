@@ -55,7 +55,6 @@ address StubRoutines::_throw_IncompatibleClassChangeError_entry = NULL;
 address StubRoutines::_throw_NullPointerException_at_call_entry = NULL;
 address StubRoutines::_throw_StackOverflowError_entry           = NULL;
 address StubRoutines::_throw_delayed_StackOverflowError_entry   = NULL;
-address StubRoutines::_handler_for_unsafe_access_entry          = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;
 address StubRoutines::_atomic_xchg_entry                        = NULL;
@@ -154,11 +153,14 @@ address StubRoutines::_vectorizedMismatch = NULL;
 
 address StubRoutines::_dexp = NULL;
 address StubRoutines::_dlog = NULL;
+address StubRoutines::_dlog10 = NULL;
 address StubRoutines::_dpow = NULL;
 address StubRoutines::_dsin = NULL;
 address StubRoutines::_dcos = NULL;
 address StubRoutines::_dlibm_sin_cos_huge = NULL;
 address StubRoutines::_dlibm_reduce_pi04l = NULL;
+address StubRoutines::_dlibm_tan_cot_huge = NULL;
+address StubRoutines::_dtan = NULL;
 
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;

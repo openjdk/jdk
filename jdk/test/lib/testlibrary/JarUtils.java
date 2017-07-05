@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,12 +50,12 @@ public final class JarUtils {
     /**
      * Creates a JAR file.
      *
-     * Equivalent to {@code jar cf <jarfile> -C <dir> file...}
+     * Equivalent to {@code jar cfm <jarfile> <manifest> -C <dir> file...}
      *
      * The input files are resolved against the given directory. Any input
      * files that are directories are processed recursively.
      */
-    public static void createJarFile(Path jarfile, Path dir, Path... file)
+    public static void createJarFile(Path jarfile, Manifest man, Path dir, Path... file)
         throws IOException
     {
         // create the target directory
@@ -73,12 +74,34 @@ public final class JarUtils {
         try (OutputStream out = Files.newOutputStream(jarfile);
              JarOutputStream jos = new JarOutputStream(out))
         {
+            if (man != null) {
+                JarEntry je = new JarEntry(JarFile.MANIFEST_NAME);
+                jos.putNextEntry(je);
+                man.write(jos);
+                jos.closeEntry();
+            }
+
             for (Path entry : entries) {
                 String name = toJarEntryName(entry);
                 jos.putNextEntry(new JarEntry(name));
                 Files.copy(dir.resolve(entry), jos);
+                jos.closeEntry();
             }
         }
+    }
+
+    /**
+     * Creates a JAR file.
+     *
+     * Equivalent to {@code jar cf <jarfile>  -C <dir> file...}
+     *
+     * The input files are resolved against the given directory. Any input
+     * files that are directories are processed recursively.
+     */
+    public static void createJarFile(Path jarfile, Path dir, Path... file)
+        throws IOException
+    {
+        createJarFile(jarfile, null, dir, file);
     }
 
     /**

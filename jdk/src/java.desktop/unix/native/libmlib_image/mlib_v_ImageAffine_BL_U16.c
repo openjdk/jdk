@@ -33,7 +33,6 @@
 
 #include "vis_proto.h"
 #include "mlib_image.h"
-#include "mlib_ImageColormap.h"
 #include "mlib_ImageCopy.h"
 #include "mlib_ImageAffine.h"
 #include "mlib_v_ImageFilters.h"

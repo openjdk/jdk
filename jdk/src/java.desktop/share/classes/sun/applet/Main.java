@@ -104,7 +104,8 @@ public class Main {
     private int run(String [] args) {
         // DECODE ARGS
         try {
-            System.out.println(lookup("deprecated"));
+            System.err.println(lookup("deprecated"));
+            System.err.flush();
             if (args.length == 0) {
                 usage();
                 return 0;

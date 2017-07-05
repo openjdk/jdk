@@ -26,6 +26,7 @@
  * @summary Test files copy plugin
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  * @run main FileCopierPluginTest
  */
@@ -36,13 +37,12 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class FileCopierPluginTest {
 
@@ -85,21 +85,20 @@ public class FileCopierPluginTest {
         Map<String, String> conf = new HashMap<>();
         conf.put(FileCopierPlugin.NAME, builder.toString());
         plug.configure(conf);
-        Pool pool = new PoolImpl();
-        plug.visit(new PoolImpl(), pool);
-        if (pool.getContent().size() != expected) {
+        ModulePool pool = new ModulePoolImpl();
+        plug.visit(new ModulePoolImpl(), pool);
+        if (pool.getEntryCount() != expected) {
             throw new AssertionError("Wrong number of added files");
         }
-        for (ModuleData f : pool.getContent()) {
-            if (!f.getType().equals(ModuleDataType.OTHER)) {
+        pool.entries().forEach(f -> {
+            if (!f.getType().equals(ModuleEntry.Type.OTHER)) {
                 throw new AssertionError("Invalid type " + f.getType()
                         + " for file " + f.getPath());
             }
             if (f.stream() == null) {
                 throw new AssertionError("Null stream for file " + f.getPath());
             }
-
-        }
+        });
         Path root = new File(".").toPath();
         DefaultImageBuilder imgbuilder = new DefaultImageBuilder(root);
         imgbuilder.storeFiles(pool);

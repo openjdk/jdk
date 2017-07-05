@@ -29,8 +29,8 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline BitMap G1CardLiveData::live_card_bitmap(uint region) {
-  return BitMap(_live_cards + ((size_t)region * _cards_per_region >> LogBitsPerWord), _cards_per_region);
+inline BitMapView G1CardLiveData::live_card_bitmap(uint region) {
+  return BitMapView(_live_cards + ((size_t)region * _cards_per_region >> LogBitsPerWord), _cards_per_region);
 }
 
 inline bool G1CardLiveData::is_card_live_at(BitMap::idx_t idx) const {

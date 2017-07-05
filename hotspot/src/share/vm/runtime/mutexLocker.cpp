@@ -120,6 +120,7 @@ Monitor* GCTaskManager_lock           = NULL;
 Mutex*   Management_lock              = NULL;
 Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;
+Monitor* RedefineClasses_lock         = NULL;
 
 #ifdef INCLUDE_TRACE
 Mutex*   JfrStacktrace_lock           = NULL;
@@ -264,6 +265,7 @@ void mutex_init() {
   def(Debug3_lock                  , Mutex  , nonleaf+4,   true,  Monitor::_safepoint_check_never);
   def(CompileThread_lock           , Monitor, nonleaf+5,   false, Monitor::_safepoint_check_always);
   def(PeriodicTask_lock            , Monitor, nonleaf+5,   true,  Monitor::_safepoint_check_sometimes);
+  def(RedefineClasses_lock         , Monitor, nonleaf+5,   true,  Monitor::_safepoint_check_always);
   if (WhiteBoxAPI) {
     def(Compilation_lock           , Monitor, leaf,        false, Monitor::_safepoint_check_never);
   }

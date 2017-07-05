@@ -26,6 +26,7 @@
  * @bug 6904403
  * @summary Don't assert if we redefine finalize method
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

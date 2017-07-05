@@ -777,7 +777,7 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
 // create new thread
 
 // Thread start routine for all newly created threads
-static void *java_start(Thread *thread) {
+static void *thread_native_entry(Thread *thread) {
 
   // find out my own stack dimensions
   {
@@ -837,6 +837,15 @@ static void *java_start(Thread *thread) {
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) kernel_thread_id);
+
+  // If a thread has not deleted itself ("delete this") as part of its
+  // termination sequence, we have to ensure thread-local-storage is
+  // cleared before we actually terminate. No threads should ever be
+  // deleted asynchronously with respect to their termination.
+  if (Thread::current_or_null_safe() != NULL) {
+    assert(Thread::current_or_null_safe() == thread, "current thread is wrong");
+    thread->clear_thread_current();
+  }
 
   return 0;
 }
@@ -902,7 +911,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   pthread_attr_setstacksize(&attr, stack_size);
 
   pthread_t tid;
-  int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
+  int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
 
 
   char buf[64];
@@ -993,11 +1002,14 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != NULL, "osthread not set");
 
-  if (Thread::current()->osthread() == osthread) {
-    // Restore caller's signal mask
-    sigset_t sigmask = osthread->caller_sigmask();
-    pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
-   }
+  // We are told to free resources of the argument thread,
+  // but we can only really operate on the current thread.
+  assert(Thread::current()->osthread() == osthread,
+         "os::free_thread but not current thread");
+
+  // Restore caller's signal mask
+  sigset_t sigmask = osthread->caller_sigmask();
+  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
 
   delete osthread;
 }
@@ -4874,4 +4886,17 @@ bool os::start_debugging(char *buf, int buflen) {
     yes = false;
   }
   return yes;
+}
+
+static inline time_t get_mtime(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  assert(ret == 0, "failed to stat() file '%s': %s", filename, strerror(errno));
+  return st.st_mtime;
+}
+
+int os::compare_file_modified_times(const char* file1, const char* file2) {
+  time_t t1 = get_mtime(file1);
+  time_t t2 = get_mtime(file2);
+  return t1 - t2;
 }

@@ -105,7 +105,7 @@ public class ResolvedJavaTypeResolveConcreteMethodTest {
         ResolvedJavaMethod di = getMethod(i, "d");
         ResolvedJavaMethod dc = getMethod(c, "d");
 
-        assertEquals(di, i.resolveConcreteMethod(di, c));
+        assertEquals(null, i.resolveConcreteMethod(di, c));
         assertEquals(di, b.resolveConcreteMethod(di, c));
         assertEquals(dc, c.resolveConcreteMethod(di, c));
     }

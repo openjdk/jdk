@@ -24,6 +24,7 @@
 /*
  * @test TestCrashOnOutOfMemoryError
  * @summary Test using -XX:+CrashOnOutOfMemoryError
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @run driver TestCrashOnOutOfMemoryError

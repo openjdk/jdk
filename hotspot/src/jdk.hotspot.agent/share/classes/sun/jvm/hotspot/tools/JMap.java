@@ -71,6 +71,8 @@ public class JMap extends Tool {
     public static final int MODE_HEAP_GRAPH_GXL = 5;
     public static final int MODE_FINALIZERINFO = 6;
 
+    private static String dumpfile = "heap.bin";
+
     public void run() {
         Tool tool = null;
         switch (mode) {
@@ -92,11 +94,11 @@ public class JMap extends Tool {
             break;
 
         case MODE_HEAP_GRAPH_HPROF_BIN:
-            writeHeapHprofBin();
+            writeHeapHprofBin(dumpfile);
             return;
 
         case MODE_HEAP_GRAPH_GXL:
-            writeHeapGXL();
+            writeHeapGXL(dumpfile);
             return;
 
         case MODE_FINALIZERINFO:
@@ -127,18 +129,34 @@ public class JMap extends Tool {
             } else if (modeFlag.equals("-finalizerinfo")) {
                 mode = MODE_FINALIZERINFO;
             } else {
-                int index = modeFlag.indexOf("-heap:format=");
+                int index = modeFlag.indexOf("-heap:");
                 if (index != -1) {
-                    String format = modeFlag.substring(1 + modeFlag.indexOf('='));
-                    if (format.equals("b")) {
-                        mode = MODE_HEAP_GRAPH_HPROF_BIN;
-                    } else if (format.equals("x")) {
-                        mode = MODE_HEAP_GRAPH_GXL;
-                    } else {
-                        System.err.println("unknown heap format:" + format);
+                    String[] options = modeFlag.substring(6).split(",");
+                    for (String option : options) {
+                        String[] keyValue = option.split("=");
+                        if (keyValue[0].equals("format")) {
+                            if (keyValue[1].equals("b")) {
+                                mode = MODE_HEAP_GRAPH_HPROF_BIN;
+                            } else if (keyValue[1].equals("x")) {
+                                mode = MODE_HEAP_GRAPH_GXL;
+                            } else {
+                                System.err.println("unknown heap format:" + keyValue[0]);
 
-                        // Exit with error status
-                        System.exit(1);
+                                // Exit with error status
+                                System.exit(1);
+                            }
+                        } else if (keyValue[0].equals("file")) {
+                            if ((keyValue[1] == null) || keyValue[1].equals("")) {
+                                System.err.println("File name must be set.");
+                                System.exit(1);
+                            }
+                            dumpfile = keyValue[1];
+                        } else {
+                            System.err.println("unknown option:" + keyValue[0]);
+
+                            // Exit with error status
+                            System.exit(1);
+                        }
                     }
                 } else {
                     copyArgs = false;

@@ -518,18 +518,22 @@ static void
 splitPathList(const char* str, int* pathCount, char*** paths) {
     int count = 0;
     char** segments = NULL;
+    char** new_segments;
     char* c = (char*) str;
     while (*c != '\0') {
         while (*c == ' ') c++;          /* skip leading spaces */
         if (*c == '\0') {
             break;
         }
-        if (segments == NULL) {
-            segments = (char**)malloc( sizeof(char**) );
-        } else {
-            segments = (char**)realloc( segments, (count+1)*sizeof(char**) );
+        new_segments = (char**)realloc(segments, (count+1)*sizeof(char*));
+        if (new_segments == NULL) {
+            jplis_assert(0);
+            free(segments);
+            count = 0;
+            segments = NULL;
+            break;
         }
-        jplis_assert(segments != (char**)NULL);
+        segments = new_segments;
         segments[count++] = c;
         c = strchr(c, ' ');
         if (c == NULL) {

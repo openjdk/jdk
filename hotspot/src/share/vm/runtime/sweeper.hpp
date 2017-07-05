@@ -66,7 +66,7 @@ class NMethodSweeper : public AllStatic {
   static long      _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
   static long      _time_counter;                 // Virtual time used to periodically invoke sweeper
   static long      _last_sweep;                   // Value of _time_counter when the last sweep happened
-  static NMethodIterator _current;                // Current nmethod
+  static CompiledMethodIterator _current;         // Current compiled method
   static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
 
   static volatile int  _sweep_started;            // Flag to control conc sweeper
@@ -88,8 +88,8 @@ class NMethodSweeper : public AllStatic {
 
   static Monitor*  _stat_lock;
 
-  static MethodStateChange process_nmethod(nmethod *nm);
-  static void              release_nmethod(nmethod* nm);
+  static MethodStateChange process_compiled_method(CompiledMethod *nm);
+  static void              release_compiled_method(CompiledMethod* nm);
 
   static void init_sweeper_log() NOT_DEBUG_RETURN;
   static bool wait_for_stack_scanning();
@@ -107,9 +107,8 @@ class NMethodSweeper : public AllStatic {
 
 
 #ifdef ASSERT
-  static bool is_sweeping(nmethod* which) { return _current.method() == which; }
   // Keep track of sweeper activity in the ring buffer
-  static void record_sweep(nmethod* nm, int line);
+  static void record_sweep(CompiledMethod* nm, int line);
   static void report_events(int id, address entry);
   static void report_events();
 #endif

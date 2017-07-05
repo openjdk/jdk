@@ -82,6 +82,19 @@ import java.util.function.UnaryOperator;
  * terminal operation is initiated, and source elements are consumed only
  * as needed.
  *
+ * <p>A stream implementation is permitted significant latitude in optimizing
+ * the computation of the result.  For example, a stream implementation is free
+ * to elide operations (or entire stages) from a stream pipeline -- and
+ * therefore elide invocation of behavioral parameters -- if it can prove that
+ * it would not affect the result of the computation.  This means that
+ * side-effects of behavioral parameters may not always be executed and should
+ * not be relied upon, unless otherwise specified (such as by the terminal
+ * operations {@code forEach} and {@code forEachOrdered}). (For a specific
+ * example of such an optimization, see the API note documented on the
+ * {@link #count} operation.  For more detail, see the
+ * <a href="package-summary.html#SideEffects">side-effects</a> section of the
+ * stream package documentation.)
+ *
  * <p>Collections and streams, while bearing some superficial similarities,
  * have different goals.  Collections are primarily concerned with the efficient
  * management of, and access to, their elements.  By contrast, streams do not
@@ -414,6 +427,11 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *         .peek(e -> System.out.println("Mapped value: " + e))
      *         .collect(Collectors.toList());
      * }</pre>
+     *
+     * <p>In cases where the stream implementation is able to optimize away the
+     * production of some or all the elements (such as with short-circuiting
+     * operations like {@code findFirst}, or in the example described in
+     * {@link #count}), the action will not be invoked for those elements.
      *
      * @param action a <a href="package-summary.html#NonInterference">
      *                 non-interfering</a> action to perform on the elements as

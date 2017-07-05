@@ -338,6 +338,7 @@ hotspot_fast_gc_2 = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
   -gc/g1/ \
+  -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/cms/TestMBeanCMS.java \
@@ -353,7 +354,7 @@ hotspot_fast_runtime = \
   runtime/ \
  -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/RedefineObject/TestRedefineObject.java \
- -runtime/8003720/Test8003720.java \
+ -runtime/MirrorFrame/Test8003720.java \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \

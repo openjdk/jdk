@@ -40,6 +40,7 @@
 #include "utilities/preserveException.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #endif // INCLUDE_ALL_GCS
 
 VM_GC_Operation::~VM_GC_Operation() {

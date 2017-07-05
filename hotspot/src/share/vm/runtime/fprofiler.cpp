@@ -538,11 +538,12 @@ class adapterNode : public ProfilerNode {
 
 class runtimeStubNode : public ProfilerNode {
  private:
-   const CodeBlob* _stub;
+  const RuntimeStub* _stub;
   const char* _symbol;     // The name of the nearest VM symbol when ProfileVM is on. Points to a unique string.
  public:
-   runtimeStubNode(const CodeBlob* stub, const char* name, TickPosition where) : ProfilerNode(), _stub(stub),  _symbol(name) {
+   runtimeStubNode(const CodeBlob* stub, const char* name, TickPosition where) : ProfilerNode(), _stub(NULL),  _symbol(name) {
      assert(stub->is_runtime_stub(), "wrong code blob");
+     _stub = (RuntimeStub*) stub;
      update(where);
    }
 
@@ -550,7 +551,7 @@ class runtimeStubNode : public ProfilerNode {
 
   bool runtimeStub_match(const CodeBlob* stub, const char* name) const {
     assert(stub->is_runtime_stub(), "wrong code blob");
-    return ((RuntimeStub*)_stub)->entry_point() == ((RuntimeStub*)stub)->entry_point() &&
+    return _stub->entry_point() == ((RuntimeStub*)stub)->entry_point() &&
             (_symbol == name);
   }
 
@@ -571,7 +572,7 @@ class runtimeStubNode : public ProfilerNode {
   }
 
   void print_method_on(outputStream* st) {
-    st->print("%s", ((RuntimeStub*)_stub)->name());
+    st->print("%s", _stub->name());
     print_symbol_on(st);
   }
 
@@ -588,18 +589,18 @@ class unknown_compiledNode : public ProfilerNode {
  public:
    unknown_compiledNode(const CodeBlob* cb, TickPosition where) : ProfilerNode() {
      if ( cb->is_buffer_blob() )
-       _name = ((BufferBlob*)cb)->name();
+       _name = ((const BufferBlob*)cb)->name();
      else
-       _name = ((SingletonBlob*)cb)->name();
+       _name = ((const SingletonBlob*)cb)->name();
      update(where);
   }
   bool is_compiled()    const { return true; }
 
   bool unknown_compiled_match(const CodeBlob* cb) const {
      if ( cb->is_buffer_blob() )
-       return !strcmp(((BufferBlob*)cb)->name(), _name);
+       return !strcmp(((const BufferBlob*)cb)->name(), _name);
      else
-       return !strcmp(((SingletonBlob*)cb)->name(), _name);
+       return !strcmp(((const SingletonBlob*)cb)->name(), _name);
   }
 
   Method* method()         { return NULL; }
@@ -993,16 +994,15 @@ void ThreadProfiler::record_compiled_tick(JavaThread* thread, frame fr, TickPosi
 
   CodeBlob* cb = fr.cb();
 
-// For runtime stubs, record as native rather than as compiled
-   if (cb->is_runtime_stub()) {
-        RegisterMap map(thread, false);
-        fr = fr.sender(&map);
-        cb = fr.cb();
-        localwhere = tp_native;
-  }
-  Method* method = (cb->is_nmethod()) ? ((nmethod *)cb)->method() :
-                                          (Method*)NULL;
+  // For runtime stubs, record as native rather than as compiled
+  if (cb->is_runtime_stub()) {
+    RegisterMap map(thread, false);
+    fr = fr.sender(&map);
+    cb = fr.cb();
+    localwhere = tp_native;
+ }
 
+  Method* method = cb->is_compiled() ? cb->as_compiled_method()->method() : (Method*) NULL;
   if (method == NULL) {
     if (cb->is_runtime_stub())
       runtime_stub_update(cb, name, localwhere);

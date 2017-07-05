@@ -111,7 +111,7 @@ import java.util.Spliterator;
  * to zero.
  *
  *
- * <h2> Clearing, flipping, and rewinding </h2>
+ * <h2> Additional operations </h2>
  *
  * <p> In addition to methods for accessing the position, limit, and capacity
  * values and for marking and resetting, this class also defines the following
@@ -130,6 +130,12 @@ import java.util.Spliterator;
  *   <li><p> {@link #rewind} makes a buffer ready for re-reading the data that
  *   it already contains: It leaves the limit unchanged and sets the position
  *   to zero.  </p></li>
+ *
+ *   <li><p> {@link #slice} creates a subsequence of a buffer: It leaves the
+ *   limit and the position unchanged. </p></li>
+ *
+ *   <li><p> {@link #duplicate} creates a shallow copy of a buffer: It leaves
+ *   the limit and the position unchanged. </p></li>
  *
  * </ul>
  *
@@ -566,6 +572,46 @@ public abstract class Buffer {
      * @since 1.6
      */
     public abstract boolean isDirect();
+
+    /**
+     * Creates a new buffer whose content is a shared subsequence of
+     * this buffer's content.
+     *
+     * <p> The content of the new buffer will start at this buffer's current
+     * position.  Changes to this buffer's content will be visible in the new
+     * buffer, and vice versa; the two buffers' position, limit, and mark
+     * values will be independent.
+     *
+     * <p> The new buffer's position will be zero, its capacity and its limit
+     * will be the number of elements remaining in this buffer, its mark will be
+     * undefined. The new buffer will be direct if, and only if, this buffer is
+     * direct, and it will be read-only if, and only if, this buffer is
+     * read-only.  </p>
+     *
+     * @return  The new buffer
+     *
+     * @since 9
+     */
+    public abstract Buffer slice();
+
+    /**
+     * Creates a new buffer that shares this buffer's content.
+     *
+     * <p> The content of the new buffer will be that of this buffer.  Changes
+     * to this buffer's content will be visible in the new buffer, and vice
+     * versa; the two buffers' position, limit, and mark values will be
+     * independent.
+     *
+     * <p> The new buffer's capacity, limit, position and mark values will be
+     * identical to those of this buffer. The new buffer will be direct if, and
+     * only if, this buffer is direct, and it will be read-only if, and only if,
+     * this buffer is read-only.  </p>
+     *
+     * @return  The new buffer
+     *
+     * @since 9
+     */
+    public abstract Buffer duplicate();
 
 
     // -- Package-private methods for bounds checking, etc. --

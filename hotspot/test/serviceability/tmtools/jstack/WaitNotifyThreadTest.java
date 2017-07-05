@@ -27,6 +27,7 @@
  *           presented in the stack is correct. Call notifyAll method
  *           monitor info have to disappear from the stack.
  *           Repeats the same scenario calling interrupt() method
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

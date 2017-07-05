@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main ContinuousCallSiteTargetChange
  */

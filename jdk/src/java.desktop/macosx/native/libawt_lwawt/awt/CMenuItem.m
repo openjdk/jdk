@@ -25,7 +25,6 @@
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
-
 #import "CMenuItem.h"
 #import "CMenu.h"
 #import "AWTEvent.h"
@@ -64,42 +63,6 @@
 - (BOOL) worksWhenModal {
     return YES;
 }
-// This is a method written using Carbon framework methods to remove
-// All modifiers including "Shift" modifier.
-// Example 1: Shortcut set is "Command Shift m" returns "m"
-// Example 2: Shortcut set is "Command m" returns "m"
-// Example 3: Shortcut set is "Alt Shift ," returns ","
-
-CFStringRef createStringForKey(CGKeyCode keyCode)
-{
-    TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
-//  currentKeyboard now contains the current input source
-    CFDataRef layoutData =
-    TISGetInputSourceProperty(currentKeyboard,
-                              kTISPropertyUnicodeKeyLayoutData);
-//  the UNICODE keyLayout is fetched from currentKeyboard in layoutData
-    const UCKeyboardLayout *keyboardLayout =
-    (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
-//  A read-only data pointer is fetched from layoutData
-    UInt32 keysDown = 0;
-    UniChar chars[4];
-    UniCharCount realLength;
-    
-    UCKeyTranslate(keyboardLayout,
-                   keyCode,
-                   kUCKeyActionDisplay,
-                   0,
-                   LMGetKbdType(),
-                   kUCKeyTranslateNoDeadKeysBit,
-                   &keysDown,
-                   sizeof(chars) / sizeof(chars[0]),
-                   &realLength,
-                   chars);
-    CFRelease(currentKeyboard);
-//  Converts keyCode, modifier and dead-key state into UNICODE characters
-    return CFStringCreateWithCharacters(kCFAllocatorDefault, chars, 1);
-}
-
 // Events
 - (void)handleAction:(NSMenuItem *)sender {
     AWT_ASSERT_APPKIT_THREAD;
@@ -116,35 +79,6 @@ CFStringRef createStringForKey(CGKeyCode keyCode)
     // from this "frameless" menu, because there are no active windows. This
     // means we have to handle it here.
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
-    if ([currEvent type] == NSKeyDown) {
-        NSString *menuKey = [sender keyEquivalent];
-//      If shortcut is "Command Shift ," the menuKey gets the value ","
-//      But [currEvent charactersIgnoringModifiers]; returns "<" and not ","
-//      because the charactersIgnoreingModifiers does not ignore "Shift"
-//      So a shortcut like "Command Shift m" will return "M" where as the
-//      MenuKey will have the value "m". To remove this issue the below
-//      createStringForKey is used.
-        NSString *eventKey = createStringForKey([currEvent keyCode]);
-        
-//      Apple uses characters from private Unicode range for some of the
-//      keys, so we need to do the same translation here that we do
-//      for the regular key down events
-                if ([eventKey length] == 1) {
-                    unichar origChar = [eventKey characterAtIndex:0];
-                    unichar newChar =  NsCharToJavaChar(origChar, 0);
-                    if (newChar == java_awt_event_KeyEvent_CHAR_UNDEFINED) {
-                        newChar = origChar;
-                    }
-        
-                    eventKey = [NSString stringWithCharacters: &newChar length: 1];
-                }
-        
-        NSWindow *keyWindow = [NSApp keyWindow];
-        if ([menuKey isEqualToString:eventKey] && keyWindow != nil) {
-            return;
-        }
-    }
-    
     if (fIsCheckbox) {
         static JNF_CLASS_CACHE(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
         static JNF_MEMBER_CACHE(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
@@ -154,16 +88,47 @@ CFStringRef createStringForKey(CGKeyCode keyCode)
         NSInteger state = [sender state];
         jboolean newState = (state == NSOnState ? JNI_FALSE : JNI_TRUE);
         JNFCallVoidMethod(env, fPeer, jm_ckHandleAction, newState);
-    } else {
-        static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
-        static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
-        
-        NSUInteger modifiers = [currEvent modifierFlags];
-        jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
-        
-        JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
+    }
+    else {
+        if ([currEvent type] == NSKeyDown) {
+            
+            // Event available through sender variable hence NSApplication
+            // not needed for checking the keyboard input sans the modifier keys
+            // Also, the method used to fetch eventKey earlier would be locale dependent
+            // With earlier implementation, if MenuKey: e EventKey: ा ; if input method
+            // is not U.S. (Devanagari in this case)
+            // With current implementation, EventKey = MenuKey = e irrespective of
+            // input method
+            
+            NSString *eventKey = [sender keyEquivalent];
+            // Apple uses characters from private Unicode range for some of the
+            // keys, so we need to do the same translation here that we do
+            // for the regular key down events
+            if ([eventKey length] == 1) {
+                unichar origChar = [eventKey characterAtIndex:0];
+                unichar newChar =  NsCharToJavaChar(origChar, 0);
+                if (newChar == java_awt_event_KeyEvent_CHAR_UNDEFINED) {
+                    newChar = origChar;
+                }
+                eventKey = [NSString stringWithCharacters: &newChar length: 1];
+            }
+            NSWindow *keyWindow = [NSApp keyWindow];
+            if (keyWindow != nil) {
+                return;
+            }
+            else {
+                static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
+                static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
+                
+                NSUInteger modifiers = [currEvent modifierFlags];
+                jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
+                
+                JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
+            }
+        }
     }
     JNF_COCOA_EXIT(env);
+    
 }
 
 - (void) setJavaLabel:(NSString *)theLabel shortcut:(NSString *)theKeyEquivalent modifierMask:(jint)modifiers {
