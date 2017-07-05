@@ -1,0 +1,402 @@
+#
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# Makefile to specify compiler flags for programs and libraries
+# targeted to MACOSX.  Should not contain any rules.
+#
+# WARNING: This file is shared with other workspaces. 
+#          So when it includes other files, it must use JDK_TOPDIR.
+#
+
+# Warning: the following variables are overriden by Defs.gmk. Set
+# values will be silently ignored:
+#   CFLAGS        (set $(OTHER_CFLAGS) instead)
+#   CPPFLAGS      (set $(OTHER_CPPFLAGS) instead)
+#   CXXFLAGS      (set $(OTHER_CXXFLAGS) instead)
+#   LDFLAGS       (set $(OTHER_LDFAGS) instead)
+#   LDLIBS        (set $(EXTRA_LIBS) instead)
+#   LDLIBS_COMMON (set $(EXTRA_LIBS) instead)
+
+# Get shared JDK settings
+include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
+
+# Part of INCREMENTAL_BUILD mechanism.
+#   Compiler emits things like:  path/file.o: file.h
+#   We want something like: relative_path/file.o relative_path/file.d: file.h
+CC_DEPEND	 = -MM
+CC_DEPEND_FILTER = $(SED) -e 's!$*\.$(OBJECT_SUFFIX)!$(dir $@)& $(dir $@)$*.$(DEPEND_SUFFIX)!g'
+
+ifndef PLATFORM_SRC
+  PLATFORM_SRC = $(BUILDDIR)/../src/solaris
+endif # PLATFORM_SRC
+
+PLATFORM_SRC_MACOS = $(BUILDDIR)/../src/macosx
+
+# BSD build pulls its platform sources from the solaris tree.
+JAVA_SRCDIR_LIST = src/$(PLATFORM) src/solaris src/share
+NATIVE_SRCDIR_LIST = src/$(PLATFORM) src/solaris src/share
+
+# Platform specific closed sources
+ifndef OPENJDK
+  ifndef CLOSED_PLATFORM_SRC
+    CLOSED_PLATFORM_SRC = $(BUILDDIR)/../src/closed/solaris
+  endif
+endif
+
+# platform specific include files
+PLATFORM_INCLUDE_NAME = $(OS_NAME)
+PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
+
+# suffix used for make dependencies files.
+DEPEND_SUFFIX = d
+# The suffix applied to the library name for FDLIBM
+FDDLIBM_SUFFIX = a
+# The suffix applied to scripts (.bat for windows, nothing for unix)
+SCRIPT_SUFFIX =
+# CC compiler object code output directive flag value
+CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
+CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
+
+#
+# Default optimization
+#
+
+ifndef OPTIMIZATION_LEVEL
+  ifeq ($(PRODUCT), java)
+    OPTIMIZATION_LEVEL = HIGHER
+  else
+    OPTIMIZATION_LEVEL = LOWER
+  endif
+endif
+ifndef FASTDEBUG_OPTIMIZATION_LEVEL
+  FASTDEBUG_OPTIMIZATION_LEVEL = LOWER
+endif
+
+# For macosx use -Os by default, unless -O3 can be proved to be worth the cost, as per policy
+# <http://wikis.sun.com/display/OpenJDK/Mac+OS+X+Port+Compilers>
+CC_OPT/NONE     = 
+CC_OPT/LOWER    = -Os
+CC_OPT/HIGHER   = -Os
+CC_OPT/HIGHEST  = -Os
+
+CC_OPT          = $(CC_OPT/$(OPTIMIZATION_LEVEL))
+
+# For all platforms, do not omit the frame pointer register usage. 
+#    We need this frame pointer to make it easy to walk the stacks.
+#    This should be the default on X86, but ia64 and amd64 may not have this
+#    as the default.
+CFLAGS_REQUIRED_amd64   += -m64 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
+LDFLAGS_COMMON_amd64    += -m64
+CFLAGS_REQUIRED_i586    += -m32 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
+LDFLAGS_COMMON_i586     += -m32
+CFLAGS_REQUIRED_ia64    += -m64 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
+CFLAGS_REQUIRED_sparcv9 += -m64 -mcpu=v9
+LDFLAGS_COMMON_sparcv9  += -m64 -mcpu=v9
+CFLAGS_REQUIRED_sparc   += -m32 -mcpu=v9
+LDFLAGS_COMMON_sparc    += -m32 -mcpu=v9
+CFLAGS_REQUIRED_arm     += -fsigned-char -D_LITTLE_ENDIAN
+CFLAGS_REQUIRED_ppc     += -fsigned-char -D_BIG_ENDIAN
+ifeq ($(ZERO_BUILD), true)
+  CFLAGS_REQUIRED       =  $(ZERO_ARCHFLAG)
+  ifeq ($(ZERO_ENDIANNESS), little)
+    CFLAGS_REQUIRED     += -D_LITTLE_ENDIAN
+  endif
+  LDFLAGS_COMMON        += $(ZERO_ARCHFLAG)
+else ifeq ($(ARCH), universal)
+  CFLAGS_REQUIRED       += -arch i386 -arch x86_64 -D_LITTLE_ENDIAN
+  LDFLAGS_COMMON        += -arch i386 -arch x86_64
+else
+  CFLAGS_REQUIRED       =  $(CFLAGS_REQUIRED_$(ARCH))
+  LDFLAGS_COMMON        += $(LDFLAGS_COMMON_$(ARCH))
+endif
+# 16-byte stack re-alignment on 32-bit Darwin
+CFLAGS_REQUIRED_i586 += -mstackrealign
+
+OTHER_CFLAGS = \
+         -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+	     -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks
+
+#
+# Selection of warning messages
+#
+GCC_INHIBIT	= -Wno-unused -Wno-parentheses
+GCC_STYLE	= 
+GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
+
+#
+# Treat compiler warnings as errors, if warnings not allowed
+#
+ifeq ($(COMPILER_WARNINGS_FATAL),true)
+  GCC_WARNINGS += -Werror
+endif
+
+#
+# Misc compiler options
+#
+ifneq ($(ARCH),ppc)
+  CFLAGS_COMMON   = -fno-strict-aliasing
+endif 
+PIC_CODE_LARGE = -fPIC
+PIC_CODE_SMALL = -fpic
+GLOBAL_KPIC = $(PIC_CODE_LARGE)
+CFLAGS_COMMON   += $(GLOBAL_KPIC) $(GCC_WARNINGS)
+ifeq ($(ARCH), amd64)
+ CFLAGS_COMMON += -pipe
+endif
+
+# BSD 64bit machines use Dwarf2, which can be HUGE, have fastdebug use -g1
+DEBUG_FLAG = -g
+ifeq ($(FASTDEBUG), true)
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    DEBUG_FLAG = -g1
+  endif
+endif
+
+# DEBUG_BINARIES overrides everything, use full -g debug information
+ifeq ($(DEBUG_BINARIES), true)
+  DEBUG_FLAG = -g
+  CFLAGS_REQUIRED += $(DEBUG_FLAG)
+endif
+
+CFLAGS_OPT      = $(CC_OPT)
+CFLAGS_DBG      = $(DEBUG_FLAG)
+CFLAGS_COMMON += $(CFLAGS_REQUIRED)
+
+CXXFLAGS_COMMON = $(GLOBAL_KPIC) -DCC_NOEX $(GCC_WARNINGS)
+CXXFLAGS_OPT	= $(CC_OPT)
+CXXFLAGS_DBG	= $(DEBUG_FLAG)
+CXXFLAGS_COMMON += $(CFLAGS_REQUIRED)
+
+# FASTDEBUG: Optimize the code in the -g versions, gives us a faster debug java
+ifeq ($(FASTDEBUG), true)
+  CFLAGS_DBG    += $(CC_OPT/$(FASTDEBUG_OPTIMIZATION_LEVEL))
+  CXXFLAGS_DBG	+= $(CC_OPT/$(FASTDEBUG_OPTIMIZATION_LEVEL))
+endif
+
+CPP_ARCH_FLAGS = -DARCH='"$(ARCH)"'
+
+# Alpha arch does not like "alpha" defined (potential general arch cleanup issue here)
+ifneq ($(ARCH),alpha)
+  CPP_ARCH_FLAGS += -D$(ARCH)
+else
+  CPP_ARCH_FLAGS += -D_$(ARCH)_
+endif
+CPPFLAGS_COMMON = $(CPP_ARCH_FLAGS) -D_ALLBSD_SOURCE $(VERSION_DEFINES) \
+		  -D_LARGEFILE64_SOURCE -D_GNU_SOURCE -D_REENTRANT
+
+CPPFLAGS_COMMON += -DMACOSX
+
+ifeq ($(ARCH_DATA_MODEL), 64)
+CPPFLAGS_COMMON += -D_LP64=1
+endif
+
+CPPFLAGS_OPT    = -DNDEBUG
+CPPFLAGS_DBG    = -DDEBUG
+ifneq ($(PRODUCT), java)
+  CPPFLAGS_DBG    += -DLOGGING 
+endif
+
+# Libraries need to locate other libraries at runtime, and you can tell
+#   a library where to look by way of the dynamic runpaths (RPATH or RUNPATH)
+#   buried inside the .{so,dylib}. The {$ORIGIN,@loader_path/} says to look
+#   relative to where the library itself is and it can be followed
+#   with relative paths from that. By default we always look in
+#   {$ORIGIN,@loader_path/}, optionally we add relative paths if the Makefile
+#   sets LD_RUNPATH_EXTRAS to those relative paths.
+#   Except on MacOS X we add a flag -z origin, not sure if this is necessary,
+#   but doesn't seem to hurt.
+#   The environment variable LD_LIBRARY_PATH will over-ride these runpaths.
+#   See 'man {dyld,rtld}' for more information.
+#   Try: 'readelf -d lib*.so' to see these settings in a library.
+#
+LDFLAGS_COMMON += -Xlinker -rpath -Xlinker @loader_path/.
+LDFLAGS_COMMON += $(LD_RUNPATH_EXTRAS:%=-Xlinker -rpath -Xlinker @loader_path/%)
+LDFLAGS_COMMON += -Xlinker -install_name -Xlinker @rpath/$(@F)
+
+#
+# -L paths for finding and -ljava
+#
+LDFLAGS_COMMON += -L$(LIBDIR)
+
+#
+# -static-libgcc is a gcc-3 flag to statically link libgcc, gcc-2.9x always
+# statically link libgcc but will print a warning with the flag. We don't 
+# want the warning, so check gcc version first.
+#
+ifeq ($(CC_MAJORVER),3)
+  OTHER_LDFLAGS  += -static-libgcc
+endif
+
+# Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
+#   (See Rules.gmk) The gcc 5 compiler might have an option for this?
+AUTOMATIC_PCH_OPTION = 
+
+#
+# Post Processing of libraries/executables
+#
+ifeq ($(VARIANT), OPT)
+  ifneq ($(NO_STRIP), true)
+    ifneq ($(DEBUG_BINARIES), true)
+      # Debug 'strip -S' leaves local function Elf symbols (better stack
+      # traces)
+      POST_STRIP_PROCESS = $(STRIP) -S
+    endif
+  endif
+endif
+
+#
+# Use: ld $(LD_MAPFILE_FLAG) mapfile *.o
+#
+LD_MAPFILE_FLAG = -Xlinker --version-script -Xlinker
+
+#
+# Support for Quantify.
+#
+ifdef QUANTIFY
+QUANTIFY_CMD = quantify
+QUANTIFY_OPTIONS = -cache-dir=/tmp/quantify -always-use-cache-dir=yes
+LINK_PRE_CMD = $(QUANTIFY_CMD) $(QUANTIFY_OPTIONS)
+endif
+
+# Darwin does not support linker map files.
+LDNOMAP=true
+
+#
+# Path and option to link against the VM, if you have to.  Note that
+# there are libraries that link against only -ljava, but they do get
+# -L to the -ljvm, this is because -ljava depends on -ljvm, whereas
+# the library itself should not.
+#
+VM_NAME         = server
+JVMLIB          = -L$(LIBDIR)/$(VM_NAME) -ljvm
+JAVALIB         = -ljava $(JVMLIB)
+
+#
+# We want to privatize JVM symbols on Solaris. This is so the user can
+# write a function called FindClass and this should not override the 
+# FindClass that is inside the JVM. At this point in time we are not
+# concerned with other JNI libraries because we hope that there will
+# not be as many clashes there.
+#
+PRIVATIZE_JVM_SYMBOLS = false
+
+USE_PTHREADS = true
+override ALT_CODESET_KEY         = _NL_CTYPE_CODESET_NAME
+override AWT_RUNPATH             =
+override HAVE_ALTZONE            = false
+override HAVE_FILIOH             = false
+override HAVE_GETHRTIME          = false
+override HAVE_GETHRVTIME         = false
+override HAVE_SIGIGNORE          = true
+override LEX_LIBRARY             = -lfl
+ifeq ($(STATIC_CXX),true)
+override LIBCXX                  = -Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic
+else
+override LIBCXX                  = -lstdc++
+endif
+override LIBPOSIX4               =
+override LIBSOCKET               =
+override LIBNSL                  =
+override LIBTHREAD               =
+override LIBDL                   =
+override MOOT_PRIORITIES         = true
+override NO_INTERRUPTIBLE_IO     = true
+override OPENWIN_HOME            = $(X11_PATH)
+override OPENWIN_LIB             = $(OPENWIN_HOME)/lib
+override OTHER_M4FLAGS           = -D__GLIBC__ -DGNU_ASSEMBLER
+override SUN_CMM_SUBDIR          =
+override THREADS_FLAG            = native
+override USE_GNU_M4              = true
+override USING_GNU_TAR           = true
+override WRITE_LIBVERSION        = false
+
+ifdef ALT_X11_PATH
+  X11_PATH = $(ALT_X11_PATH)
+else
+  X11_PATH = /usr/X11R6
+endif
+
+ifdef ALT_PACKAGE_PATH
+  PACKAGE_PATH = $(ALT_PACKAGE_PATH)
+else
+  PACKAGE_PATH = /opt/local
+endif
+
+# ALSA
+ifdef ALT_ALSA_LIB_PATH
+  ALSA_LIB_PATH = $(ALT_ALSA_LIB_PATH)
+else
+  ALSA_LIB_PATH = $(PACKAGE_PATH)/lib
+endif
+
+ifdef ALT_ALSA_HEADERS_PATH
+  ALSA_HEADERS_PATH = $(ALT_ALSA_HEADERS_PATH)
+else
+  ALSA_HEADERS_PATH = $(PACKAGE_PATH)/include
+endif
+
+# USE_EXECNAME forces the launcher to look up argv[0] on $PATH, and put the
+# resulting resolved absolute name of the executable in the environment
+# variable EXECNAME.  That executable name is then used that to locate the
+# installation area.
+override USE_EXECNAME            = true
+
+# If your platform has DPS, it will have Type1 fonts too, in which case
+# it is best to enable DPS support until such time as 2D's rasteriser
+# can fully handle Type1 fonts in all cases. Default is "yes".
+# HAVE_DPS should only be "no" if the platform has no DPS headers or libs
+# DPS (Displayable PostScript) is available on Solaris machines
+HAVE_DPS = no
+
+SYSTEM_ZLIB = true
+
+#
+# Japanese manpages
+#
+JA_SOURCE_ENCODING = eucJP
+JA_TARGET_ENCODINGS = UTF-8
+
+# Settings for the JDI - Serviceability Agent binding.
+
+HOTSPOT_SALIB_PATH = $(HOTSPOT_IMPORT_PATH)/jre/lib
+SALIB_NAME = $(LIB_PREFIX)saproc.$(LIBRARY_SUFFIX)
+
+# The JDI - Serviceability Agent binding is not currently supported
+# on ia64.
+ifeq ($(ARCH), ia64)
+  INCLUDE_SA = false
+else
+  INCLUDE_SA = true
+endif
+
+ifdef CROSS_COMPILE_ARCH
+  # X11 headers are not under /usr/include
+  OTHER_CFLAGS += -I$(OPENWIN_HOME)/include
+  OTHER_CXXFLAGS += -I$(OPENWIN_HOME)/include
+  OTHER_CPPFLAGS += -I$(OPENWIN_HOME)/include
+endif
+
+LIB_LOCATION ?= $(LIBDIR)

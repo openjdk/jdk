@@ -123,7 +123,8 @@ public class DemoRun {
         String os_arch   = System.getProperty("os.arch");
         String os_name   = System.getProperty("os.name");
         String libprefix = os_name.contains("Windows")?"":"lib";
-        String libsuffix = os_name.contains("Windows")?".dll":".so";
+        String libsuffix = os_name.contains("Windows")?".dll":
+                                os_name.startsWith("Mac OS")?".dylib":".so";
         boolean d64      =    ( os_name.contains("Solaris") ||
                                 os_name.contains("SunOS") )
                            && ( os_arch.equals("sparcv9") ||

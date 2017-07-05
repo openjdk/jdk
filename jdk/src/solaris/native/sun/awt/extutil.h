@@ -58,7 +58,7 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/include/extensions/extutil.h,v 1.5 2001/01/17 17:53:20 dawes Exp $ */
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 
 #ifndef _EXTUTIL_H_
 #define _EXTUTIL_H_
@@ -248,4 +248,4 @@ char *proc (Display *dpy, int code, XExtCodes *codes, char *buf, int n) \
         char *proc(Display *dpy, int code, XExtCodes *codes, char *buf, int n)
 #endif
 
-#endif /* __linux__ */
+#endif /* __linux__ || MACOSX */

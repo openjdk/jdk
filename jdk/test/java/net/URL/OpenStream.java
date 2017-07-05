@@ -39,7 +39,7 @@ public class OpenStream {
         URL u = new URL(badHttp);
         try {
             InputStream in = u.openStream();
-        } catch (UnknownHostException x) {
+        } catch (IOException x) {
             return;
         }
         throw new RuntimeException("Expected UnknownHostException to be thrown");

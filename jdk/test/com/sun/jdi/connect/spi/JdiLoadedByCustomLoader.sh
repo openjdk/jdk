@@ -45,10 +45,7 @@ fi
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    PS=":"
-    ;;
-  Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     ;;
   Windows* | CYGWIN*)
@@ -65,7 +62,7 @@ JAVA="${TESTJAVA}"/bin/java
 SOMEOTHERDIR="${TESTCLASSES}"/someotherdir
 
 # Compile test into the classes directory
-# Compile the list connectors class into a directory that isn't on 
+# Compile the list connectors class into a directory that isn't on
 # any class path.
 
 $JAVAC -d "${TESTCLASSES}" "${TESTSRC}"/JdiLoadedByCustomLoader.java
@@ -74,7 +71,7 @@ mkdir "${SOMEOTHERDIR}"
 $JAVAC -d "${SOMEOTHERDIR}" -classpath "${TESTSRC}${PS}${TESTJAVA}/lib/tools.jar" \
     "${TESTSRC}"/ListConnectors.java
 
-# Run the test 
+# Run the test
 
 "${JAVA}" -classpath "${TESTCLASSES}" JdiLoadedByCustomLoader \
     "${SOMEOTHERDIR}"

@@ -1,0 +1,72 @@
+." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH native2ascii 1 "10 May 2011"
+
+.LP
+.SH "Name"
+native2ascii \- Native\-to\-ASCII Converter
+.LP
+.LP
+Converts a file with characters in any supported character encoding to one with ASCII and/or Unicode escapes, or visa versa.
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f4native2ascii\fP\f2 [options] [inputfile [outputfile]]\fP
+.fl
+.fi
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+\f2native2ascii\fP converts files that are encoded to any character encoding that is supported by the Java runtime environment to files encoded in ASCII, using Unicode escapes ("\\uxxxx" notation) for all characters that are not part of the ASCII character set. This process is required for properties files containing characters not in ISO\-8859\-1 character sets. The tool can also perform the reverse conversion.
+.LP
+.LP
+If \f2outputfile\fP is omitted, standard output is used for output. If, in addition, \f2inputfile\fP is omitted, standard input is used for input.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-reverse
+Perform the reverse operation: Convert a file encoded in ISO\-8859\-1 with Unicode escapes to a file in any character encoding supported by the Java runtime environment.
+.br
+.br
+.TP 3
+\-encoding encoding_name
+Specifies the name of the character encoding to be used by the conversion procedure. If this option is not present, the default character encoding (as determined by the \f2java.nio.charset.Charset.defaultCharset\fP method) is used. The \f2encoding_name\fP string must be the name of a character encoding that is supported by the Java runtime environment \- see the
+.na
+\f4Supported Encodings\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/intl/encoding.doc.html document.
+.br
+.br
+.TP 3
+\-Joption
+Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for the java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes.
+.RE
+
+.LP
+

@@ -1,0 +1,97 @@
+." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH serialver 1 "10 May 2011"
+
+.LP
+.SH "Name"
+serialver \- The Serial Version Command
+.LP
+.LP
+The \f3serialver\fP command returns the \f2serialVersionUID\fP.
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3serialver\fP [ options ] [ classnames ]
+.fl
+.fi
+
+.LP
+.RS 3
+.TP 3
+options
+Command\-line options, as specified in this document.
+.TP 3
+classnames
+One or more class names
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+\f3serialver\fP returns the \f2serialVersionUID\fP for one or more classes in a form suitable for copying into an evolving class. When invoked with no arguments it prints a usage line.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-classpath <directories and zip/jar files separated by :>
+Set search path for application classes and resources.
+.RE
+
+.LP
+.RS 3
+.TP 3
+\-show
+Displays a simple user interface. Enter the full class name and press either the Enter key or the Show button to display the serialVersionUID.
+.TP 3
+\-Joption
+Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for the java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes.
+.RE
+
+.LP
+.SH "NOTES"
+.LP
+.LP
+The \f3serialver\fP command loads and initializes the specified classes in its virtual machine, and by default, it does not set a security manager. If \f3serialver\fP is to be run with untrusted classes, a security manager can be set with the following option:
+.LP
+.LP
+\f2\-J\-Djava.security.manager\fP
+.LP
+.LP
+and, if necessary, a security policy can be specified with the following option:
+.LP
+.LP
+\f2\-J\-Djava.security.policy=<policy file>\fP
+.LP
+.SH "SEE ALSO"
+.LP
+.LP
+.na
+\f2java.io.ObjectStreamClass\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/java/io/ObjectStreamClass.html
+.LP
+

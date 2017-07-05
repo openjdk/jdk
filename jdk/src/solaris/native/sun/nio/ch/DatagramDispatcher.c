@@ -73,7 +73,7 @@ Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
     m.msg_accrightslen = 0;
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
     m.msg_control = NULL;
     m.msg_controllen = 0;
 #endif
@@ -121,7 +121,7 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
     m.msg_accrightslen = 0;
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
     m.msg_control = NULL;
     m.msg_controllen = 0;
 #endif

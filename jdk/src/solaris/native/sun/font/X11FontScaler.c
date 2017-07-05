@@ -32,7 +32,7 @@
  * into X11FontScaler_md.c, which is compiled into another library.
  */
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/utsname.h>
 

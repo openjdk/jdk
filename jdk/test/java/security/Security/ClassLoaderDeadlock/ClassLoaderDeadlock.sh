@@ -54,6 +54,10 @@ case "$OS" in
     PATHSEP=":"
     FILESEP="/"
     ;;
+  Darwin )
+    PATHSEP=":"
+    FILESEP="/"
+    ;;
   CYGWIN* )
     PATHSEP=";"
     FILESEP="/"
@@ -75,17 +79,18 @@ fi
 
 # compile the test program
 ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
-	-d ${TESTCLASSES}${FILESEP} \
-	${TESTSRC}${FILESEP}ClassLoaderDeadlock.java
+        -d ${TESTCLASSES}${FILESEP} \
+        ${TESTSRC}${FILESEP}ClassLoaderDeadlock.java
 
 ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
-	-d ${TESTCLASSES}${FILESEP}provider${FILESEP} \
-	${TESTSRC}${FILESEP}provider${FILESEP}HashProvider.java
+        -d ${TESTCLASSES}${FILESEP}provider${FILESEP} \
+        ${TESTSRC}${FILESEP}provider${FILESEP}HashProvider.java
 
 # run the test
 ${TESTJAVA}${FILESEP}bin${FILESEP}java \
-	-classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" \
-	ClassLoaderDeadlock
+        -classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" \
+	-Djava.awt.headless=true \
+        ClassLoaderDeadlock
 
 STATUS=$?
 

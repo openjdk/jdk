@@ -49,7 +49,7 @@ OTHER_INCLUDES = -I$(SHARE_SRC)/transport/export \
                  -I$(GENNATIVESRCDIR)/jdwp
 
 ifneq ($(PLATFORM), windows)
-  OTHER_LDLIBS += -ldl
+  OTHER_LDLIBS += $(LIBDL)
 endif # PLATFORM
 
 #

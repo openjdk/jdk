@@ -137,7 +137,8 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
                         jint width, jint height)
 {
     GLenum texTarget, texProxyTarget;
-    GLint format = isOpaque ? GL_RGB : GL_RGBA;
+    GLint format = GL_RGBA;
+    GLint size = GL_UNSIGNED_INT_8_8_8_8;
     GLuint texID;
     GLsizei texWidth, texHeight, realWidth, realHeight;
     GLint texMax;
@@ -191,7 +192,7 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     // the calculated power-of-two dimensions and the given internal format
     j2d_glTexImage2D(texProxyTarget, 0, format,
                      texWidth, texHeight, 0,
-                     format, GL_UNSIGNED_BYTE, NULL);
+                     format, size, NULL);
     j2d_glGetTexLevelParameteriv(texProxyTarget, 0,
                                  GL_TEXTURE_WIDTH, &realWidth);
     j2d_glGetTexLevelParameteriv(texProxyTarget, 0,
@@ -213,7 +214,7 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     j2d_glBindTexture(texTarget, texID);
     j2d_glTexImage2D(texTarget, 0, format,
                      texWidth, texHeight, 0,
-                     format, GL_UNSIGNED_BYTE, NULL);
+                     format, size, NULL);
 
     oglsdo->isOpaque = isOpaque;
     oglsdo->xOffset = 0;
@@ -548,12 +549,12 @@ OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo,
 }
 
 /**
- * Disposes of all native resources associated with this surface.
+ * Deletes native OpenGL resources associated with this surface.
  */
 void
-OGLSD_Flush(JNIEnv *env, OGLSDOps *oglsdo)
+OGLSD_Delete(JNIEnv *env, OGLSDOps *oglsdo)
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "OGLSD_Flush: type=%d",
+    J2dTraceLn1(J2D_TRACE_INFO, "OGLSD_Delete: type=%d",
                 oglsdo->drawableType);
 
     if (oglsdo->drawableType == OGLSD_TEXTURE) {

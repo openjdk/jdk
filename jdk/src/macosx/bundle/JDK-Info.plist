@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>English</string>
+        <key>CFBundleExecutable</key>
+        <string>libjli.dylib</string>
+        <key>CFBundleGetInfoString</key>
+        <string>@@INFO@@</string>
+        <key>CFBundleIdentifier</key>
+        <string>@@ID@@</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>7.0</string>
+        <key>CFBundleName</key>
+        <string>@@NAME@@</string>
+        <key>CFBundlePackageType</key>
+        <string>BNDL</string>
+        <key>CFBundleShortVersionString</key>
+        <string>1.0</string>
+        <key>CFBundleSignature</key>
+        <string>????</string>
+        <key>CFBundleVersion</key>
+        <string>@@VERSION@@</string>
+        <key>JavaVM</key>
+        <dict>
+                <key>JVMCapabilities</key>
+                <array>
+                        <string>CommandLine</string>
+                </array>
+                <key>JVMMinimumFrameworkVersion</key>
+                <string>13.2.9</string>
+                <key>JVMMinimumSystemVersion</key>
+                <string>10.6.0</string>
+                <key>JVMPlatformVersion</key>
+                <string>@@PLATFORM_VERSION@@</string>
+                <key>JVMVendor</key>
+                <string>@@VENDOR@@</string>
+                <key>JVMVersion</key>
+                <string>@@VERSION@@</string>
+        </dict>
+</dict>
+</plist>

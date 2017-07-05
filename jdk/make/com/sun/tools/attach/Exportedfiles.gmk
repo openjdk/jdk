@@ -43,5 +43,7 @@ FILES_export = \
 	sun/tools/attach/LinuxVirtualMachine.java
 endif
 
-
-
+ifeq ($(PLATFORM), macosx)
+FILES_export = \
+	sun/tools/attach/BsdVirtualMachine.java
+endif

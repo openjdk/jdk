@@ -73,6 +73,26 @@ LocaleDataMetaInfo_Dest=$(GENSRCDIR)/sun/util/LocaleDataMetaInfo.java
 LOCALEGEN_SH=localegen.sh
 RESOURCE_NAMES="FormatData CollationData TimeZoneNames LocaleNames CurrencyNames CalendarData"
 
+
+# On MacOSX sed does not enter a newline as it does on other platforms with the same pattern
+# Using awk instead
+
+ifeq ($(PLATFORM), macosx)
+
+$(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
+	@$(RM) $@.tmp.euro $@.tmp.noneuro;
+	@$(prep-target) 
+	@$(ECHO) $(Euro_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}'  > $@.tmp.euro;
+	@$(ECHO) $(Euro_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.euro;
+	@$(ECHO) $(NonEuro_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}' > $@.tmp.noneuro;
+	@$(ECHO) $(NonEuro_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.noneuro;
+	NAWK="$(NAWK)" SED="$(SED)" SORT="$(SORT)" \
+	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.euro \
+		$@.tmp.noneuro $< $@
+	@$(RM) $@.tmp.euro $@.tmp.noneuro;
+
+else
+
 $(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
 	@$(RM) $@.tmp.euro $@.tmp.noneuro;
 	@$(prep-target) 
@@ -84,6 +104,7 @@ $(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
 	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.euro \
 		$@.tmp.noneuro $< $@
 	@$(RM) $@.tmp.euro $@.tmp.noneuro;
+endif
 	
 genlocales : $(LocaleDataMetaInfo_Dest)  
 

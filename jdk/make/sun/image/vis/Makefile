@@ -68,5 +68,5 @@ INLINE = $(PLATFORM_SRC)/native/sun/awt/medialib/vis_$(ARCH_DATA_MODEL).il
 CFLAGS += $(CFLAGS_$(ARCH)) $(INLINE) -I$(PLATFORM_SRC)/native/sun/awt/medialib -I$(SHARE_SRC)/native/sun/awt/medialib
 
 OTHER_CFLAGS += -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES
-OTHER_LDLIBS = $(LIBM) -ldl
+OTHER_LDLIBS = $(LIBM) $(LIBDL)
 
