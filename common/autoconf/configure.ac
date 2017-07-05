@@ -237,6 +237,9 @@ BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
 # Setup smart javac (after cores and memory have been setup)
 BPERF_SETUP_SMART_JAVAC
 
+# Setup use of icecc if requested
+BPERF_SETUP_ICECC
+
 # Can the C/C++ compiler use precompiled headers?
 BPERF_SETUP_PRECOMPILED_HEADERS
 
