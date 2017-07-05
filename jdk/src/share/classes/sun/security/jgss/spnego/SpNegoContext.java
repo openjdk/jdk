@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,13 +413,14 @@ public class SpNegoContext implements GSSContextSpi {
                     // pull out the mechanism token
                     byte[] accept_token = targToken.getResponseToken();
                     if (accept_token == null) {
-                        // return wth failure
-                        throw new GSSException(errorCode, -1,
-                                        "mechansim token from server is null");
+                        if (!isMechContextEstablished()) {
+                            // return with failure
+                            throw new GSSException(errorCode, -1,
+                                    "mechanism token from server is null");
+                        }
+                    } else {
+                        mechToken = GSS_initSecContext(accept_token);
                     }
-
-                    mechToken = GSS_initSecContext(accept_token);
-
                     // verify MIC
                     if (!GSSUtil.useMSInterop()) {
                         byte[] micToken = targToken.getMechListMIC();
@@ -428,7 +429,6 @@ public class SpNegoContext implements GSSContextSpi {
                                 "verification of MIC on MechList Failed!");
                         }
                     }
-
                     if (isMechContextEstablished()) {
                         state = STATE_DONE;
                         retVal = mechToken;
@@ -556,9 +556,6 @@ public class SpNegoContext implements GSSContextSpi {
 
                 // get the token for mechanism
                 byte[] accept_token = GSS_acceptSecContext(mechToken);
-                if (accept_token == null) {
-                    valid = false;
-                }
 
                 // verify MIC
                 if (!GSSUtil.useMSInterop() && valid) {

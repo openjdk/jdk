@@ -85,9 +85,9 @@ Incremental_Lists = $(Cached_db)
 
 AD_Dir   = $(GENERATED)/adfiles
 ADLC     = $(AD_Dir)/adlc
-AD_Spec  = $(GAMMADIR)/src/cpu/$(Platform_arch)/vm/$(Platform_arch).ad
+AD_Spec  = $(GAMMADIR)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad
 AD_Src   = $(GAMMADIR)/src/share/vm/adlc
-AD_Names = ad_$(Platform_arch).hpp ad_$(Platform_arch).cpp
+AD_Names = ad_$(Platform_arch_model).hpp ad_$(Platform_arch_model).cpp
 AD_Files = $(AD_Names:%=$(AD_Dir)/%)
 
 # AD_Files_If_Required/COMPILER1 = ad_stuff

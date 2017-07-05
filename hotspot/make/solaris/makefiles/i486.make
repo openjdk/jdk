@@ -35,17 +35,13 @@ Obj_Files += solaris_x86_32.o
 ifeq ("${Platform_compiler}", "sparcWorks")
 
 # _lwp_create_interpose must have a frame
-OPT_CFLAGS/os_solaris_i486.o = -xO1
-# force C++ interpreter to be full optimization
-OPT_CFLAGS/interpret.o = -fast -O4
+OPT_CFLAGS/os_solaris_x86.o = -xO1
 else
 
 ifeq ("${Platform_compiler}", "gcc")
 # gcc
 # _lwp_create_interpose must have a frame
-OPT_CFLAGS/os_solaris_i486.o = -fno-omit-frame-pointer
-# force C++ interpreter to be full optimization
-OPT_CFLAGS/interpret.o = -O3
+OPT_CFLAGS/os_solaris_x86.o = -fno-omit-frame-pointer
 #
 else
 # error
@@ -57,7 +53,7 @@ endif
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 # ILD is gone as of SS11 (5.8), not supported in SS10 (5.7)
-ifeq ($(shell expr $(COMPILER_REV) \< 5.7), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \< 507), 1)
   #
   # Bug in ild causes it to fail randomly. Until we get a fix we can't
   # use ild.

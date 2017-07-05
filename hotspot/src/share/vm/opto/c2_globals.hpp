@@ -256,10 +256,10 @@
   develop(intx, PrintIdealGraphPort, 4444,                                  \
           "Ideal graph printer to network port")                            \
                                                                             \
-  develop(ccstr, PrintIdealGraphAddress, "127.0.0.1",                       \
+  notproduct(ccstr, PrintIdealGraphAddress, "127.0.0.1",                    \
           "IP address to connect to visualizer")                            \
                                                                             \
-  develop(ccstr, PrintIdealGraphFile, NULL,                                 \
+  notproduct(ccstr, PrintIdealGraphFile, NULL,                              \
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
                                                                             \

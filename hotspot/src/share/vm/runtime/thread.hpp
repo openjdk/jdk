@@ -793,6 +793,8 @@ class JavaThread: public Thread {
   DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
   // Set of all such queues.
   static DirtyCardQueueSet _dirty_card_queue_set;
+
+  void flush_barrier_queues();
 #endif // !SERIALGC
 
   friend class VMThread;

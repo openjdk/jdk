@@ -68,13 +68,7 @@ public class JMXRemoteTargetNamespace extends JMXRemoteNamespace {
 
     public JMXRemoteTargetNamespace(JMXServiceURL sourceURL,
             Map<String,?> optionsMap, String sourceNamespace) {
-        this(sourceURL,optionsMap,sourceNamespace,false);
-    }
-
-    public JMXRemoteTargetNamespace(JMXServiceURL sourceURL,
-            Map<String,?> optionsMap, String sourceNamespace,
-            boolean createEventClient) {
-        super(sourceURL,optionsMap);
+        super(sourceURL, optionsMap);
         this.sourceNamespace = sourceNamespace;
         this.createEventClient = createEventClient(optionsMap);
     }
@@ -92,14 +86,14 @@ public class JMXRemoteTargetNamespace extends JMXRemoteNamespace {
     }
 
     @Override
-    protected JMXConnector newJMXConnector(JMXServiceURL url,
-            Map<String, ?> env) throws IOException {
-        JMXConnector sup = super.newJMXConnector(url, env);
-        if (sourceNamespace == null || "".equals(sourceNamespace))
-            return sup;
+    protected MBeanServerConnection getMBeanServerConnection(JMXConnector jmxc)
+            throws IOException {
+        MBeanServerConnection mbsc = super.getMBeanServerConnection(jmxc);
+        if (sourceNamespace != null && sourceNamespace.length() > 0)
+            mbsc = JMXNamespaces.narrowToNamespace(mbsc, sourceNamespace);
         if (createEventClient)
-            sup = EventClient.withEventClient(sup);
-        return JMXNamespaces.narrowToNamespace(sup, sourceNamespace);
+            mbsc = EventClient.getEventClientConnection(mbsc);
+        return mbsc;
     }
 
 

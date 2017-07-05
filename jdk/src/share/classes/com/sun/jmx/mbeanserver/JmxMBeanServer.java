@@ -122,7 +122,7 @@ public final class JmxMBeanServer
      *     {@link javax.management.MBeanServerFactory#newMBeanServer(java.lang.String)}
      *     instead.
      *     <p>
-     *     By default, {@link MBeanServerInterceptor} are disabled. Use
+     *     By default, interceptors are disabled. Use
      *     {@link #JmxMBeanServer(java.lang.String,javax.management.MBeanServer,javax.management.MBeanServerDelegate,boolean)} to enable them.
      * </ul>
      * @param domain The default domain name used by this MBeanServer.
@@ -239,7 +239,7 @@ public final class JmxMBeanServer
         this.mBeanServerDelegateObject = delegate;
         this.outerShell   = outer;
 
-        final Repository repository = new Repository(domain,fairLock);
+        final Repository repository = new Repository(domain);
         this.mbsInterceptor =
             new NamespaceDispatchInterceptor(outer, delegate, instantiator,
                                               repository);

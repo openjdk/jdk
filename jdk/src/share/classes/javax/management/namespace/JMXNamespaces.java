@@ -26,21 +26,19 @@
 package javax.management.namespace;
 
 import com.sun.jmx.defaults.JmxProperties;
-import com.sun.jmx.namespace.JMXNamespaceUtils;
 import com.sun.jmx.namespace.ObjectNameRouter;
 import com.sun.jmx.namespace.serial.RewritingProcessor;
 import com.sun.jmx.namespace.RoutingConnectionProxy;
 import com.sun.jmx.namespace.RoutingServerProxy;
 
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
 
 /**
  * Static constants and utility methods to help work with
@@ -69,23 +67,6 @@ public class JMXNamespaces {
 
 
     /**
-     * Returns a connector connected to a sub name space exposed through
-     * the parent connector.
-     * @param parent the parent connector.
-     * @param namespace the {@linkplain javax.management.namespace name space}
-     *                  to which the returned connector is
-     *                  connected.
-     * @return A connector connected to a sub name space exposed through
-     * the parent connector.
-     **/
-    public static JMXConnector narrowToNamespace(final JMXConnector parent,
-                                  final String namespace)
-        throws IOException {
-
-        return JMXNamespaceUtils.cd(parent,namespace,true);
-    }
-
-    /**
      * Creates a new {@code MBeanServerConnection} proxy on a
      * {@linkplain javax.management.namespace sub name space}
      * of the given parent.
@@ -96,15 +77,18 @@ public class JMXNamespaces {
      *               name space} in which to narrow.
      * @return A new {@code MBeanServerConnection} proxy that shows the content
      *         of that name space.
-     * @throws IllegalArgumentException if the name space does not exist, or
-     *         if a proxy for that name space cannot be created.
+     * @throws IllegalArgumentException if either argument is null,
+     * or the name space does not exist, or if a proxy for that name space
+     * cannot be created.  The {@linkplain Throwable#getCause() cause} of
+     * this exception will be an {@link InstanceNotFoundException} if and only
+     * if the name space is found not to exist.
      */
     public static MBeanServerConnection narrowToNamespace(
                         MBeanServerConnection parent,
                         String namespace) {
         if (LOG.isLoggable(Level.FINER))
             LOG.finer("Making MBeanServerConnection for: " +namespace);
-        return RoutingConnectionProxy.cd(parent,namespace);
+        return RoutingConnectionProxy.cd(parent, namespace, true);
     }
 
     /**
@@ -120,13 +104,15 @@ public class JMXNamespaces {
      *         of that name space.
      * @throws IllegalArgumentException if either argument is null,
      * or the name space does not exist, or if a proxy for that name space
-     * cannot be created.
+     * cannot be created.  The {@linkplain Throwable#getCause() cause} of
+     * this exception will be an {@link InstanceNotFoundException} if and only
+     * if the name space is found not to exist.
      */
     public static MBeanServer narrowToNamespace(MBeanServer parent,
             String namespace) {
         if (LOG.isLoggable(Level.FINER))
-            LOG.finer("Making NamespaceServerProxy for: " +namespace);
-        return RoutingServerProxy.cd(parent,namespace);
+            LOG.finer("Making MBeanServer for: " +namespace);
+        return RoutingServerProxy.cd(parent, namespace, true);
     }
 
     /**
@@ -266,7 +252,7 @@ public class JMXNamespaces {
                 ObjectNameRouter.normalizeNamespacePath(namespace,false,
                             true,false);
         try {
-            // We could use Util.newObjectName here - but throwing an
+            // We could use ObjectName.valueOf here - but throwing an
             // IllegalArgumentException that contains just the supplied
             // namespace instead of the whole ObjectName seems preferable.
             return ObjectName.getInstance(sourcePath+

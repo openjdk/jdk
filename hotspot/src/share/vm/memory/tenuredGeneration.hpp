@@ -73,7 +73,6 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
 
   // Mark sweep support
   void compute_new_size();
-  int allowed_dead_ratio() const;
 
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
