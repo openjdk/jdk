@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,37 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_bytecodeStream.cpp.incl"
+/**
+ * @test
+ * @bug 6756768
+ * @summary C1 generates invalid code
+ *
+ * @run main/othervm -Xcomp Test6756768
+ */
 
-Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
-  assert(!is_last_bytecode(), "should have been checked");
-  // set next bytecode position
-  address bcp = RawBytecodeStream::bcp();
-  address end = method()->code_base() + end_bci();
-  int l = Bytecodes::raw_special_length_at(bcp, end);
-  if (l <= 0 || (_bci + l) > _end_bci) {
-    code = Bytecodes::_illegal;
-  } else {
-    _next_bci += l;
-    assert(_bci < _next_bci, "length must be > 0");
-    // set attributes
-    _is_wide = false;
-    // check for special (uncommon) cases
-    if (code == Bytecodes::_wide) {
-      if (bcp + 1 >= end) {
-        code = Bytecodes::_illegal;
-      } else {
-        code = (Bytecodes::Code)bcp[1];
-        _is_wide = true;
-      }
+class Test6756768a
+{
+    static boolean var_1 = true;
+}
+
+final class Test6756768b
+{
+    static boolean var_24 = false;
+    static int var_25 = 0;
+
+    static boolean var_temp1 = Test6756768a.var_1 = false;
+}
+
+public final class Test6756768 extends Test6756768a
+{
+    final static int var = var_1 ^ (Test6756768b.var_24 ? var_1 : var_1) ? Test6756768b.var_25 : 1;
+
+    static public void main(String[] args) {
+        if (var != 0) {
+            throw new InternalError("var = " + var);
+        }
     }
-  }
-  _code = code;
-  return code;
+
 }

@@ -59,7 +59,7 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
   for (uint i = old_dbg_start; i < oldcall->req(); i++) {
     Node* old_in = oldcall->in(i);
     // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in->is_SafePointScalarObject()) {
+    if (old_in != NULL && old_in->is_SafePointScalarObject()) {
       SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
       uint old_unique = C->unique();
       Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
@@ -1509,21 +1509,63 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   if (!alock->is_eliminated()) {
     return false;
   }
-  // Mark the box lock as eliminated if all correspondent locks are eliminated
-  // to construct correct debug info.
-  BoxLockNode* box = alock->box_node()->as_BoxLock();
-  if (!box->is_eliminated()) {
-    bool eliminate = true;
-    for (DUIterator_Fast imax, i = box->fast_outs(imax); i < imax; i++) {
-      Node *lck = box->fast_out(i);
-      if (lck->is_Lock() && !lck->as_AbstractLock()->is_eliminated()) {
-        eliminate = false;
-        break;
-      }
-    }
-    if (eliminate)
-      box->set_eliminated();
-  }
+  if (alock->is_Lock() && !alock->is_coarsened()) {
+      // Create new "eliminated" BoxLock node and use it
+      // in monitor debug info for the same object.
+      BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
+      Node* obj = alock->obj_node();
+      if (!oldbox->is_eliminated()) {
+        BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+        newbox->set_eliminated();
+        transform_later(newbox);
+        // Replace old box node with new box for all users
+        // of the same object.
+        for (uint i = 0; i < oldbox->outcnt();) {
+
+          bool next_edge = true;
+          Node* u = oldbox->raw_out(i);
+          if (u == alock) {
+            i++;
+            continue; // It will be removed below
+          }
+          if (u->is_Lock() &&
+              u->as_Lock()->obj_node() == obj &&
+              // oldbox could be referenced in debug info also
+              u->as_Lock()->box_node() == oldbox) {
+            assert(u->as_Lock()->is_eliminated(), "sanity");
+            _igvn.hash_delete(u);
+            u->set_req(TypeFunc::Parms + 1, newbox);
+            next_edge = false;
+#ifdef ASSERT
+          } else if (u->is_Unlock() && u->as_Unlock()->obj_node() == obj) {
+            assert(u->as_Unlock()->is_eliminated(), "sanity");
+#endif
+          }
+          // Replace old box in monitor debug info.
+          if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
+            SafePointNode* sfn = u->as_SafePoint();
+            JVMState* youngest_jvms = sfn->jvms();
+            int max_depth = youngest_jvms->depth();
+            for (int depth = 1; depth <= max_depth; depth++) {
+              JVMState* jvms = youngest_jvms->of_depth(depth);
+              int num_mon  = jvms->nof_monitors();
+              // Loop over monitors
+              for (int idx = 0; idx < num_mon; idx++) {
+                Node* obj_node = sfn->monitor_obj(jvms, idx);
+                Node* box_node = sfn->monitor_box(jvms, idx);
+                if (box_node == oldbox && obj_node == obj) {
+                  int j = jvms->monitor_box_offset(idx);
+                  _igvn.hash_delete(u);
+                  u->set_req(j, newbox);
+                  next_edge = false;
+                }
+              } // for (int idx = 0;
+            } // for (int depth = 1;
+          } // if (u->is_SafePoint()
+          if (next_edge) i++;
+        } // for (uint i = 0; i < oldbox->outcnt();)
+      } // if (!oldbox->is_eliminated())
+  } // if (alock->is_Lock() && !lock->is_coarsened())
 
   #ifndef PRODUCT
   if (PrintEliminateLocks) {
@@ -1562,6 +1604,15 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     _igvn.subsume_node(ctrlproj, fallthroughproj);
     _igvn.hash_delete(memproj);
     _igvn.subsume_node(memproj, memproj_fallthrough);
+
+    // Delete FastLock node also if this Lock node is unique user
+    // (a loop peeling may clone a Lock node).
+    Node* flock = alock->as_Lock()->fastlock_node();
+    if (flock->outcnt() == 1) {
+      assert(flock->unique_out() == alock, "sanity");
+      _igvn.hash_delete(flock);
+      _igvn.subsume_node(flock, top());
+    }
   }
 
   // Seach for MemBarRelease node and delete it also.
@@ -1887,8 +1938,28 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 bool PhaseMacroExpand::expand_macro_nodes() {
   if (C->macro_count() == 0)
     return false;
-  // attempt to eliminate allocations
+  // First, attempt to eliminate locks
   bool progress = true;
+  while (progress) {
+    progress = false;
+    for (int i = C->macro_count(); i > 0; i--) {
+      Node * n = C->macro_node(i-1);
+      bool success = false;
+      debug_only(int old_macro_count = C->macro_count(););
+      if (n->is_AbstractLock()) {
+        success = eliminate_locking_node(n->as_AbstractLock());
+      } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
+        _igvn.add_users_to_worklist(n);
+        _igvn.hash_delete(n);
+        _igvn.subsume_node(n, n->in(1));
+        success = true;
+      }
+      assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
+      progress = progress || success;
+    }
+  }
+  // Next, attempt to eliminate allocations
+  progress = true;
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i--) {
@@ -1902,17 +1973,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         break;
       case Node::Class_Lock:
       case Node::Class_Unlock:
-        success = eliminate_locking_node(n->as_AbstractLock());
+        assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         break;
       default:
-        if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
-          _igvn.add_users_to_worklist(n);
-          _igvn.hash_delete(n);
-          _igvn.subsume_node(n, n->in(1));
-          success = true;
-        } else {
-          assert(false, "unknown node type in macro list");
-        }
+        assert(false, "unknown node type in macro list");
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
