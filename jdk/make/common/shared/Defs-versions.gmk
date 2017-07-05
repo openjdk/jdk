@@ -86,19 +86,17 @@ endif
 # REQUIRED_MAKE_VER
 #   The minimum version of GNU make.
 #
-# REQUIRED_MKS_VER
-#   Windows only: If MKS used instead of CYGWIN, the minimum version of MKS.
-#
 # REQUIRED_OS_VARIANT_NAME
 #   The OS variation name required.
 #     Solaris: Solaris or OpenSolaris
-#     Windows: Windows2000, WindowsXP, Windows2003, etc.
+#     Windows: Windows2000, WindowsXP, Windows2003, Windows2008R2, etc.
 #     Linux: Fedora, RedHat, SuSE, Ubuntu, etc.
 #
 # REQUIRED_OS_VARIANT_VERSION
 #   The version number associated with the above OS variant name.
 #     Solaris: output of uname -r
-#     Windows: 5.0 for Windows2000, 5.1 for WindowsXP, 5.2 for Windows2003, etc.
+#     Windows: 5.0 for Windows2000, 5.1 for WindowsXP,
+#              5.2 for Windows2003, 6.1 for Windows2008R2, etc.
 #     Linux: number for the variant, e.g. 9 for Fedora 9
 #
 # REQUIRED_OS_VERSION
@@ -180,21 +178,15 @@ endif
 # Windows specific
 ifeq ($(PLATFORM), windows)
   REQUIRED_OS_NAME            = Windows
-  ifeq ($(ARCH_DATA_MODEL),64)
-    REQUIRED_OS_VERSION       = 5.2
-    REQUIRED_OS_VARIANT_NAME  = Windows2003
-  else
-    REQUIRED_OS_VERSION       = 5.1
-    REQUIRED_OS_VARIANT_NAME  = WindowsXP
-  endif
+  REQUIRED_OS_VERSION         = 6.1
+  REQUIRED_OS_VARIANT_NAME    = Windows2008R2
   REQUIRED_OS_VARIANT_VERSION = $(REQUIRED_OS_VERSION)
   REQUIRED_CYGWIN_VER         = 4.0
-  REQUIRED_MKS_VER            = 6.1
   ifeq ($(CC_VERSION),msvc)
     REQUIRED_COMPILER_NAME    = Visual Studio 10
     REQUIRED_COMPILER_VERSION = VS2010
-    REQUIRED_CC_VER           = 16.00.30319.01
-    REQUIRED_LINK_VER         = 10.00.30319.01
+    REQUIRED_CC_VER           = 16.00.40219.01
+    REQUIRED_LINK_VER         = 10.00.40219.01
   endif
   ifeq ($(CC_VERSION),gcc)
     REQUIRED_CC_VER           = 3.4.3

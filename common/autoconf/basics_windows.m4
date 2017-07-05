@@ -145,7 +145,7 @@ AC_DEFUN([BASIC_FIXUP_PATH_MSYS],
     # Not in mixed or Windows style, start by that.
     new_path=`cmd //c echo $path`
   fi
-  
+
   BASIC_MAKE_WINDOWS_SPACE_SAFE_MSYS([$new_path])
   BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(new_path)
   if test "x$path" != "x$new_path"; then
@@ -175,8 +175,8 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
   if test "x$new_path" = x; then
@@ -191,8 +191,8 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
     if test "x$new_path" = x; then
@@ -218,9 +218,9 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
     # Short path failed, file does not exist as specified.
     # Try adding .exe or .cmd
     if test -f "${new_path}.exe"; then
-       input_to_shortpath="${new_path}.exe"
+      input_to_shortpath="${new_path}.exe"
     elif test -f "${new_path}.cmd"; then
-       input_to_shortpath="${new_path}.cmd"
+      input_to_shortpath="${new_path}.cmd"
     else
       AC_MSG_NOTICE([The path of $1, which resolves as "$new_path", is invalid.])
       AC_MSG_NOTICE([Neither "$new_path" nor "$new_path.exe/cmd" can be found])
@@ -254,7 +254,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_MSYS],
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
-  
+
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -264,9 +264,9 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_MSYS],
     arguments="EOL"
     new_path="$path"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(new_path)
-    
+
     new_path=`$WHICH "$new_path" 2> /dev/null`
-    
+
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
@@ -302,7 +302,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 [
   SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
   if test $SRC_ROOT_LENGTH -gt 100; then
-      AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
+    AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
   fi
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -311,14 +311,14 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([$CYGWIN_VERSION])
     WINDOWS_ENV_VENDOR='cygwin'
     WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
-    
+
     CYGWIN_VERSION_OK=`$ECHO $CYGWIN_VERSION | $GREP ^1.7.`
     if test "x$CYGWIN_VERSION_OK" = x; then
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
     if test "x$CYGPATH" = x; then
-        AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
+      AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
     fi
     AC_MSG_CHECKING([cygwin root directory as unix-style path])
     # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
@@ -329,13 +329,13 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     WINDOWS_ENV_ROOT_PATH="$CYGWIN_ROOT_PATH"
     test_cygdrive_prefix=`$ECHO $CYGWIN_ROOT_PATH | $GREP ^/cygdrive/`
     if test "x$test_cygdrive_prefix" = x; then
-        AC_MSG_ERROR([Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c.])
+      AC_MSG_ERROR([Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c.])
     fi
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     AC_MSG_CHECKING([msys release])
     MSYS_VERSION=`$UNAME -r`
     AC_MSG_RESULT([$MSYS_VERSION])
-    
+
     WINDOWS_ENV_VENDOR='msys'
     WINDOWS_ENV_VERSION="$MSYS_VERSION"
 
@@ -367,12 +367,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 
 AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
 [
-# When using cygwin or msys, we need a wrapper binary that renames
-# /cygdrive/c/ arguments into c:/ arguments and peeks into
-# @files and rewrites these too! This wrapper binary is
-# called fixpath.
-FIXPATH=
-if test "x$OPENJDK_BUILD_OS" = xwindows; then
+  # When using cygwin or msys, we need a wrapper binary that renames
+  # /cygdrive/c/ arguments into c:/ arguments and peeks into
+  # @files and rewrites these too! This wrapper binary is
+  # called fixpath.
+  FIXPATH=
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
     AC_MSG_CHECKING([if fixpath can be created])
     FIXPATH_SRC="$SRC_ROOT/common/src/fixpath.c"
     FIXPATH_BIN="$OUTPUT_ROOT/fixpath.exe"
@@ -389,7 +389,7 @@ if test "x$OPENJDK_BUILD_OS" = xwindows; then
       # @ was chosen as separator to minimize risk of other tools messing around with it
       all_unique_prefixes=`echo "${all_fixpath_prefixes@<:@@@:>@}" | tr ' ' '\n' | grep '^/./' | sort | uniq`
       fixpath_argument_list=`echo $all_unique_prefixes  | tr ' ' '@'`
-      
+
       FIXPATH="$OUTPUT_ROOT/fixpath -m$fixpath_argument_list"
     fi
     rm -f $OUTPUT_ROOT/fixpath*
@@ -397,24 +397,24 @@ if test "x$OPENJDK_BUILD_OS" = xwindows; then
     $CC $FIXPATH_SRC -Fe$FIXPATH_BIN > $OUTPUT_ROOT/fixpath1.log 2>&1
     cd $CURDIR
 
-    if test ! -x $OUTPUT_ROOT/fixpath.exe; then 
-        AC_MSG_RESULT([no])
-        cat $OUTPUT_ROOT/fixpath1.log
-        AC_MSG_ERROR([Could not create $OUTPUT_ROOT/fixpath.exe])
+    if test ! -x $OUTPUT_ROOT/fixpath.exe; then
+      AC_MSG_RESULT([no])
+      cat $OUTPUT_ROOT/fixpath1.log
+      AC_MSG_ERROR([Could not create $OUTPUT_ROOT/fixpath.exe])
     fi
     AC_MSG_RESULT([yes])
     AC_MSG_CHECKING([if fixpath.exe works])
     cd $OUTPUT_ROOT
-    $FIXPATH $CC $SRC_ROOT/common/src/fixpath.c -Fe$OUTPUT_ROOT/fixpath2.exe > $OUTPUT_ROOT/fixpath2.log 2>&1 
+    $FIXPATH $CC $SRC_ROOT/common/src/fixpath.c -Fe$OUTPUT_ROOT/fixpath2.exe > $OUTPUT_ROOT/fixpath2.log 2>&1
     cd $CURDIR
-    if test ! -x $OUTPUT_ROOT/fixpath2.exe; then 
-        AC_MSG_RESULT([no])
-        cat $OUTPUT_ROOT/fixpath2.log
-        AC_MSG_ERROR([fixpath did not work!])
+    if test ! -x $OUTPUT_ROOT/fixpath2.exe; then
+      AC_MSG_RESULT([no])
+      cat $OUTPUT_ROOT/fixpath2.log
+      AC_MSG_ERROR([fixpath did not work!])
     fi
     AC_MSG_RESULT([yes])
     rm -f $OUTPUT_ROOT/fixpath?.??? $OUTPUT_ROOT/fixpath.obj
-fi
+  fi
 
-AC_SUBST(FIXPATH)
+  AC_SUBST(FIXPATH)
 ])

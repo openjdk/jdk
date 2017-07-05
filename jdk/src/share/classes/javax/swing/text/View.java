@@ -68,7 +68,7 @@ A view has the following responsibilities:
     implementation, the minimum span will be &lt;= the preferred span which in turn
     will be &lt;= the maximum span.
     </p>
-    <p align=center><img src="doc-files/View-flexibility.jpg"
+    <p style="text-align:center"><img src="doc-files/View-flexibility.jpg"
                      alt="The above text describes this graphic.">
     <p>The minimum set of methods for layout are:
     <ul>
@@ -95,7 +95,7 @@ A view has the following responsibilities:
     This allows parent View implementations to cache the child requirements if
     desired.  The calling sequence looks something like the following:
     </p>
-    <p align=center>
+    <p style="text-align:center">
       <img src="doc-files/View-layout.jpg"
        alt="Sample calling sequence between parent view and child view:
        setSize, getMinimum, getPreferred, getMaximum, getAlignment, setSize">
@@ -293,7 +293,7 @@ public abstract class View implements SwingConstants {
     /**
      * Determines the desired alignment for this view along an
      * axis.  The desired alignment is returned.  This should be
-     * a value >= 0.0 and <= 1.0, where 0 indicates alignment at
+     * a value &gt;= 0.0 and &lt;= 1.0, where 0 indicates alignment at
      * the origin and 1.0 indicates alignment to the full span
      * away from the origin.  An alignment of 0.5 would be the
      * center of the view.
@@ -351,7 +351,7 @@ public abstract class View implements SwingConstants {
      * the default is to not be a composite view this
      * returns 0.
      *
-     * @return the number of views >= 0
+     * @return the number of views &gt;= 0
      * @see View#getViewCount
      */
     public int getViewCount() {
@@ -362,7 +362,7 @@ public abstract class View implements SwingConstants {
      * Gets the <i>n</i>th child view.  Since there are no
      * children by default, this returns <code>null</code>.
      *
-     * @param n the number of the view to get, >= 0 && < getViewCount()
+     * @param n the number of the view to get, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @return the view
      */
     public View getView(int n) {
@@ -393,7 +393,7 @@ public abstract class View implements SwingConstants {
      * Inserts a single child view.  This is a convenience
      * call to <code>replace</code>.
      *
-     * @param offs the offset of the view to insert before >= 0
+     * @param offs the offset of the view to insert before &gt;= 0
      * @param v the view
      * @see #replace
      * @since 1.3
@@ -428,9 +428,9 @@ public abstract class View implements SwingConstants {
      * a view has no children.
      *
      * @param offset the starting index into the child views to insert
-     *   the new views.  This should be a value >= 0 and <= getViewCount
+     *   the new views.  This should be a value &gt;= 0 and &lt;= getViewCount
      * @param length the number of existing child views to remove
-     *   This should be a value >= 0 and <= (getViewCount() - offset).
+     *   This should be a value &gt;= 0 and &lt;= (getViewCount() - offset).
      * @param views the child views to add.  This value can be
      *   <code>null</code> to indicate no children are being added
      *   (useful to remove).
@@ -445,7 +445,7 @@ public abstract class View implements SwingConstants {
      * to return -1 to indicate there is no valid child index for any
      * position.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      * @since 1.3
@@ -461,7 +461,7 @@ public abstract class View implements SwingConstants {
      * their location.  This returns <code>null</code> since the
      * default is to not have any child views.
      *
-     * @param index the index of the child, >= 0 && <
+     * @param index the index of the child, &gt;= 0 &amp;&amp; &lt;
      *          <code>getViewCount()</code>
      * @param a  the allocation to this view
      * @return the allocation to the child
@@ -477,7 +477,7 @@ public abstract class View implements SwingConstants {
      * they might not be in the same order found in the model, or they just
      * might not allow access to some of the locations in the model.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region in which to render
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard.
@@ -566,7 +566,7 @@ public abstract class View implements SwingConstants {
      * from the document model coordinate space
      * to the view coordinate space.
      *
-     * @param pos the position of the desired character (>=0)
+     * @param pos the position of the desired character (&gt;=0)
      * @param a the area of the view, which encompasses the requested character
      * @param b the bias toward the previous character or the
      *  next character represented by the offset, in case the
@@ -592,17 +592,17 @@ public abstract class View implements SwingConstants {
      * to the view coordinate space. The specified region is
      * created as a union of the first and last character positions.
      *
-     * @param p0 the position of the first character (>=0)
+     * @param p0 the position of the first character (&gt;=0)
      * @param b0 the bias of the first character position,
      *  toward the previous character or the
      *  next character represented by the offset, in case the
      *  position is a boundary of two views; <code>b0</code> will have one
      *  of these values:
-     * <ul>
+     * <ul style="list-style-type:none">
      * <li> <code>Position.Bias.Forward</code>
      * <li> <code>Position.Bias.Backward</code>
      * </ul>
-     * @param p1 the position of the last character (>=0)
+     * @param p1 the position of the last character (&gt;=0)
      * @param b1 the bias for the second character position, defined
      *          one of the legal values shown above
      * @param a the area of the view, which encompasses the requested region
@@ -656,11 +656,11 @@ public abstract class View implements SwingConstants {
      * closer to the next character in the model or the previous
      * character in the model.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region in which to render
      * @return the location within the model that best represents the
-     *  given point in the view >= 0.  The <code>biasReturn</code>
+     *  given point in the view &gt;= 0.  The <code>biasReturn</code>
      *  argument will be
      * filled in to indicate that the point given is closer to the next
      * character in the model or the previous character in the model.
@@ -804,7 +804,7 @@ public abstract class View implements SwingConstants {
      * Fetches the portion of the model for which this view is
      * responsible.
      *
-     * @return the starting offset into the model >= 0
+     * @return the starting offset into the model &gt;= 0
      * @see View#getStartOffset
      */
     public int getStartOffset() {
@@ -815,7 +815,7 @@ public abstract class View implements SwingConstants {
      * Fetches the portion of the model for which this view is
      * responsible.
      *
-     * @return the ending offset into the model >= 0
+     * @return the ending offset into the model &gt;= 0
      * @see View#getEndOffset
      */
     public int getEndOffset() {
@@ -884,14 +884,14 @@ public abstract class View implements SwingConstants {
      * @param axis may be either <code>View.X_AXIS</code> or
      *          <code>View.Y_AXIS</code>
      * @param offset the location in the document model
-     *   that a broken fragment would occupy >= 0.  This
+     *   that a broken fragment would occupy &gt;= 0.  This
      *   would be the starting offset of the fragment
      *   returned
      * @param pos the position along the axis that the
-     *  broken view would occupy >= 0.  This may be useful for
+     *  broken view would occupy &gt;= 0.  This may be useful for
      *  things like tab calculations
      * @param len specifies the distance along the axis
-     *  where a potential break is desired >= 0
+     *  where a potential break is desired &gt;= 0
      * @return the fragment of the view that represents the
      *  given span, if the view can be broken.  If the view
      *  doesn't support breaking behavior, the view itself is
@@ -909,10 +909,10 @@ public abstract class View implements SwingConstants {
      * the view doesn't support fragmenting (the default), it
      * should return itself.
      *
-     * @param p0 the starting offset >= 0.  This should be a value
+     * @param p0 the starting offset &gt;= 0.  This should be a value
      *   greater or equal to the element starting offset and
      *   less than the element ending offset.
-     * @param p1 the ending offset > p0.  This should be a value
+     * @param p1 the ending offset &gt; p0.  This should be a value
      *   less than or equal to the elements end offset and
      *   greater than the elements starting offset.
      * @return the view fragment, or itself if the view doesn't
@@ -949,10 +949,10 @@ public abstract class View implements SwingConstants {
      * @param axis may be either <code>View.X_AXIS</code> or
      *          <code>View.Y_AXIS</code>
      * @param pos the potential location of the start of the
-     *   broken view >= 0.  This may be useful for calculating tab
+     *   broken view &gt;= 0.  This may be useful for calculating tab
      *   positions
      * @param len specifies the relative length from <em>pos</em>
-     *   where a potential break is desired >= 0
+     *   where a potential break is desired &gt;= 0
      * @return the weight, which should be a value between
      *   ForcedBreakWeight and BadBreakWeight
      * @see LabelView
@@ -986,8 +986,8 @@ public abstract class View implements SwingConstants {
      * layout of the view along the given axis, if it
      * has any layout duties.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
     }
@@ -1314,7 +1314,7 @@ public abstract class View implements SwingConstants {
      * implemented to default the bias to <code>Position.Bias.Forward</code>
      * which was previously implied.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region in which to render
      * @return the bounding box of the given position is returned
      * @exception BadLocationException  if the given position does
@@ -1332,11 +1332,11 @@ public abstract class View implements SwingConstants {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region in which to render
      * @return the location within the model that best represents the
-     *  given point in the view >= 0
+     *  given point in the view &gt;= 0
      * @see View#viewToModel
      * @deprecated
      */

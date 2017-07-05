@@ -26,6 +26,8 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.Spliterators;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
@@ -37,6 +39,69 @@ import static java.util.stream.LambdaTestHelpers.*;
  */
 @Test
 public class SortedOpTest extends OpTestCase {
+
+    public void testRefStreamTooLarge() {
+        Function<LongStream, Stream<Long>> f = s ->
+                // Clear the SORTED flag
+                s.mapToObj(i -> i)
+                .sorted();
+
+        testStreamTooLarge(f, Stream::findFirst);
+    }
+
+    public void testIntStreamTooLarge() {
+        Function<LongStream, IntStream> f = s ->
+                // Clear the SORTED flag
+                s.mapToInt(i -> (int) i)
+                .sorted();
+
+        testStreamTooLarge(f, IntStream::findFirst);
+    }
+
+    public void testLongStreamTooLarge() {
+        Function<LongStream, LongStream> f = s ->
+                // Clear the SORTED flag
+                s.map(i -> i)
+                .sorted();
+
+        testStreamTooLarge(f, LongStream::findFirst);
+    }
+
+    public void testDoubleStreamTooLarge() {
+        Function<LongStream, DoubleStream> f = s ->
+                // Clear the SORTED flag
+                s.mapToDouble(i -> (double) i)
+                .sorted();
+
+        testStreamTooLarge(f, DoubleStream::findFirst);
+    }
+
+    <T, S extends BaseStream<T, S>> void testStreamTooLarge(Function<LongStream, S> s,
+                                                            Function<S, ?> terminal) {
+        // Set up conditions for a large input > maximum array size
+        Supplier<LongStream> input = () -> LongStream.range(0, 1L + Integer.MAX_VALUE);
+
+        // Transformation functions
+        List<Function<LongStream, LongStream>> transforms = Arrays.asList(
+                ls -> ls,
+                ls -> ls.parallel(),
+                // Clear the SIZED flag
+                ls -> ls.limit(Long.MAX_VALUE),
+                ls -> ls.limit(Long.MAX_VALUE).parallel());
+
+        for (Function<LongStream, LongStream> transform : transforms) {
+            RuntimeException caught = null;
+            try {
+                terminal.apply(s.apply(transform.apply(input.get())));
+            } catch (RuntimeException e) {
+                caught = e;
+            }
+            assertNotNull(caught, "Expected an instance of exception IllegalArgumentException but no exception thrown");
+            assertTrue(caught instanceof IllegalArgumentException,
+                       String.format("Expected an instance of exception IllegalArgumentException but got %s", caught));
+        }
+    }
+
     public void testSorted() {
         assertCountSum(countTo(0).stream().sorted(), 0, 0);
         assertCountSum(countTo(10).stream().sorted(), 10, 55);

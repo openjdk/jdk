@@ -306,23 +306,6 @@ public class TCKChronoLocalDate {
         }
     }
 
-    //-----------------------------------------------------------------------
-    // Test Serialization of Calendars
-    //-----------------------------------------------------------------------
-    @Test( dataProvider="calendars")
-    public void test_ChronoSerialization(Chronology chrono) throws Exception {
-        LocalDate ref = LocalDate.of(2013, 1, 5);
-        ChronoLocalDate orginal = chrono.date(ref);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(orginal);
-        out.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bais);
-        @SuppressWarnings("unchecked")
-        ChronoLocalDate ser = (ChronoLocalDate) in.readObject();
-        assertEquals(ser, orginal, "deserialized date is wrong");
-    }
 
     //-----------------------------------------------------------------------
     @Test(dataProvider="calendars")

@@ -80,8 +80,6 @@ public final class Method extends Executable {
     // currently only two levels deep (i.e., one root Method and
     // potentially many Method objects pointing to it.)
     private Method              root;
-    // This is set by the vm at Method creation
-    private byte[]              typeAnnotations;
 
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
@@ -152,8 +150,6 @@ public final class Method extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.methodAccessor = methodAccessor;
-
-        res.typeAnnotations = typeAnnotations;
         return res;
     }
 
@@ -165,10 +161,6 @@ public final class Method extends Executable {
     @Override
     byte[] getAnnotationBytes() {
         return annotations;
-    }
-    @Override
-    byte[] getTypeAnnotationBytes() {
-        return typeAnnotations;
     }
 
     /**

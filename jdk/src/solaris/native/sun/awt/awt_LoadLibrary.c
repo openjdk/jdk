@@ -79,10 +79,8 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 
 
 #ifdef MACOSX
-  #define XAWT_PATH "/libawt_xawt.dylib"
   #define LWAWT_PATH "/libawt_lwawt.dylib"
   #define DEFAULT_PATH LWAWT_PATH
-  #define HEADLESS_PATH "/libawt_headless.dylib"
 #else
   #define XAWT_PATH "/libawt_xawt.so"
   #define DEFAULT_PATH XAWT_PATH
@@ -100,11 +98,6 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     struct utsname name;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(vm, JNI_VERSION_1_2);
     void *v;
-    char *envvar;
-    int xt_before_xm = 0;
-    int XAWT = 0;
-    jstring toolkit = NULL;
-    jstring propname = NULL;
     jstring fmanager = NULL;
     jstring fmProp = NULL;
 
@@ -124,56 +117,32 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     /*
      * The code below is responsible for:
      * 1. Loading appropriate awt library, i.e. libawt_xawt or libawt_headless
-     * 2. Setting "awt.toolkit" system property to use the appropriate Java toolkit class,
-     *    (if user has specified the toolkit in env varialble)
+     * 2. Set the "sun.font.fontmanager" system property.
      */
 
-    propname = (*env)->NewStringUTF(env, "awt.toolkit");
     fmProp = (*env)->NewStringUTF(env, "sun.font.fontmanager");
-    tk = DEFAULT_PATH; /* default value, may be changed below */
-
-    /* Check if toolkit is specified in env variable */
-    envvar = getenv("AWT_TOOLKIT");
-    if (envvar && (strstr(envvar, "XToolkit"))) {
-        toolkit = (*env)->NewStringUTF(env, "sun.awt.X11.XToolkit");
-        tk = XAWT_PATH;
-        fmanager = (*env)->NewStringUTF(env, "sun.awt.X11FontManager");
 #ifdef MACOSX
-    } else {
         fmanager = (*env)->NewStringUTF(env, "sun.font.CFontManager");
         tk = LWAWT_PATH;
+#else
+        fmanager = (*env)->NewStringUTF(env, "sun.awt.X11FontManager");
+        tk = XAWT_PATH;
 #endif
-    }
-    /* If user specified toolkit then set java system property */
-    if (toolkit && propname) {
-        JNU_CallStaticMethodByName (env,
-                    NULL,
-                    "java/lang/System",
-                    "setProperty",
-                    "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
-                    propname,toolkit);
-    }
     if (fmanager && fmProp) {
-        JNU_CallStaticMethodByName (env,
-                    NULL,
-                    "java/lang/System",
-                        "setProperty",
-                    "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
-                    fmProp, fmanager);
+        JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "setProperty",
+                                   "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+                                   fmProp, fmanager);
     }
 
-    /* Calculate library name to load */
+#ifndef MACOSX
     if (AWTIsHeadless()) {
         tk = HEADLESS_PATH;
     }
+#endif
+
+    /* Calculate library name to load */
     strncpy(p, tk, MAXPATHLEN-len-1);
 
-    if (toolkit) {
-        (*env)->DeleteLocalRef(env, toolkit);
-    }
-    if (propname) {
-        (*env)->DeleteLocalRef(env, propname);
-    }
     if (fmProp) {
         (*env)->DeleteLocalRef(env, fmProp);
     }

@@ -26,6 +26,7 @@
 #define SHARE_VM_MEMORY_FILEMAP_HPP
 
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspace.hpp"
 
 // Layout of the file:
 //  header: dump of archive instance plus versioning info, datestamp, etc.

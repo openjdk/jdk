@@ -238,6 +238,13 @@ void InstanceKlass::copy_method_ordering(intArray* m, TRAPS) {
   }
 }
 
+// create a new array of vtable_indices for default methods
+Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
+  Array<int>* vtable_indices = MetadataFactory::new_array<int>(class_loader_data(), len, CHECK_NULL);
+  assert(default_vtable_indices() == NULL, "only create once");
+  set_default_vtable_indices(vtable_indices);
+  return vtable_indices;
+}
 
 InstanceKlass::InstanceKlass(int vtable_len,
                              int itable_len,
@@ -263,6 +270,8 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_array_klasses(NULL);
   set_methods(NULL);
   set_method_ordering(NULL);
+  set_default_methods(NULL);
+  set_default_vtable_indices(NULL);
   set_local_interfaces(NULL);
   set_transitive_interfaces(NULL);
   init_implementor();
@@ -376,6 +385,21 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_method_ordering(NULL);
 
+  // default methods can be empty
+  if (default_methods() != NULL &&
+      default_methods() != Universe::the_empty_method_array()) {
+    MetadataFactory::free_array<Method*>(loader_data, default_methods());
+  }
+  // Do NOT deallocate the default methods, they are owned by superinterfaces.
+  set_default_methods(NULL);
+
+  // default methods vtable indices can be empty
+  if (default_vtable_indices() != NULL) {
+    MetadataFactory::free_array<int>(loader_data, default_vtable_indices());
+  }
+  set_default_vtable_indices(NULL);
+
+
   // This array is in Klass, but remove it with the InstanceKlass since
   // this place would be the only caller and it can share memory with transitive
   // interfaces.
@@ -456,14 +480,14 @@ objArrayOop InstanceKlass::signers() const {
   return java_lang_Class::signers(java_mirror());
 }
 
-volatile oop InstanceKlass::init_lock() const {
+oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
   return java_lang_Class::init_lock(java_mirror());
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
-  volatile oop init_lock = this_oop->init_lock();
+  oop init_lock = this_oop->init_lock();
   ObjectLocker ol(init_lock, THREAD);
 
   // abort if someone beat us to the initialization
@@ -608,7 +632,7 @@ bool InstanceKlass::link_class_impl(
 
   // verification & rewriting
   {
-    volatile oop init_lock = this_oop->init_lock();
+    oop init_lock = this_oop->init_lock();
     ObjectLocker ol(init_lock, THREAD);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
@@ -731,7 +755,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    volatile oop init_lock = this_oop->init_lock();
+    oop init_lock = this_oop->init_lock();
     ObjectLocker ol(init_lock, THREAD);
 
     Thread *self = THREAD; // it's passed the current thread
@@ -879,7 +903,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 }
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
-  volatile oop init_lock = this_oop->init_lock();
+  oop init_lock = this_oop->init_lock();
   ObjectLocker ol(init_lock, THREAD);
   this_oop->set_init_state(state);
   ol.notify_all(CHECK);
@@ -1354,32 +1378,44 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
   return -1;
 }
 
+// find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
   return InstanceKlass::find_method(methods(), name, signature);
 }
 
+// find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
+    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+  int hit = find_method_index(methods, name, signature);
+  return hit >= 0 ? methods->at(hit): NULL;
+}
+
+// Used directly for default_methods to find the index into the
+// default_vtable_indices, and indirectly by find_method
+// find_method_index looks in the local methods array to return the index
+// of the matching name/signature
+int InstanceKlass::find_method_index(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
   int hit = binary_search(methods, name);
   if (hit != -1) {
     Method* m = methods->at(hit);
     // Do linear search to find matching signature.  First, quick check
     // for common case
-    if (m->signature() == signature) return m;
+    if (m->signature() == signature) return hit;
     // search downwards through overloaded methods
     int i;
     for (i = hit - 1; i >= 0; --i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return m;
+        if (m->signature() == signature) return i;
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return m;
+        if (m->signature() == signature) return i;
     }
     // not found
 #ifdef ASSERT
@@ -1387,9 +1423,8 @@ Method* InstanceKlass::find_method(
     assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   }
-  return NULL;
+  return -1;
 }
-
 int InstanceKlass::find_method_by_name(Symbol* name, int* end) {
   return find_method_by_name(methods(), name, end);
 }
@@ -1408,6 +1443,7 @@ int InstanceKlass::find_method_by_name(
   return -1;
 }
 
+// lookup_method searches both the local methods array and all superclasses methods arrays
 Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   Klass* klass = const_cast<InstanceKlass*>(this);
   while (klass != NULL) {
@@ -1416,6 +1452,21 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) c
     klass = InstanceKlass::cast(klass)->super();
   }
   return NULL;
+}
+
+// lookup a method in the default methods list then in all transitive interfaces
+// Do NOT return private or static methods
+Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
+                                                         Symbol* signature) const {
+  Method* m = NULL;
+  if (default_methods() != NULL) {
+    m = find_method(default_methods(), name, signature);
+  }
+  // Look up interfaces
+  if (m == NULL) {
+    m = lookup_method_in_all_interfaces(name, signature);
+  }
+  return m;
 }
 
 // lookup a method in all the interfaces that this class implements
@@ -2548,6 +2599,42 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
   return m;
 }
 
+
+#if INCLUDE_JVMTI
+// update default_methods for redefineclasses for methods that are
+// not yet in the vtable due to concurrent subclass define and superinterface
+// redefinition
+// Note: those in the vtable, should have been updated via adjust_method_entries
+void InstanceKlass::adjust_default_methods(Method** old_methods, Method** new_methods,
+                                           int methods_length, bool* trace_name_printed) {
+  // search the default_methods for uses of either obsolete or EMCP methods
+  if (default_methods() != NULL) {
+    for (int j = 0; j < methods_length; j++) {
+      Method* old_method = old_methods[j];
+      Method* new_method = new_methods[j];
+
+      for (int index = 0; index < default_methods()->length(); index ++) {
+        if (default_methods()->at(index) == old_method) {
+          default_methods()->at_put(index, new_method);
+          if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+            if (!(*trace_name_printed)) {
+              // RC_TRACE_MESG macro has an embedded ResourceMark
+              RC_TRACE_MESG(("adjust: klassname=%s default methods from name=%s",
+                             external_name(),
+                             old_method->method_holder()->external_name()));
+              *trace_name_printed = true;
+            }
+            RC_TRACE(0x00100000, ("default method update: %s(%s) ",
+                                  new_method->name()->as_C_string(),
+                                  new_method->signature()->as_C_string()));
+          }
+        }
+      }
+    }
+  }
+}
+#endif // INCLUDE_JVMTI
+
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
   // only one compilation can be active
@@ -2742,11 +2829,21 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
-    for(int i = 0; i < method_array->length(); i++) {
+    for (int i = 0; i < method_array->length(); i++) {
       st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
     }
   }
-  st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);       st->cr();
+  st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);      st->cr();
+  st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);      st->cr();
+  if (Verbose && default_methods() != NULL) {
+    Array<Method*>* method_array = default_methods();
+    for (int i = 0; i < method_array->length(); i++) {
+      st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+    }
+  }
+  if (default_vtable_indices() != NULL) {
+    st->print(BULLET"default vtable indices:   "); default_vtable_indices()->print_value_on(st);       st->cr();
+  }
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
@@ -3096,6 +3193,19 @@ void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
       guarantee(sum == ((jlong)length*(length-1))/2, "invalid method ordering sum");
     } else {
       guarantee(length == 0, "invalid method ordering length");
+    }
+  }
+
+  // Verify default methods
+  if (default_methods() != NULL) {
+    Array<Method*>* methods = this->default_methods();
+    for (int j = 0; j < methods->length(); j++) {
+      guarantee(methods->at(j)->is_method(), "non-method in methods array");
+    }
+    for (int j = 0; j < methods->length() - 1; j++) {
+      Method* m1 = methods->at(j);
+      Method* m2 = methods->at(j + 1);
+      guarantee(m1->name()->fast_compare(m2->name()) <= 0, "methods not sorted correctly");
     }
   }
 

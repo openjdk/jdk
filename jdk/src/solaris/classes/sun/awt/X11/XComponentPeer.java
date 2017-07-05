@@ -607,10 +607,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     public void layout() {}
 
-    public java.awt.Toolkit getToolkit() {
-        return Toolkit.getDefaultToolkit();
-    }
-
     void updateMotifColors(Color bg) {
         int red = bg.getRed();
         int green = bg.getGreen();
@@ -745,11 +741,11 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().prepareImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().prepareImage(img, w, h, o);
     }
 
     public int checkImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().checkImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
 
     public Dimension preferredSize() {

@@ -121,11 +121,13 @@ ifeq ($(PLATFORM), macosx)
 endif
 
 ifeq ($(PLATFORM), windows)
-  # Windows 2000 is 5.0, Windows XP is 5.1, Windows 2003 is 5.2
+  # Windows 2000 is 5.0, Windows XP is 5.1,
+  # Windows 2003 is 5.2, Windows 7 and 2008R2 are 6.1
   #    Assume 5.0 (Windows 2000) if systeminfo does not help
   WINDOWS_MAPPING-5.0 := Windows2000
   WINDOWS_MAPPING-5.1 := WindowsXP
   WINDOWS_MAPPING-5.2 := Windows2003
+  WINDOWS_MAPPING-6.1 := Windows2008R2
   # What kind of system we are using (Variation is the common name)
   _OS_VERSION := \
     $(shell systeminfo 2> $(DEV_NULL) | \
@@ -180,7 +182,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-linux \
 	sane-cygwin \
 	sane-cygwin-shell \
-	sane-mks \
 	sane-arch_data_model \
 	sane-os_patch_level \
 	sane-classpath \
@@ -317,7 +318,7 @@ ifndef OPENJDK
 endif # OPENJDK
 
 ifeq ($(PLATFORM), windows)
-  sane-os_version:: sane-cygwin sane-mks sane-cygwin-shell
+  sane-os_version:: sane-cygwin sane-cygwin-shell
 endif
 
 ######################################################
@@ -383,22 +384,6 @@ sane-cygwin-shell:
 	    "      please export SHLVL=1 when running $(MAKE).  \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-  endif
-endif
-
-######################################################
-# Check the Windows mks version
-######################################################
-ifeq ($(PLATFORM), windows)
-    MKS_CHECK :=$(call CheckVersions,$(MKS_VER),$(REQUIRED_MKS_VER))
-sane-mks:
-  ifdef USING_MKS
-    ifeq ($(MKS_CHECK),missing)
-	@$(call OfficialErrorMessage,MKS version,$(MKS_VER),$(REQUIRED_MKS_VER))
-    endif
-    ifeq ($(MKS_CHECK),older)
-	@$(call OfficialErrorMessage,MKS version,$(MKS_VER),$(REQUIRED_MKS_VER))
-    endif
   endif
 endif
 

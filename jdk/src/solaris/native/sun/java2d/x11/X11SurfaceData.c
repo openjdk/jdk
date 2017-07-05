@@ -227,7 +227,7 @@ Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable(JNIEnv *env, jobject this)
 #if defined(HEADLESS) || !defined(MITSHM)
     return JNI_FALSE;
 #else
-    return useMitShmPixmaps;
+    return (jboolean)useMitShmPixmaps;
 #endif /* HEADLESS, MITSHM */
 }
 
@@ -258,6 +258,7 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
 {
 #ifndef HEADLESS
     X11SDOps *xsdo = (X11SDOps*)SurfaceData_InitOps(env, xsd, sizeof(X11SDOps));
+    jboolean hasException;
     if (xsdo == NULL) {
         JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
         return;
@@ -270,7 +271,10 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
     xsdo->ReleasePixmapWithBg = X11SD_ReleasePixmapWithBg;
     xsdo->widget = NULL;
     if (peer != NULL) {
-        xsdo->drawable = JNU_CallMethodByName(env, NULL, peer, "getWindow", "()J").j;
+        xsdo->drawable = JNU_CallMethodByName(env, &hasException, peer, "getWindow", "()J").j;
+        if (hasException) {
+            return;
+        }
     } else {
         xsdo->drawable = 0;
     }
