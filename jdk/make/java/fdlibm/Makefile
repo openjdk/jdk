@@ -45,6 +45,7 @@ FDLIBM_SRC = $(SHARE_SRC)/native/java/lang/fdlibm
 ifeq ($(PLATFORM),windows)
   # Turn all optimizations off
   OPTIMIZATION_LEVEL = NONE
+  FASTDEBUG_OPTIMIZATION_LEVEL = NONE
   OTHER_CFLAGS =
   CPPFLAGS_DBG += -DLOGGING
 endif
@@ -56,6 +57,7 @@ endif
 ifeq ($(PLATFORM),linux)
   # Turn all optimizations off
   OPTIMIZATION_LEVEL = NONE
+  FASTDEBUG_OPTIMIZATION_LEVEL = NONE
 endif
 
 #

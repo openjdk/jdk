@@ -338,6 +338,8 @@ public final class GlyphLayout {
                     cache = new ConcurrentHashMap<SDKey, SDCache>(10);
                     cacheRef = new
                        SoftReference<ConcurrentHashMap<SDKey, SDCache>>(cache);
+                } else if (cache.size() >= 512) {
+                    cache.clear();
                 }
                 cache.put(key, res);
             }
