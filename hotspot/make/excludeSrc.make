@@ -78,7 +78,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 
       Src_Files_EXCLUDE += \
 	cmsAdaptiveSizePolicy.cpp cmsCollectorPolicy.cpp \
-	cmsGCAdaptivePolicyCounters.cpp cmsLockVerifier.cpp cmsPermGen.cpp compactibleFreeListSpace.cpp \
+	cmsGCAdaptivePolicyCounters.cpp cmsLockVerifier.cpp compactibleFreeListSpace.cpp \
 	concurrentMarkSweepGeneration.cpp concurrentMarkSweepThread.cpp \
 	freeChunk.cpp adaptiveFreeList.cpp promotionInfo.cpp vmCMSOperations.cpp collectionSetChooser.cpp \
 	concurrentG1Refine.cpp concurrentG1RefineThread.cpp concurrentMark.cpp concurrentMarkThread.cpp \
@@ -91,11 +91,11 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	gcTaskManager.cpp gcTaskThread.cpp objectStartArray.cpp parallelScavengeHeap.cpp parMarkBitMap.cpp \
 	pcTasks.cpp psAdaptiveSizePolicy.cpp psCompactionManager.cpp psGCAdaptivePolicyCounters.cpp \
 	psGenerationCounters.cpp psMarkSweep.cpp psMarkSweepDecorator.cpp psOldGen.cpp psParallelCompact.cpp \
-	psPermGen.cpp psPromotionLAB.cpp psPromotionManager.cpp psScavenge.cpp psTasks.cpp psVirtualspace.cpp \
+	psPromotionLAB.cpp psPromotionManager.cpp psScavenge.cpp psTasks.cpp psVirtualspace.cpp \
 	psYoungGen.cpp vmPSOperations.cpp asParNewGeneration.cpp parCardTableModRefBS.cpp \
 	parGCAllocBuffer.cpp parNewGeneration.cpp mutableSpace.cpp gSpaceCounters.cpp allocationStats.cpp \
 	spaceCounters.cpp gcAdaptivePolicyCounters.cpp mutableNUMASpace.cpp immutableSpace.cpp \
-	immutableSpace.cpp g1MemoryPool.cpp psMemoryPool.cpp yieldWorkingGroup.cpp g1Log.cpp
+	immutableSpace.cpp g1MemoryPool.cpp psMemoryPool.cpp yieldingWorkGroup.cpp g1Log.cpp
 endif 
 
 ifeq ($(INCLUDE_NMT), false)
