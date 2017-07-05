@@ -3996,21 +3996,21 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
   if (reachable(src)) {
-    vandpd(dst, nds, as_Address(src), vector256);
+    vandpd(dst, nds, as_Address(src), vector_len);
   } else {
     lea(rscratch1, src);
-    vandpd(dst, nds, Address(rscratch1, 0), vector256);
+    vandpd(dst, nds, Address(rscratch1, 0), vector_len);
   }
 }
 
-void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
   if (reachable(src)) {
-    vandps(dst, nds, as_Address(src), vector256);
+    vandps(dst, nds, as_Address(src), vector_len);
   } else {
     lea(rscratch1, src);
-    vandps(dst, nds, Address(rscratch1, 0), vector256);
+    vandps(dst, nds, Address(rscratch1, 0), vector_len);
   }
 }
 
@@ -4068,21 +4068,21 @@ void MacroAssembler::vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
   if (reachable(src)) {
-    vxorpd(dst, nds, as_Address(src), vector256);
+    vxorpd(dst, nds, as_Address(src), vector_len);
   } else {
     lea(rscratch1, src);
-    vxorpd(dst, nds, Address(rscratch1, 0), vector256);
+    vxorpd(dst, nds, Address(rscratch1, 0), vector_len);
   }
 }
 
-void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len) {
   if (reachable(src)) {
-    vxorps(dst, nds, as_Address(src), vector256);
+    vxorps(dst, nds, as_Address(src), vector_len);
   } else {
     lea(rscratch1, src);
-    vxorps(dst, nds, Address(rscratch1, 0), vector256);
+    vxorps(dst, nds, Address(rscratch1, 0), vector_len);
   }
 }
 
@@ -4561,6 +4561,14 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
   } else if (UseSSE >= 2)  {
+    if (UseAVX > 2) {
+      movl(rbx, 0xffff);
+#ifdef _LP64
+      kmovql(k1, rbx);
+#else
+      kmovdl(k1, rbx);
+#endif
+    }
 #ifdef COMPILER2
     if (MaxVectorSize > 16) {
       assert(UseAVX > 0, "256bit vectors are supported only with AVX");
@@ -7063,8 +7071,39 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     {
       assert( UseSSE >= 2, "supported cpu only" );
       Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
+      if (UseAVX > 2) {
+        movl(rtmp, 0xffff);
+#ifdef _LP64
+        kmovql(k1, rtmp);
+#else
+        kmovdl(k1, rtmp);
+#endif
+      }
       movdl(xtmp, value);
-      if (UseAVX >= 2 && UseUnalignedLoadStores) {
+      if (UseAVX > 2 && UseUnalignedLoadStores) {
+        // Fill 64-byte chunks
+        Label L_fill_64_bytes_loop, L_check_fill_32_bytes;
+        evpbroadcastd(xtmp, xtmp, Assembler::AVX_512bit);
+
+        subl(count, 16 << shift);
+        jcc(Assembler::less, L_check_fill_32_bytes);
+        align(16);
+
+        BIND(L_fill_64_bytes_loop);
+        evmovdqu(Address(to, 0), xtmp, Assembler::AVX_512bit);
+        addptr(to, 64);
+        subl(count, 16 << shift);
+        jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
+
+        BIND(L_check_fill_32_bytes);
+        addl(count, 8 << shift);
+        jccb(Assembler::less, L_check_fill_8_bytes);
+        evmovdqu(Address(to, 0), xtmp, Assembler::AVX_256bit);
+        addptr(to, 32);
+        subl(count, 8 << shift);
+
+        BIND(L_check_fill_8_bytes);
+      } else if (UseAVX == 2 && UseUnalignedLoadStores) {
         // Fill 64-byte chunks
         Label L_fill_64_bytes_loop, L_check_fill_32_bytes;
         vpbroadcastd(xtmp, xtmp);
@@ -7200,11 +7239,11 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
       bind(L_copy_32_chars);
       vmovdqu(tmp3Reg, Address(src, len, Address::times_2, -64));
       vmovdqu(tmp4Reg, Address(src, len, Address::times_2, -32));
-      vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector256 */ true);
+      vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
       vptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in  vector
       jccb(Assembler::notZero, L_copy_32_chars_exit);
-      vpackuswb(tmp3Reg, tmp3Reg, tmp4Reg, /* vector256 */ true);
-      vpermq(tmp4Reg, tmp3Reg, 0xD8, /* vector256 */ true);
+      vpackuswb(tmp3Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
+      vpermq(tmp4Reg, tmp3Reg, 0xD8, /* vector_len */ 1);
       vmovdqu(Address(dst, len, Address::times_1, -32), tmp4Reg);
 
       bind(L_chars_32_check);
@@ -7227,13 +7266,13 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
       vmovdqu(tmp2Reg, Address(src, len, Address::times_2, -32));
       vptest(tmp2Reg, tmp1Reg);
       jccb(Assembler::notZero, L_copy_16_chars_exit);
-      vpackuswb(tmp2Reg, tmp2Reg, tmp1Reg, /* vector256 */ true);
-      vpermq(tmp3Reg, tmp2Reg, 0xD8, /* vector256 */ true);
+      vpackuswb(tmp2Reg, tmp2Reg, tmp1Reg, /* vector_len */ 1);
+      vpermq(tmp3Reg, tmp2Reg, 0xD8, /* vector_len */ 1);
     } else {
       if (UseAVX > 0) {
         movdqu(tmp3Reg, Address(src, len, Address::times_2, -32));
         movdqu(tmp4Reg, Address(src, len, Address::times_2, -16));
-        vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector256 */ false);
+        vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 0);
       } else {
         movdqu(tmp3Reg, Address(src, len, Address::times_2, -32));
         por(tmp2Reg, tmp3Reg);
@@ -7776,7 +7815,7 @@ void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegi
   if (UseAVX > 0) {
     vpclmulhdq(xtmp, xK, xcrc); // [123:64]
     vpclmulldq(xcrc, xK, xcrc); // [63:0]
-    vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
+    vpxor(xcrc, xcrc, Address(buf, offset), 0 /* vector_len */);
     pxor(xcrc, xtmp);
   } else {
     movdqa(xtmp, xcrc);
@@ -7920,7 +7959,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()));
   if (UseAVX > 0) {
     vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
-    vpand(xmm3, xmm0, xmm2, false /* vector256 */);
+    vpand(xmm3, xmm0, xmm2, 0 /* vector_len */);
     vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
   } else {
     movdqa(xmm2, xmm0);

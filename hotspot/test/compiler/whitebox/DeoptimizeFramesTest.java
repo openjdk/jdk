@@ -46,8 +46,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Phaser;
 
 import sun.hotspot.code.NMethod;
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.InfiniteLoop;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.InfiniteLoop;
 
 public class DeoptimizeFramesTest extends CompilerWhiteBoxTest {
     private final boolean makeNotEntrant;

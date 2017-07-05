@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,73 +24,48 @@
  */
 package com.sun.hotspot.igv.connection;
 
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.serialization.BinaryParser;
 import com.sun.hotspot.igv.data.serialization.Parser;
-import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
+import com.sun.hotspot.igv.data.services.GroupCallback;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.Socket;
-import javax.swing.JTextField;
+import java.nio.channels.SocketChannel;
 import org.openide.util.Exceptions;
-import org.openide.xml.XMLUtil;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class Client implements Runnable, GroupCallback {
+public class Client implements Runnable {
+    private final boolean binary;
+    private final SocketChannel socket;
+    private final GraphDocument rootDocument;
+    private final GroupCallback callback;
 
-    private Socket socket;
-    private JTextField networkTextField;
-    private GroupCallback callback;
-
-    public Client(Socket socket, JTextField networkTextField, GroupCallback callback) {
+    public Client(SocketChannel socket, GraphDocument rootDocument, GroupCallback callback, boolean  binary) {
         this.callback = callback;
         this.socket = socket;
-        this.networkTextField = networkTextField;
+        this.binary = binary;
+        this.rootDocument = rootDocument;
     }
 
+    @Override
     public void run() {
 
         try {
-            InputStream inputStream = socket.getInputStream();
-
-            if (networkTextField.isEnabled()) {
-
-                socket.getOutputStream().write('y');
-                InputSource is = new InputSource(inputStream);
-
-                try {
-                    XMLReader reader = XMLUtil.createXMLReader();
-                    Parser parser = new Parser(this);
-                    parser.parse(reader, is, null);
-                } catch (SAXException ex) {
-                    ex.printStackTrace();
-                }
+            final SocketChannel channel = socket;
+            channel.configureBlocking(true);
+            if (binary) {
+                new BinaryParser(channel, null, rootDocument, callback).parse();
             } else {
-                socket.getOutputStream().write('n');
+                // signal readiness to client VM (old protocol)
+                channel.socket().getOutputStream().write('y');
+                new Parser(channel, null, callback).parse();
             }
-
-            socket.close();
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
-        }
-    }
-
-    public void started(final Group g) {
-        try {
-            RegexpPropertyMatcher matcher = new RegexpPropertyMatcher("name", ".*" + networkTextField.getText() + ".*");
-            if (g.getProperties().selectSingle(matcher) != null && networkTextField.isEnabled()) {
-                socket.getOutputStream().write('y');
-                callback.started(g);
-            } else {
-                socket.getOutputStream().write('n');
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
             }
-        } catch (IOException e) {
         }
     }
 }

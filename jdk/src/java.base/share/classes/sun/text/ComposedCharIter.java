@@ -50,7 +50,7 @@ public final class ComposedCharIter {
     }
 
     /**
-     * Construct a new <tt>ComposedCharIter</tt>.  The iterator will return
+     * Construct a new {@code ComposedCharIter}.  The iterator will return
      * all Unicode characters with canonical decompositions, excluding Korean
      * Hangul characters.
      */
@@ -58,10 +58,10 @@ public final class ComposedCharIter {
 
     /**
      * Returns the next precomposed Unicode character.
-     * Repeated calls to <tt>next</tt> return all of the precomposed characters defined
+     * Repeated calls to {@code next} return all of the precomposed characters defined
      * by Unicode, in ascending order.  After all precomposed characters have
-     * been returned, {@link #hasNext} will return <tt>false</tt> and further calls
-     * to <tt>next</tt> will return {@link #DONE}.
+     * been returned, {@link #hasNext} will return {@code false} and further calls
+     * to {@code next} will return {@link #DONE}.
      */
     public int next() {
         if (curChar == decompNum - 1) {

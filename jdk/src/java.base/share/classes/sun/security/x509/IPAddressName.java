@@ -263,7 +263,7 @@ public class IPAddressName implements GeneralNameInterface {
             if (address.length == 8) {
                 byte[] mask = new byte[4];
                 System.arraycopy(address, 4, mask, 0, 4);
-                name = name + "/" +
+                name = name + '/' +
                        InetAddress.getByAddress(mask).getHostAddress();
             }
         } else {
@@ -285,7 +285,7 @@ public class IPAddressName implements GeneralNameInterface {
                     if (!ba.get(i))
                         break;
                 }
-                name = name + "/" + i;
+                name = name + '/' + i;
                 // Verify remaining bits 0
                 for (; i < 16*8; i++) {
                     if (ba.get(i)) {

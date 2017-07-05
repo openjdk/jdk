@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  */
 package com.sun.hotspot.igv.data;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  *
  * @author Thomas Wuerthinger
@@ -30,6 +34,37 @@ package com.sun.hotspot.igv.data;
 public class InputNode extends Properties.Entity {
 
     private int id;
+    private List<InputGraph> subgraphs;
+
+    public static final Comparator<InputNode> COMPARATOR = new Comparator<InputNode>() {
+        @Override
+        public int compare(InputNode o1, InputNode o2) {
+            return o1.getId() - o2.getId();
+        }
+    };
+
+    public static Comparator<InputNode> getPropertyComparator(final String propertyName) {
+        return new Comparator<InputNode>() {
+
+            @Override
+            public int compare(InputNode o1, InputNode o2) {
+
+                int i1 = 0;
+                try {
+                    i1 = Integer.parseInt(o1.getProperties().get(propertyName));
+                } catch(NumberFormatException e) {
+                }
+
+                int i2 = 0;
+                try {
+                    i2 = Integer.parseInt(o2.getProperties().get(propertyName));
+                } catch(NumberFormatException e) {
+                }
+
+                return i1 - i2;
+            }
+        };
+    }
 
     public InputNode(InputNode n) {
         super(n);
@@ -49,21 +84,29 @@ public class InputNode extends Properties.Entity {
         return id;
     }
 
+    public void addSubgraph(InputGraph graph) {
+        if (subgraphs == null) {
+            subgraphs = new ArrayList<>();
+        }
+        subgraphs.add(graph);
+    }
+
+    public List<InputGraph> getSubgraphs() {
+        return subgraphs;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof InputNode)) {
             return false;
         }
         InputNode n = (InputNode) o;
-        if (n.id != id) {
-            return false;
-        }
-        return getProperties().equals(n.getProperties());
+        return n.id == id;
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return id * 13;
     }
 
     @Override

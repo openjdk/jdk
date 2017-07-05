@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,26 @@ import javax.swing.Icon;
  */
 public class ColorIcon implements Icon {
 
-    private Color color;
+    private final Color color;
 
     public ColorIcon(Color c) {
         color = c;
     }
 
+    @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
+        Color oldColor = g.getColor();
         g.setColor(color);
         g.fillRect(x, y, 16, 16);
+        g.setColor(oldColor);
     }
 
+    @Override
     public int getIconWidth() {
         return 16;
     }
 
+    @Override
     public int getIconHeight() {
         return 16;
     }

@@ -46,9 +46,9 @@ import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 
-import com.oracle.java.testlibrary.ExitCode;
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class TestLambdaFormRetransformation {
     private static String MANIFEST = String.format("Manifest-Version: 1.0\n" +

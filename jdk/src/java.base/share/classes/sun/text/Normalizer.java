@@ -32,7 +32,7 @@ import sun.text.normalizer.NormalizerImpl;
  * This Normalizer is for Unicode 3.2 support for IDNA only.
  * Developers should not use this class.
  *
- * @ since 1.6
+ * @since 1.6
  */
 public final class Normalizer {
 

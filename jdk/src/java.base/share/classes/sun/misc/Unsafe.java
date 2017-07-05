@@ -641,9 +641,9 @@ public final class Unsafe {
      * <li>String: any object (not just a java.lang.String)
      * <li>InterfaceMethodRef: (NYI) a method handle to invoke on that call site's arguments
      * </ul>
-     * @params hostClass context for linkage, access control, protection domain, and class loader
-     * @params data      bytes of a class file
-     * @params cpPatches where non-null entries exist, they replace corresponding CP entries in data
+     * @param hostClass context for linkage, access control, protection domain, and class loader
+     * @param data      bytes of a class file
+     * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
      */
     public native Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
 
@@ -808,9 +808,9 @@ public final class Unsafe {
      * The system imposes a maximum of 3 samples, representing
      * averages over the last 1,  5,  and  15 minutes, respectively.
      *
-     * @params loadavg an array of double of size nelems
-     * @params nelems the number of samples to be retrieved and
-     *         must be 1 to 3.
+     * @param loadavg an array of double of size nelems
+     * @param nelems the number of samples to be retrieved and
+     *        must be 1 to 3.
      *
      * @return the number of samples actually retrieved; or -1
      *         if the load average is unobtainable.
@@ -1108,7 +1108,6 @@ public final class Unsafe {
      * <p>
      * 8-byte atomicity is only guaranteed on platforms on which
      * support atomic accesses to longs.
-     * <p>
      *
      * @param o Java heap object in which the value resides, if any, else
      *        null

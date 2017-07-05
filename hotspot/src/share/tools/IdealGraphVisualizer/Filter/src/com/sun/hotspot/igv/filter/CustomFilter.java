@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.openide.DialogDisplayer;
-import org.openide.NotifyDescriptor;
+import javax.script.*;
 import org.openide.cookies.OpenCookie;
-import org.openide.filesystems.Repository;
-import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
-import org.openide.util.Lookup;
 
 /**
  *
@@ -48,7 +44,6 @@ import org.openide.util.Lookup;
 public class CustomFilter extends AbstractFilter {
 
     public static final String JAVASCRIPT_HELPER_ID = "JavaScriptHelper";
-    private static ScriptEngineAbstraction engine;
     private String code;
     private String name;
 
@@ -58,6 +53,7 @@ public class CustomFilter extends AbstractFilter {
         getProperties().setProperty("name", name);
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -80,6 +76,7 @@ public class CustomFilter extends AbstractFilter {
     public OpenCookie getEditor() {
         return new OpenCookie() {
 
+            @Override
             public void open() {
                 openInEditor();
             }
@@ -89,7 +86,9 @@ public class CustomFilter extends AbstractFilter {
     public boolean openInEditor() {
         EditFilterDialog dialog = new EditFilterDialog(CustomFilter.this);
         dialog.setVisible(true);
-        return dialog.wasAccepted();
+        boolean result = dialog.wasAccepted();
+        this.getChangedEvent().fire();
+        return result;
     }
 
     @Override
@@ -97,41 +96,16 @@ public class CustomFilter extends AbstractFilter {
         return getName();
     }
 
-    public static ScriptEngineAbstraction getEngine() {
-        if (engine == null) {
-
-            ScriptEngineAbstraction chosen = null;
-            try {
-                Collection<? extends ScriptEngineAbstraction> list = Lookup.getDefault().lookupAll(ScriptEngineAbstraction.class);
-                for (ScriptEngineAbstraction s : list) {
-                    if (s.initialize(getJsHelperText())) {
-                        if (chosen == null || !(chosen instanceof JavaSE6ScriptEngine)) {
-                            chosen = s;
-                        }
-                    }
-                }
-            } catch (NoClassDefFoundError ncdfe) {
-                Logger.getLogger("global").log(Level.SEVERE, null, ncdfe);
-            }
-
-            if (chosen == null) {
-                NotifyDescriptor message = new NotifyDescriptor.Message("Could not find a scripting engine. Please make sure that the Rhino scripting engine is available. Otherwise filter cannot be used.", NotifyDescriptor.ERROR_MESSAGE);
-                DialogDisplayer.getDefault().notifyLater(message);
-                chosen = new NullScriptEngine();
-            }
-
-            engine = chosen;
-        }
-
-        return engine;
-    }
-
     private static String getJsHelperText() {
         InputStream is = null;
-        StringBuilder sb = new StringBuilder("importPackage(Packages.com.sun.hotspot.igv.filter);importPackage(Packages.com.sun.hotspot.igv.graph);importPackage(Packages.com.sun.hotspot.igv.data);importPackage(Packages.com.sun.hotspot.igv.util);importPackage(java.awt);");
+        StringBuilder sb = new StringBuilder("if (typeof importPackage === 'undefined') { try { load('nashorn:mozilla_compat.js'); } catch (e) {} }"
+                + "importPackage(Packages.com.sun.hotspot.igv.filter);"
+                + "importPackage(Packages.com.sun.hotspot.igv.graph);"
+                + "importPackage(Packages.com.sun.hotspot.igv.data);"
+                + "importPackage(Packages.com.sun.hotspot.igv.util);"
+                + "importPackage(java.awt);");
         try {
-            FileSystem fs = Repository.getDefault().getDefaultFileSystem();
-            FileObject fo = fs.getRoot().getFileObject(JAVASCRIPT_HELPER_ID);
+            FileObject fo = FileUtil.getConfigRoot().getFileObject(JAVASCRIPT_HELPER_ID);
             is = fo.getInputStream();
             BufferedReader r = new BufferedReader(new InputStreamReader(is));
             String s;
@@ -152,7 +126,18 @@ public class CustomFilter extends AbstractFilter {
         return sb.toString();
     }
 
+    @Override
     public void apply(Diagram d) {
-        getEngine().execute(d, code);
+        try {
+            ScriptEngineManager sem = new ScriptEngineManager();
+            ScriptEngine e = sem.getEngineByName("ECMAScript");
+            e.eval(getJsHelperText());
+            Bindings b = e.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
+            b.put("graph", d);
+            b.put("IO", System.out);
+            e.eval(code, b);
+        } catch (ScriptException ex) {
+            Exceptions.printStackTrace(ex);
+        }
     }
 }

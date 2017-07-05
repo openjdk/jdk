@@ -21,10 +21,10 @@
  * questions.
  */
 
-import static com.oracle.java.testlibrary.Asserts.assertEQ;
-import static com.oracle.java.testlibrary.Asserts.assertFalse;
-import static com.oracle.java.testlibrary.Asserts.assertTrue;
-import com.oracle.java.testlibrary.DynamicVMOption;
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
+import jdk.test.lib.DynamicVMOption;
 
 /**
  * @test TestDynMaxHeapFreeRatio

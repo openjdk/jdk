@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  */
 package com.sun.hotspot.igv.data;
 
-import com.sun.hotspot.igv.data.Properties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -42,14 +43,37 @@ public class InputMethod extends Properties.Entity {
     private Group group;
     private List<InputBytecode> bytecodes;
 
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = result * 31 + bci;
+        result = result * 31 + shortName.hashCode();
+        result = result * 31 + inlined.hashCode();
+        result = result * 31 + bytecodes.hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || (!(o instanceof InputMethod))) {
+            return false;
+        }
+
+        final InputMethod im = (InputMethod)o;
+        return name.equals(im.name) && bci == im.bci && shortName.equals(im.shortName) &&
+               inlined.equals(im.inlined) && bytecodes.equals(im.bytecodes);
+    }
+
+
+
     /** Creates a new instance of InputMethod */
     public InputMethod(Group parent, String name, String shortName, int bci) {
         this.group = parent;
         this.name = name;
         this.bci = bci;
         this.shortName = shortName;
-        inlined = new ArrayList<InputMethod>();
-        bytecodes = new ArrayList<InputBytecode>();
+        inlined = new ArrayList<>();
+        bytecodes = new ArrayList<>();
     }
 
     public List<InputBytecode> getBytecodes() {
@@ -87,31 +111,42 @@ public class InputMethod extends Properties.Entity {
     }
 
     public void setBytecodes(String text) {
-
+        Pattern instruction = Pattern.compile("\\s*(\\d+)\\s*:?\\s*(\\w+)\\s*(.*)(?://(.*))?");
         String[] strings = text.split("\n");
-        int oldNumber = -1;
+        int oldBci = -1;
         for (String s : strings) {
-
-            if (s.length() > 0 && Character.isDigit(s.charAt(0))) {
-                s = s.trim();
-                int spaceIndex = s.indexOf(' ');
-                String numberString = s.substring(0, spaceIndex);
-                String tmpName = s.substring(spaceIndex + 1, s.length());
-
-                int number = -1;
-                number = Integer.parseInt(numberString);
-
-                // assert correct order of bytecodes
-                assert number > oldNumber;
-
-                InputBytecode bc = new InputBytecode(number, tmpName);
-                bytecodes.add(bc);
-
-                for (InputMethod m : inlined) {
-                    if (m.getBci() == number) {
-                        bc.setInlined(m);
-                        break;
+            if (s.startsWith(" ")) {
+                // indented lines are extra textual information
+                continue;
+            }
+            s = s.trim();
+            if (s.length() != 0) {
+                final Matcher matcher = instruction.matcher(s);
+                if (matcher.matches()) {
+                    String bciString = matcher.group(1);
+                    String opcode = matcher.group(2);
+                    String operands = matcher.group(3).trim();
+                    String comment = matcher.group(4);
+                    if (comment != null) {
+                        comment = comment.trim();
                     }
+
+                    int bci = Integer.parseInt(bciString);
+
+                    // assert correct order of bytecodes
+                    assert bci > oldBci;
+
+                    InputBytecode bc = new InputBytecode(bci, opcode, operands, comment);
+                    bytecodes.add(bc);
+
+                    for (InputMethod m : inlined) {
+                        if (m.getBci() == bci) {
+                            bc.setInlined(m);
+                            break;
+                        }
+                    }
+                } else {
+                    System.out.println("no match: " + s);
                 }
             }
         }

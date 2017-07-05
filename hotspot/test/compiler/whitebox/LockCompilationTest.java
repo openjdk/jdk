@@ -38,7 +38,7 @@ import java.io.PrintWriter;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class LockCompilationTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {

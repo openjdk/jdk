@@ -47,13 +47,22 @@ void VMRegImpl::set_regName() {
   }
 
   XMMRegister xreg = ::as_XMMRegister(0);
-  for ( ; i < ConcreteRegisterImpl::max_xmm ; ) {
-    for (int j = 0 ; j < 8 ; j++) {
+  for (; i < ConcreteRegisterImpl::max_xmm;) {
+    for (int j = 0 ; j < XMMRegisterImpl::max_slots_per_register ; j++) {
       regName[i++] = xreg->name();
     }
     xreg = xreg->successor();
   }
+
+  KRegister kreg = ::as_KRegister(0);
+  for (; i < ConcreteRegisterImpl::max_kpr;) {
+    for (int j = 0; j < KRegisterImpl::max_slots_per_register; j++) {
+      regName[i++] = kreg->name();
+    }
+    kreg = kreg->successor();
+  }
+
   for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
-    regName[i] = "NON-GPR-FPR-XMM";
+    regName[i] = "NON-GPR-FPR-XMM-KREG";
   }
 }

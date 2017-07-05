@@ -52,10 +52,10 @@ import com.sun.jndi.ldap.Connection;
  * The object identifier for StartTLS is 1.3.6.1.4.1.1466.20037
  * and no extended response value is defined.
  *
- *<p>
+ * <p>
  * The Start TLS extended request and response are used to establish
  * a TLS connection over the existing LDAP connection associated with
- * the JNDI context on which <tt>extendedOperation()</tt> is invoked.
+ * the JNDI context on which {@code extendedOperation()} is invoked.
  *
  * @see StartTlsRequest
  * @author Vincent Ryan
@@ -124,7 +124,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
     /**
      * Overrides the default list of cipher suites enabled for use on the
      * TLS connection. The cipher suites must have already been listed by
-     * <tt>SSLSocketFactory.getSupportedCipherSuites()</tt> as being supported.
+     * {@code SSLSocketFactory.getSupportedCipherSuites()} as being supported.
      * Even if a suite has been enabled, it still might not be used because
      * the peer does not support it, or because the requisite certificates
      * (and private keys) are not available.
@@ -140,12 +140,12 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
     }
 
     /**
-     * Overrides the default hostname verifier used by <tt>negotiate()</tt>
+     * Overrides the default hostname verifier used by {@code negotiate()}
      * after the TLS handshake has completed. If
-     * <tt>setHostnameVerifier()</tt> has not been called before
-     * <tt>negotiate()</tt> is invoked, <tt>negotiate()</tt>
+     * {@code setHostnameVerifier()} has not been called before
+     * {@code negotiate()} is invoked, {@code negotiate()}
      * will perform a simple case ignore match. If called after
-     * <tt>negotiate()</tt>, this method does not do anything.
+     * {@code negotiate()}, this method does not do anything.
      *
      * @param verifier The non-null hostname verifier callback.
      * @see #negotiate
@@ -157,10 +157,10 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
     /**
      * Negotiates a TLS session using the default SSL socket factory.
      * <p>
-     * This method is equivalent to <tt>negotiate(null)</tt>.
+     * This method is equivalent to {@code negotiate(null)}.
      *
      * @return The negotiated SSL session
-     * @throw IOException If an IO error was encountered while establishing
+     * @throws IOException If an IO error was encountered while establishing
      * the TLS session.
      * @see #setEnabledCipherSuites
      * @see #setHostnameVerifier
@@ -177,7 +177,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * attaches it to the existing connection. Performs the TLS handshake
      * and returns the negotiated session information.
      * <p>
-     * If cipher suites have been set via <tt>setEnabledCipherSuites</tt>
+     * If cipher suites have been set via {@code setEnabledCipherSuites}
      * then they are enabled before the TLS handshake begins.
      * <p>
      * Hostname verification is performed after the TLS handshake completes.
@@ -186,7 +186,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * hostname is extracted from the subjectAltName in the server's
      * certificate (if present). Otherwise the value of the common name
      * attribute of the subject name is used. If a callback has
-     * been set via <tt>setHostnameVerifier</tt> then that verifier is used if
+     * been set via {@code setHostnameVerifier} then that verifier is used if
      * the default check fails.
      * <p>
      * If an error occurs then the SSL socket is closed and an IOException
@@ -195,7 +195,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * @param factory The possibly null SSL socket factory to use.
      * If null, the default SSL socket factory is used.
      * @return The negotiated SSL session
-     * @throw IOException If an IO error was encountered while establishing
+     * @throws IOException If an IO error was encountered while establishing
      * the TLS session.
      * @see #setEnabledCipherSuites
      * @see #setHostnameVerifier
@@ -252,7 +252,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * Closes the TLS connection gracefully and reverts back to the underlying
      * connection.
      *
-     * @throw IOException If an IO error was encountered while closing the
+     * @throws IOException If an IO error was encountered while closing the
      * TLS connection
      */
     public void close() throws IOException {

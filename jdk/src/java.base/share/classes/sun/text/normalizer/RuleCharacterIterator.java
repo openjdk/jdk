@@ -101,22 +101,25 @@ public class RuleCharacterIterator {
     public static final int DONE = -1;
 
     /**
-     * Bitmask option to enable parsing of variable names.  If (options &
-     * PARSE_VARIABLES) != 0, then an embedded variable will be expanded to
+     * Bitmask option to enable parsing of variable names.
+     * If {@code (options & PARSE_VARIABLES) != 0},
+     * then an embedded variable will be expanded to
      * its value.  Variables are parsed using the SymbolTable API.
      */
     public static final int PARSE_VARIABLES = 1;
 
     /**
-     * Bitmask option to enable parsing of escape sequences.  If (options &
-     * PARSE_ESCAPES) != 0, then an embedded escape sequence will be expanded
+     * Bitmask option to enable parsing of escape sequences.
+     * If {@code (options & PARSE_ESCAPES) != 0},
+     * then an embedded escape sequence will be expanded
      * to its value.  Escapes are parsed using Utility.unescapeAt().
      */
     public static final int PARSE_ESCAPES   = 2;
 
     /**
-     * Bitmask option to enable skipping of whitespace.  If (options &
-     * SKIP_WHITESPACE) != 0, then whitespace characters will be silently
+     * Bitmask option to enable skipping of whitespace.
+     * If {@code (options & SKIP_WHITESPACE) != 0},
+     * then whitespace characters will be silently
      * skipped, as if they were not present in the input.  Whitespace
      * characters are defined by UCharacterProperty.isRuleWhiteSpace().
      */

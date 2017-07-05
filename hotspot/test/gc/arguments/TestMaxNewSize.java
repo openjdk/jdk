@@ -46,7 +46,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestMaxNewSize {
 

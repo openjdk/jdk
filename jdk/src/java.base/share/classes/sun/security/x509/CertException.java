@@ -158,7 +158,7 @@ public class CertException extends SecurityException {
      */
     public String toString()
     {
-        return "[Certificate Exception: " + getMessage() + "]";
+        return "[Certificate Exception: " + getMessage() + ']';
     }
 
     /**
@@ -168,6 +168,6 @@ public class CertException extends SecurityException {
     {
         return getVerfDescription()
                 + ( (moreData != null)
-                    ? ( "\n  (" + moreData + ")" ) : "" );
+                    ? ( "\n  (" + moreData + ')' ) : "" );
     }
 }

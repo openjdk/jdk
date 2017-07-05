@@ -454,7 +454,7 @@ public class AVA implements DerEncoder {
             if (embeddedHex.size() > 0) {
                 // add space(s) before embedded hex bytes
                 for (int i = 0; i < spaceCount; i++) {
-                    temp.append(" ");
+                    temp.append(' ');
                 }
                 spaceCount = 0;
 
@@ -472,7 +472,7 @@ public class AVA implements DerEncoder {
             } else {
                 // add space(s)
                 for (int i = 0; i < spaceCount; i++) {
-                    temp.append(" ");
+                    temp.append(' ');
                 }
                 spaceCount = 0;
                 temp.append((char)c);
@@ -853,7 +853,7 @@ public class AVA implements DerEncoder {
                 }
                 sbuffer.append(c);
             }
-            typeAndValue.append(sbuffer.toString());
+            typeAndValue.append(sbuffer);
         }
         return typeAndValue.toString();
     }
@@ -1039,7 +1039,7 @@ public class AVA implements DerEncoder {
         StringBuilder   retval = new StringBuilder(40);
 
         retval.append(keyword);
-        retval.append("=");
+        retval.append('=');
 
         try {
             String valStr = value.getAsString();
@@ -1147,9 +1147,11 @@ public class AVA implements DerEncoder {
                 // Emit the string ... quote it if needed
                 // if string is already quoted, don't re-quote
                 if (!alreadyQuoted && quoteNeeded) {
-                    retval.append("\"" + sbuffer.toString() + "\"");
+                    retval.append('\"')
+                        .append(sbuffer)
+                        .append('\"');
                 } else {
-                    retval.append(sbuffer.toString());
+                    retval.append(sbuffer);
                 }
             }
         } catch (IOException e) {

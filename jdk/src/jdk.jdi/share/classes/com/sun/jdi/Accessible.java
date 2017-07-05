@@ -40,8 +40,8 @@ package com.sun.jdi;
 public interface Accessible {
 
     /**
-     * Returns the Java<sup><font size=-2>TM</font></sup>
-     * programming language modifiers, encoded in an integer.
+     * Returns the Java&trade; programming language modifiers, encoded
+     * in an integer.
      * <p>
      * The modifier encodings are defined in
      * <cite>The Java&trade; Virtual Machine Specification</cite>

@@ -71,10 +71,9 @@ package sun.text.normalizer;
  *   <li>If there is no previous character (i.e. start == 0), use the
  *   following character</li>
  *   <li>If there is no following character (i.e. the replaceable was
- *   empty), use default metadata<br>
+ *   empty), use default metadata</li>
  *   <li>If the code point U+FFFF is seen, it should be interpreted as
- *   a special marker having no metadata<li>
- *   </li>
+ *   a special marker having no metadata</li>
  * </ul>
  * If this is not the behavior, the subclass should document any differences.
  *
@@ -111,10 +110,10 @@ public interface Replaceable {
      * starting at index <code>dstStart</code> and ending at index
      * <code>dstStart + (srcLimit-srcStart) - 1</code>.
      *
-     * @param srcStart the beginning index to copy, inclusive; <code>0
-     * <= start <= limit</code>.
+     * @param srcStart the beginning index to copy, inclusive;
+     *        {@code 0 <= start <= limit}.
      * @param srcLimit the ending index to copy, exclusive;
-     * <code>start <= limit <= length()</code>.
+     *        {@code start <= limit <= length()}.
      * @param dst the destination array.
      * @param dstStart the start offset in the destination array.
      * @stable ICU 2.0

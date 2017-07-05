@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public final class ZoomInAction extends CallableSystemAction {
 
+    @Override
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
@@ -44,6 +45,7 @@ public final class ZoomInAction extends CallableSystemAction {
         }
     }
 
+    @Override
     public String getName() {
         return "Zoom in";
     }
@@ -53,6 +55,7 @@ public final class ZoomInAction extends CallableSystemAction {
         putValue(Action.SHORT_DESCRIPTION, "Zoom in");
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
@@ -64,6 +67,6 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoomin.gif";
+        return "com/sun/hotspot/igv/view/images/zoom_in.png";
     }
 }

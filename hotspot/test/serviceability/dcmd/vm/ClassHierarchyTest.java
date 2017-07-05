@@ -29,17 +29,17 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng ClassHierarchyTest
  */
 
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 
 import java.io.File;
 import java.io.FileInputStream;
