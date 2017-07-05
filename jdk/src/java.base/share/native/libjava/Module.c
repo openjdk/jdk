@@ -73,30 +73,32 @@ Java_java_lang_reflect_Module_defineModule0(JNIEnv *env, jclass cls, jobject mod
                                             jstring location, jobjectArray packages)
 {
     char** pkgs = NULL;
-    jsize idx;
     jsize num_packages = (*env)->GetArrayLength(env, packages);
 
     if (num_packages != 0 && (pkgs = calloc(num_packages, sizeof(char*))) == NULL) {
         JNU_ThrowOutOfMemoryError(env, NULL);
         return;
-    } else {
-        int valid = 1;
+    } else if ((*env)->EnsureLocalCapacity(env, (jint)num_packages) == 0) {
+        jboolean failed = JNI_FALSE;
+        int idx;
         for (idx = 0; idx < num_packages; idx++) {
             jstring pkg = (*env)->GetObjectArrayElement(env, packages, idx);
-            pkgs[idx] = GetInternalPackageName(env, pkg, NULL, 0);
-            if (pkgs[idx] == NULL) {
-                valid = 0;
+            char* name = GetInternalPackageName(env, pkg, NULL, 0);
+            if (name != NULL) {
+                pkgs[idx] = name;
+            } else {
+                failed = JNI_TRUE;
                 break;
             }
         }
-
-        if (valid != 0) {
+        if (!failed) {
             JVM_DefineModule(env, module, is_open, version, location,
-                    (const char* const*)pkgs, num_packages);
+                             (const char* const*)pkgs, num_packages);
         }
     }
 
     if (num_packages > 0) {
+        int idx;
         for (idx = 0; idx < num_packages; idx++) {
             if (pkgs[idx] != NULL) {
                 free(pkgs[idx]);

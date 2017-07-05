@@ -304,11 +304,10 @@ template <class T, class Filter> class CodeBlobIterator : public StackObj {
     // If set to NULL, initialized by first call to next()
     _code_blob = (CodeBlob*)nm;
     if (nm != NULL) {
-      address start = nm->code_begin();
-      while(!(*_heap)->contains(start)) {
+      while(!(*_heap)->contains_blob(_code_blob)) {
         ++_heap;
       }
-      assert((*_heap)->contains(start), "match not found");
+      assert((*_heap)->contains_blob(_code_blob), "match not found");
     }
   }
 
