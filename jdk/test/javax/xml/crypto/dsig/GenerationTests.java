@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6283345 6303830 6824440 6867348
+ * @bug 4635230 6283345 6303830 6824440 6867348 7094155
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -134,6 +134,7 @@ public class GenerationTests {
         test_create_signature_enveloping_sha512_rsa_sha384();
         test_create_signature_enveloping_sha512_rsa_sha512();
         test_create_signature_reference_dependency();
+        test_create_signature_with_attr_in_no_namespace();
     }
 
     private static void setup() throws Exception {
@@ -439,6 +440,52 @@ public class GenerationTests {
 
         // create XMLSignature
         XMLSignature sig = fac.newXMLSignature(si, rsa, objs, "signature", null);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+
+        sig.sign(dsc);
+
+//      dumpDocument(doc, new PrintWriter(System.out));
+
+        DOMValidateContext dvc = new DOMValidateContext
+            (kvks, doc.getDocumentElement());
+        XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
+
+        if (sig.equals(sig2) == false) {
+            throw new Exception
+                ("Unmarshalled signature is not equal to generated signature");
+        }
+        if (sig2.validate(dvc) == false) {
+            throw new Exception("Validation of generated signature failed");
+        }
+
+        System.out.println();
+    }
+
+    static void test_create_signature_with_attr_in_no_namespace()
+        throws Exception
+    {
+        System.out.println
+            ("* Generating signature-with-attr-in-no-namespace.xml");
+
+        // create references
+        List<Reference> refs = Collections.singletonList
+            (fac.newReference("#unknown", sha1));
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha1, refs);
+
+        // create object-1
+        Document doc = db.newDocument();
+        Element nc = doc.createElementNS(null, "NonCommentandus");
+        // add attribute with no namespace
+        nc.setAttribute("Id", "unknown");
+        XMLObject obj = fac.newXMLObject(Collections.singletonList
+            (new DOMStructure(nc)), "object-1", null, null);
+
+        // create XMLSignature
+        XMLSignature sig = fac.newXMLSignature(si, rsa,
+                                               Collections.singletonList(obj),
+                                               "signature", null);
         DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
 
         sig.sign(dsc);
