@@ -32,8 +32,8 @@
 static CFDateFormatterStyle convertDateFormatterStyle(jint javaStyle);
 static CFNumberFormatterStyle convertNumberFormatterStyle(jint javaStyle);
 static void copyArrayElements(JNIEnv *env, CFArrayRef cfarray, jobjectArray jarray, CFIndex sindex, int dindex, int count);
-static jstring getNumberSymbolString(JNIEnv *env, jstring jdefault, CFStringRef type);
-static jchar getNumberSymbolChar(jchar jdefault, CFStringRef type);
+static jstring getNumberSymbolString(JNIEnv *env, jstring jlangtag, jstring jdefault, CFStringRef type);
+static jchar getNumberSymbolChar(JNIEnv *env, jstring jlangtag, jchar jdefault, CFStringRef type);
 
 // from java_props_macosx.c
 extern char * getMacOSXLocale(int cat);
@@ -322,7 +322,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getCurrencySymbol
   (JNIEnv *env, jclass cls, jstring jlangtag, jstring currencySymbol) {
-    return getNumberSymbolString(env, currencySymbol, kCFNumberFormatterCurrencySymbol);
+    return getNumberSymbolString(env, jlangtag, currencySymbol, kCFNumberFormatterCurrencySymbol);
 }
 
 /*
@@ -332,7 +332,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getDecimalSeparator
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar decimalSeparator) {
-    return getNumberSymbolChar(decimalSeparator, kCFNumberFormatterDecimalSeparator);
+    return getNumberSymbolChar(env, jlangtag, decimalSeparator, kCFNumberFormatterDecimalSeparator);
 }
 
 /*
@@ -342,7 +342,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getGroupingSeparator
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar groupingSeparator) {
-    return getNumberSymbolChar(groupingSeparator, kCFNumberFormatterGroupingSeparator);
+    return getNumberSymbolChar(env, jlangtag, groupingSeparator, kCFNumberFormatterGroupingSeparator);
 }
 
 /*
@@ -352,7 +352,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getInfinity
   (JNIEnv *env, jclass cls, jstring jlangtag, jstring infinity) {
-    return getNumberSymbolString(env, infinity, kCFNumberFormatterInfinitySymbol);
+    return getNumberSymbolString(env, jlangtag, infinity, kCFNumberFormatterInfinitySymbol);
 }
 
 /*
@@ -362,7 +362,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getInternationalCurrencySymbol
   (JNIEnv *env, jclass cls, jstring jlangtag, jstring internationalCurrencySymbol) {
-    return getNumberSymbolString(env, internationalCurrencySymbol, kCFNumberFormatterInternationalCurrencySymbol);
+    return getNumberSymbolString(env, jlangtag, internationalCurrencySymbol, kCFNumberFormatterInternationalCurrencySymbol);
 }
 
 /*
@@ -372,7 +372,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getMinusSign
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar minusSign) {
-    return getNumberSymbolChar(minusSign, kCFNumberFormatterMinusSign);
+    return getNumberSymbolChar(env, jlangtag, minusSign, kCFNumberFormatterMinusSign);
 }
 
 /*
@@ -382,7 +382,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getMonetaryDecimalSeparator
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar monetaryDecimalSeparator) {
-    return getNumberSymbolChar(monetaryDecimalSeparator, kCFNumberFormatterCurrencyDecimalSeparator);
+    return getNumberSymbolChar(env, jlangtag, monetaryDecimalSeparator, kCFNumberFormatterCurrencyDecimalSeparator);
 }
 
 /*
@@ -392,7 +392,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getNaN
   (JNIEnv *env, jclass cls, jstring jlangtag, jstring nan) {
-    return getNumberSymbolString(env, nan, kCFNumberFormatterNaNSymbol);
+    return getNumberSymbolString(env, jlangtag, nan, kCFNumberFormatterNaNSymbol);
 }
 
 /*
@@ -402,7 +402,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getPercent
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar percent) {
-    return getNumberSymbolChar(percent, kCFNumberFormatterPercentSymbol);
+    return getNumberSymbolChar(env, jlangtag, percent, kCFNumberFormatterPercentSymbol);
 }
 
 /*
@@ -412,7 +412,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getPerMill
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar perMill) {
-    return getNumberSymbolChar(perMill, kCFNumberFormatterPerMillSymbol);
+    return getNumberSymbolChar(env, jlangtag, perMill, kCFNumberFormatterPerMillSymbol);
 }
 
 /*
@@ -422,7 +422,36 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getZeroDigit
   (JNIEnv *env, jclass cls, jstring jlangtag, jchar zeroDigit) {
-    return getNumberSymbolChar(zeroDigit, kCFNumberFormatterZeroSymbol);
+    // The following code *should* work, but not for some reason :o
+    //
+    //return getNumberSymbolChar(env, jlangtag, zeroDigit, kCFNumberFormatterZeroSymbol);
+    //
+    // so here is a workaround.
+    jchar ret = zeroDigit;
+    CFLocaleRef cflocale = CFLocaleCopyCurrent();
+
+    if (cflocale != NULL) {
+        CFNumberFormatterRef nf = CFNumberFormatterCreate(kCFAllocatorDefault,
+                                                  cflocale,
+                                                  kCFNumberFormatterNoStyle);
+        if (nf != NULL) {
+            int zero = 0;
+            CFStringRef str = CFNumberFormatterCreateStringWithValue(kCFAllocatorDefault,
+                              nf, kCFNumberIntType, &zero);
+            if (str != NULL) {
+                if (CFStringGetLength(str) > 0) {
+                    ret = CFStringGetCharacterAtIndex(str, 0);
+                }
+                CFRelease(str);
+            }
+
+            CFRelease(nf);
+        }
+
+        CFRelease(cflocale);
+    }
+
+    return ret;
 }
 
 /*
@@ -432,7 +461,7 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getExponentSeparator
   (JNIEnv *env, jclass cls, jstring jlangtag, jstring exponent) {
-    return getNumberSymbolString(env, exponent, kCFNumberFormatterExponentSymbol);
+    return getNumberSymbolString(env, jlangtag, exponent, kCFNumberFormatterExponentSymbol);
 }
 
 /*
@@ -625,7 +654,7 @@ static void copyArrayElements(JNIEnv *env, CFArrayRef cfarray, jobjectArray jarr
     }
 }
 
-static jstring getNumberSymbolString(JNIEnv *env, jstring jdefault, CFStringRef type) {
+static jstring getNumberSymbolString(JNIEnv *env, jstring jlangtag, jstring jdefault, CFStringRef type) {
     char buf[BUFLEN];
     jstring ret = jdefault;
     CFLocaleRef cflocale = CFLocaleCopyCurrent();
@@ -633,7 +662,7 @@ static jstring getNumberSymbolString(JNIEnv *env, jstring jdefault, CFStringRef 
     if (cflocale != NULL) {
         CFNumberFormatterRef nf = CFNumberFormatterCreate(kCFAllocatorDefault,
                                                   cflocale,
-                                                  kCFNumberFormatterDecimalStyle);
+                                                  kCFNumberFormatterNoStyle);
         if (nf != NULL) {
             CFStringRef str = CFNumberFormatterCopyProperty(nf, type);
             if (str != NULL) {
@@ -651,21 +680,21 @@ static jstring getNumberSymbolString(JNIEnv *env, jstring jdefault, CFStringRef 
     return ret;
 }
 
-static jchar getNumberSymbolChar(jchar jdefault, CFStringRef type) {
-    char buf[BUFLEN];
+static jchar getNumberSymbolChar(JNIEnv *env, jstring jlangtag, jchar jdefault, CFStringRef type) {
     jchar ret = jdefault;
     CFLocaleRef cflocale = CFLocaleCopyCurrent();
 
     if (cflocale != NULL) {
         CFNumberFormatterRef nf = CFNumberFormatterCreate(kCFAllocatorDefault,
                                                   cflocale,
-                                                  kCFNumberFormatterDecimalStyle);
+                                                  kCFNumberFormatterNoStyle);
         if (nf != NULL) {
             CFStringRef str = CFNumberFormatterCopyProperty(nf, type);
             if (str != NULL) {
-                CFStringGetCString(str, buf, BUFLEN, kCFStringEncodingUTF8);
+                if (CFStringGetLength(str) > 0) {
+                    ret = CFStringGetCharacterAtIndex(str, 0);
+                }
                 CFRelease(str);
-                ret = buf[0];
             }
 
             CFRelease(nf);

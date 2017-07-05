@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@
 
 #include <java_awt_Toolkit.h>
 #include <java_awt_event_InputMethodEvent.h>
-#include <java_awt_peer_ComponentPeer.h>
 
 extern void initScreens(JNIEnv *env);
 extern "C" void awt_dnd_initialize();

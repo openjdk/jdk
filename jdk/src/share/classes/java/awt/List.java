@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 import javax.accessibility.*;
-import javax.tools.annotation.GenerateNativeHeader;
 
 
 /**
@@ -107,8 +106,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see         java.awt.event.ActionListener
  * @since       JDK1.0
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class List extends Component implements ItemSelectable, Accessible {
     /**
      * A vector created to contain items which will become

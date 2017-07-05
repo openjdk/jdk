@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583 6316717 6470106
+ * @bug 5033583 6316717 6470106 8004979
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
  */
@@ -39,6 +39,7 @@ public class GenericStringTest {
         classList.add(TestClass1.class);
         classList.add(TestClass2.class);
         classList.add(Roebling.class);
+        classList.add(TestInterface1.class);
 
 
         for(Class<?> clazz: classList)
@@ -127,6 +128,27 @@ class Roebling implements Comparable<Roebling> {
     @ExpectedString(
    "void Roebling.varArg(java.lang.Object[])")
     void varArg(Object ... arg) {}
+}
+
+interface TestInterface1 {
+    @ExpectedGenericString(
+   "public default void TestInterface1.foo()")
+    @ExpectedString(
+   "public default void TestInterface1.foo()")
+    public default void foo(){;}
+
+    @ExpectedString(
+   "public default java.lang.Object TestInterface1.bar()")
+    @ExpectedGenericString(
+   "public default <A> A TestInterface1.bar()")
+    default <A> A bar(){return null;}
+
+    @ExpectedString(
+   "public default strictfp double TestInterface1.quux()")
+    @ExpectedGenericString(
+    "public default strictfp double TestInterface1.quux()")
+    strictfp default double quux(){return 1.0;}
+
 }
 
 @Retention(RetentionPolicy.RUNTIME)

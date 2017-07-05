@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -42,9 +43,10 @@ import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
  */
 public final class WithObject extends ScriptObject implements Scope {
 
-    private static final MethodHandle WITHEXPRESSIONFILTER = findOwnMH("withFilterExpression", Object.class, Object.class);
-    private static final MethodHandle WITHSCOPEFILTER      = findOwnMH("withFilterScope",      Object.class, Object.class);
-    private static final MethodHandle BIND_TO_EXPRESSION   = findOwnMH("bindToExpression",     Object.class, Object.class, Object.class);
+    private static final MethodHandle WITHEXPRESSIONFILTER   = findOwnMH("withFilterExpression", Object.class, Object.class);
+    private static final MethodHandle WITHSCOPEFILTER        = findOwnMH("withFilterScope",      Object.class, Object.class);
+    private static final MethodHandle BIND_TO_EXPRESSION_OBJ = findOwnMH("bindToExpression",     Object.class, Object.class, Object.class);
+    private static final MethodHandle BIND_TO_EXPRESSION_FN  = findOwnMH("bindToExpression",     Object.class, ScriptFunction.class, Object.class);
 
     /** With expression object. */
     private final Object expression;
@@ -237,9 +239,14 @@ public final class WithObject extends ScriptObject implements Scope {
             return link.filterArguments(0, WITHEXPRESSIONFILTER);
         }
 
+        final MethodHandle linkInvocation = link.getInvocation();
+        final MethodType linkType = linkInvocation.type();
+        final boolean linkReturnsFunction = ScriptFunction.class.isAssignableFrom(linkType.returnType());
         return link.replaceMethods(
                 // Make sure getMethod will bind the script functions it receives to WithObject.expression
-                MH.foldArguments(BIND_TO_EXPRESSION, filter(link.getInvocation(), WITHEXPRESSIONFILTER)),
+                MH.foldArguments(linkReturnsFunction ? BIND_TO_EXPRESSION_FN : BIND_TO_EXPRESSION_OBJ,
+                        filter(linkInvocation.asType(linkType.changeReturnType(
+                                linkReturnsFunction ? ScriptFunction.class : Object.class)), WITHEXPRESSIONFILTER)),
                 // No clever things for the guard -- it is still identically filtered.
                 filterGuard(link, WITHEXPRESSIONFILTER));
     }
@@ -269,7 +276,11 @@ public final class WithObject extends ScriptObject implements Scope {
 
     @SuppressWarnings("unused")
     private static Object bindToExpression(final Object fn, final Object receiver) {
-        return fn instanceof ScriptFunction ? ((ScriptFunction) fn).makeBoundFunction(withFilterExpression(receiver), new Object[0]) : fn;
+        return fn instanceof ScriptFunction ? bindToExpression((ScriptFunction) fn, receiver) : fn;
+    }
+
+    private static Object bindToExpression(final ScriptFunction fn, final Object receiver) {
+        return fn.makeBoundFunction(withFilterExpression(receiver), new Object[0]);
     }
 
     /**

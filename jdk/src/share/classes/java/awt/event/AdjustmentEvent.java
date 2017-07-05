@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ package java.awt.event;
 
 import java.awt.Adjustable;
 import java.awt.AWTEvent;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The adjustment event emitted by Adjustable objects like
@@ -57,8 +56,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author Amy Fowler
  * @since 1.1
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class AdjustmentEvent extends AWTEvent {
 
     /**
@@ -79,27 +76,27 @@ public class AdjustmentEvent extends AWTEvent {
     /**
      * The unit increment adjustment type.
      */
-    public static final int UNIT_INCREMENT      = 1;
+    @Native public static final int UNIT_INCREMENT      = 1;
 
     /**
      * The unit decrement adjustment type.
      */
-    public static final int UNIT_DECREMENT      = 2;
+    @Native public static final int UNIT_DECREMENT      = 2;
 
     /**
      * The block decrement adjustment type.
      */
-    public static final int BLOCK_DECREMENT     = 3;
+    @Native public static final int BLOCK_DECREMENT     = 3;
 
     /**
      * The block increment adjustment type.
      */
-    public static final int BLOCK_INCREMENT     = 4;
+    @Native public static final int BLOCK_INCREMENT     = 4;
 
     /**
      * The absolute tracking adjustment type.
      */
-    public static final int TRACK               = 5;
+    @Native public static final int TRACK               = 5;
 
     /**
      * The adjustable object that fired the event.

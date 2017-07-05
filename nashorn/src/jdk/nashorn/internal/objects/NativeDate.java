@@ -844,10 +844,6 @@ public final class NativeDate extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toJSON(final Object self, final Object key) {
-        if (self instanceof NativeDate) {
-            final NativeDate nd = (NativeDate)self;
-            return (isNaN(nd.getTime())) ? null : toISOStringImpl(nd);
-        }
         // NOTE: Date.prototype.toJSON is generic. Accepts other objects as well.
         final Object selfObj = Global.toObject(self);
         if (!(selfObj instanceof ScriptObject)) {
@@ -1200,13 +1196,18 @@ public final class NativeDate extends ScriptObject {
     // Convert Date constructor args, checking for NaN, filling in defaults etc.
     private static double[] convertCtorArgs(final Object[] args) {
         final double[] d = new double[7];
+        boolean nullReturn = false;
 
+        // should not bailout on first NaN or infinite. Need to convert all
+        // subsequent args for possible side-effects via valueOf/toString overrides
+        // on argument objects.
         for (int i = 0; i < d.length; i++) {
             if (i < args.length) {
                 final double darg = JSType.toNumber(args[i]);
                 if (isNaN(darg) || isInfinite(darg)) {
-                    return null;
+                    nullReturn = true;
                 }
+
                 d[i] = (long)darg;
             } else {
                 d[i] = i == 2 ? 1 : 0; // day in month defaults to 1
@@ -1217,31 +1218,39 @@ public final class NativeDate extends ScriptObject {
             d[0] += 1900;
         }
 
-        return d;
+        return nullReturn? null : d;
     }
 
     // This method does the hard work for all setter methods: If a value is provided
     // as argument it is used, otherwise the value is calculated from the existing time value.
     private static double[] convertArgs(final Object[] args, final double time, final int fieldId, final int start, final int length) {
         final double[] d = new double[length];
+        boolean nullReturn = false;
 
+        // Need to call toNumber on all args for side-effects - even if an argument
+        // fails to convert to number, subsequent toNumber calls needed for possible
+        // side-effects via valueOf/toString overrides.
         for (int i = start; i < start + length; i++) {
             if (fieldId <= i && i < fieldId + args.length) {
                 final double darg = JSType.toNumber(args[i - fieldId]);
                 if (isNaN(darg) || isInfinite(darg)) {
-                    return null;
+                    nullReturn = true;
                 }
+
                 d[i - start] = (long) darg;
             } else {
                 // Date.prototype.set* methods require first argument to be defined
                 if (i == fieldId) {
-                    return null;
+                    nullReturn = true;
                 }
-                d[i - start] = valueFromTime(i, time);
+
+                if (! nullReturn) {
+                    d[i - start] = valueFromTime(i, time);
+                }
             }
         }
-        return d;
 
+        return nullReturn? null : d;
     }
 
     // ECMA 15.9.1.14 TimeClip (time)

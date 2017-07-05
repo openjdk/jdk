@@ -30,7 +30,6 @@
 
 #include <java_awt_MenuItem.h>
 #include <sun_awt_windows_WMenuItemPeer.h>
-#include <java_awt_PopupMenu.h>
 #include <sun_awt_windows_WPopupMenuPeer.h>
 
 

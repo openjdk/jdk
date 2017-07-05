@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.text.BreakIterator;
 import javax.swing.text.AttributeSet;
 import javax.accessibility.*;
 import java.awt.im.InputMethodRequests;
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The <code>TextComponent</code> class is the superclass of
@@ -57,8 +56,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author      Arthur van Hoff
  * @since       JDK1.0
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class TextComponent extends Component implements Accessible {
 
     /**
