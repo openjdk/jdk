@@ -24,10 +24,10 @@
  */
 
 package java.util.logging;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;

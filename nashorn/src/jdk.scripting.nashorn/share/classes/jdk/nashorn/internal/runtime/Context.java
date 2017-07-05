@@ -51,9 +51,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.Field;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -378,7 +376,7 @@ public final class Context {
     static final boolean javaSqlFound, javaSqlRowsetFound;
 
     static {
-        final Layer boot = Layer.boot();
+        final ModuleLayer boot = ModuleLayer.boot();
         javaSqlFound = boot.findModule("java.sql").isPresent();
         javaSqlRowsetFound = boot.findModule("java.sql.rowset").isPresent();
     }
@@ -1334,7 +1332,7 @@ public final class Context {
      * @return the new Module
      */
     static Module createModuleTrusted(final ModuleDescriptor descriptor, final ClassLoader loader) {
-        return createModuleTrusted(Layer.boot(), descriptor, loader);
+        return createModuleTrusted(ModuleLayer.boot(), descriptor, loader);
     }
 
     /**
@@ -1346,7 +1344,7 @@ public final class Context {
      * @param loader the class loader of the module
      * @return the new Module
      */
-    static Module createModuleTrusted(final Layer parent, final ModuleDescriptor descriptor, final ClassLoader loader) {
+    static Module createModuleTrusted(final ModuleLayer parent, final ModuleDescriptor descriptor, final ClassLoader loader) {
         final String mn = descriptor.name();
 
         final ModuleReference mref = new ModuleReference(descriptor, null) {
@@ -1374,8 +1372,8 @@ public final class Context {
         final Configuration cf = parent.configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of(mn));
 
-        final PrivilegedAction<Layer> pa = () -> parent.defineModules(cf, name -> loader);
-        final Layer layer = AccessController.doPrivileged(pa, GET_LOADER_ACC_CTXT);
+        final PrivilegedAction<ModuleLayer> pa = () -> parent.defineModules(cf, name -> loader);
+        final ModuleLayer layer = AccessController.doPrivileged(pa, GET_LOADER_ACC_CTXT);
 
         final Module m = layer.findModule(mn).get();
         assert m.getLayer() == layer;
@@ -1796,7 +1794,7 @@ public final class Context {
                 collect(Collectors.toSet());
         }
 
-        final Layer boot = Layer.boot();
+        final ModuleLayer boot = ModuleLayer.boot();
         final Configuration conf = boot.configuration().
             resolve(mf, ModuleFinder.of(), rootMods);
         final String firstMod = rootMods.iterator().next();

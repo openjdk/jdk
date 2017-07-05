@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -55,10 +54,10 @@ public final class Jlink {
      * @return A new plugin or null if plugin is unknown.
      */
     public static Plugin newPlugin(String name,
-            Map<String, String> configuration, Layer pluginsLayer) {
+            Map<String, String> configuration, ModuleLayer pluginsLayer) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(configuration);
-        pluginsLayer = pluginsLayer == null ? Layer.boot() : pluginsLayer;
+        pluginsLayer = pluginsLayer == null ? ModuleLayer.boot() : pluginsLayer;
         return PluginRepository.newPlugin(configuration, name, pluginsLayer);
     }
 
@@ -330,7 +329,7 @@ public final class Jlink {
 
     private PluginsConfiguration addAutoEnabledPlugins(PluginsConfiguration pluginsConfig) {
         List<Plugin> plugins = new ArrayList<>(pluginsConfig.getPlugins());
-        List<Plugin> bootPlugins = PluginRepository.getPlugins(Layer.boot());
+        List<Plugin> bootPlugins = PluginRepository.getPlugins(ModuleLayer.boot());
         for (Plugin bp : bootPlugins) {
             if (Utils.isAutoEnabled(bp)) {
                 try {

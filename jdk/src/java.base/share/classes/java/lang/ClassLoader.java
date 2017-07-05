@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
@@ -352,9 +351,7 @@ public abstract class ClassLoader {
     private ClassLoader(Void unused, String name, ClassLoader parent) {
         this.name = name;
         this.parent = parent;
-        this.unnamedModule
-            = SharedSecrets.getJavaLangReflectModuleAccess()
-                           .defineUnnamedModule(this);
+        this.unnamedModule = new Module(this);
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             package2certs = new ConcurrentHashMap<>();
@@ -2348,6 +2345,7 @@ public abstract class ClassLoader {
             this.isBuiltin = isBuiltin;
         }
 
+        @SuppressWarnings("deprecation")
         protected void finalize() {
             synchronized (loadedLibraryNames) {
                 if (fromClass.getClassLoader() != null && loaded) {

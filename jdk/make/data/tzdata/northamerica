@@ -3162,6 +3162,12 @@ Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 # http://www.vantbefinfo.com/changement-dheure-pas-pour-haiti/
 # http://news.anmwe.com/haiti-lheure-nationale-ne-sera-ni-avancee-ni-reculee-cette-annee/
 
+# From Steffen Thorsen (2017-03-12):
+# We have received 4 mails from different people telling that Haiti
+# has started DST again today, and this source seems to confirm that,
+# I have not been able to find a more authoritative source:
+# https://www.haitilibre.com/en/news-20319-haiti-notices-time-change-in-haiti.html
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Haiti	1983	only	-	May	8	0:00	1:00	D
 Rule	Haiti	1984	1987	-	Apr	lastSun	0:00	1:00	D
@@ -3174,6 +3180,8 @@ Rule	Haiti	2005	2006	-	Apr	Sun>=1	0:00	1:00	D
 Rule	Haiti	2005	2006	-	Oct	lastSun	0:00	0	S
 Rule	Haiti	2012	2015	-	Mar	Sun>=8	2:00	1:00	D
 Rule	Haiti	2012	2015	-	Nov	Sun>=1	2:00	0	S
+Rule	Haiti	2017	max	-	Mar	Sun>=8	2:00	1:00	D
+Rule	Haiti	2017	max	-	Nov	Sun>=1	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 			-4:49	-	PPMT	1917 Jan 24 12:00 # P-a-P MT

@@ -23,7 +23,6 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -88,12 +87,12 @@ public class ProxyClassAccessTest {
     @Test
     public void testNoReadAccess() throws Exception {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
                 .configuration()
                 .resolveAndBind(ModuleFinder.of(), finder, modules);
         ClassLoader parentLoader = this.getClass().getClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, parentLoader);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, parentLoader);
 
         ClassLoader loader = layer.findLoader("m1");
         Class<?>[] interfaces = new Class<?>[] {
