@@ -154,7 +154,8 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
 
 int unpack_counter = 0;
 
-void vframeArrayElement::unpack_on_stack(int callee_parameters,
+void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
+                                         int callee_parameters,
                                          int callee_locals,
                                          frame* caller,
                                          bool is_top_frame,
@@ -270,6 +271,7 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
                                  temps + callee_parameters,
                                  popframe_preserved_args_size_in_words,
                                  locks,
+                                 caller_actual_parameters,
                                  callee_parameters,
                                  callee_locals,
                                  caller,
@@ -415,7 +417,8 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
 
 }
 
-int vframeArrayElement::on_stack_size(int callee_parameters,
+int vframeArrayElement::on_stack_size(int caller_actual_parameters,
+                                      int callee_parameters,
                                       int callee_locals,
                                       bool is_top_frame,
                                       int popframe_extra_stack_expression_els) const {
@@ -426,6 +429,7 @@ int vframeArrayElement::on_stack_size(int callee_parameters,
                                       temps + callee_parameters,
                                       popframe_extra_stack_expression_els,
                                       locks,
+                                      caller_actual_parameters,
                                       callee_parameters,
                                       callee_locals,
                                       is_top_frame);
@@ -496,7 +500,7 @@ void vframeArray::fill_in(JavaThread* thread,
   }
 }
 
-void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode) {
+void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller_actual_parameters) {
   // stack picture
   //   unpack_frame
   //   [new interpreter frames ] (frames are skeletal but walkable)
@@ -525,7 +529,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode) {
   for (index = frames() - 1; index >= 0 ; index--) {
     int callee_parameters = index == 0 ? 0 : element(index-1)->method()->size_of_parameters();
     int callee_locals     = index == 0 ? 0 : element(index-1)->method()->max_locals();
-    element(index)->unpack_on_stack(callee_parameters,
+    element(index)->unpack_on_stack(caller_actual_parameters,
+                                    callee_parameters,
                                     callee_locals,
                                     &caller_frame,
                                     index == 0,
@@ -534,6 +539,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode) {
       Deoptimization::unwind_callee_save_values(element(index)->iframe(), this);
     }
     caller_frame = *element(index)->iframe();
+    caller_actual_parameters = callee_parameters;
   }
 
 

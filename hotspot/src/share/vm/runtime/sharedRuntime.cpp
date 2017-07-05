@@ -88,6 +88,8 @@ HS_DTRACE_PROBE_DECL7(hotspot, method__entry, int,
 HS_DTRACE_PROBE_DECL7(hotspot, method__return, int,
                       char*, int, char*, int, char*, int);
 
+RicochetBlob*      SharedRuntime::_ricochet_blob = NULL;
+
 // Implementation of SharedRuntime
 
 #ifndef PRODUCT
@@ -459,6 +461,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
   // Interpreted code
   if (Interpreter::contains(return_address)) {
     return Interpreter::rethrow_exception_entry();
+  }
+  // Ricochet frame unwind code
+  if (SharedRuntime::ricochet_blob() != NULL && SharedRuntime::ricochet_blob()->returns_to_bounce_addr(return_address)) {
+    return SharedRuntime::ricochet_blob()->exception_addr();
   }
 
   guarantee(blob == NULL || !blob->is_runtime_stub(), "caller should have skipped stub");
@@ -1174,6 +1180,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
   assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame(), "unexpected frame");
+  assert(!caller_frame.is_ricochet_frame(), "unexpected frame");
 #endif /* ASSERT */
 
   methodHandle callee_method;
@@ -1222,6 +1229,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
 
   if (caller_frame.is_interpreted_frame() ||
       caller_frame.is_entry_frame()       ||
+      caller_frame.is_ricochet_frame()    ||
       is_mh_invoke_via_adapter) {
     methodOop callee = thread->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");

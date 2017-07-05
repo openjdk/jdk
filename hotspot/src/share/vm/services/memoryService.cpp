@@ -565,7 +565,8 @@ void MemoryService::gc_begin(bool fullGC, bool recordGCBeginTime,
 
 void MemoryService::gc_end(bool fullGC, bool recordPostGCUsage,
                            bool recordAccumulatedGCTime,
-                           bool recordGCEndTime, bool countCollection) {
+                           bool recordGCEndTime, bool countCollection,
+                           GCCause::Cause cause) {
 
   GCMemoryManager* mgr;
   if (fullGC) {
@@ -577,7 +578,7 @@ void MemoryService::gc_end(bool fullGC, bool recordPostGCUsage,
 
   // register the GC end statistics and memory usage
   mgr->gc_end(recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
-              countCollection);
+              countCollection, cause);
 }
 
 void MemoryService::oops_do(OopClosure* f) {
@@ -633,7 +634,7 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
 // gc manager (so _fullGC is set to false ) and for other generation kinds
 // doing mark-sweep-compact uses major gc manager (so _fullGC is set
 // to true).
-TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind) {
+TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind, GCCause::Cause cause) {
   switch (kind) {
     case Generation::DefNew:
 #ifndef SERIALGC
@@ -654,9 +655,10 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind) {
   }
   // this has to be called in a stop the world pause and represent
   // an entire gc pause, start to finish:
-  initialize(_fullGC, true, true, true, true, true, true, true);
+  initialize(_fullGC, cause,true, true, true, true, true, true, true);
 }
 TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
+                                                 GCCause::Cause cause,
                                                  bool recordGCBeginTime,
                                                  bool recordPreGCUsage,
                                                  bool recordPeakUsage,
@@ -664,7 +666,7 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
                                                  bool recordAccumulatedGCTime,
                                                  bool recordGCEndTime,
                                                  bool countCollection) {
-  initialize(fullGC, recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
+    initialize(fullGC, cause, recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
              recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
              countCollection);
 }
@@ -672,6 +674,7 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
 // for a subclass to create then initialize an instance before invoking
 // the MemoryService
 void TraceMemoryManagerStats::initialize(bool fullGC,
+                                         GCCause::Cause cause,
                                          bool recordGCBeginTime,
                                          bool recordPreGCUsage,
                                          bool recordPeakUsage,
@@ -687,6 +690,7 @@ void TraceMemoryManagerStats::initialize(bool fullGC,
   _recordAccumulatedGCTime = recordAccumulatedGCTime;
   _recordGCEndTime = recordGCEndTime;
   _countCollection = countCollection;
+  _cause = cause;
 
   MemoryService::gc_begin(_fullGC, _recordGCBeginTime, _recordAccumulatedGCTime,
                           _recordPreGCUsage, _recordPeakUsage);
@@ -694,6 +698,6 @@ void TraceMemoryManagerStats::initialize(bool fullGC,
 
 TraceMemoryManagerStats::~TraceMemoryManagerStats() {
   MemoryService::gc_end(_fullGC, _recordPostGCUsage, _recordAccumulatedGCTime,
-                        _recordGCEndTime, _countCollection);
+                        _recordGCEndTime, _countCollection, _cause);
 }
 

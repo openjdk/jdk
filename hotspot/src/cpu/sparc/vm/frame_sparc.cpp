@@ -811,7 +811,7 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
 #ifdef ASSERT
 
 #define DESCRIBE_FP_OFFSET(name) \
-  values.describe(-1, fp() + frame::name##_offset, #name)
+  values.describe(frame_no, fp() + frame::name##_offset, #name)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
   for (int w = 0; w < frame::register_save_words; w++) {

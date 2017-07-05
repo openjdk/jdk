@@ -252,26 +252,28 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
         Constant::CompareResult t_compare_res = x_tval_const->compare(cond, y_const);
         Constant::CompareResult f_compare_res = x_fval_const->compare(cond, y_const);
 
-        guarantee(t_compare_res != Constant::not_comparable && f_compare_res != Constant::not_comparable, "incomparable constants in IfOp");
+        // not_comparable here is a valid return in case we're comparing unloaded oop constants
+        if (t_compare_res != Constant::not_comparable && f_compare_res != Constant::not_comparable) {
+          Value new_tval = t_compare_res == Constant::cond_true ? tval : fval;
+          Value new_fval = f_compare_res == Constant::cond_true ? tval : fval;
 
-        Value new_tval = t_compare_res == Constant::cond_true ? tval : fval;
-        Value new_fval = f_compare_res == Constant::cond_true ? tval : fval;
-
-        _ifop_count++;
-        if (new_tval == new_fval) {
-          return new_tval;
-        } else {
-          return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval);
+          _ifop_count++;
+          if (new_tval == new_fval) {
+            return new_tval;
+          } else {
+            return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval);
+          }
         }
       }
     } else {
       Constant* x_const = x->as_Constant();
       if (x_const != NULL) {         // x and y are constants
         Constant::CompareResult x_compare_res = x_const->compare(cond, y_const);
-        guarantee(x_compare_res != Constant::not_comparable, "incomparable constants in IfOp");
-
-        _ifop_count++;
-        return x_compare_res == Constant::cond_true ? tval : fval;
+        // not_comparable here is a valid return in case we're comparing unloaded oop constants
+        if (x_compare_res != Constant::not_comparable) {
+          _ifop_count++;
+          return x_compare_res == Constant::cond_true ? tval : fval;
+        }
       }
     }
   }

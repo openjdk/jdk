@@ -89,7 +89,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
 }
 
 // positive filter: should send be inlined?  returns NULL, if yes, or rejection msg
-const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const {
+const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const {
   // Allows targeted inlining
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
@@ -102,8 +102,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
 
   // positive filter: should send be inlined?  returns NULL (--> yes)
   // or rejection msg
-  int max_size = C->max_inline_size();
-  int size     = callee_method->code_size();
+  int size = callee_method->code_size();
 
   // Check for too many throws (and not too huge)
   if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
@@ -120,18 +119,36 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
     return NULL;  // size and frequency are represented in a new way
   }
 
+  int default_max_inline_size = C->max_inline_size();
+  int inline_small_code_size  = InlineSmallCode / 4;
+  int max_inline_size         = default_max_inline_size;
+
   int call_site_count  = method()->scale_count(profile.count());
   int invoke_count     = method()->interpreter_invocation_count();
-  assert( invoke_count != 0, "Require invokation count greater than zero");
-  int freq = call_site_count/invoke_count;
+
+  // Bytecoded method handle adapters do not have interpreter
+  // profiling data but only made up MDO data.  Get the counter from
+  // there.
+  if (caller_method->is_method_handle_adapter()) {
+    assert(method()->method_data_or_null(), "must have an MDO");
+    ciMethodData* mdo = method()->method_data();
+    ciProfileData* mha_profile = mdo->bci_to_data(caller_bci);
+    assert(mha_profile, "must exist");
+    CounterData* cd = mha_profile->as_CounterData();
+    invoke_count = cd->count();
+    call_site_count = invoke_count;  // use the same value
+  }
+
+  assert(invoke_count != 0, "require invocation count greater than zero");
+  int freq = call_site_count / invoke_count;
 
   // bump the max size if the call is frequent
   if ((freq >= InlineFrequencyRatio) ||
       (call_site_count >= InlineFrequencyCount) ||
       is_init_with_ea(callee_method, caller_method, C)) {
 
-    max_size = C->freq_inline_size();
-    if (size <= max_size && TraceFrequencyInlining) {
+    max_inline_size = C->freq_inline_size();
+    if (size <= max_inline_size && TraceFrequencyInlining) {
       CompileTask::print_inline_indent(inline_depth());
       tty->print_cr("Inlined frequent method (freq=%d count=%d):", freq, call_site_count);
       CompileTask::print_inline_indent(inline_depth());
@@ -141,11 +158,11 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.
     if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size(CompLevel_full_optimization) > InlineSmallCode/4)
+        callee_method->instructions_size(CompLevel_full_optimization) > inline_small_code_size)
       return "already compiled into a medium method";
   }
-  if (size > max_size) {
-    if (max_size > C->max_inline_size())
+  if (size > max_inline_size) {
+    if (max_inline_size > default_max_inline_size)
       return "hot method too big";
     return "too big";
   }
@@ -154,7 +171,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
 
 
 // negative filter: should send NOT be inlined?  returns NULL, ok to inline, or rejection msg
-const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const {
+const char* InlineTree::should_not_inline(ciMethod *callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const {
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
   if (!UseOldInlining) {
     const char* fail = NULL;
@@ -269,14 +286,13 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
   }
 
   const char *msg = NULL;
-  if ((msg = shouldInline(callee_method, caller_method, caller_bci,
-                          profile, wci_result)) != NULL) {
+  msg = should_inline(callee_method, caller_method, caller_bci, profile, wci_result);
+  if (msg != NULL)
     return msg;
-  }
-  if ((msg = shouldNotInline(callee_method, caller_method,
-                             wci_result)) != NULL) {
+
+  msg = should_not_inline(callee_method, caller_method, wci_result);
+  if (msg != NULL)
     return msg;
-  }
 
   if (InlineAccessors && callee_method->is_accessor()) {
     // accessor methods are not subject to any of the following limits.
@@ -492,9 +508,8 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
       new_depth_adjust -= 1;  // don't count method handle calls from java.lang.invoke implem
     }
     if (new_depth_adjust != 0 && PrintInlining) {
-      stringStream nm1; caller_jvms->method()->print_name(&nm1);
-      stringStream nm2; callee_method->print_name(&nm2);
-      tty->print_cr("discounting inlining depth from %s to %s", nm1.base(), nm2.base());
+      CompileTask::print_inline_indent(inline_depth());
+      tty->print_cr(" \\-> discounting inline depth");
     }
     if (new_depth_adjust != 0 && C->log()) {
       int id1 = C->log()->identify(caller_jvms->method());
