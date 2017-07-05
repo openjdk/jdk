@@ -62,7 +62,6 @@ import sun.util.locale.ParseStatus;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.LocaleServiceProviderPool;
-import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * A <code>Locale</code> object represents a specific geographical, political,
@@ -2016,11 +2015,11 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Calculated hashcode
      */
-    private transient volatile int hashCodeValue = 0;
+    private transient volatile int hashCodeValue;
 
     private static volatile Locale defaultLocale = initDefault();
-    private static volatile Locale defaultDisplayLocale = null;
-    private static volatile Locale defaultFormatLocale = null;
+    private static volatile Locale defaultDisplayLocale;
+    private static volatile Locale defaultFormatLocale;
 
     private transient volatile String languageTag;
 
@@ -2207,9 +2206,9 @@ public final class Locale implements Cloneable, Serializable {
                 baseLocale.getRegion(), baseLocale.getVariant(), localeExtensions);
     }
 
-    private static volatile String[] isoLanguages = null;
+    private static volatile String[] isoLanguages;
 
-    private static volatile String[] isoCountries = null;
+    private static volatile String[] isoCountries;
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
@@ -2851,7 +2850,7 @@ public final class Locale implements Cloneable, Serializable {
         private final String range;
         private final double weight;
 
-        private volatile int hash = 0;
+        private volatile int hash;
 
         /**
          * Constructs a {@code LanguageRange} using the given {@code range}.
@@ -3108,14 +3107,17 @@ public final class Locale implements Cloneable, Serializable {
          */
         @Override
         public int hashCode() {
-            if (hash == 0) {
-                int result = 17;
-                result = 37*result + range.hashCode();
+            int h = hash;
+            if (h == 0) {
+                h = 17;
+                h = 37*h + range.hashCode();
                 long bitsWeight = Double.doubleToLongBits(weight);
-                result = 37*result + (int)(bitsWeight ^ (bitsWeight >>> 32));
-                hash = result;
+                h = 37*h + (int)(bitsWeight ^ (bitsWeight >>> 32));
+                if (h != 0) {
+                    hash = h;
+                }
             }
-            return hash;
+            return h;
         }
 
         /**

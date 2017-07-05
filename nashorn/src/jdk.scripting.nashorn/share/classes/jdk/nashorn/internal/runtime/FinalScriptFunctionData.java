@@ -36,6 +36,9 @@ import java.util.List;
  */
 final class FinalScriptFunctionData extends ScriptFunctionData {
 
+    // documentation key for this function, may be null
+    private String docKey;
+
     private static final long serialVersionUID = -930632846167768864L;
 
     /**
@@ -70,6 +73,23 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
                 addInvoker(spec.getMethodHandle(), spec);
             }
         }
+    }
+
+    @Override
+    String getDocumentationKey() {
+        return docKey;
+    }
+
+    @Override
+    void setDocumentationKey(final String docKey) {
+        this.docKey = docKey;
+    }
+
+    @Override
+    String getDocumentation() {
+        String doc = docKey != null?
+            FunctionDocumentation.getDoc(docKey) : null;
+        return doc != null? doc : super.getDocumentation();
     }
 
     @Override

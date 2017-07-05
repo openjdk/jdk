@@ -58,7 +58,7 @@ import sun.management.AgentConfigurationError;
  * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through JCMD
  *          achieves the desired results
- * @key randomness
+ * @key randomness intermittent
  */
 public class JMXStartStopTest {
     private static final String TEST_APP_NAME = "TestApp";

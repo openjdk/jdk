@@ -130,13 +130,25 @@ public final class WriteAfterAbort implements IIOWriteProgressListener {
                 ImageWriterSpi.class, provider -> true, true);
 
         // Validates all supported ImageWriters
+        int numFailures = 0;
         while (iter.hasNext()) {
             final WriteAfterAbort writeAfterAbort = new WriteAfterAbort();
             final ImageWriter writer = iter.next().createWriterInstance();
             System.out.println("ImageWriter = " + writer);
-            writeAfterAbort.test(writer);
+            try {
+                writeAfterAbort.test(writer);
+            } catch (Exception e) {
+                System.err.println("Test failed for \""
+                    + writer.getOriginatingProvider().getFormatNames()[0]
+                    + "\" format.");
+                numFailures++;
+            }
         }
-        System.out.println("Test passed");
+        if (numFailures == 0) {
+            System.out.println("Test passed.");
+        } else {
+            throw new RuntimeException("Test failed.");
+        }
     }
 
     // Callbacks
