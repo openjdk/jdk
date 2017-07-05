@@ -329,7 +329,7 @@ public class CompositeType extends OpenType<CompositeData> {
      * @return true if {@code ot} is assignable to this open type.
      */
     @Override
-    boolean isAssignableFrom(OpenType ot) {
+    boolean isAssignableFrom(OpenType<?> ot) {
         if (!(ot instanceof CompositeType))
             return false;
         CompositeType ct = (CompositeType) ot;
@@ -420,9 +420,7 @@ public class CompositeType extends OpenType<CompositeData> {
         if (myHashCode == null) {
             int value = 0;
             value += this.getTypeName().hashCode();
-            String key;
-            for (Iterator k = nameToDescription.keySet().iterator(); k.hasNext();  ) {
-                key = (String) k.next();
+            for (String key : nameToDescription.keySet()) {
                 value += key.hashCode();
                 value += this.nameToType.get(key).hashCode();
             }
@@ -457,10 +455,10 @@ public class CompositeType extends OpenType<CompositeData> {
             result.append(getTypeName());
             result.append(",items=(");
             int i=0;
-            Iterator k=nameToType.keySet().iterator();
+            Iterator<String> k=nameToType.keySet().iterator();
             String key;
             while (k.hasNext()) {
-                key = (String) k.next();
+                key = k.next();
                 if (i > 0) result.append(",");
                 result.append("(itemName=");
                 result.append(key);

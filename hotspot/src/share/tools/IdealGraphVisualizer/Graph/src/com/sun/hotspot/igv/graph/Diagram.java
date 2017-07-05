@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +126,7 @@ public class Diagram {
         d.updateBlocks();
 
         Collection<InputNode> nodes = graph.getNodes();
-        Hashtable<Integer, Figure> figureHash = new Hashtable<Integer, Figure>();
+        HashMap<Integer, Figure> figureHash = new HashMap<Integer, Figure>();
         for (InputNode n : nodes) {
             Figure f = d.createFigure();
             f.getSource().addSourceNode(n);

@@ -38,6 +38,7 @@ import com.sun.hotspot.igv.data.serialization.XMLParser.HandoverElementHandler;
 import com.sun.hotspot.igv.data.serialization.XMLParser.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.XMLParser.TopElementHandler;
 import java.io.IOException;
+import java.util.HashMap;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -88,6 +89,18 @@ public class Parser {
     private TopElementHandler xmlDocument = new TopElementHandler();
     private boolean difference;
     private GroupCallback groupCallback;
+    private HashMap<String, Integer> idCache = new HashMap<String, Integer>();
+    private int maxId = 0;
+
+    private int lookupID(String i) {
+        Integer id = idCache.get(i);
+        if (id == null) {
+            id = maxId++;
+            idCache.put(i, id);
+        }
+        return id.intValue();
+    }
+
     // <graphDocument>
     private ElementHandler<GraphDocument, Object> topHandler = new ElementHandler<GraphDocument, Object>(TOP_ELEMENT) {
 
@@ -187,13 +200,13 @@ public class Parser {
                 previous = null;
             }
             InputGraph curGraph = new InputGraph(getParentObject(), previous, name);
-            getParentObject().addGraph(curGraph);
             this.graph = curGraph;
             return curGraph;
         }
 
         @Override
         protected void end(String text) throws SAXException {
+            getParentObject().addGraph(graph);
             graph.resolveBlockLinks();
         }
     };
@@ -207,7 +220,7 @@ public class Parser {
         @Override
         protected InputBlock start() throws SAXException {
             InputGraph graph = getParentObject();
-            String name = readRequiredAttribute(BLOCK_NAME_PROPERTY);
+            String name = readRequiredAttribute(BLOCK_NAME_PROPERTY).intern();
             InputBlock b = new InputBlock(getParentObject(), name);
             graph.addBlock(b);
             return b;
@@ -224,7 +237,7 @@ public class Parser {
 
             int id = 0;
             try {
-                id = Integer.parseInt(s);
+                id = lookupID(s);
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
@@ -252,7 +265,7 @@ public class Parser {
             String s = readRequiredAttribute(NODE_ID_PROPERTY);
             int id = 0;
             try {
-                id = Integer.parseInt(s);
+                id = lookupID(s);
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
@@ -269,7 +282,7 @@ public class Parser {
             String s = readRequiredAttribute(NODE_ID_PROPERTY);
             int id = 0;
             try {
-                id = Integer.parseInt(s);
+                id = lookupID(s);
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
@@ -280,7 +293,7 @@ public class Parser {
     private HandoverElementHandler<InputGraph> edgesHandler = new HandoverElementHandler<InputGraph>(EDGES_ELEMENT);
 
     // Local class for edge elements
-    private static class EdgeElementHandler extends ElementHandler<InputEdge, InputGraph> {
+    private class EdgeElementHandler extends ElementHandler<InputEdge, InputGraph> {
 
         public EdgeElementHandler(String name) {
             super(name);
@@ -298,8 +311,8 @@ public class Parser {
                     toIndex = Integer.parseInt(toIndexString);
                 }
 
-                from = Integer.parseInt(readRequiredAttribute(FROM_PROPERTY));
-                to = Integer.parseInt(readRequiredAttribute(TO_PROPERTY));
+                from = lookupID(readRequiredAttribute(FROM_PROPERTY));
+                to = lookupID(readRequiredAttribute(TO_PROPERTY));
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
@@ -344,18 +357,16 @@ public class Parser {
         }
     };
     // <property>
-    private ElementHandler<Property, Properties.Provider> propertyHandler = new XMLParser.ElementHandler<Property, Properties.Provider>(PROPERTY_ELEMENT, true) {
+    private ElementHandler<String, Properties.Provider> propertyHandler = new XMLParser.ElementHandler<String, Properties.Provider>(PROPERTY_ELEMENT, true) {
 
         @Override
-        public Property start() throws SAXException {
-            String value = "";
-            String name = readRequiredAttribute(PROPERTY_NAME_PROPERTY).intern();
-            return getParentObject().getProperties().setProperty(name, value);
+        public String start() throws SAXException {
+            return readRequiredAttribute(PROPERTY_NAME_PROPERTY).intern();
         }
 
         @Override
         public void end(String text) {
-            getObject().setValue(text.trim().intern());
+            getParentObject().getProperties().setProperty(getObject(), text.trim().intern());
         }
     };
 

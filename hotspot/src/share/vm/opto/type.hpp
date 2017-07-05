@@ -1183,6 +1183,9 @@ inline bool Type::is_floatingpoint() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
+// UseOptoBiasInlining
+#define XorXNode     XorLNode
+#define StoreXConditionalNode StoreLConditionalNode
 // Opcodes
 #define Op_LShiftX   Op_LShiftL
 #define Op_AndX      Op_AndL
@@ -1222,6 +1225,9 @@ inline bool Type::is_floatingpoint() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
+// UseOptoBiasInlining
+#define XorXNode     XorINode
+#define StoreXConditionalNode StoreIConditionalNode
 // Opcodes
 #define Op_LShiftX   Op_LShiftI
 #define Op_AndX      Op_AndI

@@ -329,6 +329,8 @@ protected:
 
 public:
   static const char *_signal;      // reserved user-defined string
+  static const char *_signal2;      // reserved user-defined string
+  static const char *_signal3;      // reserved user-defined string
   enum               { Not_in_list = -1 };
 
   void  addName(const char *name);

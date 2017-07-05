@@ -36,7 +36,7 @@ import org.omg.CORBA.ORB;
 import org.omg.CORBA.TypeCode;
 import org.omg.CORBA.portable.BoxedValueHelper;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "rawtypes"})
 public class ProxyInputStream extends org.omg.CORBA_2_3.portable.InputStream {
     public ProxyInputStream(org.omg.CORBA.portable.InputStream in) {
         this.in = in;

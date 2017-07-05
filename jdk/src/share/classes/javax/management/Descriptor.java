@@ -101,7 +101,7 @@ import javax.management.openmbean.OpenType;
  *
  * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>
  *
- * <tr><td><a name="defaultValue"><i>defaultValue</i></a><td>Object</td>
+ * <tr id="defaultValue"><td><i>defaultValue</i><td>Object</td>
  * <td>MBeanAttributeInfo<br>MBeanParameterInfo</td>
  *
  * <td>Default value for an attribute or parameter.  See
@@ -144,7 +144,7 @@ import javax.management.openmbean.OpenType;
  * might be disabled if it cannot currently be emitted but could be in
  * other circumstances.</td>
  *
- * <tr><td><a name="immutableInfo"><i>immutableInfo</i></a><td>String</td>
+ * <tr id="immutableInfo"><td><i>immutableInfo</i><td>String</td>
  * <td>MBeanInfo</td>
  *
  * <td>The string {@code "true"} or {@code "false"} according as this
@@ -153,20 +153,24 @@ import javax.management.openmbean.OpenType;
  * the lifetime of the MBean.  Hence, a client can read it once and
  * cache the read value.  When this field is false or absent, there is
  * no such guarantee, although that does not mean that the MBeanInfo
- * will necessarily change.</td>
+ * will necessarily change.  See also the <a
+ * href="MBeanInfo.html#info-changed">{@code "jmx.mbean.info.changed"}</a>
+ * notification.</td>
  *
  * <tr><td>infoTimeout</td><td>String<br>Long</td><td>MBeanInfo</td>
  *
- * <td>The time in milli-seconds that the MBeanInfo can reasonably be
- * expected to be unchanged.  The value can be a {@code Long} or a
- * decimal string.  This provides a hint from a DynamicMBean or any
+ * <td id="infoTimeout">The time in milli-seconds that the MBeanInfo can
+ * reasonably be expected to be unchanged.  The value can be a {@code Long}
+ * or a decimal string.  This provides a hint from a DynamicMBean or any
  * MBean that does not define {@code immutableInfo} as {@code true}
  * that the MBeanInfo is not likely to change within this period and
  * therefore can be cached.  When this field is missing or has the
  * value zero, it is not recommended to cache the MBeanInfo unless it
- * has the {@code immutableInfo} set to {@code true}.</td></tr>
+ * has the {@code immutableInfo} set to {@code true} or it has <a
+ * href="MBeanInfo.html#info-changed">{@code "jmx.mbean.info.changed"}</a> in
+ * its {@link MBeanNotificationInfo} array.</td></tr>
  *
- * <tr><td><a name="interfaceClassName"><i>interfaceClassName</i></a></td>
+ * <tr id="interfaceClassName"><td><i>interfaceClassName</i></td>
  * <td>String</td><td>MBeanInfo</td>
  *
  * <td>The Java interface name for a Standard MBean or MXBean, as
@@ -175,19 +179,19 @@ import javax.management.openmbean.OpenType;
  * StandardMBean} class will have this field in its MBeanInfo
  * Descriptor.</td>
  *
- * <tr><td><a name="legalValues"><i>legalValues</i></a></td>
+ * <tr id="legalValues"><td><i>legalValues</i></td>
  * <td>{@literal Set<?>}</td><td>MBeanAttributeInfo<br>MBeanParameterInfo</td>
  *
  * <td>Legal values for an attribute or parameter.  See
  * {@link javax.management.openmbean}.</td>
  *
- * <tr><td><a name="maxValue"><i>maxValue</i></a><td>Object</td>
+ * <tr id="maxValue"><td><i>maxValue</i><td>Object</td>
  * <td>MBeanAttributeInfo<br>MBeanParameterInfo</td>
  *
  * <td>Maximum legal value for an attribute or parameter.  See
  * {@link javax.management.openmbean}.</td>
  *
- * <tr><td><a name="metricType">metricType</a><td>String</td>
+ * <tr id="metricType"><td>metricType</td><td>String</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo</td>
  *
  * <td>The type of a metric, one of the strings "counter" or "gauge".
@@ -200,13 +204,13 @@ import javax.management.openmbean.OpenType;
  * that can increase or decrease.  Examples might be the number of
  * open connections or a cache hit rate or a temperature reading.
  *
- * <tr><td><a name="minValue"><i>minValue</i></a><td>Object</td>
+ * <tr id="minValue"><td><i>minValue</i><td>Object</td>
  * <td>MBeanAttributeInfo<br>MBeanParameterInfo</td>
  *
  * <td>Minimum legal value for an attribute or parameter.  See
  * {@link javax.management.openmbean}.</td>
  *
- * <tr><td><a name="mxbean"><i>mxbean</i></a><td>String</td>
+ * <tr id="mxbean"><td><i>mxbean</i><td>String</td>
  * <td>MBeanInfo</td>
  *
  * <td>The string {@code "true"} or {@code "false"} according as this
@@ -223,7 +227,7 @@ import javax.management.openmbean.OpenType;
  * MXBean, if it was not the {@linkplain MXBeanMappingFactory#DEFAULT default}
  * one.</td>
  *
- * <tr><td><a name="openType"><i>openType</i></a><td>{@link OpenType}</td>
+ * <tr id="openType"><td><i>openType</i><td>{@link OpenType}</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
  * <td><p>The Open Type of this element.  In the case of {@code
@@ -240,7 +244,7 @@ import javax.management.openmbean.OpenType;
  * which case it indicates the Open Type that the {@link
  * Notification#getUserData() user data} will have.</td>
  *
- * <tr><td><a name="originalType"><i>originalType</i></a><td>String</td>
+ * <tr id="originalType"><td><i>originalType</i><td>String</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
  * <td><p>The original Java type of this element as it appeared in the
@@ -282,11 +286,132 @@ import javax.management.openmbean.OpenType;
  *
  * </table>
  *
- * <p>Some additional fields are defined by Model MBeans.  See
- * {@link javax.management.modelmbean.ModelMBeanInfo ModelMBeanInfo}
- * and related classes and the chapter "Model MBeans" of the
- * <a href="http://java.sun.com/products/JavaManagement/download.html">
- * JMX Specification</a>.</p>
+ * <p>Some additional fields are defined by Model MBeans.  See the
+ * information for <a href="modelmbean/ModelMBeanInfo.html#descriptor"><!--
+ * -->{@code ModelMBeanInfo}</a>,
+ * <a href="modelmbean/ModelMBeanAttributeInfo.html#descriptor"><!--
+ * -->{@code ModelMBeanAttributeInfo}</a>,
+ * <a href="modelmbean/ModelMBeanConstructorInfo.html#descriptor"><!--
+ * -->{@code ModelMBeanConstructorInfo}</a>,
+ * <a href="modelmbean/ModelMBeanNotificationInfo.html#descriptor"><!--
+ * -->{@code ModelMBeanNotificationInfo}</a>, and
+ * <a href="modelmbean/ModelMBeanOperationInfo.html#descriptor"><!--
+ * -->{@code ModelMBeanOperationInfo}</a>, as
+ * well as the chapter "Model MBeans" of the <a
+ * href="http://java.sun.com/products/JavaManagement/download.html">JMX
+ * Specification</a>.  The following table summarizes these fields.  Note
+ * that when the Type in this table is Number, a String that is the decimal
+ * representation of a Long can also be used.</p>
+ *
+ * <p>Nothing prevents the use of these fields in MBeans that are not Model
+ * MBeans.  The <a href="#displayName">displayName</a>, <a href="#severity"><!--
+ * -->severity</a>, and <a href="#visibility">visibility</a> fields are of
+ * interest outside Model MBeans, for example.  But only Model MBeans have
+ * a predefined behavior for these fields.</p>
+ *
+ * <table border="1" cellpadding="5">
+ *
+ * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>
+ *
+ * <tr><td>class</td><td>String</td><td>ModelMBeanOperationInfo</td>
+ *     <td>Class where method is defined (fully qualified).</td></tr>
+ *
+ * <tr><td>currencyTimeLimit</td><td>Number</td>
+ *     <td>ModelMBeanInfo<br>ModelMBeanAttributeInfo<br>ModelMBeanOperationInfo</td>
+ *     <td>How long cached value is valid: &lt;0 never, =0 always,
+ *         &gt;0 seconds.</td></tr>
+ *
+ * <tr><td>default</td><td>Object</td><td>ModelMBeanAttributeInfo</td>
+ *     <td>Default value for attribute.</td></tr>
+ *
+ * <tr><td>descriptorType</td><td>String</td><td>Any</td>
+ *     <td>Type of descriptor, "mbean", "attribute", "constructor", "operation",
+ *         or "notification".</td></tr>
+ *
+ * <tr id="displayName"><td>displayName</td><td>String</td><td>Any</td>
+ *     <td>Human readable name of this item.</td></tr>
+ *
+ * <tr><td>export</td><td>String</td><td>ModelMBeanInfo</td>
+ *     <td>Name to be used to export/expose this MBean so that it is
+ *         findable by other JMX Agents.</td></tr>
+ *
+ * <tr><td>getMethod</td><td>String</td><td>ModelMBeanAttributeInfo</td>
+ *     <td>Name of operation descriptor for get method.</td></tr>
+ *
+ * <tr><td>lastUpdatedTimeStamp</td><td>Number</td>
+ *     <td>ModelMBeanAttributeInfo<br>ModelMBeanOperationInfo</td>
+ *     <td>When <a href="#value-field">value</a> was set.</td></tr>
+ *
+ * <tr><td>log</td><td>String</td><td>ModelMBeanInfo<br>ModelMBeanNotificationInfo</td>
+ *     <td>t or T: log all notifications, f or F: log no notifications.</td></tr>
+ *
+ * <tr><td>logFile</td><td>String</td><td>ModelMBeanInfo<br>ModelMBeanNotificationInfo</td>
+ *     <td>Fully qualified filename to log events to.</td></tr>
+ *
+ * <tr><td>messageID</td><td>String</td><td>ModelMBeanNotificationInfo</td>
+ *     <td>Unique key for message text (to allow translation, analysis).</td></tr>
+ *
+ * <tr><td>messageText</td><td>String</td><td>ModelMBeanNotificationInfo</td>
+ *     <td>Text of notification.</td></tr>
+ *
+ * <tr><td>name</td><td>String</td><td>Any</td>
+ *     <td>Name of this item.</td></tr>
+ *
+ * <tr><td>persistFile</td><td>String</td><td>ModelMBeanInfo</td>
+ *     <td>File name into which the MBean should be persisted.</td></tr>
+ *
+ * <tr><td>persistLocation</td><td>String</td><td>ModelMBeanInfo</td>
+ *     <td>The fully qualified directory name where the MBean should be
+ *         persisted (if appropriate).</td></tr>
+ *
+ * <tr><td>persistPeriod</td><td>Number</td>
+ *     <td>ModelMBeanInfo<br>ModelMBeanAttributeInfo</td>
+ *     <td>Frequency of persist cycle in seconds. Used when persistPolicy is
+ *         "OnTimer" or "NoMoreOftenThan".</td></tr>
+ *
+ * <tr><td>persistPolicy</td><td>String</td>
+ *     <td>ModelMBeanInfo<br>ModelMBeanAttributeInfo</td>
+ *     <td>One of: OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never.
+ *         See the section "MBean Descriptor Fields" in the JMX specification
+ *         document.</td></tr>
+ *
+ * <tr><td>presentationString</td><td>String</td><td>Any</td>
+ *     <td>XML formatted string to allow presentation of data.</td></tr>
+ *
+ * <tr><td>protocolMap</td><td>Descriptor</td><td>ModelMBeanAttributeInfo</td>
+ *     <td>See the section "Protocol Map Support" in the JMX specification
+ *         document.  Mappings must be appropriate for the attribute and entries
+ *         can be updated or augmented at runtime.</td></tr>
+ *
+ * <tr><td>role</td><td>String</td>
+ *     <td>ModelMBeanConstructorInfo<br>ModelMBeanOperationInfo</td>
+ *     <td>One of "constructor", "operation", "getter", or "setter".</td></tr>
+ *
+ * <tr><td>setMethod</td><td>String</td><td>ModelMBeanAttributeInfo</td>
+ *     <td>Name of operation descriptor for set method.</td></tr>
+ *
+ * <tr id="severity"><td>severity</td><td>Number</td>
+ *     <td>ModelMBeanNotificationInfo</td>
+ *     <td>0-6 where 0: unknown; 1: non-recoverable;
+ *         2: critical, failure; 3: major, severe;
+ *         4: minor, marginal, error; 5: warning;
+ *         6: normal, cleared, informative</td></tr>
+ *
+ * <tr><td>targetObject</td><td>Object</td><td>ModelMBeanOperationInfo</td>
+ *     <td>Object on which to execute this method.</td></tr>
+ *
+ * <tr><td>targetType</td><td>String</td><td>ModelMBeanOperationInfo</td>
+ *     <td>type of object reference for targetObject. Can be:
+ *         ObjectReference | Handle | EJBHandle | IOR | RMIReference.</td></tr>
+ *
+ * <tr id="value-field"><td>value</td><td>Object</td>
+ *     <td>ModelMBeanAttributeInfo<br>ModelMBeanOperationInfo</td>
+ *     <td>Current (cached) value for attribute or operation.</td></tr>
+ *
+ * <tr id="visibility"><td>visibility</td><td>Number</td><td>Any</td>
+ *     <td>1-4 where 1: always visible, 4: rarely visible.</td></tr>
+ *
+ * </table>
  *
  * @since 1.5
  */
@@ -439,7 +564,7 @@ public interface Descriptor extends Serializable, Cloneable
     public boolean isValid() throws RuntimeOperationsException;
 
     /**
-     * Compares this descriptor to the given object.  The objects are equal if
+     * <p>Compares this descriptor to the given object.  The objects are equal if
      * the given object is also a Descriptor, and if the two Descriptors have
      * the same field names (possibly differing in case) and the same
      * associated values.  The respective values for a field in the two
