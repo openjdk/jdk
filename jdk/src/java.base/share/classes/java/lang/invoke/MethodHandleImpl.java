@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.JavaLangInvokeAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -38,12 +40,11 @@ import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Array;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -57,19 +58,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @author jrose
  */
 /*non-public*/ abstract class MethodHandleImpl {
-    // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY;
-    static {
-        final Object[] values = { 255 };
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                values[0] = Integer.getInteger(MethodHandleImpl.class.getName()+".MAX_ARITY", 255);
-                return null;
-            }
-        });
-        MAX_ARITY = (Integer) values[0];
-    }
 
     /// Factory methods to create method handles:
 
@@ -649,7 +637,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         MethodType srcType = targetType                 // (a..., [b...])=>r
                 .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
         if (!retainOriginalArgs) {                      // (a..., b...)=>r
-            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterList());
+            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterArray());
         }
         // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
         // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
@@ -1094,7 +1082,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         int arity = type.parameterCount();
         if (arity > 1) {
             MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
-            mh = MethodHandles.dropArguments(mh, 1, type.parameterList().subList(1, arity));
+            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
             return mh;
         }
         return makePairwiseConvert(NF_throwException.resolvedHandle(), type, false, true);
@@ -1710,6 +1698,39 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
+
+        SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
+            @Override
+            public Object newMemberName() {
+                return new MemberName();
+            }
+
+            @Override
+            public String getName(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getName();
+            }
+
+            @Override
+            public boolean isNative(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.isNative();
+            }
+
+            @Override
+            public byte[] generateDMHClassBytes(String className,
+            MethodType[] methodTypes, int[] types) {
+                return GenerateJLIClassesHelper
+                        .generateDMHClassBytes(className, methodTypes, types);
+            }
+
+            @Override
+            public Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
+                    final String types) {
+                return GenerateJLIClassesHelper
+                        .generateConcreteBMHClassBytes(types);
+            }
+        });
     }
 
     /** Result unboxing: ValueConversions.unbox() OR ValueConversions.identity() OR ValueConversions.ignore(). */

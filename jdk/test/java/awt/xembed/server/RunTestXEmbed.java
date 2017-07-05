@@ -73,10 +73,11 @@ public class RunTestXEmbed extends TestXEmbedServer {
                     enva[ind++] = "AWT_TOOLKIT=sun.awt.X11.XToolkit";
                 }
             }
-            Process proc = Runtime.getRuntime().exec(java_home +
-                                                     "/bin/java -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED -Dawt.toolkit=sun.awt.X11.XToolkit TesterClient "
-                                                     + test.getName() + " " + window + buf,
-                                                     enva);
+            Process proc = Runtime.getRuntime().
+                exec(java_home +
+                     "/bin/java --add-exports java.desktop/sun.awt.X11=ALL-UNNAMED -Dawt.toolkit=sun.awt.X11.XToolkit TesterClient "
+                     + test.getName() + " " + window + buf,
+                     enva);
             System.err.println("Test for " + test.getName() + " has started.");
             log.fine("Test for " + test.getName() + " has started.");
             new InputReader(proc.getInputStream());

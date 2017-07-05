@@ -35,8 +35,8 @@ import javax.xml.bind.Validator;
  * @bug 8150173
  * @summary Verifies that a JAXBContext can be created with a legacy
  *          factory class that has static createContext methods.
- * @compile -addmods java.xml.bind JAXBContextWithLegacyFactory.java
- * @run main/othervm -addmods java.xml.bind JAXBContextWithLegacyFactory
+ * @modules java.xml.bind
+ * @run main/othervm JAXBContextWithLegacyFactory
  */
 public class JAXBContextWithLegacyFactory {
     private static JAXBContext tmp;

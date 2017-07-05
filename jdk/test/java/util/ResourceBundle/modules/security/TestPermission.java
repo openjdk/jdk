@@ -59,7 +59,7 @@ public class TestPermission {
     public void compileAll() throws Exception {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "-modulesourcepath", SRC_DIR.toString()));
+            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
         }
     }
 
@@ -68,7 +68,7 @@ public class TestPermission {
      */
     @Test
     public void runTest() throws Exception {
-        int exitValue = executeTestJava("-mp", MODS_DIR.toString(),
+        int exitValue = executeTestJava("--module-path", MODS_DIR.toString(),
                                         "-m", "test/jdk.test.Main")
                             .outputTo(System.out)
                             .errorTo(System.out)

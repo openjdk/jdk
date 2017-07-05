@@ -806,7 +806,7 @@ SplashGetScaledImageName(const char* jarName, const char* fileName,
 #ifndef __linux__
     return JNI_FALSE;
 #endif
-    *scaleFactor = getNativeScaleFactor();
+    *scaleFactor = getNativeScaleFactor(NULL);
     if (*scaleFactor == 2.0) {
         size_t length = 0;
         char *stringToAppend = ".java-scale2x";

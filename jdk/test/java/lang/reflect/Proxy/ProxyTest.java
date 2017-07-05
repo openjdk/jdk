@@ -61,7 +61,7 @@ public class ProxyTest {
     public void compileAll() throws Exception {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "-modulesourcepath", SRC_DIR.toString()));
+            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
         }
     }
 
@@ -71,7 +71,7 @@ public class ProxyTest {
     @Test
     public void runTest() throws Exception {
         int exitValue = executeTestJava("-cp", CPATH_DIR.toString(),
-                                        "-mp", MODS_DIR.toString(),
+                                        "--module-path", MODS_DIR.toString(),
                                         "-m", "test/jdk.test.Main")
                             .outputTo(System.out)
                             .errorTo(System.out)

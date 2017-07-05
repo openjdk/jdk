@@ -11,5 +11,6 @@ grant codeBase "jrt:/jdk.crypto.mscapi" {
                    "clearProviderProperties.SunMSCAPI";
     permission java.security.SecurityPermission
                    "removeProviderProperty.SunMSCAPI";
+    permission java.security.SecurityPermission "authProvider.SunMSCAPI";
     permission java.util.PropertyPermission "*", "read";
 };

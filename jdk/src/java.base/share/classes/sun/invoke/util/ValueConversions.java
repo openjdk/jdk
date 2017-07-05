@@ -29,27 +29,32 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.util.EnumMap;
+import jdk.internal.vm.annotation.Stable;
 
 public class ValueConversions {
     private static final Class<?> THIS_CLASS = ValueConversions.class;
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
-    /** Thread-safe canonicalized mapping from Wrapper to MethodHandle
+    /**
+     * Thread-safe canonicalized mapping from Wrapper to MethodHandle
      * with unsynchronized reads and synchronized writes.
-     * It's safe to publish MethodHandles by data race because they are immutable. */
+     * It's safe to publish MethodHandles by data race because they are immutable.
+     */
     private static class WrapperCache {
-        /** EnumMap uses preconstructed array internally, which is constant during it's lifetime. */
-        private final EnumMap<Wrapper, MethodHandle> map = new EnumMap<>(Wrapper.class);
+        @Stable
+        private final MethodHandle[] map = new MethodHandle[Wrapper.COUNT];
 
         public MethodHandle get(Wrapper w) {
-            return map.get(w);
+            return map[w.ordinal()];
         }
         public synchronized MethodHandle put(final Wrapper w, final MethodHandle mh) {
-            // Simulate CAS to avoid racy duplication
-            MethodHandle prev = map.putIfAbsent(w, mh);
-            if (prev != null)  return prev;
-            return mh;
+            MethodHandle prev = map[w.ordinal()];
+            if (prev != null) {
+                return prev;
+            } else {
+                map[w.ordinal()] = mh;
+                return mh;
+            }
         }
     }
 
@@ -623,7 +628,7 @@ public class ValueConversions {
         return (x ? (byte)1 : (byte)0);
     }
 
-    private static final WrapperCache[] CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
+    private static final WrapperCache[] CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.COUNT);
 
     public static MethodHandle convertPrimitive(Wrapper wsrc, Wrapper wdst) {
         WrapperCache cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];

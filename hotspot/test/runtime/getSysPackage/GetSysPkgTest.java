@@ -98,7 +98,7 @@ public class GetSysPkgTest {
             ClassFileInstaller.writeClassToDisk("GetSysPkg_package/GetSysClass", klassbuf);
 
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:bl_dir",
-                "-XaddExports:java.base/jdk.internal.loader=ALL-UNNAMED", "-cp", "." + File.pathSeparator +
+                "--add-exports=java.base/jdk.internal.loader=ALL-UNNAMED", "-cp", "." + File.pathSeparator +
                 System.getProperty("test.classes"), "GetSysPkgTest", "do_tests");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);

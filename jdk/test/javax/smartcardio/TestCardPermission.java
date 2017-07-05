@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @bug 6293767
+ * @bug 6293767 6469513
  * @summary Test for the CardPermission class
  * @author Andreas Sterbenz
- * @compile -addmods java.smartcardio TestCardPermission.java
- * @run main/othervm -addmods java.smartcardio TestCardPermission
+ * @compile --add-modules=java.smartcardio TestCardPermission.java
+ * @run main/othervm --add-modules=java.smartcardio TestCardPermission
  */
 
 import javax.smartcardio.*;
@@ -49,15 +49,14 @@ public class TestCardPermission {
         test("Reset,coNnect", "connect,reset");
         test("exclusive,*,connect", "*");
         test("connect,reset,exclusive,transmitControl,getBasicChannel,openLogicalChannel", "*");
+        test(null, null);
 
-        invalid(null);
         invalid("");
         invalid("foo");
         invalid("connect, reset");
         invalid("connect,,reset");
         invalid("connect,");
         invalid(",connect");
-        invalid("");
     }
 
     private static void invalid(String s) throws Exception {
@@ -77,7 +76,7 @@ public class TestCardPermission {
         CardPermission p = new CardPermission("*", actions);
         System.out.println(p);
         String a = p.getActions();
-        if (canon.equals(a) == false) {
+        if (canon != null && canon.equals(a) == false) {
             throw new Exception("Canonical actions mismatch: " + canon + " != " + a);
         }
     }

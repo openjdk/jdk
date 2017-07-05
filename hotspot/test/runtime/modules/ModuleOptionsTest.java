@@ -23,24 +23,32 @@
 
 /*
  * @test
- * @summary VM exit initialization results if java.base is specificed more than once to Xpatch.
+ * @bug 8136930
+ * @summary Test that the VM only recognizes the last specified --add-modules
+ *          and --list-modules options
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 
 import jdk.test.lib.*;
 
-public class XpatchDupJavaBase {
-  // The VM should exit initialization if java.base is specified
-  // more than once to -Xpatch.
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-Xpatch:java.base=javabase_dir",
-      "-Xpatch:java.base=javabase_dir",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Cannot specify java.base more than once to -Xpatch");
-    output.shouldHaveExitValue(1);
-  }
-}
+// Test that the VM behaves correctly when processing module related options.
+public class ModuleOptionsTest {
 
+    public static void main(String[] args) throws Exception {
+
+        // Test that last --add-modules is the only one recognized.  No exception
+        // should be thrown.
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "--add-modules=i_dont_exist", "--add-modules=java.base", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        // Test that last --limit-modules is the only one recognized.  No exception
+        // should be thrown.
+        pb = ProcessTools.createJavaProcessBuilder(
+            "--limit-modules=i_dont_exist", "--limit-modules=java.base", "-version");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+    }
+}
