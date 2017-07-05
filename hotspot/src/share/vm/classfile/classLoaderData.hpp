@@ -66,6 +66,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* _unloading;
   // CMS support.
   static ClassLoaderData* _saved_head;
+  static bool _should_purge;
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
   static void post_class_unload_events(void);
@@ -87,12 +88,20 @@ class ClassLoaderDataGraph : public AllStatic {
   static void remember_new_clds(bool remember) { _saved_head = (remember ? _head : NULL); }
   static GrowableArray<ClassLoaderData*>* new_clds();
 
+  static void set_should_purge(bool b) { _should_purge = b; }
+  static void purge_if_needed() {
+    // Only purge the CLDG for CMS if concurrent sweep is complete.
+    if (_should_purge) {
+      purge();
+      // reset for next time.
+      set_should_purge(false);
+    }
+  }
+
   static void dump_on(outputStream * const out) PRODUCT_RETURN;
   static void dump() { dump_on(tty); }
   static void verify();
 
-  // expensive test for pointer in metaspace for debugging
-  static bool contains(const void* x);
 #ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
 #endif

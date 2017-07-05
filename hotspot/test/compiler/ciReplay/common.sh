@@ -234,6 +234,12 @@ generate_replay() {
             sed -e 's/.*location: //'`
     echo CRASH OUTPUT:
     cat crash.out    
+    
+    if [ "${core_locations}" = "" ]
+    then
+        test_fail 2 "CHECK :: CORE_LOCATION" "output doesn't contain the location of core file, see crash.out"
+    fi
+
     rm crash.out 
     
     # processing core locations for *nix

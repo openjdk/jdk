@@ -1318,7 +1318,7 @@ class PrintFreeListsClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t
     for (Chunk_t* fc = fl->head(); fc != NULL;
          fc = fc->next()) {
       _st->print_cr("\t[" PTR_FORMAT "," PTR_FORMAT ")  %s",
-                    fc, (HeapWord*)fc + sz,
+                    p2i(fc), p2i((HeapWord*)fc + sz),
                     fc->cantCoalesce() ? "\t CC" : "");
     }
   }

@@ -30,15 +30,8 @@
 #endif
 
 #include "runtime/atomic.inline.hpp"
-#include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "prefetch_solaris_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "prefetch_solaris_sparc.inline.hpp"
-#endif
 
 // Thread::current is "hot" it's called > 128K times in the 1st 500 msecs of
 // startup.

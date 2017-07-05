@@ -3653,9 +3653,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg = I4; // cipher length
     const Register keylen = I5;  // reg for storing expanded key array length
 
-    // save cipher len before save_frame, to return in the end
-    __ mov(O4, L0);
     __ save_frame(0);
+    // save cipher len to return in the end
+    __ mov(len_reg, L0);
 
     // read expanded key length
     __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
@@ -3778,9 +3778,9 @@ class StubGenerator: public StubCodeGenerator {
     // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
-    __ restore();
-    __ retl();
-    __ delayed()->mov(L0, O0);
+    __ mov(L0, I0);
+    __ ret();
+    __ delayed()->restore();
 
     __ align(OptoLoopAlignment);
     __ BIND(L_cbcenc192);
@@ -3869,9 +3869,9 @@ class StubGenerator: public StubCodeGenerator {
     // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
-    __ restore();
-    __ retl();
-    __ delayed()->mov(L0, O0);
+    __ mov(L0, I0);
+    __ ret();
+    __ delayed()->restore();
 
     __ align(OptoLoopAlignment);
     __ BIND(L_cbcenc256);
@@ -3962,9 +3962,9 @@ class StubGenerator: public StubCodeGenerator {
     // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
-    __ restore();
-    __ retl();
-    __ delayed()->mov(L0, O0);
+    __ mov(L0, I0);
+    __ ret();
+    __ delayed()->restore();
 
     return start;
   }
@@ -3992,9 +3992,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register original_key = I5;  // original key array only required during decryption
     const Register keylen = L6;  // reg for storing expanded key array length
 
-    // save cipher len before save_frame, to return in the end
-    __ mov(O4, L0);
     __ save_frame(0); //args are read from I* registers since we save the frame in the beginning
+    // save cipher len to return in the end
+    __ mov(len_reg, L7);
 
     // load original key from SunJCE expanded decryption key
     // Since we load original key buffer starting first element, 8-byte alignment is guaranteed
@@ -4568,10 +4568,9 @@ class StubGenerator: public StubCodeGenerator {
     // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stx(L0, rvec, 0);
     __ stx(L1, rvec, 8);
-    __ restore();
-    __ mov(L0, O0);
-    __ retl();
-    __ delayed()->nop();
+    __ mov(L7, I0);
+    __ ret();
+    __ delayed()->restore();
 
     return start;
   }

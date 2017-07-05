@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1322,7 +1322,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
     OperandForm* oper = form->is_operand();
     if (oper != NULL && oper->is_bound_register()) {
       const RegDef* first = oper->get_RegClass()->find_first_elem();
-      fprintf(fp, "    st->print(\"%s\");\n", first->_regname);
+      fprintf(fp, "    st->print_raw(\"%s\");\n", first->_regname);
     } else {
       globalAD->syntax_err(_linenum, "In %s can't find format for %s %s", _ident, opc->_ident, rep_var);
     }
@@ -2530,7 +2530,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealP: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealNKlass:
   case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
-  case Form::idealL: fprintf(fp,"  st->print(\"#%%lld\", _c%d);\n", const_index); break;
+  case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:

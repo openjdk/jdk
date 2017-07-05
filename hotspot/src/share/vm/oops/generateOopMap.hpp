@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,9 +412,9 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   int copy_cts                              (CellTypeState *dst, CellTypeState *src);
 
   // Error handling
-  void  error_work                          (const char *format, va_list ap);
-  void  report_error                        (const char *format, ...);
-  void  verify_error                        (const char *format, ...);
+  void  error_work                          (const char *format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+  void  report_error                        (const char *format, ...) ATTRIBUTE_PRINTF(2, 3);
+  void  verify_error                        (const char *format, ...) ATTRIBUTE_PRINTF(2, 3);
   bool  got_error()                         { return _got_error; }
 
   // Create result set

@@ -666,6 +666,42 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
 
   ###############################################################################
   #
+  # Check for the lcms2 library
+  #
+
+  AC_ARG_WITH(lcms, [AS_HELP_STRING([--with-lcms],
+  	[use lcms2 from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+  AC_MSG_CHECKING([for which lcms to use])
+
+  DEFAULT_LCMS=bundled
+
+  #
+  # If user didn't specify, use DEFAULT_LCMS
+  #
+  if test "x${with_lcms}" = "x"; then
+      with_lcms=${DEFAULT_LCMS}
+  fi
+
+  if test "x${with_lcms}" = "xbundled"; then
+    USE_EXTERNAL_LCMS=false
+    AC_MSG_RESULT([bundled])
+  elif test "x${with_lcms}" = "xsystem"; then
+    AC_MSG_RESULT([system])
+    PKG_CHECK_MODULES([LCMS], [lcms2], [LCMS_FOUND=yes], [LCMS_FOUND=no])
+    if test "x${LCMS_FOUND}" = "xyes"; then
+      USE_EXTERNAL_LCMS=true
+    else
+      AC_MSG_ERROR([--with-lcms=system specified, but no lcms found!])
+    fi
+  else
+    AC_MSG_ERROR([Invalid value for --with-lcms: ${with_lcms}, use 'system' or 'bundled'])
+  fi
+
+  AC_SUBST(USE_EXTERNAL_LCMS)
+
+  ###############################################################################
+  #
   # Check for the png library
   #
 

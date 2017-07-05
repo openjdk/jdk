@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,13 +522,13 @@ BitMap::idx_t BitMap::count_one_bits() const {
 
 void BitMap::print_on_error(outputStream* st, const char* prefix) const {
   st->print_cr("%s[" PTR_FORMAT ", " PTR_FORMAT ")",
-      prefix, map(), (char*)map() + (size() >> LogBitsPerByte));
+      prefix, p2i(map()), p2i((char*)map() + (size() >> LogBitsPerByte)));
 }
 
 #ifndef PRODUCT
 
 void BitMap::print_on(outputStream* st) const {
-  tty->print("Bitmap(%d):", size());
+  tty->print("Bitmap(" SIZE_FORMAT "):", size());
   for (idx_t index = 0; index < size(); index++) {
     tty->print("%c", at(index) ? '1' : '0');
   }

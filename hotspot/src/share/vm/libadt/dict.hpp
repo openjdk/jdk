@@ -25,11 +25,12 @@
 #ifndef SHARE_VM_LIBADT_DICT_HPP
 #define SHARE_VM_LIBADT_DICT_HPP
 
-#include "libadt/port.hpp"
-
 // Dictionaries - An Abstract Data Type
-//INTERFACE
-class ostream;
+
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/thread.hpp"
+
 class Dict;
 
 // These dictionaries define a key-value mapping.  They can be inserted to,
@@ -38,7 +39,7 @@ class Dict;
 // key comparison routine determines if two keys are equal or not.  A hash
 // function can be provided; if it's not provided the key itself is used
 // instead.  A nice string hash function is included.
-typedef int32 (*CmpKey)(const void *key1, const void *key2);
+typedef int32_t (*CmpKey)(const void *key1, const void *key2);
 typedef int  (*Hash)(const void *key);
 typedef void (*FuncDict)(const void *key, const void *val, Dict *d);
 
@@ -47,7 +48,7 @@ class Dict : public ResourceObj { // Dictionary structure
   class Arena *_arena;          // Where to draw storage from
   class bucket *_bin;           // Hash table is array of buckets
   uint _size;                   // Size (# of slots) in hash table
-  uint32 _cnt;                  // Number of key-value pairs in hash table
+  uint32_t _cnt;                // Number of key-value pairs in hash table
   const Hash _hash;             // Hashing function
   const CmpKey _cmp;            // Key comparison function
   void doubhash( void );        // Double hash table size
@@ -67,7 +68,7 @@ class Dict : public ResourceObj { // Dictionary structure
   void Clear();
 
   // Return # of key-value pairs in dict
-  uint32 Size(void) const { return _cnt; }
+  uint32_t Size(void) const { return _cnt; }
 
   // Insert inserts the given key-value pair into the dictionary.  The prior
   // value of the key is returned; NULL if the key was not previously defined.
@@ -81,7 +82,7 @@ class Dict : public ResourceObj { // Dictionary structure
   // == compares two dictionaries; they must have the same keys (their keys
   // must match using CmpKey) and they must have the same values (pointer
   // comparison).  If so 1 is returned, if not 0 is returned.
-  int32 operator ==(const Dict &d) const;   // Compare dictionaries for equal
+  int32_t operator ==(const Dict &d) const;   // Compare dictionaries for equal
 
   // Print out the dictionary contents as key-value pairs
   void print();
@@ -96,9 +97,9 @@ int hashptr(const void *key);
 int hashkey(const void *key);
 
 // Key comparators
-int32 cmpstr(const void *k1, const void *k2);
+int32_t cmpstr(const void *k1, const void *k2);
 // Slimey cheap key comparator.
-int32 cmpkey(const void *key1, const void *key2);
+int32_t cmpkey(const void *key1, const void *key2);
 
 //------------------------------Iteration--------------------------------------
 // The class of dictionary iterators.  Fails in the presences of modifications
