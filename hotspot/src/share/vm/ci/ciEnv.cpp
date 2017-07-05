@@ -176,7 +176,6 @@ void ciEnv::cache_jvmti_state() {
   // Get Jvmti capabilities under lock to get consistant values.
   MutexLocker mu(JvmtiThreadState_lock);
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
-  _jvmti_can_examine_or_deopt_anywhere  = JvmtiExport::can_examine_or_deopt_anywhere();
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
 }
@@ -887,8 +886,6 @@ void ciEnv::register_method(ciMethod* target,
     if (!failing() &&
         ( (!jvmti_can_hotswap_or_post_breakpoint() &&
            JvmtiExport::can_hotswap_or_post_breakpoint()) ||
-          (!jvmti_can_examine_or_deopt_anywhere() &&
-           JvmtiExport::can_examine_or_deopt_anywhere()) ||
           (!jvmti_can_access_local_variables() &&
            JvmtiExport::can_access_local_variables()) ||
           (!jvmti_can_post_on_exceptions() &&

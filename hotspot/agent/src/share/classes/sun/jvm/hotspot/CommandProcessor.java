@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,6 +494,68 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("revptrs", "revptrs address", false) {
+            public void doit(Tokens t) {
+                int tokens = t.countTokens();
+                if (tokens != 1 && (tokens != 2 || !t.nextToken().equals("-c"))) {
+                    usage();
+                    return;
+                }
+                boolean chase = tokens == 2;
+                ReversePtrs revptrs = VM.getVM().getRevPtrs();
+                if (revptrs == null) {
+                    out.println("Computing reverse pointers...");
+                    ReversePtrsAnalysis analysis = new ReversePtrsAnalysis();
+                    final boolean[] complete = new boolean[1];
+                    HeapProgressThunk thunk = new HeapProgressThunk() {
+                            public void heapIterationFractionUpdate(double d) {}
+                            public synchronized void heapIterationComplete() {
+                                complete[0] = true;
+                                notify();
+                            }
+                        };
+                    analysis.setHeapProgressThunk(thunk);
+                    analysis.run();
+                    while (!complete[0]) {
+                        synchronized (thunk) {
+                            try {
+                                thunk.wait();
+                            } catch (Exception e) {
+                            }
+                        }
+                    }
+                    revptrs = VM.getVM().getRevPtrs();
+                    out.println("Done.");
+                }
+                Address a = VM.getVM().getDebugger().parseAddress(t.nextToken());
+                if (VM.getVM().getUniverse().heap().isInReserved(a)) {
+                    OopHandle handle = a.addOffsetToAsOopHandle(0);
+                    Oop oop = VM.getVM().getObjectHeap().newOop(handle);
+                    ArrayList ptrs = revptrs.get(oop);
+                    if (ptrs == null) {
+                        out.println("no live references to " + a);
+                    } else {
+                        if (chase) {
+                            while (ptrs.size() == 1) {
+                                LivenessPathElement e = (LivenessPathElement)ptrs.get(0);
+                                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                                Oop.printOopValueOn(e.getObj(), new PrintStream(bos));
+                                out.println(bos.toString());
+                                ptrs = revptrs.get(e.getObj());
+                            }
+                        } else {
+                            for (int i = 0; i < ptrs.size(); i++) {
+                                LivenessPathElement e = (LivenessPathElement)ptrs.get(i);
+                                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                                Oop.printOopValueOn(e.getObj(), new PrintStream(bos));
+                                out.println(bos.toString());
+                                oop = e.getObj();
+                            }
+                        }
+                    }
+                }
+            }
+        },
         new Command("inspect", "inspect expression", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
@@ -816,8 +878,24 @@ public class CommandProcessor {
                     dumpType(type);
                 } else {
                     Iterator i = agent.getTypeDataBase().getTypes();
+                    // Make sure the types are emitted in an order than can be read back in
+                    HashSet emitted = new HashSet();
+                    Stack pending = new Stack();
                     while (i.hasNext()) {
-                        dumpType((Type)i.next());
+                        Type n = (Type)i.next();
+                        if (emitted.contains(n.getName())) {
+                            continue;
+                        }
+
+                        while (n != null && !emitted.contains(n.getName())) {
+                            pending.push(n);
+                            n = n.getSuperclass();
+                        }
+                        while (!pending.empty()) {
+                            n = (Type)pending.pop();
+                            dumpType(n);
+                            emitted.add(n.getName());
+                        }
                     }
                 }
             }
@@ -846,83 +924,105 @@ public class CommandProcessor {
 
             }
         },
-        new Command("search", "search [ heap | codecache | threads ] value", false) {
+        new Command("search", "search [ heap | perm | rawheap | codecache | threads ] value", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 2) {
                     usage();
-                } else {
-                    String type = t.nextToken();
-                    final Address value = VM.getVM().getDebugger().parseAddress(t.nextToken());
-                    final long stride = VM.getVM().getAddressSize();
-                    if (type.equals("threads")) {
-                        Threads threads = VM.getVM().getThreads();
-                        for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
-                            Address base = thread.getBaseOfStackPointer();
-                            Address end = thread.getLastJavaSP();
-                            if (end == null) continue;
-                            if (end.lessThan(base)) {
-                                Address tmp = base;
-                                base = end;
-                                end = tmp;
-                            }
-                            out.println("Searching " + base + " " + end);
-                            while (base != null && base.lessThan(end)) {
-                                Address val = base.getAddressAt(0);
-                                if (AddressOps.equal(val, value)) {
-                                    out.println(base);
-                                }
-                                base = base.addOffsetTo(stride);
-                            }
+                    return;
+                }
+                String type = t.nextToken();
+                final Address value = VM.getVM().getDebugger().parseAddress(t.nextToken());
+                final long stride = VM.getVM().getAddressSize();
+                if (type.equals("threads")) {
+                    Threads threads = VM.getVM().getThreads();
+                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                        Address base = thread.getBaseOfStackPointer();
+                        Address end = thread.getLastJavaSP();
+                        if (end == null) continue;
+                        if (end.lessThan(base)) {
+                            Address tmp = base;
+                            base = end;
+                            end = tmp;
                         }
-                    } else if (type.equals("heap")) {
-                        RawHeapVisitor iterator = new RawHeapVisitor() {
-                                public void prologue(long used) {
-                                }
-
-                                public void visitAddress(Address addr) {
-                                    Address val = addr.getAddressAt(0);
-                                    if (AddressOps.equal(val, value)) {
-                                        out.println("found at " + addr);
-                                    }
-                                }
-                                public void visitCompOopAddress(Address addr) {
-                                    Address val = addr.getCompOopAddressAt(0);
-                                    if (AddressOps.equal(val, value)) {
-                                        out.println("found at " + addr);
-                                    }
-                                }
-                                public void epilogue() {
-                                }
-                            };
-                        VM.getVM().getObjectHeap().iterateRaw(iterator);
-                    } else if (type.equals("codecache")) {
-                        CodeCacheVisitor v = new CodeCacheVisitor() {
-                                public void prologue(Address start, Address end) {
-                                }
-                                public void visit(CodeBlob blob) {
-                                    boolean printed = false;
-                                    Address base = blob.getAddress();
-                                    Address end = base.addOffsetTo(blob.getSize());
-                                    while (base != null && base.lessThan(end)) {
-                                        Address val = base.getAddressAt(0);
-                                        if (AddressOps.equal(val, value)) {
-                                            if (!printed) {
-                                                printed = true;
-                                                blob.printOn(out);
-                                            }
-                                            out.println("found at " + base + "\n");
-                                        }
-                                        base = base.addOffsetTo(stride);
-                                    }
-                                }
-                                public void epilogue() {
-                                }
-
-
-                            };
-                        VM.getVM().getCodeCache().iterate(v);
-
+                        out.println("Searching " + base + " " + end);
+                        while (base != null && base.lessThan(end)) {
+                            Address val = base.getAddressAt(0);
+                            if (AddressOps.equal(val, value)) {
+                                out.println(base);
+                            }
+                            base = base.addOffsetTo(stride);
+                        }
                     }
+                } else if (type.equals("rawheap")) {
+                    RawHeapVisitor iterator = new RawHeapVisitor() {
+                            public void prologue(long used) {
+                            }
+
+                            public void visitAddress(Address addr) {
+                                Address val = addr.getAddressAt(0);
+                                if (AddressOps.equal(val, value)) {
+                                        out.println("found at " + addr);
+                                }
+                            }
+                            public void visitCompOopAddress(Address addr) {
+                                Address val = addr.getCompOopAddressAt(0);
+                                if (AddressOps.equal(val, value)) {
+                                    out.println("found at " + addr);
+                                }
+                            }
+                            public void epilogue() {
+                            }
+                        };
+                    VM.getVM().getObjectHeap().iterateRaw(iterator);
+                } else if (type.equals("heap") || type.equals("perm")) {
+                    HeapVisitor iterator = new DefaultHeapVisitor() {
+                            public boolean doObj(Oop obj) {
+                                int index = 0;
+                                Address start = obj.getHandle();
+                                long end = obj.getObjectSize();
+                                while (index < end) {
+                                    Address val = start.getAddressAt(index);
+                                    if (AddressOps.equal(val, value)) {
+                                        out.println("found in " + obj.getHandle());
+                                        break;
+                                    }
+                                    index += 4;
+                                }
+                                return false;
+                            }
+                        };
+                    if (type.equals("heap")) {
+                        VM.getVM().getObjectHeap().iterate(iterator);
+                    } else {
+                        VM.getVM().getObjectHeap().iteratePerm(iterator);
+                    }
+                } else if (type.equals("codecache")) {
+                    CodeCacheVisitor v = new CodeCacheVisitor() {
+                            public void prologue(Address start, Address end) {
+                            }
+                            public void visit(CodeBlob blob) {
+                                boolean printed = false;
+                                Address base = blob.getAddress();
+                                Address end = base.addOffsetTo(blob.getSize());
+                                while (base != null && base.lessThan(end)) {
+                                    Address val = base.getAddressAt(0);
+                                    if (AddressOps.equal(val, value)) {
+                                        if (!printed) {
+                                            printed = true;
+                                            blob.printOn(out);
+                                        }
+                                        out.println("found at " + base + "\n");
+                                    }
+                                    base = base.addOffsetTo(stride);
+                                }
+                            }
+                            public void epilogue() {
+                            }
+
+
+                        };
+                    VM.getVM().getCodeCache().iterate(v);
+
                 }
             }
         },
@@ -957,16 +1057,43 @@ public class CommandProcessor {
                     Threads threads = VM.getVM().getThreads();
                     boolean all = name.equals("-a");
                     for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
-                        StringWriter sw = new StringWriter();
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
+                            out.println(bos.toString() + " = " + thread.getAddress());
                             HTMLGenerator gen = new HTMLGenerator(false);
-                            out.println(gen.genHTMLForJavaStackTrace(thread));
+                            try {
+                                out.println(gen.genHTMLForJavaStackTrace(thread));
+                            } catch (Exception e) {
+                                err.println("Error: " + e);
+                                if (verboseExceptions) {
+                                    e.printStackTrace(err);
+                                }
+                            }
                             if (!all) return;
                         }
                     }
                     if (!all) out.println("Couldn't find thread " + name);
+                }
+            }
+        },
+        new Command("thread", "thread { -a | id }", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String name = t.nextToken();
+                    Threads threads = VM.getVM().getThreads();
+                    boolean all = name.equals("-a");
+                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        thread.printThreadIDOn(new PrintStream(bos));
+                        if (all || bos.toString().equals(name)) {
+                            out.println(bos.toString() + " = " + thread.getAddress());
+                            if (!all) return;
+                        }
+                    }
+                    out.println("Couldn't find thread " + name);
                 }
             }
         },
@@ -1161,7 +1288,7 @@ public class CommandProcessor {
         }
     }
 
-    static Pattern historyPattern = Pattern.compile("((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*))");
+    static Pattern historyPattern = Pattern.compile("((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
 
     public void executeCommand(String ln) {
         if (ln.indexOf('!') != -1) {
@@ -1195,14 +1322,37 @@ public class CommandProcessor {
                         result.append(item.at(item.countTokens() - 1));
                     } else {
                         String tail = cmd.substring(1);
-                        int index = Integer.parseInt(tail);
-                        if (index < 0) {
-                            index = history.size() + index;
+                        switch (tail.charAt(0)) {
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                        case '-': {
+                            int index = Integer.parseInt(tail);
+                            if (index < 0) {
+                                index = history.size() + index;
+                            }
+                            if (index > size) {
+                                err.println("No such history item");
+                            } else {
+                                result.append((String)history.get(index));
+                            }
+                            break;
                         }
-                        if (index > size) {
-                            err.println("No such history item");
-                        } else {
-                            result.append((String)history.get(index));
+                        default: {
+                            for (int i = history.size() - 1; i >= 0; i--) {
+                                String s = (String)history.get(i);
+                                if (s.startsWith(tail)) {
+                                    result.append(s);
+                                }
+                            }
+                        }
                         }
                     }
                 }

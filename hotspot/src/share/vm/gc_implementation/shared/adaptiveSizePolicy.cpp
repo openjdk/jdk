@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,15 @@ AdaptiveSizePolicy::AdaptiveSizePolicy(size_t init_eden_size,
     _survivor_size(init_survivor_size),
     _gc_pause_goal_sec(gc_pause_goal_sec),
     _throughput_goal(1.0 - double(1.0 / (1.0 + (double) gc_cost_ratio))),
-    _gc_time_limit_exceeded(false),
-    _print_gc_time_limit_would_be_exceeded(false),
-    _gc_time_limit_count(0),
+    _gc_overhead_limit_exceeded(false),
+    _print_gc_overhead_limit_would_be_exceeded(false),
+    _gc_overhead_limit_count(0),
     _latest_minor_mutator_interval_seconds(0),
     _threshold_tolerance_percent(1.0 + ThresholdTolerance/100.0),
     _young_gen_change_for_minor_throughput(0),
     _old_gen_change_for_major_throughput(0) {
+  assert(AdaptiveSizePolicyGCTimeLimitThreshold > 0,
+    "No opportunity to clear SoftReferences before GC overhead limit");
   _avg_minor_pause    =
     new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding);
   _avg_minor_interval = new AdaptiveWeightedAverage(AdaptiveTimeWeight);
@@ -278,6 +280,147 @@ void AdaptiveSizePolicy::clear_generation_free_space_flags() {
   set_decide_at_full_gc(0);
 }
 
+void AdaptiveSizePolicy::check_gc_overhead_limit(
+                                          size_t young_live,
+                                          size_t eden_live,
+                                          size_t max_old_gen_size,
+                                          size_t max_eden_size,
+                                          bool   is_full_gc,
+                                          GCCause::Cause gc_cause,
+                                          CollectorPolicy* collector_policy) {
+
+  // Ignore explicit GC's.  Exiting here does not set the flag and
+  // does not reset the count.  Updating of the averages for system
+  // GC's is still controlled by UseAdaptiveSizePolicyWithSystemGC.
+  if (GCCause::is_user_requested_gc(gc_cause) ||
+      GCCause::is_serviceability_requested_gc(gc_cause)) {
+    return;
+  }
+  // eden_limit is the upper limit on the size of eden based on
+  // the maximum size of the young generation and the sizes
+  // of the survivor space.
+  // The question being asked is whether the gc costs are high
+  // and the space being recovered by a collection is low.
+  // free_in_young_gen is the free space in the young generation
+  // after a collection and promo_live is the free space in the old
+  // generation after a collection.
+  //
+  // Use the minimum of the current value of the live in the
+  // young gen or the average of the live in the young gen.
+  // If the current value drops quickly, that should be taken
+  // into account (i.e., don't trigger if the amount of free
+  // space has suddenly jumped up).  If the current is much
+  // higher than the average, use the average since it represents
+  // the longer term behavor.
+  const size_t live_in_eden =
+    MIN2(eden_live, (size_t) avg_eden_live()->average());
+  const size_t free_in_eden = max_eden_size > live_in_eden ?
+    max_eden_size - live_in_eden : 0;
+  const size_t free_in_old_gen = (size_t)(max_old_gen_size - avg_old_live()->average());
+  const size_t total_free_limit = free_in_old_gen + free_in_eden;
+  const size_t total_mem = max_old_gen_size + max_eden_size;
+  const double mem_free_limit = total_mem * (GCHeapFreeLimit/100.0);
+  const double mem_free_old_limit = max_old_gen_size * (GCHeapFreeLimit/100.0);
+  const double mem_free_eden_limit = max_eden_size * (GCHeapFreeLimit/100.0);
+  const double gc_cost_limit = GCTimeLimit/100.0;
+  size_t promo_limit = (size_t)(max_old_gen_size - avg_old_live()->average());
+  // But don't force a promo size below the current promo size. Otherwise,
+  // the promo size will shrink for no good reason.
+  promo_limit = MAX2(promo_limit, _promo_size);
+
+
+  if (PrintAdaptiveSizePolicy && (Verbose ||
+      (free_in_old_gen < (size_t) mem_free_old_limit &&
+       free_in_eden < (size_t) mem_free_eden_limit))) {
+    gclog_or_tty->print_cr(
+          "PSAdaptiveSizePolicy::compute_generation_free_space limits:"
+          " promo_limit: " SIZE_FORMAT
+          " max_eden_size: " SIZE_FORMAT
+          " total_free_limit: " SIZE_FORMAT
+          " max_old_gen_size: " SIZE_FORMAT
+          " max_eden_size: " SIZE_FORMAT
+          " mem_free_limit: " SIZE_FORMAT,
+          promo_limit, max_eden_size, total_free_limit,
+          max_old_gen_size, max_eden_size,
+          (size_t) mem_free_limit);
+  }
+
+  bool print_gc_overhead_limit_would_be_exceeded = false;
+  if (is_full_gc) {
+    if (gc_cost() > gc_cost_limit &&
+      free_in_old_gen < (size_t) mem_free_old_limit &&
+      free_in_eden < (size_t) mem_free_eden_limit) {
+      // Collections, on average, are taking too much time, and
+      //      gc_cost() > gc_cost_limit
+      // we have too little space available after a full gc.
+      //      total_free_limit < mem_free_limit
+      // where
+      //   total_free_limit is the free space available in
+      //     both generations
+      //   total_mem is the total space available for allocation
+      //     in both generations (survivor spaces are not included
+      //     just as they are not included in eden_limit).
+      //   mem_free_limit is a fraction of total_mem judged to be an
+      //     acceptable amount that is still unused.
+      // The heap can ask for the value of this variable when deciding
+      // whether to thrown an OutOfMemory error.
+      // Note that the gc time limit test only works for the collections
+      // of the young gen + tenured gen and not for collections of the
+      // permanent gen.  That is because the calculation of the space
+      // freed by the collection is the free space in the young gen +
+      // tenured gen.
+      // At this point the GC overhead limit is being exceeded.
+      inc_gc_overhead_limit_count();
+      if (UseGCOverheadLimit) {
+        if (gc_overhead_limit_count() >=
+            AdaptiveSizePolicyGCTimeLimitThreshold){
+          // All conditions have been met for throwing an out-of-memory
+          set_gc_overhead_limit_exceeded(true);
+          // Avoid consecutive OOM due to the gc time limit by resetting
+          // the counter.
+          reset_gc_overhead_limit_count();
+        } else {
+          // The required consecutive collections which exceed the
+          // GC time limit may or may not have been reached. We
+          // are approaching that condition and so as not to
+          // throw an out-of-memory before all SoftRef's have been
+          // cleared, set _should_clear_all_soft_refs in CollectorPolicy.
+          // The clearing will be done on the next GC.
+          bool near_limit = gc_overhead_limit_near();
+          if (near_limit) {
+            collector_policy->set_should_clear_all_soft_refs(true);
+            if (PrintGCDetails && Verbose) {
+              gclog_or_tty->print_cr("  Nearing GC overhead limit, "
+                "will be clearing all SoftReference");
+            }
+          }
+        }
+      }
+      // Set this even when the overhead limit will not
+      // cause an out-of-memory.  Diagnostic message indicating
+      // that the overhead limit is being exceeded is sometimes
+      // printed.
+      print_gc_overhead_limit_would_be_exceeded = true;
+
+    } else {
+      // Did not exceed overhead limits
+      reset_gc_overhead_limit_count();
+    }
+  }
+
+  if (UseGCOverheadLimit && PrintGCDetails && Verbose) {
+    if (gc_overhead_limit_exceeded()) {
+      gclog_or_tty->print_cr("      GC is exceeding overhead limit "
+        "of %d%%", GCTimeLimit);
+      reset_gc_overhead_limit_count();
+    } else if (print_gc_overhead_limit_would_be_exceeded) {
+      assert(gc_overhead_limit_count() > 0, "Should not be printing");
+      gclog_or_tty->print_cr("      GC would exceed overhead limit "
+        "of %d%% %d consecutive time(s)",
+        GCTimeLimit, gc_overhead_limit_count());
+    }
+  }
+}
 // Printing
 
 bool AdaptiveSizePolicy::print_adaptive_size_policy_on(outputStream* st) const {

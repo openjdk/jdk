@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2008 Red Hat, Inc.
+ * Copyright 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ class EntryFrame : public ZeroFrame {
   };
 
  public:
-  static EntryFrame *build(ZeroStack*       stack,
-                           const intptr_t*  parameters,
+  static EntryFrame *build(const intptr_t*  parameters,
                            int              parameter_words,
-                           JavaCallWrapper* call_wrapper);
+                           JavaCallWrapper* call_wrapper,
+                           TRAPS);
  public:
   JavaCallWrapper *call_wrapper() const {
     return (JavaCallWrapper *) value_of_word(call_wrapper_off);

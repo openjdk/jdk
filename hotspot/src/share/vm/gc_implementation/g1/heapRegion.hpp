@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   enum YoungType {
     NotYoung,                   // a region is not young
-    ScanOnly,                   // a region is young and scan-only
     Young,                      // a region is young
     Survivor                    // a region is young and it contains
                                 // survivor
@@ -291,6 +290,20 @@ class HeapRegion: public G1OffsetTableContigSpace {
     // TODO: add more assertions here
     _young_type = new_type;
   }
+
+  // Cached attributes used in the collection set policy information
+
+  // The RSet length that was added to the total value
+  // for the collection set.
+  size_t _recorded_rs_length;
+
+  // The predicted elapsed time that was added to total value
+  // for the collection set.
+  double _predicted_elapsed_time_ms;
+
+  // The predicted number of bytes to copy that was added to
+  // the total value for the collection set.
+  size_t _predicted_bytes_to_copy;
 
  public:
   // If "is_zeroed" is "true", the region "mr" can be assumed to contain zeros.
@@ -614,7 +627,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // </PREDICTION>
 
   bool is_young() const     { return _young_type != NotYoung; }
-  bool is_scan_only() const { return _young_type == ScanOnly; }
   bool is_survivor() const  { return _young_type == Survivor; }
 
   int  young_index_in_cset() const { return _young_index_in_cset; }
@@ -627,12 +639,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     assert( _surv_rate_group != NULL, "pre-condition" );
     assert( _age_index > -1, "pre-condition" );
     return _surv_rate_group->age_in_group(_age_index);
-  }
-
-  void recalculate_age_in_surv_rate_group() {
-    assert( _surv_rate_group != NULL, "pre-condition" );
-    assert( _age_index > -1, "pre-condition" );
-    _age_index = _surv_rate_group->recalculate_age_index(_age_index);
   }
 
   void record_surv_words_in_group(size_t words_survived) {
@@ -675,8 +681,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   }
 
   void set_young() { set_young_type(Young); }
-
-  void set_scan_only() { set_young_type(ScanOnly); }
 
   void set_survivor() { set_young_type(Survivor); }
 
@@ -773,6 +777,22 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void reset_zero_fill() {
     set_zero_fill_state_work(NotZeroFilled);
     _zero_filler = NULL;
+  }
+
+  size_t recorded_rs_length() const        { return _recorded_rs_length; }
+  double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
+  size_t predicted_bytes_to_copy() const   { return _predicted_bytes_to_copy; }
+
+  void set_recorded_rs_length(size_t rs_length) {
+    _recorded_rs_length = rs_length;
+  }
+
+  void set_predicted_elapsed_time_ms(double ms) {
+    _predicted_elapsed_time_ms = ms;
+  }
+
+  void set_predicted_bytes_to_copy(size_t bytes) {
+    _predicted_bytes_to_copy = bytes;
   }
 
 #define HeapRegion_OOP_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)  \
