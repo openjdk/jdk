@@ -375,6 +375,9 @@ public class BasicDouble
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicDouble
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 

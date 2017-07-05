@@ -943,8 +943,7 @@ public class XIncludeHandler
                 setState(STATE_IGNORE);
             }
             else {
-                reportFatalError("NoFallback",
-                    new Object[] { attributes.getValue(null, "href") });
+                reportFatalError("NoFallback");
             }
         }
         else if (isFallbackElement(element)) {
@@ -1002,8 +1001,7 @@ public class XIncludeHandler
             // we check to see if the children of this include element contained a fallback
             if (getState() == STATE_EXPECT_FALLBACK
                 && !getSawFallback(fDepth + 1)) {
-                reportFatalError("NoFallback",
-                    new Object[] { "unknown" });
+                reportFatalError("NoFallback");
             }
         }
         if (isFallbackElement(element)) {

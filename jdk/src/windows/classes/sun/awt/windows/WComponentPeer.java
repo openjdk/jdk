@@ -970,11 +970,12 @@ public abstract class WComponentPeer extends WObjectPeer
      *
      * Conditions which could prevent hw acceleration include the toplevel
      * window containing this component being
-     * {@link com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT TRANSLUCENT}.
+     * {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
+     * PERPIXEL_TRANSLUCENT}.
      *
      * @return {@code true} if this component is capable of being hw
      * accelerated, {@code false} otherwise
-     * @see com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT
+     * @see GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      */
     public boolean isAccelCapable() {
         boolean isTranslucent =

@@ -375,6 +375,9 @@ public class BasicLong
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicLong
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 

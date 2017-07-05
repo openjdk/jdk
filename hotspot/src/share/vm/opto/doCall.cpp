@@ -248,6 +248,14 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
                   holder_klass);
     return true;
   }
+  if (dest_method->is_method_handle_invoke()
+      && holder_klass->name() == ciSymbol::java_dyn_Dynamic()) {
+    // FIXME: NYI
+    uncommon_trap(Deoptimization::Reason_unhandled,
+                  Deoptimization::Action_none,
+                  holder_klass);
+    return true;
+  }
 
   assert(dest_method->will_link(method()->holder(), klass, bc()), "dest_method: typeflow responsibility");
   return false;
@@ -748,6 +756,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
       case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_inlined_calls_addr()); break;
       case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_inlined_interface_calls_addr()); break;
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_inlined_static_calls_addr()); break;
       default: fatal("unexpected call bytecode");
       }
@@ -756,6 +765,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
       case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_normal_calls_addr()); break;
       case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_interface_calls_addr()); break;
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_static_calls_addr()); break;
       default: fatal("unexpected call bytecode");
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,7 @@ void CompactingPermGenGen::generate_vtable_methods(void** vtbl_list,
   __ and3(L0, 255, L4);                 // Isolate L3 = method offset;.
   __ sll(L4, LogBytesPerWord, L4);
   __ ld_ptr(L3, L4, L4);                // Get address of correct virtual method
-  Address method(L4, 0);
-  __ jmpl(method, G0);                  // Jump to correct method.
+  __ jmpl(L4, 0, G0);                   // Jump to correct method.
   __ delayed()->restore();              // Restore registers.
 
   __ flush();

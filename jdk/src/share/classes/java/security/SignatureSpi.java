@@ -316,7 +316,7 @@ public abstract class SignatureSpi {
      * overridden by a provider
      *
      * @exception InvalidAlgorithmParameterException if this method is
-     * overridden by a provider and the the given parameters
+     * overridden by a provider and the given parameters
      * are inappropriate for this signature engine
      */
     protected void engineSetParameter(AlgorithmParameterSpec params)

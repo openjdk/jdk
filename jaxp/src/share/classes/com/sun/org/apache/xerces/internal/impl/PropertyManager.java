@@ -45,8 +45,8 @@ import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 public class PropertyManager {
 
 
-    protected static final String STAX_NOTATIONS = "javax.xml.stream.notations";
-    protected static final String STAX_ENTITIES = "javax.xml.stream.entities";
+    public static final String STAX_NOTATIONS = "javax.xml.stream.notations";
+    public static final String STAX_ENTITIES = "javax.xml.stream.entities";
 
     private static final String STRING_INTERNING = "http://xml.org/sax/features/string-interning";
 

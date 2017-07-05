@@ -161,7 +161,7 @@ void methodOopDesc::mask_for(int bci, InterpreterOopMap* mask) {
 
 
 int methodOopDesc::bci_from(address bcp) const {
-  assert(is_native() && bcp == code_base() || contains(bcp), "bcp doesn't belong to this method");
+  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(), "bcp doesn't belong to this method");
   return bcp - code_base();
 }
 

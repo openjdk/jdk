@@ -433,6 +433,7 @@ class ServerImpl implements TimeSource {
                         rawin = sslStreams.getInputStream();
                         rawout = sslStreams.getOutputStream();
                         engine = sslStreams.getSSLEngine();
+                        connection.sslStreams = sslStreams;
                     } else {
                         rawin = new BufferedInputStream(
                             new Request.ReadStream (
@@ -442,6 +443,8 @@ class ServerImpl implements TimeSource {
                             ServerImpl.this, chan
                         );
                     }
+                    connection.raw = rawin;
+                    connection.rawout = rawout;
                 }
                 Request req = new Request (rawin, rawout);
                 requestLine = req.requestLine();

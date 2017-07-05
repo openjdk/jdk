@@ -1217,31 +1217,34 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
     // valid class file.  The class loader will check everything else.
     if (strchr(buffer, '.') == NULL) {
       _compile_the_world_counter++;
-      if (_compile_the_world_counter >= CompileTheWorldStartAt && _compile_the_world_counter <= CompileTheWorldStopAt) {
-        // Construct name without extension
-        symbolHandle sym = oopFactory::new_symbol_handle(buffer, CHECK);
-        // Use loader to load and initialize class
-        klassOop ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
-        instanceKlassHandle k (THREAD, ik);
-        if (k.not_null() && !HAS_PENDING_EXCEPTION) {
-          k->initialize(THREAD);
+      if (_compile_the_world_counter > CompileTheWorldStopAt) return;
+
+      // Construct name without extension
+      symbolHandle sym = oopFactory::new_symbol_handle(buffer, CHECK);
+      // Use loader to load and initialize class
+      klassOop ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
+      instanceKlassHandle k (THREAD, ik);
+      if (k.not_null() && !HAS_PENDING_EXCEPTION) {
+        k->initialize(THREAD);
+      }
+      bool exception_occurred = HAS_PENDING_EXCEPTION;
+      CLEAR_PENDING_EXCEPTION;
+      if (CompileTheWorldPreloadClasses && k.not_null()) {
+        constantPoolKlass::preload_and_initialize_all_classes(k->constants(), THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          // If something went wrong in preloading we just ignore it
+          CLEAR_PENDING_EXCEPTION;
+          tty->print_cr("Preloading failed for (%d) %s", _compile_the_world_counter, buffer);
         }
-        bool exception_occurred = HAS_PENDING_EXCEPTION;
-        CLEAR_PENDING_EXCEPTION;
+      }
+
+      if (_compile_the_world_counter >= CompileTheWorldStartAt) {
         if (k.is_null() || (exception_occurred && !CompileTheWorldIgnoreInitErrors)) {
           // If something went wrong (e.g. ExceptionInInitializerError) we skip this class
           tty->print_cr("CompileTheWorld (%d) : Skipping %s", _compile_the_world_counter, buffer);
         } else {
           tty->print_cr("CompileTheWorld (%d) : %s", _compile_the_world_counter, buffer);
           // Preload all classes to get around uncommon traps
-          if (CompileTheWorldPreloadClasses) {
-            constantPoolKlass::preload_and_initialize_all_classes(k->constants(), THREAD);
-            if (HAS_PENDING_EXCEPTION) {
-              // If something went wrong in preloading we just ignore it
-              CLEAR_PENDING_EXCEPTION;
-              tty->print_cr("Preloading failed for (%d) %s", _compile_the_world_counter, buffer);
-            }
-          }
           // Iterate over all methods in class
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, methodOop(k->methods()->obj_at(n)));
@@ -1253,16 +1256,28 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 CLEAR_PENDING_EXCEPTION;
                 tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
               }
-            if (TieredCompilation) {
-              // Clobber the first compile and force second tier compilation
-              m->clear_code();
-              CompileBroker::compile_method(m, InvocationEntryBci,
-                                            methodHandle(), 0, "CTW", THREAD);
-              if (HAS_PENDING_EXCEPTION) {
-                CLEAR_PENDING_EXCEPTION;
-                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
+              if (TieredCompilation) {
+                // Clobber the first compile and force second tier compilation
+                nmethod* nm = m->code();
+                if (nm != NULL) {
+                  // Throw out the code so that the code cache doesn't fill up
+                  nm->make_not_entrant();
+                  m->clear_code();
+                }
+                CompileBroker::compile_method(m, InvocationEntryBci,
+                                              methodHandle(), 0, "CTW", THREAD);
+                if (HAS_PENDING_EXCEPTION) {
+                  CLEAR_PENDING_EXCEPTION;
+                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
+                }
               }
             }
+
+            nmethod* nm = m->code();
+            if (nm != NULL) {
+              // Throw out the code so that the code cache doesn't fill up
+              nm->make_not_entrant();
+              m->clear_code();
             }
           }
         }

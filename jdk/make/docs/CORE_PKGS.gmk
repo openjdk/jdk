@@ -233,6 +233,7 @@ CORE_PKGS =                                      \
   javax.xml.ws.http                              \
   javax.xml.ws.soap                              \
   javax.xml.ws.spi                               \
+  javax.xml.ws.wsaddressing                      \
   javax.xml.transform                            \
   javax.xml.transform.sax                        \
   javax.xml.transform.dom                        \

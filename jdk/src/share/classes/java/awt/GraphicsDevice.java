@@ -112,10 +112,14 @@ public abstract class GraphicsDevice {
      */
     public final static int TYPE_IMAGE_BUFFER           = 2;
 
-    /** Kinds of translucency supported by the underlying system.
-     *  @see #isTranslucencySupported
+    /**
+     * Kinds of translucency supported by the underlying system.
+     *
+     * @see #isWindowTranslucencySupported
+     *
+     * @since 1.7
      */
-    /*public */static enum WindowTranslucency {
+    public static enum WindowTranslucency {
         /**
          * Represents support in the underlying system for windows each pixel
          * of which is guaranteed to be either completely opaque, with
@@ -246,38 +250,44 @@ public abstract class GraphicsDevice {
      * full-screen window is not visible, this method will make it visible.
      * It will remain visible when returning to windowed mode.
      * <p>
-     * When returning to windowed mode from an exclusive full-screen window, any
-     * display changes made by calling <code>setDisplayMode</code> are
+     * When entering full-screen mode, all the translucency effects are reset for
+     * the window. Its shape is set to {@code null}, the opacity value is set to
+     * 1.0f, and the background color alpha is set to 255 (completely opaque).
+     * These values are not restored when returning to windowed mode.
+     * <p>
+     * When returning to windowed mode from an exclusive full-screen window,
+     * any display changes made by calling {@code setDisplayMode} are
      * automatically restored to their original state.
      *
-     * @param w a window to use as the full-screen window; <code>null</code>
+     * @param w a window to use as the full-screen window; {@code null}
      * if returning to windowed mode.  Some platforms expect the
      * fullscreen window to be a top-level component (i.e., a Frame);
      * therefore it is preferable to use a Frame here rather than a
      * Window.
+     *
      * @see #isFullScreenSupported
      * @see #getFullScreenWindow
      * @see #setDisplayMode
      * @see Component#enableInputMethods
      * @see Component#setVisible
+     *
      * @since 1.4
      */
     public void setFullScreenWindow(Window w) {
         if (w != null) {
-            //XXX: The actions should be documented in some non-update release.
-            /*
             if (w.getShape() != null) {
-                w.setShape(w, null);
-            }
-            if (!w.isOpaque()) {
-                w.setOpaque(false);
+                w.setShape(null);
             }
             if (w.getOpacity() < 1.0f) {
                 w.setOpacity(1.0f);
             }
-            */
+            Color bgColor = w.getBackground();
+            if (bgColor.getAlpha() < 255) {
+                bgColor = new Color(bgColor.getRed(), bgColor.getGreen(),
+                                    bgColor.getBlue(), 255);
+                w.setBackground(bgColor);
+            }
         }
-
         if (fullScreenWindow != null && windowedModeBounds != null) {
             // if the window went into fs mode before it was realized it may
             // have (0,0) dimensions
@@ -469,13 +479,15 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns whether the given level of translucency is supported
+     * Returns whether the given level of translucency is supported by
      * this graphics device.
      *
      * @param translucencyKind a kind of translucency support
      * @return whether the given translucency kind is supported
+     *
+     * @since 1.7
      */
-    /*public */boolean isWindowTranslucencySupported(WindowTranslucency translucencyKind) {
+    public boolean isWindowTranslucencySupported(WindowTranslucency translucencyKind) {
         switch (translucencyKind) {
             case PERPIXEL_TRANSPARENT:
                 return isWindowShapingSupported();
