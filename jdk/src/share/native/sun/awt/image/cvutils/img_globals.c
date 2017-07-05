@@ -31,7 +31,6 @@
 #include "img_globals.h"
 
 #include "java_awt_image_IndexColorModel.h"
-#include "java_awt_image_DirectColorModel.h"
 #include "java_awt_Transparency.h"
 
 /*

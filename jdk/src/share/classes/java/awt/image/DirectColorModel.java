@@ -27,7 +27,6 @@ package java.awt.image;
 
 import java.awt.color.ColorSpace;
 import java.awt.Transparency;
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The <code>DirectColorModel</code> class is a <code>ColorModel</code>
@@ -107,8 +106,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see ColorModel#getRGBdefault
  *
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class DirectColorModel extends PackedColorModel {
     private int red_mask;
     private int green_mask;

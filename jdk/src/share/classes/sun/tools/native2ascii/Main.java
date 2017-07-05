@@ -241,7 +241,9 @@ public class Main {
             if (tempDir == null)
                 tempDir = new File(System.getProperty("user.dir"));
 
-            tempFile = Files.createTempFile(tempDir.toPath(), "_N2A", ".TMP").toFile();
+            tempFile = File.createTempFile("_N2A",
+                                           ".TMP",
+                                            tempDir);
             tempFile.deleteOnExit();
 
             try {
@@ -291,7 +293,9 @@ public class Main {
             File tempDir = f.getParentFile();
             if (tempDir == null)
                 tempDir = new File(System.getProperty("user.dir"));
-            tempFile =  Files.createTempFile(tempDir.toPath(), "_N2A", ".TMP").toFile();
+            tempFile =  File.createTempFile("_N2A",
+                                            ".TMP",
+                                            tempDir);
             tempFile.deleteOnExit();
 
             try {
