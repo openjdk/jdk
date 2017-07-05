@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@
  * @key gc
  * @key regression
  * @requires vm.gc=="null"
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:+UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:-UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:-UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseSerialGC -XX:+UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseSerialGC -XX:-UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseConcMarkSweepGC -XX:+UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseConcMarkSweepGC -XX:-UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseG1GC -XX:+UseLargePages TestAlignmentToUseLargePages
- * @run main/othervm -Xms7M -Xmx9M -XX:+UseG1GC -XX:-UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:-UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:-UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseSerialGC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseSerialGC -XX:-UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseConcMarkSweepGC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseConcMarkSweepGC -XX:-UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseG1GC -XX:+UseLargePages TestAlignmentToUseLargePages
+ * @run main/othervm -Xms71M -Xmx91M -XX:+UseG1GC -XX:-UseLargePages TestAlignmentToUseLargePages
  */
 
 public class TestAlignmentToUseLargePages {

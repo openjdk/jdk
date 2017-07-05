@@ -1131,8 +1131,12 @@ public class TIFFImageReader extends ImageReader {
         pixelsToRead = destRegion.width * destRegion.height;
         pixelsRead = 0;
 
+        clearAbortRequest();
         processImageStarted(imageIndex);
-        processImageProgress(0.0f);
+        if (abortRequested()) {
+            processReadAborted();
+            return theImage;
+        }
 
         tilesAcross = (width + tileOrStripWidth - 1) / tileOrStripWidth;
         tilesDown = (height + tileOrStripHeight - 1) / tileOrStripHeight;
@@ -1286,6 +1290,10 @@ public class TIFFImageReader extends ImageReader {
                     }
 
                     reportProgress();
+                    if (abortRequested()) {
+                        processReadAborted();
+                        return theImage;
+                    }
                 }
             }
         } else {
@@ -1294,16 +1302,14 @@ public class TIFFImageReader extends ImageReader {
                     decodeTile(ti, tj, -1);
 
                     reportProgress();
+                    if (abortRequested()) {
+                        processReadAborted();
+                        return theImage;
+                    }
                 }
             }
         }
-
-        if (abortRequested()) {
-            processReadAborted();
-        } else {
-            processImageComplete();
-        }
-
+        processImageComplete();
         return theImage;
     }
 

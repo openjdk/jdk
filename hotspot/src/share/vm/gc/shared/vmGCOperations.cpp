@@ -62,14 +62,6 @@ void VM_GC_Operation::notify_gc_end() {
   HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 }
 
-void VM_GC_Operation::acquire_pending_list_lock() {
-  _pending_list_locker.lock();
-}
-
-void VM_GC_Operation::release_and_notify_pending_list_lock() {
-  _pending_list_locker.unlock();
-}
-
 // Allocations may fail in several threads at about the same time,
 // resulting in multiple gc requests.  We only want to do one of them.
 // In case a GC locker is active and the need for a GC is already signaled,
@@ -102,16 +94,13 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  acquire_pending_list_lock();
   // If the GC count has changed someone beat us to the collection
-  // Get the Heap_lock after the pending_list_lock.
   Heap_lock->lock();
 
   // Check invocations
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
-    release_and_notify_pending_list_lock();
     _prologue_succeeded = false;
   } else {
     _prologue_succeeded = true;
@@ -122,9 +111,10 @@ bool VM_GC_Operation::doit_prologue() {
 
 void VM_GC_Operation::doit_epilogue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
-  // Release the Heap_lock first.
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
+  }
   Heap_lock->unlock();
-  release_and_notify_pending_list_lock();
 }
 
 bool VM_GC_HeapInspection::skip_operation() const {

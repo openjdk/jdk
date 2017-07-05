@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4898461 6604496
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestSymmCiphers
  * @run main/othervm TestSymmCiphers sm
  */

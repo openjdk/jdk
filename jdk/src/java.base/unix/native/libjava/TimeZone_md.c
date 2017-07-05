@@ -128,13 +128,20 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     char *dbuf = NULL;
     char *tz = NULL;
     int res;
+    long name_max = 0;
 
     dirp = opendir(dir);
     if (dirp == NULL) {
         return NULL;
     }
 
-    entry = (struct dirent64 *) malloc((size_t) pathconf(dir, _PC_NAME_MAX));
+    name_max = pathconf(dir, _PC_NAME_MAX);
+    // If pathconf did not work, fall back to a mimimum buffer size.
+    if (name_max < 1024) {
+        name_max = 1024;
+    }
+
+    entry = (struct dirent64 *)malloc(offsetof(struct dirent64, d_name) + name_max + 1);
     if (entry == NULL) {
         (void) closedir(dirp);
         return NULL;

@@ -176,6 +176,9 @@ SUNWprivate_1.1 {
 		Java_java_lang_ProcessHandleImpl_00024Info_info0;
 		Java_java_lang_ProcessImpl_init;
 		Java_java_lang_ProcessImpl_forkAndExec;
+		Java_java_lang_ref_Reference_getAndClearReferencePendingList;
+		Java_java_lang_ref_Reference_hasReferencePendingList;
+		Java_java_lang_ref_Reference_waitForReferencePendingList;
 		Java_java_lang_reflect_Array_get;
 		Java_java_lang_reflect_Array_getBoolean;
 		Java_java_lang_reflect_Array_getByte;

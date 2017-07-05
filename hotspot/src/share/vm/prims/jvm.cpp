@@ -3352,6 +3352,35 @@ JVM_ENTRY(jobjectArray, JVM_GetSystemPackages(JNIEnv *env))
 JVM_END
 
 
+// java.lang.ref.Reference ///////////////////////////////////////////////////////////////
+
+
+JVM_ENTRY(jobject, JVM_GetAndClearReferencePendingList(JNIEnv* env))
+  JVMWrapper("JVM_GetAndClearReferencePendingList");
+
+  MonitorLockerEx ml(Heap_lock);
+  oop ref = Universe::reference_pending_list();
+  if (ref != NULL) {
+    Universe::set_reference_pending_list(NULL);
+  }
+  return JNIHandles::make_local(env, ref);
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_HasReferencePendingList(JNIEnv* env))
+  JVMWrapper("JVM_HasReferencePendingList");
+  MonitorLockerEx ml(Heap_lock);
+  return Universe::has_reference_pending_list();
+JVM_END
+
+JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
+  JVMWrapper("JVM_WaitForReferencePendingList");
+  MonitorLockerEx ml(Heap_lock);
+  while (!Universe::has_reference_pending_list()) {
+    ml.wait();
+  }
+JVM_END
+
+
 // ObjectInputStream ///////////////////////////////////////////////////////////////
 
 bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessFlags access, bool classloader_only) {

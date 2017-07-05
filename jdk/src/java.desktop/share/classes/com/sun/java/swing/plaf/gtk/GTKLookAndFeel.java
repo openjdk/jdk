@@ -504,7 +504,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             public Object createValue(UIDefaults table) {
                 GTKStyleFactory factory = (GTKStyleFactory)getStyleFactory();
                 GTKStyle style = (GTKStyle)factory.getStyle(null, region);
-                return style.getFontForState(null);
+                return style.getDefaultFont();
             }
         }
 

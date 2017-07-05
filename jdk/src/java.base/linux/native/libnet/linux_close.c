@@ -367,6 +367,10 @@ int NET_Read(int s, void* buf, size_t len) {
     BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, 0) );
 }
 
+int NET_NonBlockingRead(int s, void* buf, size_t len) {
+    BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, MSG_DONTWAIT) );
+}
+
 int NET_ReadV(int s, const struct iovec * vector, int count) {
     BLOCKING_IO_RETURN_INT( s, readv(s, vector, count) );
 }
@@ -406,8 +410,8 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
  * Auto restarts with adjusted timeout if interrupted by
  * signal other than our wakeup signal.
  */
-int NET_Timeout(int s, long timeout) {
-    long prevtime = 0, newtime;
+int NET_Timeout0(int s, long timeout, long currentTime) {
+    long prevtime = currentTime, newtime;
     struct timeval t;
     fdEntry_t *fdEntry = getFdEntry(s);
 
@@ -417,14 +421,6 @@ int NET_Timeout(int s, long timeout) {
     if (fdEntry == NULL) {
         errno = EBADF;
         return -1;
-    }
-
-    /*
-     * Pick up current time as may need to adjust timeout
-     */
-    if (timeout > 0) {
-        gettimeofday(&t, NULL);
-        prevtime = t.tv_sec * 1000  +  t.tv_usec / 1000;
     }
 
     for(;;) {

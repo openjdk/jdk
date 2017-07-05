@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class FileInputStreamPoolTest {
         // make JVM process References
         System.gc();
         // help ReferenceHandler thread enqueue References
-        while (TestProxy.Reference_tryHandlePending(false)) {}
+        while (TestProxy.Reference_waitForReferenceProcessing()) { }
         // help run Finalizers
         System.runFinalization();
     }
@@ -103,11 +103,11 @@ public class FileInputStreamPoolTest {
     /**
      * A proxy for (package)private static methods:
      *   sun.security.provider.FileInputStreamPool.getInputStream
-     *   java.lang.ref.Reference.tryHandlePending
+     *   java.lang.ref.Reference.waitForReferenceProcessing
      */
     static class TestProxy {
         private static final Method getInputStreamMethod;
-        private static final Method tryHandlePendingMethod;
+        private static final Method waitForReferenceProcessingMethod;
 
         static {
             try {
@@ -118,9 +118,9 @@ public class FileInputStreamPoolTest {
                         "getInputStream", File.class);
                 getInputStreamMethod.setAccessible(true);
 
-                tryHandlePendingMethod = Reference.class.getDeclaredMethod(
-                    "tryHandlePending", boolean.class);
-                tryHandlePendingMethod.setAccessible(true);
+                waitForReferenceProcessingMethod =
+                    Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+                waitForReferenceProcessingMethod.setAccessible(true);
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -146,13 +146,14 @@ public class FileInputStreamPoolTest {
             }
         }
 
-        static boolean Reference_tryHandlePending(boolean waitForNotify) {
+        static boolean Reference_waitForReferenceProcessing() {
             try {
-                return (boolean) tryHandlePendingMethod
-                    .invoke(null, waitForNotify);
+                return (boolean) waitForReferenceProcessingMethod.invoke(null);
             } catch (InvocationTargetException e) {
                 Throwable te = e.getTargetException();
-                if (te instanceof RuntimeException) {
+                if (te instanceof InterruptedException) {
+                    return true;
+                } else if (te instanceof RuntimeException) {
                     throw (RuntimeException) te;
                 } else if (te instanceof Error) {
                     throw (Error) te;

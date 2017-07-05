@@ -36,6 +36,7 @@ import static java.util.Calendar.*;
 public class NonGregorianFormatTest {
     static int errors;
 
+    @SuppressWarnings("deprecation")
     static final Object[][] JAPANESE_EN = {
         { "GGGG yyyy MMMM d", "Showa 1 December 31", new Date(1926-1900, DECEMBER, 31) },
         { "GGGG yyyy MMMM d", "Showa 64 January 6", new Date(1989-1900, JANUARY, 6) },
@@ -58,6 +59,7 @@ public class NonGregorianFormatTest {
         { "Gyy.MM.dd", "H01.01.01" },
     };
 
+    @SuppressWarnings("deprecation")
     static final Object[][] BUDDHIST_EN = {
         { "GGGG yyyy MMMM d", "B.E. 2469 December 31", new Date(1926-1900, DECEMBER, 31) },
         { "GGGG yyyy MMMM d", "B.E. 2532 January 6", new Date(1989-1900, JANUARY, 6) },
@@ -71,6 +73,7 @@ public class NonGregorianFormatTest {
 
     static final String FULL_DATE_FORMAT_JA = "GGGGyyyy'\u5e74'M'\u6708'd'\u65e5'";
 
+    @SuppressWarnings("deprecation")
     static final Object[][] JAPANESE_JA = {
         { FULL_DATE_FORMAT_JA, "\u662d\u548c\u5143\u5e7412\u670831\u65e5", new Date(1926-1900, DECEMBER, 31) },
         { FULL_DATE_FORMAT_JA, "\u662d\u548c64\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
@@ -93,6 +96,7 @@ public class NonGregorianFormatTest {
         { "Gyy.MM.dd", "H01.01.01" },
     };
 
+    @SuppressWarnings("deprecation")
     static final Object[][] BUDDHIST_JA = {
         { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62469\u5e7412\u670831\u65e5", new Date(1926-1900, DECEMBER, 31) },
         { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62532\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
@@ -137,6 +141,7 @@ public class NonGregorianFormatTest {
                             locale == Locale.ENGLISH ? BUDDHIST_EN : BUDDHIST_JA);
     }
 
+    @SuppressWarnings("deprecation")
     private static void testRoundTrip(Locale calendarLocale) {
         DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL,
                                                        DateFormat.FULL,

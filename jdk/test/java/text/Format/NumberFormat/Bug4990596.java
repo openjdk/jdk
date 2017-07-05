@@ -35,6 +35,7 @@ public class Bug4990596 {
         new DecimalFormat().format(new MutableInteger(0));
     }
 
+    @SuppressWarnings("serial")
     public static class MutableInteger extends Number {
         public int value;
 

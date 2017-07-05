@@ -101,11 +101,8 @@ public class GetModuleTest {
         return new Object[][] {
 
             { GetModuleTest.class,      null },
-            { GetModuleTest[].class,    null },
             { Object.class,             null },
-            { Object[].class,           null },
             { Component.class,          null },
-            { Component[].class,        null },
 
         };
     }
@@ -117,7 +114,7 @@ public class GetModuleTest {
     public void testGetModuleOnVMAnonymousClass(Class<?> hostClass, String ignore) {
 
         // choose a class name in the same package as the host class
-        String prefix = packageName(hostClass);
+        String prefix = hostClass.getPackageName();
         if (prefix.length() > 0)
             prefix = prefix.replace('.', '/') + "/";
         String className = prefix + "Anon";
@@ -134,17 +131,6 @@ public class GetModuleTest {
             = U.defineAnonymousClass(hostClass, classBytes, new Object[cpPoolSize]);
 
         assertTrue(anonClass.getModule() == hostClass.getModule());
-    }
-
-    private static String packageName(Class<?> c) {
-        if (c.isArray()) {
-            return packageName(c.getComponentType());
-        } else {
-            String name = c.getName();
-            int dot = name.lastIndexOf('.');
-            if (dot == -1) return "";
-            return name.substring(0, dot);
-        }
     }
 
     private static int constantPoolSize(byte[] classFile) {
