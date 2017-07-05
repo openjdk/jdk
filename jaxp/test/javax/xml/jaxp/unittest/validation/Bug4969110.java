@@ -79,4 +79,3 @@ public class Bug4969110 {
         validatorHandler.setProperty(name, "123");
     }
 }
-

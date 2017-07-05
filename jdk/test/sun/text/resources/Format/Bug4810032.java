@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  */
 
 /*
- *@test
- *@bug 4810032 8008577
- *@summary verify the ja full time pattern parsing
+ * @test
+ * @bug 4810032 8008577
+ * @modules jdk.localedata
+ * @summary verify the ja full time pattern parsing
  * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4810032
 */
 
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Locale;
 
 public class Bug4810032
 {

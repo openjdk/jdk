@@ -72,4 +72,3 @@ public class CR6909336Test {
     }
 
 }
-

@@ -108,4 +108,3 @@ public class Bug6320118 {
     }
 
 }
-

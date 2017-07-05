@@ -105,5 +105,3 @@ public class TransformerExcpTest {
         assertNotNull(te.initCause(null));
     }
 }
-
-

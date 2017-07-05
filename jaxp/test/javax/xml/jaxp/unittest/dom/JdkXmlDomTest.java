@@ -46,4 +46,3 @@ public class JdkXmlDomTest {
         Assert.assertTrue(runWithAllPerm(() -> cls.getClassLoader()) != null);
     }
 }
-

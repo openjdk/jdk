@@ -147,4 +147,3 @@ public class Bug6290947 {
         return src;
     }
 }
-

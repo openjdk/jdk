@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8134250 8134520
+ * @modules jdk.localedata
  * @summary Tests CLDR/LDML features are correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8134250
  */
@@ -31,10 +32,15 @@
 // Note this test highly depends on a particular version of CLDR. Results
 // may vary in the future.
 
-import java.time.*;
-import java.time.chrono.*;
-import java.time.format.*;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.chrono.Chronology;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
+import java.time.format.TextStyle;
+import java.util.Locale;
 
 public class Bug8134250 {
     public static void main(String [] args) {

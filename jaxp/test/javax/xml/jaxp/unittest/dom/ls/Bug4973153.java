@@ -204,4 +204,3 @@ class DOMErrorHandlerImpl implements DOMErrorHandler {
         return true;
     }
 }
-

@@ -149,7 +149,10 @@ class BreakDictionary {
         BufferedInputStream in;
         try {
             PrivilegedExceptionAction<BufferedInputStream> pa = () -> {
-                InputStream is = module.getResourceAsStream("sun/text/resources/" + dictionaryName);
+                String pathName = "jdk.localedata".equals(module.getName()) ?
+                     "sun/text/resources/ext/" :
+                     "sun/text/resources/";
+                InputStream is = module.getResourceAsStream(pathName + dictionaryName);
                 if (is == null) {
                     // Try to load the file with "java.base" module instance. Assumption
                     // here is that the fall back data files to be read should reside in

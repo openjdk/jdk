@@ -47,4 +47,3 @@ public class MyClassLoader extends ClassLoader {
         return isCalled;
     }
 }
-

@@ -74,4 +74,3 @@ public class Bug4915748 {
         Assert.assertTrue(hadError[0]);
     }
 }
-

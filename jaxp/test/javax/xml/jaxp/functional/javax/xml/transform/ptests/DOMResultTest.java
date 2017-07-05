@@ -118,5 +118,3 @@ public class DOMResultTest {
                 writeNodes(kids.item(i), bWriter);
     }
 }
-
-

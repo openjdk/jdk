@@ -85,4 +85,3 @@ public class ValidationWarningsTest extends WarningsTestBase {
     private static final String xml = "<?xml version='1.0'?><test>Element</test>";
 
 }
-

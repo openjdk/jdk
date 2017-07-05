@@ -239,5 +239,3 @@ public class TfClearParamTest {
         assertNull(transformer.getParameter(LONG_PARAM_NAME));
     }
 }
-
-

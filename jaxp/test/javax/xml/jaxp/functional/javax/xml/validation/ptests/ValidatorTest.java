@@ -209,4 +209,3 @@ public class ValidatorTest {
     private Document xmlDoc;
 
 }
-

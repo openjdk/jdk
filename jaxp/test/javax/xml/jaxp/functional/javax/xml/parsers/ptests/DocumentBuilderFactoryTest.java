@@ -531,5 +531,3 @@ public class DocumentBuilderFactoryTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

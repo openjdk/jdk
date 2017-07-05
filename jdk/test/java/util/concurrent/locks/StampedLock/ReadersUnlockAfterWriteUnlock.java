@@ -22,7 +22,6 @@
 
 /*
  * @test
- * @run main/othervm/timeout=60 ReadersUnlockAfterWriteUnlock
  * @bug 8023234
  * @summary StampedLock serializes readers on writer unlock
  * @author Dmitry Chyuko
@@ -30,26 +29,23 @@
  */
 
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.StampedLock;
 
 public class ReadersUnlockAfterWriteUnlock {
-    static final int RNUM = 2;
-    static final StampedLock sl = new StampedLock();
-    static volatile boolean isDone;
+    public static void main(String[] args) throws InterruptedException {
+        final int RNUM = 2;
+        final int REPS = 128;
+        final StampedLock sl = new StampedLock();
+        final AtomicReference<Throwable> bad = new AtomicReference<>();
 
-    static CyclicBarrier iterationStart = new CyclicBarrier(RNUM + 1);
-    static CyclicBarrier readersHaveLocks = new CyclicBarrier(RNUM);
-    static CyclicBarrier writerHasLock = new CyclicBarrier(RNUM + 1);
+        final CyclicBarrier iterationStart = new CyclicBarrier(RNUM + 1);
+        final CyclicBarrier readersHaveLocks = new CyclicBarrier(RNUM);
+        final CyclicBarrier writerHasLock = new CyclicBarrier(RNUM + 1);
 
-    static class Reader extends Thread {
-        final String name;
-        Reader(String name) {
-            super();
-            this.name = name;
-        }
-        public void run() {
-            while (!isDone && !isInterrupted()) {
-                try {
+        Runnable reader = () -> {
+            try {
+                for (int i = 0; i < REPS; i++) {
                     iterationStart.await();
                     writerHasLock.await();
                     long rs = sl.readLock();
@@ -59,30 +55,45 @@ public class ReadersUnlockAfterWriteUnlock {
                     readersHaveLocks.await();
 
                     sl.unlockRead(rs);
-                } catch (Exception e) {
-                    throw new IllegalStateException(e);
                 }
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+                bad.set(ex);
             }
-        }
-    }
+        };
 
-    public static void main(String[] args) throws InterruptedException {
-        for (int r = 0 ; r < RNUM; ++r) {
-            new Reader("r" + r).start();
+        Thread[] threads = new Thread[RNUM];
+        for (int i = 0 ; i < RNUM; i++) {
+            Thread thread = new Thread(reader, "Reader");
+            threads[i] = thread;
+            thread.start();
         }
-        int i;
-        for (i = 0; i < 1024; ++i) {
+        for (int i = 0; i < REPS; i++) {
             try {
                 iterationStart.await();
                 long ws = sl.writeLock();
                 writerHasLock.await();
-                Thread.sleep(10);
+                awaitWaitState(threads);
                 sl.unlockWrite(ws);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
         }
-        isDone = true;
+        for (Thread thread : threads)
+            thread.join();
+        if (bad.get() != null)
+            throw new AssertionError(bad.get());
     }
 
+    static void awaitWaitState(Thread[] threads) {
+        restart: for (;;) {
+            for (Thread thread : threads) {
+                if (thread.getState() != Thread.State.WAITING) {
+                    Thread.yield();
+                    continue restart;
+                }
+            }
+            break;
+        }
+    }
 }

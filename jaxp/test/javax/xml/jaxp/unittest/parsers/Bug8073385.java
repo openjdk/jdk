@@ -100,4 +100,3 @@ public class Bug8073385 {
         assertTrue(exceptionText.contains("Unicode: " + hexString));
     }
 }
-

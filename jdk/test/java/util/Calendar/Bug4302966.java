@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4302966
+ * @modules jdk.localedata
  * @summary In Czech Republic first day of week is Monday not Sunday
  */
 

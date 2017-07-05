@@ -83,4 +83,3 @@ public class Bug6341770 {
         System.out.println("OK.");
     }
 }
-
