@@ -62,7 +62,9 @@ public:
   // given PtrQueueSet.
   PtrQueue(PtrQueueSet*, bool perm = false);
   // Release any contained resources.
-  ~PtrQueue();
+  void flush();
+  // Calls flush() when destroyed.
+  ~PtrQueue() { flush(); }
 
   // Associate a lock with a ptr queue.
   void set_lock(Mutex* lock) { _lock = lock; }

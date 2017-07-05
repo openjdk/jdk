@@ -1600,7 +1600,11 @@ void ClassVerifier::verify_ldc(
     types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long);
     verify_cp_type(index, cp, types, CHECK_VERIFY(this));
   }
-  if (tag.is_string() || tag.is_unresolved_string()) {
+  if (tag.is_string() && cp->is_pseudo_string_at(index)) {
+    current_frame->push_stack(
+      VerificationType::reference_type(
+        vmSymbols::java_lang_Object()), CHECK_VERIFY(this));
+  } else if (tag.is_string() || tag.is_unresolved_string()) {
     current_frame->push_stack(
       VerificationType::reference_type(
         vmSymbols::java_lang_String()), CHECK_VERIFY(this));

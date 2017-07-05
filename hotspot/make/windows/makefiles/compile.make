@@ -30,7 +30,7 @@ CPP=cl.exe
 #   /W3       Warning level 3
 #   /Zi       Include debugging information
 #   /WX       Treat any warning error as a fatal error
-#   /MD       Use dynamic multi-threaded runtime (msvcrt.dll or msvc*71.dll)
+#   /MD       Use dynamic multi-threaded runtime (msvcrt.dll or msvc*NN.dll)
 #   /MTd      Use static multi-threaded runtime debug versions
 #   /O1       Optimize for size (/Os), skips /Oi
 #   /O2       Optimize for speed (/Ot), adds /Oi to /O1
@@ -80,8 +80,10 @@ CPP_FLAGS=$(CPP_FLAGS) /D "IA32"
 CPP=ARCH_ERROR
 !endif
 
-# MSC_VER is a 4 digit number that tells us what compiler is being used, it is
-#    generated when the local.make file is created by the script gen_msc_ver.sh.
+# MSC_VER is a 4 digit number that tells us what compiler is being used
+#    and is generated when the local.make file is created by build.make
+#    via the script get_msc_ver.sh
+#
 #    If MSC_VER is set, it overrides the above default setting.
 #    But it should be set.
 #    Possible values:
@@ -89,13 +91,14 @@ CPP=ARCH_ERROR
 #      1300 and 1310 is VS2003 or VC7
 #      1399 is our fake number for the VS2005 compiler that really isn't 1400
 #      1400 is for VS2005
+#      1500 is for VS2008
 #    Do not confuse this MSC_VER with the predefined macro _MSC_VER that the
 #    compiler provides, when MSC_VER==1399, _MSC_VER will be 1400.
 #    Normally they are the same, but a pre-release of the VS2005 compilers
 #    in the Windows 64bit Platform SDK said it was 1400 when it was really
 #    closer to VS2003 in terms of option spellings, so we use 1399 for that
 #    1400 version that really isn't 1400.
-#    See the file gen_msc_ver.sh for more info.
+#    See the file get_msc_ver.sh for more info.
 !if "x$(MSC_VER)" == "x"
 COMPILER_NAME=$(DEFAULT_COMPILER_NAME)
 !else
@@ -114,6 +117,9 @@ COMPILER_NAME=VS2003
 !endif
 !if "$(MSC_VER)" == "1400"
 COMPILER_NAME=VS2005
+!endif
+!if "$(MSC_VER)" == "1500"
+COMPILER_NAME=VS2008
 !endif
 !endif
 
@@ -160,7 +166,25 @@ GX_OPTION = /EHsc
 #    externals at link time. Even with /GS-, you need bufferoverflowU.lib.
 #    NOTE: Currently we decided to not use /GS-
 BUFFEROVERFLOWLIB = bufferoverflowU.lib
-LINK_FLAGS = $(LINK_FLAGS) $(BUFFEROVERFLOWLIB)
+LINK_FLAGS = /manifest $(LINK_FLAGS) $(BUFFEROVERFLOWLIB)
+# Manifest Tool - used in VS2005 and later to adjust manifests stored
+# as resources inside build artifacts.
+MT=mt.exe
+!if "$(BUILDARCH)" == "i486"
+# VS2005 on x86 restricts the use of certain libc functions without this
+CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_DEPRECATE
+!endif
+!endif
+
+!if "$(COMPILER_NAME)" == "VS2008"
+PRODUCT_OPT_OPTION   = /O2 /Oy-
+FASTDEBUG_OPT_OPTION = /O2 /Oy-
+DEBUG_OPT_OPTION     = /Od
+GX_OPTION = /EHsc
+LINK_FLAGS = /manifest $(LINK_FLAGS)
+# Manifest Tool - used in VS2005 and later to adjust manifests stored
+# as resources inside build artifacts.
+MT=mt.exe
 !if "$(BUILDARCH)" == "i486"
 # VS2005 on x86 restricts the use of certain libc functions without this
 CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_DEPRECATE
