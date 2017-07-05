@@ -50,25 +50,6 @@ ciMethodHandle* ciCallSite::get_target() const {
 }
 
 // ------------------------------------------------------------------
-// ciCallSite::get_context
-//
-// Return the target MethodHandle of this CallSite.
-ciKlass* ciCallSite::get_context() {
-  assert(!is_constant_call_site(), "");
-
-  VM_ENTRY_MARK;
-  oop call_site_oop = get_oop();
-  InstanceKlass* ctxk = MethodHandles::get_call_site_context(call_site_oop);
-  if (ctxk == NULL) {
-    // The call site doesn't have a context associated. Set it to the default context.
-    oop def_context_oop = java_lang_invoke_CallSite::default_context();
-    java_lang_invoke_CallSite::set_context_cas(call_site_oop, def_context_oop, /*expected=*/NULL);
-    ctxk = MethodHandles::get_call_site_context(call_site_oop);
-  }
-  return (CURRENT_ENV->get_metadata(ctxk))->as_klass();
-}
-
-// ------------------------------------------------------------------
 // ciCallSite::print
 //
 // Print debugging information about the CallSite.

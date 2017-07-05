@@ -24,11 +24,14 @@
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.ProcessTools;
+import jdk.test.lib.apps.LingeredApp;
 
 /*
  * @test
+ * @library /../../test/lib/share/classes
  * @library /testlibrary
  * @build jdk.test.lib.*
+ * @build jdk.test.lib.apps.*
  * @run main TestStackTrace
  */
 public class TestStackTrace {
@@ -39,17 +42,25 @@ public class TestStackTrace {
             return;
         }
 
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UsePerfData",
-                "sun.jvm.hotspot.tools.StackTrace",
-                Integer.toString(ProcessTools.getProcessId()));
-        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-        System.out.println(output.getOutput());
+        LingeredApp app = null;
+        try {
+            app = LingeredApp.startApp();
 
-        output.shouldHaveExitValue(0);
-        output.shouldContain("Debugger attached successfully.");
-        output.stderrShouldNotMatch("[E|e]xception");
-        output.stderrShouldNotMatch("[E|e]rror");
+            System.out.println("Attaching sun.jvm.hotspot.tools.StackTrace to " + app.getPid());
+            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-XX:+UsePerfData",
+                    "sun.jvm.hotspot.tools.StackTrace",
+                    Long.toString(app.getPid()));
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+            System.out.println(output.getOutput());
+
+            output.shouldHaveExitValue(0);
+            output.shouldContain("Debugger attached successfully.");
+            output.stderrShouldNotMatch("[E|e]xception");
+            output.stderrShouldNotMatch("[E|e]rror");
+        } finally {
+            app.stopApp();
+        }
      }
 
 }

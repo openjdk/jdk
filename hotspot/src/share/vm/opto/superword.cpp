@@ -1631,7 +1631,7 @@ void SuperWord::output() {
         }
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
         vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
@@ -2279,6 +2279,19 @@ Node* SuperWord::executed_last(Node_List* p) {
   }
   return n;
 }
+
+LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
+  LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
+  for (uint i = 0; i < p->size(); i++) {
+    Node* n = p->at(i);
+    assert(n->is_Load(), "only meaningful for loads");
+    if (!n->depends_only_on_test()) {
+      dep = LoadNode::Pinned;
+    }
+  }
+  return dep;
+}
+
 
 //----------------------------align_initial_loop_index---------------------------
 // Adjust pre-loop limit so that in main loop, a load/store reference

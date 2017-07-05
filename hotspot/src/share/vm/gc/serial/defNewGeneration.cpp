@@ -960,7 +960,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
                             GCCause::to_string(gch->gc_cause()));
       }
       assert(gch->gc_cause() == GCCause::_scavenge_alot ||
-             (gch->gc_cause() == GCCause::_java_lang_system_gc && UseConcMarkSweepGC && ExplicitGCInvokesConcurrent) ||
+             (GCCause::is_user_requested_gc(gch->gc_cause()) && UseConcMarkSweepGC && ExplicitGCInvokesConcurrent) ||
              !gch->incremental_collection_failed(),
              "Twice in a row");
       seen_incremental_collection_failed = false;

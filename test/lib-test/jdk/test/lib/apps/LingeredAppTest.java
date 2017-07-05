@@ -28,9 +28,11 @@
  * @compile LingeredApp.java
  * @run main LingeredAppTest
  */
+
+package jdk.test.lib.apps;
+
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class LingeredAppTest {
 
@@ -38,7 +40,7 @@ public class LingeredAppTest {
         try {
             System.out.println("Starting LingeredApp with default parameters");
 
-            ArrayList<String> cmd = new ArrayList();
+            ArrayList<String> cmd = new ArrayList<String>();
 
             // Propagate test.vm.options to LingeredApp, filter out possible empty options
             String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
