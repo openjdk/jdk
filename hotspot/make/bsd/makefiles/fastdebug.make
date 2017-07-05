@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Sets make macros for making debug version of VM
@@ -59,5 +59,5 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-debug
 
 VERSION = optimized
-SYSDEFS += -DASSERT -DFASTDEBUG
+SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT

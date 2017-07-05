@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ class InterpreterRuntime: AllStatic {
 #ifdef ASSERT
   static void    verify_mdp(Method* method, address bcp, address mdp);
 #endif // ASSERT
+  static MethodCounters* build_method_counters(JavaThread* thread, Method* m);
 };
 
 
