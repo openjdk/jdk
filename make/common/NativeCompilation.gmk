@@ -369,6 +369,10 @@ define SetupNativeCompilation
     $$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
   endif
 
+  # Add sys root specific cflags last
+  $1_EXTRA_CFLAGS += $(SYSROOT_CFLAGS)
+  $1_EXTRA_CXXFLAGS += $(SYSROOT_CFLAGS)
+
   # Now call add_native_source for each source file we are going to compile.
   $$(foreach p,$$($1_SRCS), \
       $$(eval $$(call add_native_source,$1,$$p,$$($1_OBJECT_DIR), \
@@ -413,6 +417,8 @@ define SetupNativeCompilation
   ifneq (,$$($1_REAL_MAPFILE))
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif
+
+  $1_EXTRA_LDFLAGS += $(SYSROOT_LDFLAGS)
 
   # Need to make sure TARGET is first on list
   $1 := $$($1_TARGET)
@@ -476,7 +482,7 @@ define SetupNativeCompilation
             # to be rebuilt properly.
             $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
 		$(CD) $$($1_OBJECT_DIR) \
-		&& $(ZIP) -q $$@ $$($1_DEBUGINFO_FILES)
+		&& $(ZIP) -q $$@ $$(notdir $$($1_DEBUGINFO_FILES))
 
           else
             $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_FILES))
