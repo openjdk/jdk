@@ -30,11 +30,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "utilities/macros.hpp"
 
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "entry_zero.hpp"
 #endif
-
 
 
 class MacroAssembler;
@@ -66,7 +66,7 @@ class MethodHandles: AllStatic {
   static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
   static oop init_MemberName(Handle mname_h, Handle target_h); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
-  static oop init_method_MemberName(Handle mname_h, CallInfo& info, bool intern = true);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
   static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
   static int find_MemberNames(KlassHandle k, Symbol* name, Symbol* sig,
                               int mflags, KlassHandle caller,
@@ -192,25 +192,7 @@ public:
             ref_kind == JVM_REF_invokeInterface);
   }
 
-
-#ifdef TARGET_ARCH_x86
-# include "methodHandles_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "methodHandles_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "methodHandles_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "methodHandles_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "methodHandles_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "methodHandles_aarch64.hpp"
-#endif
+#include CPU_HEADER(methodHandles)
 
   // Tracing
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
@@ -253,8 +235,7 @@ class MemberNameTable : public GrowableArray<jweak> {
  public:
   MemberNameTable(int methods_cnt);
   ~MemberNameTable();
-  oop add_member_name(jweak mem_name_ref);
-  oop find_or_add_member_name(jweak mem_name_ref);
+  void add_member_name(jweak mem_name_ref);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:

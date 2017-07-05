@@ -33,7 +33,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm_solaris.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_solaris.inline.hpp"
 #include "os_share_solaris.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
@@ -74,7 +73,6 @@
 # include <sys/socket.h>
 # include <sys/trap.h>
 # include <sys/lwp.h>
-# include <pwd.h>
 # include <poll.h>
 # include <sys/lwp.h>
 # include <procfs.h>     //  see comment in <sys/procfs.h>

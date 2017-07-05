@@ -20,13 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package printcodecache;
 
+package compiler.codecache.cli.printcodecache;
+
+import compiler.codecache.cli.common.CodeCacheCLITestCase;
+import compiler.codecache.cli.common.CodeCacheInfoFormatter;
+import compiler.codecache.cli.common.CodeCacheOptions;
 import jdk.test.lib.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import common.CodeCacheCLITestCase;
-import common.CodeCacheInfoFormatter;
-import common.CodeCacheOptions;
 import sun.hotspot.code.BlobType;
 
 import java.util.EnumSet;

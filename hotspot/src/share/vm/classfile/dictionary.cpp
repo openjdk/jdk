@@ -396,14 +396,15 @@ void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
 DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
                                        Symbol* class_name,
                                        ClassLoaderData* loader_data) {
-  debug_only(_lookup_count++);
+  DEBUG_ONLY(_lookup_count++);
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
     if (entry->hash() == hash && entry->equals(class_name, loader_data)) {
+      DEBUG_ONLY(bucket_count_hit(index));
       return entry;
     }
-    debug_only(_lookup_length++);
+    DEBUG_ONLY(_lookup_length++);
   }
   return NULL;
 }
@@ -596,7 +597,7 @@ void ProtectionDomainCacheTable::verify() {
   }
   guarantee(number_of_entries() == element_count,
             "Verify of protection domain cache table failed");
-  debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
+  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size()));
 }
 
 void ProtectionDomainCacheEntry::verify() {
@@ -737,19 +738,65 @@ void Dictionary::print(bool details) {
                    table_size(), number_of_entries());
     tty->print_cr("^ indicates that initiating loader is different from "
                   "defining loader");
+    tty->print_cr("1st number: th bucket index");
+    tty->print_cr("2nd number: the entry's index within this bucket");
+#ifdef ASSERT
+    tty->print_cr("3rd number: the hit percentage of this entry");
+    tty->print_cr("4th number: the hash index of this entry");
+#endif
   }
 
+#ifdef ASSERT
+  // find top buckets with highest lookup count
+  #define TOP_COUNT 16
+  int topItemsIndicies[TOP_COUNT];
+  for (int i = 0; i < TOP_COUNT; i++) {
+    topItemsIndicies[i] = i;
+  }
+  double total = 0.0;
+  for (int i = 0; i < table_size(); i++) {
+    // find the total count number, so later on we can
+    // express bucket lookup count as a percentage of all lookups
+    unsigned value = bucket_hits(i);
+    total += value;
+
+    // find the entry with min value
+    int index = 0;
+    unsigned min = bucket_hits(topItemsIndicies[index]);
+    for (int j = 1; j < TOP_COUNT; j++) {
+      if (bucket_hits(topItemsIndicies[j]) < min) {
+        min = bucket_hits(topItemsIndicies[j]);
+        index = j;
+      }
+    }
+    // if the bucket loookup value is bigger than the current min
+    // move that bucket index into the top list
+    if (value > min) {
+      topItemsIndicies[index] = i;
+    }
+  }
+#endif
+
   for (int index = 0; index < table_size(); index++) {
+#ifdef ASSERT
+    double percentage = 100.0 * (double)bucket_hits(index)/total;
+#endif
+    int chain = 0;
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      if (Verbose) tty->print("%4d: ", index);
       Klass* e = probe->klass();
       ClassLoaderData* loader_data =  probe->loader_data();
       bool is_defining_class =
          (loader_data == e->class_loader_data());
+      if (details) {
+        tty->print("%4d: %3d: ", index, chain);
+#ifdef ASSERT
+        tty->print("%5.2f%%: %10u:", percentage, probe->hash());
+#endif
+      }
       tty->print("%s%s", ((!details) || is_defining_class) ? " " : "^",
-                   e->external_name());
+                 e->external_name());
 
       if (details) {
         tty->print(", loader ");
@@ -760,8 +807,29 @@ void Dictionary::print(bool details) {
         }
       }
       tty->cr();
+
+      chain++;
+    }
+    if (details && (chain == 0)) {
+      tty->print("%4d:", index);
+      tty->cr();
     }
   }
+
+#ifdef ASSERT
+  // print out the TOP_COUNT of buckets with highest lookup count (unsorted)
+  if (details) {
+    tty->cr();
+    tty->print("Top %d buckets:", TOP_COUNT);
+    tty->cr();
+    for (int i = 0; i < TOP_COUNT; i++) {
+      tty->print("%4d: hits %5.2f%%",
+                 topItemsIndicies[i],
+                 100.0*(double)bucket_hits(topItemsIndicies[i])/total);
+      tty->cr();
+    }
+  }
+#endif
 
   if (details) {
     tty->cr();
@@ -795,7 +863,7 @@ void Dictionary::verify() {
   }
   guarantee(number_of_entries() == element_count,
             "Verify of system dictionary failed");
-  debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
+  DEBUG_ONLY(if (!verify_lookup_length((double)number_of_entries() / table_size())) this->print(true));
 
   _pd_cache_table->verify();
 }

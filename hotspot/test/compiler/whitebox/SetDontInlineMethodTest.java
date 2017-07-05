@@ -21,21 +21,24 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test SetDontInlineMethodTest
  * @bug 8006683 8007288 8022832
+ * @summary testing of WB::testSetDontInlineMethod()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build SetDontInlineMethodTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* SetDontInlineMethodTest
- * @summary testing of WB::testSetDontInlineMethod()
- * @author igor.ignatyev@oracle.com
+ *          java.management
+ * @build compiler.whitebox.SetDontInlineMethodTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   compiler.whitebox.SetDontInlineMethodTest
  */
+
+package compiler.whitebox;
+
 public class SetDontInlineMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {

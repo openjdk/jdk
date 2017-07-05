@@ -1,5 +1,5 @@
 
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,10 @@ ifeq ($(MODULE), java.base)
   endif
 endif
 
-# Changes to the jmod tool itself should also trigger a rebuild of all jmods
-DEPS += $(JMOD_CMD)
+# Changes to the jmod tool itself should also trigger a rebuild of all jmods.
+# The variable JMOD_CMD could contain an environment variable assignment before
+# the actual command. Filter that out using wildcard before adding to DEPS.
+DEPS += $(wildcard $(JMOD_CMD))
 ifeq ($(EXTERNAL_BUILDJDK), false)
   DEPS += $(call CacheFind, $(JDK_OUTPUTDIR)/modules/jdk.jlink/jdk/tools/jmod)
 endif
@@ -100,7 +102,7 @@ $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
             --os-name $(REQUIRED_OS_NAME) \
             --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
             --os-version $(REQUIRED_OS_VERSION) \
-	        --modulepath $(JMODS_DIR) \
+            --modulepath $(JMODS_DIR) \
             --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
 	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@

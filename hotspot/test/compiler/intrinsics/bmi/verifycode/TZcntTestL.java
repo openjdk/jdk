@@ -24,15 +24,22 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib / ..
+ * @requires vm.flavor == "server"
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TZcntTestL
+ *
+ * @build compiler.intrinsics.bmi.verifycode.TZcntTestL
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountTrailingZerosInstruction TZcntTestL
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountTrailingZerosInstruction
+ *      compiler.intrinsics.bmi.verifycode.TZcntTestL
  */
+
+package compiler.intrinsics.bmi.verifycode;
+
+import compiler.intrinsics.bmi.TestTzcntL;
 
 import java.lang.reflect.Method;
 

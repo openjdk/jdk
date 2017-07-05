@@ -23,8 +23,6 @@
 package requires;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -35,13 +33,17 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import sun.hotspot.gc.GC;
+import sun.hotspot.WhiteBox;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
  * collect information about VM.
+ * Do not use any API's that may not be available in all target VMs.
  * Properties set by this Class will be available in the @requires expressions.
  */
 public class VMProps implements Callable<Map<String, String>> {
+
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     /**
      * Collects information about VM properties.
@@ -131,17 +133,14 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return "true" if Flight Recorder is enabled, "false" if is disabled.
      */
     protected String vmFlightRecorder() {
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> arguments = runtimeMxBean.getInputArguments();
-        if (arguments.contains("-XX:+UnlockCommercialFeatures")) {
-            if (arguments.contains("-XX:+FlightRecorder")) {
+        Boolean isUnlockedCommercialFatures = WB.getBooleanVMFlag("UnlockCommercialFeatures");
+        Boolean isFlightRecorder = WB.getBooleanVMFlag("FlightRecorder");
+        String startFROptions = WB.getStringVMFlag("StartFlightRecording");
+        if (isUnlockedCommercialFatures != null && isUnlockedCommercialFatures) {
+            if (isFlightRecorder != null && isFlightRecorder) {
                 return "true";
             }
-            if (arguments.contains("-XX:-FlightRecorder")) {
-                return "false";
-            }
-            if (arguments.stream()
-                    .anyMatch(option -> option.startsWith("-XX:StartFlightRecording"))) {
+            if (startFROptions != null && !startFROptions.isEmpty()) {
                 return "true";
             }
         }

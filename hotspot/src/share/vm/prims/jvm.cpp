@@ -84,21 +84,6 @@
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "jvm_linux.h"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "jvm_solaris.h"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "jvm_windows.h"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "jvm_aix.h"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "jvm_bsd.h"
-#endif
 
 #include <errno.h>
 
@@ -695,7 +680,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
       // This can safepoint and redefine method, so need both new_obj and method
       // in a handle, for two different reasons.  new_obj can move, method can be
       // deleted if nothing is using it on the stack.
-      m->method_holder()->add_member_name(new_obj(), false);
+      m->method_holder()->add_member_name(new_obj());
     }
   }
 

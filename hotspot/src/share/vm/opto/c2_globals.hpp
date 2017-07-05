@@ -26,36 +26,10 @@
 #define SHARE_VM_OPTO_C2_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
-#ifdef TARGET_ARCH_x86
-# include "c2_globals_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c2_globals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c2_globals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c2_globals_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c2_globals_aarch64.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "c2_globals_linux.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "c2_globals_solaris.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "c2_globals_windows.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "c2_globals_aix.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "c2_globals_bsd.hpp"
-#endif
+#include "utilities/macros.hpp"
+
+#include CPU_HEADER(c2_globals)
+#include OS_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.

@@ -40,7 +40,10 @@
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.AbstractClass;
+import compiler.jvmci.common.testcases.AnotherSingleImplementer;
+import compiler.jvmci.common.testcases.AnotherSingleImplementerInterface;
 import compiler.jvmci.common.testcases.DoNotExtendClass;
 import compiler.jvmci.common.testcases.MultipleAbstractImplementer;
 import compiler.jvmci.common.testcases.MultipleImplementersInterface;
@@ -49,18 +52,16 @@ import compiler.jvmci.common.testcases.SingleImplementer;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
 import compiler.jvmci.common.testcases.SingleSubclass;
 import compiler.jvmci.common.testcases.SingleSubclassedClass;
-import compiler.jvmci.common.CTVMUtilities;
-import compiler.jvmci.common.testcases.AnotherSingleImplementer;
-import compiler.jvmci.common.testcases.AnotherSingleImplementerInterface;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 public class GetVtableIndexForInterfaceTest {
     private static final int INVALID_VTABLE_INDEX = -4; // see method.hpp: VtableIndexFlag

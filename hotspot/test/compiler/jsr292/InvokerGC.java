@@ -25,15 +25,21 @@
  * @test
  * @bug 8067247
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /
+ * @library /test/lib
+ *
  * @run main/bootclasspath/othervm -Xcomp -Xbatch
- *      -XX:CompileCommand=compileonly,InvokerGC::test
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      InvokerGC
+ *      -XX:CompileCommand=compileonly,compiler.jsr292.InvokerGC::test
+ *      compiler.jsr292.InvokerGC
  */
 
-import java.lang.invoke.*;
+package compiler.jsr292;
+
 import sun.hotspot.WhiteBox;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 public class InvokerGC {
     static final WhiteBox WB = WhiteBox.getWhiteBox();

@@ -21,24 +21,33 @@
  * questions.
  */
 
-import jdk.test.lib.Asserts;
-import java.util.EnumSet;
-import sun.hotspot.code.BlobType;
-
 /**
  * @test CodeHeapBeanPresenceTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build CodeHeapBeanPresenceTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache CodeHeapBeanPresenceTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache CodeHeapBeanPresenceTest
  * @summary verify CodeHeap bean presence
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib
+ *
+ * @build compiler.codecache.jmx.CodeHeapBeanPresenceTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.CodeHeapBeanPresenceTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.CodeHeapBeanPresenceTest
  */
+
+package compiler.codecache.jmx;
+
+import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
+import java.util.EnumSet;
+
 public class CodeHeapBeanPresenceTest {
 
     public static void main(String args[]) {

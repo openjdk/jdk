@@ -81,7 +81,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   mutable ClassLoaderData* _loader_data;
   const Klass* _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
-  TempNewSymbol* _parsed_name;
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
@@ -475,7 +474,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                   Symbol* name,
                   ClassLoaderData* loader_data,
                   Handle protection_domain,
-                  TempNewSymbol* parsed_name,
                   const Klass* host_klass,
                   GrowableArray<Handle>* cp_patches,
                   Publicity pub_level,
@@ -514,6 +512,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool is_internal() const { return INTERNAL == _pub_level; }
 
   static bool verify_unqualified_name(const char* name, unsigned int length, int type);
+
+#ifdef ASSERT
+  static bool is_internal_format(Symbol* class_name);
+#endif
+
 };
 
 #endif // SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
