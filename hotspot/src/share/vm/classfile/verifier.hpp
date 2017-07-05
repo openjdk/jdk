@@ -25,7 +25,10 @@
 // The verifier class
 class Verifier : AllStatic {
  public:
-  enum { STACKMAP_ATTRIBUTE_MAJOR_VERSION = 50 };
+  enum {
+    STACKMAP_ATTRIBUTE_MAJOR_VERSION    = 50,
+    INVOKEDYNAMIC_MAJOR_VERSION         = 51
+  };
   typedef enum { ThrowException, NoException } Mode;
 
   /**

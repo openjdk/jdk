@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,9 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     }
 
     public void uninstallUI(JComponent c) {
-        getFileChooser().removeAll();
+        c.removePropertyChangeListener(filterComboBoxModel);
+        approveButton.removeActionListener(getApproveSelectionAction());
+        filenameTextField.removeActionListener(getApproveSelectionAction());
         super.uninstallUI(c);
     }
 
@@ -515,6 +517,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     public void uninstallComponents(JFileChooser fc) {
         fc.removeAll();
+        bottomPanel = null;
         if (filterComboBoxModel != null) {
             fc.removePropertyChangeListener(filterComboBoxModel);
         }

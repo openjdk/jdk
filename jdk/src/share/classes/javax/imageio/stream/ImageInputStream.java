@@ -25,6 +25,7 @@
 
 package javax.imageio.stream;
 
+import java.io.Closeable;
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -42,7 +43,7 @@ import java.nio.ByteOrder;
  * @see MemoryCacheImageInputStream
  *
  */
-public interface ImageInputStream extends DataInput {
+public interface ImageInputStream extends DataInput, Closeable {
 
     /**
      * Sets the desired byte order for future reads of data values

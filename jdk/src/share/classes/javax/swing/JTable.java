@@ -1048,7 +1048,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns the horizontal and vertical space between cells.
-     * The default spacing is (1, 1), which provides room to draw the grid.
+     * The default spacing is look and feel dependent.
      *
      * @return  the horizontal and vertical spacing between cells
      * @see     #setIntercellSpacing
@@ -1155,7 +1155,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns true if the table draws horizontal lines between cells, false if it
-     * doesn't. The default is true.
+     * doesn't. The default value is look and feel dependent.
      *
      * @return  true if the table draws horizontal lines between cells, false if it
      *          doesn't
@@ -1167,7 +1167,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns true if the table draws vertical lines between cells, false if it
-     * doesn't. The default is true.
+     * doesn't. The default value is look and feel dependent.
      *
      * @return  true if the table draws vertical lines between cells, false if it
      *          doesn't

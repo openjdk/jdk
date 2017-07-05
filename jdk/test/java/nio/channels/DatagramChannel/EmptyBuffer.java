@@ -46,21 +46,25 @@ public class EmptyBuffer {
         Thread serverThread = new Thread(server);
         serverThread.start();
         DatagramChannel dc = DatagramChannel.open();
-        ByteBuffer bb = ByteBuffer.allocateDirect(12);
-        bb.order(ByteOrder.BIG_ENDIAN);
-        bb.putInt(1).putLong(1);
-        bb.flip();
-        InetAddress address = InetAddress.getLocalHost();
-        InetSocketAddress isa = new InetSocketAddress(address, server.port());
-        dc.connect(isa);
-        dc.write(bb);
-        bb.rewind();
-        dc.write(bb);
-        bb.rewind();
-        dc.write(bb);
-        Thread.sleep(2000);
-        serverThread.interrupt();
-        server.throwException();
+        try {
+            ByteBuffer bb = ByteBuffer.allocateDirect(12);
+            bb.order(ByteOrder.BIG_ENDIAN);
+            bb.putInt(1).putLong(1);
+            bb.flip();
+            InetAddress address = InetAddress.getLocalHost();
+            InetSocketAddress isa = new InetSocketAddress(address, server.port());
+            dc.connect(isa);
+            dc.write(bb);
+            bb.rewind();
+            dc.write(bb);
+            bb.rewind();
+            dc.write(bb);
+            Thread.sleep(2000);
+            serverThread.interrupt();
+            server.throwException();
+        } finally {
+            dc.close();
+        }
     }
 
     public static class Server implements Runnable {
@@ -118,6 +122,8 @@ public class EmptyBuffer {
                 }
             } catch (Exception ex) {
                 e = ex;
+            } finally {
+                try { dc.close(); } catch (IOException ignore) { }
             }
         }
     }

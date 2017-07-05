@@ -28,7 +28,6 @@
    @run main Test6635110
 */
 
-import com.sun.java.swing.plaf.gtk.GTKLookAndFeel;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -59,7 +58,12 @@ public class Test6635110 implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(new GTKLookAndFeel());
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        } catch (Exception e) {
+            System.out.println("GTKLookAndFeel cannot be set, skipping this test");
+            return;
+        }
         SwingUtilities.invokeAndWait(new Test6635110());
     }
 }

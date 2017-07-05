@@ -26,6 +26,8 @@
  * @bug 4997227
  * @summary Calling inheritedChannel() after FileDescriptor.in was closed
  *          caused an InternalError to be thrown.
+ * @build ClosedStreams
+ * @run main/othervm ClosedStreams
  */
 
 import java.io.FileDescriptor;

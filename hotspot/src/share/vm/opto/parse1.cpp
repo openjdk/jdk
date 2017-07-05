@@ -88,15 +88,16 @@ Node *Parse::fetch_interpreter_state(int index,
                                      Node *local_addrs_base) {
   Node *mem = memory(Compile::AliasIdxRaw);
   Node *adr = basic_plus_adr( local_addrs_base, local_addrs, -index*wordSize );
+  Node *ctl = control();
 
   // Very similar to LoadNode::make, except we handle un-aligned longs and
   // doubles on Sparc.  Intel can handle them just fine directly.
   Node *l;
   switch( bt ) {                // Signature is flattened
-  case T_INT:     l = new (C, 3) LoadINode( 0, mem, adr, TypeRawPtr::BOTTOM ); break;
-  case T_FLOAT:   l = new (C, 3) LoadFNode( 0, mem, adr, TypeRawPtr::BOTTOM ); break;
-  case T_ADDRESS: l = new (C, 3) LoadPNode( 0, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM  ); break;
-  case T_OBJECT:  l = new (C, 3) LoadPNode( 0, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM ); break;
+  case T_INT:     l = new (C, 3) LoadINode( ctl, mem, adr, TypeRawPtr::BOTTOM ); break;
+  case T_FLOAT:   l = new (C, 3) LoadFNode( ctl, mem, adr, TypeRawPtr::BOTTOM ); break;
+  case T_ADDRESS: l = new (C, 3) LoadPNode( ctl, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM  ); break;
+  case T_OBJECT:  l = new (C, 3) LoadPNode( ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM ); break;
   case T_LONG:
   case T_DOUBLE: {
     // Since arguments are in reverse order, the argument address 'adr'
@@ -104,12 +105,12 @@ Node *Parse::fetch_interpreter_state(int index,
     adr = basic_plus_adr( local_addrs_base, local_addrs, -(index+1)*wordSize );
     if( Matcher::misaligned_doubles_ok ) {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C, 3) LoadDNode( 0, mem, adr, TypeRawPtr::BOTTOM )
-        : (Node*)new (C, 3) LoadLNode( 0, mem, adr, TypeRawPtr::BOTTOM );
+        ? (Node*)new (C, 3) LoadDNode( ctl, mem, adr, TypeRawPtr::BOTTOM )
+        : (Node*)new (C, 3) LoadLNode( ctl, mem, adr, TypeRawPtr::BOTTOM );
     } else {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C, 3) LoadD_unalignedNode( 0, mem, adr, TypeRawPtr::BOTTOM )
-        : (Node*)new (C, 3) LoadL_unalignedNode( 0, mem, adr, TypeRawPtr::BOTTOM );
+        ? (Node*)new (C, 3) LoadD_unalignedNode( ctl, mem, adr, TypeRawPtr::BOTTOM )
+        : (Node*)new (C, 3) LoadL_unalignedNode( ctl, mem, adr, TypeRawPtr::BOTTOM );
     }
     break;
   }

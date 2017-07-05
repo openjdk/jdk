@@ -111,6 +111,35 @@ char* ReservedSpace::reserve_and_align(const size_t reserve_size,
   return result;
 }
 
+// Helper method.
+static bool failed_to_reserve_as_requested(char* base, char* requested_address,
+                                           const size_t size, bool special)
+{
+  if (base == requested_address || requested_address == NULL)
+    return false; // did not fail
+
+  if (base != NULL) {
+    // Different reserve address may be acceptable in other cases
+    // but for compressed oops heap should be at requested address.
+    assert(UseCompressedOops, "currently requested address used only for compressed oops");
+    if (PrintCompressedOopsMode) {
+      tty->cr();
+      tty->print_cr("Reserved memory at not requested address: " PTR_FORMAT " vs " PTR_FORMAT, base, requested_address);
+    }
+    // OS ignored requested address. Try different address.
+    if (special) {
+      if (!os::release_memory_special(base, size)) {
+        fatal("os::release_memory_special failed");
+      }
+    } else {
+      if (!os::release_memory(base, size)) {
+        fatal("os::release_memory failed");
+      }
+    }
+  }
+  return true;
+}
+
 ReservedSpace::ReservedSpace(const size_t prefix_size,
                              const size_t prefix_align,
                              const size_t suffix_size,
@@ -128,6 +157,10 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
     "suffix_size not divisible by suffix_align");
   assert((suffix_align & prefix_align - 1) == 0,
     "suffix_align not divisible by prefix_align");
+
+  // Assert that if noaccess_prefix is used, it is the same as prefix_align.
+  assert(noaccess_prefix == 0 ||
+         noaccess_prefix == prefix_align, "noaccess prefix wrong");
 
   // Add in noaccess_prefix to prefix_size;
   const size_t adjusted_prefix_size = prefix_size + noaccess_prefix;
@@ -150,15 +183,16 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
   _noaccess_prefix = 0;
   _executable = false;
 
-  // Assert that if noaccess_prefix is used, it is the same as prefix_align.
-  assert(noaccess_prefix == 0 ||
-         noaccess_prefix == prefix_align, "noaccess prefix wrong");
-
   // Optimistically try to reserve the exact size needed.
   char* addr;
   if (requested_address != 0) {
-    addr = os::attempt_reserve_memory_at(size,
-                                         requested_address-noaccess_prefix);
+    requested_address -= noaccess_prefix; // adjust address
+    assert(requested_address != NULL, "huge noaccess prefix?");
+    addr = os::attempt_reserve_memory_at(size, requested_address);
+    if (failed_to_reserve_as_requested(addr, requested_address, size, false)) {
+      // OS ignored requested address. Try different address.
+      addr = NULL;
+    }
   } else {
     addr = os::reserve_memory(size, NULL, prefix_align);
   }
@@ -222,11 +256,20 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   bool special = large && !os::can_commit_large_page_memory();
   char* base = NULL;
 
+  if (requested_address != 0) {
+    requested_address -= noaccess_prefix; // adjust requested address
+    assert(requested_address != NULL, "huge noaccess prefix?");
+  }
+
   if (special) {
 
     base = os::reserve_memory_special(size, requested_address, executable);
 
     if (base != NULL) {
+      if (failed_to_reserve_as_requested(base, requested_address, size, true)) {
+        // OS ignored requested address. Try different address.
+        return;
+      }
       // Check alignment constraints
       if (alignment > 0) {
         assert((uintptr_t) base % alignment == 0,
@@ -235,6 +278,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       _special = true;
     } else {
       // failed; try to reserve regular memory below
+      if (UseLargePages && (!FLAG_IS_DEFAULT(UseLargePages) ||
+                            !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {
+        if (PrintCompressedOopsMode) {
+          tty->cr();
+          tty->print_cr("Reserve regular memory without large pages.");
+        }
+      }
     }
   }
 
@@ -248,8 +298,11 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size,
-                                           requested_address-noaccess_prefix);
+      base = os::attempt_reserve_memory_at(size, requested_address);
+      if (failed_to_reserve_as_requested(base, requested_address, size, false)) {
+        // OS ignored requested address. Try different address.
+        base = NULL;
+      }
     } else {
       base = os::reserve_memory(size, NULL, alignment);
     }
@@ -365,7 +418,12 @@ void ReservedSpace::release() {
 }
 
 void ReservedSpace::protect_noaccess_prefix(const size_t size) {
-  // If there is noaccess prefix, return.
+  assert( (_noaccess_prefix != 0) == (UseCompressedOops && _base != NULL &&
+                                      (size_t(_base + _size) > OopEncodingHeapMax) &&
+                                      Universe::narrow_oop_use_implicit_null_checks()),
+         "noaccess_prefix should be used only with non zero based compressed oops");
+
+  // If there is no noaccess prefix, return.
   if (_noaccess_prefix == 0) return;
 
   assert(_noaccess_prefix >= (size_t)os::vm_page_size(),
@@ -376,6 +434,10 @@ void ReservedSpace::protect_noaccess_prefix(const size_t size) {
   if (!os::protect_memory(_base, _noaccess_prefix, os::MEM_PROT_NONE,
                           _special)) {
     fatal("cannot protect protection page");
+  }
+  if (PrintCompressedOopsMode) {
+    tty->cr();
+    tty->print_cr("Protected page at the reserved heap base: " PTR_FORMAT " / " INTX_FORMAT " bytes", _base, _noaccess_prefix);
   }
 
   _base += _noaccess_prefix;

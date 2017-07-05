@@ -179,9 +179,14 @@ char* GenCollectedHeap::allocate(size_t alignment,
     }
     n_covered_regions += _gen_specs[i]->n_covered_regions();
   }
-  assert(total_reserved % pageSize == 0, "Gen size");
+  assert(total_reserved % pageSize == 0,
+         err_msg("Gen size; total_reserved=" SIZE_FORMAT ", pageSize="
+                 SIZE_FORMAT, total_reserved, pageSize));
   total_reserved += perm_gen_spec->max_size();
-  assert(total_reserved % pageSize == 0, "Perm Gen size");
+  assert(total_reserved % pageSize == 0,
+         err_msg("Perm size; total_reserved=" SIZE_FORMAT ", pageSize="
+                 SIZE_FORMAT ", perm gen max=" SIZE_FORMAT, total_reserved,
+                 pageSize, perm_gen_spec->max_size()));
 
   if (total_reserved < perm_gen_spec->max_size()) {
     vm_exit_during_initialization(overflow_msg);

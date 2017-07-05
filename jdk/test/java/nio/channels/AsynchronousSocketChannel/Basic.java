@@ -776,6 +776,7 @@ public class Basic {
             throw new RuntimeException("RuntimeException expected after timeout.");
 
         ch.close();
+        server.close();
     }
 
     // returns ByteBuffer with random bytes

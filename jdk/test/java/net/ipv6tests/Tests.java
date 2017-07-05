@@ -248,7 +248,8 @@ public class Tests {
                 }
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = (InetAddress) addrs.nextElement();
-                    if (filter.isInstance (addr) && !addr.isLoopbackAddress()) {
+                    if (filter.isInstance (addr) && !addr.isLoopbackAddress()
+                            && !addr.isAnyLocalAddress()) {
                         if (Arrays.equals (addr.getAddress(), fe80_loopback)) {
                             continue;
                         }

@@ -230,7 +230,8 @@ endif
 
 # Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
 ifeq ($(ARCH_DATA_MODEL), 32)
-  # Try looking in MSVCDIR or MSVCDir area first (set by vcvars32.bat)
+  # Try looking in MSVCDIR or MSVCDir area first 
+  # (set by vcvars32.bat for VC .NET, not defined in the VC 2008/2010)
   ifdef MSVCDIR
     xMSVCDIR  :="$(subst \,/,$(MSVCDIR))"
     _msvc_dir :=$(call FullPath,$(xMSVCDIR))
@@ -238,11 +239,6 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     ifdef MSVCDir
       xMSVCDIR  :="$(subst \,/,$(MSVCDir))"
       _msvc_dir :=$(call FullPath,$(xMSVCDIR))
-    else
-      ifneq ($(_program_files),)
-        xMSVCDIR  :="$(_program_files)/Microsoft Visual Studio .NET 2003/Vc7"
-        _msvc_dir :=$(call FullPath,$(xMSVCDIR))
-      endif
     endif
   endif
   # If we still don't have it, look for VSnnCOMNTOOLS (newest first),

@@ -47,5 +47,6 @@ public class Write {
         out.close();
         fc.close();
         fos.close();
+        testFile.delete();
     }
 }

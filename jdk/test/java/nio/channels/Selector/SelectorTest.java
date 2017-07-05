@@ -57,13 +57,13 @@ public class SelectorTest {
      */
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            InetSocketAddress isa
-                = new InetSocketAddress(InetAddress.getLocalHost(), TEST_PORT);
-            Server server = new Server(isa);
+            Server server = new Server(0);
             server.start();
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) { }
+            InetSocketAddress isa
+                = new InetSocketAddress(InetAddress.getLocalHost(), server.port());
             Client client = new Client(isa);
             client.start();
             if ((server.finish(FINISH_TIME) & client.finish(FINISH_TIME)) == 0)
@@ -74,9 +74,7 @@ public class SelectorTest {
 
             if (args.length > 1)
                 TEST_PORT = Integer.parseInt(args[1]);
-            InetSocketAddress isa
-                = new InetSocketAddress(InetAddress.getLocalHost(), TEST_PORT);
-            Server server = new Server(isa);
+            Server server = new Server(TEST_PORT);
             server.start();
             if (server.finish(FINISH_TIME) == 0)
                 throw new Exception("Failure");
@@ -136,18 +134,22 @@ public class SelectorTest {
     }
 
     static class Server extends TestThread {
+        private final ServerSocketChannel ssc;
         private List socketList = new ArrayList();
         private ServerSocket ss;
         private int connectionsAccepted = 0;
         private Selector pollSelector;
         private Selector acceptSelector;
-        private InetSocketAddress isa;
         private Set pkeys;
         private Set pskeys;
 
-        Server(InetSocketAddress isa) {
+        Server(int port) throws IOException {
             super("Server", SelectorTest.log);
-            this.isa = isa;
+            this.ssc = ServerSocketChannel.open().bind(new InetSocketAddress(port));
+        }
+
+        int port() {
+            return ssc.socket().getLocalPort();
         }
 
         public void go() throws Exception {
@@ -162,11 +164,7 @@ public class SelectorTest {
 
             requestThread.start();
 
-            ServerSocketChannel ssc = ServerSocketChannel.open();
             ssc.configureBlocking(false);
-            ssc.socket().setReuseAddress(true);
-            ssc.socket().bind(isa);
-
             SelectionKey acceptKey = ssc.register(acceptSelector,
                                                   SelectionKey.OP_ACCEPT);
             while(connectionsAccepted < SelectorTest.NUM_CLIENTS) {

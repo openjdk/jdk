@@ -53,12 +53,16 @@ public class Lock {
         LockSlaveMirror slave = startLockSlave();
         try {
 
-             // create temporary file
+            // create temporary file
             File blah = File.createTempFile("blah", null);
             blah.deleteOnExit();
 
+            // run tests
             testLockProtocol(blah, slave);
             testAsyncClose(blah, slave);
+
+            // eagerly clean-up
+            blah.delete();
 
         } finally {
             slave.shutdown();
@@ -150,7 +154,12 @@ public class Lock {
         String sep = FileSystems.getDefault().getSeparator();
 
         String command = System.getProperty("java.home") +
-            sep + "bin" + sep + "java Lock -lockslave " + port;
+            sep + "bin" + sep + "java";
+        String testClasses = System.getProperty("test.classes");
+        if (testClasses != null)
+            command += " -cp " + testClasses;
+        command += " Lock -lockslave " + port;
+
         Process p = Runtime.getRuntime().exec(command);
         IOHandler.handle(p.getInputStream());
         IOHandler.handle(p.getErrorStream());

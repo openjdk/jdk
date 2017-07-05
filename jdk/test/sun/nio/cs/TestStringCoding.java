@@ -26,7 +26,7 @@
 /* @test
    @bug 6636323 6636319
    @summary Test if StringCoding and NIO result have the same de/encoding result
- * @run main/timeout=2000 TestStringCoding
+ * @run main/othervm/timeout=2000 TestStringCoding
  */
 
 import java.util.*;

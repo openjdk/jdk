@@ -26,7 +26,16 @@ void ParCompactionManager::push_objarray(oop obj, size_t index)
 {
   ObjArrayTask task(obj, index);
   assert(task.is_valid(), "bad ObjArrayTask");
-  if (!_objarray_queue.push(task)) {
-    _objarray_overflow_stack->push(task);
-  }
+  _objarray_stack.push(task);
+}
+
+void ParCompactionManager::push_region(size_t index)
+{
+#ifdef ASSERT
+  const ParallelCompactData& sd = PSParallelCompact::summary_data();
+  ParallelCompactData::RegionData* const region_ptr = sd.region(index);
+  assert(region_ptr->claimed(), "must be claimed");
+  assert(region_ptr->_pushed++ == 0, "should only be pushed once");
+#endif
+  region_stack()->push(index);
 }

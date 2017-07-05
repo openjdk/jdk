@@ -31,11 +31,7 @@ import java.io.IOException;
 import java.net.*;
 
 public class SelectAndCancel {
-    static ServerSocketChannel ssc;
-    static Selector selector;
     static SelectionKey sk;
-    static InetSocketAddress isa;
-    public static int TEST_PORT = 40170;
 
     /*
      * CancelledKeyException is the failure symptom of 4729342
@@ -43,17 +39,17 @@ public class SelectAndCancel {
      * seen immediately when the bug is present.
      */
     public static void main(String[] args) throws Exception {
-        InetAddress lh = InetAddress.getLocalHost();
-        isa = new InetSocketAddress(lh, TEST_PORT);
-        selector = Selector.open();
-        ssc = ServerSocketChannel.open();
+        final Selector selector = Selector.open();
+        final ServerSocketChannel ssc =
+            ServerSocketChannel.open().bind(new InetSocketAddress(0));
+        final InetSocketAddress isa =
+            new InetSocketAddress(InetAddress.getLocalHost(), ssc.socket().getLocalPort());
 
         // Create and start a selector in a separate thread.
         new Thread(new Runnable() {
                 public void run() {
                     try {
                         ssc.configureBlocking(false);
-                        ssc.socket().bind(isa);
                         sk = ssc.register(selector, SelectionKey.OP_ACCEPT);
                         selector.select();
                     } catch (IOException e) {
