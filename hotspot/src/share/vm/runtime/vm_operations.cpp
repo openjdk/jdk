@@ -59,7 +59,7 @@ void VM_Operation::evaluate() {
   outputStream* debugstream;
   bool enabled = log_is_enabled(Debug, vmoperation);
   if (enabled) {
-    debugstream = LogHandle(vmoperation)::debug_stream();
+    debugstream = Log(vmoperation)::debug_stream();
     debugstream->print("begin ");
     print_on_error(debugstream);
     debugstream->cr();
@@ -102,6 +102,14 @@ void VM_ThreadStop::doit() {
   if (target != NULL) {
     // the thread has run and is not already in the process of exiting
     target->send_thread_stop(throwable());
+  }
+}
+
+void VM_ClearICs::doit() {
+  if (_preserve_static_stubs) {
+    CodeCache::cleanup_inline_caches();
+  } else {
+    CodeCache::clear_inline_caches();
   }
 }
 

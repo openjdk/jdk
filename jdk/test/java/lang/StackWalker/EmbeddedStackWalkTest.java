@@ -75,7 +75,7 @@ public class EmbeddedStackWalkTest {
             if (loops == 0) {
                 String caller = walker.walk(s ->
                     s.map(StackFrame::getClassName)
-                     .filter(cn -> !cn.startsWith("sun.reflect.") && !cn.startsWith("java.lang.invoke"))
+                     .filter(cn -> !cn.startsWith("jdk.internal.reflect.") && !cn.startsWith("java.lang.invoke"))
                      .skip(2).findFirst()
                 ).get();
                 assertEquals(caller, C1.class.getName());
@@ -122,7 +122,7 @@ public class EmbeddedStackWalkTest {
         static void call(StackWalker walker) {
             String caller = walker.walk(s ->
                 s.map(StackFrame::getClassName)
-                 .filter(cn -> !cn.startsWith("sun.reflect.") && !cn.startsWith("java.lang.invoke"))
+                 .filter(cn -> !cn.startsWith("jdk.internal.reflect.") && !cn.startsWith("java.lang.invoke"))
                  .skip(2).findFirst()
             ).get();
             assertEquals(caller, C2.class.getName());

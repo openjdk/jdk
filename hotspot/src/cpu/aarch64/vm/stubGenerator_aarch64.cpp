@@ -1711,20 +1711,42 @@ class StubGenerator: public StubCodeGenerator {
   // to a long, int, short, or byte copy loop.
   //
   address generate_unsafe_copy(const char *name,
-                               address byte_copy_entry) {
-#ifdef PRODUCT
-    return StubRoutines::_jbyte_arraycopy;
-#else
+                               address byte_copy_entry,
+                               address short_copy_entry,
+                               address int_copy_entry,
+                               address long_copy_entry) {
+    Label L_long_aligned, L_int_aligned, L_short_aligned;
+    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+
     // bump this on entry, not on exit:
-    __ lea(rscratch2, ExternalAddress((address)&SharedRuntime::_unsafe_array_copy_ctr));
-    __ incrementw(Address(rscratch2));
+    inc_counter_np(SharedRuntime::_unsafe_array_copy_ctr);
+
+    __ orr(rscratch1, s, d);
+    __ orr(rscratch1, rscratch1, count);
+
+    __ andr(rscratch1, rscratch1, BytesPerLong-1);
+    __ cbz(rscratch1, L_long_aligned);
+    __ andr(rscratch1, rscratch1, BytesPerInt-1);
+    __ cbz(rscratch1, L_int_aligned);
+    __ tbz(rscratch1, 0, L_short_aligned);
     __ b(RuntimeAddress(byte_copy_entry));
+
+    __ BIND(L_short_aligned);
+    __ lsr(count, count, LogBytesPerShort);  // size => short_count
+    __ b(RuntimeAddress(short_copy_entry));
+    __ BIND(L_int_aligned);
+    __ lsr(count, count, LogBytesPerInt);    // size => int_count
+    __ b(RuntimeAddress(int_copy_entry));
+    __ BIND(L_long_aligned);
+    __ lsr(count, count, LogBytesPerLong);   // size => long_count
+    __ b(RuntimeAddress(long_copy_entry));
+
     return start;
-#endif
   }
 
   //
@@ -2090,7 +2112,10 @@ class StubGenerator: public StubCodeGenerator {
                                                                         /*dest_uninitialized*/true);
 
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
-                                                              entry_jbyte_arraycopy);
+                                                              entry_jbyte_arraycopy,
+                                                              entry_jshort_arraycopy,
+                                                              entry_jint_arraycopy,
+                                                              entry_jlong_arraycopy);
 
     StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy",
                                                                entry_jbyte_arraycopy,

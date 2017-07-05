@@ -82,6 +82,9 @@ class GroupEntry extends BaseEntry {
     //The length of the longest match of a suffix type
     int longestSuffixMatch = 0;
 
+    //Indicate whether a system entry has been searched
+    boolean systemEntrySearched = false;
+
     /**
      * PreferType represents possible values of the prefer property
      */
@@ -156,6 +159,7 @@ class GroupEntry extends BaseEntry {
         longestRewriteMatch = 0;
         suffixMatch = null;
         longestSuffixMatch = 0;
+        systemEntrySearched = false;
     }
     /**
      * Constructs a group entry.
@@ -212,6 +216,7 @@ class GroupEntry extends BaseEntry {
      * @return An URI string if a mapping is found, or null otherwise.
      */
     public String matchSystem(String systemId) {
+        systemEntrySearched = true;
         String match = null;
         for (BaseEntry entry : entries) {
             switch (entry.type) {
@@ -244,8 +249,10 @@ class GroupEntry extends BaseEntry {
                         //use it if there is a match of the system type
                         return match;
                     } else if (grpEntry.longestRewriteMatch > longestRewriteMatch) {
+                        longestRewriteMatch = grpEntry.longestRewriteMatch;
                         rewriteMatch = match;
                     } else if (grpEntry.longestSuffixMatch > longestSuffixMatch) {
+                        longestSuffixMatch = grpEntry.longestSuffixMatch;
                         suffixMatch = match;
                     }
                     break;
@@ -277,11 +284,13 @@ class GroupEntry extends BaseEntry {
      * @return An URI string if a mapping is found, or null otherwise.
      */
     public String matchPublic(String publicId) {
-        //as the specification required
-        if (!isPreferPublic) {
+        /*
+           When both public and system identifiers are specified, and prefer is
+        not public (that is, system), only system entry will be used.
+        */
+        if (!isPreferPublic && systemEntrySearched) {
             return null;
         }
-
         //match public entries
         String match = null;
         for (BaseEntry entry : entries) {

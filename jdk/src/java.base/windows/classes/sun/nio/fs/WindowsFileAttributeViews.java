@@ -79,7 +79,7 @@ class WindowsFileAttributeViews {
             long handle = -1L;
             try {
                 int flags = FILE_FLAG_BACKUP_SEMANTICS;
-                if (!followLinks && file.getFileSystem().supportsLinks())
+                if (!followLinks)
                     flags |= FILE_FLAG_OPEN_REPARSE_POINT;
 
                 handle = CreateFile(file.getPathForWin32Calls(),

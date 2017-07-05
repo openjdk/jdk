@@ -24,7 +24,7 @@
  */
 package java.lang;
 
-import sun.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitive;
 
 import java.util.*;
 import java.util.function.Consumer;

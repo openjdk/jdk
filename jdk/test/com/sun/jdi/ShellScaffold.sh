@@ -131,6 +131,9 @@ killcmd=kill
 
 # This can be increased if timing seems to be an issue.
 sleep_seconds=1
+if [ -n "$TIMEOUT_FACTOR" ] ; then
+  sleep_seconds=$(echo $TIMEOUT_FACTOR $sleep_seconds | awk '{printf "%d\n", int($1 * $2)}')
+fi
 
 echo "ShellScaffold.sh: Version" >& 2
 topPid=$$

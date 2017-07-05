@@ -122,7 +122,7 @@ public abstract class JdpTestCase {
      */
     private void jdpPacketReceived(Map<String, String> payload) throws Exception {
         final String instanceName = payload.get("INSTANCE_NAME");
-        if (instanceName.equals(connection.instanceName)) {
+        if (instanceName != null && instanceName.equals(connection.instanceName)) {
             packetFromThisVMReceived(payload);
         } else {
             packetFromOtherVMReceived(payload);

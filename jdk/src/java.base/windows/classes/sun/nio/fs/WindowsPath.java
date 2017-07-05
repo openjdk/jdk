@@ -780,7 +780,7 @@ class WindowsPath implements Path {
         throws WindowsException
     {
         int flags = FILE_FLAG_BACKUP_SEMANTICS;
-        if (!followLinks && getFileSystem().supportsLinks())
+        if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
         return CreateFile(getPathForWin32Calls(),
                           FILE_READ_ATTRIBUTES,

@@ -30,6 +30,7 @@ import java.nio.file.DirectoryIteratorException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.io.IOException;
 
@@ -44,115 +45,47 @@ import java.io.IOException;
  */
 final class JrtDirectoryStream implements DirectoryStream<Path> {
 
-    private final AbstractJrtFileSystem jrtfs;
-    private final AbstractJrtPath dir;
+    private final JrtPath dir;
     private final DirectoryStream.Filter<? super Path> filter;
     private volatile boolean isClosed;
     private volatile Iterator<Path> itr;
 
-    JrtDirectoryStream(AbstractJrtPath jrtPath,
+    JrtDirectoryStream(JrtPath dir,
             DirectoryStream.Filter<? super java.nio.file.Path> filter)
-            throws IOException {
-        this.jrtfs = jrtPath.getFileSystem();
-        this.dir = jrtPath;
-        // sanity check
-        if (!jrtfs.isDirectory(dir, true)) {
-            throw new NotDirectoryException(jrtPath.toString());
+            throws IOException
+    {
+        this.dir = dir;
+        if (!dir.jrtfs.isDirectory(dir, true)) {  // sanity check
+            throw new NotDirectoryException(dir.toString());
         }
-
         this.filter = filter;
     }
 
     @Override
     public synchronized Iterator<Path> iterator() {
-        if (isClosed) {
+        if (isClosed)
             throw new ClosedDirectoryStreamException();
-        }
-        if (itr != null) {
+        if (itr != null)
             throw new IllegalStateException("Iterator has already been returned");
-        }
-
         try {
-            itr = jrtfs.iteratorOf(dir);
+            itr = dir.jrtfs.iteratorOf(dir, filter);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
         return new Iterator<Path>() {
-            /*
-             * next Path value to return from this iterator.
-             * null value means hasNext() not called yet
-             * or last hasNext() returned false or resulted
-             * in exception. If last hasNext() returned true,
-             * then this field has non-null value.
-             */
             private Path next;
-
-            // get-and-clear and set-next by these methods
-            private Path getAndClearNext() {
-                assert next != null;
-                Path result = this.next;
-                this.next = null;
-                return result;
-            }
-
-            private void setNext(Path path) {
-                assert path != null;
-                this.next = path;
-            }
-
-            // if hasNext() returns true, 'next' field has non-null Path
             @Override
             public synchronized boolean hasNext() {
-                if (next != null) {
-                    return true;
-                }
-
-                if (isClosed) {
+                if (isClosed)
                     return false;
-                }
-
-                if (filter == null) {
-                    if (itr.hasNext()) {
-                        setNext(itr.next());
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    while (itr.hasNext()) {
-                        Path tmpPath = itr.next();
-                        try {
-                            if (filter.accept(tmpPath)) {
-                                setNext(tmpPath);
-                                return true;
-                            }
-                        } catch (IOException ioe) {
-                            throw new DirectoryIteratorException(ioe);
-                        }
-                    }
-
-                    return false;
-                }
+                return itr.hasNext();
             }
 
             @Override
             public synchronized Path next() {
-                if (next != null) {
-                    return getAndClearNext();
-                }
-
-                if (isClosed) {
+                if (isClosed)
                     throw new NoSuchElementException();
-                }
-
-                if (next == null && itr.hasNext()) {
-                    // missing hasNext() between next() calls.
-                    if (hasNext()) {
-                        return getAndClearNext();
-                    }
-                }
-
-                throw new NoSuchElementException();
+                return itr.next();
             }
 
             @Override

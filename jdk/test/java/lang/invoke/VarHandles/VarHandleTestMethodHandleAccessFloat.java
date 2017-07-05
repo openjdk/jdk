@@ -121,30 +121,30 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestMethodHandleAccessFloat recv, Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact(recv, 1.0f);
-            float x = (float) hs.get(TestAccessMode.get).invokeExact(recv);
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, 1.0f, "set float value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact(recv, 2.0f);
-            float x = (float) hs.get(TestAccessMode.getVolatile).invokeExact(recv);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, 2.0f);
+            float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
             assertEquals(x, 2.0f, "setVolatile float value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact(recv, 1.0f);
-            float x = (float) hs.get(TestAccessMode.getAcquire).invokeExact(recv);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, 1.0f);
+            float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
             assertEquals(x, 1.0f, "setRelease float value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact(recv, 2.0f);
-            float x = (float) hs.get(TestAccessMode.getOpaque).invokeExact(recv);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, 2.0f);
+            float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
             assertEquals(x, 2.0f, "setOpaque float value");
         }
 
@@ -152,25 +152,25 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessFloat recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(recv, 1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(recv, 1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(recv, 1.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(recv, 1.0f);
             });
@@ -181,30 +181,30 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
     static void testStaticField(Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact(1.0f);
-            float x = (float) hs.get(TestAccessMode.get).invokeExact();
+            hs.get(TestAccessMode.SET).invokeExact(1.0f);
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, 1.0f, "set float value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact(2.0f);
-            float x = (float) hs.get(TestAccessMode.getVolatile).invokeExact();
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(2.0f);
+            float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
             assertEquals(x, 2.0f, "setVolatile float value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact(1.0f);
-            float x = (float) hs.get(TestAccessMode.getAcquire).invokeExact();
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(1.0f);
+            float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
             assertEquals(x, 1.0f, "setRelease float value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact(2.0f);
-            float x = (float) hs.get(TestAccessMode.getOpaque).invokeExact();
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(2.0f);
+            float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
             assertEquals(x, 2.0f, "setOpaque float value");
         }
 
@@ -212,25 +212,25 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(1.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(1.0f);
             });
@@ -244,30 +244,30 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                hs.get(TestAccessMode.set).invokeExact(array, i, 1.0f);
-                float x = (float) hs.get(TestAccessMode.get).invokeExact(array, i);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, 1.0f, "get float value");
             }
 
 
             // Volatile
             {
-                hs.get(TestAccessMode.setVolatile).invokeExact(array, i, 2.0f);
-                float x = (float) hs.get(TestAccessMode.getVolatile).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, 2.0f);
+                float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
                 assertEquals(x, 2.0f, "setVolatile float value");
             }
 
             // Lazy
             {
-                hs.get(TestAccessMode.setRelease).invokeExact(array, i, 1.0f);
-                float x = (float) hs.get(TestAccessMode.getAcquire).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, 1.0f);
+                float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
                 assertEquals(x, 1.0f, "setRelease float value");
             }
 
             // Opaque
             {
-                hs.get(TestAccessMode.setOpaque).invokeExact(array, i, 2.0f);
-                float x = (float) hs.get(TestAccessMode.getOpaque).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, 2.0f);
+                float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
                 assertEquals(x, 2.0f, "setOpaque float value");
             }
 
@@ -279,25 +279,25 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         float[] array = new float[10];
 
         final int i = 0;
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(array, i, 1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(array, i, 1.0f, 2.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 float r = (float) hs.get(am).invokeExact(array, i, 1.0f);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 float o = (float) hs.get(am).invokeExact(array, i, 1.0f);
             });
@@ -310,13 +310,13 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
                 checkIOOBE(am, () -> {
                     float x = (float) hs.get(am).invokeExact(array, ci);
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
                 checkIOOBE(am, () -> {
                     hs.get(am).invokeExact(array, ci, 1.0f);
                 });

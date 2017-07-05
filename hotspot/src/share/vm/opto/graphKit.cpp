@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -1190,11 +1191,6 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   bool speculative) {
   assert(!assert_null || null_control == NULL, "not both at once");
   if (stopped())  return top();
-  if (!GenerateCompilerNullChecks && !assert_null && null_control == NULL) {
-    // For some performance testing, we may wish to suppress null checking.
-    value = cast_not_null(value);   // Make it appear to be non-null (4962416).
-    return value;
-  }
   NOT_PRODUCT(explicit_null_checks_inserted++);
 
   // Construct NULL check
@@ -1686,6 +1682,9 @@ Node* GraphKit::load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAr
   const Type* elemtype = arytype->elem();
   BasicType elembt = elemtype->array_element_basic_type();
   Node* adr = array_element_address(ary, idx, elembt, arytype->size());
+  if (elembt == T_NARROWOOP) {
+    elembt = T_OBJECT; // To satisfy switch in LoadNode::make()
+  }
   Node* ld = make_load(ctl, adr, elemtype, elembt, arytype, MemNode::unordered);
   return ld;
 }
@@ -3770,9 +3769,7 @@ void GraphKit::add_predicate(int nargs) {
     add_predicate_impl(Deoptimization::Reason_predicate, nargs);
   }
   // loop's limit check predicate should be near the loop.
-  if (LoopLimitCheck) {
-    add_predicate_impl(Deoptimization::Reason_loop_limit_check, nargs);
-  }
+  add_predicate_impl(Deoptimization::Reason_loop_limit_check, nargs);
 }
 
 //----------------------------- store barriers ----------------------------

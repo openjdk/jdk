@@ -34,6 +34,8 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
+class ConcurrentGCTimer;
+class G1OldTracer;
 typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
@@ -139,10 +141,7 @@ class G1CMBitMap : public G1CMBitMapRO {
   inline void clear(HeapWord* addr);
   inline bool parMark(HeapWord* addr);
 
-  void clearRange(MemRegion mr);
-
-  // Clear the whole mark bitmap.
-  void clearAll();
+  void clear_range(MemRegion mr);
 };
 
 // Represents a marking stack used by ConcurrentMarking in the G1 collector.
@@ -352,17 +351,9 @@ protected:
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
 
-  // There would be a race between ConcurrentMarkThread and VMThread(ConcurrentMark::abort())
-  // to call ConcurrentGCTimer::register_gc_concurrent_end().
-  // And this variable is used to keep track of concurrent phase.
-  volatile uint           _concurrent_phase_status;
-  // Concurrent phase is not yet started.
-  static const uint       ConcPhaseNotStarted = 0;
-  // Concurrent phase is started.
-  static const uint       ConcPhaseStarted = 1;
-  // Caller thread of ConcurrentGCTimer::register_gc_concurrent_end() is ending concurrent phase.
-  // So other thread should wait until the status to be changed to ConcPhaseNotStarted.
-  static const uint       ConcPhaseStopping = 2;
+  ConcurrentGCTimer*      _gc_timer_cm;
+
+  G1OldTracer*            _gc_tracer_cm;
 
   // All of these times are in ms
   NumberSeq _init_times;
@@ -497,6 +488,9 @@ protected:
   // end_timer, true to end gc timer after ending concurrent phase.
   void register_concurrent_phase_end_common(bool end_timer);
 
+  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // true, periodically insert checks to see if this method should exit prematurely.
+  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
 public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
@@ -530,10 +524,8 @@ public:
     _concurrent_marking_in_progress = false;
   }
 
-  void register_concurrent_phase_start(const char* title);
-  void register_concurrent_phase_end();
-  // Ends both concurrent phase and timer.
-  void register_concurrent_gc_end_and_stop_timer();
+  void concurrent_cycle_start();
+  void concurrent_cycle_end();
 
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;
@@ -585,8 +577,13 @@ public:
                        uint worker_id,
                        HeapRegion* hr = NULL);
 
-  // Clear the next marking bitmap (will be called concurrently).
-  void clearNextBitmap();
+  // Prepare internal data structures for the next mark cycle. This includes clearing
+  // the next mark bitmap and some internal data structures. This method is intended
+  // to be called concurrently to the mutator. It will yield to safepoint requests.
+  void cleanup_for_next_mark();
+
+  // Clear the previous marking bitmap during safepoint.
+  void clear_prev_bitmap(WorkGang* workers);
 
   // Return whether the next mark bitmap has no marks set. To be used for assertions
   // only. Will not yield to pause requests.
@@ -603,18 +600,18 @@ public:
 
   // Scan all the root regions and mark everything reachable from
   // them.
-  void scanRootRegions();
+  void scan_root_regions();
 
   // Scan a single root region and mark everything reachable from it.
   void scanRootRegion(HeapRegion* hr, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
-  void markFromRoots();
+  void mark_from_roots();
 
   void checkpointRootsFinal(bool clear_all_soft_refs);
   void checkpointRootsFinalWork();
   void cleanup();
-  void completeCleanup();
+  void complete_cleanup();
 
   // Mark in the previous bitmap.  NB: this is usually read-only, so use
   // this carefully!
@@ -729,6 +726,9 @@ public:
   bool completed_initialization() const {
     return _completed_initialization;
   }
+
+  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 protected:
   // Clear all the per-task bitmaps and arrays used to store the
@@ -996,18 +996,6 @@ private:
   size_t _total_prev_live_bytes;
   size_t _total_next_live_bytes;
 
-  // These are set up when we come across a "stars humongous" region
-  // (as this is where most of this information is stored, not in the
-  // subsequent "continues humongous" regions). After that, for every
-  // region in a given humongous region series we deduce the right
-  // values for it by simply subtracting the appropriate amount from
-  // these fields. All these values should reach 0 after we've visited
-  // the last region in the series.
-  size_t _hum_used_bytes;
-  size_t _hum_capacity_bytes;
-  size_t _hum_prev_live_bytes;
-  size_t _hum_next_live_bytes;
-
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
@@ -1025,11 +1013,6 @@ private:
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
-
-  // See the .cpp file.
-  size_t get_hum_bytes(size_t* hum_bytes);
-  void get_hum_bytes(size_t* used_bytes, size_t* capacity_bytes,
-                     size_t* prev_live_bytes, size_t* next_live_bytes);
 
 public:
   // The header and footer are printed in the constructor and
