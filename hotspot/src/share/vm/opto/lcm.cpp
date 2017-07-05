@@ -404,7 +404,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
 // remaining cases (most), choose the instruction with the greatest latency
 // (that is, the most number of pseudo-cycles required to the end of the
 // routine). If there is a tie, choose the instruction with the most inputs.
-Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSet &next_call, uint sched_slot) {
+Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot) {
 
   // If only a single entry on the stack, use it
   uint cnt = worklist.size();
@@ -465,7 +465,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
 
         // More than this instruction pending for successor to be ready,
         // don't choose this if other opportunities are ready
-        if (ready_cnt[use->_idx] > 1)
+        if (ready_cnt.at(use->_idx) > 1)
           n_choice = 1;
       }
 
@@ -565,7 +565,7 @@ void Block::add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
 
 
 //------------------------------sched_call-------------------------------------
-uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, int *ready_cnt, MachCallNode *mcall, VectorSet &next_call ) {
+uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call ) {
   RegMask regs;
 
   // Schedule all the users of the call right now.  All the users are
@@ -574,8 +574,9 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   for (DUIterator_Fast imax, i = mcall->fast_outs(imax); i < imax; i++) {
     Node* n = mcall->fast_out(i);
     assert( n->is_MachProj(), "" );
-    --ready_cnt[n->_idx];
-    assert( !ready_cnt[n->_idx], "" );
+    int n_cnt = ready_cnt.at(n->_idx)-1;
+    ready_cnt.at_put(n->_idx, n_cnt);
+    assert( n_cnt == 0, "" );
     // Schedule next to call
     _nodes.map(node_cnt++, n);
     // Collect defined registers
@@ -590,7 +591,9 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
       Node* m = n->fast_out(j); // Get user
       if( bbs[m->_idx] != this ) continue;
       if( m->is_Phi() ) continue;
-      if( !--ready_cnt[m->_idx] )
+      int m_cnt = ready_cnt.at(m->_idx)-1;
+      ready_cnt.at_put(m->_idx, m_cnt);
+      if( m_cnt == 0 )
         worklist.push(m);
     }
 
@@ -655,7 +658,7 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
 
 //------------------------------schedule_local---------------------------------
 // Topological sort within a block.  Someday become a real scheduler.
-bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, VectorSet &next_call) {
+bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &ready_cnt, VectorSet &next_call) {
   // Already "sorted" are the block start Node (as the first entry), and
   // the block-ending Node and any trailing control projections.  We leave
   // these alone.  PhiNodes and ParmNodes are made to follow the block start
@@ -695,7 +698,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
         if( m && cfg->_bbs[m->_idx] == this && !m->is_top() )
           local++;              // One more block-local input
       }
-      ready_cnt[n->_idx] = local; // Count em up
+      ready_cnt.at_put(n->_idx, local); // Count em up
 
 #ifdef ASSERT
       if( UseConcMarkSweepGC || UseG1GC ) {
@@ -729,7 +732,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
     }
   }
   for(uint i2=i; i2<_nodes.size(); i2++ ) // Trailing guys get zapped count
-    ready_cnt[_nodes[i2]->_idx] = 0;
+    ready_cnt.at_put(_nodes[i2]->_idx, 0);
 
   // All the prescheduled guys do not hold back internal nodes
   uint i3;
@@ -737,8 +740,10 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
     Node *n = _nodes[i3];       // Get pre-scheduled
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* m = n->fast_out(j);
-      if( cfg->_bbs[m->_idx] ==this ) // Local-block user
-        ready_cnt[m->_idx]--;   // Fix ready count
+      if( cfg->_bbs[m->_idx] ==this ) { // Local-block user
+        int m_cnt = ready_cnt.at(m->_idx)-1;
+        ready_cnt.at_put(m->_idx, m_cnt);   // Fix ready count
+      }
     }
   }
 
@@ -747,7 +752,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
   Node_List worklist;
   for(uint i4=i3; i4<node_cnt; i4++ ) {    // Put ready guys on worklist
     Node *m = _nodes[i4];
-    if( !ready_cnt[m->_idx] ) {   // Zero ready count?
+    if( !ready_cnt.at(m->_idx) ) {   // Zero ready count?
       if (m->is_iteratively_computed()) {
         // Push induction variable increments last to allow other uses
         // of the phi to be scheduled first. The select() method breaks
@@ -775,14 +780,14 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
       for (uint j=0; j<_nodes.size(); j++) {
         Node     *n = _nodes[j];
         int     idx = n->_idx;
-        tty->print("#   ready cnt:%3d  ", ready_cnt[idx]);
+        tty->print("#   ready cnt:%3d  ", ready_cnt.at(idx));
         tty->print("latency:%3d  ", cfg->_node_latency->at_grow(idx));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
 #endif
 
-  uint max_idx = matcher.C->unique();
+  uint max_idx = (uint)ready_cnt.length();
   // Pull from worklist and schedule
   while( worklist.size() ) {    // Worklist is not ready
 
@@ -840,11 +845,13 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
       Node* m = n->fast_out(i5); // Get user
       if( cfg->_bbs[m->_idx] != this ) continue;
       if( m->is_Phi() ) continue;
-      if (m->_idx > max_idx) { // new node, skip it
+      if (m->_idx >= max_idx) { // new node, skip it
         assert(m->is_MachProj() && n->is_Mach() && n->as_Mach()->has_call(), "unexpected node types");
         continue;
       }
-      if( !--ready_cnt[m->_idx] )
+      int m_cnt = ready_cnt.at(m->_idx)-1;
+      ready_cnt.at_put(m->_idx, m_cnt);
+      if( m_cnt == 0 )
         worklist.push(m);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,12 @@ public class G1CollectedHeap extends SharedHeap {
     static private long g1CommittedFieldOffset;
     // size_t _summary_bytes_used;
     static private CIntegerField summaryBytesUsedField;
-    // G1MonitoringSupport* _g1mm
+    // G1MonitoringSupport* _g1mm;
     static private AddressField g1mmField;
+    // MasterOldRegionSet _old_set;
+    static private long oldSetFieldOffset;
+    // MasterHumongousRegionSet _humongous_set;
+    static private long humongousSetFieldOffset;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -67,12 +71,14 @@ public class G1CollectedHeap extends SharedHeap {
         g1CommittedFieldOffset = type.getField("_g1_committed").getOffset();
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
         g1mmField = type.getAddressField("_g1mm");
+        oldSetFieldOffset = type.getField("_old_set").getOffset();
+        humongousSetFieldOffset = type.getField("_humongous_set").getOffset();
     }
 
     public long capacity() {
         Address g1CommittedAddr = addr.addOffsetTo(g1CommittedFieldOffset);
-        MemRegion g1_committed = new MemRegion(g1CommittedAddr);
-        return g1_committed.byteSize();
+        MemRegion g1Committed = new MemRegion(g1CommittedAddr);
+        return g1Committed.byteSize();
     }
 
     public long used() {
@@ -92,6 +98,18 @@ public class G1CollectedHeap extends SharedHeap {
     public G1MonitoringSupport g1mm() {
         Address g1mmAddr = g1mmField.getValue(addr);
         return (G1MonitoringSupport) VMObjectFactory.newObject(G1MonitoringSupport.class, g1mmAddr);
+    }
+
+    public HeapRegionSetBase oldSet() {
+        Address oldSetAddr = addr.addOffsetTo(oldSetFieldOffset);
+        return (HeapRegionSetBase) VMObjectFactory.newObject(HeapRegionSetBase.class,
+                                                             oldSetAddr);
+    }
+
+    public HeapRegionSetBase humongousSet() {
+        Address humongousSetAddr = addr.addOffsetTo(humongousSetFieldOffset);
+        return (HeapRegionSetBase) VMObjectFactory.newObject(HeapRegionSetBase.class,
+                                                             humongousSetAddr);
     }
 
     private Iterator<HeapRegion> heapRegionIterator() {

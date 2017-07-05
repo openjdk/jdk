@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,8 +178,30 @@ BitMap::get_next_one_offset_inline(idx_t l_offset, idx_t r_offset) const {
     for (; !(res & 1); res_offset++) {
       res = res >> 1;
     }
-    assert(res_offset >= l_offset &&
-           res_offset < r_offset, "just checking");
+
+#ifdef ASSERT
+    // In the following assert, if r_offset is not bitamp word aligned,
+    // checking that res_offset is strictly less than r_offset is too
+    // strong and will trip the assert.
+    //
+    // Consider the case where l_offset is bit 15 and r_offset is bit 17
+    // of the same map word, and where bits [15:16:17:18] == [00:00:00:01].
+    // All the bits in the range [l_offset:r_offset) are 0.
+    // The loop that calculates res_offset, above, would yield the offset
+    // of bit 18 because it's in the same map word as l_offset and there
+    // is a set bit in that map word above l_offset (i.e. res != NoBits).
+    //
+    // In this case, however, we can assert is that res_offset is strictly
+    // less than size() since we know that there is at least one set bit
+    // at an offset above, but in the same map word as, r_offset.
+    // Otherwise, if r_offset is word aligned then it will not be in the
+    // same map word as l_offset (unless it equals l_offset). So either
+    // there won't be a set bit between l_offset and the end of it's map
+    // word (i.e. res == NoBits), or res_offset will be less than r_offset.
+
+    idx_t limit = is_word_aligned(r_offset) ? r_offset : size();
+    assert(res_offset >= l_offset && res_offset < limit, "just checking");
+#endif // ASSERT
     return MIN2(res_offset, r_offset);
   }
   // skip over all word length 0-bit runs
