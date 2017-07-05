@@ -3029,6 +3029,58 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
 
 
+void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
+                                              Register temp_reg,
+                                              Label& wrong_method_type) {
+  assert_different_registers(mtype_reg, mh_reg, temp_reg);
+  // compare method type against that of the receiver
+  RegisterOrConstant mhtype_offset = delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg);
+  ld_ptr(mh_reg, mhtype_offset, temp_reg);
+  cmp(temp_reg, mtype_reg);
+  br(Assembler::notEqual, false, Assembler::pn, wrong_method_type);
+  delayed()->nop();
+}
+
+
+void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_reg) {
+  assert(mh_reg == G3_method_handle, "caller must put MH object in G3");
+  assert_different_registers(mh_reg, temp_reg);
+
+  // pick out the interpreted side of the handler
+  ld_ptr(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg), temp_reg);
+
+  // off we go...
+  ld_ptr(temp_reg, MethodHandleEntry::from_interpreted_entry_offset_in_bytes(), temp_reg);
+  jmp(temp_reg, 0);
+
+  // for the various stubs which take control at this point,
+  // see MethodHandles::generate_method_handle_stub
+
+  // (Can any caller use this delay slot?  If so, add an option for supression.)
+  delayed()->nop();
+}
+
+RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
+                                                   int extra_slot_offset) {
+  // cf. TemplateTable::prepare_invoke(), if (load_receiver).
+  int stackElementSize = Interpreter::stackElementWords() * wordSize;
+  int offset = Interpreter::expr_offset_in_bytes(extra_slot_offset+0);
+  int offset1 = Interpreter::expr_offset_in_bytes(extra_slot_offset+1);
+  assert(offset1 - offset == stackElementSize, "correct arithmetic");
+  if (arg_slot.is_constant()) {
+    offset += arg_slot.as_constant() * stackElementSize;
+    return offset;
+  } else {
+    Register temp = arg_slot.as_register();
+    sll_ptr(temp, exact_log2(stackElementSize), temp);
+    if (offset != 0)
+      add(temp, offset, temp);
+    return temp;
+  }
+}
+
+
+
 void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
                                           Register temp_reg,
                                           Label& done, Label* slow_case,

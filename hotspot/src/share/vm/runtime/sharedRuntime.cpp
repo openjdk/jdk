@@ -1471,9 +1471,73 @@ char* SharedRuntime::generate_class_cast_message(
   return generate_class_cast_message(objName, targetKlass->external_name());
 }
 
+char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
+                                                        oopDesc* required,
+                                                        oopDesc* actual) {
+  assert(EnableMethodHandles, "");
+  oop singleKlass = wrong_method_type_is_for_single_argument(thread, required);
+  if (singleKlass != NULL) {
+    const char* objName = "argument or return value";
+    if (actual != NULL) {
+      // be flexible about the junk passed in:
+      klassOop ak = (actual->is_klass()
+                     ? (klassOop)actual
+                     : actual->klass());
+      objName = Klass::cast(ak)->external_name();
+    }
+    Klass* targetKlass = Klass::cast(required->is_klass()
+                                     ? (klassOop)required
+                                     : java_lang_Class::as_klassOop(required));
+    return generate_class_cast_message(objName, targetKlass->external_name());
+  } else {
+    // %%% need to get the MethodType string, without messing around too much
+    // Get a signature from the invoke instruction
+    const char* mhName = "method handle";
+    const char* targetType = "the required signature";
+    vframeStream vfst(thread, true);
+    if (!vfst.at_end()) {
+      Bytecode_invoke* call = Bytecode_invoke_at(vfst.method(), vfst.bci());
+      methodHandle target;
+      {
+        EXCEPTION_MARK;
+        target = call->static_target(THREAD);
+        if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; }
+      }
+      if (target.not_null()
+          && target->is_method_handle_invoke()
+          && required == target->method_handle_type()) {
+        targetType = target->signature()->as_C_string();
+      }
+    }
+    klassOop kignore; int fignore;
+    methodOop actual_method = MethodHandles::decode_method(actual,
+                                                          kignore, fignore);
+    if (actual_method != NULL) {
+      if (actual_method->name() == vmSymbols::invoke_name())
+        mhName = "$";
+      else
+        mhName = actual_method->signature()->as_C_string();
+      if (mhName[0] == '$')
+        mhName = actual_method->signature()->as_C_string();
+    }
+    return generate_class_cast_message(mhName, targetType,
+                                       " cannot be called as ");
+  }
+}
+
+oop SharedRuntime::wrong_method_type_is_for_single_argument(JavaThread* thr,
+                                                            oopDesc* required) {
+  if (required == NULL)  return NULL;
+  if (required->klass() == SystemDictionary::class_klass())
+    return required;
+  if (required->is_klass())
+    return Klass::cast(klassOop(required))->java_mirror();
+  return NULL;
+}
+
+
 char* SharedRuntime::generate_class_cast_message(
-    const char* objName, const char* targetKlassName) {
-  const char* desc = " cannot be cast to ";
+    const char* objName, const char* targetKlassName, const char* desc) {
   size_t msglen = strlen(objName) + strlen(desc) + strlen(targetKlassName) + 1;
 
   char* message = NEW_RESOURCE_ARRAY(char, msglen);
