@@ -192,8 +192,6 @@ class LibraryCallKit : public GraphKit {
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
-  bool inline_native_AtomicLong_get();
-  bool inline_native_AtomicLong_attemptUpdate();
   bool is_method_invoke_or_aux_frame(JVMState* jvms);
   // Helper function for inlining native object hash method
   bool inline_native_hashcode(bool is_virtual, bool is_static);
@@ -330,11 +328,6 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_checkIndex:
     // We do not intrinsify this.  The optimizer does fine with it.
     return NULL;
-
-  case vmIntrinsics::_get_AtomicLong:
-  case vmIntrinsics::_attemptUpdate:
-    if (!InlineAtomicLong)  return NULL;
-    break;
 
   case vmIntrinsics::_getCallerClass:
     if (!UseNewReflection)  return NULL;
@@ -710,11 +703,6 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_reverseBytes_s:
   case vmIntrinsics::_reverseBytes_c:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
-
-  case vmIntrinsics::_get_AtomicLong:
-    return inline_native_AtomicLong_get();
-  case vmIntrinsics::_attemptUpdate:
-    return inline_native_AtomicLong_attemptUpdate();
 
   case vmIntrinsics::_getCallerClass:
     return inline_native_Reflection_getCallerClass();
@@ -4004,113 +3992,6 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
   }
 
   return false;
-}
-
-static int value_field_offset = -1;  // offset of the "value" field of AtomicLongCSImpl.  This is needed by
-                                     // inline_native_AtomicLong_attemptUpdate() but it has no way of
-                                     // computing it since there is no lookup field by name function in the
-                                     // CI interface.  This is computed and set by inline_native_AtomicLong_get().
-                                     // Using a static variable here is safe even if we have multiple compilation
-                                     // threads because the offset is constant.  At worst the same offset will be
-                                     // computed and  stored multiple
-
-bool LibraryCallKit::inline_native_AtomicLong_get() {
-  // Restore the stack and pop off the argument
-  _sp+=1;
-  Node *obj = pop();
-
-  // get the offset of the "value" field. Since the CI interfaces
-  // does not provide a way to look up a field by name, we scan the bytecodes
-  // to get the field index.  We expect the first 2 instructions of the method
-  // to be:
-  //    0 aload_0
-  //    1 getfield "value"
-  ciMethod* method = callee();
-  if (value_field_offset == -1)
-  {
-    ciField* value_field;
-    ciBytecodeStream iter(method);
-    Bytecodes::Code bc = iter.next();
-
-    if ((bc != Bytecodes::_aload_0) &&
-              ((bc != Bytecodes::_aload) || (iter.get_index() != 0)))
-      return false;
-    bc = iter.next();
-    if (bc != Bytecodes::_getfield)
-      return false;
-    bool ignore;
-    value_field = iter.get_field(ignore);
-    value_field_offset = value_field->offset_in_bytes();
-  }
-
-  // Null check without removing any arguments.
-  _sp++;
-  obj = do_null_check(obj, T_OBJECT);
-  _sp--;
-  // Check for locking null object
-  if (stopped()) return true;
-
-  Node *adr = basic_plus_adr(obj, obj, value_field_offset);
-  const TypePtr *adr_type = _gvn.type(adr)->is_ptr();
-  int alias_idx = C->get_alias_index(adr_type);
-
-  Node *result = _gvn.transform(new (C, 3) LoadLLockedNode(control(), memory(alias_idx), adr));
-
-  push_pair(result);
-
-  return true;
-}
-
-bool LibraryCallKit::inline_native_AtomicLong_attemptUpdate() {
-  // Restore the stack and pop off the arguments
-  _sp+=5;
-  Node *newVal = pop_pair();
-  Node *oldVal = pop_pair();
-  Node *obj = pop();
-
-  // we need the offset of the "value" field which was computed when
-  // inlining the get() method.  Give up if we don't have it.
-  if (value_field_offset == -1)
-    return false;
-
-  // Null check without removing any arguments.
-  _sp+=5;
-  obj = do_null_check(obj, T_OBJECT);
-  _sp-=5;
-  // Check for locking null object
-  if (stopped()) return true;
-
-  Node *adr = basic_plus_adr(obj, obj, value_field_offset);
-  const TypePtr *adr_type = _gvn.type(adr)->is_ptr();
-  int alias_idx = C->get_alias_index(adr_type);
-
-  Node *cas = _gvn.transform(new (C, 5) StoreLConditionalNode(control(), memory(alias_idx), adr, newVal, oldVal));
-  Node *store_proj = _gvn.transform( new (C, 1) SCMemProjNode(cas));
-  set_memory(store_proj, alias_idx);
-  Node *bol = _gvn.transform( new (C, 2) BoolNode( cas, BoolTest::eq ) );
-
-  Node *result;
-  // CMove node is not used to be able fold a possible check code
-  // after attemptUpdate() call. This code could be transformed
-  // into CMove node by loop optimizations.
-  {
-    RegionNode *r = new (C, 3) RegionNode(3);
-    result = new (C, 3) PhiNode(r, TypeInt::BOOL);
-
-    Node *iff = create_and_xform_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
-    Node *iftrue = opt_iff(r, iff);
-    r->init_req(1, iftrue);
-    result->init_req(1, intcon(1));
-    result->init_req(2, intcon(0));
-
-    set_control(_gvn.transform(r));
-    record_for_igvn(r);
-
-    C->set_has_split_ifs(true); // Has chance for split-if optimization
-  }
-
-  push(_gvn.transform(result));
-  return true;
 }
 
 bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {

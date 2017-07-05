@@ -631,9 +631,6 @@ class CommandLineFlags {
   develop(bool, InlineClassNatives, true,                                   \
           "inline Class.isInstance, etc")                                   \
                                                                             \
-  develop(bool, InlineAtomicLong, true,                                     \
-          "inline sun.misc.AtomicLong")                                     \
-                                                                            \
   develop(bool, InlineThreadNatives, true,                                  \
           "inline Thread.currentThread, etc")                               \
                                                                             \

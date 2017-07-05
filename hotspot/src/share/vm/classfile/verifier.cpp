@@ -1738,10 +1738,14 @@ void ClassVerifier::verify_switch(
   int target = bci + default_offset;
   stackmap_table->check_jump_target(current_frame, target, CHECK_VERIFY(this));
   for (int i = 0; i < keys; i++) {
+    // Because check_jump_target() may safepoint, the bytecode could have
+    // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
+    aligned_bcp = (address)round_to((intptr_t)(bcs->bcp() + 1), jintSize);
     target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
       current_frame, target, CHECK_VERIFY(this));
   }
+  NOT_PRODUCT(aligned_bcp = NULL);  // no longer valid at this point
 }
 
 bool ClassVerifier::name_in_supers(
