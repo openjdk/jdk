@@ -221,9 +221,20 @@ bool frame::is_first_java_frame() const {
 
 
 bool frame::entry_frame_is_first() const {
-  return entry_frame_call_wrapper()->anchor()->last_Java_sp() == NULL;
+  return entry_frame_call_wrapper()->is_first_frame();
 }
 
+JavaCallWrapper* frame::entry_frame_call_wrapper_if_safe(JavaThread* thread) const {
+  JavaCallWrapper** jcw = entry_frame_call_wrapper_addr();
+  address addr = (address) jcw;
+
+  // addr must be within the usable part of the stack
+  if (thread->is_in_usable_stack(addr)) {
+    return *jcw;
+  }
+
+  return NULL;
+}
 
 bool frame::should_be_deoptimized() const {
   if (_deopt_state == is_deoptimized ||
