@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -262,6 +261,7 @@ public abstract class ReferenceType extends Type {
    * @deprecated use getFirstCommonSuperclass(ReferenceType t) which has
    *             slightly changed semantics.
    */
+  @Deprecated
   public ReferenceType firstCommonSuperclass(ReferenceType t) {
     if (this.equals(Type.NULL)) return t;
     if (t.equals(Type.NULL)) return this;

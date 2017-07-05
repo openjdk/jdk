@@ -37,6 +37,8 @@ import jdk.test.lib.RandomFactory;
  * @author Kevin Liu
  * @key randomness
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main TestSameValue
  */
 
 public class TestSameValue {

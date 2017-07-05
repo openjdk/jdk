@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -128,6 +128,7 @@ import org.xml.sax.ext.LexicalHandler;
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
+@Deprecated
 public abstract class BaseMarkupSerializer
     implements ContentHandler, DocumentHandler, LexicalHandler,
                DTDHandler, DeclHandler, DOMSerializer, Serializer

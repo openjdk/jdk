@@ -31,6 +31,8 @@
  *          jdk.jartool/sun.security.tools.jarsigner
  *          java.base/sun.security.pkcs
  *          java.base/sun.security.x509
+ * @build jdk.test.lib.util.JarUtils
+ * @run main Options
  */
 
 import com.sun.jarsigner.ContentSigner;

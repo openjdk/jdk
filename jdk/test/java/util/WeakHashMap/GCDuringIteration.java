@@ -25,6 +25,7 @@
  * @test
  * @bug 6499848
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main GCDuringIteration
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.

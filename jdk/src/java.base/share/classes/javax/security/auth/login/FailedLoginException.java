@@ -32,6 +32,7 @@ package javax.security.auth.login;
  * For example, a {@code LoginModule} throws this exception if
  * the user entered an incorrect password.
  *
+ * @since 1.4
  */
 public class FailedLoginException extends LoginException {
 

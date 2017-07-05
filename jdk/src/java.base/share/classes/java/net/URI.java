@@ -253,32 +253,32 @@ import java.lang.NullPointerException;  // for javadoc
  * which are taken from that specification, are used below to describe these
  * constraints:
  *
- * <blockquote><table>
+ * <blockquote><table class="borderless">
  * <caption style="display:none">Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other</caption>
  *   <tbody>
- *   <tr><th valign=top><i>alpha</i></th>
+ *   <tr><th style="vertical-align:top"><i>alpha</i></th>
  *       <td>The US-ASCII alphabetic characters,
  *        {@code 'A'}&nbsp;through&nbsp;{@code 'Z'}
  *        and {@code 'a'}&nbsp;through&nbsp;{@code 'z'}</td></tr>
- *   <tr><th valign=top><i>digit</i></th>
+ *   <tr><th style="vertical-align:top"><i>digit</i></th>
  *       <td>The US-ASCII decimal digit characters,
  *       {@code '0'}&nbsp;through&nbsp;{@code '9'}</td></tr>
- *   <tr><th valign=top><i>alphanum</i></th>
+ *   <tr><th style="vertical-align:top"><i>alphanum</i></th>
  *       <td>All <i>alpha</i> and <i>digit</i> characters</td></tr>
- *   <tr><th valign=top><i>unreserved</i>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *   <tr><th style="vertical-align:top"><i>unreserved</i>&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *       <td>All <i>alphanum</i> characters together with those in the string
  *        {@code "_-!.~'()*"}</td></tr>
- *   <tr><th valign=top><i>punct</i></th>
+ *   <tr><th style="vertical-align:top"><i>punct</i></th>
  *       <td>The characters in the string {@code ",;:$&+="}</td></tr>
- *   <tr><th valign=top><i>reserved</i></th>
+ *   <tr><th style="vertical-align:top"><i>reserved</i></th>
  *       <td>All <i>punct</i> characters together with those in the string
  *        {@code "?/[]@"}</td></tr>
- *   <tr><th valign=top><i>escaped</i></th>
+ *   <tr><th style="vertical-align:top"><i>escaped</i></th>
  *       <td>Escaped octets, that is, triplets consisting of the percent
  *           character ({@code '%'}) followed by two hexadecimal digits
  *           ({@code '0'}-{@code '9'}, {@code 'A'}-{@code 'F'}, and
  *           {@code 'a'}-{@code 'f'})</td></tr>
- *   <tr><th valign=top><i>other</i></th>
+ *   <tr><th style="vertical-align:top"><i>other</i></th>
  *       <td>The Unicode characters that are not in the US-ASCII character set,
  *           are not control characters (according to the {@link
  *           java.lang.Character#isISOControl(char) Character.isISOControl}

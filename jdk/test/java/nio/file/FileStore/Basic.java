@@ -26,6 +26,8 @@
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run main Basic
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,7 +22,7 @@
  */
 package com.sun.org.apache.xalan.internal.lib;
 
-import com.sun.org.apache.xml.internal.utils.DOMHelper;
+import com.sun.org.apache.xml.internal.utils.DOM2Helper;
 import com.sun.org.apache.xpath.internal.NodeSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,8 +72,8 @@ public class ExsltSets extends ExsltBase
     for (int i = 0; i < nl1.getLength(); i++)
     {
       Node testNode = nl1.item(i);
-      if (DOMHelper.isNodeAfter(testNode, endNode)
-          && !DOMHelper.isNodeTheSame(testNode, endNode))
+      if (DOM2Helper.isNodeAfter(testNode, endNode)
+          && !DOM2Helper.isNodeTheSame(testNode, endNode))
         leadNodes.addElement(testNode);
     }
     return leadNodes;
@@ -107,8 +107,8 @@ public class ExsltSets extends ExsltBase
     for (int i = 0; i < nl1.getLength(); i++)
     {
       Node testNode = nl1.item(i);
-      if (DOMHelper.isNodeAfter(startNode, testNode)
-          && !DOMHelper.isNodeTheSame(startNode, testNode))
+      if (DOM2Helper.isNodeAfter(startNode, testNode)
+          && !DOM2Helper.isNodeTheSame(startNode, testNode))
         trailNodes.addElement(testNode);
     }
     return trailNodes;

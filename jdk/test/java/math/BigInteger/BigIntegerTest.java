@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main BigIntegerTest
  * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)

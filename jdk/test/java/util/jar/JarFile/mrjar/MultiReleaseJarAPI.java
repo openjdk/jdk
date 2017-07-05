@@ -27,7 +27,8 @@
  * @summary Test the extended API and the aliasing additions in JarFile that
  *          support multi-release jar files
  * @library /lib/testlibrary/java/util/jar /test/lib
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @build jdk.test.lib.RandomFactory
+ *        Compiler JarBuilder CreateMultiReleaseTestJars
  * @run testng MultiReleaseJarAPI
  */
 

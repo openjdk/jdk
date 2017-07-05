@@ -62,6 +62,8 @@ import com.sun.corba.se.impl.orbutil.GetPropertyAction;
  * attempts to narrow it to conform to
  * the given interface. If the operation is successful the result will be an
  * object of the specified type, otherwise an exception will be thrown.
+ *
+ * <p>See also {@extLink rmi_iiop_guides RMI-IIOP developer's guides}.</p>
  */
 public class PortableRemoteObject {
 

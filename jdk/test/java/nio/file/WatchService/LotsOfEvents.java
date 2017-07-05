@@ -26,6 +26,7 @@
  * @summary Tests WatchService behavior when lots of events are pending (use -Dseed=X to set PRNG seed)
  * @library ..
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/timeout=180 LotsOfEvents
  * @key randomness
  */

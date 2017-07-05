@@ -185,6 +185,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * @see          ChoiceFormat
  * @author       Mark Davis
  * @author       Helena Shih
+ * @since 1.1
  */
 public abstract class NumberFormat extends Format  {
 
