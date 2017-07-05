@@ -238,8 +238,8 @@ public class SubjectInfoAccessExtension extends Extension
      * Return the extension as user readable string.
      */
     public String toString() {
-        return super.toString() + "SubjectInfoAccess [\n  "
-               + accessDescriptions + "\n]\n";
+        return super.toString() +
+            "SubjectInfoAccess [\n  " + accessDescriptions + "\n]\n";
     }
 
 }

@@ -29,7 +29,7 @@
  * @library /testlibrary
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class PrintNMTStatistics {
 

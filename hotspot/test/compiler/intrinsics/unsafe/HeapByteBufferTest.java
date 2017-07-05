@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2015, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -23,7 +23,7 @@
 //
 //
 
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import static java.lang.Math.abs;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

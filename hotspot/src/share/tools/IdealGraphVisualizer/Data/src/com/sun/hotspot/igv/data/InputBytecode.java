@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,15 @@ public class InputBytecode {
 
     private int bci;
     private String name;
+    private String operands;
+    private String comment;
     private InputMethod inlined;
 
-    public InputBytecode(int bci, String name) {
+    public InputBytecode(int bci, String name, String operands, String comment) {
         this.bci = bci;
         this.name = name;
+        this.operands = operands;
+        this.comment = comment;
     }
 
     public InputMethod getInlined() {
@@ -52,5 +56,13 @@ public class InputBytecode {
 
     public String getName() {
         return name;
+    }
+
+    public String getOperands() {
+        return operands;
+    }
+
+    public String getComment() {
+        return comment;
     }
 }

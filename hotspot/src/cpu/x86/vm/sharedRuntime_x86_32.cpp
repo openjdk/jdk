@@ -117,9 +117,9 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int vect_words = 0;
 #ifdef COMPILER2
   if (save_vectors) {
-    assert(UseAVX > 0, "256bit vectors are supported only with AVX");
-    assert(MaxVectorSize == 32, "only 256bit vectors are supported now");
-    // Save upper half of YMM registes
+    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
+    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
+    // Save upper half of ZMM/YMM registers :
     vect_words = 8 * 16 / wordSize;
     additional_frame_words += vect_words;
   }
@@ -216,6 +216,17 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     __ vextractf128h(Address(rsp, 80),xmm5);
     __ vextractf128h(Address(rsp, 96),xmm6);
     __ vextractf128h(Address(rsp,112),xmm7);
+    if (UseAVX > 2) {
+      __ subptr(rsp, 256); // Save upper half of ZMM registes
+      __ vextractf64x4h(Address(rsp, 0), xmm0);
+      __ vextractf64x4h(Address(rsp, 32), xmm1);
+      __ vextractf64x4h(Address(rsp, 64), xmm2);
+      __ vextractf64x4h(Address(rsp, 96), xmm3);
+      __ vextractf64x4h(Address(rsp, 128), xmm4);
+      __ vextractf64x4h(Address(rsp, 160), xmm5);
+      __ vextractf64x4h(Address(rsp, 192), xmm6);
+      __ vextractf64x4h(Address(rsp, 224), xmm7);
+    }
   }
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -283,8 +294,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   int additional_frame_bytes = 0;
 #ifdef COMPILER2
   if (restore_vectors) {
-    assert(UseAVX > 0, "256bit vectors are supported only with AVX");
-    assert(MaxVectorSize == 32, "only 256bit vectors are supported now");
+    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
+    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
     additional_frame_bytes = 128;
   }
 #else
@@ -324,6 +335,18 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     __ vinsertf128h(xmm6, Address(rsp, 96));
     __ vinsertf128h(xmm7, Address(rsp,112));
     __ addptr(rsp, additional_frame_bytes);
+    if (UseAVX > 2) {
+      additional_frame_bytes = 256;
+      __ vinsertf64x4h(xmm0, Address(rsp, 0));
+      __ vinsertf64x4h(xmm1, Address(rsp, 32));
+      __ vinsertf64x4h(xmm2, Address(rsp, 64));
+      __ vinsertf64x4h(xmm3, Address(rsp, 96));
+      __ vinsertf64x4h(xmm4, Address(rsp, 128));
+      __ vinsertf64x4h(xmm5, Address(rsp, 160));
+      __ vinsertf64x4h(xmm6, Address(rsp, 192));
+      __ vinsertf64x4h(xmm7, Address(rsp, 224));
+      __ addptr(rsp, additional_frame_bytes);
+    }
   }
   __ pop_FPU_state();
   __ addptr(rsp, FPU_regs_live*wordSize); // Pop FPU registers

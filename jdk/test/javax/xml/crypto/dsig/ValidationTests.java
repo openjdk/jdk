@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6365103 6366054 6824440 7131084 8046724
+ * @bug 4635230 6365103 6366054 6824440 7131084 8046724 8079693
  * @summary Basic unit tests for validating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
@@ -35,6 +35,7 @@ import java.io.FileInputStream;
 import java.security.*;
 import javax.xml.crypto.Data;
 import javax.xml.crypto.KeySelector;
+import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.OctetStreamData;
 import javax.xml.crypto.URIDereferencer;
 import javax.xml.crypto.URIReference;
@@ -60,9 +61,17 @@ public class ValidationTests {
     static class Test {
         String file;
         KeySelector ks;
-        Test(String file, KeySelector ks) {
+        Class exception;
+
+        Test(String file, KeySelector ks, Class exception) {
             this.file = file;
             this.ks = ks;
+            this.exception = exception;
+        }
+
+        // XMLSignatureException is expected by default
+        Test(String file, KeySelector ks) {
+            this(file, ks, XMLSignatureException.class);
         }
     }
 
@@ -91,6 +100,8 @@ public class ValidationTests {
         new Test("signature-enveloping-dsa.xml", KVKS),
         new Test("signature-enveloping-rsa.xml", KVKS),
         new Test("signature-enveloping-p256-sha1.xml", KVKS),
+        new Test("signature-enveloping-p384-sha1.xml", KVKS),
+        new Test("signature-enveloping-p521-sha1.xml", KVKS),
         new Test("signature-enveloping-hmac-sha1.xml", SKKS),
         new Test("signature-external-dsa.xml", KVKS),
         new Test("signature-external-b64-dsa.xml", KVKS),
@@ -110,7 +121,17 @@ public class ValidationTests {
     private final static Test[] INVALID_TESTS = {
         new Test("signature-enveloping-hmac-sha1-40.xml", SKKS),
         new Test("signature-enveloping-hmac-sha1-trunclen-0-attack.xml", SKKS),
-        new Test("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", SKKS)
+        new Test("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", SKKS),
+        new Test("signature-extra-text-in-signed-info.xml", SKKS,
+                MarshalException.class),
+        new Test("signature-wrong-canonicalization-method-algorithm.xml", SKKS,
+                MarshalException.class),
+        new Test("signature-wrong-transform-algorithm.xml", SKKS,
+                MarshalException.class),
+        new Test("signature-no-reference-uri.xml", SKKS),
+        new Test("signature-wrong-signature-method-algorithm.xml", SKKS,
+                MarshalException.class),
+        new Test("signature-wrong-tag-names.xml", SKKS, MarshalException.class)
     };
 
     public static void main(String args[]) throws Exception {
@@ -143,9 +164,14 @@ public class ValidationTests {
                 test_signature(test);
                 System.out.println("FAILED");
                 atLeastOneFailed = true;
-            } catch (XMLSignatureException xse) {
-                System.out.println(xse.getMessage());
-                System.out.println("PASSED");
+            } catch (Exception e) {
+                System.out.println("Exception: " + e);
+                if (e.getClass() != test.exception) {
+                    System.out.println("FAILED: unexpected exception");
+                    atLeastOneFailed = true;
+                } else {
+                    System.out.println("PASSED");
+                }
             }
         }
 

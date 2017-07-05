@@ -51,10 +51,12 @@ import java.io.Writer;
  * <P>
  * To automatically track startup performance in an app or applet,
  * use the command-line parameter sun.perflog as follows:<BR>
+ * <pre>{@code
  *     -Dsun.perflog[=file:<filename>]
+ * }</pre>
  * <BR>
  * where simply using the parameter with no value will enable output
- * to the console and a value of "file:<filename>" will cause
+ * to the console and a value of "{@code file:<filename>}" will cause
  * that given filename to be created and used for all output.
  * <P>
  * By default, times are measured using System.currentTimeMillis().  To use

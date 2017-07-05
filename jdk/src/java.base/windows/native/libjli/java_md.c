@@ -990,6 +990,26 @@ ProcessPlatformOption(const char *arg)
     return JNI_FALSE;
 }
 
+int
+filterArgs(StdArg *stdargs, const int nargc, StdArg **pargv) {
+    StdArg* argv = NULL;
+    int nargs = 0;
+    int i;
+
+    /* Copy the non-vm args */
+    for (i = 0; i < nargc ; i++) {
+        const char *arg = stdargs[i].arg;
+        if (arg[0] == '-' && arg[1] == 'J')
+            continue;
+        argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
+        argv[nargs].arg = JLI_StringDup(arg);
+        argv[nargs].has_wildcard = stdargs[i].has_wildcard;
+        nargs++;
+    }
+    *pargv = argv;
+    return nargs;
+}
+
 /*
  * At this point we have the arguments to the application, and we need to
  * check with original stdargs in order to compare which of these truly
@@ -1005,8 +1025,9 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     char *ostart, *astart, **nargv;
     jboolean needs_expansion = JNI_FALSE;
     jmethodID mid;
-    int stdargc;
+    int filteredargc, stdargc;
     StdArg *stdargs;
+    StdArg *filteredargs;
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK0(cls);
 
@@ -1017,6 +1038,8 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     stdargs = JLI_GetStdArgs();
     stdargc = JLI_GetStdArgc();
 
+    filteredargc = filterArgs(stdargs, stdargc, &filteredargs);
+
     // sanity check, this should never happen
     if (argc > stdargc) {
         JLI_TraceLauncher("Warning: app args is larger than the original, %d %d\n", argc, stdargc);
@@ -1025,8 +1048,8 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     }
 
     // sanity check, match the args we have, to the holy grail
-    idx = stdargc - argc;
-    ostart = stdargs[idx].arg;
+    idx = filteredargc - argc;
+    ostart = filteredargs[idx].arg;
     astart = strv[0];
     // sanity check, ensure that the first argument of the arrays are the same
     if (JLI_StrCmp(ostart, astart) != 0) {
@@ -1039,8 +1062,8 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
     // make a copy of the args which will be expanded in java if required.
     nargv = (char **)JLI_MemAlloc(argc * sizeof(char*));
     for (i = 0, j = idx; i < argc; i++, j++) {
-        jboolean arg_expand = (JLI_StrCmp(stdargs[j].arg, strv[i]) == 0)
-                                ? stdargs[j].has_wildcard
+        jboolean arg_expand = (JLI_StrCmp(filteredargs[j].arg, strv[i]) == 0)
+                                ? filteredargs[j].has_wildcard
                                 : JNI_FALSE;
         if (needs_expansion == JNI_FALSE)
             needs_expansion = arg_expand;
@@ -1077,5 +1100,6 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
         JLI_MemFree(nargv[i]);
     }
     JLI_MemFree(nargv);
+    JLI_MemFree(filteredargs);
     return outArray;
 }

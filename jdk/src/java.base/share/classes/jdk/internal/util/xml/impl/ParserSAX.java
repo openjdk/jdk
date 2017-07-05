@@ -649,7 +649,7 @@ final class ParserSAX
      * Reports characters and empties the parser's buffer. This method is called
      * only if parser is going to return control to the main loop. This means
      * that this method may use parser buffer to report white space without
-     * copeing characters to temporary buffer.
+     * copying characters to temporary buffer.
      */
     protected void bflash() throws SAXException {
         if (mBuffIdx >= 0) {
@@ -663,7 +663,7 @@ final class ParserSAX
      * Reports white space characters and empties the parser's buffer. This
      * method is called only if parser is going to return control to the main
      * loop. This means that this method may use parser buffer to report white
-     * space without copeing characters to temporary buffer.
+     * space without copying characters to temporary buffer.
      */
     protected void bflash_ws() throws SAXException {
         if (mBuffIdx >= 0) {

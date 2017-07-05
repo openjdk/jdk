@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,19 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public final class SaveAllAction extends CallableSystemAction {
 
+    @Override
     public void performAction() {
         final OutlineTopComponent component = OutlineTopComponent.findInstance();
         SaveAsAction.save(component.getDocument());
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(SaveAllAction.class, "CTL_SaveAllAction");
     }
 
     public SaveAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Save all methods to XML file");
+        putValue(Action.SHORT_DESCRIPTION, "Save all groups to XML file...");
         putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
     }
 
@@ -58,6 +60,7 @@ public final class SaveAllAction extends CallableSystemAction {
         return "com/sun/hotspot/igv/coordinator/images/saveall.gif";
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }

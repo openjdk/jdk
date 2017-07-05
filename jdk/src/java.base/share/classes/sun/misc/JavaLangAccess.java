@@ -91,14 +91,14 @@ public interface JavaLangAccess {
      * may be added to the delete on exit list by the application shutdown
      * hooks.
      *
-     * @params slot  the slot in the shutdown hook array, whose element
-     *               will be invoked in order during shutdown
-     * @params registerShutdownInProgress true to allow the hook
-     *               to be registered even if the shutdown is in progress.
-     * @params hook  the hook to be registered
+     * @param slot  the slot in the shutdown hook array, whose element
+     *              will be invoked in order during shutdown
+     * @param registerShutdownInProgress true to allow the hook
+     *        to be registered even if the shutdown is in progress.
+     * @param hook  the hook to be registered
      *
-     * @throw IllegalStateException if shutdown is in progress and
-     *          the slot is not valid to register.
+     * @throws IllegalStateException if shutdown is in progress and
+     *         the slot is not valid to register.
      */
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
 

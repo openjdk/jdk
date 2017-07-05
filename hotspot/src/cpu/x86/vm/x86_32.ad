@@ -101,6 +101,17 @@ reg_def FPR6L( SOC, SOC, Op_RegF, 6, as_FloatRegister(5)->as_VMReg());
 reg_def FPR6H( SOC, SOC, Op_RegF, 6, as_FloatRegister(5)->as_VMReg()->next());
 reg_def FPR7L( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg());
 reg_def FPR7H( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next());
+//
+// Empty fill registers, which are never used, but supply alignment to xmm regs
+//
+reg_def FILL0( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(2));
+reg_def FILL1( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(3));
+reg_def FILL2( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(4));
+reg_def FILL3( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(5));
+reg_def FILL4( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(6));
+reg_def FILL5( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(7));
+reg_def FILL6( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(8));
+reg_def FILL7( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next(9));
 
 // Specify priority of register selection within phases of register
 // allocation.  Highest priority is first.  A useful heuristic is to
@@ -112,7 +123,8 @@ reg_def FPR7H( SOC, SOC, Op_RegF, 7, as_FloatRegister(6)->as_VMReg()->next());
 alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
                     FPR0L, FPR0H, FPR1L, FPR1H, FPR2L, FPR2H,
                     FPR3L, FPR3H, FPR4L, FPR4H, FPR5L, FPR5H,
-                    FPR6L, FPR6H, FPR7L, FPR7H );
+                    FPR6L, FPR6H, FPR7L, FPR7H,
+                    FILL0, FILL1, FILL2, FILL3, FILL4, FILL5, FILL6, FILL7);
 
 
 //----------Architecture Description Register Classes--------------------------
@@ -131,7 +143,7 @@ reg_class any_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, ECX, EBX, ESP);
 // Class for all registers (excluding EBP)
 reg_class any_reg_no_ebp(EAX, EDX, EDI, ESI, ECX, EBX, ESP);
 // Dynamic register class that selects at runtime between register classes
-// any_reg and any_no_ebp_reg (depending on the value of the flag PreserveFramePointer). 
+// any_reg and any_no_ebp_reg (depending on the value of the flag PreserveFramePointer).
 // Equivalent to: return PreserveFramePointer ? any_no_ebp_reg : any_reg;
 reg_class_dynamic any_reg(any_reg_no_ebp, any_reg_with_ebp, %{ PreserveFramePointer %});
 
@@ -279,7 +291,9 @@ static int pre_call_resets_size() {
     size += 6; // fldcw
   }
   if (C->max_vector_size() > 16) {
-    size += 3; // vzeroupper
+    if(UseAVX <= 2) {
+      size += 3; // vzeroupper
+    }
   }
   return size;
 }
@@ -288,7 +302,7 @@ static int pre_call_resets_size() {
 //       from the start of the call to the point where the return address
 //       will point.
 int MachCallStaticJavaNode::ret_addr_offset() {
-  return 5 + pre_call_resets_size();  // 5 bytes from start of call to where return address points  
+  return 5 + pre_call_resets_size();  // 5 bytes from start of call to where return address points
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
@@ -767,6 +781,12 @@ static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset
 // Helper for XMM registers.  Extra opcode bits, limited syntax.
 static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
                          int offset, int reg_lo, int reg_hi, int size, outputStream* st ) {
+  int in_size_in_bits = Assembler::EVEX_32bit;
+  int evex_encoding = 0;
+  if (reg_lo+1 == reg_hi) {
+    in_size_in_bits = Assembler::EVEX_64bit;
+    evex_encoding = Assembler::VEX_W;
+  }
   if (cbuf) {
     MacroAssembler _masm(cbuf);
     if (reg_lo+1 == reg_hi) { // double move?
@@ -799,7 +819,17 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
     }
 #endif
   }
-  int offset_size = (offset == 0) ? 0 : ((offset <= 127) ? 1 : 4);
+  bool is_single_byte = false;
+  if ((UseAVX > 2) && (offset != 0)) {
+    is_single_byte = Assembler::query_compressed_disp_byte(offset, true, 0, Assembler::EVEX_T1S, in_size_in_bits, evex_encoding);
+  }
+  int offset_size = 0;
+  if (UseAVX > 2 ) {
+    offset_size = (offset == 0) ? 0 : ((is_single_byte) ? 1 : 4);
+  } else {
+    offset_size = (offset == 0) ? 0 : ((offset <= 127) ? 1 : 4);
+  }
+  size += (UseAVX > 2) ? 2 : 0; // Need an additional two bytes for EVEX
   // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
   return size+5+offset_size;
 }
@@ -835,8 +865,8 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
 #endif
   }
   // VEX_2bytes prefix is used if UseAVX > 0, and it takes the same 2 bytes as SIMD prefix.
-  // Only MOVAPS SSE prefix uses 1 byte.
-  int sz = 4;
+  // Only MOVAPS SSE prefix uses 1 byte.  EVEX uses an additional 2 bytes.
+  int sz = (UseAVX > 2) ? 6 : 4;
   if (!(src_lo+1 == src_hi && dst_lo+1 == dst_hi) &&
       UseXmmRegToRegMoveAll && (UseAVX == 0)) sz = 3;
   return size + sz;
@@ -854,7 +884,7 @@ static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
     st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
 #endif
   }
-  return 4;
+  return (UseAVX> 2) ? 6 : 4;
 }
 
 
@@ -870,7 +900,7 @@ static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
     st->print("movdl   %s, %s\t# spill", Matcher::regName[dst_lo], Matcher::regName[src_lo]);
 #endif
   }
-  return 4;
+  return (UseAVX> 2) ? 6 : 4;
 }
 
 static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size, outputStream* st ) {
@@ -941,9 +971,8 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
     calc_size += 3+src_offset_size + 3+dst_offset_size;
     break;
   case Op_VecX:
-    calc_size = 6 + 6 + 5+src_offset_size + 5+dst_offset_size;
-    break;
   case Op_VecY:
+  case Op_VecZ:
     calc_size = 6 + 6 + 5+src_offset_size + 5+dst_offset_size;
     break;
   default:
@@ -974,6 +1003,11 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+    case Op_VecZ:
+      __ evmovdqu(Address(rsp, -64), xmm0, 2);
+      __ evmovdqu(xmm0, Address(rsp, src_offset), 2);
+      __ evmovdqu(Address(rsp, dst_offset), xmm0, 2);
+      __ evmovdqu(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1009,6 +1043,12 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
                 "vmovdqu [rsp + #%d], xmm0\n\t"
                 "vmovdqu xmm0, [rsp - #32]",
                 src_offset, dst_offset);
+    case Op_VecZ:
+      st->print("vmovdqu [rsp - #64], xmm0\t# 512-bit mem-mem spill\n\t"
+                "vmovdqu xmm0, [rsp + #%d]\n\t"
+                "vmovdqu [rsp + #%d], xmm0\n\t"
+                "vmovdqu xmm0, [rsp - #64]",
+                src_offset, dst_offset);
       break;
     default:
       ShouldNotReachHere();
@@ -1042,7 +1082,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
     assert((src_first_rc != rc_float && dst_first_rc != rc_float), "sanity");
-    assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY), "sanity");
+    assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ ), "sanity");
     if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
@@ -3998,7 +4038,7 @@ operand regFPR1(regFPR reg) %{
 // XMM Float register operands
 operand regF() %{
   predicate( UseSSE>=1 );
-  constraint(ALLOC_IN_RC(float_reg));
+  constraint(ALLOC_IN_RC(float_reg_legacy));
   match(RegF);
   format %{ %}
   interface(REG_INTER);
@@ -4007,12 +4047,45 @@ operand regF() %{
 // XMM Double register operands
 operand regD() %{
   predicate( UseSSE>=2 );
-  constraint(ALLOC_IN_RC(double_reg));
+  constraint(ALLOC_IN_RC(double_reg_legacy));
   match(RegD);
   format %{ %}
   interface(REG_INTER);
 %}
 
+// Vectors : note, we use legacy registers to avoid extra (unneeded in 32-bit VM)
+// runtime code generation via reg_class_dynamic.
+operand vecS() %{
+  constraint(ALLOC_IN_RC(vectors_reg_legacy));
+  match(VecS);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecD() %{
+  constraint(ALLOC_IN_RC(vectord_reg_legacy));
+  match(VecD);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecX() %{
+  constraint(ALLOC_IN_RC(vectorx_reg_legacy));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecY() %{
+  constraint(ALLOC_IN_RC(vectory_reg_legacy));
+  match(VecY);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
 
 //----------Memory Operands----------------------------------------------------
 // Direct Memory Operand
@@ -5020,11 +5093,11 @@ instruct bytes_reverse_unsigned_short(rRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
   effect(KILL cr);
 
-  format %{ "BSWAP  $dst\n\t" 
+  format %{ "BSWAP  $dst\n\t"
             "SHR    $dst,16\n\t" %}
   ins_encode %{
     __ bswapl($dst$$Register);
-    __ shrl($dst$$Register, 16); 
+    __ shrl($dst$$Register, 16);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -5033,11 +5106,11 @@ instruct bytes_reverse_short(rRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
   effect(KILL cr);
 
-  format %{ "BSWAP  $dst\n\t" 
+  format %{ "BSWAP  $dst\n\t"
             "SAR    $dst,16\n\t" %}
   ins_encode %{
     __ bswapl($dst$$Register);
-    __ sarl($dst$$Register, 16); 
+    __ sarl($dst$$Register, 16);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -6525,7 +6598,7 @@ instruct membar_volatile(eFlagsReg cr) %{
   effect(KILL cr);
   ins_cost(400);
 
-  format %{ 
+  format %{
     $$template
     if (os::is_MP()) {
       $$emit$$"LOCK ADDL [ESP + #0], 0\t! membar_volatile"
@@ -8288,10 +8361,10 @@ instruct xorI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
 
 // Xor Register with Immediate -1
 instruct xorI_eReg_im1(rRegI dst, immI_M1 imm) %{
-  match(Set dst (XorI dst imm));  
+  match(Set dst (XorI dst imm));
 
   size(2);
-  format %{ "NOT    $dst" %}  
+  format %{ "NOT    $dst" %}
   ins_encode %{
      __ notl($dst$$Register);
   %}
@@ -8939,7 +9012,7 @@ instruct xorl_eReg(eRegL dst, eRegL src, eFlagsReg cr) %{
 
 // Xor Long Register with Immediate -1
 instruct xorl_eReg_im1(eRegL dst, immL_M1 imm) %{
-  match(Set dst (XorL dst imm));  
+  match(Set dst (XorL dst imm));
   format %{ "NOT    $dst.lo\n\t"
             "NOT    $dst.hi" %}
   ins_encode %{
@@ -8994,7 +9067,7 @@ instruct shlL_eReg_2(eRegL dst, immI_2 cnt, eFlagsReg cr) %{
   effect(KILL cr);
   ins_cost(100);
   format %{ "ADD    $dst.lo,$dst.lo\n\t"
-            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADC    $dst.hi,$dst.hi\n\t"
             "ADD    $dst.lo,$dst.lo\n\t"
             "ADC    $dst.hi,$dst.hi" %}
   ins_encode %{
@@ -9013,9 +9086,9 @@ instruct shlL_eReg_3(eRegL dst, immI_3 cnt, eFlagsReg cr) %{
   effect(KILL cr);
   ins_cost(100);
   format %{ "ADD    $dst.lo,$dst.lo\n\t"
-            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADC    $dst.hi,$dst.hi\n\t"
             "ADD    $dst.lo,$dst.lo\n\t"
-            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADC    $dst.hi,$dst.hi\n\t"
             "ADD    $dst.lo,$dst.lo\n\t"
             "ADC    $dst.hi,$dst.hi" %}
   ins_encode %{
@@ -11168,7 +11241,6 @@ instruct convL2I_reg( rRegI dst, eRegL src ) %{
   ins_pipe( ialu_reg_reg );
 %}
 
-
 instruct MoveF2I_stack_reg(rRegI dst, stackSlotF src) %{
   match(Set dst (MoveF2I src));
   effect( DEF dst, USE src );
@@ -11400,7 +11472,7 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlag
   format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
             "SHL    ECX,1\t# Convert doublewords to words\n\t"
             "REP STOS\t# store EAX into [EDI++] while ECX--" %}
-  ins_encode %{ 
+  ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
   %}
   ins_pipe( pipe_slow );
@@ -11413,7 +11485,7 @@ instruct rep_fast_stosb(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy,
   format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
             "SHL    ECX,3\t# Convert doublewords to bytes\n\t"
             "REP STOSB\t# store EAX into [EDI++] while ECX--" %}
-  ins_encode %{ 
+  ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
   %}
   ins_pipe( pipe_slow );

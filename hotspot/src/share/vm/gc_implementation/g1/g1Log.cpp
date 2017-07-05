@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,34 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1_globals.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
-#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 
 G1Log::LogLevel G1Log::_level = G1Log::LevelNone;
 
-// If G1LogLevel has not been set up we will use the values of PrintGC
-// and PrintGCDetails for the logging level.
+
+// Updates _level based on PrintGC and PrintGCDetails values (unless
+// G1LogLevel is set explicitly)
 // - PrintGC maps to "fine".
 // - PrintGCDetails maps to "finer".
+void G1Log::update_level() {
+  if (FLAG_IS_DEFAULT(G1LogLevel)) {
+    _level = LevelNone;
+    if (PrintGCDetails) {
+      _level = LevelFiner;
+    } else if (PrintGC) {
+      _level = LevelFine;
+    }
+  }
+}
+
+
+// If G1LogLevel has not been set up we will use the values of PrintGC
+// and PrintGCDetails for the logging level.
 void G1Log::init() {
-  if (G1LogLevel != NULL && G1LogLevel[0] != '\0') {
-    if (strncmp("none", G1LogLevel, 4) == 0 && G1LogLevel[4] == '\0') {
+  if (!FLAG_IS_DEFAULT(G1LogLevel)) {
+    // PrintGC flags change won't have any affect, because G1LogLevel
+    // is set explicitly
+    if (G1LogLevel[0] == '\0' || strncmp("none", G1LogLevel, 4) == 0 && G1LogLevel[4] == '\0') {
       _level = LevelNone;
     } else if (strncmp("fine", G1LogLevel, 4) == 0 && G1LogLevel[4] == '\0') {
       _level = LevelFine;
@@ -47,10 +64,7 @@ void G1Log::init() {
       warning("Unknown logging level '%s', should be one of 'fine', 'finer' or 'finest'.", G1LogLevel);
     }
   } else {
-    if (PrintGCDetails) {
-      _level = LevelFiner;
-    } else if (PrintGC) {
-      _level = LevelFine;
-    }
+    update_level();
   }
 }
+

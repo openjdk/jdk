@@ -86,7 +86,23 @@ class RegisterSaver {
     DEF_XMM_OFFS(13),
     DEF_XMM_OFFS(14),
     DEF_XMM_OFFS(15),
-    fpu_state_end = fpu_state_off + ((FPUStateSizeInWords-1)*wordSize / BytesPerInt),
+    DEF_XMM_OFFS(16),
+    DEF_XMM_OFFS(17),
+    DEF_XMM_OFFS(18),
+    DEF_XMM_OFFS(19),
+    DEF_XMM_OFFS(20),
+    DEF_XMM_OFFS(21),
+    DEF_XMM_OFFS(22),
+    DEF_XMM_OFFS(23),
+    DEF_XMM_OFFS(24),
+    DEF_XMM_OFFS(25),
+    DEF_XMM_OFFS(26),
+    DEF_XMM_OFFS(27),
+    DEF_XMM_OFFS(28),
+    DEF_XMM_OFFS(29),
+    DEF_XMM_OFFS(30),
+    DEF_XMM_OFFS(31),
+    fpu_state_end = fpu_state_off + ((FPUStateSizeInWords - 1)*wordSize / BytesPerInt),
     fpu_stateH_end,
     r15_off, r15H_off,
     r14_off, r14H_off,
@@ -136,13 +152,21 @@ class RegisterSaver {
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
   int vect_words = 0;
+  int num_xmm_regs = 16;
+  if (UseAVX > 2) {
+    num_xmm_regs = 32;
+  }
 #ifdef COMPILER2
   if (save_vectors) {
-    assert(UseAVX > 0, "256bit vectors are supported only with AVX");
-    assert(MaxVectorSize == 32, "only 256bit vectors are supported now");
-    // Save upper half of YMM registes
-    vect_words = 16 * 16 / wordSize;
+    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
+    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
+    // Save upper half of YMM registers
+    vect_words = 16 * num_xmm_regs / wordSize;
     additional_frame_words += vect_words;
+    if (UseAVX > 2) {
+      // Save upper half of ZMM registers as well
+      additional_frame_words += vect_words;
+    }
   }
 #else
   assert(!save_vectors, "vectors are generated only by C2");
@@ -150,7 +174,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   // Always make the frame size 16-byte aligned
   int frame_size_in_bytes = round_to(additional_frame_words*wordSize +
-                                     reg_save_size*BytesPerInt, 16);
+                                     reg_save_size*BytesPerInt, num_xmm_regs);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
   // The caller will allocate additional_frame_words
@@ -169,24 +193,77 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   __ push_CPU_state(); // Push a multiple of 16 bytes
 
   if (vect_words > 0) {
-    assert(vect_words*wordSize == 256, "");
-    __ subptr(rsp, 256); // Save upper half of YMM registes
-    __ vextractf128h(Address(rsp,  0),xmm0);
-    __ vextractf128h(Address(rsp, 16),xmm1);
-    __ vextractf128h(Address(rsp, 32),xmm2);
-    __ vextractf128h(Address(rsp, 48),xmm3);
-    __ vextractf128h(Address(rsp, 64),xmm4);
-    __ vextractf128h(Address(rsp, 80),xmm5);
-    __ vextractf128h(Address(rsp, 96),xmm6);
-    __ vextractf128h(Address(rsp,112),xmm7);
-    __ vextractf128h(Address(rsp,128),xmm8);
-    __ vextractf128h(Address(rsp,144),xmm9);
-    __ vextractf128h(Address(rsp,160),xmm10);
-    __ vextractf128h(Address(rsp,176),xmm11);
-    __ vextractf128h(Address(rsp,192),xmm12);
-    __ vextractf128h(Address(rsp,208),xmm13);
-    __ vextractf128h(Address(rsp,224),xmm14);
-    __ vextractf128h(Address(rsp,240),xmm15);
+    assert(vect_words*wordSize >= 256, "");
+    __ subptr(rsp, 256); // Save upper half of YMM registes(0..15)
+    __ vextractf128h(Address(rsp, 0), xmm0);
+    __ vextractf128h(Address(rsp, 16), xmm1);
+    __ vextractf128h(Address(rsp, 32), xmm2);
+    __ vextractf128h(Address(rsp, 48), xmm3);
+    __ vextractf128h(Address(rsp, 64), xmm4);
+    __ vextractf128h(Address(rsp, 80), xmm5);
+    __ vextractf128h(Address(rsp, 96), xmm6);
+    __ vextractf128h(Address(rsp, 112), xmm7);
+    __ vextractf128h(Address(rsp, 128), xmm8);
+    __ vextractf128h(Address(rsp, 144), xmm9);
+    __ vextractf128h(Address(rsp, 160), xmm10);
+    __ vextractf128h(Address(rsp, 176), xmm11);
+    __ vextractf128h(Address(rsp, 192), xmm12);
+    __ vextractf128h(Address(rsp, 208), xmm13);
+    __ vextractf128h(Address(rsp, 224), xmm14);
+    __ vextractf128h(Address(rsp, 240), xmm15);
+    if (UseAVX > 2) {
+      __ subptr(rsp, 256); // Save upper half of YMM registes(16..31)
+      __ vextractf128h(Address(rsp, 0), xmm16);
+      __ vextractf128h(Address(rsp, 16), xmm17);
+      __ vextractf128h(Address(rsp, 32), xmm18);
+      __ vextractf128h(Address(rsp, 48), xmm19);
+      __ vextractf128h(Address(rsp, 64), xmm20);
+      __ vextractf128h(Address(rsp, 80), xmm21);
+      __ vextractf128h(Address(rsp, 96), xmm22);
+      __ vextractf128h(Address(rsp, 112), xmm23);
+      __ vextractf128h(Address(rsp, 128), xmm24);
+      __ vextractf128h(Address(rsp, 144), xmm25);
+      __ vextractf128h(Address(rsp, 160), xmm26);
+      __ vextractf128h(Address(rsp, 176), xmm27);
+      __ vextractf128h(Address(rsp, 192), xmm28);
+      __ vextractf128h(Address(rsp, 208), xmm29);
+      __ vextractf128h(Address(rsp, 224), xmm30);
+      __ vextractf128h(Address(rsp, 240), xmm31);
+      // Now handle the ZMM registers (0..31)
+      __ subptr(rsp, 1024); // Save upper half of ZMM registes
+      __ vextractf64x4h(Address(rsp, 0), xmm0);
+      __ vextractf64x4h(Address(rsp, 32), xmm1);
+      __ vextractf64x4h(Address(rsp, 64), xmm2);
+      __ vextractf64x4h(Address(rsp, 96), xmm3);
+      __ vextractf64x4h(Address(rsp, 128), xmm4);
+      __ vextractf64x4h(Address(rsp, 160), xmm5);
+      __ vextractf64x4h(Address(rsp, 192), xmm6);
+      __ vextractf64x4h(Address(rsp, 224), xmm7);
+      __ vextractf64x4h(Address(rsp, 256), xmm8);
+      __ vextractf64x4h(Address(rsp, 288), xmm9);
+      __ vextractf64x4h(Address(rsp, 320), xmm10);
+      __ vextractf64x4h(Address(rsp, 352), xmm11);
+      __ vextractf64x4h(Address(rsp, 384), xmm12);
+      __ vextractf64x4h(Address(rsp, 416), xmm13);
+      __ vextractf64x4h(Address(rsp, 448), xmm14);
+      __ vextractf64x4h(Address(rsp, 480), xmm15);
+      __ vextractf64x4h(Address(rsp, 512), xmm16);
+      __ vextractf64x4h(Address(rsp, 544), xmm17);
+      __ vextractf64x4h(Address(rsp, 576), xmm18);
+      __ vextractf64x4h(Address(rsp, 608), xmm19);
+      __ vextractf64x4h(Address(rsp, 640), xmm20);
+      __ vextractf64x4h(Address(rsp, 672), xmm21);
+      __ vextractf64x4h(Address(rsp, 704), xmm22);
+      __ vextractf64x4h(Address(rsp, 736), xmm23);
+      __ vextractf64x4h(Address(rsp, 768), xmm24);
+      __ vextractf64x4h(Address(rsp, 800), xmm25);
+      __ vextractf64x4h(Address(rsp, 832), xmm26);
+      __ vextractf64x4h(Address(rsp, 864), xmm27);
+      __ vextractf64x4h(Address(rsp, 896), xmm28);
+      __ vextractf64x4h(Address(rsp, 928), xmm29);
+      __ vextractf64x4h(Address(rsp, 960), xmm30);
+      __ vextractf64x4h(Address(rsp, 992), xmm31);
+    }
   }
   if (frame::arg_reg_save_area_bytes != 0) {
     // Allocate argument register save area
@@ -235,6 +312,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   map->set_callee_saved(STACK_OFFSET(xmm13_off), xmm13->as_VMReg());
   map->set_callee_saved(STACK_OFFSET(xmm14_off), xmm14->as_VMReg());
   map->set_callee_saved(STACK_OFFSET(xmm15_off), xmm15->as_VMReg());
+  if (UseAVX > 2) {
+    map->set_callee_saved(STACK_OFFSET(xmm16_off), xmm16->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm17_off), xmm17->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm18_off), xmm18->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm19_off), xmm19->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm20_off), xmm20->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm21_off), xmm21->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm22_off), xmm22->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm23_off), xmm23->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm24_off), xmm24->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm25_off), xmm25->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm26_off), xmm26->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm27_off), xmm27->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm28_off), xmm28->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm29_off), xmm29->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm30_off), xmm30->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(xmm31_off), xmm31->as_VMReg());
+  }
 
   // %%% These should all be a waste but we'll keep things as they were for now
   if (true) {
@@ -269,6 +364,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(STACK_OFFSET(xmm13H_off), xmm13->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET(xmm14H_off), xmm14->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET(xmm15H_off), xmm15->as_VMReg()->next());
+    if (UseAVX > 2) {
+      map->set_callee_saved(STACK_OFFSET(xmm16H_off), xmm16->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm17H_off), xmm17->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm18H_off), xmm18->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm19H_off), xmm19->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm20H_off), xmm20->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm21H_off), xmm21->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm22H_off), xmm22->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm23H_off), xmm23->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm24H_off), xmm24->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm25H_off), xmm25->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm26H_off), xmm26->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm27H_off), xmm27->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm28H_off), xmm28->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm29H_off), xmm29->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm30H_off), xmm30->as_VMReg());
+      map->set_callee_saved(STACK_OFFSET(xmm31H_off), xmm31->as_VMReg());
+    }
   }
 
   return map;
@@ -281,9 +394,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   }
 #ifdef COMPILER2
   if (restore_vectors) {
-    // Restore upper half of YMM registes.
-    assert(UseAVX > 0, "256bit vectors are supported only with AVX");
-    assert(MaxVectorSize == 32, "only 256bit vectors are supported now");
+    // Restore upper half of YMM registes (0..15)
+    assert(UseAVX > 0, "512bit vectors are supported only with AVX");
+    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
     __ vinsertf128h(xmm0, Address(rsp,  0));
     __ vinsertf128h(xmm1, Address(rsp, 16));
     __ vinsertf128h(xmm2, Address(rsp, 32));
@@ -301,6 +414,60 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     __ vinsertf128h(xmm14, Address(rsp,224));
     __ vinsertf128h(xmm15, Address(rsp,240));
     __ addptr(rsp, 256);
+    if (UseAVX > 2) {
+      // Restore upper half of YMM registes (16..31)
+      __ vinsertf128h(xmm16, Address(rsp,  0));
+      __ vinsertf128h(xmm17, Address(rsp, 16));
+      __ vinsertf128h(xmm18, Address(rsp, 32));
+      __ vinsertf128h(xmm19, Address(rsp, 48));
+      __ vinsertf128h(xmm20, Address(rsp, 64));
+      __ vinsertf128h(xmm21, Address(rsp, 80));
+      __ vinsertf128h(xmm22, Address(rsp, 96));
+      __ vinsertf128h(xmm23, Address(rsp,112));
+      __ vinsertf128h(xmm24, Address(rsp,128));
+      __ vinsertf128h(xmm25, Address(rsp,144));
+      __ vinsertf128h(xmm26, Address(rsp,160));
+      __ vinsertf128h(xmm27, Address(rsp,176));
+      __ vinsertf128h(xmm28, Address(rsp,192));
+      __ vinsertf128h(xmm29, Address(rsp,208));
+      __ vinsertf128h(xmm30, Address(rsp,224));
+      __ vinsertf128h(xmm31, Address(rsp,240));
+      __ addptr(rsp, 256);
+      // Restore upper half of ZMM registes.
+      __ vinsertf64x4h(xmm0, Address(rsp, 0));
+      __ vinsertf64x4h(xmm1, Address(rsp, 32));
+      __ vinsertf64x4h(xmm2, Address(rsp, 64));
+      __ vinsertf64x4h(xmm3, Address(rsp, 96));
+      __ vinsertf64x4h(xmm4, Address(rsp, 128));
+      __ vinsertf64x4h(xmm5, Address(rsp, 160));
+      __ vinsertf64x4h(xmm6, Address(rsp, 192));
+      __ vinsertf64x4h(xmm7, Address(rsp, 224));
+      __ vinsertf64x4h(xmm8, Address(rsp, 256));
+      __ vinsertf64x4h(xmm9, Address(rsp, 288));
+      __ vinsertf64x4h(xmm10, Address(rsp, 320));
+      __ vinsertf64x4h(xmm11, Address(rsp, 352));
+      __ vinsertf64x4h(xmm12, Address(rsp, 384));
+      __ vinsertf64x4h(xmm13, Address(rsp, 416));
+      __ vinsertf64x4h(xmm14, Address(rsp, 448));
+      __ vinsertf64x4h(xmm15, Address(rsp, 480));
+      __ vinsertf64x4h(xmm16, Address(rsp, 512));
+      __ vinsertf64x4h(xmm17, Address(rsp, 544));
+      __ vinsertf64x4h(xmm18, Address(rsp, 576));
+      __ vinsertf64x4h(xmm19, Address(rsp, 608));
+      __ vinsertf64x4h(xmm20, Address(rsp, 640));
+      __ vinsertf64x4h(xmm21, Address(rsp, 672));
+      __ vinsertf64x4h(xmm22, Address(rsp, 704));
+      __ vinsertf64x4h(xmm23, Address(rsp, 736));
+      __ vinsertf64x4h(xmm24, Address(rsp, 768));
+      __ vinsertf64x4h(xmm25, Address(rsp, 800));
+      __ vinsertf64x4h(xmm26, Address(rsp, 832));
+      __ vinsertf64x4h(xmm27, Address(rsp, 864));
+      __ vinsertf64x4h(xmm28, Address(rsp, 896));
+      __ vinsertf64x4h(xmm29, Address(rsp, 928));
+      __ vinsertf64x4h(xmm30, Address(rsp, 960));
+      __ vinsertf64x4h(xmm31, Address(rsp, 992));
+      __ subptr(rsp, 1024);
+    }
   }
 #else
   assert(!restore_vectors, "vectors are generated only by C2");

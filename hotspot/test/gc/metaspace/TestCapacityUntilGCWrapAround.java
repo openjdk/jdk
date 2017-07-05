@@ -36,8 +36,8 @@
 
 import sun.hotspot.WhiteBox;
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 
 public class TestCapacityUntilGCWrapAround {
     private static long MB = 1024 * 1024;

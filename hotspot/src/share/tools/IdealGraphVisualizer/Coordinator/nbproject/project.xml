@@ -7,6 +7,14 @@
             <suite-component/>
             <module-dependencies>
                 <dependency>
+                    <code-name-base>com.sun.hotspot.igv.connection</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.0</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
                     <code-name-base>com.sun.hotspot.igv.data</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
@@ -44,7 +52,7 @@
                     <compile-dependency/>
                     <run-dependency>
                         <release-version>1</release-version>
-                        <specification-version>1.10.0.1</specification-version>
+                        <specification-version>1.23.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -52,7 +60,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.6.1.1</specification-version>
+                        <specification-version>6.21.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -60,7 +68,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.11.0.1</specification-version>
+                        <specification-version>7.30.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -68,7 +76,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.5.1</specification-version>
+                        <specification-version>7.18.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -76,7 +84,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.11</specification-version>
+                        <specification-version>6.34.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -84,7 +92,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.3</specification-version>
+                        <specification-version>7.46.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -92,7 +100,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.7</specification-version>
+                        <specification-version>7.20.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -100,7 +108,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.2.0.1</specification-version>
+                        <specification-version>7.20.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -108,7 +116,15 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.9.0.1</specification-version>
+                        <specification-version>8.14.1</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.util.lookup</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>8.6.1</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -116,7 +132,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>6.16</specification-version>
+                        <specification-version>6.39.1</specification-version>
                     </run-dependency>
                 </dependency>
             </module-dependencies>

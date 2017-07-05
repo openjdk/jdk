@@ -149,7 +149,3 @@ REGISTER_DEFINITION(Register, rthread);
 REGISTER_DEFINITION(Register, rheapbase);
 
 REGISTER_DEFINITION(Register, r31_sp);
-
-// TODO : x86 uses rbp to save SP in method handle code
-// we may need to do the same with fp
-// REGISTER_DEFINITION(Register, rbp_mh_SP_save)

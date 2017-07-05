@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.ChangedEventProvider;
+import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.graph.Diagram;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,20 +39,25 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
 
     private List<Filter> filters;
     private transient ChangedEvent<FilterChain> changedEvent;
-    private boolean fireEvents;
+
+    private ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
+        @Override
+        public void changed(Filter source) {
+            changedEvent.fire();
+        }
+    };
 
     public FilterChain() {
-        filters = new ArrayList<Filter>();
-        changedEvent = new ChangedEvent<FilterChain>(this);
-        this.fireEvents = true;
+        filters = new ArrayList<>();
+        changedEvent = new ChangedEvent<>(this);
     }
 
     public FilterChain(FilterChain f) {
-        this.filters = new ArrayList<Filter>(f.filters);
-        changedEvent = new ChangedEvent<FilterChain>(this);
-        this.fireEvents = true;
+        this.filters = new ArrayList<>(f.filters);
+        changedEvent = new ChangedEvent<>(this);
     }
 
+    @Override
     public ChangedEvent<FilterChain> getChangedEvent() {
         return changedEvent;
     }
@@ -68,7 +74,7 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
     }
 
     public void apply(Diagram d, FilterChain sequence) {
-        List<Filter> applied = new ArrayList<Filter>();
+        List<Filter> applied = new ArrayList<>();
         for (Filter f : sequence.getFilters()) {
             if (filters.contains(f)) {
                 f.apply(d);
@@ -84,29 +90,12 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         }
     }
 
-    public void beginAtomic() {
-        this.fireEvents = false;
-    }
-
-    public void endAtomic() {
-        this.fireEvents = true;
-        changedEvent.fire();
-    }
 
     public void addFilter(Filter filter) {
         assert filter != null;
         filters.add(filter);
-        if (fireEvents) {
-            changedEvent.fire();
-        }
-    }
-
-    public void addFilterSameSequence(Filter filter) {
-        assert filter != null;
-        filters.add(filter);
-        if (fireEvents) {
-            changedEvent.fire();
-        }
+        filter.getChangedEvent().addListener(changedListener);
+        changedEvent.fire();
     }
 
     public boolean containsFilter(Filter filter) {
@@ -116,9 +105,8 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
     public void removeFilter(Filter filter) {
         assert filters.contains(filter);
         filters.remove(filter);
-        if (fireEvents) {
-            changedEvent.fire();
-        }
+        filter.getChangedEvent().removeListener(changedListener);
+        changedEvent.fire();
     }
 
     public void moveFilterUp(Filter filter) {
@@ -128,9 +116,7 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
             filters.remove(index);
             filters.add(index - 1, filter);
         }
-        if (fireEvents) {
-            changedEvent.fire();
-        }
+        changedEvent.fire();
     }
 
     public void moveFilterDown(Filter filter) {
@@ -140,16 +126,10 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
             filters.remove(index);
             filters.add(index + 1, filter);
         }
-        if (fireEvents) {
-            changedEvent.fire();
-        }
+        changedEvent.fire();
     }
 
     public List<Filter> getFilters() {
         return Collections.unmodifiableList(filters);
-    }
-
-    public void clear() {
-        filters.clear();
     }
 }

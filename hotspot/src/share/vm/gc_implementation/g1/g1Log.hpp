@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ class G1Log : public AllStatic {
   }
 
   static void init();
+
+  // Update to log level to reflect runtime changes to manageable flags
+  static void update_level();
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1LOG_HPP
