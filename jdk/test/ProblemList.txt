@@ -138,6 +138,8 @@ java/lang/instrument/RetransformBigClass.sh                     8061177 generic-
 
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
+java/lang/instrument/DaemonThread/TestDaemonThread.java         8161225 generic-all
+
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
@@ -170,6 +172,8 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-a
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
+
+java/net/httpclient/SplitResponse.java                          8157533 generic-all 
 
 java/net/httpclient/http2/BasicTest.java                        8157408 linux-all
 java/net/httpclient/http2/ErrorTest.java                        8158127 solaris-all,windows-all

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class TestJpsJar {
         cmd.addAll(JpsHelper.getVmArgs());
         cmd.add("-Dtest.jdk=" + testJdk);
         cmd.add("-Dtest.src=" + testSrc);
+        cmd.add("-Duser.dir=" + System.getProperty("user.dir"));
         cmd.add("-jar");
         cmd.add(jar.getAbsolutePath());
         cmd.add("monkey");

@@ -1,5 +1,3 @@
-package checker;
-
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  *
@@ -30,6 +28,8 @@ package checker;
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+package checker;
 
 /*
  * This source code is provided to illustrate the usage of a given feature
