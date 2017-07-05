@@ -1893,7 +1893,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _ref_processor_stw(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
-  _objs_with_preserved_marks(NULL), _preserved_marks_of_objs(NULL),
   _evac_failure_scan_stack(NULL) ,
   _mark_in_progress(false),
   _cg1r(NULL), _summary_bytes_used(0),
@@ -4215,22 +4214,15 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 
   // Now restore saved marks, if any.
-  if (_objs_with_preserved_marks != NULL) {
-    assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    guarantee(_objs_with_preserved_marks->length() ==
-              _preserved_marks_of_objs->length(), "Both or none.");
-    for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
-      oop obj   = _objs_with_preserved_marks->at(i);
-      markOop m = _preserved_marks_of_objs->at(i);
-      obj->set_mark(m);
-    }
-
-    // Delete the preserved marks growable arrays (allocated on the C heap).
-    delete _objs_with_preserved_marks;
-    delete _preserved_marks_of_objs;
-    _objs_with_preserved_marks = NULL;
-    _preserved_marks_of_objs = NULL;
+  assert(_objs_with_preserved_marks.size() ==
+            _preserved_marks_of_objs.size(), "Both or none.");
+  while (!_objs_with_preserved_marks.is_empty()) {
+    oop obj = _objs_with_preserved_marks.pop();
+    markOop m = _preserved_marks_of_objs.pop();
+    obj->set_mark(m);
   }
+  _objs_with_preserved_marks.clear(true);
+  _preserved_marks_of_objs.clear(true);
 }
 
 void G1CollectedHeap::push_on_evac_failure_scan_stack(oop obj) {
@@ -4313,15 +4305,8 @@ void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
   // We want to call the "for_promotion_failure" version only in the
   // case of a promotion failure.
   if (m->must_be_preserved_for_promotion_failure(obj)) {
-    if (_objs_with_preserved_marks == NULL) {
-      assert(_preserved_marks_of_objs == NULL, "Both or none.");
-      _objs_with_preserved_marks =
-        new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(40, true);
-      _preserved_marks_of_objs =
-        new (ResourceObj::C_HEAP, mtGC) GrowableArray<markOop>(40, true);
-    }
-    _objs_with_preserved_marks->push(obj);
-    _preserved_marks_of_objs->push(m);
+    _objs_with_preserved_marks.push(obj);
+    _preserved_marks_of_objs.push(m);
   }
 }
 

@@ -64,33 +64,33 @@ rm -f -r ${tmp}
 mkdir -p ${tmp}
 
 safe_interrupt () {
-  if [ -d ${tmp} ]; then 
-    if [ "`ls ${tmp}`" != "" ]; then 
-      echo "Waiting for processes ( `cat ${tmp}/* | tr '\n' ' '`) to terminate nicely!"
+  if [ -d ${tmp} ]; then
+    if [ "`ls ${tmp}/*.pid`" != "" ]; then
+      echo "Waiting for processes ( `cat ${tmp}/*.pid | tr '\n' ' '`) to terminate nicely!"
       sleep 1
       # Pipe stderr to dev/null to silence kill, that complains when trying to kill
       # a subprocess that has already exited.
-      kill -TERM `cat ${tmp}/* | tr '\n' ' '` 2> /dev/null
-      wait 
-      echo Interrupt complete! 
-    fi 
+      kill -TERM `cat ${tmp}/*.pid | tr '\n' ' '` 2> /dev/null
+      wait
+      echo Interrupt complete!
+    fi
   fi
   rm -f -r ${tmp}
   exit 1
 }
 
 nice_exit () {
-  if [ -d ${tmp} ]; then 
-    if [ "`ls ${tmp}`" != "" ]; then 
-      wait 
-    fi 
+  if [ -d ${tmp} ]; then
+    if [ "`ls ${tmp}`" != "" ]; then
+      wait
+    fi
   fi
   rm -f -r ${tmp}
 }
 
 trap 'safe_interrupt' INT QUIT
 trap 'nice_exit' EXIT
- 
+
 # Only look in specific locations for possible forests (avoids long searches)
 pull_default=""
 repos=""
@@ -172,14 +172,26 @@ for i in ${repos} ${repos_extra} ; do
       if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
         pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
         echo ${hg} clone ${pull_newrepo} ${i}
-        ${hg} clone ${pull_newrepo} ${i} &
+        path="`dirname ${i}`"
+        if [ "${path}" != "." ] ; then
+          times=0
+          while [ ! -d "${path}" ]   ## nested repo, ensure containing dir exists
+          do
+            times=`expr ${times} '+' 1`
+            if [ `expr ${times} '%' 10` -eq 0 ] ; then
+              echo ${path} still not created, waiting...
+            fi
+            sleep 5
+          done
+        fi
+        (${hg} clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
       else
         echo "cd ${i} && ${hg} $*"
-        cd ${i} && ${hg} "$@" &
-      fi 
+        cd ${i} && (${hg} "$@"; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
+      fi
       echo $! > ${tmp}/${repopidfile}.pid
     ) 2>&1 | sed -e "s@^@${reponame}:   @") &
-  
+
   if [ `expr ${n} '%' ${at_a_time}` -eq 0 ] ; then
     sleep 2
     echo Waiting 5 secs before spawning next background command.
@@ -189,6 +201,15 @@ done
 # Wait for all hg commands to complete
 wait
 
-# Terminate with exit 0 all the time (hard to know when to say "failed")
-exit 0
-
+# Terminate with exit 0 only if all subprocesses were successful
+ec=0
+if [ -d ${tmp} ]; then
+  for rc in ${tmp}/*.pid.rc ; do
+    exit_code=`cat ${rc} | tr -d ' \n\r'`
+    if [ "${exit_code}" != "0" ] ; then
+      echo "WARNING: ${rc} exited abnormally."
+      ec=1
+    fi
+  done
+fi
+exit ${ec}

@@ -162,8 +162,9 @@ public class JarReorder {
         for (int i = orderList.size() - 1; i >= 0; --i) {
             String s = orderList.get(i);
             if (allFilesExcluded.contains(s)) {
-                System.err.println("Included order file " + s
-                    + " is also excluded, skipping.");
+                // Disable this warning until 8005688 is fixed
+                // System.err.println("Included order file " + s
+                //    + " is also excluded, skipping.");
             } else if (new File(s).exists()) {
                 allFiles.add(s);
             } else {

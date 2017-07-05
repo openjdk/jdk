@@ -66,25 +66,24 @@ import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Month;
+import java.time.chrono.IsoChronology;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.ISOChrono;
 import java.time.temporal.JulianFields;
 import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -177,34 +176,27 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @Test
-    public void test_query_chrono() {
-        assertEquals(DayOfWeek.FRIDAY.query(Queries.chrono()), null);
-        assertEquals(Queries.chrono().queryFrom(DayOfWeek.FRIDAY), null);
+    @DataProvider(name="query")
+    Object[][] data_query() {
+        return new Object[][] {
+                {DayOfWeek.FRIDAY, Queries.chronology(), null},
+                {DayOfWeek.FRIDAY, Queries.zoneId(), null},
+                {DayOfWeek.FRIDAY, Queries.precision(), ChronoUnit.DAYS},
+                {DayOfWeek.FRIDAY, Queries.zone(), null},
+                {DayOfWeek.FRIDAY, Queries.offset(), null},
+                {DayOfWeek.FRIDAY, Queries.localDate(), null},
+                {DayOfWeek.FRIDAY, Queries.localTime(), null},
+        };
     }
 
-    @Test
-    public void test_query_zoneId() {
-        assertEquals(DayOfWeek.FRIDAY.query(Queries.zoneId()), null);
-        assertEquals(Queries.zoneId().queryFrom(DayOfWeek.FRIDAY), null);
+    @Test(dataProvider="query")
+    public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(temporal.query(query), expected);
     }
 
-    @Test
-    public void test_query_precision() {
-        assertEquals(DayOfWeek.FRIDAY.query(Queries.precision()), ChronoUnit.DAYS);
-        assertEquals(Queries.precision().queryFrom(DayOfWeek.FRIDAY), ChronoUnit.DAYS);
-    }
-
-    @Test
-    public void test_query_offset() {
-        assertEquals(DayOfWeek.FRIDAY.query(Queries.offset()), null);
-        assertEquals(Queries.offset().queryFrom(DayOfWeek.FRIDAY), null);
-    }
-
-    @Test
-    public void test_query_zone() {
-        assertEquals(DayOfWeek.FRIDAY.query(Queries.zone()), null);
-        assertEquals(Queries.zone().queryFrom(DayOfWeek.FRIDAY), null);
+    @Test(dataProvider="query")
+    public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(query.queryFrom(temporal), expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -217,17 +209,17 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
     public void test_getText() {
-        assertEquals(DayOfWeek.MONDAY.getText(TextStyle.SHORT, Locale.US), "Mon");
+        assertEquals(DayOfWeek.MONDAY.getDisplayName(TextStyle.SHORT, Locale.US), "Mon");
     }
 
     @Test(expectedExceptions = NullPointerException.class, groups={"tck"})
     public void test_getText_nullStyle() {
-        DayOfWeek.MONDAY.getText(null, Locale.US);
+        DayOfWeek.MONDAY.getDisplayName(null, Locale.US);
     }
 
     @Test(expectedExceptions = NullPointerException.class, groups={"tck"})
     public void test_getText_nullLocale() {
-        DayOfWeek.MONDAY.getText(TextStyle.FULL, null);
+        DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null);
     }
 
     //-----------------------------------------------------------------------

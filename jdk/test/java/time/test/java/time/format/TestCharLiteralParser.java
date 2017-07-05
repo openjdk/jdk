@@ -59,11 +59,15 @@
  */
 package test.java.time.format;
 
+import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
-import java.time.format.DateTimeBuilder;
 import java.text.ParsePosition;
+import java.time.temporal.Queries;
+import java.time.temporal.TemporalAccessor;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -101,13 +105,14 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
                                    String text, int pos, int expectedPos) {
         setCaseSensitive(caseSensitive);
         ParsePosition ppos = new ParsePosition(pos);
-        DateTimeBuilder result =
-               getFormatter(c).parseToBuilder(text, ppos);
+        TemporalAccessor parsed = getFormatter(c).parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getIndex(), expectedPos);
         } else {
             assertEquals(ppos.getIndex(), expectedPos);
-            assertEquals(result.getCalendricalList().size(), 0);
+            assertEquals(parsed.isSupported(YEAR), false);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -123,9 +128,9 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
     @Test(dataProvider="error")
     public void test_parse_error(char c, String text, int pos, Class<?> expected) {
         try {
-            DateTimeBuilder result =
-               getFormatter(c).parseToBuilder(text, new ParsePosition(pos));
-            assertTrue(false);
+            ParsePosition ppos = new ParsePosition(pos);
+            getFormatter(c).parseUnresolved(text, ppos);
+            fail();
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
         }

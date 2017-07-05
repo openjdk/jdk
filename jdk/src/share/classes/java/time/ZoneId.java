@@ -71,6 +71,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.zone.ZoneRules;
+import java.time.zone.ZoneRulesException;
 import java.time.zone.ZoneRulesProvider;
 import java.util.Collections;
 import java.util.HashMap;
@@ -111,10 +112,11 @@ import java.util.TimeZone;
  * The ID is unique within the system.
  * The formats for offset and region IDs differ.
  * <p>
- * An ID is parsed as an offset ID if it starts with 'UTC', 'GMT', '+' or '-', or
- * is a single letter.
- * For example, 'Z', '+02:00', '-05:00', 'UTC+05' and 'GMT-6' are all valid offset IDs.
- * Note that some IDs, such as 'D' or '+ABC' meet the criteria, but are invalid.
+ * An ID is parsed as an offset ID if it starts with 'UTC', 'GMT', 'UT' '+' or '-', or
+ * is a single letter. For example, 'Z', '+02:00', '-05:00', 'UTC+05', 'GMT-6' and
+ * 'UT+01:00' are all valid offset IDs.
+ * Note that some IDs, such as 'D' or '+ABC' meet the criteria to be parsed as offset IDs,
+ * but have an invalid offset.
  * <p>
  * All other IDs are considered to be region IDs.
  * <p>
@@ -126,11 +128,11 @@ import java.util.TimeZone;
  * The default group is the IANA Time Zone Database (TZDB).
  * Other organizations include IATA (the airline industry body) and Microsoft.
  * <p>
- * Each group defines its own format for region ID.
+ * Each group defines its own format for the region ID it provides.
  * The TZDB group defines IDs such as 'Europe/London' or 'America/New_York'.
  * TZDB IDs take precedence over other groups.
  * <p>
- * It is strongly recommended that the group name is included in all Ids supplied by
+ * It is strongly recommended that the group name is included in all IDs supplied by
  * groups other than TZDB to avoid conflicts. For example, IATA airline time-zone
  * region IDs are typically the same as the three letter airport code.
  * However, the airport of Utrecht has the code 'UTC', which is obviously a conflict.
@@ -140,7 +142,7 @@ import java.util.TimeZone;
  * <h3>Specification for implementors</h3>
  * This abstract class has two implementations, both of which are immutable and thread-safe.
  * One implementation models region-based IDs, the other is {@code ZoneOffset} modelling
- * offset-based IDs.
+ * offset-based IDs. This difference is visible in serialization.
  *
  * @since 1.8
  */
@@ -151,8 +153,8 @@ public abstract class ZoneId implements Serializable {
      * <p>
      * This maps as follows:
      * <p><ul>
-     * <li>EST - America/Indianapolis</li>
-     * <li>MST - America/Phoenix</li>
+     * <li>EST - America/New_York</li>
+     * <li>MST - America/Denver</li>
      * <li>HST - Pacific/Honolulu</li>
      * <li>ACT - Australia/Darwin</li>
      * <li>AET - Australia/Sydney</li>
@@ -248,8 +250,8 @@ public abstract class ZoneId implements Serializable {
         base.put("SST", "Pacific/Guadalcanal");
         base.put("VST", "Asia/Ho_Chi_Minh");
         Map<String, String> pre = new HashMap<>(base);
-        pre.put("EST", "America/Indianapolis");
-        pre.put("MST", "America/Phoenix");
+        pre.put("EST", "America/New_York");
+        pre.put("MST", "America/Denver");
         pre.put("HST", "Pacific/Honolulu");
         OLD_IDS_PRE_2005 = Collections.unmodifiableMap(pre);
         Map<String, String> post = new HashMap<>(base);
@@ -273,7 +275,7 @@ public abstract class ZoneId implements Serializable {
      *
      * @return the zone ID, not null
      * @throws DateTimeException if the converted zone ID has an invalid format
-     * @throws java.time.zone.ZoneRulesException if the converted zone region ID cannot be found
+     * @throws ZoneRulesException if the converted zone region ID cannot be found
      */
     public static ZoneId systemDefault() {
         return ZoneId.of(TimeZone.getDefault().getID(), OLD_IDS_POST_2005);
@@ -294,7 +296,7 @@ public abstract class ZoneId implements Serializable {
      * @param aliasMap  a map of alias zone IDs (typically abbreviations) to real zone IDs, not null
      * @return the zone ID, not null
      * @throws DateTimeException if the zone ID has an invalid format
-     * @throws java.time.zone.ZoneRulesException if the zone region ID cannot be found
+     * @throws ZoneRulesException if the zone ID is a region ID that cannot be found
      */
     public static ZoneId of(String zoneId, Map<String, String> aliasMap) {
         Objects.requireNonNull(zoneId, "zoneId");
@@ -311,22 +313,22 @@ public abstract class ZoneId implements Serializable {
      * This method parses the ID, applies any appropriate normalization, and validates it
      * against the known set of IDs for which rules are available.
      * <p>
-     * An ID is parsed as though it is an offset ID if it starts with 'UTC', 'GMT', '+'
+     * An ID is parsed as though it is an offset ID if it starts with 'UTC', 'GMT', 'UT', '+'
      * or '-', or if it has less then two letters.
-     * The offset of {@link ZoneOffset#UTC zero} may be represented in multiple ways,
-     * including 'Z', 'UTC', 'GMT', 'UTC0' 'GMT0', '+00:00', '-00:00' and 'UTC+00:00'.
+     * The offset of {@linkplain ZoneOffset#UTC zero} may be represented in multiple ways,
+     * including 'Z', 'UTC', 'GMT', 'UT', 'UTC0', 'GMT0', 'UT0', '+00:00', '-00:00' and 'UTC+00:00'.
      * <p>
-     * Eight forms of ID are recognized, where '{offset}' means to parse using {@link ZoneOffset#of(String)}:
+     * Six forms of ID are recognized:
      * <p><ul>
-     * <li><code>{offset}</code> - a {@link ZoneOffset} ID, such as 'Z' or '+02:00'
-     * <li><code>UTC</code> - alternate form of a {@code ZoneOffset} ID equal to 'Z'
-     * <li><code>UTC0</code> - alternate form of a {@code ZoneOffset} ID equal to 'Z'
-     * <li><code>UTC{offset}</code> - alternate form of a {@code ZoneOffset} ID equal to '{offset}'
-     * <li><code>GMT</code> - alternate form of a {@code ZoneOffset} ID equal to 'Z'
-     * <li><code>GMT0</code> - alternate form of a {@code ZoneOffset} ID equal to 'Z'
-     * <li><code>GMT{offset}</code> - alternate form of a {@code ZoneOffset} ID equal to '{offset}'r
+     * <li><code>Z</code> - an offset of zero, which is {@code ZoneOffset.UTC}
+     * <li><code>{offset}</code> - a {@code ZoneOffset} ID, such as '+02:00'
+     * <li><code>{utcPrefix}</code> - a {@code ZoneOffset} ID equal to 'Z'
+     * <li><code>{utcPrefix}0</code> - a {@code ZoneOffset} ID equal to 'Z'
+     * <li><code>{utcPrefix}{offset}</code> - a {@code ZoneOffset} ID equal to '{offset}'
      * <li><code>{regionID}</code> - full region ID, loaded from configuration
      * </ul><p>
+     * The {offset} is a valid format for {@link ZoneOffset#of(String)}, excluding 'Z'.
+     * The {utcPrefix} is 'UTC', 'GMT' or 'UT'.
      * Region IDs must match the regular expression <code>[A-Za-z][A-Za-z0-9~/._+-]+</code>.
      * <p>
      * The detailed format of the region ID depends on the group supplying the data.
@@ -337,24 +339,51 @@ public abstract class ZoneId implements Serializable {
      * @param zoneId  the time-zone ID, not null
      * @return the zone ID, not null
      * @throws DateTimeException if the zone ID has an invalid format
-     * @throws java.time.zone.ZoneRulesException if the zone region ID cannot be found
+     * @throws ZoneRulesException if the zone ID is a region ID that cannot be found
      */
     public static ZoneId of(String zoneId) {
         Objects.requireNonNull(zoneId, "zoneId");
         if (zoneId.length() <= 1 || zoneId.startsWith("+") || zoneId.startsWith("-")) {
             return ZoneOffset.of(zoneId);
         } else if (zoneId.startsWith("UTC") || zoneId.startsWith("GMT")) {
-            if (zoneId.length() == 3 || (zoneId.length() == 4 && zoneId.charAt(3) == '0')) {
-                return ZoneOffset.UTC;
-            }
-            return ZoneOffset.of(zoneId.substring(3));
+            return ofWithPrefix(zoneId, 3);
+        } else if (zoneId.startsWith("UT")) {
+            return ofWithPrefix(zoneId, 2);
         }
         return ZoneRegion.ofId(zoneId, true);
+    }
+
+    /**
+     * Parse once a prefix is established.
+     *
+     * @param zoneId  the time-zone ID, not null
+     * @param prefixLength  the length of the prefix, 2 or 3
+     * @return the zone ID, not null
+     * @return the zone ID, not null
+     * @throws DateTimeException if the zone ID has an invalid format
+     */
+    private static ZoneId ofWithPrefix(String zoneId, int prefixLength) {
+        if (zoneId.length() == prefixLength ||
+                (zoneId.length() == prefixLength + 1 && zoneId.charAt(prefixLength) == '0')) {
+            return ZoneOffset.UTC;
+        }
+        if (zoneId.charAt(prefixLength) == '+' || zoneId.charAt(prefixLength) == '-') {
+            try {
+                return ZoneOffset.of(zoneId.substring(prefixLength));
+            } catch (DateTimeException ex) {
+                throw new DateTimeException("Invalid ID for offset-based ZoneId: " + zoneId, ex);
+            }
+        }
+        throw new DateTimeException("Invalid ID for offset-based ZoneId: " + zoneId);
     }
 
     //-----------------------------------------------------------------------
     /**
      * Obtains an instance of {@code ZoneId} from a temporal object.
+     * <p>
+     * This obtains a zone based on the specified temporal.
+     * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
+     * which this factory converts to an instance of {@code ZoneId}.
      * <p>
      * A {@code TemporalAccessor} represents some form of date and time information.
      * This factory converts the arbitrary temporal object to an instance of {@code ZoneId}.
@@ -417,7 +446,7 @@ public abstract class ZoneId implements Serializable {
      * {@link ZoneOffset} will always return a set of rules where the offset never changes.
      *
      * @return the rules, not null
-     * @throws DateTimeException if no rules are available for this ID
+     * @throws ZoneRulesException if no rules are available for this ID
      */
     public abstract ZoneRules getRules();
 
@@ -426,7 +455,9 @@ public abstract class ZoneId implements Serializable {
      * Gets the textual representation of the zone, such as 'British Time' or
      * '+02:00'.
      * <p>
-     * This returns a textual description for the time-zone ID.
+     * This returns the textual name used to identify the time-zone ID,
+     * suitable for presentation to the user.
+     * The parameters control the style of the returned text and the locale.
      * <p>
      * If no textual mapping is found then the {@link #getId() full ID} is returned.
      *
@@ -434,8 +465,8 @@ public abstract class ZoneId implements Serializable {
      * @param locale  the locale to use, not null
      * @return the text value of the zone, not null
      */
-    public String getText(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale).print(new TemporalAccessor() {
+    public String getDisplayName(TextStyle style, Locale locale) {
+        return new DateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale).format(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 return false;

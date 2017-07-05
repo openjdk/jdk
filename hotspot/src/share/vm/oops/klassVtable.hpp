@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ class klassVtable : public ResourceObj {
       Array<Method*>* methods, AccessFlags class_flags, Handle classloader,
       Symbol* classname, Array<Klass*>* local_interfaces, TRAPS);
 
+#if INCLUDE_JVMTI
   // RedefineClasses() API support:
   // If any entry of this vtable points to any of old_methods,
   // replace it with the corresponding new_method.
@@ -98,16 +99,14 @@ class klassVtable : public ResourceObj {
   // group don't print the klass name.
   void adjust_method_entries(Method** old_methods, Method** new_methods,
                              int methods_length, bool * trace_name_printed);
+  bool check_no_old_or_obsolete_entries();
+  void dump_vtable();
+#endif // INCLUDE_JVMTI
 
   // Debugging code
   void print()                                              PRODUCT_RETURN;
   void verify(outputStream* st, bool force = false);
   static void print_statistics()                            PRODUCT_RETURN;
-
-#ifndef PRODUCT
-  bool check_no_old_entries();
-  void dump_vtable();
-#endif
 
  protected:
   friend class vtableEntry;
@@ -275,6 +274,7 @@ class klassItable : public ResourceObj {
   // Updates
   void initialize_with_method(Method* m);
 
+#if INCLUDE_JVMTI
   // RedefineClasses() API support:
   // if any entry of this itable points to any of old_methods,
   // replace it with the corresponding new_method.
@@ -283,6 +283,9 @@ class klassItable : public ResourceObj {
   // group don't print the klass name.
   void adjust_method_entries(Method** old_methods, Method** new_methods,
                              int methods_length, bool * trace_name_printed);
+  bool check_no_old_or_obsolete_entries();
+  void dump_itable();
+#endif // INCLUDE_JVMTI
 
   // Setup of itable
   static int compute_itable_size(Array<Klass*>* transitive_interfaces);
@@ -307,11 +310,6 @@ class klassItable : public ResourceObj {
   NOT_PRODUCT(static long _total_size;)      // Total no. of bytes used for itables
 
   static void update_stats(int size) PRODUCT_RETURN NOT_PRODUCT({ _total_classes++; _total_size += size; })
-
- public:
-#ifndef PRODUCT
-  bool check_no_old_entries();
-#endif
 };
 
 #endif // SHARE_VM_OOPS_KLASSVTABLE_HPP

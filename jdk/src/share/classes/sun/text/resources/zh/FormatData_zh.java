@@ -82,7 +82,12 @@ public class FormatData_zh extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
+    @Override
     protected final Object[][] getContents() {
+        final String[] rocEras = {
+            "\u6c11\u56fd\u524d",
+            "\u6c11\u56fd",
+        };
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -217,12 +222,8 @@ public class FormatData_zh extends ListResourceBundle {
                     "Gyy-MM-dd",
                 }
             },
-            { "roc.Eras",
-                new String[] {
-                    "\u6c11\u56fd\u524d",
-                    "\u6c11\u56fd",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "cldr.roc.DatePatterns",
                 new String[] {
                     "Gy\u5e74M\u6708d\u65e5EEEE",

@@ -26,7 +26,8 @@
  * @bug 9999999
  * @summary default principal can act as anyone
  * @compile -XDignore.symbol.file AcceptPermissions.java
- * @run main/othervm AcceptPermissions
+ * @run main/othervm AcceptPermissions two
+ * @run main/othervm AcceptPermissions unbound
  */
 
 import java.nio.file.Files;
@@ -83,15 +84,20 @@ public class AcceptPermissions extends SecurityManager {
     public static void main(String[] args) throws Exception {
         System.setSecurityManager(new AcceptPermissions());
         new OneKDC(null).writeJAASConf();
-        String two = "two {\n"
+        String moreEntries = "two {\n"
                 + " com.sun.security.auth.module.Krb5LoginModule required"
                 + "     principal=\"" + OneKDC.SERVER + "\" useKeyTab=true"
                 + "     isInitiator=false storeKey=true;\n"
                 + " com.sun.security.auth.module.Krb5LoginModule required"
                 + "     principal=\"" + OneKDC.BACKEND + "\" useKeyTab=true"
                 + "     isInitiator=false storeKey=true;\n"
+                + "};\n"
+                + "unbound {"
+                + " com.sun.security.auth.module.Krb5LoginModule required"
+                + "     principal=* useKeyTab=true"
+                + "     isInitiator=false storeKey=true;\n"
                 + "};\n";
-        Files.write(Paths.get(OneKDC.JAAS_CONF), two.getBytes(),
+        Files.write(Paths.get(OneKDC.JAAS_CONF), moreEntries.getBytes(),
                 StandardOpenOption.APPEND);
 
         Context c, s;
@@ -114,7 +120,7 @@ public class AcceptPermissions extends SecurityManager {
         // Named principal (even if there are 2 JAAS modules)
         initPerms(OneKDC.SERVER);
         c = Context.fromJAAS("client");
-        s = Context.fromJAAS("two");
+        s = Context.fromJAAS(args[0]);
         c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
         s.startAsServer(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
         checkPerms();
@@ -136,7 +142,7 @@ public class AcceptPermissions extends SecurityManager {
         // Default principal with no predictable name
         initPerms();    // permission not needed for cred !!!
         c = Context.fromJAAS("client");
-        s = Context.fromJAAS("two");
+        s = Context.fromJAAS(args[0]);
         c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
         checkPerms();

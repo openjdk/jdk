@@ -74,18 +74,18 @@ public class TestCharLiteralPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     public void test_print_emptyCalendrical() throws Exception {
         buf.append("EXISTING");
-        getFormatter('a').printTo(EMPTY_DTA, buf);
+        getFormatter('a').formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "EXISTINGa");
     }
 
     public void test_print_dateTime() throws Exception {
         buf.append("EXISTING");
-        getFormatter('a').printTo(dta, buf);
+        getFormatter('a').formatTo(dta, buf);
         assertEquals(buf.toString(), "EXISTINGa");
     }
 
     public void test_print_emptyAppendable() throws Exception {
-        getFormatter('a').printTo(dta, buf);
+        getFormatter('a').formatTo(dta, buf);
         assertEquals(buf.toString(), "a");
     }
 

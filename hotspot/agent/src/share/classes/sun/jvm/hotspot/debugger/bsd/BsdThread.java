@@ -28,21 +28,23 @@ import sun.jvm.hotspot.debugger.*;
 
 class BsdThread implements ThreadProxy {
     private BsdDebugger debugger;
-    private int           lwp_id;
+    private int         thread_id;
+    private long        unique_thread_id;
 
     /** The address argument must be the address of the _thread_id in the
         OSThread. It's value is result ::gettid() call. */
-    BsdThread(BsdDebugger debugger, Address addr) {
+    BsdThread(BsdDebugger debugger, Address threadIdAddr, Address uniqueThreadIdAddr) {
         this.debugger = debugger;
         // FIXME: size of data fetched here should be configurable.
         // However, making it so would produce a dependency on the "types"
         // package from the debugger package, which is not desired.
-        this.lwp_id = (int) addr.getCIntegerAt(0, 4, true);
+        this.thread_id = (int) threadIdAddr.getCIntegerAt(0, 4, true);
+        this.unique_thread_id = uniqueThreadIdAddr.getCIntegerAt(0, 8, true);
     }
 
     BsdThread(BsdDebugger debugger, long id) {
         this.debugger = debugger;
-        this.lwp_id = (int) id;
+        this.thread_id = (int) id;
     }
 
     public boolean equals(Object obj) {
@@ -50,19 +52,19 @@ class BsdThread implements ThreadProxy {
             return false;
         }
 
-        return (((BsdThread) obj).lwp_id == lwp_id);
+        return (((BsdThread) obj).thread_id == thread_id);
     }
 
     public int hashCode() {
-        return lwp_id;
+        return thread_id;
     }
 
     public String toString() {
-        return Integer.toString(lwp_id);
+        return Integer.toString(thread_id);
     }
 
     public ThreadContext getContext() throws IllegalThreadStateException {
-        long[] data = debugger.getThreadIntegerRegisterSet(lwp_id);
+        long[] data = debugger.getThreadIntegerRegisterSet(unique_thread_id);
         ThreadContext context = BsdThreadContextFactory.createThreadContext(debugger);
         for (int i = 0; i < data.length; i++) {
             context.setRegister(i, data[i]);

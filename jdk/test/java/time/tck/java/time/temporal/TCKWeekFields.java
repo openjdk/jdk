@@ -56,310 +56,349 @@
  */
 package tck.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.fail;
-
-import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalField;
-import java.time.format.DateTimeBuilder;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
 /**
  * Test WeekFields.
  */
 @Test
-public class TCKWeekFields {
+public class TCKWeekFields extends AbstractTCKTest {
 
-    @Test(groups={"tck"})
-    public void test_WeekFieldsOf() {
-        for (DayOfWeek dow : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                WeekFields week = WeekFields.of(dow, minDays);
-                assertEquals(week.getFirstDayOfWeek(), dow, "Incorrect firstDayOfWeek");
-                assertEquals(week.getMinimalDaysInFirstWeek(), minDays, "Incorrect MinimalDaysInFirstWeek");
-            }
-        }
+    @Test(dataProvider="weekFields")
+    public void test_of_DayOfWeek_int_singleton(DayOfWeek firstDayOfWeek, int minDays) {
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        assertEquals(week.getFirstDayOfWeek(), firstDayOfWeek, "Incorrect firstDayOfWeek");
+        assertEquals(week.getMinimalDaysInFirstWeek(), minDays, "Incorrect MinimalDaysInFirstWeek");
+        assertSame(WeekFields.of(firstDayOfWeek, minDays), week);
     }
 
-    @Test(groups={"tck"})
-    public void test_DayOfWeek() {
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_dayOfWeekField_simpleGet() {
+        LocalDate date = LocalDate.of(2000, 1, 10);  // Known to be ISO Monday
+        assertEquals(date.get(WeekFields.ISO.dayOfWeek()), 1);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.MONDAY, 1).dayOfWeek()), 1);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.MONDAY, 7).dayOfWeek()), 1);
+        assertEquals(date.get(WeekFields.SUNDAY_START.dayOfWeek()), 2);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.SUNDAY, 1).dayOfWeek()), 2);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.SUNDAY, 7).dayOfWeek()), 2);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.SATURDAY, 1).dayOfWeek()), 3);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.FRIDAY, 1).dayOfWeek()), 4);
+        assertEquals(date.get(WeekFields.of(DayOfWeek.TUESDAY, 1).dayOfWeek()), 7);
+    }
+
+    @Test
+    public void test_dayOfWeekField_simpleSet() {
+        LocalDate date = LocalDate.of(2000, 1, 10);  // Known to be ISO Monday
+        assertEquals(date.with(WeekFields.ISO.dayOfWeek(), 2), LocalDate.of(2000, 1, 11));
+        assertEquals(date.with(WeekFields.ISO.dayOfWeek(), 7), LocalDate.of(2000, 1, 16));
+
+        assertEquals(date.with(WeekFields.SUNDAY_START.dayOfWeek(), 3), LocalDate.of(2000, 1, 11));
+        assertEquals(date.with(WeekFields.SUNDAY_START.dayOfWeek(), 7), LocalDate.of(2000, 1, 15));
+
+        assertEquals(date.with(WeekFields.of(DayOfWeek.SATURDAY, 1).dayOfWeek(), 4), LocalDate.of(2000, 1, 11));
+        assertEquals(date.with(WeekFields.of(DayOfWeek.TUESDAY, 1).dayOfWeek(), 1), LocalDate.of(2000, 1, 4));
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_dayOfWeekField(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate day = LocalDate.of(2000, 1, 10);  // Known to be ISO Monday
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
-                TemporalField f = week.dayOfWeek();
-                //System.out.printf("  Week: %s; field: %s%n", week, f);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField f = week.dayOfWeek();
+        //System.out.printf("  Week: %s; field: %s%n", week, f);
 
-                for (int i = 1; i <= 7; i++) {
-                    //System.out.printf("  ISO Dow: %s, WeekDOW ordinal: %s%n", day.getDayOfWeek(), day.get(f));
-                    assertEquals(day.get(f), (7 + day.getDayOfWeek().getValue() - firstDayOfWeek.getValue()) % 7 + 1);
-                    day = day.plusDays(1);
-                }
-            }
+        for (int i = 1; i <= 7; i++) {
+            //System.out.printf("  ISO Dow: %s, WeekDOW ordinal: %s%n", day.getDayOfWeek(), day.get(f));
+            assertEquals(day.get(f), (7 + day.getDayOfWeek().getValue() - firstDayOfWeek.getValue()) % 7 + 1);
+            day = day.plusDays(1);
         }
     }
 
-    @Test(groups={"tck"})
-    public void test_WeekOfMonth() {
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                LocalDate day = LocalDate.of(2012, 12, 31);  // Known to be ISO Monday
-                WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
-                TemporalField dowField = week.dayOfWeek();
-                TemporalField womField = week.weekOfMonth();
-                //System.err.printf("%n  Week: %s; dowField: %s, domField: %s%n", week, dowField, womField);
+    @Test(dataProvider="weekFields")
+    public void test_weekOfMonthField(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate day = LocalDate.of(2012, 12, 31);  // Known to be ISO Monday
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField womField = week.weekOfMonth();
+        //System.err.printf("%n  Week: %s; dowField: %s, domField: %s%n", week, dowField, womField);
 
-                DayOfWeek isoDOW = day.getDayOfWeek();
-                int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
+        DayOfWeek isoDOW = day.getDayOfWeek();
+        int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
 
-                for (int i = 1; i <= 15; i++) {
-                    int actualDOW = day.get(dowField);
-                    int actualWOM = day.get(womField);
+        for (int i = 1; i <= 15; i++) {
+            int actualDOW = day.get(dowField);
+            int actualWOM = day.get(womField);
 
-                    // Verify that the combination of day of week and week of month can be used
-                    // to reconstruct the same date.
-                    LocalDate day1 = day.withDayOfMonth(1);
-                    int offset = - (day1.get(dowField) - 1);
-                    //System.err.printf("   refDay: %s%n", day1.plusDays(offset));
-                    int week1 = day1.get(womField);
-                    if (week1 == 0) {
-                        // week of the 1st is partial; start with first full week
-                        offset += 7;
-                    }
-                    //System.err.printf("   refDay2: %s, offset: %d, week1: %d%n", day1.plusDays(offset), offset, week1);
-                    offset += actualDOW - 1;
-                    //System.err.printf("   refDay3: %s%n", day1.plusDays(offset));
-                    offset += (actualWOM - 1) * 7;
-                    //System.err.printf("   refDay4: %s%n", day1.plusDays(offset));
-                    LocalDate result = day1.plusDays(offset);
-
-                    if (!day.equals(result)) {
-                        System.err.printf("FAIL ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
-                                day.getDayOfWeek(), offset, actualDOW, actualWOM, day, result);
-                    }
-                    assertEquals(result, day, "Incorrect dayOfWeek or weekOfMonth: "
-                            + String.format("%s, ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
-                            week, day.getDayOfWeek(), offset, actualDOW, actualWOM, day, result));
-                    day = day.plusDays(1);
-                }
+            // Verify that the combination of day of week and week of month can be used
+            // to reconstruct the same date.
+            LocalDate day1 = day.withDayOfMonth(1);
+            int offset = - (day1.get(dowField) - 1);
+            //System.err.printf("   refDay: %s%n", day1.plusDays(offset));
+            int week1 = day1.get(womField);
+            if (week1 == 0) {
+                // week of the 1st is partial; start with first full week
+                offset += 7;
             }
+            //System.err.printf("   refDay2: %s, offset: %d, week1: %d%n", day1.plusDays(offset), offset, week1);
+            offset += actualDOW - 1;
+            //System.err.printf("   refDay3: %s%n", day1.plusDays(offset));
+            offset += (actualWOM - 1) * 7;
+            //System.err.printf("   refDay4: %s%n", day1.plusDays(offset));
+            LocalDate result = day1.plusDays(offset);
+
+            if (!day.equals(result)) {
+                System.err.printf("FAIL ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
+                        day.getDayOfWeek(), offset, actualDOW, actualWOM, day, result);
+            }
+            assertEquals(result, day, "Incorrect dayOfWeek or weekOfMonth: "
+                    + String.format("%s, ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
+                    week, day.getDayOfWeek(), offset, actualDOW, actualWOM, day, result));
+            day = day.plusDays(1);
         }
     }
 
-    @Test(groups={"tck"})
-    public void test_WeekOfYear() {
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                LocalDate day = LocalDate.of(2012, 12, 31);  // Known to be ISO Monday
-                WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
-                TemporalField dowField = week.dayOfWeek();
-                TemporalField woyField = week.weekOfYear();
-                //System.err.printf("%n  Year: %s; dowField: %s, woyField: %s%n", week, dowField, woyField);
+    @Test(dataProvider="weekFields")
+    public void test_weekOfYearField(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate day = LocalDate.of(2012, 12, 31);  // Known to be ISO Monday
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField woyField = week.weekOfYear();
+        //System.err.printf("%n  Year: %s; dowField: %s, woyField: %s%n", week, dowField, woyField);
 
-                DayOfWeek isoDOW = day.getDayOfWeek();
-                int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
+        DayOfWeek isoDOW = day.getDayOfWeek();
+        int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
 
-                for (int i = 1; i <= 15; i++) {
-                    int actualDOW = day.get(dowField);
-                    int actualWOY = day.get(woyField);
+        for (int i = 1; i <= 15; i++) {
+            int actualDOW = day.get(dowField);
+            int actualWOY = day.get(woyField);
 
-                    // Verify that the combination of day of week and week of month can be used
-                    // to reconstruct the same date.
-                    LocalDate day1 = day.withDayOfYear(1);
-                    int offset = - (day1.get(dowField) - 1);
-                    //System.err.printf("   refDay: %s%n", day1.plusDays(offset));
-                    int week1 = day1.get(woyField);
-                    if (week1 == 0) {
-                        // week of the 1st is partial; start with first full week
-                        offset += 7;
-                    }
-                    //System.err.printf("   refDay2: %s, offset: %d, week1: %d%n", day1.plusDays(offset), offset, week1);
-                    offset += actualDOW - 1;
-                    //System.err.printf("   refDay3: %s%n", day1.plusDays(offset));
-                    offset += (actualWOY - 1) * 7;
-                    //System.err.printf("   refDay4: %s%n", day1.plusDays(offset));
-                    LocalDate result = day1.plusDays(offset);
-
-
-                    if (!day.equals(result)) {
-                        System.err.printf("FAIL  ISO Dow: %s, offset: %s, actualDOW: %s, actualWOY: %s, expected: %s, result: %s%n",
-                                day.getDayOfWeek(), offset, actualDOW, actualWOY, day, result);
-                    }
-                    assertEquals(result, day, "Incorrect dayOfWeek or weekOfYear "
-                            + String.format("%s, ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
-                            week, day.getDayOfWeek(), offset, actualDOW, actualWOY, day, result));
-                    day = day.plusDays(1);
-                }
+            // Verify that the combination of day of week and week of month can be used
+            // to reconstruct the same date.
+            LocalDate day1 = day.withDayOfYear(1);
+            int offset = - (day1.get(dowField) - 1);
+            //System.err.printf("   refDay: %s%n", day1.plusDays(offset));
+            int week1 = day1.get(woyField);
+            if (week1 == 0) {
+                // week of the 1st is partial; start with first full week
+                offset += 7;
             }
+            //System.err.printf("   refDay2: %s, offset: %d, week1: %d%n", day1.plusDays(offset), offset, week1);
+            offset += actualDOW - 1;
+            //System.err.printf("   refDay3: %s%n", day1.plusDays(offset));
+            offset += (actualWOY - 1) * 7;
+            //System.err.printf("   refDay4: %s%n", day1.plusDays(offset));
+            LocalDate result = day1.plusDays(offset);
+
+
+            if (!day.equals(result)) {
+                System.err.printf("FAIL  ISO Dow: %s, offset: %s, actualDOW: %s, actualWOY: %s, expected: %s, result: %s%n",
+                        day.getDayOfWeek(), offset, actualDOW, actualWOY, day, result);
+            }
+            assertEquals(result, day, "Incorrect dayOfWeek or weekOfYear "
+                    + String.format("%s, ISO Dow: %s, offset: %s, actualDOW: %s, actualWOM: %s, expected: %s, result: %s%n",
+                    week, day.getDayOfWeek(), offset, actualDOW, actualWOY, day, result));
+            day = day.plusDays(1);
         }
     }
 
-    @Test(groups={"tck"})
-    public void test_fieldRanges() {
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
-                TemporalField dowField = weekDef.dayOfWeek();
-                TemporalField womField = weekDef.weekOfMonth();
-                TemporalField woyField = weekDef.weekOfYear();
+    @Test(dataProvider="weekFields")
+    public void test_fieldRanges(DayOfWeek firstDayOfWeek, int minDays) {
+        WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField womField = weekDef.weekOfMonth();
+        TemporalField woyField = weekDef.weekOfYear();
 
-                LocalDate day = LocalDate.of(2012, 11, 30);
-                LocalDate endDay = LocalDate.of(2013, 1, 2);
-                while (day.isBefore(endDay)) {
-                    LocalDate last = day.with(DAY_OF_MONTH, day.lengthOfMonth());
-                    int lastWOM = last.get(womField);
-                    LocalDate first = day.with(DAY_OF_MONTH, 1);
-                    int firstWOM = first.get(womField);
-                    ValueRange rangeWOM = day.range(womField);
-                    assertEquals(rangeWOM.getMinimum(), firstWOM,
-                            "Range min should be same as WeekOfMonth for first day of month: "
-                            + first + ", " + weekDef);
-                    assertEquals(rangeWOM.getMaximum(), lastWOM,
-                            "Range max should be same as WeekOfMonth for last day of month: "
-                            + last + ", " + weekDef);
+        LocalDate day = LocalDate.of(2012, 11, 30);
+        LocalDate endDay = LocalDate.of(2013, 1, 2);
+        while (day.isBefore(endDay)) {
+            LocalDate last = day.with(DAY_OF_MONTH, day.lengthOfMonth());
+            int lastWOM = last.get(womField);
+            LocalDate first = day.with(DAY_OF_MONTH, 1);
+            int firstWOM = first.get(womField);
+            ValueRange rangeWOM = day.range(womField);
+            assertEquals(rangeWOM.getMinimum(), firstWOM,
+                    "Range min should be same as WeekOfMonth for first day of month: "
+                    + first + ", " + weekDef);
+            assertEquals(rangeWOM.getMaximum(), lastWOM,
+                    "Range max should be same as WeekOfMonth for last day of month: "
+                    + last + ", " + weekDef);
 
-                    last = day.with(DAY_OF_YEAR, day.lengthOfYear());
-                    int lastWOY = last.get(woyField);
-                    first = day.with(DAY_OF_YEAR, 1);
-                    int firstWOY = first.get(woyField);
-                    ValueRange rangeWOY = day.range(woyField);
-                    assertEquals(rangeWOY.getMinimum(), firstWOY,
-                            "Range min should be same as WeekOfYear for first day of Year: "
-                            + day + ", " + weekDef);
-                    assertEquals(rangeWOY.getMaximum(), lastWOY,
-                            "Range max should be same as WeekOfYear for last day of Year: "
-                            + day + ", " + weekDef);
+            last = day.with(DAY_OF_YEAR, day.lengthOfYear());
+            int lastWOY = last.get(woyField);
+            first = day.with(DAY_OF_YEAR, 1);
+            int firstWOY = first.get(woyField);
+            ValueRange rangeWOY = day.range(woyField);
+            assertEquals(rangeWOY.getMinimum(), firstWOY,
+                    "Range min should be same as WeekOfYear for first day of Year: "
+                    + day + ", " + weekDef);
+            assertEquals(rangeWOY.getMaximum(), lastWOY,
+                    "Range max should be same as WeekOfYear for last day of Year: "
+                    + day + ", " + weekDef);
 
-                    day = day.plusDays(1);
-                }
-            }
+            day = day.plusDays(1);
         }
     }
 
     //-----------------------------------------------------------------------
     // withDayOfWeek()
     //-----------------------------------------------------------------------
-    @Test(groups = {"tck"})
-    public void test_withDayOfWeek() {
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                LocalDate day = LocalDate.of(2012, 12, 15);  // Safely in the middle of a month
-                WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+    @Test(dataProvider="weekFields")
+    public void test_withDayOfWeek(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate day = LocalDate.of(2012, 12, 15);  // Safely in the middle of a month
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField womField = week.weekOfMonth();
+        TemporalField woyField = week.weekOfYear();
 
-                TemporalField dowField = week.dayOfWeek();
-                TemporalField womField = week.weekOfMonth();
-                TemporalField woyField = week.weekOfYear();
-                int wom = day.get(womField);
-                int woy = day.get(woyField);
-                for (int dow = 1; dow <= 7; dow++) {
-                    LocalDate result = day.with(dowField, dow);
-                    if (result.get(dowField) != dow) {
-                        System.err.printf(" DOW actual: %d, expected: %d, week:%s%n",
-                                result.get(dowField), dow, week);
-                    }
-                    if (result.get(womField) != wom) {
-                        System.err.printf(" WOM actual: %d, expected: %d, week:%s%n",
-                                result.get(womField), wom, week);
-                    }
-                    if (result.get(woyField) != woy) {
-                        System.err.printf(" WOY actual: %d, expected: %d, week:%s%n",
-                                result.get(woyField), woy, week);
-                    }
-                    assertEquals(result.get(dowField), dow, String.format("Incorrect new Day of week: %s", result));
-                    assertEquals(result.get(womField), wom, "Week of Month should not change");
-                    assertEquals(result.get(woyField), woy, "Week of Year should not change");
-                }
+        int wom = day.get(womField);
+        int woy = day.get(woyField);
+        for (int dow = 1; dow <= 7; dow++) {
+            LocalDate result = day.with(dowField, dow);
+            if (result.get(dowField) != dow) {
+                System.err.printf(" DOW actual: %d, expected: %d, week:%s%n",
+                        result.get(dowField), dow, week);
             }
+            if (result.get(womField) != wom) {
+                System.err.printf(" WOM actual: %d, expected: %d, week:%s%n",
+                        result.get(womField), wom, week);
+            }
+            if (result.get(woyField) != woy) {
+                System.err.printf(" WOY actual: %d, expected: %d, week:%s%n",
+                        result.get(woyField), woy, week);
+            }
+            assertEquals(result.get(dowField), dow, String.format("Incorrect new Day of week: %s", result));
+            assertEquals(result.get(womField), wom, "Week of Month should not change");
+            assertEquals(result.get(woyField), woy, "Week of Year should not change");
         }
     }
 
-    @Test()
-    public void test_computedFieldResolver() {
-        // For all starting days of week, for all minDays, for two weeks in Dec 2012
-        // Test that when supplied with partial values, that the resolver
-        // fills in the month
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                LocalDate day = LocalDate.of(2012, 12, 15);  // Safely in the middle of a month
-                WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWom(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField womField = week.weekOfMonth();
 
-                TemporalField dowField = week.dayOfWeek();
-                TemporalField womField = week.weekOfMonth();
-                TemporalField woyField = week.weekOfYear();
-                int wom = day.get(womField);
-                int woy = day.get(woyField);
-                for (int dow = 1; dow <= 15; dow++) {
-                    // Test that with dayOfWeek and Week of month it computes the day of month
-                    DateTimeBuilder builder = new DateTimeBuilder();
-                    builder.addFieldValue(YEAR, day.get(YEAR));
-                    builder.addFieldValue(MONTH_OF_YEAR, day.get(MONTH_OF_YEAR));
-                    builder.addFieldValue(DAY_OF_WEEK, day.get(DAY_OF_WEEK));
-                    builder.addFieldValue(dowField, day.get(dowField));
-                    builder.addFieldValue(womField, day.get(womField));
+        for (int i = 1; i <= 60; i++) {
+            // Test that with dayOfWeek and Week of month it computes the date
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral('-')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                    .appendValue(womField).appendLiteral('-')
+                    .appendValue(DAY_OF_WEEK).toFormatter();
+            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
+                    date.get(womField) + "-" + date.get(DAY_OF_WEEK);
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, date, " ::" + str + "::" + i);
 
-                    boolean res1 = dowField.resolve(builder, day.get(dowField));
-                    boolean res2 = womField.resolve(builder, day.get(womField));
-                    assertEquals(day.get(DAY_OF_MONTH), day.get(DAY_OF_MONTH));
-                    assertEquals(day.get(DAY_OF_YEAR), day.get(DAY_OF_YEAR));
-
-                    day = day.plusDays(1);
-                }
-                day = LocalDate.of(2012, 12, 15);  // Safely in the middle of a month
-                for (int dow = 1; dow <= 15; dow++) {
-                    // Test that with dayOfWeek and Week of year it computes the day of year
-                    DateTimeBuilder builder = new DateTimeBuilder();
-                    builder.addFieldValue(YEAR, day.get(YEAR));
-                    builder.addFieldValue(DAY_OF_WEEK, day.get(DAY_OF_WEEK));
-                    builder.addFieldValue(dowField, day.get(dowField));
-                    builder.addFieldValue(woyField, day.get(woyField));
-
-                    boolean res1 = dowField.resolve(builder, day.get(dowField));
-                    boolean res2 = woyField.resolve(builder, day.get(woyField));
-
-                    assertEquals(day.get(DAY_OF_MONTH), day.get(DAY_OF_MONTH));
-                    assertEquals(day.get(DAY_OF_YEAR), day.get(DAY_OF_YEAR));
-
-                    day = day.plusDays(1);
-                }
-            }
+            date = date.plusDays(1);
         }
     }
 
-    @Test(groups = {"tck"})
-    public void test_WeekFieldsSingleton() throws IOException, ClassNotFoundException {
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
-                WeekFields weekDef2 = WeekFields.of(firstDayOfWeek, minDays);
-                assertSame(weekDef2, weekDef, "WeekFields same parameters should be same instance");
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                     ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-                    oos.writeObject(weekDef);
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWomDow(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField womField = week.weekOfMonth();
 
-                    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(
-                        baos.toByteArray()));
-                    WeekFields result = (WeekFields)ois.readObject();
-                    assertSame(result, weekDef, "Deserialized object same as serialized.");
-                }
-                // Exceptions will be handled as failures by TestNG
-            }
+        for (int i = 1; i <= 15; i++) {
+            // Test that with dayOfWeek and Week of month it computes the date
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral('-')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                    .appendValue(womField).appendLiteral('-')
+                    .appendValue(dowField).toFormatter();
+            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
+                    date.get(womField) + "-" + date.get(dowField);
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, date, " :: " + str + " " + i);
+
+            date = date.plusDays(1);
         }
     }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoy(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField woyField = week.weekOfYear();
+
+        for (int i = 1; i <= 60; i++) {
+            // Test that with dayOfWeek and Week of month it computes the date
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral('-')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                    .appendValue(woyField).appendLiteral('-')
+                    .appendValue(DAY_OF_WEEK).toFormatter();
+            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
+                    date.get(woyField) + "-" + date.get(DAY_OF_WEEK);
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, date, " :: " + str + " " + i);
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoyDow(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField woyField = week.weekOfYear();
+
+        for (int i = 1; i <= 60; i++) {
+            // Test that with dayOfWeek and Week of month it computes the date
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral('-')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                    .appendValue(woyField).appendLiteral('-')
+                    .appendValue(dowField).toFormatter();
+            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
+                    date.get(woyField) + "-" + date.get(dowField);
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, date, " :: " + str + " " + i);
+
+            date = date.plusDays(1);
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
+    public void test_serializable_singleton(DayOfWeek firstDayOfWeek, int minDays) throws IOException, ClassNotFoundException {
+        WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
+        assertSerializableSame(weekDef);  // spec state singleton
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="weekFields")
+    Object[][] data_weekFields() {
+        Object[][] objects = new Object[49][];
+        int i = 0;
+        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
+            for (int minDays = 1; minDays <= 7; minDays++) {
+                objects[i++] = new Object[] {firstDayOfWeek, minDays};
+            }
+        }
+        return objects;
+    }
+
 }
