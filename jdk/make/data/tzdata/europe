@@ -1931,7 +1931,7 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
 # Amsterdam mean time.
 
 # The data entries before 1945 are taken from
-# http://www.phys.uu.nl/~vgent/wettijd/wettijd.htm
+# http://www.staff.science.uu.nl/~gent0113/idl/idl.htm
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time
@@ -3450,22 +3450,24 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 
 # Turkey
 
-# From Amar Devegowda (2007-01-03):
-# The time zone rules for Istanbul, Turkey have not been changed for years now.
-# ... The latest rules are available at:
-# http://www.timeanddate.com/worldclock/timezone.html?n=107
-# From Steffen Thorsen (2007-01-03):
-# I have been able to find press records back to 1996 which all say that
-# DST started 01:00 local time and end at 02:00 local time.  I am not sure
-# what happened before that.  One example for each year from 1996 to 2001:
-# http://newspot.byegm.gov.tr/arsiv/1996/21/N4.htm
-# http://www.byegm.gov.tr/YAYINLARIMIZ/CHR/ING97/03/97X03X25.TXT
-# http://www.byegm.gov.tr/YAYINLARIMIZ/CHR/ING98/03/98X03X02.HTM
-# http://www.byegm.gov.tr/YAYINLARIMIZ/CHR/ING99/10/99X10X26.HTM#%2016
-# http://www.byegm.gov.tr/YAYINLARIMIZ/CHR/ING2000/03/00X03X06.HTM#%2021
-# http://www.byegm.gov.tr/YAYINLARIMIZ/CHR/ING2001/03/23x03x01.HTM#%2027
-# From Paul Eggert (2007-01-03):
-# Prefer the above source to Shanks & Pottenger for time stamps after 1990.
+# From Kıvanç Yazan (2016-09-25):
+# 1) For 1986-2006, DST started at 01:00 local and ended at 02:00 local, with
+#    no exceptions.
+# 2) 1994's lastSun was overridden with Mar 20 ...
+# Here are official papers:
+# http://www.resmigazete.gov.tr/arsiv/19032.pdf  - page 2 for 1986
+# http://www.resmigazete.gov.tr/arsiv/19400.pdf  - page 4 for 1987
+# http://www.resmigazete.gov.tr/arsiv/19752.pdf  - page 15 for 1988
+# http://www.resmigazete.gov.tr/arsiv/20102.pdf  - page 6 for 1989
+# http://www.resmigazete.gov.tr/arsiv/20464.pdf  - page 1 for 1990 - 1992
+# http://www.resmigazete.gov.tr/arsiv/21531.pdf  - page 15 for 1993 - 1995
+# http://www.resmigazete.gov.tr/arsiv/21879.pdf  - page 1 for overriding 1994
+# http://www.resmigazete.gov.tr/arsiv/22588.pdf  - page 1 for 1996, 1997
+# http://www.resmigazete.gov.tr/arsiv/23286.pdf  - page 10 for 1998 - 2000
+# http://www.resmigazete.gov.tr/eskiler/2001/03/20010324.htm#2  - for 2001
+# http://www.resmigazete.gov.tr/eskiler/2002/03/20020316.htm#2  - for 2002-2006
+# From Paul Eggert (2016-09-25):
+# Prefer the above sources to Shanks & Pottenger for time stamps after 1985.
 
 # From Steffen Thorsen (2007-03-09):
 # Starting 2007 though, it seems that they are adopting EU's 1:00 UTC
@@ -3574,10 +3576,10 @@ Rule	Turkey	1983	only	-	Jul	31	0:00	1:00	S
 Rule	Turkey	1983	only	-	Oct	 2	0:00	0	-
 Rule	Turkey	1985	only	-	Apr	20	0:00	1:00	S
 Rule	Turkey	1985	only	-	Sep	28	0:00	0	-
-Rule	Turkey	1986	1990	-	Mar	lastSun	2:00s	1:00	S
-Rule	Turkey	1986	1990	-	Sep	lastSun	2:00s	0	-
-Rule	Turkey	1991	2006	-	Mar	lastSun	1:00s	1:00	S
-Rule	Turkey	1991	1995	-	Sep	lastSun	1:00s	0	-
+Rule	Turkey	1986	1993	-	Mar	lastSun	1:00s	1:00	S
+Rule	Turkey	1986	1995	-	Sep	lastSun	1:00s	0	-
+Rule	Turkey	1994	only	-	Mar	20	1:00s	1:00	S
+Rule	Turkey	1995	2006	-	Mar	lastSun	1:00s	1:00	S
 Rule	Turkey	1996	2006	-	Oct	lastSun	1:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Istanbul	1:55:52 -	LMT	1880

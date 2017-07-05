@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.MethodHandleFactory.LookupException;
@@ -127,15 +126,15 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
     // This is to support length as method call as well.
     @Override
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = NashornCallSiteDescriptor.getOperand(desc);
 
         // if str.length(), then let the bean linker handle it
-        if ("length".equals(name) && operation == StandardOperation.GET_METHOD) {
+        if ("length".equals(name) && NashornCallSiteDescriptor.isMethodFirstOperation(desc)) {
             return null;
         }
 
-        return super.findGetMethod(desc, request, operation);
+        return super.findGetMethod(desc, request);
     }
 
     // This is to provide array-like access to string characters without creating a NativeString wrapper.

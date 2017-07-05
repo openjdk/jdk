@@ -24,6 +24,9 @@
  */
 package jdk.dynalink.test;
 
+import static jdk.dynalink.StandardNamespace.PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,9 +38,9 @@ import javax.script.ScriptEngineManager;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
-import jdk.dynalink.NamedOperation;
 import jdk.dynalink.NoSuchDynamicMethodException;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -51,6 +54,8 @@ import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
 public class DynamicLinkerFactoryTest {
+
+    private static final Operation GET_PROPERTY = GET.withNamespace(PROPERTY);
 
     private static DynamicLinkerFactory newDynamicLinkerFactory(final boolean resetClassLoader) {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
@@ -190,7 +195,7 @@ public class DynamicLinkerFactoryTest {
         final MethodType mt = MethodType.methodType(Object.class, Object.class, String.class);
         final DynamicLinker linker = factory.createLinker();
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-                MethodHandles.publicLookup(), StandardOperation.GET_PROPERTY, mt)));
+                MethodHandles.publicLookup(), GET_PROPERTY, mt)));
         Assert.assertFalse(reachedPrelinkTransformer[0]);
         Assert.assertEquals(cs.getTarget().invoke(new Object(), "class"), Object.class);
         Assert.assertTrue(reachedPrelinkTransformer[0]);
@@ -209,7 +214,7 @@ public class DynamicLinkerFactoryTest {
         final MethodType mt = MethodType.methodType(Object.class, Object.class, String.class);
         final DynamicLinker linker = factory.createLinker();
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
-                MethodHandles.publicLookup(), StandardOperation.GET_PROPERTY, mt)));
+                MethodHandles.publicLookup(), GET_PROPERTY, mt)));
         Assert.assertFalse(reachedInternalObjectsFilter[0]);
         Assert.assertEquals(cs.getTarget().invoke(new Object(), "class"), Object.class);
         Assert.assertTrue(reachedInternalObjectsFilter[0]);
@@ -252,7 +257,7 @@ public class DynamicLinkerFactoryTest {
 
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
         final CallSiteDescriptor testDescriptor = new CallSiteDescriptor(MethodHandles.publicLookup(),
-                new NamedOperation(StandardOperation.GET_METHOD, methodName), mt);
+                GET.withNamespace(StandardNamespace.METHOD).named(methodName), mt);
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(testDescriptor));
 
         TrustedGuardingDynamicLinkerExporter.enable();
@@ -274,7 +279,7 @@ public class DynamicLinkerFactoryTest {
         final DynamicLinker linker = factory.createLinker();
 
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
-        final NamedOperation op = new NamedOperation(StandardOperation.GET_PROPERTY, "foo");
+        final Operation op = GET_PROPERTY.named("foo");
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
                 MethodHandles.publicLookup(), op, mt)));
         final boolean[] reachedGetMember = new boolean[1];
@@ -306,7 +311,7 @@ public class DynamicLinkerFactoryTest {
         // check that the nashorn exported linker can be used for ScriptObjectMirror
         final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
         final MethodType mt = MethodType.methodType(Object.class, Object.class);
-        final NamedOperation op = new NamedOperation(StandardOperation.GET_PROPERTY, "foo");
+        final Operation op = GET_PROPERTY.named("foo");
         final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
                 MethodHandles.publicLookup(), op, mt)));
         Object value = null;

@@ -32,6 +32,13 @@ import java.awt.event.*;
  * JDK functionality.
  */
 final class NSEvent {
+
+    static final int SCROLL_PHASE_UNSUPPORTED = 1;
+    static final int SCROLL_PHASE_BEGAN = 2;
+    static final int SCROLL_PHASE_CONTINUED = 3;
+    static final int SCROLL_MASK_PHASE_CANCELLED = 4;
+    static final int SCROLL_MASK_PHASE_ENDED = 5;
+
     private int type;
     private int modifierFlags;
 
@@ -42,6 +49,7 @@ final class NSEvent {
     private int y;
     private double scrollDeltaY;
     private double scrollDeltaX;
+    private int scrollPhase;
     private int absX;
     private int absY;
 
@@ -62,7 +70,7 @@ final class NSEvent {
     // Called from native
     NSEvent(int type, int modifierFlags, int clickCount, int buttonNumber,
                    int x, int y, int absX, int absY,
-                   double scrollDeltaY, double scrollDeltaX) {
+                   double scrollDeltaY, double scrollDeltaX, int scrollPhase) {
         this.type = type;
         this.modifierFlags = modifierFlags;
         this.clickCount = clickCount;
@@ -73,6 +81,7 @@ final class NSEvent {
         this.absY = absY;
         this.scrollDeltaY = scrollDeltaY;
         this.scrollDeltaX = scrollDeltaX;
+        this.scrollPhase = scrollPhase;
     }
 
     int getType() {
@@ -105,6 +114,10 @@ final class NSEvent {
 
     double getScrollDeltaX() {
         return scrollDeltaX;
+    }
+
+    int getScrollPhase() {
+        return scrollPhase;
     }
 
     int getAbsX() {

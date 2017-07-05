@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
@@ -129,9 +130,9 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
             // allow 'static' access on Class objects representing public classes of non-restricted packages
             if ((self instanceof Class) && Modifier.isPublic(((Class<?>)self).getModifiers())) {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                if ("static".equals(NashornCallSiteDescriptor.getOperand(desc)) && NashornCallSiteDescriptor.contains(desc, StandardOperation.GET_PROPERTY)) {
+                if ("static".equals(NashornCallSiteDescriptor.getOperand(desc)) && NashornCallSiteDescriptor.contains(desc, StandardOperation.GET, StandardNamespace.PROPERTY)) {
                     if (Context.isAccessibleClass((Class<?>)self) && !isReflectionClass((Class<?>)self)) {
-                        // If "GET_PROPERTY:static" passes access checks, allow access.
+                        // If "GET:PROPERTY:static" passes access checks, allow access.
                         return;
                     }
                 }

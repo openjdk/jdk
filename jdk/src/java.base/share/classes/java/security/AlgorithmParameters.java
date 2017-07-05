@@ -28,6 +28,7 @@ package java.security;
 import java.io.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Objects;
 
 /**
  * This class is used as an opaque representation of cryptographic parameters.
@@ -140,16 +141,19 @@ public class AlgorithmParameters {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new parameter object.
+     * @return the new parameter object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports an
-     *          AlgorithmParametersSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports an
+     *         {@code AlgorithmParametersSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static AlgorithmParameters getInstance(String algorithm)
     throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         try {
             Object[] objs = Security.getImpl(algorithm, "AlgorithmParameters",
                                              (String)null);
@@ -184,17 +188,19 @@ public class AlgorithmParameters {
      *
      * @param provider the name of the provider.
      *
-     * @return the new parameter object.
+     * @return the new parameter object
      *
-     * @exception NoSuchAlgorithmException if an AlgorithmParametersSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if an {@code AlgorithmParametersSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
@@ -202,6 +208,7 @@ public class AlgorithmParameters {
                                                   String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null || provider.length() == 0)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "AlgorithmParameters",
@@ -231,13 +238,16 @@ public class AlgorithmParameters {
      *
      * @param provider the name of the provider.
      *
-     * @return the new parameter object.
+     * @return the new parameter object
      *
-     * @exception NoSuchAlgorithmException if an AlgorithmParameterGeneratorSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the provider is {@code null}
      *
-     * @exception IllegalArgumentException if the provider is null.
+     * @throws NoSuchAlgorithmException if an
+     *         {@code AlgorithmParameterGeneratorSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -247,6 +257,7 @@ public class AlgorithmParameters {
                                                   Provider provider)
         throws NoSuchAlgorithmException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "AlgorithmParameters",
