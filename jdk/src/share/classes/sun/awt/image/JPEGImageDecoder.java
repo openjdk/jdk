@@ -47,8 +47,8 @@ public class JPEGImageDecoder extends ImageDecoder {
     private static ColorModel ARGBcolormodel;
     private static ColorModel Graycolormodel;
 
-    private static final Class InputStreamClass = InputStream.class;
-    private static native void initIDs(Class InputStreamClass);
+    private static final Class<?> InputStreamClass = InputStream.class;
+    private static native void initIDs(Class<?> InputStreamClass);
 
     private ColorModel colormodel;
 
@@ -73,7 +73,7 @@ public class JPEGImageDecoder extends ImageDecoder {
     private native void readImage(InputStream is, byte buf[])
         throws ImageFormatException, IOException;
 
-    Hashtable props = new Hashtable();
+    Hashtable<String, Object> props = new Hashtable<>();
 
     public JPEGImageDecoder(InputStreamImageSource src, InputStream is) {
         super(src, is);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,10 @@ class G1CardCounts: public CHeapObj<mtGC> {
            err_msg("Invalid card pointer: "
                    "card_ptr: " PTR_FORMAT ", "
                    "_ct_bot: " PTR_FORMAT,
-                   card_ptr, _ct_bot));
+                   p2i(card_ptr), p2i(_ct_bot)));
     size_t card_num = pointer_delta(card_ptr, _ct_bot, sizeof(jbyte));
     assert(card_num >= 0 && card_num < _committed_max_card_num,
-           err_msg("card pointer out of range: " PTR_FORMAT, card_ptr));
+           err_msg("card pointer out of range: " PTR_FORMAT, p2i(card_ptr)));
     return card_num;
   }
 

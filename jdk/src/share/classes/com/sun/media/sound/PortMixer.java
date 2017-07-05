@@ -253,12 +253,12 @@ final class PortMixer extends AbstractMixer {
             long newID = ((PortMixer) mixer).getID();
             if ((id == 0) || (newID != id) || (controls.length == 0)) {
                 id = newID;
-                Vector vector = new Vector();
+                Vector<Control> vector = new Vector<>();
                 synchronized (vector) {
                     nGetControls(id, portIndex, vector);
                     controls = new Control[vector.size()];
                     for (int i = 0; i < controls.length; i++) {
-                        controls[i] = (Control) vector.elementAt(i);
+                        controls[i] = vector.elementAt(i);
                     }
                 }
             } else {
@@ -494,6 +494,7 @@ final class PortMixer extends AbstractMixer {
     private static native String nGetPortName(long id, int portIndex);
 
     // fills the vector with the controls for this port
+    @SuppressWarnings("rawtypes")
     private static native void nGetControls(long id, int portIndex, Vector vector);
 
     // getters/setters for controls

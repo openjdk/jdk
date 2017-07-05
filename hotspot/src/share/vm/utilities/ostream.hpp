@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class outputStream : public ResourceObj {
    static const char* do_vsnprintf(char* buffer, size_t buflen,
                                    const char* format, va_list ap,
                                    bool add_cr,
-                                   size_t& result_len);
+                                   size_t& result_len)  ATTRIBUTE_PRINTF(3, 0);
 
  public:
    // creation
@@ -80,10 +80,10 @@ class outputStream : public ResourceObj {
    void set_position(int pos)   { _position = pos; }
 
    // printing
-   void print(const char* format, ...);
-   void print_cr(const char* format, ...);
-   void vprint(const char *format, va_list argptr);
-   void vprint_cr(const char* format, va_list argptr);
+   void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+   void print_cr(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+   void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
+   void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void print_raw(const char* str)            { write(str, strlen(str)); }
    void print_raw(const char* str, int len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
@@ -274,10 +274,10 @@ class staticBufferStream : public outputStream {
   ~staticBufferStream() {};
   virtual void write(const char* c, size_t len);
   void flush();
-  void print(const char* format, ...);
-  void print_cr(const char* format, ...);
-  void vprint(const char *format, va_list argptr);
-  void vprint_cr(const char* format, va_list argptr);
+  void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  void print_cr(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
+  void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
 };
 
 // In the non-fixed buffer case an underlying buffer will be created and

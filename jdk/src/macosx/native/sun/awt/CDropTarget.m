@@ -65,7 +65,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
     return sCurrentDropTarget;
 }
 
-- (id)init:(jobject)jdropTarget component:(jobject)jcomponent peer:(jobject)jpeer control:(id)control
+- (id)init:(jobject)jdropTarget component:(jobject)jcomponent control:(id)control
 {
     self = [super init];
     DLog2(@"[CDropTarget init]: %@\n", self);
@@ -714,13 +714,13 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
  * Signature: (Ljava/awt/dnd/DropTarget;Ljava/awt/Component;Ljava/awt/peer/ComponentPeer;J)J
  */
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDropTarget_createNativeDropTarget
-  (JNIEnv *env, jobject jthis, jobject jdroptarget, jobject jcomponent, jobject jpeer, jlong jnativepeer)
+  (JNIEnv *env, jobject jthis, jobject jdroptarget, jobject jcomponent, jlong jnativepeer)
 {
     CDropTarget* dropTarget = nil;
 
 JNF_COCOA_ENTER(env);
     id controlObj = (id) jlong_to_ptr(jnativepeer);
-    dropTarget = [[CDropTarget alloc] init:jdroptarget component:jcomponent peer:jpeer control:controlObj];
+    dropTarget = [[CDropTarget alloc] init:jdroptarget component:jcomponent control:controlObj];
 JNF_COCOA_EXIT(env);
 
     return ptr_to_jlong(dropTarget);

@@ -33,7 +33,7 @@ import sun.jvm.hotspot.utilities.*;
 
 // A MethodData provides interpreter profiling information
 
-public class MethodData extends Metadata {
+public class MethodData extends Metadata implements MethodDataInterface<Klass,Method> {
   static int TypeProfileWidth = 2;
   static int BciProfileWidth = 2;
   static int CompileThreshold;
@@ -152,6 +152,8 @@ public class MethodData extends Metadata {
     dataSize     = new CIntField(type.getCIntegerField("_data_size"), 0);
     data         = type.getAddressField("_data[0]");
 
+    parametersTypeDataDi = new CIntField(type.getCIntegerField("_parameters_type_data_di"), 0);
+
     sizeofMethodDataOopDesc = (int)type.getSize();;
 
     Reason_many            = db.lookupIntConstant("Deoptimization::Reason_many").intValue();
@@ -191,6 +193,22 @@ public class MethodData extends Metadata {
     super(addr);
   }
 
+  public Klass getKlassAtAddress(Address addr) {
+    return (Klass)Metadata.instantiateWrapperFor(addr);
+  }
+
+  public Method getMethodAtAddress(Address addr) {
+    return (Method)Metadata.instantiateWrapperFor(addr);
+  }
+
+  public void printKlassValueOn(Klass klass, PrintStream st) {
+    klass.printValueOn(st);
+  }
+
+  public void printMethodValueOn(Method method, PrintStream st) {
+    method.printValueOn(st);
+  }
+
   public boolean isMethodData()        { return true; }
 
   private static long baseOffset;
@@ -198,7 +216,7 @@ public class MethodData extends Metadata {
   private static MetadataField  method;
   private static CIntField dataSize;
   private static AddressField data;
-
+  private static CIntField parametersTypeDataDi;
   public static int sizeofMethodDataOopDesc;
   public static int cellSize;
 
@@ -225,6 +243,27 @@ public class MethodData extends Metadata {
     }
   }
 
+  int sizeInBytes() {
+    if (size == null) {
+      return 0;
+    } else {
+      return (int)size.getValue(getAddress());
+    }
+  }
+
+  int size() {
+    return (int)Oop.alignObjectSize(VM.getVM().alignUp(sizeInBytes(), VM.getVM().getBytesPerWord())/VM.getVM().getBytesPerWord());
+  }
+
+  ParametersTypeData<Klass,Method> parametersTypeData() {
+    int di = (int)parametersTypeDataDi.getValue(getAddress());
+    if (di == -1) {
+      return null;
+    }
+    DataLayout dataLayout = new DataLayout(this, di + (int)data.getOffset());
+    return new ParametersTypeData<Klass,Method>(this, dataLayout);
+  }
+
   boolean outOfBounds(int dataIndex) {
     return dataIndex >= dataSize();
   }
@@ -246,15 +285,21 @@ public class MethodData extends Metadata {
     case DataLayout.jumpDataTag:
       return new JumpData(dataLayout);
     case DataLayout.receiverTypeDataTag:
-      return new ReceiverTypeData(dataLayout);
+      return new ReceiverTypeData<Klass,Method>(this, dataLayout);
     case DataLayout.virtualCallDataTag:
-      return new VirtualCallData(dataLayout);
+      return new VirtualCallData<Klass,Method>(this, dataLayout);
     case DataLayout.retDataTag:
       return new RetData(dataLayout);
     case DataLayout.branchDataTag:
       return new BranchData(dataLayout);
     case DataLayout.multiBranchDataTag:
       return new MultiBranchData(dataLayout);
+    case DataLayout.callTypeDataTag:
+      return new CallTypeData<Klass,Method>(this, dataLayout);
+    case DataLayout.virtualCallTypeDataTag:
+      return new VirtualCallTypeData<Klass,Method>(this, dataLayout);
+    case DataLayout.parametersTypeDataTag:
+      return new ParametersTypeData<Klass,Method>(this, dataLayout);
     }
   }
 
@@ -272,13 +317,73 @@ public class MethodData extends Metadata {
   }
   boolean isValid(ProfileData current) { return current != null; }
 
+  DataLayout limitDataPosition() {
+    return new DataLayout(this, dataSize() + (int)data.getOffset());
+  }
+
+  DataLayout extraDataBase() {
+    return limitDataPosition();
+  }
+
+  DataLayout extraDataLimit() {
+    return new DataLayout(this, sizeInBytes());
+  }
+
+  static public int extraNbCells(DataLayout dataLayout) {
+    int nbCells = 0;
+    switch(dataLayout.tag()) {
+    case DataLayout.bitDataTag:
+    case DataLayout.noTag:
+      nbCells = BitData.staticCellCount();
+      break;
+    case DataLayout.speculativeTrapDataTag:
+      nbCells = SpeculativeTrapData.staticCellCount();
+      break;
+    default:
+      throw new InternalError("unexpected tag " +  dataLayout.tag());
+    }
+    return nbCells;
+  }
+
+  DataLayout nextExtra(DataLayout dataLayout) {
+    return new DataLayout(this, dataLayout.dp() + DataLayout.computeSizeInBytes(extraNbCells(dataLayout)));
+  }
+
   public void printDataOn(PrintStream st) {
+    if (parametersTypeData() != null) {
+      parametersTypeData().printDataOn(st);
+    }
     ProfileData data = firstData();
     for ( ; isValid(data); data = nextData(data)) {
       st.print(dpToDi(data.dp()));
       st.print(" ");
       // st->fillTo(6);
       data.printDataOn(st);
+    }
+    st.println("--- Extra data:");
+    DataLayout dp    = extraDataBase();
+    DataLayout end   = extraDataLimit();
+    for (;; dp = nextExtra(dp)) {
+      switch(dp.tag()) {
+      case DataLayout.noTag:
+        continue;
+      case DataLayout.bitDataTag:
+        data = new BitData(dp);
+        break;
+      case DataLayout.speculativeTrapDataTag:
+        data = new SpeculativeTrapData<Klass,Method>(this, dp);
+        break;
+      case DataLayout.argInfoDataTag:
+        data = new ArgInfoData(dp);
+        dp = end; // ArgInfoData is at the end of extra data section.
+        break;
+      default:
+        throw new InternalError("unexpected tag " +  dp.tag());
+      }
+      st.print(dpToDi(data.dp()));
+      st.print(" ");
+      data.printDataOn(st);
+      if (dp == end) return;
     }
   }
 
@@ -332,14 +437,71 @@ public class MethodData extends Metadata {
     return 20000;
   }
 
+  int dumpReplayDataTypeHelper(PrintStream out, int round, int count, int index, ProfileData pdata, Klass k) {
+    if (k != null) {
+      if (round == 0) count++;
+      else out.print(" " +
+                     (dpToDi(pdata.dp() +
+                             pdata.cellOffset(index)) / cellSize) + " " +
+                     k.getName().asString());
+    }
+    return count;
+  }
+
+  int dumpReplayDataReceiverTypeHelper(PrintStream out, int round, int count, ReceiverTypeData<Klass,Method> vdata) {
+    for (int i = 0; i < vdata.rowLimit(); i++) {
+      Klass k = vdata.receiver(i);
+      count = dumpReplayDataTypeHelper(out, round, count, vdata.receiverCellIndex(i), vdata, k);
+    }
+    return count;
+  }
+
+  int dumpReplayDataCallTypeHelper(PrintStream out, int round, int count, CallTypeDataInterface<Klass> callTypeData) {
+    if (callTypeData.hasArguments()) {
+      for (int i = 0; i < callTypeData.numberOfArguments(); i++) {
+        count = dumpReplayDataTypeHelper(out, round, count, callTypeData.argumentTypeIndex(i), (ProfileData)callTypeData, callTypeData.argumentType(i));
+      }
+    }
+    if (callTypeData.hasReturn()) {
+      count = dumpReplayDataTypeHelper(out, round, count, callTypeData.returnTypeIndex(), (ProfileData)callTypeData, callTypeData.returnType());
+    }
+    return count;
+  }
+
+  int dumpReplayDataExtraDataHelper(PrintStream out, int round, int count) {
+    DataLayout dp    = extraDataBase();
+    DataLayout end   = extraDataLimit();
+
+    for (;dp != end; dp = nextExtra(dp)) {
+      switch(dp.tag()) {
+      case DataLayout.noTag:
+      case DataLayout.argInfoDataTag:
+        return count;
+      case DataLayout.bitDataTag:
+        break;
+      case DataLayout.speculativeTrapDataTag: {
+        SpeculativeTrapData<Klass,Method> data = new SpeculativeTrapData<Klass,Method>(this, dp);
+        Method m = data.method();
+        if (m != null) {
+          if (round == 0) {
+            count++;
+          } else {
+            out.print(" " +  (dpToDi(data.dp() + data.cellOffset(SpeculativeTrapData.methodIndex())) / cellSize) + " " +  m.nameAsAscii());
+          }
+        }
+        break;
+      }
+      default:
+        throw new InternalError("bad tag "  + dp.tag());
+      }
+    }
+    return count;
+  }
+
   public void dumpReplayData(PrintStream out) {
     Method method = getMethod();
-    Klass holder = method.getMethodHolder();
-    out.print("ciMethodData " +
-              holder.getName().asString() + " " +
-              OopUtilities.escapeString(method.getName().asString()) + " " +
-              method.getSignature().asString() + " " +
-              "2" + " " +
+    out.print("ciMethodData " + method.nameAsAscii()
+              + " " + "2" + " " +
               currentMileage());
     byte[] orig = orig();
     out.print(" orig " + orig.length);
@@ -353,36 +515,28 @@ public class MethodData extends Metadata {
       out.print(" 0x" + Long.toHexString(data[i]));
     }
     int count = 0;
+    ParametersTypeData<Klass,Method> parameters = parametersTypeData();
     for (int round = 0; round < 2; round++) {
       if (round == 1) out.print(" oops " + count);
       ProfileData pdata = firstData();
       for ( ; isValid(pdata); pdata = nextData(pdata)) {
         if (pdata instanceof ReceiverTypeData) {
-          ReceiverTypeData vdata = (ReceiverTypeData)pdata;
-          for (int i = 0; i < vdata.rowLimit(); i++) {
-            Klass k = vdata.receiver(i);
-            if (k != null) {
-              if (round == 0) count++;
-              else out.print(" " +
-                             (dpToDi(vdata.dp() +
-                              vdata.cellOffset(vdata.receiverCellIndex(i))) / cellSize) + " " +
-                             k.getName().asString());
-            }
-          }
-        } else if (pdata instanceof VirtualCallData) {
-          VirtualCallData vdata = (VirtualCallData)pdata;
-          for (int i = 0; i < vdata.rowLimit(); i++) {
-            Klass k = vdata.receiver(i);
-            if (k != null) {
-              if (round == 0) count++;
-              else out.print(" " +
-                             (dpToDi(vdata.dp() +
-                              vdata.cellOffset(vdata.receiverCellIndex(i))) / cellSize) + " " +
-                             k.getName().asString());
-            }
-          }
+          count = dumpReplayDataReceiverTypeHelper(out, round, count, (ReceiverTypeData<Klass,Method>)pdata);
+        }
+        if (pdata instanceof CallTypeDataInterface) {
+          count = dumpReplayDataCallTypeHelper(out, round, count, (CallTypeDataInterface<Klass>)pdata);
         }
       }
+      if (parameters != null) {
+        for (int i = 0; i < parameters.numberOfParameters(); i++) {
+          count = dumpReplayDataTypeHelper(out, round, count, ParametersTypeData.typeIndex(i), parameters, parameters.type(i));
+        }
+      }
+    }
+    count = 0;
+    for (int round = 0; round < 2; round++) {
+      if (round == 1) out.print(" methods " + count);
+      count = dumpReplayDataExtraDataHelper(out, round, count);
     }
     out.println();
   }

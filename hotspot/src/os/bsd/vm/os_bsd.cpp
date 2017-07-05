@@ -124,6 +124,9 @@
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
 #define LARGEPAGES_BIT (1 << 6)
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Bsd::_physical_memory = 0;
@@ -2394,7 +2397,6 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
                         (!FLAG_IS_DEFAULT(UseLargePages) ||
                          !FLAG_IS_DEFAULT(LargePageSizeInBytes)
                         );
-  char msg[128];
 
   // Create a large shared memory region to attach to based on size.
   // Currently, size is the total size of the heap
@@ -2415,8 +2417,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
      //            coalesce into large pages. Try to reserve large pages when
      //            the system is still "fresh".
      if (warn_on_failure) {
-       jio_snprintf(msg, sizeof(msg), "Failed to reserve shared memory (errno = %d).", errno);
-       warning(msg);
+       warning("Failed to reserve shared memory (errno = %d).", errno);
      }
      return NULL;
   }
@@ -2433,8 +2434,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
 
   if ((intptr_t)addr == -1) {
      if (warn_on_failure) {
-       jio_snprintf(msg, sizeof(msg), "Failed to attach shared memory (errno = %d).", err);
-       warning(msg);
+       warning("Failed to attach shared memory (errno = %d).", err);
      }
      return NULL;
   }
@@ -3810,6 +3810,7 @@ bool os::check_heap(bool force) {
   return true;
 }
 
+ATTRIBUTE_PRINTF(3, 0)
 int local_vsnprintf(char* buf, size_t count, const char* format, va_list args) {
   return ::vsnprintf(buf, count, format, args);
 }

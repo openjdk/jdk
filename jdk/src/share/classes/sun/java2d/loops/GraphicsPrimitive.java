@@ -316,7 +316,7 @@ public abstract class GraphicsPrimitive {
 
     public abstract GraphicsPrimitive traceWrap();
 
-    static HashMap traceMap;
+    static HashMap<Object, int[]> traceMap;
 
     public static int traceflags;
     public static String tracefile;
@@ -427,13 +427,14 @@ public abstract class GraphicsPrimitive {
 
         public void run() {
             PrintStream ps = getTraceOutputFile();
-            Iterator iterator = traceMap.entrySet().iterator();
+            Iterator<Map.Entry<Object, int[]>> iterator =
+                traceMap.entrySet().iterator();
             long total = 0;
             int numprims = 0;
             while (iterator.hasNext()) {
-                Map.Entry me = (Map.Entry) iterator.next();
+                Map.Entry<Object, int[]> me = iterator.next();
                 Object prim = me.getKey();
-                int[] count = (int[]) me.getValue();
+                int[] count = me.getValue();
                 if (count[0] == 1) {
                     ps.print("1 call to ");
                 } else {
@@ -455,15 +456,15 @@ public abstract class GraphicsPrimitive {
     public synchronized static void tracePrimitive(Object prim) {
         if ((traceflags & TRACECOUNTS) != 0) {
             if (traceMap == null) {
-                traceMap = new HashMap();
+                traceMap = new HashMap<>();
                 TraceReporter.setShutdownHook();
             }
-            Object o = traceMap.get(prim);
+            int[] o = traceMap.get(prim);
             if (o == null) {
                 o = new int[1];
                 traceMap.put(prim, o);
             }
-            ((int[]) o)[0]++;
+            o[0]++;
         }
         if ((traceflags & TRACELOG) != 0) {
             PrintStream ps = getTraceOutputFile();

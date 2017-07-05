@@ -68,7 +68,7 @@ public final class AudioSynthesizerPropertyInfo {
      * The <code>valueClass</code> field specifies class
      * used in <code>value</code> field.
      */
-    public Class valueClass = null;
+    public Class<?> valueClass = null;
     /**
      * An array of possible values if the value for the field
      * <code>AudioSynthesizerPropertyInfo.value</code> may be selected

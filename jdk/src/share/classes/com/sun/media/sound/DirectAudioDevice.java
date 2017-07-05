@@ -94,7 +94,7 @@ final class DirectAudioDevice extends AbstractMixer {
     }
 
     private DirectDLI createDataLineInfo(boolean isSource) {
-        Vector formats = new Vector();
+        Vector<AudioFormat> formats = new Vector<>();
         AudioFormat[] hardwareFormatArray = null;
         AudioFormat[] formatArray = null;
 
@@ -107,7 +107,7 @@ final class DirectAudioDevice extends AbstractMixer {
                 int formatArraySize = size;
                 hardwareFormatArray = new AudioFormat[size];
                 for (int i = 0; i < size; i++) {
-                    AudioFormat format = (AudioFormat)formats.elementAt(i);
+                    AudioFormat format = formats.elementAt(i);
                     hardwareFormatArray[i] = format;
                     int bits = format.getSampleSizeInBits();
                     boolean isSigned = format.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED);
@@ -265,7 +265,7 @@ final class DirectAudioDevice extends AbstractMixer {
         return ((DirectAudioDeviceProvider.DirectAudioDeviceInfo) getMixerInfo()).getMaxSimulLines();
     }
 
-    private static void addFormat(Vector v, int bits, int frameSizeInBytes, int channels, float sampleRate,
+    private static void addFormat(Vector<AudioFormat> v, int bits, int frameSizeInBytes, int channels, float sampleRate,
                                   int encoding, boolean signed, boolean bigEndian) {
         AudioFormat.Encoding enc = null;
         switch (encoding) {
@@ -338,7 +338,7 @@ final class DirectAudioDevice extends AbstractMixer {
     private static final class DirectDLI extends DataLine.Info {
         final AudioFormat[] hardwareFormats;
 
-        private DirectDLI(Class clazz, AudioFormat[] formatArray,
+        private DirectDLI(Class<?> clazz, AudioFormat[] formatArray,
                           AudioFormat[] hardwareFormatArray,
                           int minBuffer, int maxBuffer) {
             super(clazz, formatArray, minBuffer, maxBuffer);
@@ -1457,7 +1457,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
     } // class DirectBAOS
 
-
+    @SuppressWarnings("rawtypes")
     private static native void nGetFormats(int mixerIndex, int deviceID,
                                            boolean isSource, Vector formats);
 

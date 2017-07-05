@@ -248,6 +248,17 @@ static void restoreIOEHandleState(
         }
 }
 
+/*
+ * Class:     java_lang_ProcessImpl
+ * Method:    getProcessId0
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_java_lang_ProcessImpl_getProcessId0
+  (JNIEnv *env, jclass clazz, jlong handle) {
+    DWORD pid = GetProcessId((HANDLE) jlong_to_ptr(handle));
+    return (jint)pid;
+}
+
 /* Please, read about the MS inheritance problem
    http://support.microsoft.com/kb/315939
    and critical section/synchronized block solution. */

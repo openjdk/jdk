@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,14 @@ public final class DHParameters extends AlgorithmParametersSpi {
     protected String engineToString() {
         String LINE_SEP = System.getProperty("line.separator");
 
-        StringBuffer strbuf
-            = new StringBuffer("SunJCE Diffie-Hellman Parameters:"
+        StringBuilder sb
+            = new StringBuilder("SunJCE Diffie-Hellman Parameters:"
                                + LINE_SEP + "p:" + LINE_SEP
                                + Debug.toHexString(this.p)
                                + LINE_SEP + "g:" + LINE_SEP
                                + Debug.toHexString(this.g));
         if (this.l != 0)
-            strbuf.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
-        return strbuf.toString();
+            sb.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
+        return sb.toString();
     }
 }

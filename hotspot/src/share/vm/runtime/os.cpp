@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@
 #endif
 
 # include <signal.h>
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
@@ -909,9 +911,9 @@ void os::print_environment_variables(outputStream* st, const char** env_list,
 
     for (int i = 0; env_list[i] != NULL; i++) {
       if (getenv(env_list[i], buffer, len)) {
-        st->print(env_list[i]);
+        st->print("%s", env_list[i]);
         st->print("=");
-        st->print_cr(buffer);
+        st->print_cr("%s", buffer);
       }
     }
   }
@@ -1095,11 +1097,15 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   }
 
-  // Check if in metaspace.
-  if (ClassLoaderDataGraph::contains((address)addr)) {
-    // Use addr->print() from the debugger instead (not here)
-    st->print_cr(INTPTR_FORMAT
-                 " is pointing into metadata", addr);
+  // Check if in metaspace and print types that have vptrs (only method now)
+  if (Metaspace::contains(addr)) {
+    if (Method::has_method_vptr((const void*)addr)) {
+      ((Method*)addr)->print_value_on(st);
+      st->cr();
+    } else {
+      // Use addr->print() from the debugger instead (not here)
+      st->print_cr(INTPTR_FORMAT " is pointing into metadata", addr);
+    }
     return;
   }
 

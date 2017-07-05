@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,22 @@ package test.java.awt.regtesthelpers.process;
 
 import java.io.*;
 
-/** This class is created to solve interprocess communication problems.
+/**
+ *  This class is created to solve interprocess communication problems.
  *  When you need to write a regression test which should verify inter jvm
  *  behavior such as DnD data transfer, Clipboard data transfer, focus
  *  transfer etc., you could use the next scenario:
  *
  *  1. Write an implementation for the parent JVM, using applet test.
- *  2. Write an implimentation for the child JVM or native application, using
+ *  2. Write an implementation for the child JVM or native application, using
  *     main() function.
  *  3. Execute child process using  ProcessCommunicator.executeChildProcess()
  *     method.
- *  4. You can decide whetherthe test is passed on the basis of
+ *  4. You can decide whether the test is passed on the basis of
  *     ProcessResults class data.
  *
- *  Note: The class is not thread safe. You should access its methods only from the same
- *        thread.
+ *  Note: The class is not thread safe. You should access its methods only from
+ *        the same thread.
  */
 
 public class ProcessCommunicator {
@@ -48,31 +49,34 @@ public class ProcessCommunicator {
     private static final String javaPath = javaHome + File.separator + "bin" +
             File.separator + "java ";
     private static String command = "";
+    private static volatile Process process;
 
     private ProcessCommunicator() {}
 
-    /** The same as {#link #executeChildProcess(Class,String)} except
-     *  the {@code classPathArgument} parameter. The class path
-     *  parameter is for the debug purposes
+    /**
+     * The same as {#link #executeChildProcess(Class,String)} except
+     * the {@code classPathArgument} parameter. The class path
+     * parameter is for the debug purposes
      *
-     *  @param classToExecute is passed to the child JVM
-     *  @param classPathArguments class path for the child JVM
-     *  @param args arguments that will be passed to the executed class
-     *  @return results of the executed {@code Process}
+     * @param classToExecute is passed to the child JVM
+     * @param classPathArguments class path for the child JVM
+     * @param args arguments that will be passed to the executed class
+     * @return results of the executed {@code Process}
      */
     public static ProcessResults executeChildProcess(final Class classToExecute,
                            final String classPathArguments, final String [] args)
     {
         try {
             String command = buildCommand(classToExecute, classPathArguments, args);
-            Process process = Runtime.getRuntime().exec(command);
+            process = Runtime.getRuntime().exec(command);
             return doWaitFor(process);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /** Executes child {code Process}
+    /**
+     * Executes child {code Process}
      *
      * @param classToExecute class to be executed as a child java process
      * @param args args to be passed in to the child process
@@ -86,11 +90,11 @@ public class ProcessCommunicator {
 
     /**
      * Waits for a process and return its results.
-     * This is a workaround for <code>Process.waitFor()</code> never returning.
+     * This is a workaround for {@code Process.waitFor()} never returning.
      *
      * @return results of the executed {@code Process}
      */
-    private static ProcessResults doWaitFor(final Process p) {
+    public static ProcessResults doWaitFor(final Process p) {
         ProcessResults pres = new ProcessResults();
 
         final InputStream in;
@@ -133,13 +137,14 @@ public class ProcessCommunicator {
         return pres;
     }
 
-    /** Builds command on the basis of the passed class name,
-     *  class path and arguments.
+    /**
+     * Builds command on the basis of the passed class name,
+     * class path and arguments.
      *
      * @param classToExecute with class will be executed in the new JVM
      * @param classPathArguments java class path (only for test purposes)
      * @param args arguments for the new application. This could be used
-     *             to pass some information from the parnent to child JVM.
+     *             to pass some information from the parent to child JVM.
      * @return command to execute the {@code Process}
      */
     private static String buildCommand(final Class classToExecute,
@@ -162,11 +167,24 @@ public class ProcessCommunicator {
         return command;
     }
 
-    /** Could be used for the debug purposes.
+    /**
+     * Could be used for the debug purposes.
      *
-      * @return command that was build to execute the child process
+     * @return command that was build to execute the child process
      */
     public static String getExecutionCommand () {
         return command;
+    }
+
+    /**
+     * Terminates the process created by {@code executeChildProcess} methods.
+     */
+    public static void destroyProcess() {
+        if (process != null) {
+            if (process.isAlive()) {
+                process.destroy();
+            }
+            process = null;
+        }
     }
 }

@@ -207,8 +207,9 @@ public abstract class InfoWindow extends Window {
                             textLabel.setText(tooltipString);
                         }
 
-                        Point pointer = (Point)AccessController.doPrivileged(new PrivilegedAction() {
-                                public Object run() {
+                        Point pointer = AccessController.doPrivileged(
+                            new PrivilegedAction<Point>() {
+                                public Point run() {
                                     if (!isPointerOverTrayIcon(liveArguments.getBounds())) {
                                         return null;
                                     }

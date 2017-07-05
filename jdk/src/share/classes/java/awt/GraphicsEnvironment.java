@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,18 +95,18 @@ public abstract class GraphicsEnvironment {
         String nm = AccessController.doPrivileged(new GetPropertyAction("java.awt.graphicsenv", null));
         try {
 //          long t0 = System.currentTimeMillis();
-            Class<GraphicsEnvironment> geCls;
+            Class<?> geCls;
             try {
                 // First we try if the bootclassloader finds the requested
                 // class. This way we can avoid to run in a privileged block.
-                geCls = (Class<GraphicsEnvironment>)Class.forName(nm);
+                geCls = Class.forName(nm);
             } catch (ClassNotFoundException ex) {
                 // If the bootclassloader fails, we try again with the
                 // application classloader.
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
-                geCls = (Class<GraphicsEnvironment>)Class.forName(nm, true, cl);
+                geCls = Class.forName(nm, true, cl);
             }
-            ge = geCls.newInstance();
+            ge = (GraphicsEnvironment)geCls.newInstance();
 //          long t1 = System.currentTimeMillis();
 //          System.out.println("GE creation took " + (t1-t0)+ "ms.");
             if (isHeadless()) {

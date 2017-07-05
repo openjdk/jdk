@@ -27,10 +27,12 @@ package java.lang.invoke;
 
 
 import java.util.*;
+import java.lang.invoke.LambdaForm.BasicType;
 import sun.invoke.util.*;
 import sun.misc.Unsafe;
 
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
 
 /**
  * A method handle is a typed, directly executable reference to an underlying method,
@@ -729,7 +731,7 @@ public abstract class MethodHandle {
      * <li>If the return type <em>T0</em> is void and <em>T1</em> a primitive,
      *     a zero value is introduced.
      * </ul>
-    * (<em>Note:</em> Both <em>T0</em> and <em>T1</em> may be regarded as static types,
+     * (<em>Note:</em> Both <em>T0</em> and <em>T1</em> may be regarded as static types,
      * because neither corresponds specifically to the <em>dynamic type</em> of any
      * actual argument or return value.)
      * <p>
@@ -1374,7 +1376,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    MethodHandle bindArgument(int pos, char basicType, Object value) {
+    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
         // Override this if it can be improved.
         return rebind().bindArgument(pos, basicType, value);
     }
@@ -1382,26 +1384,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MethodHandle bindReceiver(Object receiver) {
         // Override this if it can be improved.
-        return bindArgument(0, 'L', receiver);
-    }
-
-    /*non-public*/
-    MethodHandle bindImmediate(int pos, char basicType, Object value) {
-        // Bind an immediate value to a position in the arguments.
-        // This means, elide the respective argument,
-        // and replace all references to it in NamedFunction args with the specified value.
-
-        // CURRENT RESTRICTIONS
-        // * only for pos 0 and UNSAFE (position is adjusted in MHImpl to make API usable for others)
-        assert pos == 0 && basicType == 'L' && value instanceof Unsafe;
-        MethodType type2 = type.dropParameterTypes(pos, pos + 1); // adjustment: ignore receiver!
-        LambdaForm form2 = form.bindImmediate(pos + 1, basicType, value); // adjust pos to form-relative pos
-        return copyWith(type2, form2);
-    }
-
-    /*non-public*/
-    MethodHandle copyWith(MethodType mt, LambdaForm lf) {
-        throw new InternalError("copyWith: " + this.getClass());
+        return bindArgument(0, L_TYPE, receiver);
     }
 
     /*non-public*/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 int MetaspaceShared::_max_alignment = 0;
 
@@ -337,13 +338,14 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   int all_rw_count = 0;
   int all_rw_bytes = 0;
 
-  const char *fmt = "%-20s: %8d %10d %5.1f | %8d %10d %5.1f | %8d %10d %5.1f";
+// To make fmt_stats be a syntactic constant (for format warnings), use #define.
+#define fmt_stats "%-20s: %8d %10d %5.1f | %8d %10d %5.1f | %8d %10d %5.1f"
   const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
   const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
 
   tty->print_cr("Detailed metadata info (rw includes md and mc):");
-  tty->print_cr(hdr);
-  tty->print_cr(sep);
+  tty->print_cr("%s", hdr);
+  tty->print_cr("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
     const char *name = type_name((Type)type);
     int ro_count = _counts[RO][type];
@@ -357,7 +359,7 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
     double rw_perc = 100.0 * double(rw_bytes) / double(rw_all);
     double perc    = 100.0 * double(bytes)    / double(ro_all + rw_all);
 
-    tty->print_cr(fmt, name,
+    tty->print_cr(fmt_stats, name,
                   ro_count, ro_bytes, ro_perc,
                   rw_count, rw_bytes, rw_perc,
                   count, bytes, perc);
@@ -375,14 +377,15 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   double all_rw_perc = 100.0 * double(all_rw_bytes) / double(rw_all);
   double all_perc    = 100.0 * double(all_bytes)    / double(ro_all + rw_all);
 
-  tty->print_cr(sep);
-  tty->print_cr(fmt, "Total",
+  tty->print_cr("%s", sep);
+  tty->print_cr(fmt_stats, "Total",
                 all_ro_count, all_ro_bytes, all_ro_perc,
                 all_rw_count, all_rw_bytes, all_rw_perc,
                 all_count, all_bytes, all_perc);
 
   assert(all_ro_bytes == ro_all, "everything should have been counted");
   assert(all_rw_bytes == rw_all, "everything should have been counted");
+#undef fmt_stats
 }
 
 // Populate the shared space.
@@ -514,7 +517,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   md_top = wc.get_top();
 
   // Print shared spaces all the time
-  const char* fmt = "%s space: %9d [ %4.1f%% of total] out of %9d bytes [%4.1f%% used] at " PTR_FORMAT;
+// To make fmt_space be a syntactic constant (for format warnings), use #define.
+#define fmt_space "%s space: %9d [ %4.1f%% of total] out of %9d bytes [%4.1f%% used] at " INTPTR_FORMAT
   Metaspace* ro_space = _loader_data->ro_metaspace();
   Metaspace* rw_space = _loader_data->rw_metaspace();
 
@@ -545,10 +549,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   const double mc_u_perc = mc_bytes / double(mc_alloced) * 100.0;
   const double total_u_perc = total_bytes / double(total_alloced) * 100.0;
 
-  tty->print_cr(fmt, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, ro_space->bottom());
-  tty->print_cr(fmt, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, rw_space->bottom());
-  tty->print_cr(fmt, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, md_low);
-  tty->print_cr(fmt, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, mc_low);
+  tty->print_cr(fmt_space, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, ro_space->bottom());
+  tty->print_cr(fmt_space, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, rw_space->bottom());
+  tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, md_low);
+  tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, mc_low);
   tty->print_cr("total   : %9d [100.0%% of total] out of %9d bytes [%4.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
@@ -603,6 +607,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
     dac.dump_stats(int(ro_bytes), int(rw_bytes), int(md_bytes), int(mc_bytes));
   }
+#undef fmt_space
 }
 
 static void link_shared_classes(Klass* obj, TRAPS) {

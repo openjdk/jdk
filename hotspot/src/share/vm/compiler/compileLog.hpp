@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class CompileLog : public xmlStream {
 
   static CompileLog* _first;     // head of static chain
 
-  void va_tag(bool push, const char* format, va_list ap);
+  void va_tag(bool push, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
 
  public:
   CompileLog(const char* file_name, FILE* fp, intx thread_id);
@@ -69,7 +69,7 @@ class CompileLog : public xmlStream {
   // or reset, context string will be silently ignored
   stringStream* context()                        { return &_context; }
   void    clear_context()                        { context()->reset(); }
-  void      set_context(const char* format, ...);
+  void      set_context(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   void          name(ciSymbol* s);               // name='s'
   void          name(Symbol* s)                  { xmlStream::name(s); }

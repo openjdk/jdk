@@ -239,6 +239,4 @@ FULL_JRE_INCLUDE_METAINF_SERVICES := \
     META-INF/services/javax.sound.sampled.spi.AudioFileReader \
     META-INF/services/javax.sound.sampled.spi.AudioFileWriter \
     META-INF/services/javax.sound.sampled.spi.FormatConversionProvider \
-    META-INF/services/javax.sound.sampled.spi.MixerProvider \
-    META-INF/services/sun.java2d.cmm.PCMM \
-    META-INF/services/sun.java2d.pipe.RenderingEngine
+    META-INF/services/javax.sound.sampled.spi.MixerProvider
