@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: SyntaxTreeNode.java,v 1.6 2006/06/06 22:34:33 spericas Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
@@ -519,9 +516,9 @@ public abstract class SyntaxTreeNode implements Constants {
         // references falling out-of-scope inside the for-each element.
         // (the cause of which being 'lazy' register allocation for references)
         for (int i = 0; i < n; i++) {
-            if( _contents.get(i) instanceof VariableBase) {
+            if ( _contents.get(i) instanceof VariableBase) {
                 final VariableBase var = (VariableBase)_contents.get(i);
-                var.unmapRegister(methodGen);
+                var.unmapRegister(classGen, methodGen);
             }
         }
     }

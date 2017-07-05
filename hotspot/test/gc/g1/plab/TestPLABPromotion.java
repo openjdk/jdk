@@ -23,7 +23,7 @@
 
  /*
  * @test TestPLABPromotion
- * @bug 8141278
+ * @bug 8141278 8141141
  * @summary Test PLAB promotion
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
@@ -130,16 +130,15 @@ public class TestPLABPromotion {
         long plabAllocatedOld;
         long directAllocatedOld;
         long memAllocated = testCase.getMemToFill();
-        long wordSize = Platform.is32bit() ? 4l : 8l;
         LogParser logParser = new LogParser(output);
 
         Map<String, Long> survivorStats = getPlabStats(logParser, LogParser.ReportType.SURVIVOR_STATS, GC_ID_SURVIVOR_STATS);
         Map<String, Long> oldStats = getPlabStats(logParser, LogParser.ReportType.OLD_STATS, GC_ID_OLD_STATS);
 
-        plabAllocatedSurvivor = wordSize * survivorStats.get("used");
-        directAllocatedSurvivor = wordSize * survivorStats.get("direct_allocated");
-        plabAllocatedOld = wordSize * oldStats.get("used");
-        directAllocatedOld = wordSize * oldStats.get("direct_allocated");
+        plabAllocatedSurvivor = survivorStats.get("used");
+        directAllocatedSurvivor = survivorStats.get("direct allocated");
+        plabAllocatedOld = oldStats.get("used");
+        directAllocatedOld = oldStats.get("direct allocated");
 
         System.out.printf("Survivor PLAB allocated:%17d Direct allocated: %17d Mem consumed:%17d%n", plabAllocatedSurvivor, directAllocatedSurvivor, memAllocated);
         System.out.printf("Old      PLAB allocated:%17d Direct allocated: %17d Mem consumed:%17d%n", plabAllocatedOld, directAllocatedOld, memAllocated);

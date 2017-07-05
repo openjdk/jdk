@@ -372,6 +372,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PreInflateSpin",                JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "JNIDetachReleasesMonitors",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "SegmentedHeapDumpThreshold",    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -405,8 +406,9 @@ static AliasedFlag const aliased_jvm_flags[] = {
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LogTag::_classpath },
   { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
   { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
@@ -2315,6 +2317,17 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 //===========================================================================================================
 // Parsing of main arguments
 
+#if INCLUDE_JVMCI
+// Check consistency of jvmci vm argument settings.
+bool Arguments::check_jvmci_args_consistency() {
+  if (!EnableJVMCI && !JVMCIGlobals::check_jvmci_flags_are_consistent()) {
+    JVMCIGlobals::print_jvmci_args_inconsistency_error_message();
+    return false;
+  }
+  return true;
+}
+#endif //INCLUDE_JVMCI
+
 // Check consistency of GC selection
 bool Arguments::check_gc_consistency() {
   // Ensure that the user has not selected conflicting sets
@@ -2411,6 +2424,9 @@ bool Arguments::check_vm_args_consistency() {
 #endif
   }
 #if INCLUDE_JVMCI
+
+  status = status && check_jvmci_args_consistency();
+
   if (EnableJVMCI) {
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
@@ -3255,7 +3271,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
   // PrintSharedArchiveAndExit will turn on
   //   -Xshare:on
-  //   -XX:+TraceClassPaths
+  //   -Xlog:classpath=info
   if (PrintSharedArchiveAndExit) {
     if (FLAG_SET_CMDLINE(bool, UseSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
@@ -3263,9 +3279,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     if (FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true) != Flag::SUCCESS) {
       return JNI_EINVAL;
     }
-    if (FLAG_SET_CMDLINE(bool, TraceClassPaths, true) != Flag::SUCCESS) {
-      return JNI_EINVAL;
-    }
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classpath));
   }
 
   // Change the default value for flags  which have different default values
@@ -3317,10 +3331,6 @@ void Arguments::fix_appclasspath() {
 
     _java_class_path->set_value(copy);
     FreeHeap(copy); // a copy was made by set_value, so don't need this anymore
-  }
-
-  if (!PrintSharedArchiveAndExit) {
-    ClassLoader::trace_class_path(tty, "[classpath: ", _java_class_path->value());
   }
 }
 

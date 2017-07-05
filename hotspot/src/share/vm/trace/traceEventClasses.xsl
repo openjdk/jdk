@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@
 class TraceEvent {
 public:
   TraceEvent() {}
-  void set_starttime(const Ticks&amp; time) {}
-  void set_endtime(const Ticks&amp; time) {}
+  void set_starttime(const Ticks&amp; ignore) {}
+  void set_endtime(const Ticks&amp; ignore) {}
   bool should_commit() const { return false; }
   static bool is_enabled() { return false; }
   void commit() {}

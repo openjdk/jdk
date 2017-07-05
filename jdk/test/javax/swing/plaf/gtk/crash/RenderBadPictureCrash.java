@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
 
 /*
  @test
- @bug 8056151
+ @bug 8056151 8131751
  @summary Switching to GTK L&F on-the-fly leads to X Window System error RenderBadPicture
  @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel -Dsun.java2d.xrender=T RenderBadPictureCrash
  */
-
 import java.awt.Color;
+import java.awt.GraphicsDevice;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-
 import javax.swing.UIManager;
 
 public class RenderBadPictureCrash {
@@ -41,7 +40,10 @@ public class RenderBadPictureCrash {
         SwingUtilities.invokeAndWait(() -> {
             JFrame f = new JFrame();
             f.setUndecorated(true);
-            f.setBackground(new Color(0, 0, 0, 0));
+            GraphicsDevice gd = f.getGraphicsConfiguration().getDevice();
+            if (gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+                f.setBackground(new Color(0, 0, 0, 0));
+            }
             f.setSize(200, 300);
             f.setVisible(true);
 
