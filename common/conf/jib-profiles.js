@@ -910,7 +910,7 @@ var getJibProfilesDependencies = function (input, common) {
         freetype: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "2.3.4+1.0",
+            revision: "2.7.1-v120+1.0",
             module: "freetype-" + input.target_platform
         }
     };

@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4500906 4433599 4740097
- *  @summary vmexec= debug java fails for SunCommandLineLauncher
+ * @test
+ * @bug 4500906 4433599 4740097
+ * @summary vmexec= debug java fails for SunCommandLineLauncher
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g Java_gTest.java
- *  @run driver Java_gTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g Java_gTest.java
+ * @run driver Java_gTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
