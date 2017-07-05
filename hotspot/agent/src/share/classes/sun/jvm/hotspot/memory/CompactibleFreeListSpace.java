@@ -191,7 +191,6 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
             //Find the object size using Printezis bits and skip over
             long size = collector().blockSizeUsingPrintezisBits(cur);
             if (size == -1) {
-              System.err.println("Printezis bits not set...");
               break;
             }
             cur = cur.addOffsetTo(adjustObjectSizeInBytes(size));
