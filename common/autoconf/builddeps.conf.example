@@ -31,7 +31,7 @@
 
 # Translate a configuration triplet/quadruplet into something
 # known by this configuration file.
-# If no rewrite was found, then rewritten_target=${OPENJDK_TARGET_SYSTEM}
+# If no rewrite was found, then rewritten_target=${OPENJDK_TARGET_AUTOCONF_NAME}
 REWRITE_i686_pc_linux_gnu=i686-unknown-linux-gnu
 REWRITE_i386_pc_solaris2_10=i686-sun-solaris2_10
  

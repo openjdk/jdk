@@ -597,13 +597,10 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 CCACHE
 USE_PRECOMPILED_HEADER
+SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
-JAVAC_USE_MODE
-JAVAC_USE_DEPS
-JAVAC_SERVER_CORES
-JAVAC_SERVERS
-JAVAC_USE_REMOTE
-SERVER_JAVA
+SJAVAC_SERVER_CORES
+SJAVAC_SERVER_JAVA
 MEMORY_SIZE
 CONCURRENT_BUILD_JOBS
 NUM_CORES
@@ -635,6 +632,7 @@ CFLAGS_DEBUG_SYMBOLS
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
 UNCYGDRIVE
+LDFLAGS_CXX_JDK
 LDFLAGS_JDKEXE_SUFFIX
 LDFLAGS_JDKLIB_SUFFIX
 LDFLAGS_JDKEXE
@@ -644,6 +642,9 @@ CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
 PACKAGE_PATH
+LEGACY_EXTRA_LDFLAGS
+LEGACY_EXTRA_CXXFLAGS
+LEGACY_EXTRA_CFLAGS
 CXX_FLAG_DEPS
 C_FLAG_DEPS
 CXX_O_FLAG_NONE
@@ -656,6 +657,7 @@ C_O_FLAG_HI
 C_O_FLAG_HIGHEST
 POST_MCS_CMD
 POST_STRIP_CMD
+SET_EXECUTABLE_ORIGIN
 SET_SHARED_LIBRARY_ORIGIN
 CXX_FLAG_REORDER
 C_FLAG_REORDER
@@ -669,14 +671,11 @@ LIBRARY_PREFIX
 STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
-ENDIAN
-ARCH_DATA_MODEL
-LP64
+LIPO
 OBJCOPY
 MCS
 STRIP
 NM
-ASFLAGS
 AS
 CXXCPP
 CPP
@@ -706,30 +705,18 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
-HOSTLD
-HOSTCXX
-HOSTCC
-DEFINE_CROSS_COMPILE_ARCH
+BUILD_LD
+BUILD_CXX
+BUILD_CC
 MSVCR100DLL
 CHECK_FOR_VCINSTALLDIR
 SETUPDEVENV
+CYGWIN_LINK
 AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
-SYS_ROOT
-HOTSPOT_DIST
-JAXWS_DIST
-JAXP_DIST
-CORBA_DIST
-LANGTOOLS_DIST
-IMAGES_OUTPUTDIR
-JDK_OUTPUTDIR
-HOTSPOT_OUTPUTDIR
-JAXWS_OUTPUTDIR
-JAXP_OUTPUTDIR
-CORBA_OUTPUTDIR
-LANGTOOLS_OUTPUTDIR
+BUILD_OUTPUT
 OVERRIDE_SRC_ROOT
 ADD_SRC_ROOT
 JDK_TOPDIR
@@ -739,17 +726,11 @@ JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
 BOOT_JDK_JVMARGS
-NATIVE2ASCII
-RMIC
-JAR
-JAVAH
 JAVAC_FLAGS
-JAVAC
 BOOT_JDK_SOURCETARGET
-JAVA
+BOOT_JDK
 BOOT_TOOLSJAR
 BOOT_RTJAR
-BOOT_JDK
 JAVA_CHECK
 JAVAC_CHECK
 OUTPUT_ROOT
@@ -777,9 +758,6 @@ COMPRESS_JARS
 CACERTS_FILE
 TEST_IN_BUILD
 DISABLE_NIMBUS
-GENERATE_DOCS
-ENABLE_DOCS
-BUILD_HEADLESS_ONLY
 BUILD_HEADLESS
 SUPPORT_HEADFUL
 SUPPORT_HEADLESS
@@ -790,6 +768,7 @@ DEBUG_CLASSFILES
 FASTDEBUG
 VARIANT
 DEBUG_LEVEL
+MACOSX_UNIVERSAL
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
 JVM_VARIANT_KERNEL
@@ -797,39 +776,98 @@ JVM_VARIANT_CLIENT
 JVM_VARIANT_SERVER
 JVM_VARIANTS
 JDK_VARIANT
-MINIMIZE_RAM_USAGE
-JAVASE_EMBEDDED
-PATH_SEP
-CYGPATH
+BDEPS_FTP
+BDEPS_UNZIP
 OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
+PKG_CONFIG
+HG
+OBJDUMP
+READELF
+OTOOL
+LDD
+THEPWDCMD
+FIND_DELETE
+RM
+MAKE
+CHECK_TOOLSDIR_MAKE
+CHECK_TOOLSDIR_GMAKE
+CHECK_MAKE
+CHECK_GMAKE
+NAWK
+SED
+FGREP
+EGREP
+GREP
+AWK
+ZIP
+XARGS
+WC
+UNZIP
+UNIQ
+TR
+TOUCH
+TEE
+TAR
+TAIL
+SORT
+SH
+PRINTF
+MV
+MKDIR
+LS
+LN
+HEAD
+FIND
+FILE
+EXPR
+ECHO
+DIFF
+DF
+DATE
+CUT
+CPIO
+CP
+CMP
+CHMOD
+CAT
+BASENAME
+PKGHANDLER
+BUILD_LOG_WRAPPER
+BUILD_LOG_PREVIOUS
+BUILD_LOG
+SYS_ROOT
+PATH_SEP
+CYGPATH
+SRC_ROOT
+READLINK
+DEFINE_CROSS_COMPILE_ARCH
+LP64
+OPENJDK_TARGET_OS_API_DIR
+OPENJDK_TARGET_CPU_JLI_CFLAGS
+OPENJDK_TARGET_CPU_OSARCH
+OPENJDK_TARGET_CPU_ISADIR
+OPENJDK_TARGET_CPU_LIBDIR
+OPENJDK_TARGET_CPU_LEGACY_LIB
+OPENJDK_TARGET_CPU_LEGACY
 REQUIRED_OS_VERSION
 REQUIRED_OS_NAME
-LEGACY_OPENJDK_BUILD_CPU3
-LEGACY_OPENJDK_BUILD_CPU2
-LEGACY_OPENJDK_BUILD_CPU1
+COMPILE_TYPE
 OPENJDK_BUILD_CPU_ENDIAN
 OPENJDK_BUILD_CPU_BITS
 OPENJDK_BUILD_CPU_ARCH
 OPENJDK_BUILD_CPU
-LEGACY_OPENJDK_BUILD_OS_API
 OPENJDK_BUILD_OS_API
-OPENJDK_BUILD_OS_FAMILY
 OPENJDK_BUILD_OS
-LEGACY_OPENJDK_TARGET_CPU3
-LEGACY_OPENJDK_TARGET_CPU2
-LEGACY_OPENJDK_TARGET_CPU1
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
 OPENJDK_TARGET_CPU_ARCH
 OPENJDK_TARGET_CPU
-LEGACY_OPENJDK_TARGET_OS_API
 OPENJDK_TARGET_OS_API
-OPENJDK_TARGET_OS_FAMILY
 OPENJDK_TARGET_OS
-OPENJDK_BUILD_SYSTEM
-OPENJDK_TARGET_SYSTEM
+OPENJDK_BUILD_AUTOCONF_NAME
+OPENJDK_TARGET_AUTOCONF_NAME
 target_os
 target_vendor
 target_cpu
@@ -842,60 +880,9 @@ build_os
 build_vendor
 build_cpu
 build
-PKG_CONFIG
-BDEPS_FTP
-BDEPS_UNZIP
-HG
-FILE
-EXPR
-READELF
-OTOOL
-LDD
-UNZIP
-ZIP
-XARGS
-WC
-TOUCH
-TR
-TEE
-TAIL
-TAR
-SORT
-SH
-SED
-RM
-THEPWDCMD
-PRINTF
-NAWK
-MV
-MKDIR
-MAKE
-LS
-LN
-HEAD
-FIND_DELETE
-FIND
-FGREP
-EGREP
-GREP
-ECHO
-DIFF
-DF
-DATE
-CUT
-CPIO
-CP
-CHMOD
-CAT
-AWK
-PKGHANDLER
-BUILD_LOG_WRAPPER
-BUILD_LOG_PREVIOUS
-BUILD_LOG
-SRC_ROOT
-READLINK
 DATE_WHEN_CONFIGURED
 CONFIGURE_COMMAND_LINE
+CUSTOM_MAKE_DIR
 target_alias
 host_alias
 build_alias
@@ -937,12 +924,16 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_custom_make_dir
+with_target_bits
+with_sys_root
+with_tools_dir
+with_devkit
 with_builddeps_conf
 with_builddeps_server
 with_builddeps_dir
 with_builddeps_group
 enable_list_builddeps
-with_target_bits
 with_jdk_variant
 with_jvm_variants
 enable_debug
@@ -950,7 +941,6 @@ with_debug_level
 enable_openjdk_only
 enable_jigsaw
 enable_headful
-enable_docs
 enable_nimbus
 enable_hotspot_test_in_build
 with_cacerts_file
@@ -968,9 +958,6 @@ with_override_jaxws
 with_override_hotspot
 with_override_jdk
 with_msvcr100dll
-with_sys_root
-with_tools_dir
-with_devkit
 with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
@@ -989,11 +976,8 @@ with_zlib
 enable_static_link_stdc__
 with_num_cores
 with_memory_size
-with_server_java
-enable_javac_server
-with_javac_server_cores
-enable_javac_deps
-enable_javac_multi_core
+with_sjavac_server_java
+with_sjavac_server_cores
 enable_sjavac
 enable_precompiled_headers
 enable_ccache
@@ -1649,8 +1633,6 @@ Optional Features:
   --enable-jigsaw         build Jigsaw images (not yet available) [disabled]
   --disable-headful       build headful support (graphical UI support)
                           [enabled]
-  --enable-docs           enable generation of Javadoc documentation
-                          [disabled]
   --disable-nimbus        disable Nimbus L&F [enabled]
   --enable-hotspot-test-in-build
                           enable running of Queens test after Hotspot build
@@ -1666,12 +1648,6 @@ Optional Features:
   --disable-static-link-stdc++
                           disable static linking of the C++ runtime on Linux
                           [enabled]
-  --enable-javac-server   enable the shared javac server during the build
-                          process [disabled]
-  --enable-javac-deps     enable the dependency tracking between Java packages
-                          [disabled]
-  --enable-javac-multi-core
-                          compile Java packages concurrently [disabled]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -1681,6 +1657,16 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-custom-make-dir  directory containing custom build/make files
+  --with-target-bits      build 32-bit or 64-bit binaries (for platforms that
+                          support it), e.g. --with-target-bits=32 [guessed]
+  --with-sys-root         pass this sys-root to the compilers and linker
+                          (useful if the sys-root encoded in the cross
+                          compiler tools is incorrect)
+  --with-tools-dir        search this directory for (cross-compiling)
+                          compilers and tools
+  --with-devkit           use this directory as base for tools-dir and
+                          sys-root (for cross-compiling)
   --with-builddeps-conf   use this configuration file for the builddeps
   --with-builddeps-server download and use build dependencies from this server
                           url, e.g.
@@ -1689,9 +1675,7 @@ Optional Packages:
                           [d/localhome/builddeps]
   --with-builddeps-group  chgrp the downloaded build dependencies to this
                           group
-  --with-target-bits      build 32-bit or 64-bit binaries (for platforms that
-                          support it), e.g. --with-target-bits=32 [guessed]
-  --with-jdk-variant      JDK variant to build (normal, embedded) [normal]
+  --with-jdk-variant      JDK variant to build (normal) [normal]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
                           client, kernel, zero, zeroshark) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug)
@@ -1724,12 +1708,6 @@ Optional Packages:
   --with-override-hotspot use this hotspot dir for the build
   --with-override-jdk     use this jdk dir for the build
   --with-msvcr100dll      copy this msvcr100.dll into the built JDK
-  --with-sys-root         pass this sys-root to the compilers and linker
-                          (useful if the sys-root encoded in the cross
-                          compiler tools is incorrect)
-  --with-tools-dir        search this directory for compilers and tools
-  --with-devkit           use this directory as base for tools-dir and
-                          sys-root
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
   --with-extra-ldflags    extra flags to be used when linking jdk
@@ -1753,13 +1731,15 @@ Optional Packages:
                           --with-num-cores=8 [probed]
   --with-memory-size      memory (in MB) available in the build system, e.g.
                           --with-memory-size=1024 [probed]
-  --with-server-java      use this java binary for running the javac
+  --with-sjavac-server-java
+                          use this java binary for running the sjavac
                           background server and other long running java tasks
                           in the build process, e.g.
-                          ---with-server-java="/opt/jrockit/bin/java -server"
-  --with-javac-server-cores
+                          ---with-sjavac-server-java="/opt/jrockit/bin/java
+                          -server"
+  --with-sjavac-server-cores
                           use at most this number of concurrent threads on the
-                          javac server [probed]
+                          sjavac server [probed]
   --with-ccache-dir       where to store ccache files [~/.ccache]
 
 Some influential environment variables:
@@ -2053,6 +2033,97 @@ fi
 
 } # ac_fn_cxx_try_cpp
 
+# ac_fn_cxx_check_header_mongrel LINENO HEADER VAR INCLUDES
+# ---------------------------------------------------------
+# Tests whether HEADER exists, giving a warning if it cannot be compiled using
+# the include files in INCLUDES and setting the cache variable VAR
+# accordingly.
+ac_fn_cxx_check_header_mongrel ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if eval "test \"\${$3+set}\"" = set; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval "test \"\${$3+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
+$as_echo_n "checking $2 usability... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+#include <$2>
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_header_compiler=yes
+else
+  ac_header_compiler=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
+$as_echo_n "checking $2 presence... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <$2>
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+  ac_header_preproc=yes
+else
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in #((
+  yes:no: )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+( $as_echo "## ----------------------------------------- ##
+## Report this to build-dev@openjdk.java.net ##
+## ----------------------------------------- ##"
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval "test \"\${$3+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=\$ac_header_compiler"
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+fi
+  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
+
+} # ac_fn_cxx_check_header_mongrel
+
 # ac_fn_cxx_try_run LINENO
 # ------------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
@@ -2094,6 +2165,37 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_try_run
+
+# ac_fn_cxx_check_header_compile LINENO HEADER VAR INCLUDES
+# ---------------------------------------------------------
+# Tests whether HEADER exists and can be compiled using the include files in
+# INCLUDES, setting the cache variable VAR accordingly.
+ac_fn_cxx_check_header_compile ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval "test \"\${$3+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+#include <$2>
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
+
+} # ac_fn_cxx_check_header_compile
 
 # ac_fn_cxx_compute_int LINENO EXPR VAR INCLUDES
 # ----------------------------------------------
@@ -2272,37 +2374,6 @@ rm -f conftest.val
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_compute_int
-
-# ac_fn_cxx_check_header_compile LINENO HEADER VAR INCLUDES
-# ---------------------------------------------------------
-# Tests whether HEADER exists and can be compiled using the include files in
-# INCLUDES, setting the cache variable VAR accordingly.
-ac_fn_cxx_check_header_compile ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval "test \"\${$3+set}\"" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-#include <$2>
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  eval "$3=yes"
-else
-  eval "$3=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
-
-} # ac_fn_cxx_check_header_compile
 
 # ac_fn_cxx_try_link LINENO
 # -------------------------
@@ -2507,97 +2578,6 @@ fi
   eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
 
 } # ac_fn_c_check_header_mongrel
-
-# ac_fn_cxx_check_header_mongrel LINENO HEADER VAR INCLUDES
-# ---------------------------------------------------------
-# Tests whether HEADER exists, giving a warning if it cannot be compiled using
-# the include files in INCLUDES and setting the cache variable VAR
-# accordingly.
-ac_fn_cxx_check_header_mongrel ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if eval "test \"\${$3+set}\"" = set; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval "test \"\${$3+set}\"" = set; then :
-  $as_echo_n "(cached) " >&6
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
-$as_echo_n "checking $2 usability... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-#include <$2>
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_header_compiler=yes
-else
-  ac_header_compiler=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
-$as_echo_n "checking $2 presence... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <$2>
-_ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  ac_header_preproc=yes
-else
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in #((
-  yes:no: )
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
-( $as_echo "## ----------------------------------------- ##
-## Report this to build-dev@openjdk.java.net ##
-## ----------------------------------------- ##"
-     ) | sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval "test \"\${$3+set}\"" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  eval "$3=\$ac_header_compiler"
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-fi
-  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
-
-} # ac_fn_cxx_check_header_mongrel
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -2952,7 +2932,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # Do not change or remove the following line, it is needed for consistency checks:
-# DATE_WHEN_GENERATED: 1341161875
+# DATE_WHEN_GENERATED: 1347963060
 
 ac_aux_dir=
 for ac_dir in build-aux "$srcdir"/build-aux; do
@@ -3083,10 +3063,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-
-
-
-
+# Setup basic configuration paths, and platform-specific stuff related to PATHs.
 
 
 
@@ -3096,10 +3073,25 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 #%%% Simple tools %%%
 
+# Check if we have found a usable version of make
+# $1: the path to a potential make binary (or empty)
+# $2: the description on how we found this
+
+
+# Goes looking for a usable version of GNU make.
 
 
 
 
+# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
+# $1: variable to check
+# $2: executable name to print in warning (optional)
+
+
+# Does AC_PATH_PROG followed by CHECK_NONEMPTY.
+# Arguments as AC_PATH_PROG:
+# $1: variable to set
+# $2: executable name to look for
 
 
 
@@ -3176,9 +3168,43 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
-# Fixes paths on windows to be mixed mode short.
+# Execute the check given as argument, and verify the result
+# If the Boot JDK was previously found, do nothing
+# $1 A command line (typically autoconf macro) to execute
 
 
+# Test: Is bootjdk explicitely set by command line arguments?
+
+
+# Test: Is bootjdk available from builddeps?
+
+
+# Test: Is $JAVA_HOME set?
+
+
+# Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
+
+
+# Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+
+
+# Look for a jdk in the given path. If there are multiple, try to select the newest.
+# If found, set BOOT_JDK and BOOT_JDK_FOUND.
+# $1 = Path to directory containing jdk installations.
+# $2 = String to append to the found JDK directory to get the proper JDK home
+
+
+# Call BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY, but use the given
+# environmental variable as base for where to look.
+# $1 Name of an environmal variable, assumed to point to the Program Files directory.
+
+
+# Test: Is there a JDK installed in default, well-known locations?
+
+
+# Check that a command-line tool in the Boot JDK is correct
+# $1 = name of variable to assign
+# $2 = name of binary
 
 
 ###############################################################################
@@ -3360,42 +3386,15 @@ pkgadd_help() {
 
 
 
-#
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
+# Support for customization of the build process. Some build files
+# will include counterparts from this location, if they exist. This allows
+# for a degree of customization of the build targets and the rules/recipes
+# to create them
 
-
-
-
-
-
-
-
-
-
-
-
+# Check whether --with-custom-make-dir was given.
+if test "${with_custom_make_dir+set}" = set; then :
+  withval=$with_custom_make_dir; CUSTOM_MAKE_DIR=$with_custom_make_dir
+fi
 
 
 
@@ -3432,6 +3431,62 @@ pkgadd_help() {
 
 
 
+
+
+
+
+
+
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Support macro for PLATFORM_EXTRACT_TARGET_AND_BUILD.
+# Converts autoconf style CPU name to OpenJDK style, into
+# VAR_CPU, VAR_CPU_ARCH, VAR_CPU_BITS and VAR_CPU_ENDIAN.
+
+
+# Support macro for PLATFORM_EXTRACT_TARGET_AND_BUILD.
+# Converts autoconf style OS name to OpenJDK style, into
+# VAR_OS and VAR_OS_API.
+
+
+# Expects $host_os $host_cpu $build_os and $build_cpu
+# and $with_target_bits to have been setup!
+#
+# Translate the standard triplet(quadruplet) definition
+# of the target/build system into OPENJDK_TARGET_OS, OPENJDK_TARGET_CPU,
+# OPENJDK_BUILD_OS, etc.
+
+
+# Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behaviour
+# accordingly. Must be done after setting up build and target system, but before
+# doing anything else with these values.
+
+
+    # Setup the legacy variables, for controlling the old makefiles.
+    #
 
 
 
@@ -3441,6 +3496,8 @@ pkgadd_help() {
 
 
 
+# Support macro for PLATFORM_SETUP_OPENJDK_TARGET_BITS.
+# Add -mX to various FLAGS variables.
 
 
 
@@ -3519,8 +3576,8 @@ pkgadd_help() {
 
 
 # This line needs to be here, verbatim, after all includes.
-# It is replaced with closed functionality when building
-# closed sources.
+# It is replaced with custom functionality when building
+# custom sources.
 
 
 ###############################################################################
@@ -3536,2568 +3593,9 @@ pkgadd_help() {
 DATE_WHEN_CONFIGURED=`LANG=C date`
 
 
-# Locate the directory of this script.
-SCRIPT="$0"
 
-    if test "x$OPENJDK_BUILD_OS" != xwindows; then
-        # Follow a chain of symbolic links. Use readlink
-        # where it exists, else fall back to horribly
-        # complicated shell code.
-        # Extract the first word of "readlink", so it can be a program name with args.
-set dummy readlink; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_READLINK+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $READLINK in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_READLINK="$READLINK" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_READLINK="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-READLINK=$ac_cv_path_READLINK
-if test -n "$READLINK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINK" >&5
-$as_echo "$READLINK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        if test "x$READLINK_TESTED" != yes; then
-            # On MacOSX there is a readlink tool with a different
-            # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | grep GNU`
-            if test "x$ISGNU" = x; then
-                 # A readlink that we do not know how to use.
-                 # Are there other non-GNU readlinks out there?
-                 READLINK_TESTED=yes
-                 READLINK=
-            fi
-        fi
-
-        if test "x$READLINK" != x; then
-            SCRIPT=`$READLINK -f $SCRIPT`
-        else
-            STARTDIR=$PWD
-            COUNTER=0
-            DIR=`dirname $SCRIPT`
-            FIL=`basename $SCRIPT`
-            while test $COUNTER -lt 20; do
-                ISLINK=`ls -l $DIR/$FIL | grep '\->' | sed -e 's/.*-> \(.*\)/\1/'`
-                if test "x$ISLINK" == x; then
-                    # This is not a symbolic link! We are done!
-                    break
-                fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
-                cd `dirname $ISLINK`
-                DIR=`pwd`
-                FIL=`basename $ISLINK`
-                let COUNTER=COUNTER+1
-            done
-            cd $STARTDIR
-            SCRIPT=$DIR/$FIL
-        fi
-    fi
-
-AUTOCONF_DIR=`dirname $0`
-
-
-# Where is the source? It is located two levels above the configure script.
-CURDIR="$PWD"
-cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`pwd`"
-if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    SRC_ROOT_LENGTH=`pwd|wc -m`
-    if test $SRC_ROOT_LENGTH -gt 100; then
-        as_fn_error $? "Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported" "$LINENO" 5
-    fi
-fi
-
-cd "$CURDIR"
-
-
-    # Fail with message the path to the source root if var SRC_ROOT contains a path with no spaces in it.
-    # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "$SRC_ROOT" | grep " "`
-    if test "x$HAS_SPACE" != x; then
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-            SRC_ROOT=`$CYGPATH -s -m -a "$SRC_ROOT"`
-            SRC_ROOT=`$CYGPATH -u "$SRC_ROOT"`
-        else
-            as_fn_error $? "You cannot have spaces in the path to the source root! \"$SRC_ROOT\"" "$LINENO" 5
-        fi
-    fi
-
-
-    # Fail with message the path to the current directory if var CURDIR contains a path with no spaces in it.
-    # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "$CURDIR" | grep " "`
-    if test "x$HAS_SPACE" != x; then
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-            CURDIR=`$CYGPATH -s -m -a "$CURDIR"`
-            CURDIR=`$CYGPATH -u "$CURDIR"`
-        else
-            as_fn_error $? "You cannot have spaces in the path to the current directory! \"$CURDIR\"" "$LINENO" 5
-        fi
-    fi
-
-
-
-# Setup default logging of stdout and stderr to build.log in the output root.
-BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-BUILD_LOG_WRAPPER='$(SH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-
-
-
-
-
-# Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
-
-    for ac_prog in apt-get yum port pkgutil pkgadd
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_PKGHANDLER+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$PKGHANDLER"; then
-  ac_cv_prog_PKGHANDLER="$PKGHANDLER" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_PKGHANDLER="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-PKGHANDLER=$ac_cv_prog_PKGHANDLER
-if test -n "$PKGHANDLER"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKGHANDLER" >&5
-$as_echo "$PKGHANDLER" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$PKGHANDLER" && break
-done
-
-
-
-# Setup simple tools, that do not need have cross compilation support.
-# Without these, we can't properly run the rest of the configure script.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
-$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
-if test "${ac_cv_path_GREP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -z "$GREP"; then
-  ac_path_GREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_prog in grep ggrep; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_GREP" && $as_test_x "$ac_path_GREP"; } || continue
-# Check for GNU ac_path_GREP and select it if it is found.
-  # Check for GNU $ac_path_GREP
-case `"$ac_path_GREP" --version 2>&1` in
-*GNU*)
-  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo 'GREP' >> "conftest.nl"
-    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_GREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_GREP="$ac_path_GREP"
-      ac_path_GREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_GREP_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_GREP"; then
-    as_fn_error $? "no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
-  fi
-else
-  ac_cv_path_GREP=$GREP
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_GREP" >&5
-$as_echo "$ac_cv_path_GREP" >&6; }
- GREP="$ac_cv_path_GREP"
-
-
-
-# Start with tools that do not need have cross compilation support
-# and can be expected to be found in the default PATH. These tools are
-# used by configure. Nor are these tools expected to be found in the
-# devkit from the builddeps server either, since they are
-# needed to download the devkit.
-for ac_prog in gawk mawk nawk awk
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_AWK+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$AWK"; then
-  ac_cv_prog_AWK="$AWK" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_AWK="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-AWK=$ac_cv_prog_AWK
-if test -n "$AWK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
-$as_echo "$AWK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$AWK" && break
-done
-
-
-    # Test that variable AWK is not empty.
-    if test "" = "$AWK"; then as_fn_error $? "Could not find awk !" "$LINENO" 5 ; fi
-
-# Extract the first word of "cat", so it can be a program name with args.
-set dummy cat; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CAT+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CAT in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CAT="$CAT" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CAT="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CAT=$ac_cv_path_CAT
-if test -n "$CAT"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAT" >&5
-$as_echo "$CAT" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable CAT is not empty.
-    if test "" = "$CAT"; then as_fn_error $? "Could not find cat !" "$LINENO" 5 ; fi
-
-# Extract the first word of "chmod", so it can be a program name with args.
-set dummy chmod; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CHMOD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CHMOD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CHMOD="$CHMOD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CHMOD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CHMOD=$ac_cv_path_CHMOD
-if test -n "$CHMOD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHMOD" >&5
-$as_echo "$CHMOD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable CHMOD is not empty.
-    if test "" = "$CHMOD"; then as_fn_error $? "Could not find chmod !" "$LINENO" 5 ; fi
-
-# Extract the first word of "cp", so it can be a program name with args.
-set dummy cp; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CP in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CP="$CP" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CP="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CP=$ac_cv_path_CP
-if test -n "$CP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CP" >&5
-$as_echo "$CP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable CP is not empty.
-    if test "" = "$CP"; then as_fn_error $? "Could not find cp !" "$LINENO" 5 ; fi
-
-# Extract the first word of "cpio", so it can be a program name with args.
-set dummy cpio; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CPIO+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CPIO in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CPIO=$ac_cv_path_CPIO
-if test -n "$CPIO"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
-$as_echo "$CPIO" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable CPIO is not empty.
-    if test "" = "$CPIO"; then as_fn_error $? "Could not find cpio !" "$LINENO" 5 ; fi
-
-# Extract the first word of "cut", so it can be a program name with args.
-set dummy cut; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CUT+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CUT in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CUT="$CUT" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CUT="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CUT=$ac_cv_path_CUT
-if test -n "$CUT"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUT" >&5
-$as_echo "$CUT" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable CUT is not empty.
-    if test "" = "$CUT"; then as_fn_error $? "Could not find cut !" "$LINENO" 5 ; fi
-
-# Extract the first word of "date", so it can be a program name with args.
-set dummy date; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_DATE+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $DATE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_DATE="$DATE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_DATE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-DATE=$ac_cv_path_DATE
-if test -n "$DATE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DATE" >&5
-$as_echo "$DATE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable DATE is not empty.
-    if test "" = "$DATE"; then as_fn_error $? "Could not find date !" "$LINENO" 5 ; fi
-
-# Extract the first word of "df", so it can be a program name with args.
-set dummy df; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_DF+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $DF in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_DF="$DF" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_DF="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-DF=$ac_cv_path_DF
-if test -n "$DF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DF" >&5
-$as_echo "$DF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable DF is not empty.
-    if test "" = "$DF"; then as_fn_error $? "Could not find df !" "$LINENO" 5 ; fi
-
-# Extract the first word of "diff", so it can be a program name with args.
-set dummy diff; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_DIFF+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $DIFF in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_DIFF="$DIFF" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_DIFF="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-DIFF=$ac_cv_path_DIFF
-if test -n "$DIFF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIFF" >&5
-$as_echo "$DIFF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable DIFF is not empty.
-    if test "" = "$DIFF"; then as_fn_error $? "Could not find diff !" "$LINENO" 5 ; fi
-
-# Warning echo is really, really unportable!!!!! Different
-# behaviour in bash and dash and in a lot of other shells!
-# Use printf for serious work!
-# Extract the first word of "echo", so it can be a program name with args.
-set dummy echo; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_ECHO+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ECHO in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ECHO="$ECHO" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ECHO="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ECHO=$ac_cv_path_ECHO
-if test -n "$ECHO"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ECHO" >&5
-$as_echo "$ECHO" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable ECHO is not empty.
-    if test "" = "$ECHO"; then as_fn_error $? "Could not find echo !" "$LINENO" 5 ; fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
-$as_echo_n "checking for egrep... " >&6; }
-if test "${ac_cv_path_EGREP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if echo a | $GREP -E '(a|b)' >/dev/null 2>&1
-   then ac_cv_path_EGREP="$GREP -E"
-   else
-     if test -z "$EGREP"; then
-  ac_path_EGREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_prog in egrep; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_EGREP="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_EGREP" && $as_test_x "$ac_path_EGREP"; } || continue
-# Check for GNU ac_path_EGREP and select it if it is found.
-  # Check for GNU $ac_path_EGREP
-case `"$ac_path_EGREP" --version 2>&1` in
-*GNU*)
-  ac_cv_path_EGREP="$ac_path_EGREP" ac_path_EGREP_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo 'EGREP' >> "conftest.nl"
-    "$ac_path_EGREP" 'EGREP$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_EGREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_EGREP="$ac_path_EGREP"
-      ac_path_EGREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_EGREP_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_EGREP"; then
-    as_fn_error $? "no acceptable egrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
-  fi
-else
-  ac_cv_path_EGREP=$EGREP
-fi
-
-   fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP" >&5
-$as_echo "$ac_cv_path_EGREP" >&6; }
- EGREP="$ac_cv_path_EGREP"
-
-
-
-    # Test that variable EGREP is not empty.
-    if test "" = "$EGREP"; then as_fn_error $? "Could not find egrep !" "$LINENO" 5 ; fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
-$as_echo_n "checking for fgrep... " >&6; }
-if test "${ac_cv_path_FGREP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if echo 'ab*c' | $GREP -F 'ab*c' >/dev/null 2>&1
-   then ac_cv_path_FGREP="$GREP -F"
-   else
-     if test -z "$FGREP"; then
-  ac_path_FGREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_prog in fgrep; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_FGREP="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_FGREP" && $as_test_x "$ac_path_FGREP"; } || continue
-# Check for GNU ac_path_FGREP and select it if it is found.
-  # Check for GNU $ac_path_FGREP
-case `"$ac_path_FGREP" --version 2>&1` in
-*GNU*)
-  ac_cv_path_FGREP="$ac_path_FGREP" ac_path_FGREP_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo 'FGREP' >> "conftest.nl"
-    "$ac_path_FGREP" FGREP < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_FGREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_FGREP="$ac_path_FGREP"
-      ac_path_FGREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_FGREP_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_FGREP"; then
-    as_fn_error $? "no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
-  fi
-else
-  ac_cv_path_FGREP=$FGREP
-fi
-
-   fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_FGREP" >&5
-$as_echo "$ac_cv_path_FGREP" >&6; }
- FGREP="$ac_cv_path_FGREP"
-
-
-
-    # Test that variable FGREP is not empty.
-    if test "" = "$FGREP"; then as_fn_error $? "Could not find fgrep !" "$LINENO" 5 ; fi
-
-
-# Extract the first word of "find", so it can be a program name with args.
-set dummy find; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_FIND+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $FIND in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_FIND="$FIND" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_FIND="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-FIND=$ac_cv_path_FIND
-if test -n "$FIND"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FIND" >&5
-$as_echo "$FIND" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable FIND is not empty.
-    if test "" = "$FIND"; then as_fn_error $? "Could not find find !" "$LINENO" 5 ; fi
-
-
-    # Test if find supports -delete
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if find supports -delete" >&5
-$as_echo_n "checking if find supports -delete... " >&6; }
-    FIND_DELETE="-delete"
-
-    DELETEDIR=`mktemp -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
-
-    echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
-
-    TEST_DELETE=`$FIND "$DELETEDIR" -name TestIfFindSupportsDelete $FIND_DELETE 2>&1`
-    if test -f $DELETEDIR/TestIfFindSupportsDelete; then
-        # No, it does not.
-        rm $DELETEDIR/TestIfFindSupportsDelete
-        FIND_DELETE="-exec rm \{\} \+"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    fi
-    rmdir $DELETEDIR
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
-$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
-if test "${ac_cv_path_GREP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -z "$GREP"; then
-  ac_path_GREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_prog in grep ggrep; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_GREP" && $as_test_x "$ac_path_GREP"; } || continue
-# Check for GNU ac_path_GREP and select it if it is found.
-  # Check for GNU $ac_path_GREP
-case `"$ac_path_GREP" --version 2>&1` in
-*GNU*)
-  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo 'GREP' >> "conftest.nl"
-    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_GREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_GREP="$ac_path_GREP"
-      ac_path_GREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_GREP_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_GREP"; then
-    as_fn_error $? "no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
-  fi
-else
-  ac_cv_path_GREP=$GREP
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_GREP" >&5
-$as_echo "$ac_cv_path_GREP" >&6; }
- GREP="$ac_cv_path_GREP"
-
-
-
-    # Test that variable GREP is not empty.
-    if test "" = "$GREP"; then as_fn_error $? "Could not find grep !" "$LINENO" 5 ; fi
-
-# Extract the first word of "head", so it can be a program name with args.
-set dummy head; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_HEAD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $HEAD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_HEAD="$HEAD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_HEAD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-HEAD=$ac_cv_path_HEAD
-if test -n "$HEAD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HEAD" >&5
-$as_echo "$HEAD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable HEAD is not empty.
-    if test "" = "$HEAD"; then as_fn_error $? "Could not find head !" "$LINENO" 5 ; fi
-
-# Extract the first word of "ln", so it can be a program name with args.
-set dummy ln; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_LN+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LN in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LN="$LN" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LN="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-LN=$ac_cv_path_LN
-if test -n "$LN"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LN" >&5
-$as_echo "$LN" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable LN is not empty.
-    if test "" = "$LN"; then as_fn_error $? "Could not find ln !" "$LINENO" 5 ; fi
-
-# Extract the first word of "ls", so it can be a program name with args.
-set dummy ls; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_LS+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LS="$LS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LS="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-LS=$ac_cv_path_LS
-if test -n "$LS"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LS" >&5
-$as_echo "$LS" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable LS is not empty.
-    if test "" = "$LS"; then as_fn_error $? "Could not find ls !" "$LINENO" 5 ; fi
-
-for ac_prog in gmake make
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_MAKE+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MAKE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MAKE="$MAKE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_MAKE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MAKE=$ac_cv_path_MAKE
-if test -n "$MAKE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKE" >&5
-$as_echo "$MAKE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MAKE" && break
-done
-
-
-    # Test that variable MAKE is not empty.
-    if test "" = "$MAKE"; then as_fn_error $? "Could not find make !" "$LINENO" 5 ; fi
-
-MAKE_VERSION=`$MAKE --version | head -n 1 | grep '3.8[12346789]'`
-if test "x$MAKE_VERSION" = x; then
-    as_fn_error $? "You must use GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
-fi
-# Extract the first word of "mkdir", so it can be a program name with args.
-set dummy mkdir; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_MKDIR+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MKDIR in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MKDIR="$MKDIR" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_MKDIR="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MKDIR=$ac_cv_path_MKDIR
-if test -n "$MKDIR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR" >&5
-$as_echo "$MKDIR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable MKDIR is not empty.
-    if test "" = "$MKDIR"; then as_fn_error $? "Could not find mkdir !" "$LINENO" 5 ; fi
-
-# Extract the first word of "mv", so it can be a program name with args.
-set dummy mv; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_MV+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MV in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MV="$MV" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_MV="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MV=$ac_cv_path_MV
-if test -n "$MV"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MV" >&5
-$as_echo "$MV" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable MV is not empty.
-    if test "" = "$MV"; then as_fn_error $? "Could not find mv !" "$LINENO" 5 ; fi
-
-for ac_prog in nawk gawk awk
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_NAWK+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $NAWK in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-NAWK=$ac_cv_path_NAWK
-if test -n "$NAWK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
-$as_echo "$NAWK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$NAWK" && break
-done
-
-
-    # Test that variable NAWK is not empty.
-    if test "" = "$NAWK"; then as_fn_error $? "Could not find nawk !" "$LINENO" 5 ; fi
-
-# Extract the first word of "printf", so it can be a program name with args.
-set dummy printf; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_PRINTF+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PRINTF in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PRINTF="$PRINTF" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_PRINTF="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PRINTF=$ac_cv_path_PRINTF
-if test -n "$PRINTF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PRINTF" >&5
-$as_echo "$PRINTF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable PRINTF is not empty.
-    if test "" = "$PRINTF"; then as_fn_error $? "Could not find printf !" "$LINENO" 5 ; fi
-
-# Extract the first word of "pwd", so it can be a program name with args.
-set dummy pwd; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_THEPWDCMD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $THEPWDCMD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_THEPWDCMD="$THEPWDCMD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_THEPWDCMD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-THEPWDCMD=$ac_cv_path_THEPWDCMD
-if test -n "$THEPWDCMD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $THEPWDCMD" >&5
-$as_echo "$THEPWDCMD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-# Extract the first word of "rm", so it can be a program name with args.
-set dummy rm; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_RM+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $RM in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_RM="$RM" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_RM="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-RM=$ac_cv_path_RM
-if test -n "$RM"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RM" >&5
-$as_echo "$RM" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable RM is not empty.
-    if test "" = "$RM"; then as_fn_error $? "Could not find rm !" "$LINENO" 5 ; fi
-
-RM="$RM -f"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
-$as_echo_n "checking for a sed that does not truncate output... " >&6; }
-if test "${ac_cv_path_SED+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
-     for ac_i in 1 2 3 4 5 6 7; do
-       ac_script="$ac_script$as_nl$ac_script"
-     done
-     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
-     { ac_script=; unset ac_script;}
-     if test -z "$SED"; then
-  ac_path_SED_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_prog in sed gsed; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_SED" && $as_test_x "$ac_path_SED"; } || continue
-# Check for GNU ac_path_SED and select it if it is found.
-  # Check for GNU $ac_path_SED
-case `"$ac_path_SED" --version 2>&1` in
-*GNU*)
-  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo '' >> "conftest.nl"
-    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_SED_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_SED="$ac_path_SED"
-      ac_path_SED_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_SED_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_SED"; then
-    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
-  fi
-else
-  ac_cv_path_SED=$SED
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
-$as_echo "$ac_cv_path_SED" >&6; }
- SED="$ac_cv_path_SED"
-  rm -f conftest.sed
-
-
-    # Test that variable SED is not empty.
-    if test "" = "$SED"; then as_fn_error $? "Could not find sed !" "$LINENO" 5 ; fi
-
-# Extract the first word of "sh", so it can be a program name with args.
-set dummy sh; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_SH+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $SH in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SH="$SH" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_SH="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-SH=$ac_cv_path_SH
-if test -n "$SH"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SH" >&5
-$as_echo "$SH" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable SH is not empty.
-    if test "" = "$SH"; then as_fn_error $? "Could not find sh !" "$LINENO" 5 ; fi
-
-# Extract the first word of "sort", so it can be a program name with args.
-set dummy sort; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_SORT+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $SORT in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SORT="$SORT" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_SORT="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-SORT=$ac_cv_path_SORT
-if test -n "$SORT"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SORT" >&5
-$as_echo "$SORT" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable SORT is not empty.
-    if test "" = "$SORT"; then as_fn_error $? "Could not find sort !" "$LINENO" 5 ; fi
-
-# Extract the first word of "tar", so it can be a program name with args.
-set dummy tar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_TAR+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TAR in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TAR="$TAR" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TAR="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-TAR=$ac_cv_path_TAR
-if test -n "$TAR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR" >&5
-$as_echo "$TAR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable TAR is not empty.
-    if test "" = "$TAR"; then as_fn_error $? "Could not find tar !" "$LINENO" 5 ; fi
-
-# Extract the first word of "tail", so it can be a program name with args.
-set dummy tail; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_TAIL+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TAIL in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TAIL="$TAIL" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TAIL="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-TAIL=$ac_cv_path_TAIL
-if test -n "$TAIL"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAIL" >&5
-$as_echo "$TAIL" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable TAIL is not empty.
-    if test "" = "$TAIL"; then as_fn_error $? "Could not find tail !" "$LINENO" 5 ; fi
-
-# Extract the first word of "tee", so it can be a program name with args.
-set dummy tee; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_TEE+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TEE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TEE="$TEE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TEE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-TEE=$ac_cv_path_TEE
-if test -n "$TEE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEE" >&5
-$as_echo "$TEE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable TEE is not empty.
-    if test "" = "$TEE"; then as_fn_error $? "Could not find tee !" "$LINENO" 5 ; fi
-
-# Extract the first word of "tr", so it can be a program name with args.
-set dummy tr; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_TR+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TR in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TR="$TR" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TR="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-TR=$ac_cv_path_TR
-if test -n "$TR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TR" >&5
-$as_echo "$TR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable TR is not empty.
-    if test "" = "$TR"; then as_fn_error $? "Could not find tr !" "$LINENO" 5 ; fi
-
-# Extract the first word of "touch", so it can be a program name with args.
-set dummy touch; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_TOUCH+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TOUCH in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TOUCH="$TOUCH" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TOUCH="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-TOUCH=$ac_cv_path_TOUCH
-if test -n "$TOUCH"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOUCH" >&5
-$as_echo "$TOUCH" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable TOUCH is not empty.
-    if test "" = "$TOUCH"; then as_fn_error $? "Could not find touch !" "$LINENO" 5 ; fi
-
-# Extract the first word of "wc", so it can be a program name with args.
-set dummy wc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_WC+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $WC in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_WC="$WC" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_WC="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-WC=$ac_cv_path_WC
-if test -n "$WC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WC" >&5
-$as_echo "$WC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable WC is not empty.
-    if test "" = "$WC"; then as_fn_error $? "Could not find wc !" "$LINENO" 5 ; fi
-
-# Extract the first word of "xargs", so it can be a program name with args.
-set dummy xargs; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_XARGS+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $XARGS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_XARGS="$XARGS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_XARGS="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-XARGS=$ac_cv_path_XARGS
-if test -n "$XARGS"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XARGS" >&5
-$as_echo "$XARGS" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable XARGS is not empty.
-    if test "" = "$XARGS"; then as_fn_error $? "Could not find xargs !" "$LINENO" 5 ; fi
-
-# Extract the first word of "zip", so it can be a program name with args.
-set dummy zip; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_ZIP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ZIP in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ZIP=$ac_cv_path_ZIP
-if test -n "$ZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
-$as_echo "$ZIP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable ZIP is not empty.
-    if test "" = "$ZIP"; then as_fn_error $? "Could not find zip !" "$LINENO" 5 ; fi
-
-# Extract the first word of "unzip", so it can be a program name with args.
-set dummy unzip; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_UNZIP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $UNZIP in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_UNZIP="$UNZIP" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_UNZIP="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-UNZIP=$ac_cv_path_UNZIP
-if test -n "$UNZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNZIP" >&5
-$as_echo "$UNZIP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable UNZIP is not empty.
-    if test "" = "$UNZIP"; then as_fn_error $? "Could not find unzip !" "$LINENO" 5 ; fi
-
-# Extract the first word of "ldd", so it can be a program name with args.
-set dummy ldd; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_LDD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LDD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LDD="$LDD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LDD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-LDD=$ac_cv_path_LDD
-if test -n "$LDD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDD" >&5
-$as_echo "$LDD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-if test "x$LDD" = "x"; then
-    # List shared lib dependencies is used for
-    # debug output and checking for forbidden dependencies.
-    # We can build without it.
-    LDD="true"
-fi
-# Extract the first word of "otool", so it can be a program name with args.
-set dummy otool; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_OTOOL+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $OTOOL in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_OTOOL="$OTOOL" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_OTOOL="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-OTOOL=$ac_cv_path_OTOOL
-if test -n "$OTOOL"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OTOOL" >&5
-$as_echo "$OTOOL" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-if test "x$OTOOL" = "x"; then
-   OTOOL="true"
-fi
-# Extract the first word of "readelf", so it can be a program name with args.
-set dummy readelf; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_READELF+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $READELF in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_READELF="$READELF" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_READELF="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-READELF=$ac_cv_path_READELF
-if test -n "$READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
-$as_echo "$READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-# Extract the first word of "expr", so it can be a program name with args.
-set dummy expr; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_EXPR+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $EXPR in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_EXPR="$EXPR" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_EXPR="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-EXPR=$ac_cv_path_EXPR
-if test -n "$EXPR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPR" >&5
-$as_echo "$EXPR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable EXPR is not empty.
-    if test "" = "$EXPR"; then as_fn_error $? "Could not find expr !" "$LINENO" 5 ; fi
-
-# Extract the first word of "file", so it can be a program name with args.
-set dummy file; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_FILE+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $FILE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_FILE="$FILE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_FILE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-FILE=$ac_cv_path_FILE
-if test -n "$FILE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FILE" >&5
-$as_echo "$FILE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    # Test that variable FILE is not empty.
-    if test "" = "$FILE"; then as_fn_error $? "Could not find file !" "$LINENO" 5 ; fi
-
-# Extract the first word of "hg", so it can be a program name with args.
-set dummy hg; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_HG+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $HG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_HG="$HG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_HG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-HG=$ac_cv_path_HG
-if test -n "$HG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HG" >&5
-$as_echo "$HG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-
-# Setup builddeps, for automatic downloading of tools we need.
-# This is needed before we can call BDEPS_CHECK_MODULE, which is done in
-# boot-jdk setup, but we need to have basic tools setup first.
-
-
-# Check whether --with-builddeps-conf was given.
-if test "${with_builddeps_conf+set}" = set; then :
-  withval=$with_builddeps_conf;
-fi
-
-
-
-# Check whether --with-builddeps-server was given.
-if test "${with_builddeps_server+set}" = set; then :
-  withval=$with_builddeps_server;
-fi
-
-
-
-# Check whether --with-builddeps-dir was given.
-if test "${with_builddeps_dir+set}" = set; then :
-  withval=$with_builddeps_dir;
-else
-  with_builddeps_dir=/localhome/builddeps
-fi
-
-
-
-# Check whether --with-builddeps-group was given.
-if test "${with_builddeps_group+set}" = set; then :
-  withval=$with_builddeps_group;
-fi
-
-
-# Check whether --enable-list-builddeps was given.
-if test "${enable_list_builddeps+set}" = set; then :
-  enableval=$enable_list_builddeps; LIST_BUILDDEPS="${enableval}"
-else
-  LIST_BUILDDEPS='no'
-fi
-
-
-if test "x$LIST_BUILDDEPS" = xyes; then
-    echo
-    echo List of build dependencies known to the configure script,
-    echo that can be used in builddeps.conf files:
-    cat $AUTOCONF_DIR/*.ac $AUTOCONF_DIR/*.m4 | grep BDEPS_CHECK_MODULE\( | cut -f 2 -d ',' | tr -d ' ' | sort
-    echo
-    exit 1
-fi
-
-
-
-    if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-        if test "x$with_builddeps_conf" != x; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for supplied builddeps configuration file" >&5
-$as_echo_n "checking for supplied builddeps configuration file... " >&6; }
-            builddepsfile=$with_builddeps_conf
-            if test -s $builddepsfile; then
-                . $builddepsfile
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: loaded!" >&5
-$as_echo "loaded!" >&6; }
-            else
-               as_fn_error $? "The given builddeps conf file $with_builddeps_conf could not be loaded!" "$LINENO" 5
-           fi
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for builddeps.conf files in sources..." >&5
-$as_echo_n "checking for builddeps.conf files in sources...... " >&6; }
-            builddepsfile=`mktemp`
-            touch $builddepsfile
-            # Put all found confs into a single file.
-            find ${SRC_ROOT} -name builddeps.conf -exec cat \{\} \; >> $builddepsfile
-            # Source the file to acquire the variables
-            if test -s $builddepsfile; then
-                . $builddepsfile
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: found at least one!" >&5
-$as_echo "found at least one!" >&6; }
-            else
-               as_fn_error $? "Could not find any builddeps.conf at all!" "$LINENO" 5
-           fi
-        fi
-        # Create build and target names that use _ instead of "-" and ".".
-        # This is necessary to use them in variable names.
-        build_var=`echo ${OPENJDK_BUILD_SYSTEM} | tr '-' '_' | tr '.' '_'`
-        target_var=`echo ${OPENJDK_TARGET_SYSTEM} | tr '-' '_' | tr '.' '_'`
-        # Extract rewrite information for build and target
-        eval rewritten_build=\${REWRITE_${build_var}}
-        if test "x$rewritten_build" = x; then
-            rewritten_build=${OPENJDK_BUILD_SYSTEM}
-            echo Build stays the same $rewritten_build
-        else
-            echo Rewriting build for builddeps into $rewritten_build
-        fi
-        eval rewritten_target=\${REWRITE_${target_var}}
-        if test "x$rewritten_target" = x; then
-            rewritten_target=${OPENJDK_TARGET_SYSTEM}
-            echo Target stays the same $rewritten_target
-        else
-            echo Rewriting target for builddeps into $rewritten_target
-        fi
-        rewritten_build_var=`echo ${rewritten_build} | tr '-' '_' | tr '.' '_'`
-        rewritten_target_var=`echo ${rewritten_target} | tr '-' '_' | tr '.' '_'`
-    fi
-    for ac_prog in 7z unzip
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_BDEPS_UNZIP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$BDEPS_UNZIP"; then
-  ac_cv_prog_BDEPS_UNZIP="$BDEPS_UNZIP" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_BDEPS_UNZIP="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-BDEPS_UNZIP=$ac_cv_prog_BDEPS_UNZIP
-if test -n "$BDEPS_UNZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_UNZIP" >&5
-$as_echo "$BDEPS_UNZIP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BDEPS_UNZIP" && break
-done
-
-    if test "x$BDEPS_UNZIP" = x7z; then
-        BDEPS_UNZIP="7z x"
-    fi
-
-    for ac_prog in wget lftp ftp
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_BDEPS_FTP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$BDEPS_FTP"; then
-  ac_cv_prog_BDEPS_FTP="$BDEPS_FTP" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_BDEPS_FTP="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-BDEPS_FTP=$ac_cv_prog_BDEPS_FTP
-if test -n "$BDEPS_FTP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_FTP" >&5
-$as_echo "$BDEPS_FTP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BDEPS_FTP" && break
-done
-
-
-
-# Check if pkg-config is available.
-
-
-if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
-	if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
-set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_PKG_CONFIG+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_PKG_CONFIG"; then
-  ac_pt_PKG_CONFIG=$PKG_CONFIG
-  # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_ac_pt_PKG_CONFIG+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
-if test -n "$ac_pt_PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
-$as_echo "$ac_pt_PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_PKG_CONFIG" = x; then
-    PKG_CONFIG=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    PKG_CONFIG=$ac_pt_PKG_CONFIG
-  fi
-else
-  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
-fi
-
-fi
-if test -n "$PKG_CONFIG"; then
-	_pkg_min_version=0.9.0
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
-$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
-	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-		PKG_CONFIG=""
-	fi
-
-fi
-
-###############################################################################
-#
-# Determine OpenJDK build and target platforms.
-#
-###############################################################################
-
+# Now we can determine OpenJDK build and target platforms. This is required to
+# have early on.
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
@@ -6219,237 +3717,96 @@ test -n "$target_alias" &&
 
 
 
-# Check whether --with-target-bits was given.
-if test "${with_target_bits+set}" = set; then :
-  withval=$with_target_bits;
-fi
-
-
-if test "x$with_target_bits" != x && \
-   test "x$with_target_bits" != x32 && \
-   test "x$with_target_bits" != x64 ; then
-    as_fn_error $? "--with-target-bits can only be 32 or 64, you specified $with_target_bits!" "$LINENO" 5
-fi
-# Translate the standard cpu-vendor-kernel-os quadruplets into
-# the new TARGET_.... and BUILD_... and the legacy names used by
-# the openjdk build.
-# It uses $host_os $host_cpu $build_os $build_cpu and $with_target_bits
-
-    # Expects $host_os $host_cpu $build_os and $build_cpu
-    # and $with_target_bits to have been setup!
-    #
-    # Translate the standard triplet(quadruplet) definition
-    # of the target/build system into
-    # OPENJDK_TARGET_OS=aix,bsd,hpux,linux,macosx,solaris,windows
-    # OPENJDK_TARGET_OS_FAMILY=bsd,gnu,sysv,win32,wince
-    # OPENJDK_TARGET_OS_API=posix,winapi
-    #
-    # OPENJDK_TARGET_CPU=ia32,x64,sparc,sparcv9,arm,arm64,ppc,ppc64
-    # OPENJDK_TARGET_CPU_ARCH=x86,sparc,pcc,arm
-    # OPENJDK_TARGET_CPU_BITS=32,64
-    # OPENJDK_TARGET_CPU_ENDIAN=big,little
-    #
-    # The same values are setup for BUILD_...
-    #
-    # And the legacy variables, for controlling the old makefiles.
-    # LEGACY_OPENJDK_TARGET_CPU1=i586,amd64/x86_64,sparc,sparcv9,arm,arm64...
-    # LEGACY_OPENJDK_TARGET_CPU2=i386,amd64,sparc,sparcv9,arm,arm64...
-    # LEGACY_OPENJDK_TARGET_CPU3=sparcv9,amd64 (but only on solaris)
-    # LEGACY_OPENJDK_TARGET_OS_API=solaris,windows
-    #
-    # We also copy the autoconf trip/quadruplet
-    # verbatim to OPENJDK_TARGET_SYSTEM (from the autoconf "host") and OPENJDK_BUILD_SYSTEM
-    OPENJDK_TARGET_SYSTEM="$host"
-    OPENJDK_BUILD_SYSTEM="$build"
+    # Copy the autoconf trip/quadruplet verbatim to OPENJDK_TARGET_AUTOCONF_NAME
+    # (from the autoconf "host") and OPENJDK_BUILD_AUTOCONF_NAME
+    # Note that we might later on rewrite e.g. OPENJDK_TARGET_CPU due to reduced build,
+    # but this will not change the value of OPENJDK_TARGET_AUTOCONF_NAME.
+    OPENJDK_TARGET_AUTOCONF_NAME="$host"
+    OPENJDK_BUILD_AUTOCONF_NAME="$build"
 
 
 
-
+    # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
 
   case "$host_os" in
     *linux*)
       VAR_OS=linux
       VAR_OS_API=posix
-      VAR_OS_FAMILY=gnu
       ;;
     *solaris*)
       VAR_OS=solaris
       VAR_OS_API=posix
-      VAR_OS_FAMILY=sysv
       ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
-      VAR_OS_FAMILY=bsd
       ;;
     *bsd*)
       VAR_OS=bsd
       VAR_OS_API=posix
-      VAR_OS_FAMILY=bsd
       ;;
     *cygwin*|*windows*)
       VAR_OS=windows
       VAR_OS_API=winapi
-      VAR_OS_FAMILY=windows
       ;;
     *)
       as_fn_error $? "unsupported operating system $host_os" "$LINENO" 5
       ;;
   esac
 
-    OPENJDK_TARGET_OS="$VAR_OS"
-    OPENJDK_TARGET_OS_FAMILY="$VAR_OS_FAMILY"
-    OPENJDK_TARGET_OS_API="$VAR_OS_API"
-
-
-
-
-
-    if test "x$OPENJDK_TARGET_OS_API" = xposix; then
-        LEGACY_OPENJDK_TARGET_OS_API="solaris"
-    fi
-    if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
-        LEGACY_OPENJDK_TARGET_OS_API="windows"
-    fi
-
-
-
 
   # First argument is the cpu name from the trip/quad
   case "$host_cpu" in
     x86_64)
-      VAR_CPU=x64
+      VAR_CPU=x86_64
       VAR_CPU_ARCH=x86
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=amd64
       ;;
     i?86)
-      VAR_CPU=ia32
+      VAR_CPU=x86
       VAR_CPU_ARCH=x86
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=i586
-      ;;
-    alpha*)
-      VAR_CPU=alpha
-      VAR_CPU_ARCH=alpha
-      VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=alpha
       ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=arm
       ;;
-    mips)
-      VAR_CPU=mips
-      VAR_CPU_ARCH=mips
-      VAR_CPU_BITS=woot
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=mips
-       ;;
-    mipsel)
-      VAR_CPU=mipsel
-      VAR_CPU_ARCH=mips
-      VAR_CPU_BITS=woot
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=mipsel
-       ;;
     powerpc)
       VAR_CPU=ppc
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=ppc
        ;;
     powerpc64)
       VAR_CPU=ppc64
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=ppc64
        ;;
     sparc)
       VAR_CPU=sparc
       VAR_CPU_ARCH=sparc
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=sparc
        ;;
-    sparc64)
+    sparcv9)
       VAR_CPU=sparcv9
       VAR_CPU_ARCH=sparc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=sparcv9
-       ;;
-    s390)
-      VAR_CPU=s390
-      VAR_CPU_ARCH=s390
-      VAR_CPU_BITS=32
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=s390
-      VAR_LEGACY_CPU=s390
-       ;;
-    s390x)
-      VAR_CPU=s390x
-      VAR_CPU_ARCH=s390
-      VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=s390x
        ;;
     *)
       as_fn_error $? "unsupported cpu $host_cpu" "$LINENO" 5
       ;;
   esac
 
-  # Workaround cygwin not knowing about 64 bit.
-  if test "x$VAR_OS" = "xwindows"; then
-      if test "x$PROCESSOR_IDENTIFIER" != "x"; then
-          PROC_ARCH=`echo $PROCESSOR_IDENTIFIER | $CUT -f1 -d' '`
-          case "$PROC_ARCH" in
-            intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)
-              VAR_CPU=x64
-              VAR_CPU_BITS=64
-              VAR_LEGACY_CPU=amd64
-              ;;
-          esac
-      fi
-  fi
-
-  # on solaris x86...default seems to be 32-bit
-  if test "x$VAR_OS" = "xsolaris" && \
-     test "x$with_target_bits" = "x" && \
-     test "x$VAR_CPU_ARCH" = "xx86"
-  then
-      with_target_bits=32
-  fi
-
-  if test "x$VAR_CPU_ARCH" = "xx86"; then
-      if test "x$with_target_bits" = "x64"; then
-          VAR_CPU=x64
-          VAR_CPU_BITS=64
-          VAR_LEGACY_CPU=amd64
-      fi
-      if test "x$with_target_bits" = "x32"; then
-          VAR_CPU=ia32
-          VAR_CPU_BITS=32
-          VAR_LEGACY_CPU=i586
-      fi
-  fi
-
-  if test "x$VAR_CPU_ARCH" = "xsparc"; then
-      if test "x$with_target_bits" = "x64"; then
-          VAR_CPU=sparcv9
-          VAR_CPU_BITS=64
-          VAR_LEGACY_CPU=sparcv9
-      fi
-  fi
-
+    # ... and setup our own variables. (Do this explicitely to facilitate searching)
+    OPENJDK_TARGET_OS="$VAR_OS"
+    OPENJDK_TARGET_OS_API="$VAR_OS_API"
     OPENJDK_TARGET_CPU="$VAR_CPU"
     OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
     OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
@@ -6460,217 +3817,88 @@ fi
 
 
 
-    # Also store the legacy naming of the cpu.
-    # Ie i586 and amd64 instead of ia32 and x64
-    LEGACY_OPENJDK_TARGET_CPU1="$VAR_LEGACY_CPU"
 
-
-    # And the second legacy naming of the cpu.
-    # Ie i386 and amd64 instead of ia32 and x64.
-    LEGACY_OPENJDK_TARGET_CPU2="$LEGACY_OPENJDK_TARGET_CPU1"
-    if test "x$LEGACY_OPENJDK_TARGET_CPU1" = xi586; then
-        LEGACY_OPENJDK_TARGET_CPU2=i386
-    fi
-
-
-    # And the third legacy naming of the cpu.
-    # Ie only amd64 or sparcv9, used for the ISA_DIR on Solaris.
-    LEGACY_OPENJDK_TARGET_CPU3=""
-    if test "x$OPENJDK_TARGET_CPU" = xx64; then
-        LEGACY_OPENJDK_TARGET_CPU3=amd64
-    fi
-    if test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
-        LEGACY_OPENJDK_TARGET_CPU3=sparcv9
-    fi
-
-
-
-
+    # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
 
   case "$build_os" in
     *linux*)
       VAR_OS=linux
       VAR_OS_API=posix
-      VAR_OS_FAMILY=gnu
       ;;
     *solaris*)
       VAR_OS=solaris
       VAR_OS_API=posix
-      VAR_OS_FAMILY=sysv
       ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
-      VAR_OS_FAMILY=bsd
       ;;
     *bsd*)
       VAR_OS=bsd
       VAR_OS_API=posix
-      VAR_OS_FAMILY=bsd
       ;;
     *cygwin*|*windows*)
       VAR_OS=windows
       VAR_OS_API=winapi
-      VAR_OS_FAMILY=windows
       ;;
     *)
       as_fn_error $? "unsupported operating system $build_os" "$LINENO" 5
       ;;
   esac
 
-    OPENJDK_BUILD_OS="$VAR_OS"
-    OPENJDK_BUILD_OS_FAMILY="$VAR_OS_FAMILY"
-    OPENJDK_BUILD_OS_API="$VAR_OS_API"
-
-
-
-
-
-    if test "x$OPENJDK_BUILD_OS_API" = xposix; then
-        LEGACY_OPENJDK_BUILD_OS_API="solaris"
-    fi
-    if test "x$OPENJDK_BUILD_OS_API" = xwinapi; then
-        LEGACY_OPENJDK_BUILD_OS_API="windows"
-    fi
-
-
-
 
   # First argument is the cpu name from the trip/quad
   case "$build_cpu" in
     x86_64)
-      VAR_CPU=x64
+      VAR_CPU=x86_64
       VAR_CPU_ARCH=x86
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=amd64
       ;;
     i?86)
-      VAR_CPU=ia32
+      VAR_CPU=x86
       VAR_CPU_ARCH=x86
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=i586
-      ;;
-    alpha*)
-      VAR_CPU=alpha
-      VAR_CPU_ARCH=alpha
-      VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=alpha
       ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
-      VAR_LEGACY_CPU=arm
       ;;
-    mips)
-      VAR_CPU=mips
-      VAR_CPU_ARCH=mips
-      VAR_CPU_BITS=woot
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=mips
-       ;;
-    mipsel)
-      VAR_CPU=mipsel
-      VAR_CPU_ARCH=mips
-      VAR_CPU_BITS=woot
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=mipsel
-       ;;
     powerpc)
       VAR_CPU=ppc
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=ppc
        ;;
     powerpc64)
       VAR_CPU=ppc64
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=ppc64
        ;;
     sparc)
       VAR_CPU=sparc
       VAR_CPU_ARCH=sparc
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=sparc
        ;;
-    sparc64)
+    sparcv9)
       VAR_CPU=sparcv9
       VAR_CPU_ARCH=sparc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=sparcv9
-       ;;
-    s390)
-      VAR_CPU=s390
-      VAR_CPU_ARCH=s390
-      VAR_CPU_BITS=32
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=s390
-      VAR_LEGACY_CPU=s390
-       ;;
-    s390x)
-      VAR_CPU=s390x
-      VAR_CPU_ARCH=s390
-      VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=woot
-      VAR_LEGACY_CPU=s390x
        ;;
     *)
       as_fn_error $? "unsupported cpu $build_cpu" "$LINENO" 5
       ;;
   esac
 
-  # Workaround cygwin not knowing about 64 bit.
-  if test "x$VAR_OS" = "xwindows"; then
-      if test "x$PROCESSOR_IDENTIFIER" != "x"; then
-          PROC_ARCH=`echo $PROCESSOR_IDENTIFIER | $CUT -f1 -d' '`
-          case "$PROC_ARCH" in
-            intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)
-              VAR_CPU=x64
-              VAR_CPU_BITS=64
-              VAR_LEGACY_CPU=amd64
-              ;;
-          esac
-      fi
-  fi
-
-  # on solaris x86...default seems to be 32-bit
-  if test "x$VAR_OS" = "xsolaris" && \
-     test "x$with_target_bits" = "x" && \
-     test "x$VAR_CPU_ARCH" = "xx86"
-  then
-      with_target_bits=32
-  fi
-
-  if test "x$VAR_CPU_ARCH" = "xx86"; then
-      if test "x$with_target_bits" = "x64"; then
-          VAR_CPU=x64
-          VAR_CPU_BITS=64
-          VAR_LEGACY_CPU=amd64
-      fi
-      if test "x$with_target_bits" = "x32"; then
-          VAR_CPU=ia32
-          VAR_CPU_BITS=32
-          VAR_LEGACY_CPU=i586
-      fi
-  fi
-
-  if test "x$VAR_CPU_ARCH" = "xsparc"; then
-      if test "x$with_target_bits" = "x64"; then
-          VAR_CPU=sparcv9
-          VAR_CPU_BITS=64
-          VAR_LEGACY_CPU=sparcv9
-      fi
-  fi
-
+    # ..and setup our own variables. (Do this explicitely to facilitate searching)
+    OPENJDK_BUILD_OS="$VAR_OS"
+    OPENJDK_BUILD_OS_API="$VAR_OS_API"
     OPENJDK_BUILD_CPU="$VAR_CPU"
     OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
     OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
@@ -6681,40 +3909,58 @@ fi
 
 
 
-    # Also store the legacy naming of the cpu.
-    # Ie i586 and amd64 instead of ia32 and x64
-    LEGACY_OPENJDK_BUILD_CPU1="$VAR_LEGACY_CPU"
 
 
-    # And the second legacy naming of the cpu.
-    # Ie i386 and amd64 instead of ia32 and x64.
-    LEGACY_OPENJDK_BUILD_CPU2="$LEGACY_OPENJDK_BUILD_CPU1"
-    if test "x$LEGACY_OPENJDK_BUILD_CPU1" = xi586; then
-        LEGACY_OPENJDK_BUILD_CPU2=i386
+
+# Check whether --with-target-bits was given.
+if test "${with_target_bits+set}" = set; then :
+  withval=$with_target_bits;
+fi
+
+
+  # We have three types of compiles:
+  # native  == normal compilation, target system == build system
+  # cross   == traditional cross compilation, target system != build system; special toolchain needed
+  # reduced == using native compilers, but with special flags (e.g. -m32) to produce 32-bit builds on 64-bit machines
+  #
+  if test "x$OPENJDK_BUILD_AUTOCONF_NAME" != "x$OPENJDK_TARGET_AUTOCONF_NAME"; then
+    # We're doing a proper cross-compilation
+    COMPILE_TYPE="cross"
+  else
+    COMPILE_TYPE="native"
+  fi
+
+  if test "x$with_target_bits" != x; then
+    if test "x$COMPILE_TYPE" = "xcross"; then
+      as_fn_error $? "It is not possible to combine --with-target-bits=X and proper cross-compilation. Choose either." "$LINENO" 5
     fi
 
-
-    # And the third legacy naming of the cpu.
-    # Ie only amd64 or sparcv9, used for the ISA_DIR on Solaris.
-    LEGACY_OPENJDK_BUILD_CPU3=""
-    if test "x$OPENJDK_BUILD_CPU" = xx64; then
-        LEGACY_OPENJDK_BUILD_CPU3=amd64
+    if test "x$with_target_bits" = x32 && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      # A reduced build is requested
+      COMPILE_TYPE="reduced"
+      OPENJDK_TARGET_CPU_BITS=32
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = "xx86"; then
+        OPENJDK_TARGET_CPU=x86
+      elif test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
+        OPENJDK_TARGET_CPU=sparc
+      else
+        as_fn_error $? "Reduced build (--with-target-bits=32) is only supported on x86_64 and sparcv9" "$LINENO" 5
+      fi
+    elif test "x$with_target_bits" = x64 && test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      as_fn_error $? "It is not possible to use --with-target-bits=64 on a 32 bit system. Use proper cross-compilation instead." "$LINENO" 5
+    elif test "x$with_target_bits" = "x$OPENJDK_TARGET_CPU_BITS"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: --with-target-bits are set to build platform address size; argument has no meaning" >&5
+$as_echo "$as_me: --with-target-bits are set to build platform address size; argument has no meaning" >&6;}
+    else
+      as_fn_error $? "--with-target-bits can only be 32 or 64, you specified $with_target_bits!" "$LINENO" 5
     fi
-    if test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
-        LEGACY_OPENJDK_BUILD_CPU3=sparcv9
-    fi
+  fi
 
 
-
-    if test "x$OPENJDK_TARGET_OS" != xsolaris; then
-        LEGACY_OPENJDK_TARGET_CPU3=""
-        LEGACY_OPENJDK_BUILD_CPU3=""
-    fi
-
-    # On MacOSX and MacOSX only, we have a different name for the x64 CPU in ARCH (LEGACY_OPENJDK_TARGET_CPU1) ...
-    if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$OPENJDK_TARGET_CPU" = xx64; then
-        LEGACY_OPENJDK_TARGET_CPU1="x86_64"
-    fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for compilation type" >&5
+$as_echo_n "checking for compilation type... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMPILE_TYPE" >&5
+$as_echo "$COMPILE_TYPE" >&6; }
 
 
     if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
@@ -6727,7 +3973,11 @@ fi
     fi
     if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
         REQUIRED_OS_NAME=Windows
-        REQUIRED_OS_VERSION=5.1
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+            REQUIRED_OS_VERSION=5.2
+        else
+            REQUIRED_OS_VERSION=5.1
+        fi
     fi
     if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
         REQUIRED_OS_NAME=Darwin
@@ -6738,45 +3988,244 @@ fi
 
 
 
+    # Also store the legacy naming of the cpu.
+    # Ie i586 and amd64 instead of x86 and x86_64
+    OPENJDK_TARGET_CPU_LEGACY="$OPENJDK_TARGET_CPU"
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      OPENJDK_TARGET_CPU_LEGACY="i586"
+    elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      # On all platforms except MacOSX replace x86_64 with amd64.
+      OPENJDK_TARGET_CPU_LEGACY="amd64"
+    fi
 
-# The LEGACY_OPENJDK_TARGET_CPU3 is the setting for ISA_DIR.
-if test "x$LEGACY_OPENJDK_TARGET_CPU3" != x; then
-   LEGACY_OPENJDK_TARGET_CPU3="/${LEGACY_OPENJDK_TARGET_CPU3}"
+
+    # And the second legacy naming of the cpu.
+    # Ie i386 and amd64 instead of x86 and x86_64.
+    OPENJDK_TARGET_CPU_LEGACY_LIB="$OPENJDK_TARGET_CPU"
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      OPENJDK_TARGET_CPU_LEGACY_LIB="i386"
+    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      OPENJDK_TARGET_CPU_LEGACY_LIB="amd64"
+    fi
+
+
+    # This is the name of the cpu (but using i386 and amd64 instead of
+    # x86 and x86_64, respectively), preceeded by a /, to be used when
+    # locating libraries. On macosx, it's empty, though.
+    OPENJDK_TARGET_CPU_LIBDIR="/$OPENJDK_TARGET_CPU_LEGACY_LIB"
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        OPENJDK_TARGET_CPU_LIBDIR=""
+    fi
+
+
+    # OPENJDK_TARGET_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
+    # /amd64 or /sparcv9. This string is appended to some library paths, like this:
+    # /usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libexample.so
+    OPENJDK_TARGET_CPU_ISADIR=""
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+          OPENJDK_TARGET_CPU_ISADIR="/amd64"
+      elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+          OPENJDK_TARGET_CPU_ISADIR="/sparcv9"
+      fi
+    fi
+
+
+    # Setup OPENJDK_TARGET_CPU_OSARCH, which is used to set the os.arch Java system property
+    OPENJDK_TARGET_CPU_OSARCH="$OPENJDK_TARGET_CPU"
+    if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xx86; then
+      # On linux only, we replace x86 with i386.
+      OPENJDK_TARGET_CPU_OSARCH="i386"
+    elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      # On all platforms except macosx, we replace x86_64 with amd64.
+      OPENJDK_TARGET_CPU_OSARCH="amd64"
+    fi
+
+
+    OPENJDK_TARGET_CPU_JLI="$OPENJDK_TARGET_CPU"
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      OPENJDK_TARGET_CPU_JLI="i386"
+    elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      # On all platforms except macosx, we replace x86_64 with amd64.
+      OPENJDK_TARGET_CPU_JLI="amd64"
+    fi
+    # Now setup the -D flags for building libjli.
+    OPENJDK_TARGET_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_TARGET_CPU_JLI\"'"
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc; then
+        OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
+      elif test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
+        OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
+      fi
+    fi
+
+
+    # Setup OPENJDK_TARGET_OS_API_DIR, used in source paths.
+    if test "x$OPENJDK_TARGET_OS_API" = xposix; then
+        OPENJDK_TARGET_OS_API_DIR="solaris"
+    fi
+    if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
+        OPENJDK_TARGET_OS_API_DIR="windows"
+    fi
+
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        A_LP64="LP64:="
+        ADD_LP64="-D_LP64=1"
+    fi
+    LP64=$A_LP64
+
+
+    if test "x$COMPILE_TYPE" = "xcross"; then
+      # FIXME: ... or should this include reduced builds..?
+      DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_TARGET_CPU_LEGACY"
+    else
+      DEFINE_CROSS_COMPILE_ARCH=""
+    fi
+
+
+
+
+# Continue setting up basic stuff.
+
+# Locate the directory of this script.
+SCRIPT="$0"
+
+    if test "x$OPENJDK_BUILD_OS" != xwindows; then
+        # Follow a chain of symbolic links. Use readlink
+        # where it exists, else fall back to horribly
+        # complicated shell code.
+        # Extract the first word of "readlink", so it can be a program name with args.
+set dummy readlink; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_READLINK+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READLINK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READLINK="$READLINK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_READLINK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READLINK=$ac_cv_path_READLINK
+if test -n "$READLINK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINK" >&5
+$as_echo "$READLINK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
-# Now the following vars are defined.
-# OPENJDK_TARGET_OS=aix,bsd,hpux,linux,macosx,solaris,windows
-# OPENJDK_TARGET_OS_FAMILY=bsd,gnu,sysv,win32,wince
-# OPENJDK_TARGET_OS_API=posix,winapi
-#
-# OPENJDK_TARGET_CPU=ia32,x64,sparc,sparcv9,arm,arm64,ppc,ppc64
-# OPENJDK_TARGET_CPU_ARCH=x86,sparc,pcc,arm
-# OPENJDK_TARGET_CPU_BITS=32,64
-# OPENJDK_TARGET_CPU_ENDIAN=big,little
-#
-# There is also a:
-# LEGACY_OPENJDK_TARGET_CPU1=i586,amd64,....  # used to set the old var ARCH
-# LEGACY_OPENJDK_TARGET_CPU2=i386,amd64,.... # used to set the old var LIBARCH
-# LEGACY_OPENJDK_TARGET_CPU3=only sparcv9,amd64 # used to set the ISA_DIR on Solaris
-# There was also a BUILDARCH that had i486,amd64,... but we do not use that
-# in the new build.
-# LEGACY_OPENJDK_TARGET_OS_API=solaris,windows # used to select source roots
+
+        if test "x$READLINK_TESTED" != yes; then
+            # On MacOSX there is a readlink tool with a different
+            # purpose than the GNU readlink tool. Check the found readlink.
+            ISGNU=`$READLINK --help 2>&1 | grep GNU`
+            if test "x$ISGNU" = x; then
+                 # A readlink that we do not know how to use.
+                 # Are there other non-GNU readlinks out there?
+                 READLINK_TESTED=yes
+                 READLINK=
+            fi
+        fi
+
+        if test "x$READLINK" != x; then
+            SCRIPT=`$READLINK -f $SCRIPT`
+        else
+            STARTDIR=$PWD
+            COUNTER=0
+            DIR=`dirname $SCRIPT`
+            FIL=`basename $SCRIPT`
+            while test $COUNTER -lt 20; do
+                ISLINK=`ls -l $DIR/$FIL | grep '\->' | sed -e 's/.*-> \(.*\)/\1/'`
+                if test "x$ISLINK" == x; then
+                    # This is not a symbolic link! We are done!
+                    break
+                fi
+                # The link might be relative! We have to use cd to travel safely.
+                cd $DIR
+                cd `dirname $ISLINK`
+                DIR=`pwd`
+                FIL=`basename $ISLINK`
+                let COUNTER=COUNTER+1
+            done
+            cd $STARTDIR
+            SCRIPT=$DIR/$FIL
+        fi
+    fi
+
+AUTOCONF_DIR=`dirname $0`
+
+# Where is the source? It is located two levels above the configure script.
+CURDIR="$PWD"
+cd "$AUTOCONF_DIR/../.."
+SRC_ROOT="`pwd`"
+if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+    SRC_ROOT_LENGTH=`pwd|wc -m`
+    if test $SRC_ROOT_LENGTH -gt 100; then
+        as_fn_error $? "Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported" "$LINENO" 5
+    fi
+fi
+
+cd "$CURDIR"
 
 
-###############################################################################
+    # Fail with message the path to the source root if var SRC_ROOT contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$SRC_ROOT" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            SRC_ROOT=`$CYGPATH -s -m -a "$SRC_ROOT"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            SRC_ROOT=`$ECHO "$SRC_ROOT" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            SRC_ROOT=`$CYGPATH -u "$SRC_ROOT"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the source root! \"$SRC_ROOT\"" "$LINENO" 5
+        fi
+    fi
 
-# Note that this is the build platform OS version!
 
-OS_VERSION="`uname -r | ${SED} 's!\.! !g' | ${SED} 's!-! !g'`"
-OS_VERSION_MAJOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 1 -d ' '`"
-OS_VERSION_MINOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 2 -d ' '`"
-OS_VERSION_MICRO="`${ECHO} ${OS_VERSION} | ${CUT} -f 3 -d ' '`"
+    # Fail with message the path to the current directory if var CURDIR contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$CURDIR" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            CURDIR=`$CYGPATH -s -m -a "$CURDIR"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            CURDIR=`$ECHO "$CURDIR" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            CURDIR=`$CYGPATH -u "$CURDIR"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the current directory! \"$CURDIR\"" "$LINENO" 5
+        fi
+    fi
 
 
-
-
-
-# With knowledge of the build platform, setup more basic things.
+if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+    # Add extra search paths on solaris for utilities like ar and as etc...
+    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+fi
 
 # For cygwin we need cygpath first, since it is used everywhere.
 # Extract the first word of "cygpath", so it can be a program name with args.
@@ -6828,11 +4277,3645 @@ if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
 fi
 
 
+# You can force the sys-root if the sys-root encoded into the cross compiler tools
+# is not correct.
 
-if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
-    # Add extra search paths on solaris for utilities like ar and as etc...
-    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+# Check whether --with-sys-root was given.
+if test "${with_sys_root+set}" = set; then :
+  withval=$with_sys_root;
 fi
+
+
+if test "x$with_sys_root" != x; then
+  SYS_ROOT=$with_sys_root
+else
+  SYS_ROOT=/
+fi
+
+
+
+# Check whether --with-tools-dir was given.
+if test "${with_tools_dir+set}" = set; then :
+  withval=$with_tools_dir; TOOLS_DIR=$with_tools_dir
+fi
+
+
+
+# Check whether --with-devkit was given.
+if test "${with_devkit+set}" = set; then :
+  withval=$with_devkit;
+    if test "x$with_sys_root" != x; then
+      as_fn_error $? "Cannot specify both --with-devkit and --with-sys-root at the same time" "$LINENO" 5
+    fi
+    if test "x$with_tools_dir" != x; then
+      as_fn_error $? "Cannot specify both --with-devkit and --with-tools-dir at the same time" "$LINENO" 5
+    fi
+    TOOLS_DIR=$with_devkit/bin
+    SYS_ROOT=$with_devkit/$host_alias/libc
+
+fi
+
+
+
+
+# Setup default logging of stdout and stderr to build.log in the output root.
+BUILD_LOG='$(OUTPUT_ROOT)/build.log'
+BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
+BUILD_LOG_WRAPPER='$(SH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
+
+
+
+
+
+# Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
+
+    for ac_prog in apt-get yum port pkgutil pkgadd
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_PKGHANDLER+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$PKGHANDLER"; then
+  ac_cv_prog_PKGHANDLER="$PKGHANDLER" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_PKGHANDLER="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+PKGHANDLER=$ac_cv_prog_PKGHANDLER
+if test -n "$PKGHANDLER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKGHANDLER" >&5
+$as_echo "$PKGHANDLER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PKGHANDLER" && break
+done
+
+
+
+# Setup simple tools, that do not need have cross compilation support.
+# Without these, we can't properly run the rest of the configure script.
+
+# Start with tools that do not need have cross compilation support
+# and can be expected to be found in the default PATH. These tools are
+# used by configure. Nor are these tools expected to be found in the
+# devkit from the builddeps server either, since they are
+# needed to download the devkit.
+
+# First are all the simple required tools.
+
+    for ac_prog in basename
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_BASENAME+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASENAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASENAME="$BASENAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_BASENAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BASENAME=$ac_cv_path_BASENAME
+if test -n "$BASENAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASENAME" >&5
+$as_echo "$BASENAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BASENAME" && break
+done
+
+
+    if test "x$BASENAME" = x; then
+        if test "xbasename" = x; then
+          PROG_NAME=basename
+        else
+          PROG_NAME=basename
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cat
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CAT+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CAT="$CAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CAT=$ac_cv_path_CAT
+if test -n "$CAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAT" >&5
+$as_echo "$CAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CAT" && break
+done
+
+
+    if test "x$CAT" = x; then
+        if test "xcat" = x; then
+          PROG_NAME=cat
+        else
+          PROG_NAME=cat
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in chmod
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CHMOD+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHMOD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHMOD="$CHMOD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CHMOD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHMOD=$ac_cv_path_CHMOD
+if test -n "$CHMOD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHMOD" >&5
+$as_echo "$CHMOD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHMOD" && break
+done
+
+
+    if test "x$CHMOD" = x; then
+        if test "xchmod" = x; then
+          PROG_NAME=chmod
+        else
+          PROG_NAME=chmod
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cmp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CMP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CMP="$CMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CMP=$ac_cv_path_CMP
+if test -n "$CMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CMP" >&5
+$as_echo "$CMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CMP" && break
+done
+
+
+    if test "x$CMP" = x; then
+        if test "xcmp" = x; then
+          PROG_NAME=cmp
+        else
+          PROG_NAME=cmp
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CP="$CP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CP=$ac_cv_path_CP
+if test -n "$CP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CP" >&5
+$as_echo "$CP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CP" && break
+done
+
+
+    if test "x$CP" = x; then
+        if test "xcp" = x; then
+          PROG_NAME=cp
+        else
+          PROG_NAME=cp
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cpio
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CPIO+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CPIO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CPIO=$ac_cv_path_CPIO
+if test -n "$CPIO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
+$as_echo "$CPIO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CPIO" && break
+done
+
+
+    if test "x$CPIO" = x; then
+        if test "xcpio" = x; then
+          PROG_NAME=cpio
+        else
+          PROG_NAME=cpio
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cut
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CUT+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CUT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CUT="$CUT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CUT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CUT=$ac_cv_path_CUT
+if test -n "$CUT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUT" >&5
+$as_echo "$CUT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CUT" && break
+done
+
+
+    if test "x$CUT" = x; then
+        if test "xcut" = x; then
+          PROG_NAME=cut
+        else
+          PROG_NAME=cut
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in date
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_DATE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DATE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DATE="$DATE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_DATE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DATE=$ac_cv_path_DATE
+if test -n "$DATE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DATE" >&5
+$as_echo "$DATE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DATE" && break
+done
+
+
+    if test "x$DATE" = x; then
+        if test "xdate" = x; then
+          PROG_NAME=date
+        else
+          PROG_NAME=date
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in df
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_DF+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DF="$DF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_DF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DF=$ac_cv_path_DF
+if test -n "$DF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DF" >&5
+$as_echo "$DF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DF" && break
+done
+
+
+    if test "x$DF" = x; then
+        if test "xdf" = x; then
+          PROG_NAME=df
+        else
+          PROG_NAME=df
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in gdiff diff
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_DIFF+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DIFF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DIFF="$DIFF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_DIFF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DIFF=$ac_cv_path_DIFF
+if test -n "$DIFF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIFF" >&5
+$as_echo "$DIFF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DIFF" && break
+done
+
+
+    if test "x$DIFF" = x; then
+        if test "xgdiff diff" = x; then
+          PROG_NAME=diff
+        else
+          PROG_NAME=gdiff diff
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in echo
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_ECHO+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ECHO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ECHO="$ECHO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ECHO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ECHO=$ac_cv_path_ECHO
+if test -n "$ECHO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ECHO" >&5
+$as_echo "$ECHO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ECHO" && break
+done
+
+
+    if test "x$ECHO" = x; then
+        if test "xecho" = x; then
+          PROG_NAME=echo
+        else
+          PROG_NAME=echo
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in expr
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_EXPR+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $EXPR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_EXPR="$EXPR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_EXPR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+EXPR=$ac_cv_path_EXPR
+if test -n "$EXPR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPR" >&5
+$as_echo "$EXPR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$EXPR" && break
+done
+
+
+    if test "x$EXPR" = x; then
+        if test "xexpr" = x; then
+          PROG_NAME=expr
+        else
+          PROG_NAME=expr
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in file
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_FILE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FILE="$FILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_FILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FILE=$ac_cv_path_FILE
+if test -n "$FILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FILE" >&5
+$as_echo "$FILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FILE" && break
+done
+
+
+    if test "x$FILE" = x; then
+        if test "xfile" = x; then
+          PROG_NAME=file
+        else
+          PROG_NAME=file
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in find
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_FIND+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FIND in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FIND="$FIND" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_FIND="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FIND=$ac_cv_path_FIND
+if test -n "$FIND"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FIND" >&5
+$as_echo "$FIND" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FIND" && break
+done
+
+
+    if test "x$FIND" = x; then
+        if test "xfind" = x; then
+          PROG_NAME=find
+        else
+          PROG_NAME=find
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in head
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_HEAD+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HEAD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HEAD="$HEAD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_HEAD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HEAD=$ac_cv_path_HEAD
+if test -n "$HEAD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HEAD" >&5
+$as_echo "$HEAD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$HEAD" && break
+done
+
+
+    if test "x$HEAD" = x; then
+        if test "xhead" = x; then
+          PROG_NAME=head
+        else
+          PROG_NAME=head
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in ln
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_LN+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LN="$LN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_LN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LN=$ac_cv_path_LN
+if test -n "$LN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LN" >&5
+$as_echo "$LN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LN" && break
+done
+
+
+    if test "x$LN" = x; then
+        if test "xln" = x; then
+          PROG_NAME=ln
+        else
+          PROG_NAME=ln
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in ls
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_LS+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LS="$LS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_LS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LS=$ac_cv_path_LS
+if test -n "$LS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LS" >&5
+$as_echo "$LS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LS" && break
+done
+
+
+    if test "x$LS" = x; then
+        if test "xls" = x; then
+          PROG_NAME=ls
+        else
+          PROG_NAME=ls
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in mkdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_MKDIR+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKDIR="$MKDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_MKDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKDIR=$ac_cv_path_MKDIR
+if test -n "$MKDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR" >&5
+$as_echo "$MKDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MKDIR" && break
+done
+
+
+    if test "x$MKDIR" = x; then
+        if test "xmkdir" = x; then
+          PROG_NAME=mkdir
+        else
+          PROG_NAME=mkdir
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in mv
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_MV+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MV="$MV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_MV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MV=$ac_cv_path_MV
+if test -n "$MV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MV" >&5
+$as_echo "$MV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MV" && break
+done
+
+
+    if test "x$MV" = x; then
+        if test "xmv" = x; then
+          PROG_NAME=mv
+        else
+          PROG_NAME=mv
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in printf
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_PRINTF+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PRINTF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PRINTF="$PRINTF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PRINTF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PRINTF=$ac_cv_path_PRINTF
+if test -n "$PRINTF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PRINTF" >&5
+$as_echo "$PRINTF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PRINTF" && break
+done
+
+
+    if test "x$PRINTF" = x; then
+        if test "xprintf" = x; then
+          PROG_NAME=printf
+        else
+          PROG_NAME=printf
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in sh
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_SH+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SH="$SH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_SH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SH=$ac_cv_path_SH
+if test -n "$SH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SH" >&5
+$as_echo "$SH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SH" && break
+done
+
+
+    if test "x$SH" = x; then
+        if test "xsh" = x; then
+          PROG_NAME=sh
+        else
+          PROG_NAME=sh
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in sort
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_SORT+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SORT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SORT="$SORT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_SORT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SORT=$ac_cv_path_SORT
+if test -n "$SORT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SORT" >&5
+$as_echo "$SORT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SORT" && break
+done
+
+
+    if test "x$SORT" = x; then
+        if test "xsort" = x; then
+          PROG_NAME=sort
+        else
+          PROG_NAME=sort
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in tail
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TAIL+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAIL="$TAIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TAIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAIL=$ac_cv_path_TAIL
+if test -n "$TAIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAIL" >&5
+$as_echo "$TAIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TAIL" && break
+done
+
+
+    if test "x$TAIL" = x; then
+        if test "xtail" = x; then
+          PROG_NAME=tail
+        else
+          PROG_NAME=tail
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in tar
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TAR+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAR="$TAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAR=$ac_cv_path_TAR
+if test -n "$TAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR" >&5
+$as_echo "$TAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TAR" && break
+done
+
+
+    if test "x$TAR" = x; then
+        if test "xtar" = x; then
+          PROG_NAME=tar
+        else
+          PROG_NAME=tar
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in tee
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TEE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TEE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TEE="$TEE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TEE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TEE=$ac_cv_path_TEE
+if test -n "$TEE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEE" >&5
+$as_echo "$TEE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TEE" && break
+done
+
+
+    if test "x$TEE" = x; then
+        if test "xtee" = x; then
+          PROG_NAME=tee
+        else
+          PROG_NAME=tee
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in touch
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOUCH+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOUCH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOUCH="$TOUCH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOUCH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOUCH=$ac_cv_path_TOUCH
+if test -n "$TOUCH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOUCH" >&5
+$as_echo "$TOUCH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOUCH" && break
+done
+
+
+    if test "x$TOUCH" = x; then
+        if test "xtouch" = x; then
+          PROG_NAME=touch
+        else
+          PROG_NAME=touch
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in tr
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TR+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TR="$TR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TR=$ac_cv_path_TR
+if test -n "$TR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TR" >&5
+$as_echo "$TR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TR" && break
+done
+
+
+    if test "x$TR" = x; then
+        if test "xtr" = x; then
+          PROG_NAME=tr
+        else
+          PROG_NAME=tr
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in uniq
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_UNIQ+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNIQ in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNIQ="$UNIQ" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_UNIQ="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNIQ=$ac_cv_path_UNIQ
+if test -n "$UNIQ"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNIQ" >&5
+$as_echo "$UNIQ" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$UNIQ" && break
+done
+
+
+    if test "x$UNIQ" = x; then
+        if test "xuniq" = x; then
+          PROG_NAME=uniq
+        else
+          PROG_NAME=uniq
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in unzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_UNZIP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNZIP="$UNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_UNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNZIP=$ac_cv_path_UNZIP
+if test -n "$UNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNZIP" >&5
+$as_echo "$UNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$UNZIP" && break
+done
+
+
+    if test "x$UNZIP" = x; then
+        if test "xunzip" = x; then
+          PROG_NAME=unzip
+        else
+          PROG_NAME=unzip
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in wc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_WC+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $WC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_WC="$WC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_WC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+WC=$ac_cv_path_WC
+if test -n "$WC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WC" >&5
+$as_echo "$WC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$WC" && break
+done
+
+
+    if test "x$WC" = x; then
+        if test "xwc" = x; then
+          PROG_NAME=wc
+        else
+          PROG_NAME=wc
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in xargs
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_XARGS+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XARGS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XARGS="$XARGS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_XARGS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+XARGS=$ac_cv_path_XARGS
+if test -n "$XARGS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XARGS" >&5
+$as_echo "$XARGS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$XARGS" && break
+done
+
+
+    if test "x$XARGS" = x; then
+        if test "xxargs" = x; then
+          PROG_NAME=xargs
+        else
+          PROG_NAME=xargs
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in zip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_ZIP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ZIP=$ac_cv_path_ZIP
+if test -n "$ZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
+$as_echo "$ZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ZIP" && break
+done
+
+
+    if test "x$ZIP" = x; then
+        if test "xzip" = x; then
+          PROG_NAME=zip
+        else
+          PROG_NAME=zip
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+# Then required tools that require some special treatment.
+for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_AWK+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_AWK="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
+
+    if test "x$AWK" = x; then
+        if test "x" = x; then
+          PROG_NAME=awk
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
+$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
+if test "${ac_cv_path_GREP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -z "$GREP"; then
+  ac_path_GREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in grep ggrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_GREP" && $as_test_x "$ac_path_GREP"; } || continue
+# Check for GNU ac_path_GREP and select it if it is found.
+  # Check for GNU $ac_path_GREP
+case `"$ac_path_GREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'GREP' >> "conftest.nl"
+    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_GREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_GREP="$ac_path_GREP"
+      ac_path_GREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_GREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_GREP"; then
+    as_fn_error $? "no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_GREP=$GREP
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_GREP" >&5
+$as_echo "$ac_cv_path_GREP" >&6; }
+ GREP="$ac_cv_path_GREP"
+
+
+
+    if test "x$GREP" = x; then
+        if test "x" = x; then
+          PROG_NAME=grep
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
+$as_echo_n "checking for egrep... " >&6; }
+if test "${ac_cv_path_EGREP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if echo a | $GREP -E '(a|b)' >/dev/null 2>&1
+   then ac_cv_path_EGREP="$GREP -E"
+   else
+     if test -z "$EGREP"; then
+  ac_path_EGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in egrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_EGREP="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_EGREP" && $as_test_x "$ac_path_EGREP"; } || continue
+# Check for GNU ac_path_EGREP and select it if it is found.
+  # Check for GNU $ac_path_EGREP
+case `"$ac_path_EGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_EGREP="$ac_path_EGREP" ac_path_EGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'EGREP' >> "conftest.nl"
+    "$ac_path_EGREP" 'EGREP$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_EGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_EGREP="$ac_path_EGREP"
+      ac_path_EGREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_EGREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_EGREP"; then
+    as_fn_error $? "no acceptable egrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_EGREP=$EGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP" >&5
+$as_echo "$ac_cv_path_EGREP" >&6; }
+ EGREP="$ac_cv_path_EGREP"
+
+
+
+    if test "x$EGREP" = x; then
+        if test "x" = x; then
+          PROG_NAME=egrep
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
+$as_echo_n "checking for fgrep... " >&6; }
+if test "${ac_cv_path_FGREP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if echo 'ab*c' | $GREP -F 'ab*c' >/dev/null 2>&1
+   then ac_cv_path_FGREP="$GREP -F"
+   else
+     if test -z "$FGREP"; then
+  ac_path_FGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in fgrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_FGREP="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_FGREP" && $as_test_x "$ac_path_FGREP"; } || continue
+# Check for GNU ac_path_FGREP and select it if it is found.
+  # Check for GNU $ac_path_FGREP
+case `"$ac_path_FGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_FGREP="$ac_path_FGREP" ac_path_FGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'FGREP' >> "conftest.nl"
+    "$ac_path_FGREP" FGREP < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_FGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_FGREP="$ac_path_FGREP"
+      ac_path_FGREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_FGREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_FGREP"; then
+    as_fn_error $? "no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_FGREP=$FGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_FGREP" >&5
+$as_echo "$ac_cv_path_FGREP" >&6; }
+ FGREP="$ac_cv_path_FGREP"
+
+
+
+    if test "x$FGREP" = x; then
+        if test "x" = x; then
+          PROG_NAME=fgrep
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+$as_echo_n "checking for a sed that does not truncate output... " >&6; }
+if test "${ac_cv_path_SED+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+     for ac_i in 1 2 3 4 5 6 7; do
+       ac_script="$ac_script$as_nl$ac_script"
+     done
+     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
+     { ac_script=; unset ac_script;}
+     if test -z "$SED"; then
+  ac_path_SED_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in sed gsed; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_SED" && $as_test_x "$ac_path_SED"; } || continue
+# Check for GNU ac_path_SED and select it if it is found.
+  # Check for GNU $ac_path_SED
+case `"$ac_path_SED" --version 2>&1` in
+*GNU*)
+  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo '' >> "conftest.nl"
+    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_SED_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_SED="$ac_path_SED"
+      ac_path_SED_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_SED_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_SED"; then
+    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
+  fi
+else
+  ac_cv_path_SED=$SED
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
+$as_echo "$ac_cv_path_SED" >&6; }
+ SED="$ac_cv_path_SED"
+  rm -f conftest.sed
+
+
+    if test "x$SED" = x; then
+        if test "x" = x; then
+          PROG_NAME=sed
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+for ac_prog in nawk gawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_NAWK+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NAWK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NAWK=$ac_cv_path_NAWK
+if test -n "$NAWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
+$as_echo "$NAWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NAWK" && break
+done
+
+
+    if test "x$NAWK" = x; then
+        if test "x" = x; then
+          PROG_NAME=nawk
+        else
+          PROG_NAME=
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+  # We need to find a recent version of GNU make. Especially on Solaris, this can be tricky.
+  if test "x$MAKE" != x; then
+    # User has supplied a make, test it.
+    if test ! -f "$MAKE"; then
+      as_fn_error $? "The specified make (by MAKE=$MAKE) is not found." "$LINENO" 5
+    fi
+
+  MAKE_CANDIDATE=""$MAKE""
+  DESCRIPTION="user supplied MAKE="
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$MAKE_CANDIDATE"
+    car="${tmp%% *}"
+    tmp="$MAKE_CANDIDATE EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        MAKE_CANDIDATE="$car ${cdr% *}"
+    else
+        MAKE_CANDIDATE="$car"
+    fi
+
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+
+    if test "x$FOUND_MAKE" = x; then
+      as_fn_error $? "The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer." "$LINENO" 5
+    fi
+  else
+    # Try our hardest to locate a correct version of GNU make
+    for ac_prog in gmake
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CHECK_GMAKE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_GMAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_GMAKE="$CHECK_GMAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CHECK_GMAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_GMAKE=$ac_cv_path_CHECK_GMAKE
+if test -n "$CHECK_GMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_GMAKE" >&5
+$as_echo "$CHECK_GMAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_GMAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_GMAKE""
+  DESCRIPTION="gmake in PATH"
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$MAKE_CANDIDATE"
+    car="${tmp%% *}"
+    tmp="$MAKE_CANDIDATE EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        MAKE_CANDIDATE="$car ${cdr% *}"
+    else
+        MAKE_CANDIDATE="$car"
+    fi
+
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+
+
+    if test "x$FOUND_MAKE" = x; then
+      for ac_prog in make
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CHECK_MAKE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_MAKE="$CHECK_MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CHECK_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_MAKE=$ac_cv_path_CHECK_MAKE
+if test -n "$CHECK_MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_MAKE" >&5
+$as_echo "$CHECK_MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_MAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_MAKE""
+  DESCRIPTION="make in PATH"
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$MAKE_CANDIDATE"
+    car="${tmp%% *}"
+    tmp="$MAKE_CANDIDATE EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        MAKE_CANDIDATE="$car ${cdr% *}"
+    else
+        MAKE_CANDIDATE="$car"
+    fi
+
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      if test "x$TOOLS_DIR" != x; then
+        # We have a tools-dir, check that as well before giving up.
+        OLD_PATH=$PATH
+        PATH=$TOOLS_DIR:$PATH
+        for ac_prog in gmake
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CHECK_TOOLSDIR_GMAKE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_TOOLSDIR_GMAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_TOOLSDIR_GMAKE="$CHECK_TOOLSDIR_GMAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CHECK_TOOLSDIR_GMAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_TOOLSDIR_GMAKE=$ac_cv_path_CHECK_TOOLSDIR_GMAKE
+if test -n "$CHECK_TOOLSDIR_GMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_TOOLSDIR_GMAKE" >&5
+$as_echo "$CHECK_TOOLSDIR_GMAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_TOOLSDIR_GMAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_TOOLSDIR_GMAKE""
+  DESCRIPTION="gmake in tools-dir"
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$MAKE_CANDIDATE"
+    car="${tmp%% *}"
+    tmp="$MAKE_CANDIDATE EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        MAKE_CANDIDATE="$car ${cdr% *}"
+    else
+        MAKE_CANDIDATE="$car"
+    fi
+
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+
+        if test "x$FOUND_MAKE" = x; then
+          for ac_prog in make
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CHECK_TOOLSDIR_MAKE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_TOOLSDIR_MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_TOOLSDIR_MAKE="$CHECK_TOOLSDIR_MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CHECK_TOOLSDIR_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_TOOLSDIR_MAKE=$ac_cv_path_CHECK_TOOLSDIR_MAKE
+if test -n "$CHECK_TOOLSDIR_MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_TOOLSDIR_MAKE" >&5
+$as_echo "$CHECK_TOOLSDIR_MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_TOOLSDIR_MAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_TOOLSDIR_MAKE""
+  DESCRIPTION="make in tools-dir"
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$MAKE_CANDIDATE"
+    car="${tmp%% *}"
+    tmp="$MAKE_CANDIDATE EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        MAKE_CANDIDATE="$car ${cdr% *}"
+    else
+        MAKE_CANDIDATE="$car"
+    fi
+
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+
+        fi
+        PATH=$OLD_PATH
+      fi
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      as_fn_error $? "Cannot find GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
+    fi
+  fi
+
+  MAKE=$FOUND_MAKE
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&5
+$as_echo "$as_me: Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&6;}
+
+
+
+    for ac_prog in rm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_RM+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RM="$RM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_RM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RM=$ac_cv_path_RM
+if test -n "$RM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RM" >&5
+$as_echo "$RM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RM" && break
+done
+
+
+    if test "x$RM" = x; then
+        if test "xrm" = x; then
+          PROG_NAME=rm
+        else
+          PROG_NAME=rm
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+RM="$RM -f"
+
+
+    # Test if find supports -delete
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if find supports -delete" >&5
+$as_echo_n "checking if find supports -delete... " >&6; }
+    FIND_DELETE="-delete"
+
+    DELETEDIR=`mktemp -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
+
+    echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
+
+    TEST_DELETE=`$FIND "$DELETEDIR" -name TestIfFindSupportsDelete $FIND_DELETE 2>&1`
+    if test -f $DELETEDIR/TestIfFindSupportsDelete; then
+        # No, it does not.
+        rm $DELETEDIR/TestIfFindSupportsDelete
+        FIND_DELETE="-exec rm \{\} \+"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+    rmdir $DELETEDIR
+
+
+
+# Non-required basic tools
+
+# Extract the first word of "pwd", so it can be a program name with args.
+set dummy pwd; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_THEPWDCMD+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $THEPWDCMD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_THEPWDCMD="$THEPWDCMD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_THEPWDCMD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+THEPWDCMD=$ac_cv_path_THEPWDCMD
+if test -n "$THEPWDCMD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $THEPWDCMD" >&5
+$as_echo "$THEPWDCMD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "ldd", so it can be a program name with args.
+set dummy ldd; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_LDD+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LDD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LDD="$LDD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_LDD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LDD=$ac_cv_path_LDD
+if test -n "$LDD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDD" >&5
+$as_echo "$LDD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "x$LDD" = "x"; then
+    # List shared lib dependencies is used for
+    # debug output and checking for forbidden dependencies.
+    # We can build without it.
+    LDD="true"
+fi
+# Extract the first word of "otool", so it can be a program name with args.
+set dummy otool; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_OTOOL+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OTOOL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OTOOL="$OTOOL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_OTOOL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OTOOL=$ac_cv_path_OTOOL
+if test -n "$OTOOL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OTOOL" >&5
+$as_echo "$OTOOL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "x$OTOOL" = "x"; then
+   OTOOL="true"
+fi
+for ac_prog in readelf greadelf
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_READELF+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READELF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READELF="$READELF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_READELF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READELF=$ac_cv_path_READELF
+if test -n "$READELF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
+$as_echo "$READELF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$READELF" && break
+done
+
+for ac_prog in objdump gobjdump
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_OBJDUMP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OBJDUMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OBJDUMP="$OBJDUMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_OBJDUMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OBJDUMP=$ac_cv_path_OBJDUMP
+if test -n "$OBJDUMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJDUMP" >&5
+$as_echo "$OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$OBJDUMP" && break
+done
+
+# Extract the first word of "hg", so it can be a program name with args.
+set dummy hg; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_HG+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HG="$HG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_HG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HG=$ac_cv_path_HG
+if test -n "$HG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HG" >&5
+$as_echo "$HG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+
+# Check if pkg-config is available.
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_ac_pt_PKG_CONFIG+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+
+fi
+
+# After basic tools have been setup, we can check build os specific details.
+
+###############################################################################
+
+# Note that this is the build platform OS version!
+
+OS_VERSION="`uname -r | ${SED} 's!\.! !g' | ${SED} 's!-! !g'`"
+OS_VERSION_MAJOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 1 -d ' '`"
+OS_VERSION_MINOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 2 -d ' '`"
+OS_VERSION_MICRO="`${ECHO} ${OS_VERSION} | ${CUT} -f 3 -d ' '`"
+
+
+
+
+
+# Setup builddeps, for automatic downloading of tools we need.
+# This is needed before we can call BDEPS_CHECK_MODULE, which is done in
+# boot-jdk setup, but we need to have basic tools setup first.
+
+
+# Check whether --with-builddeps-conf was given.
+if test "${with_builddeps_conf+set}" = set; then :
+  withval=$with_builddeps_conf;
+fi
+
+
+
+# Check whether --with-builddeps-server was given.
+if test "${with_builddeps_server+set}" = set; then :
+  withval=$with_builddeps_server;
+fi
+
+
+
+# Check whether --with-builddeps-dir was given.
+if test "${with_builddeps_dir+set}" = set; then :
+  withval=$with_builddeps_dir;
+else
+  with_builddeps_dir=/localhome/builddeps
+fi
+
+
+
+# Check whether --with-builddeps-group was given.
+if test "${with_builddeps_group+set}" = set; then :
+  withval=$with_builddeps_group;
+fi
+
+
+# Check whether --enable-list-builddeps was given.
+if test "${enable_list_builddeps+set}" = set; then :
+  enableval=$enable_list_builddeps; LIST_BUILDDEPS="${enableval}"
+else
+  LIST_BUILDDEPS='no'
+fi
+
+
+if test "x$LIST_BUILDDEPS" = xyes; then
+    echo
+    echo List of build dependencies known to the configure script,
+    echo that can be used in builddeps.conf files:
+    cat $AUTOCONF_DIR/*.ac $AUTOCONF_DIR/*.m4 | grep BDEPS_CHECK_MODULE\( | cut -f 2 -d ',' | tr -d ' ' | sort
+    echo
+    exit 1
+fi
+
+
+
+    if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
+        if test "x$with_builddeps_conf" != x; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for supplied builddeps configuration file" >&5
+$as_echo_n "checking for supplied builddeps configuration file... " >&6; }
+            builddepsfile=$with_builddeps_conf
+            if test -s $builddepsfile; then
+                . $builddepsfile
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: loaded!" >&5
+$as_echo "loaded!" >&6; }
+            else
+               as_fn_error $? "The given builddeps conf file $with_builddeps_conf could not be loaded!" "$LINENO" 5
+           fi
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for builddeps.conf files in sources..." >&5
+$as_echo_n "checking for builddeps.conf files in sources...... " >&6; }
+            builddepsfile=`mktemp`
+            touch $builddepsfile
+            # Put all found confs into a single file.
+            find ${SRC_ROOT} -name builddeps.conf -exec cat \{\} \; >> $builddepsfile
+            # Source the file to acquire the variables
+            if test -s $builddepsfile; then
+                . $builddepsfile
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: found at least one!" >&5
+$as_echo "found at least one!" >&6; }
+            else
+               as_fn_error $? "Could not find any builddeps.conf at all!" "$LINENO" 5
+           fi
+        fi
+        # Create build and target names that use _ instead of "-" and ".".
+        # This is necessary to use them in variable names.
+        build_var=`echo ${OPENJDK_BUILD_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
+        target_var=`echo ${OPENJDK_TARGET_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
+        # Extract rewrite information for build and target
+        eval rewritten_build=\${REWRITE_${build_var}}
+        if test "x$rewritten_build" = x; then
+            rewritten_build=${OPENJDK_BUILD_AUTOCONF_NAME}
+            echo Build stays the same $rewritten_build
+        else
+            echo Rewriting build for builddeps into $rewritten_build
+        fi
+        eval rewritten_target=\${REWRITE_${target_var}}
+        if test "x$rewritten_target" = x; then
+            rewritten_target=${OPENJDK_TARGET_AUTOCONF_NAME}
+            echo Target stays the same $rewritten_target
+        else
+            echo Rewriting target for builddeps into $rewritten_target
+        fi
+        rewritten_build_var=`echo ${rewritten_build} | tr '-' '_' | tr '.' '_'`
+        rewritten_target_var=`echo ${rewritten_target} | tr '-' '_' | tr '.' '_'`
+    fi
+    for ac_prog in 7z unzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_BDEPS_UNZIP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$BDEPS_UNZIP"; then
+  ac_cv_prog_BDEPS_UNZIP="$BDEPS_UNZIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_BDEPS_UNZIP="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+BDEPS_UNZIP=$ac_cv_prog_BDEPS_UNZIP
+if test -n "$BDEPS_UNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_UNZIP" >&5
+$as_echo "$BDEPS_UNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BDEPS_UNZIP" && break
+done
+
+    if test "x$BDEPS_UNZIP" = x7z; then
+        BDEPS_UNZIP="7z x"
+    fi
+
+    for ac_prog in wget lftp ftp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_BDEPS_FTP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$BDEPS_FTP"; then
+  ac_cv_prog_BDEPS_FTP="$BDEPS_FTP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_BDEPS_FTP="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+BDEPS_FTP=$ac_cv_prog_BDEPS_FTP
+if test -n "$BDEPS_FTP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_FTP" >&5
+$as_echo "$BDEPS_FTP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BDEPS_FTP" && break
+done
+
 
 
 ###############################################################################
@@ -6848,7 +7931,7 @@ fi
 # Check which variant of the JDK that we want to build.
 # Currently we have:
 #    normal:   standard edition
-#    embedded: cut down to a smaller footprint
+# but the custom make system may add other variants
 #
 # Effectively the JDK variant gives a name to a specific set of
 # modules to compile into the JDK. In the future, these modules
@@ -6864,18 +7947,10 @@ fi
 
 
 if test "x$with_jdk_variant" = xnormal || test "x$with_jdk_variant" = x; then
-    JAVASE_EMBEDDED=""
-    MINIMIZE_RAM_USAGE=""
     JDK_VARIANT="normal"
-elif test "x$with_jdk_variant" = xembedded; then
-    JAVASE_EMBEDDED="JAVASE_EMBEDDED:=true"
-    MINIMIZE_RAM_USAGE="MINIMIZE_RAM_USAGE:=true"
-    JDK_VARIANT="embedded"
 else
-    as_fn_error $? "The available JDK variants are: normal, embedded" "$LINENO" 5
+    as_fn_error $? "The available JDK variants are: normal" "$LINENO" 5
 fi
-
-
 
 
 
@@ -6904,11 +7979,7 @@ fi
 
 
 if test "x$with_jvm_variants" = x; then
-    if test "x$JDK_VARIANT" = xembedded; then
-        with_jvm_variants="client"
-    else
-        with_jvm_variants="server"
-    fi
+     with_jvm_variants="server"
 fi
 
 JVM_VARIANTS=",$with_jvm_variants,"
@@ -6951,6 +8022,11 @@ fi
 
 
 
+
+
+if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+   MACOSX_UNIVERSAL="true"
+fi
 
 
 
@@ -7058,6 +8134,14 @@ fi
 
 HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 
+# On Macosx universal binaries are produced, but they only contain
+# 64 bit intel. This invalidates control of which jvms are built
+# from configure, but only server is valid anyway. Fix this
+# when hotspot makefiles are rewritten.
+if test "x$MACOSX_UNIVERSAL" = xtrue; then
+    HOTSPOT_TARGET=universal_product
+fi
+
 #####
 
 
@@ -7133,14 +8217,12 @@ BUILD_HEADLESS="BUILD_HEADLESS:=true"
 
 if test "x$SUPPORT_HEADFUL" = xyes; then
     # We are building both headful and headless.
-    BUILD_HEADLESS_ONLY=""
     headful_msg="inlude support for both headful and headless"
 fi
 
 if test "x$SUPPORT_HEADFUL" = xno; then
     # Thus we are building headless only.
     BUILD_HEADLESS="BUILD_HEADLESS:=true"
-    BUILD_HEADLESS_ONLY="BUILD_HEADLESS_ONLY:=true"
     headful_msg="headless only"
 fi
 
@@ -7149,29 +8231,6 @@ $as_echo "$headful_msg" >&6; }
 
 
 
-
-
-
-###############################################################################
-#
-# Should we run the painfully slow javadoc tool?
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build documentation" >&5
-$as_echo_n "checking whether to build documentation... " >&6; }
-# Check whether --enable-docs was given.
-if test "${enable_docs+set}" = set; then :
-  enableval=$enable_docs; ENABLE_DOCS="${enableval}"
-else
-  ENABLE_DOCS='no'
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_DOCS" >&5
-$as_echo "$ENABLE_DOCS" >&6; }
-
-GENERATE_DOCS=false
-if test "x$ENABLE_DOCS" = xyes; then
-    GENERATE_DOCS=true
-fi
 
 
 ###############################################################################
@@ -7238,25 +8297,21 @@ fi
 #
 COMPRESS_JARS=false
 
-# default for embedded is yes...
-if test "x$JDK_VARIANT" = "xembedded"; then
-   COMPRESS_JARS=true
-fi
 
 
 ###############################################################################
 #
 # Should we compile JFR
-#   default no, except for on closed-jdk and !embedded
+#   default no, except for on closed-jdk
 #
 ENABLE_JFR=no
 
 # Is the JFR source present
 
 #
-# For closed && !embedded default is yes if the source is present
+# For closed default is yes
 #
-if test "x${OPENJDK}" != "xtrue" && test "x$JDK_VARIANT" != "xembedded" && test -d "$SRC_ROOT/jdk/src/closed/share/native/oracle/jfr"; then
+if test "x${OPENJDK}" != "xtrue"; then
    ENABLE_JFR=yes
 fi
 
@@ -7374,7 +8429,11 @@ fi
     HAS_SPACE=`echo "$OUTPUT_ROOT" | grep " "`
     if test "x$HAS_SPACE" != x; then
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
             OUTPUT_ROOT=`$CYGPATH -s -m -a "$OUTPUT_ROOT"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            OUTPUT_ROOT=`$ECHO "$OUTPUT_ROOT" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
             OUTPUT_ROOT=`$CYGPATH -u "$OUTPUT_ROOT"`
         else
             as_fn_error $? "You cannot have spaces in the path to the output root! \"$OUTPUT_ROOT\"" "$LINENO" 5
@@ -7395,7 +8454,16 @@ ac_config_headers="$ac_config_headers $OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config
 # The spec.gmk file contains all variables for the make system.
 ac_config_files="$ac_config_files $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in"
 
-# The spec.sh file contains variables for compare{images|-objects}.sh scrips.
+# The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
+ac_config_files="$ac_config_files $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in"
+
+# The bootcycle-spec.gmk file contains support for boot cycle builds.
+ac_config_files="$ac_config_files $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in"
+
+# The compare.sh is used to compare the build output to other builds.
+ac_config_files="$ac_config_files $OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in"
+
+# Spec.sh is currently used by compare-objects.sh
 ac_config_files="$ac_config_files $OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in"
 
 # The generated Makefile knows where the spec.gmk is and where the source is.
@@ -7423,41 +8491,129 @@ if test "${with_boot_jdk+set}" = set; then :
 fi
 
 
+# We look for the Boot JDK through various means, going from more certain to
+# more of a guess-work. After each test, BOOT_JDK_FOUND is set to "yes" if
+# we detected something (if so, the path to the jdk is in BOOT_JDK). But we
+# must check if this is indeed valid; otherwise we'll continue looking.
+
+# Test: Is bootjdk explicitely set by command line arguments?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
 if test "x$with_boot_jdk" != x; then
     BOOT_JDK=$with_boot_jdk
-    BOOT_JDK_FOUND=yes
+    BOOT_JDK_FOUND=maybe
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using configure arguments" >&5
+$as_echo "$as_me: Found potential Boot JDK using configure arguments" >&6;}
 fi
-if test "x$BOOT_JDK_FOUND" = xno; then
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+if test "x$with_boot_jdk" != x && test "x$BOOT_JDK_FOUND" = xno; then
+  # Having specified an argument which is incorrect will produce an instant failure;
+  # we should not go on looking
+  as_fn_error $? "The path given by --with-boot-jdk does not contain a valid Boot JDK" "$LINENO" 5
+fi
+
+# Test: Is bootjdk available from builddeps?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
 
 
     if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
         # Source the builddeps file again, to make sure it uses the latest variables!
         . $builddepsfile
         # Look for a target and build machine specific resource!
-        eval resource=\${builddep_boot-jdk_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
+        eval resource=\${builddep_bootjdk_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
         if test "x$resource" = x; then
             # Ok, lets instead look for a target specific resource
-            eval resource=\${builddep_boot-jdk_TARGET_${rewritten_target_var}}
+            eval resource=\${builddep_bootjdk_TARGET_${rewritten_target_var}}
         fi
         if test "x$resource" = x; then
             # Ok, lets instead look for a build specific resource
-            eval resource=\${builddep_boot-jdk_BUILD_${rewritten_build_var}}
+            eval resource=\${builddep_bootjdk_BUILD_${rewritten_build_var}}
         fi
         if test "x$resource" = x; then
             # Ok, lets instead look for a generic resource
-            # (The boot-jdk comes from M4 and not the shell, thus no need for eval here.)
-            resource=${builddep_boot-jdk}
+            # (The bootjdk comes from M4 and not the shell, thus no need for eval here.)
+            resource=${builddep_bootjdk}
         fi
         if test "x$resource" != x; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for boot-jdk" >&5
-$as_echo "$as_me: Using builddeps $resource for boot-jdk" >&6;}
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for bootjdk" >&5
+$as_echo "$as_me: Using builddeps $resource for bootjdk" >&6;}
 	    # If the resource in the builddeps.conf file is an existing directory,
 	    # for example /java/linux/cups
 	    if test -d ${resource}; then
 	       depdir=${resource}
 	    else
 
-# boot-jdk is for example mymodule
+# bootjdk is for example mymodule
 # $resource is for example libs/general/libmymod_1_2_3.zip
 # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
 # $with_builddeps_dir is for example /localhome/builddeps
@@ -7470,15 +8626,15 @@ $as_echo "$as_me: Using builddeps $resource for boot-jdk" >&6;}
     extension=${filename#*.}
     installdir=$with_builddeps_dir/$filebase
     if test ! -f $installdir/$filename.unpacked; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency boot-jdk from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency boot-jdk from $with_builddeps_server/$resource and installing into $installdir" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency bootjdk from $with_builddeps_server/$resource and installing into $installdir" >&5
+$as_echo "$as_me: Downloading build dependency bootjdk from $with_builddeps_server/$resource and installing into $installdir" >&6;}
         if test ! -d $installdir; then
             mkdir -p $installdir
         fi
         if test ! -d $installdir; then
             as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
         fi
-        tmpfile=`mktemp $installdir/boot-jdk.XXXXXXXXX`
+        tmpfile=`mktemp $installdir/bootjdk.XXXXXXXXX`
         touch $tmpfile
         if test ! -f $tmpfile; then
             as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
@@ -7549,11 +8705,11 @@ $as_echo "$as_me: Downloading build dependency boot-jdk from $with_builddeps_ser
             # was updated to point at the current build dependency install directory.
             . $builddepsfile
             # Now extract variables from the builddeps.conf files.
-            theroot=${builddep_boot-jdk_ROOT}
-            thecflags=${builddep_boot-jdk_CFLAGS}
-            thelibs=${builddep_boot-jdk_LIBS}
+            theroot=${builddep_bootjdk_ROOT}
+            thecflags=${builddep_bootjdk_CFLAGS}
+            thelibs=${builddep_bootjdk_LIBS}
             if test "x$depdir" = x; then
-                as_fn_error $? "Could not download build dependency boot-jdk" "$LINENO" 5
+                as_fn_error $? "Could not download build dependency bootjdk" "$LINENO" 5
             fi
             BOOT_JDK=$depdir
             if test "x$theroot" != x; then
@@ -7565,7 +8721,7 @@ $as_echo "$as_me: Downloading build dependency boot-jdk from $with_builddeps_ser
             if test "x$thelibs" != x; then
                BOOT_JDK_LIBS="$thelibs"
             fi
-            BOOT_JDK_FOUND=yes
+            BOOT_JDK_FOUND=maybe
             else BOOT_JDK_FOUND=no
 
         fi
@@ -7573,41 +8729,247 @@ $as_echo "$as_me: Downloading build dependency boot-jdk from $with_builddeps_ser
 
     fi
 
-fi
 
-if test "x$BOOT_JDK_FOUND" = xno; then
-    if test "x$JAVA_HOME" != x; then
-        if test ! -d "$JAVA_HOME"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Your JAVA_HOME points to a non-existing directory!" >&5
-$as_echo "$as_me: Your JAVA_HOME points to a non-existing directory!" >&6;}
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-        fi
-        # Aha, the user has set a JAVA_HOME
-        # let us use that as the Boot JDK.
-        BOOT_JDK="$JAVA_HOME"
-        BOOT_JDK_FOUND=yes
-        # To be on the safe side, lets check that it is a JDK.
-        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
-            JAVAC="$BOOT_JDK/bin/javac"
-            JAVA="$BOOT_JDK/bin/java"
-            BOOT_JDK_FOUND=yes
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
         else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Your JAVA_HOME points to a JRE! The build needs a JDK! Please point JAVA_HOME to a JDK. JAVA_HOME=$JAVA_HOME" >&5
-$as_echo "$as_me: Your JAVA_HOME points to a JRE! The build needs a JDK! Please point JAVA_HOME to a JDK. JAVA_HOME=$JAVA_HOME" >&6;}
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
 
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
         fi
     fi
-fi
 
-if test "x$BOOT_JDK_FOUND" = xno; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+# Test: Is $JAVA_HOME set?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+    if test "x$JAVA_HOME" != x; then
+        if test "x$OPENJDK_TARGET_OS" = xwindows; then
+          # On Windows, JAVA_HOME is likely in DOS-style
+          JAVA_HOME_PROCESSED="`$CYGPATH -u "$JAVA_HOME"`"
+        else
+          JAVA_HOME_PROCESSED="$JAVA_HOME"
+        fi
+        if test ! -d "$JAVA_HOME_PROCESSED"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Your JAVA_HOME points to a non-existing directory!" >&5
+$as_echo "$as_me: Your JAVA_HOME points to a non-existing directory!" >&6;}
+        else
+          # Aha, the user has set a JAVA_HOME
+          # let us use that as the Boot JDK.
+          BOOT_JDK="$JAVA_HOME_PROCESSED"
+          BOOT_JDK_FOUND=maybe
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using JAVA_HOME" >&5
+$as_echo "$as_me: Found potential Boot JDK using JAVA_HOME" >&6;}
+        fi
+    fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+# Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+    if test -x /usr/libexec/java_home; then
+        BOOT_JDK=`/usr/libexec/java_home`
+        BOOT_JDK_FOUND=maybe
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home" >&5
+$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home" >&6;}
+    fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+# Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
     # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7800,288 +9162,742 @@ fi
         fi
     fi
 
-        BOOT_JDK=`dirname $BINARY`
-        BOOT_JDK=`cd $BOOT_JDK/..; pwd`
-        if test -x $BOOT_JDK/bin/javac && test -x $BOOT_JDK/bin/java; then
-            JAVAC=$BOOT_JDK/bin/javac
-            JAVA=$BOOT_JDK/bin/java
-            BOOT_JDK_FOUND=yes
+        BOOT_JDK=`dirname "$BINARY"`
+        BOOT_JDK=`cd "$BOOT_JDK/.."; pwd`
+        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
+            # Looks like we found ourselves an JDK
+            BOOT_JDK_FOUND=maybe
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using java(c) in PATH" >&5
+$as_echo "$as_me: Found potential Boot JDK using java(c) in PATH" >&6;}
         fi
     fi
-fi
-
-if test "x$BOOT_JDK_FOUND" = xno; then
-    # Try the MacOSX way.
-    if test -x /usr/libexec/java_home; then
-        BOOT_JDK=`/usr/libexec/java_home`
-        if test -x $BOOT_JDK/bin/javac && test -x $BOOT_JDK/bin/java; then
-            JAVAC=$BOOT_JDK/bin/javac
-            JAVA=$BOOT_JDK/bin/java
-            BOOT_JDK_FOUND=yes
-        fi
-    fi
-fi
-
-if test "x$BOOT_JDK_FOUND" = xno; then
-    # Extract the first word of "java", so it can be a program name with args.
-set dummy java; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_JAVA_CHECK+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $JAVA_CHECK in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_JAVA_CHECK="$JAVA_CHECK" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_JAVA_CHECK="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-JAVA_CHECK=$ac_cv_path_JAVA_CHECK
-if test -n "$JAVA_CHECK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAVA_CHECK" >&5
-$as_echo "$JAVA_CHECK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
 
 
-    if test "x$JAVA_CHECK" != x; then
-        # There is a java in the path. But apparently we have not found a javac
-        # in the path, since that would have been tested earlier.
-        if test "x$OPENJDK_TARGET_OS" = xwindows; then
-            # Now if this is a windows platform. The default installation of a JDK
-            # actually puts the JRE in the path and keeps the JDK out of the path!
-            # Go look in the default installation location.
-            BOOT_JDK=/cygdrive/c/Program\ Files/Java/`ls /cygdrive/c/Program\ Files/Java | grep jdk | sort -r | head --lines 1`
-            if test -d "$BOOT_JDK"; then
-                BOOT_JDK_FOUND=yes
-            fi
-        fi
-        if test "x$BOOT_JDK_FOUND" = xno; then
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
-    # Print a helpful message on how to acquire the necessary build dependency.
-    # openjdk is the help tag: freetyp2, cups, pulse, alsa etc
-    MISSING_DEPENDENCY=openjdk
-    PKGHANDLER_COMMAND=
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
 
-    case $PKGHANDLER in
-	apt-get)
-                apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-                yum_help     $MISSING_DEPENDENCY ;;
-	port)
-                port_help    $MISSING_DEPENDENCY ;;
-	pkgutil)
-                pkgutil_help $MISSING_DEPENDENCY ;;
-	pkgadd)
-                pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-        HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Found a JRE, not not a JDK! Please remove the JRE from your path and put a JDK there instead. $HELP_MSG" >&5
-$as_echo "$as_me: Found a JRE, not not a JDK! Please remove the JRE from your path and put a JDK there instead. $HELP_MSG" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-        fi
-    else
-
-    # Print a helpful message on how to acquire the necessary build dependency.
-    # openjdk is the help tag: freetyp2, cups, pulse, alsa etc
-    MISSING_DEPENDENCY=openjdk
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-	apt-get)
-                apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-                yum_help     $MISSING_DEPENDENCY ;;
-	port)
-                port_help    $MISSING_DEPENDENCY ;;
-	pkgutil)
-                pkgutil_help $MISSING_DEPENDENCY ;;
-	pkgadd)
-                pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-        HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a JDK. $HELP_MSG" >&5
-$as_echo "$as_me: Could not find a JDK. $HELP_MSG" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-    fi
-fi
-
-
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        # Extract the first word of "cygpath", so it can be a program name with args.
-set dummy cygpath; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_CYGPATH+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $CYGPATH in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_CYGPATH="$CYGPATH" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_CYGPATH="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-CYGPATH=$ac_cv_path_CYGPATH
-if test -n "$CYGPATH"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGPATH" >&5
-$as_echo "$CYGPATH" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-        tmp="$BOOT_JDK"
-        # Convert to C:/ mixed style path without spaces.
-        tmp=`$CYGPATH -s -m "$tmp"`
-        BOOT_JDK="$tmp"
-    fi
-
-
-# Now see if we can find the rt.jar, or its nearest equivalent.
-BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
-
-    # Fail with message the path to the Boot JDK rt.jar (or nearest equivalent) if var BOOT_RTJAR contains a path with no spaces in it.
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
     # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "$BOOT_RTJAR" | grep " "`
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
     if test "x$HAS_SPACE" != x; then
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-            BOOT_RTJAR=`$CYGPATH -s -m -a "$BOOT_RTJAR"`
-            BOOT_RTJAR=`$CYGPATH -u "$BOOT_RTJAR"`
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
         else
-            as_fn_error $? "You cannot have spaces in the path to the Boot JDK rt.jar (or nearest equivalent)! \"$BOOT_RTJAR\"" "$LINENO" 5
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
         fi
     fi
 
-
-BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
-
-    # Fail with message the path to the Boot JDK tools.jar (or nearest equivalent) if var BOOT_TOOLSJAR contains a path with no spaces in it.
-    # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "$BOOT_TOOLSJAR" | grep " "`
-    if test "x$HAS_SPACE" != x; then
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-            BOOT_TOOLSJAR=`$CYGPATH -s -m -a "$BOOT_TOOLSJAR"`
-            BOOT_TOOLSJAR=`$CYGPATH -u "$BOOT_TOOLSJAR"`
-        else
-            as_fn_error $? "You cannot have spaces in the path to the Boot JDK tools.jar (or nearest equivalent)! \"$BOOT_TOOLSJAR\"" "$LINENO" 5
-        fi
-    fi
-
-
-if test ! -f $BOOT_RTJAR; then
-    # On MacOSX it is called classes.jar
-    BOOT_RTJAR=$BOOT_JDK/../Classes/classes.jar
-    if test ! -f $BOOT_RTJAR; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Cannot find the rt.jar or its equivalent!" >&5
-$as_echo "$as_me: Cannot find the rt.jar or its equivalent!" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: This typically means that configure failed to automatically find a suitable Boot JDK" >&5
-$as_echo "$as_me: This typically means that configure failed to automatically find a suitable Boot JDK" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-    fi
-    # Remove the ..
-    BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
-    # The tools.jar is part of classes.jar
-    BOOT_TOOLSJAR="$BOOT_RTJAR"
-fi
-
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
 $as_echo_n "checking for Boot JDK... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
-$as_echo "$BOOT_JDK" >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot rt.jar" >&5
-$as_echo_n "checking for Boot rt.jar... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_RTJAR" >&5
-$as_echo "$BOOT_RTJAR" >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot tools.jar" >&5
-$as_echo_n "checking for Boot tools.jar... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_TOOLSJAR" >&5
-$as_echo "$BOOT_TOOLSJAR" >&6; }
-
-# Use the java tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
-$as_echo_n "checking for java in Boot JDK... " >&6; }
-JAVA=$BOOT_JDK/bin/java
-if test ! -x $JAVA; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a working java" >&5
-$as_echo "$as_me: Could not find a working java" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-fi
-BOOT_JDK_VERSION=`$JAVA -version 2>&1 | head -n 1`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes $BOOT_JDK_VERSION" >&5
-$as_echo "yes $BOOT_JDK_VERSION" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
 
 
-# Extra M4 quote needed to protect [] in grep expression.
-FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-if test "x$FOUND_VERSION_78" = x; then
+# Test: Is there a JDK installed in default, well-known locations?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$ProgramW6432" != x; then
+
+  BOOT_JDK_PREFIX="`$CYGPATH -u "$ProgramW6432"`/Java"
+  BOOT_JDK_SUFFIX=""
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$PROGRAMW6432" != x; then
+
+  BOOT_JDK_PREFIX="`$CYGPATH -u "$PROGRAMW6432"`/Java"
+  BOOT_JDK_SUFFIX=""
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$PROGRAMFILES" != x; then
+
+  BOOT_JDK_PREFIX="`$CYGPATH -u "$PROGRAMFILES"`/Java"
+  BOOT_JDK_SUFFIX=""
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$ProgramFiles" != x; then
+
+  BOOT_JDK_PREFIX="`$CYGPATH -u "$ProgramFiles"`/Java"
+  BOOT_JDK_SUFFIX=""
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  BOOT_JDK_PREFIX="/cygdrive/c/Program Files/Java"
+  BOOT_JDK_SUFFIX=""
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  BOOT_JDK_PREFIX="/Library/Java/JavaVirtualMachines"
+  BOOT_JDK_SUFFIX="/Contents/Home"
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  BOOT_JDK_PREFIX="/System/Library/Java/JavaVirtualMachines"
+  BOOT_JDK_SUFFIX="/Contents/Home"
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&5
+$as_echo "$as_me: Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)" >&6;}
+    fi
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
+            if test "x$FOUND_VERSION_78" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+    # Fail with message the path to the Boot JDK if var BOOT_JDK contains a path with no spaces in it.
+    # Unless on Windows, where we can rewrite the path.
+    HAS_SPACE=`echo "$BOOT_JDK" | grep " "`
+    if test "x$HAS_SPACE" != x; then
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
+            BOOT_JDK=`$CYGPATH -s -m -a "$BOOT_JDK"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            BOOT_JDK=`$ECHO "$BOOT_JDK" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            BOOT_JDK=`$CYGPATH -u "$BOOT_JDK"`
+        else
+            as_fn_error $? "You cannot have spaces in the path to the Boot JDK! \"$BOOT_JDK\"" "$LINENO" 5
+        fi
+    fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK ($BOOT_JDK_VERSION)" >&5
+$as_echo "$BOOT_JDK ($BOOT_JDK_VERSION)" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+# If we haven't found anything yet, we've truly lost. Give up.
+if test "x$BOOT_JDK_FOUND" = xno; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # openjdk is the help tag: freetyp2, cups, pulse, alsa etc
@@ -8107,97 +9923,134 @@ if test "x$FOUND_VERSION_78" = x; then
         HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
     fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your boot-jdk must be version 7 or 8. $HELP_MSG" >&5
-$as_echo "$as_me: Your boot-jdk must be version 7 or 8. $HELP_MSG" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a valid Boot JDK. $HELP_MSG" >&5
+$as_echo "$as_me: Could not find a valid Boot JDK. $HELP_MSG" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
+  as_fn_error $? "Cannot continue" "$LINENO" 5
 fi
+
+# Setup proper paths for what we found
+BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
+if test ! -f "$BOOT_RTJAR"; then
+    # On MacOSX it is called classes.jar
+    BOOT_RTJAR="$BOOT_JDK/../Classes/classes.jar"
+    if test -f "$BOOT_RTJAR"; then
+      # Remove the ..
+      BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
+    fi
+fi
+BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
+BOOT_JDK="$BOOT_JDK"
+
+
+
+
+# Setup tools from the Boot JDK.
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
+$as_echo_n "checking for java in Boot JDK... " >&6; }
+  JAVA=$BOOT_JDK/bin/java
+  if test ! -x $JAVA; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
+$as_echo_n "checking for javac in Boot JDK... " >&6; }
+  JAVAC=$BOOT_JDK/bin/javac
+  if test ! -x $JAVAC; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
+$as_echo_n "checking for javah in Boot JDK... " >&6; }
+  JAVAH=$BOOT_JDK/bin/javah
+  if test ! -x $JAVAH; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javap in Boot JDK" >&5
+$as_echo_n "checking for javap in Boot JDK... " >&6; }
+  JAVAP=$BOOT_JDK/bin/javap
+  if test ! -x $JAVAP; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find javap in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
+$as_echo_n "checking for jar in Boot JDK... " >&6; }
+  JAR=$BOOT_JDK/bin/jar
+  if test ! -x $JAR; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rmic in Boot JDK" >&5
+$as_echo_n "checking for rmic in Boot JDK... " >&6; }
+  RMIC=$BOOT_JDK/bin/rmic
+  if test ! -x $RMIC; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find rmic in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
+$as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
+  NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
+  if test ! -x $NATIVE2ASCII; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+      as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+# Finally, set some other options...
 
 # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
 BOOT_JDK_SOURCETARGET="-source 7 -target 7"
 
-
-# Use the javac tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
-$as_echo_n "checking for javac in Boot JDK... " >&6; }
-JAVAC=$BOOT_JDK/bin/javac
-if test ! -x $JAVAC; then
-    as_fn_error $? "Could not find a working javac" "$LINENO" 5
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-
-# Use the javah tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
-$as_echo_n "checking for javah in Boot JDK... " >&6; }
-JAVAH=$BOOT_JDK/bin/javah
-if test ! -x $JAVAH; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a working javah" >&5
-$as_echo "$as_me: Could not find a working javah" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-# Use the jar tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
-$as_echo_n "checking for jar in Boot JDK... " >&6; }
-JAR=$BOOT_JDK/bin/jar
-if test ! -x $JAR; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a working jar" >&5
-$as_echo "$as_me: Could not find a working jar" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-# Use the rmic tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rmic in Boot JDK" >&5
-$as_echo_n "checking for rmic in Boot JDK... " >&6; }
-RMIC=$BOOT_JDK/bin/rmic
-if test ! -x $RMIC; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a working rmic" >&5
-$as_echo "$as_me: Could not find a working rmic" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-# Use the native2ascii tool from the Boot JDK.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
-$as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
-NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
-if test ! -x $NATIVE2ASCII; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a working native2ascii" >&5
-$as_echo "$as_me: Could not find a working native2ascii" >&6;}
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This might be fixed by explicitely setting --with-boot-jdk" >&5
-$as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 
 
 
@@ -8573,33 +10426,10 @@ fi
 
 
 
-LANGTOOLS_OUTPUTDIR="$OUTPUT_ROOT/langtools"
-CORBA_OUTPUTDIR="$OUTPUT_ROOT/corba"
-JAXP_OUTPUTDIR="$OUTPUT_ROOT/jaxp"
-JAXWS_OUTPUTDIR="$OUTPUT_ROOT/jaxws"
-HOTSPOT_OUTPUTDIR="$OUTPUT_ROOT/hotspot"
+BUILD_OUTPUT="$OUTPUT_ROOT"
+
+
 JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
-IMAGES_OUTPUTDIR="$OUTPUT_ROOT/images"
-
-
-
-
-
-
-
-
-
-LANGTOOLS_DIST="$OUTPUT_ROOT/langtools/dist"
-CORBA_DIST="$OUTPUT_ROOT/corba/dist"
-JAXP_DIST="$OUTPUT_ROOT/jaxp/dist"
-JAXWS_DIST="$OUTPUT_ROOT/jaxws/dist"
-HOTSPOT_DIST="$OUTPUT_ROOT/hotspot/dist"
-
-
-
-
-
-
 
 
 ###############################################################################
@@ -8619,9 +10449,6 @@ ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-DEVKIT=
-SYS_ROOT=/
 
 
 # The option used to specify the target .o,.a or .so file.
@@ -8645,6 +10472,61 @@ AR_OUT_OPTION='rcs$(SPACE)'
 # the set env variables into the spec file.
 SETUPDEVENV="# No special vars"
 if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+    # Store path to cygwin link.exe to help excluding it when searching for
+    # VS linker.
+    # Extract the first word of "link", so it can be a program name with args.
+set dummy link; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CYGWIN_LINK+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CYGWIN_LINK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CYGWIN_LINK="$CYGWIN_LINK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CYGWIN_LINK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CYGWIN_LINK=$ac_cv_path_CYGWIN_LINK
+if test -n "$CYGWIN_LINK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_LINK" >&5
+$as_echo "$CYGWIN_LINK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the first found link.exe is actually the Cygwin link tool" >&5
+$as_echo_n "checking if the first found link.exe is actually the Cygwin link tool... " >&6; }
+    "$CYGWIN_LINK" --version > /dev/null
+    if test $? -eq 0 ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      # This might be the VS linker. Don't exclude it later on.
+      CYGWIN_LINK=""
+    fi
+
     # If vcvarsall.bat has been run, then VCINSTALLDIR is set.
     if test "x$VCINSTALLDIR" != x; then
         # No further setup is needed. The build will happen from this kind
@@ -8675,12 +10557,12 @@ $as_echo_n "checking if we can find the VS installation... " >&6; }
 $as_echo "no" >&6; }
             as_fn_error $? "Tried to find a VS installation using both $SEARCH_ROOT but failed. Please run \"c:\\cygwin\\bin\\bash.exe -l\" from a VS command prompt and then run configure/make from there." "$LINENO" 5
         fi
-        case "$LEGACY_OPENJDK_TARGET_CPU1" in
-          i?86)
+        case "$OPENJDK_TARGET_CPU" in
+          x86)
             VARSBAT_ARCH=x86
             ;;
-          *)
-            VARSBAT_ARCH=$LEGACY_OPENJDK_TARGET_CPU1
+          x86_64)
+            VARSBAT_ARCH=amd64
             ;;
         esac
         # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
@@ -8743,7 +10625,11 @@ $as_echo "$MSVCR100DLL" >&6; }
     HAS_SPACE=`echo "$MSVCR100DLL" | grep " "`
     if test "x$HAS_SPACE" != x; then
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
             MSVCR100DLL=`$CYGPATH -s -m -a "$MSVCR100DLL"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            MSVCR100DLL=`$ECHO "$MSVCR100DLL" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
             MSVCR100DLL=`$CYGPATH -u "$MSVCR100DLL"`
         else
             as_fn_error $? "You cannot have spaces in the path to msvcr100.dll! \"$MSVCR100DLL\"" "$LINENO" 5
@@ -8768,33 +10654,25 @@ fi
 # Setting only --host, does not seem to be really supported.
 # Please set both --build and --host if you want to cross compile.
 
-DEFINE_CROSS_COMPILE_ARCH=""
-HOSTCC=""
-HOSTCXX=""
-HOSTLD=""
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if this is a cross compile" >&5
-$as_echo_n "checking if this is a cross compile... " >&6; }
-if test "x$OPENJDK_BUILD_SYSTEM" != "x$OPENJDK_TARGET_SYSTEM"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, from $OPENJDK_BUILD_SYSTEM to $OPENJDK_TARGET_SYSTEM" >&5
-$as_echo "yes, from $OPENJDK_BUILD_SYSTEM to $OPENJDK_TARGET_SYSTEM" >&6; }
-    # We have detected a cross compile!
-    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$LEGACY_OPENJDK_TARGET_CPU1"
+if test "x$COMPILE_TYPE" = "xcross"; then
     # Now we to find a C/C++ compiler that can build executables for the build
     # platform. We can't use the AC_PROG_CC macro, since it can only be used
-    # once.
+    # once. Also, we need to do this before adding a tools dir to the path,
+    # otherwise we might pick up cross-compilers which don't use standard naming.
+    # Otherwise, we'll set the BUILD_tools to the native tools, but that'll have
+    # to wait until they are properly discovered.
     for ac_prog in cl cc gcc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_HOSTCC+set}" = set; then :
+if test "${ac_cv_path_BUILD_CC+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  case $HOSTCC in
+  case $BUILD_CC in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_HOSTCC="$HOSTCC" # Let the user override the test with a path.
+  ac_cv_path_BUILD_CC="$BUILD_CC" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -8804,7 +10682,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_HOSTCC="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_BUILD_CC="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8815,17 +10693,17 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-HOSTCC=$ac_cv_path_HOSTCC
-if test -n "$HOSTCC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTCC" >&5
-$as_echo "$HOSTCC" >&6; }
+BUILD_CC=$ac_cv_path_BUILD_CC
+if test -n "$BUILD_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CC" >&5
+$as_echo "$BUILD_CC" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$HOSTCC" && break
+  test -n "$BUILD_CC" && break
 done
 
 
@@ -8833,9 +10711,9 @@ done
     # extract the full path to the binary and at the
     # same time maintain any arguments passed to it.
     # The command MUST exist in the path, or else!
-    tmp="$HOSTCC"
+    tmp="$BUILD_CC"
     car="${tmp%% *}"
-    tmp="$HOSTCC EOL"
+    tmp="$BUILD_CC EOL"
     cdr="${tmp#* }"
     # On windows we want paths without spaces.
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
@@ -8866,9 +10744,9 @@ done
         car=`which $car`
     fi
     if test "x$cdr" != xEOL; then
-        HOSTCC="$car ${cdr% *}"
+        BUILD_CC="$car ${cdr% *}"
     else
-        HOSTCC="$car"
+        BUILD_CC="$car"
     fi
 
     for ac_prog in cl CC g++
@@ -8877,12 +10755,12 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_HOSTCXX+set}" = set; then :
+if test "${ac_cv_path_BUILD_CXX+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  case $HOSTCXX in
+  case $BUILD_CXX in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_HOSTCXX="$HOSTCXX" # Let the user override the test with a path.
+  ac_cv_path_BUILD_CXX="$BUILD_CXX" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -8892,7 +10770,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_HOSTCXX="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_BUILD_CXX="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8903,17 +10781,17 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-HOSTCXX=$ac_cv_path_HOSTCXX
-if test -n "$HOSTCXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTCXX" >&5
-$as_echo "$HOSTCXX" >&6; }
+BUILD_CXX=$ac_cv_path_BUILD_CXX
+if test -n "$BUILD_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CXX" >&5
+$as_echo "$BUILD_CXX" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$HOSTCXX" && break
+  test -n "$BUILD_CXX" && break
 done
 
 
@@ -8921,9 +10799,9 @@ done
     # extract the full path to the binary and at the
     # same time maintain any arguments passed to it.
     # The command MUST exist in the path, or else!
-    tmp="$HOSTCXX"
+    tmp="$BUILD_CXX"
     car="${tmp%% *}"
-    tmp="$HOSTCXX EOL"
+    tmp="$BUILD_CXX EOL"
     cdr="${tmp#* }"
     # On windows we want paths without spaces.
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
@@ -8954,21 +10832,21 @@ done
         car=`which $car`
     fi
     if test "x$cdr" != xEOL; then
-        HOSTCXX="$car ${cdr% *}"
+        BUILD_CXX="$car ${cdr% *}"
     else
-        HOSTCXX="$car"
+        BUILD_CXX="$car"
     fi
 
     # Extract the first word of "ld", so it can be a program name with args.
 set dummy ld; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_HOSTLD+set}" = set; then :
+if test "${ac_cv_path_BUILD_LD+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  case $HOSTLD in
+  case $BUILD_LD in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_HOSTLD="$HOSTLD" # Let the user override the test with a path.
+  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -8978,7 +10856,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_HOSTLD="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8989,10 +10867,10 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-HOSTLD=$ac_cv_path_HOSTLD
-if test -n "$HOSTLD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTLD" >&5
-$as_echo "$HOSTLD" >&6; }
+BUILD_LD=$ac_cv_path_BUILD_LD
+if test -n "$BUILD_LD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
+$as_echo "$BUILD_LD" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -9004,9 +10882,9 @@ fi
     # extract the full path to the binary and at the
     # same time maintain any arguments passed to it.
     # The command MUST exist in the path, or else!
-    tmp="$HOSTLD"
+    tmp="$BUILD_LD"
     car="${tmp%% *}"
-    tmp="$HOSTLD EOL"
+    tmp="$BUILD_LD EOL"
     cdr="${tmp#* }"
     # On windows we want paths without spaces.
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
@@ -9037,34 +10915,20 @@ fi
         car=`which $car`
     fi
     if test "x$cdr" != xEOL; then
-        HOSTLD="$car ${cdr% *}"
+        BUILD_LD="$car ${cdr% *}"
     else
-        HOSTLD="$car"
+        BUILD_LD="$car"
     fi
 
-    # Building for the build platform should be easy. Therefore
-    # we do not need any linkers or assemblers etc.
-else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-# You can force the sys-root if the sys-root encoded into the cross compiler tools
-# is not correct.
-
-# Check whether --with-sys-root was given.
-if test "${with_sys_root+set}" = set; then :
-  withval=$with_sys_root;
 fi
 
 
-if test "x$with_sys_root" != x; then
-    SYS_ROOT=$with_sys_root
-fi
+
 
 # If a devkit is found on the builddeps server, then prepend its path to the
 # PATH variable. If there are cross compilers available in the devkit, these
 # will be found by AC_PROG_CC et al.
+DEVKIT=
 
 
     if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
@@ -9231,29 +11095,6 @@ fi
 ORG_CFLAGS="$CFLAGS"
 ORG_CXXFLAGS="$CXXFLAGS"
 ORG_OBJCFLAGS="$OBJCFLAGS"
-
-
-# Check whether --with-tools-dir was given.
-if test "${with_tools_dir+set}" = set; then :
-  withval=$with_tools_dir; TOOLS_DIR=$with_tools_dir
-fi
-
-
-
-# Check whether --with-devkit was given.
-if test "${with_devkit+set}" = set; then :
-  withval=$with_devkit;
-    if test "x$with_sys_root" != x; then
-      as_fn_error $? "Cannot specify both --with-devkit and --with-sys-root at the same time" "$LINENO" 5
-    fi
-    if test "x$with_tools_dir" != x; then
-      as_fn_error $? "Cannot specify both --with-devkit and --with-tools-dir at the same time" "$LINENO" 5
-    fi
-    TOOLS_DIR=$with_devkit/bin
-    SYS_ROOT=$with_devkit/$host_alias/libc
-
-fi
-
 
 # autoconf magic only relies on PATH, so update it if tools dir is specified
 OLD_PATH="$PATH"
@@ -10578,152 +12419,11 @@ CFLAGS="$ORG_CFLAGS"
 CXXFLAGS="$ORG_CXXFLAGS"
 OBJCFLAGS="$ORG_OBJCFLAGS"
 
-# If we are not cross compiling, use the same compilers for
-# building the build platform executables.
-if test "x$DEFINE_CROSS_COMPILE_ARCH" = x; then
-    HOSTCC="$CC"
-    HOSTCXX="$CXX"
-fi
-
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ld", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ld; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_LD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$LD"; then
-  ac_cv_prog_LD="$LD" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_LD="${ac_tool_prefix}ld"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-LD=$ac_cv_prog_LD
-if test -n "$LD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LD" >&5
-$as_echo "$LD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_LD"; then
-  ac_ct_LD=$LD
-  # Extract the first word of "ld", so it can be a program name with args.
-set dummy ld; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ac_ct_LD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_LD"; then
-  ac_cv_prog_ac_ct_LD="$ac_ct_LD" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_LD="ld"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_LD=$ac_cv_prog_ac_ct_LD
-if test -n "$ac_ct_LD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_LD" >&5
-$as_echo "$ac_ct_LD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_LD" = x; then
-    LD=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    LD=$ac_ct_LD
-  fi
-else
-  LD="$ac_cv_prog_LD"
-fi
-
-
-    # Translate "gcc -E" into "`which gcc` -E" ie
-    # extract the full path to the binary and at the
-    # same time maintain any arguments passed to it.
-    # The command MUST exist in the path, or else!
-    tmp="$LD"
-    car="${tmp%% *}"
-    tmp="$LD EOL"
-    cdr="${tmp#* }"
-    # On windows we want paths without spaces.
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-
-    # Translate long cygdrive or C:\sdfsf path
-    # into a short mixed mode path that has no
-    # spaces in it.
-    tmp="$car"
-
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        tmp=`$CYGPATH -u "$car"`
-        tmp=`which "$tmp"`
-        # If file exists with .exe appended, that's the real filename
-        # and cygpath needs that to convert to short style path.
-        if test -f "${tmp}.exe"; then
-           tmp="${tmp}.exe"
-        elif test -f "${tmp}.cmd"; then
-           tmp="${tmp}.cmd"
-        fi
-        # Convert to C:/ mixed style path without spaces.
-         tmp=`$CYGPATH -s -m "$tmp"`
-    fi
-    car="$tmp"
-
-    else
-        # "which" is not portable, but is used here
-        # because we know that the command exists!
-        car=`which $car`
-    fi
-    if test "x$cdr" != xEOL; then
-        LD="$car ${cdr% *}"
-    else
-        LD="$car"
-    fi
-
 LD="$CC"
 LDEXE="$CC"
 LDCXX="$CXX"
 LDEXECXX="$CXX"
+
 # LDEXE is the linker to use, when creating executables.
 
 # Linking C++ libraries.
@@ -10731,7 +12431,8 @@ LDEXECXX="$CXX"
 # Linking C++ executables.
 
 
-if test -n "$ac_tool_prefix"; then
+if test "x$OPENJDK_BUILD_OS" != xwindows; then
+    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ar; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -10866,6 +12567,7 @@ fi
         AR="$car"
     fi
 
+fi
 if test "x$OPENJDK_BUILD_OS" = xmacosx; then
     ARFLAGS="-r"
 else
@@ -10882,7 +12584,7 @@ if test "x$OPENJDK_BUILD_OS" = xwindows; then :
     EXE_OUT_OPTION=-out:
     LD_OUT_OPTION=-out:
     AR_OUT_OPTION=-out:
-    # On Windows, reject /usr/bin/link, which is a cygwin
+    # On Windows, reject /usr/bin/link (as determined in CYGWIN_LINK), which is a cygwin
     # program for something completely different.
     # Extract the first word of "link", so it can be a program name with args.
 set dummy link; ac_word=$2
@@ -10902,7 +12604,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/bin/link"; then
+    if test "$as_dir/$ac_word$ac_exec_ext" = "$CYGWIN_LINK"; then
        ac_prog_rejected=yes
        continue
      fi
@@ -10961,13 +12663,22 @@ fi
     fi
     WINLD="$tmp"
 
+    printf "Windows linker was found at $WINLD\n"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the found link.exe is actually the Visual Studio linker" >&5
+$as_echo_n "checking if the found link.exe is actually the Visual Studio linker... " >&6; }
+    "$WINLD" --version > /dev/null
+    if test $? -eq 0 ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      as_fn_error $? "This is the Cygwin link tool. Please check your PATH and rerun configure." "$LINENO" 5
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
     LD="$WINLD"
     LDEXE="$WINLD"
     LDCXX="$WINLD"
     LDEXECXX="$WINLD"
-    # Set HOSTLD to same as LD until we fully support cross compilation
-    # on windows.
-    HOSTLD="$WINLD"
 
     # Extract the first word of "mt", so it can be a program name with args.
 set dummy mt; ac_word=$2
@@ -11627,6 +13338,16 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     fi
 
 
+if test "x$COMPILE_TYPE" != "xcross"; then
+    # If we are not cross compiling, use the same compilers for
+    # building the build platform executables. The cross-compilation
+    # case needed to be done earlier, but this can only be done after
+    # the native tools have been localized.
+    BUILD_CC="$CC"
+    BUILD_CXX="$CXX"
+    BUILD_LD="$LD"
+fi
+
 # for solaris we really need solaris tools, and not gnu equivalent
 #   these seems to normally reside in /usr/ccs/bin so add that to path before
 #   starting to probe
@@ -11722,17 +13443,16 @@ fi
         AS="$car"
     fi
 
-    ASFLAGS=" "
 else
     AS="$CC -c"
-    ASFLAGS=" "
 fi
 
 
-
 if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-    # Extract the first word of "nm", so it can be a program name with args.
-set dummy nm; ac_word=$2
+    for ac_prog in gnm nm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if test "${ac_cv_path_NM+set}" = set; then :
@@ -11770,6 +13490,9 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+  test -n "$NM" && break
+done
 
 
     # Translate "gcc -E" into "`which gcc` -E" ie
@@ -11980,7 +13703,7 @@ fi
         MCS="$car"
     fi
 
-else
+elif test "x$OPENJDK_BUILD_OS" != xwindows; then
     if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}nm", so it can be a program name with args.
 set dummy ${ac_tool_prefix}nm; ac_word=$2
@@ -12459,6 +14182,92 @@ fi
 
 fi
 
+if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+   # Extract the first word of "lipo", so it can be a program name with args.
+set dummy lipo; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_LIPO+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LIPO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LIPO="$LIPO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_LIPO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LIPO=$ac_cv_path_LIPO
+if test -n "$LIPO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIPO" >&5
+$as_echo "$LIPO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+    # Translate "gcc -E" into "`which gcc` -E" ie
+    # extract the full path to the binary and at the
+    # same time maintain any arguments passed to it.
+    # The command MUST exist in the path, or else!
+    tmp="$LIPO"
+    car="${tmp%% *}"
+    tmp="$LIPO EOL"
+    cdr="${tmp#* }"
+    # On windows we want paths without spaces.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+
+    # Translate long cygdrive or C:\sdfsf path
+    # into a short mixed mode path that has no
+    # spaces in it.
+    tmp="$car"
+
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        tmp=`$CYGPATH -u "$car"`
+        tmp=`which "$tmp"`
+        # If file exists with .exe appended, that's the real filename
+        # and cygpath needs that to convert to short style path.
+        if test -f "${tmp}.exe"; then
+           tmp="${tmp}.exe"
+        elif test -f "${tmp}.cmd"; then
+           tmp="${tmp}.cmd"
+        fi
+        # Convert to C:/ mixed style path without spaces.
+         tmp=`$CYGPATH -s -m "$tmp"`
+    fi
+    car="$tmp"
+
+    else
+        # "which" is not portable, but is used here
+        # because we know that the command exists!
+        car=`which $car`
+    fi
+    if test "x$cdr" != xEOL; then
+        LIPO="$car ${cdr% *}"
+    else
+        LIPO="$car"
+    fi
+
+fi
+
 # Restore old path without tools dir
 PATH="$OLD_PATH"
 
@@ -12604,16 +14413,71 @@ done
 # (The JVM can use 32 or 64 bit Java pointers but that decision
 # is made at runtime.)
 #
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+  # Always specify -m flags on Solaris
 
-OLD_CXXFLAGS="$CXXFLAGS"
-if test "x$OPENJDK_TARGET_OS" != xwindows && test "x$with_target_bits" != x; then
-	CXXFLAGS="-m${with_target_bits} $CXXFLAGS"
+  # keep track of c/cxx flags that we added outselves...
+  #   to prevent emitting warning...
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
+
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+elif test "x$COMPILE_TYPE" = xreduced; then
+  if test "x$OPENJDK_TARGET_OS" != xwindows; then
+    # Specify -m if running reduced on other Posix platforms
+
+  # keep track of c/cxx flags that we added outselves...
+  #   to prevent emitting warning...
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
+
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+  fi
 fi
+
+# Make compilation sanity check
+for ac_header in stdio.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "stdio.h" "ac_cv_header_stdio_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdio_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STDIO_H 1
+_ACEOF
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Failed to compile stdio.h. This likely implies missing compile dependencies." >&5
+$as_echo "$as_me: Failed to compile stdio.h. This likely implies missing compile dependencies." >&6;}
+  if test "x$COMPILE_TYPE" = xreduced; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed." >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed." >&6;}
+  elif test "x$COMPILE_TYPE" = xcross; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
+$as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
+  fi
+  as_fn_error $? "Cannot continue." "$LINENO" 5
+
+fi
+
+done
+
+
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -12647,85 +14511,28 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-CXXFLAGS="$OLD_CXXFLAGS"
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+if test "x$SIZEOF_INT_P" != "x$ac_cv_sizeof_int_p"; then
+  # Workaround autoconf bug, see http://lists.gnu.org/archive/html/autoconf/2010-07/msg00004.html
+  SIZEOF_INT_P="$ac_cv_sizeof_int_p"
+fi
 
-# keep track of c/cxx flags that we added outselves...
-#   to prevent emitting warning...
-ADDED_CFLAGS=
-ADDED_CXXFLAGS=
-ADDED_LDFLAGS=
-
-if test "x$ac_cv_sizeof_int_p" = x0; then
-    # The test failed, lets pick the assumed value.
-    ARCH_DATA_MODEL=$OPENJDK_TARGET_CPU_BITS
+if test "x$SIZEOF_INT_P" = x; then
+    # The test failed, lets stick to the assumed value.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&5
+$as_echo "$as_me: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&2;}
 else
-    ARCH_DATA_MODEL=`expr 8 \* $ac_cv_sizeof_int_p`
+    TESTED_TARGET_CPU_BITS=`expr 8 \* $SIZEOF_INT_P`
 
-    if test "x$OPENJDK_TARGET_OS" != xwindows && test "x$with_target_bits" != x; then
-       ADDED_CFLAGS=" -m${with_target_bits}"
-       ADDED_CXXFLAGS=" -m${with_target_bits}"
-       ADDED_LDFLAGS=" -m${with_target_bits}"
-
-       CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
-       CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
-       LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
-
-       CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
-       CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
-       LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+    if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
+        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
     fi
 fi
 
-if test "x$ARCH_DATA_MODEL" = x64; then
-    A_LP64="LP64:="
-    ADD_LP64="-D_LP64=1"
-fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for target address size" >&5
 $as_echo_n "checking for target address size... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ARCH_DATA_MODEL bits" >&5
-$as_echo "$ARCH_DATA_MODEL bits" >&6; }
-LP64=$A_LP64
-
-
-
-if test "x$ARCH_DATA_MODEL" != "x$OPENJDK_TARGET_CPU_BITS"; then
-    as_fn_error $? "The tested number of bits in the target ($ARCH_DATA_MODEL) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
-fi
-
-#
-# NOTE: check for -mstackrealign needs to be below potential addition of -m32
-#
-if test "x$OPENJDK_TARGET_CPU_BITS" = x32 && test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On 32-bit MacOSX the OS requires C-entry points to be 16 byte aligned.
-    # While waiting for a better solution, the current workaround is to use -mstackrealign.
-    CFLAGS="$CFLAGS -mstackrealign"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if 32-bit compiler supports -mstackrealign" >&5
-$as_echo_n "checking if 32-bit compiler supports -mstackrealign... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int main() { return 0; }
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-
-		        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-		        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	                as_fn_error $? "The selected compiler $CXX does not support -mstackrealign! Try to put another compiler in the path." "$LINENO" 5
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_TARGET_CPU_BITS bits" >&5
+$as_echo "$OPENJDK_TARGET_CPU_BITS bits" >&6; }
 
 
 ###############################################################################
@@ -12956,15 +14763,9 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 if test "x$ENDIAN" = xuniversal_endianness; then
     as_fn_error $? "Building with both big and little endianness is not supported" "$LINENO" 5
 fi
-if test "x$ENDIAN" = xunknown; then
-    ENDIAN="$OPENJDK_TARGET_CPU_ENDIAN"
-fi
 if test "x$ENDIAN" != "x$OPENJDK_TARGET_CPU_ENDIAN"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The tested endian in the target ($ENDIAN) differs from the endian expected to be found in the target ($OPENJDK_TARGET_CPU_ENDIAN)" >&5
-$as_echo "$as_me: WARNING: The tested endian in the target ($ENDIAN) differs from the endian expected to be found in the target ($OPENJDK_TARGET_CPU_ENDIAN)" >&2;}
-    ENDIAN="$OPENJDK_TARGET_CPU_ENDIAN"
+    as_fn_error $? "The tested endian in the target ($ENDIAN) differs from the endian expected to be found in the target ($OPENJDK_TARGET_CPU_ENDIAN)" "$LINENO" 5
 fi
-
 
 
 # Configure flags for the tools
@@ -12990,15 +14791,13 @@ if test "x$GCC" = xyes; then
     SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
-    SET_SHARED_LIBRARY_ORIGIN='-Xlinker -z -Xlinker origin -Xlinker -rpath -Xlinker \$$$$ORIGIN/$1'
+    SET_SHARED_LIBRARY_ORIGIN='-Xlinker -z -Xlinker origin -Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
+    SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
     LD="$CC"
     LDEXE="$CC"
     LDCXX="$CXX"
     LDEXECXX="$CXX"
     POST_STRIP_CMD="$STRIP -g"
-    if test "x$JDK_VARIANT" = xembedded; then
-        POST_STRIP_CMD="$STRIP --strip-unneeded"
-    fi
 
     # Linking is different on MacOSX
     if test "x$OPENJDK_BUILD_OS" = xmacosx; then
@@ -13011,6 +14810,7 @@ if test "x$GCC" = xyes; then
         SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
         SET_SHARED_LIBRARY_MAPFILE=''
         SET_SHARED_LIBRARY_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+        SET_EXECUTABLE_ORIGIN="$SET_SHARED_LIBRARY_ORIGIN"
         POST_STRIP_CMD="$STRIP -S"
     fi
 else
@@ -13021,7 +14821,7 @@ else
         LIBRARY_PREFIX=lib
         SHARED_LIBRARY='lib$1.so'
         STATIC_LIBRARY='lib$1.a'
-        SHARED_LIBRARY_FLAGS="-z defs -xildoff -ztext -G"
+        SHARED_LIBRARY_FLAGS="-G"
         SHARED_LIBRARY_SUFFIX='.so'
         STATIC_LIBRARY_SUFFIX='.a'
         OBJ_SUFFIX='.o'
@@ -13030,7 +14830,8 @@ else
         SET_SHARED_LIBRARY_MAPFILE='-M$1'
 	C_FLAG_REORDER='-xF'
 	CXX_FLAG_REORDER='-xF'
-        SET_SHARED_LIBRARY_ORIGIN='-R \$$$$ORIGIN/$1'
+        SET_SHARED_LIBRARY_ORIGIN='-R\$$$$ORIGIN$1'
+        SET_EXECUTABLE_ORIGIN="$SET_SHARED_LIBRARY_ORIGIN"
         CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
         CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
         CFLAGS_JDKLIB_EXTRA='-xstrconst'
@@ -13052,8 +14853,10 @@ else
         SET_SHARED_LIBRARY_NAME=''
         SET_SHARED_LIBRARY_MAPFILE=''
         SET_SHARED_LIBRARY_ORIGIN=''
+        SET_EXECUTABLE_ORIGIN=''
     fi
 fi
+
 
 
 
@@ -13081,6 +14884,36 @@ fi
 # Setup the opt flags for different compilers
 # and different operating systems.
 #
+
+#
+# NOTE: check for -mstackrealign needs to be below potential addition of -m32
+#
+if test "x$OPENJDK_TARGET_CPU_BITS" = x32 && test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # On 32-bit MacOSX the OS requires C-entry points to be 16 byte aligned.
+    # While waiting for a better solution, the current workaround is to use -mstackrealign.
+    CFLAGS="$CFLAGS -mstackrealign"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if 32-bit compiler supports -mstackrealign" >&5
+$as_echo_n "checking if 32-bit compiler supports -mstackrealign... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int main() { return 0; }
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+
+		        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+		        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	                as_fn_error $? "The selected compiler $CXX does not support -mstackrealign! Try to put another compiler in the path." "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+
 C_FLAG_DEPS="-MMD -MF"
 CXX_FLAG_DEPS="-MMD -MF"
 
@@ -13105,7 +14938,7 @@ case $COMPILER_TYPE in
 	    CXXFLAGS_DEBUG_SYMBOLS="-g"
 	    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
 	       CFLAGS_DEBUG_SYMBOLS="-g1"
-	       CXXFLAGS_DEBUG_SYMBOLSG="-g1"
+	       CXXFLAGS_DEBUG_SYMBOLS="-g1"
 	    fi
 	    ;;
 	esac
@@ -13117,52 +14950,56 @@ case $COMPILER_TYPE in
         #
         # Forte has different names for this with their C++ compiler...
         #
-	C_FLAG_DEPS="-xMMD -xMF"
-	CXX_FLAG_DEPS="-xMMD -xMF"
+        C_FLAG_DEPS="-xMMD -xMF"
+        CXX_FLAG_DEPS="-xMMD -xMF"
 
-# Extra options used with HIGHEST
-#
-# WARNING: Use of OPTIMIZATION_LEVEL=HIGHEST in your Makefile needs to be
-#          done with care, there are some assumptions below that need to
-#          be understood about the use of pointers, and IEEE behavior.
-#
-# Use non-standard floating point mode (not IEEE 754)
-CC_HIGHEST="$CC_HIGHEST -fns"
-# Do some simplification of floating point arithmetic (not IEEE 754)
-CC_HIGHEST="$CC_HIGHEST -fsimple"
-# Use single precision floating point with 'float'
-CC_HIGHEST="$CC_HIGHEST -fsingle"
-# Assume memory references via basic pointer types do not alias
-#   (Source with excessing pointer casting and data access with mixed
-#    pointer types are not recommended)
-CC_HIGHEST="$CC_HIGHEST -xalias_level=basic"
-# Use intrinsic or inline versions for math/std functions
-#   (If you expect perfect errno behavior, do not use this)
-CC_HIGHEST="$CC_HIGHEST -xbuiltin=%all"
-# Loop data dependency optimizations (need -xO3 or higher)
-CC_HIGHEST="$CC_HIGHEST -xdepend"
-# Pointer parameters to functions do not overlap
-#   (Similar to -xalias_level=basic usage, but less obvious sometimes.
-#    If you pass in multiple pointers to the same data, do not use this)
-CC_HIGHEST="$CC_HIGHEST -xrestrict"
-# Inline some library routines
-#   (If you expect perfect errno behavior, do not use this)
-CC_HIGHEST="$CC_HIGHEST -xlibmil"
-# Use optimized math routines
-#   (If you expect perfect errno behavior, do not use this)
-#  Can cause undefined external on Solaris 8 X86 on __sincos, removing for now
-#CC_HIGHEST="$CC_HIGHEST -xlibmopt"
+        # Extra options used with HIGHEST
+        #
+        # WARNING: Use of OPTIMIZATION_LEVEL=HIGHEST in your Makefile needs to be
+        #          done with care, there are some assumptions below that need to
+        #          be understood about the use of pointers, and IEEE behavior.
+        #
+        # Use non-standard floating point mode (not IEEE 754)
+        CC_HIGHEST="$CC_HIGHEST -fns"
+        # Do some simplification of floating point arithmetic (not IEEE 754)
+        CC_HIGHEST="$CC_HIGHEST -fsimple"
+        # Use single precision floating point with 'float'
+        CC_HIGHEST="$CC_HIGHEST -fsingle"
+        # Assume memory references via basic pointer types do not alias
+        #   (Source with excessing pointer casting and data access with mixed
+        #    pointer types are not recommended)
+        CC_HIGHEST="$CC_HIGHEST -xalias_level=basic"
+        # Use intrinsic or inline versions for math/std functions
+        #   (If you expect perfect errno behavior, do not use this)
+        CC_HIGHEST="$CC_HIGHEST -xbuiltin=%all"
+        # Loop data dependency optimizations (need -xO3 or higher)
+        CC_HIGHEST="$CC_HIGHEST -xdepend"
+        # Pointer parameters to functions do not overlap
+        #   (Similar to -xalias_level=basic usage, but less obvious sometimes.
+        #    If you pass in multiple pointers to the same data, do not use this)
+        CC_HIGHEST="$CC_HIGHEST -xrestrict"
+        # Inline some library routines
+        #   (If you expect perfect errno behavior, do not use this)
+        CC_HIGHEST="$CC_HIGHEST -xlibmil"
+        # Use optimized math routines
+        #   (If you expect perfect errno behavior, do not use this)
+        #  Can cause undefined external on Solaris 8 X86 on __sincos, removing for now
+        #CC_HIGHEST="$CC_HIGHEST -xlibmopt"
 
-        case $LEGACY_OPENJDK_TARGET_CPU1 in
-          i586)
-            C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xchip=pentium"
-            C_O_FLAG_HI="-xO4 -Wu,-O4~yz"
-            C_O_FLAG_NORM="-xO2 -Wu,-O2~yz"
-            C_O_FLAG_NONE=""
-            CXX_O_FLAG_HIGHEST="-xO4 -Qoption ube -O4~yz $CC_HIGHEST -xchip=pentium"
-            CXX_O_FLAG_HI="-xO4 -Qoption ube -O4~yz"
-            CXX_O_FLAG_NORM="-xO2 -Qoption ube -O2~yz"
-            CXX_O_FLAG_NONE=""
+        case $OPENJDK_TARGET_CPU_ARCH in
+          x86)
+            C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xregs=no%frameptr"
+            C_O_FLAG_HI="-xO4 -Wu,-O4~yz -xregs=no%frameptr"
+            C_O_FLAG_NORM="-xO2 -Wu,-O2~yz -xregs=no%frameptr"
+            C_O_FLAG_NONE="-xregs=no%frameptr"
+            CXX_O_FLAG_HIGHEST="-xO4 -Qoption ube -O4~yz $CC_HIGHEST -xregs=no%frameptr"
+            CXX_O_FLAG_HI="-xO4 -Qoption ube -O4~yz -xregs=no%frameptr"
+            CXX_O_FLAG_NORM="-xO2 -Qoption ube -O2~yz -xregs=no%frameptr"
+            CXX_O_FLAG_NONE="-xregs=no%frameptr"
+            if test "x$OPENJDK_TARGET_CPU" = xx86; then
+               C_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST -xchip=pentium"
+               CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_HIGHEST -xchip=pentium"
+            fi
             ;;
           sparc)
             CFLAGS_JDK="${CFLAGS_JDK} -xmemalign=4s"
@@ -13186,9 +15023,11 @@ CC_HIGHEST="$CC_HIGHEST -xlibmil"
     ;;
   CL )
     D_FLAG=
-    C_O_FLAG_HI="-O2"
+    C_O_FLAG_HIGHEST="-O2"
+    C_O_FLAG_HI="-O1"
     C_O_FLAG_NORM="-O1"
     C_O_FLAG_NONE="-Od"
+    CXX_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST"
     CXX_O_FLAG_HI="$C_O_FLAG_HI"
     CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
     CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
@@ -13217,18 +15056,18 @@ fi
 
 
 if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags\"" >&5
-$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags\"" >&2;}
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&2;}
 fi
 
 if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags\"" >&5
-$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags\"" >&2;}
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&2;}
 fi
 
 if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags\"" >&5
-$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags\"" >&2;}
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&5
+$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&2;}
 fi
 
 
@@ -13256,6 +15095,15 @@ CFLAGS_JDK="${CFLAGS_JDK} $with_extra_cflags"
 CXXFLAGS_JDK="${CXXFLAGS_JDK} $with_extra_cxxflags"
 LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
 
+# Hotspot needs these set in their legacy form
+LEGACY_EXTRA_CFLAGS=$with_extra_cflags
+LEGACY_EXTRA_CXXFLAGS=$with_extra_cxxflags
+LEGACY_EXTRA_LDFLAGS=$with_extra_ldflags
+
+
+
+
+
 ###############################################################################
 #
 # Now setup the CFLAGS and LDFLAGS for the JDK build.
@@ -13281,41 +15129,34 @@ case $COMPILER_NAME in
 	  esac
           ;;
       ossc )
-      	  CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -norunpath -xnolib"
-      	  CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX"
+          CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
+          case $OPENJDK_TARGET_CPU_ARCH in
+          x86 )
+            CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DcpuIntel -Di586 -Di386"
+       	    CFLAGS_JDK="$CFLAGS_JDK -erroff=E_BAD_PRAGMA_PACK_VALUE"
+          ;;
+          esac
+
+      	  CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
+      	  CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
+
+          LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
+          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
           ;;
       cl )
           CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
                -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
 	       -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
 	       -DWIN32 -DIAL"
-          case $LEGACY_OPENJDK_TARGET_CPU1 in
-              i?86 )
+          case $OPENJDK_TARGET_CPU in
+              x86 )
                   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_X86_ -Dx86"
                   ;;
-              amd64 )
+              x86_64 )
                   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_AMD64_ -Damd64"
                   ;;
           esac
           ;;
-esac
-
-###############################################################################
-#
-# Cross-compile arch specific flags
-
-#
-if test "x$JDK_VARIANT" = "xembedded"; then
-   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DJAVASE_EMBEDDED"
-fi
-
-case $OPENJDK_TARGET_CPU_ARCH in
-arm )
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fsigned-char"
-    ;;
-ppc )
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fsigned-char"
-    ;;
 esac
 
 ###############################################################################
@@ -13326,11 +15167,17 @@ CCXXFLAGS_JDK="$CCXXFLAGS_JDK $ADD_LP64"
 PACKAGE_PATH=/opt/local
 
 
-# Sometimes we use a cpu dir (.../lib/amd64/server)
-# Sometimes not (.../lib/server)
-LIBARCHDIR="$LEGACY_OPENJDK_TARGET_CPU2/"
-if test "x$ENDIAN" = xlittle; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
+if test "x$OPENJDK_TARGET_CPU_ENDIAN" = xlittle; then
+    # The macro _LITTLE_ENDIAN needs to be defined the same to avoid the
+    #   Sun C compiler warning message: warning: macro redefined: _LITTLE_ENDIAN
+    #   (The Solaris X86 system defines this in file /usr/include/sys/isa_defs.h).
+    #   Note: -Dmacro         is the same as    #define macro 1
+    #         -Dmacro=	    is the same as    #define macro
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN="
+    else
+        CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
+    fi
 else
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
 fi
@@ -13345,27 +15192,29 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE"
-    LIBARCHDIR=""
 fi
 if test "x$OPENJDK_TARGET_OS" = xbsd; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DBSD -D_ALLBSD_SOURCE"
 fi
 if test "x$DEBUG_LEVEL" = xrelease; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DNDEBUG"
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DTRIMMED"
+    fi
 else
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DDEBUG"
 fi
 
-CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$LEGACY_OPENJDK_TARGET_CPU1\"' -D$LEGACY_OPENJDK_TARGET_CPU1"
+CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
 CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"$RELEASE\"'"
 
 CCXXFLAGS_JDK="$CCXXFLAGS_JDK \
         -I${JDK_OUTPUTDIR}/include \
         -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
         -I${JDK_TOPDIR}/src/share/javavm/export \
-        -I${JDK_TOPDIR}/src/$LEGACY_OPENJDK_TARGET_OS_API/javavm/export \
+        -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/javavm/export \
         -I${JDK_TOPDIR}/src/share/native/common \
-        -I${JDK_TOPDIR}/src/$LEGACY_OPENJDK_TARGET_OS_API/native/common"
+        -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
 
 # The shared libraries are compiled using the picflag.
 CFLAGS_JDKLIB="$CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
@@ -13385,7 +15234,7 @@ CXXFLAGS_JDKEXE="$CCXXFLAGS_JDK $CXXFLAGS_JDK"
 # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
 if test "x$COMPILER_TYPE" = xCL; then
     LDFLAGS_JDK="$LDFLAGS_JDK -nologo -opt:ref -incremental:no"
-    if test "x$LEGACY_OPENJDK_TARGET_CPU1" = xi586; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
         LDFLAGS_JDK="$LDFLAGS_JDK -safeseh"
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
@@ -13413,20 +15262,18 @@ else
     fi
 
     LDFLAGS_JDKLIB="${LDFLAGS_JDK} $SHARED_LIBRARY_FLAGS \
-                    -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}server \
-                    -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}client \
-  	            -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}"
-    LDFLAGS_JDKLIB_SUFFIX="-ljvm -ljava"
+                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server \
+                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client \
+                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
+
+    LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
     if test "x$COMPILER_NAME" = xossc; then
         LDFLAGS_JDKLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX -lc"
     fi
 
-    # Only the jli library is explicitly linked when the launchers are built.
-    # The libjvm is then dynamically loaded/linked by the launcher.
     LDFLAGS_JDKEXE="${LDFLAGS_JDK}"
-    if test "x$OPENJDK_TARGET_OS" != "xmacosx"; then
-       LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}jli"
-       LDFLAGS_JDKEXE_SUFFIX="-ljli"
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
     fi
 fi
 
@@ -13445,6 +15292,7 @@ case $DEBUG_LEVEL in
               JAVAC_FLAGS="$JAVAC_FLAGS -g"
               ;;
 esac
+
 
 
 
@@ -13498,6 +15346,8 @@ $as_echo "no" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     rm -f $OUTPUT_ROOT/uncygdrive?.??? $OUTPUT_ROOT/uncygdrive.obj
+    # The path to uncygdrive to use should be Unix-style
+    UNCYGDRIVE="$OUTPUT_ROOT/uncygdrive.exe"
 fi
 
 
@@ -13514,11 +15364,6 @@ ENABLE_DEBUG_SYMBOLS=default
 
 # default on macosx is no...
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
-# default for embedded is no...
-if test "x$JDK_VARIANT" = "xembedded"; then
    ENABLE_DEBUG_SYMBOLS=no
 fi
 
@@ -13642,6 +15487,10 @@ fi
 
 if test "x$OPENJDK" = "xfalse"; then
     FREETYPE2_NOT_NEEDED=yes
+fi
+
+if test "x$SUPPORT_HEADFUL" = xno; then
+    X11_NOT_NEEDED=yes
 fi
 
 ###############################################################################
@@ -14817,7 +16666,11 @@ else
     HAS_SPACE=`echo "$with_freetype" | grep " "`
     if test "x$HAS_SPACE" != x; then
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
             with_freetype=`$CYGPATH -s -m -a "$with_freetype"`
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            with_freetype=`$ECHO "$with_freetype" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
             with_freetype=`$CYGPATH -u "$with_freetype"`
         else
             as_fn_error $? "You cannot have spaces in the path to freetype! \"$with_freetype\"" "$LINENO" 5
@@ -15677,9 +17530,7 @@ fi
 
 ###############################################################################
 LIBZIP_CAN_USE_MMAP=true
-if test "x$JDK_VARIANT" = "xembedded"; then
-   LIBZIP_CAN_USE_MMAP=false
-fi
+
 
 
 ###############################################################################
@@ -15956,7 +17807,7 @@ fi
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then
-    LIBCXX="/usr/lib${LEGACY_OPENJDK_TARGET_CPU3}/libCrun.so.1"
+    LIBCXX="/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
 fi
 
 # TODO better (platform agnostic) test
@@ -15975,7 +17826,7 @@ fi
 ###############################################################################
 
 
-HOTSPOT_MAKE_ARGS="ALT_OUTPUTDIR=$HOTSPOT_OUTPUTDIR ALT_EXPORT_PATH=$HOTSPOT_DIST $HOTSPOT_TARGET"
+HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
 
 
 # The name of the Service Agent jar.
@@ -16011,25 +17862,17 @@ $as_echo_n "checking for number of cores... " >&6; }
     FOUND_CORES=no
 
     if test -f /proc/cpuinfo; then
-        # Looks like a Linux system
+        # Looks like a Linux (or cygwin) system
         NUM_CORES=`cat /proc/cpuinfo  | grep -c processor`
         FOUND_CORES=yes
-    fi
-
-    if test -x /usr/sbin/psrinfo; then
+    elif test -x /usr/sbin/psrinfo; then
         # Looks like a Solaris system
         NUM_CORES=`LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line`
         FOUND_CORES=yes
-    fi
-
-    if test -x /usr/sbin/system_profiler; then
+    elif test -x /usr/sbin/system_profiler; then
         # Looks like a MacOSX system
         NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print $5}'`
         FOUND_CORES=yes
-    fi
-
-    if test "x$build_os" = xwindows; then
-        NUM_CORES=4
     fi
 
     # For c/c++ code we run twice as many concurrent build
@@ -16065,31 +17908,26 @@ if test "x$with_memory_size" = x; then
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for memory size" >&5
 $as_echo_n "checking for memory size... " >&6; }
-    # Default to 1024MB
+    # Default to 1024 MB
     MEMORY_SIZE=1024
     FOUND_MEM=no
 
-    if test -f /proc/cpuinfo; then
-        # Looks like a Linux system
+    if test -f /proc/meminfo; then
+        # Looks like a Linux (or cygwin) system
         MEMORY_SIZE=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
         MEMORY_SIZE=`expr $MEMORY_SIZE / 1024`
         FOUND_MEM=yes
-    fi
-
-    if test -x /usr/sbin/prtconf; then
+    elif test -x /usr/sbin/prtconf; then
         # Looks like a Solaris system
         MEMORY_SIZE=`/usr/sbin/prtconf | grep "Memory size" | awk '{ print $3 }'`
         FOUND_MEM=yes
-    fi
-
-    if test -x /usr/sbin/system_profiler; then
+    elif test -x /usr/sbin/system_profiler; then
         # Looks like a MacOSX system
         MEMORY_SIZE=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Memory' | awk  '{print $2}'`
         MEMORY_SIZE=`expr $MEMORY_SIZE \* 1024`
         FOUND_MEM=yes
-    fi
-
-    if test "x$build_os" = xwindows; then
+    elif test "x$build_os" = xwindows; then
+        # Windows, but without cygwin
         MEMORY_SIZE=`systeminfo | grep 'Total Physical Memory:' | awk '{ print $4 }' | sed 's/,//'`
         FOUND_MEM=yes
     fi
@@ -16098,8 +17936,8 @@ $as_echo_n "checking for memory size... " >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MEMORY_SIZE MB" >&5
 $as_echo "$MEMORY_SIZE MB" >&6; }
     else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size defaulting to 1024MB!" >&5
-$as_echo "could not detect memory size defaulting to 1024MB!" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size defaulting to 1024 MB!" >&5
+$as_echo "could not detect memory size defaulting to 1024 MB!" >&6; }
     fi
 
 else
@@ -16111,82 +17949,52 @@ fi
 # Setup smart javac (after cores and memory have been setup)
 
 
-# Check whether --with-server-java was given.
-if test "${with_server_java+set}" = set; then :
-  withval=$with_server_java;
+# Check whether --with-sjavac-server-java was given.
+if test "${with_sjavac_server_java+set}" = set; then :
+  withval=$with_sjavac_server_java;
 fi
 
 
-if test "x$with_server_java" != x; then
-    SERVER_JAVA="$with_server_java"
-    FOUND_VERSION=`$SERVER_JAVA -version 2>&1 | grep " version \""`
+if test "x$with_sjavac_server_java" != x; then
+    SJAVAC_SERVER_JAVA="$with_sjavac_server_java"
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" = x; then
-        as_fn_error $? "Could not execute server java: $SERVER_JAVA" "$LINENO" 5
+        as_fn_error $? "Could not execute server java: $SJAVAC_SERVER_JAVA" "$LINENO" 5
     fi
 else
-    SERVER_JAVA=""
+    SJAVAC_SERVER_JAVA=""
     # Hotspot specific options.
 
-    # Test if -XX:+UseParallelOldGC is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -XX:+UseParallelOldGC to SERVER_JAVA
-    FOUND_WARN=`$JAVA -XX:+UseParallelOldGC -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -XX:+UseParallelOldGC -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -XX:+UseParallelOldGC"
-    fi
-
-
     # Test if -verbosegc is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -verbosegc to SERVER_JAVA
+    # If so, then append -verbosegc to SJAVAC_SERVER_JAVA
     FOUND_WARN=`$JAVA -verbosegc -version 2>&1 | grep -i warn`
     FOUND_VERSION=`$JAVA -verbosegc -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -verbosegc"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -verbosegc"
     fi
 
     # JRockit specific options.
 
     # Test if -Xverbose:gc is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -Xverbose:gc to SERVER_JAVA
+    # If so, then append -Xverbose:gc to SJAVAC_SERVER_JAVA
     FOUND_WARN=`$JAVA -Xverbose:gc -version 2>&1 | grep -i warn`
     FOUND_VERSION=`$JAVA -Xverbose:gc -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xverbose:gc"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xverbose:gc"
     fi
 
-    SERVER_JAVA="$JAVA $SERVER_JAVA"
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use shared server for javac" >&5
-$as_echo_n "checking whether to use shared server for javac... " >&6; }
-# Check whether --enable-javac-server was given.
-if test "${enable_javac_server+set}" = set; then :
-  enableval=$enable_javac_server; ENABLE_JAVAC_SERVER="${enableval}"
-else
-  ENABLE_JAVAC_SERVER='no'
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_SERVER" >&5
-$as_echo "$ENABLE_JAVAC_SERVER" >&6; }
-if test "x$ENABLE_JAVAC_SERVER" = xyes; then
-    JAVAC_USE_REMOTE=true
-    JAVAC_SERVERS="$OUTPUT_ROOT/javacservers"
-else
-    JAVAC_USE_REMOTE=false
-    JAVAC_SERVERS=
+    SJAVAC_SERVER_JAVA="$JAVA $SJAVAC_SERVER_JAVA"
 fi
 
 
 
-
-# Check whether --with-javac-server-cores was given.
-if test "${with_javac_server_cores+set}" = set; then :
-  withval=$with_javac_server_cores;
+# Check whether --with-sjavac-server-cores was given.
+if test "${with_sjavac_server_cores+set}" = set; then :
+  withval=$with_sjavac_server_cores;
 fi
 
-if test "x$with_javac_server_cores" != x; then
-    JAVAC_SERVER_CORES="$with_javac_server_cores"
+if test "x$with_sjavac_server_cores" != x; then
+    SJAVAC_SERVER_CORES="$with_sjavac_server_cores"
 else
     if test "$NUM_CORES" -gt 16; then
         # We set this arbitrary limit because we want to limit the heap
@@ -16194,237 +18002,152 @@ else
         # In the future we will make the javac compilers in the server
         # share more and more state, thus enabling us to use more and
         # more concurrent threads in the server.
-        JAVAC_SERVER_CORES="16"
+        SJAVAC_SERVER_CORES="16"
     else
-        JAVAC_SERVER_CORES="$NUM_CORES"
+        SJAVAC_SERVER_CORES="$NUM_CORES"
     fi
 
     if test "$MEMORY_SIZE" -gt "17000"; then
         MAX_HEAP_MEM=10000
 
-    # Test if -d64 is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -d64 to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
+    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -d64 to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -d64"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
     fi
 
 
-    # Test if -Xms10G -Xmx10G is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms10G -Xmx10G to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep " version \""`
+    # Test if -Xms10G -Xmx10G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms10G -Xmx10G to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms10G -Xmx10G"
-    fi
-
-
-    # Test if -Xmn2G is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn2G to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn2G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn2G -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn2G"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G"
     fi
 
     elif test "$MEMORY_SIZE" -gt "10000"; then
         MAX_HEAP_MEM=6000
 
-    # Test if -d64 is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -d64 to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
+    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -d64 to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -d64"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
     fi
 
 
-    # Test if -Xms6G -Xmx6G is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms6G -Xmx6G to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep " version \""`
+    # Test if -Xms6G -Xmx6G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms6G -Xmx6G to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms6G -Xmx6G"
-    fi
-
-
-    # Test if -Xmn1G is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn1G to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn1G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn1G -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn1G"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G"
     fi
 
     elif test "$MEMORY_SIZE" -gt "5000"; then
         MAX_HEAP_MEM=3000
 
-    # Test if -d64 is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -d64 to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
+    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -d64 to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -d64"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
     fi
 
 
-    # Test if -Xms1G -Xmx3G is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms1G -Xmx3G to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep " version \""`
+    # Test if -Xms1G -Xmx3G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms1G -Xmx3G to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms1G -Xmx3G"
-    fi
-
-
-    # Test if -Xmn256M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn256M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn256M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G"
     fi
 
     elif test "$MEMORY_SIZE" -gt "3800"; then
         MAX_HEAP_MEM=2500
 
-    # Test if -Xms1G -Xmx2500M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms1G -Xmx2500M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep " version \""`
+    # Test if -Xms1G -Xmx2500M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms1G -Xmx2500M to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms1G -Xmx2500M"
-    fi
-
-
-    # Test if -Xmn256M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn256M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn256M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M"
     fi
 
     elif test "$MEMORY_SIZE" -gt "1900"; then
         MAX_HEAP_MEM=1200
 
-    # Test if -Xms700M -Xmx1200M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms700M -Xmx1200M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms700M -Xmx1200M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms700M -Xmx1200M -version 2>&1 | grep " version \""`
+    # Test if -Xms700M -Xmx1400M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms700M -Xmx1400M to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms700M -Xmx1200M"
-    fi
-
-
-    # Test if -Xmn256M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn256M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn256M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn256M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M"
     fi
 
     elif test "$MEMORY_SIZE" -gt "1000"; then
         MAX_HEAP_MEM=900
 
-    # Test if -Xms400M -Xmx900M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms400M -Xmx900M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms400M -Xmx900M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms400M -Xmx900M -version 2>&1 | grep " version \""`
+    # Test if -Xms400M -Xmx1100M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms400M -Xmx1100M to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms400M -Xmx900M"
-    fi
-
-
-    # Test if -Xmn128M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn128M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn128M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn128M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn128M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M"
     fi
 
     else
         MAX_HEAP_MEM=512
 
-    # Test if -Xms256M -Xmx512M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xms256M -Xmx512M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep " version \""`
+    # Test if -Xms256M -Xmx512M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -Xms256M -Xmx512M to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xms256M -Xmx512M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M"
+    fi
+
     fi
 
 
-    # Test if -Xmn128M is a valid argument to $SERVER_JAVA (often is $JAVA passed as $SERVER_JAVA)
-    # If so, then append -Xmn128M to SERVER_JAVA
-    FOUND_WARN=`$SERVER_JAVA -Xmn128M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SERVER_JAVA -Xmn128M -version 2>&1 | grep " version \""`
+    # Test if -XX:PermSize=32m is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -XX:PermSize=32m to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:PermSize=32m -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:PermSize=32m -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SERVER_JAVA="$SERVER_JAVA -Xmn128M"
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:PermSize=32m"
     fi
 
+
+    # Test if -XX:MaxPermSize=160m is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -XX:MaxPermSize=160m to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m -version 2>&1 | grep " version \""`
+    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m"
     fi
+
+
+    # Test if -XX:ThreadStackSize=$STACK_SIZE is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
+    # If so, then append -XX:ThreadStackSize=$STACK_SIZE to SJAVAC_SERVER_JAVA
+    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep -i warn`
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep " version \""`
+    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE"
+    fi
+
 
     MAX_COMPILERS_IN_HEAP=`expr $MAX_HEAP_MEM / 501`
-    if test "$JAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
+    if test "$SJAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking if number of server cores must be reduced" >&5
 $as_echo_n "checking if number of server cores must be reduced... " >&6; }
-        JAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, to $JAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&5
-$as_echo "yes, to $JAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&6; }
-    fi
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to track dependencies between Java packages" >&5
-$as_echo_n "checking whether to track dependencies between Java packages... " >&6; }
-# Check whether --enable-javac-deps was given.
-if test "${enable_javac_deps+set}" = set; then :
-  enableval=$enable_javac_deps; ENABLE_JAVAC_DEPS="${enableval}"
-else
-  ENABLE_JAVAC_DEPS='no'
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_DEPS" >&5
-$as_echo "$ENABLE_JAVAC_DEPS" >&6; }
-if test "x$ENABLE_JAVAC_DEPS" = xyes; then
-    JAVAC_USE_DEPS=true
-else
-    JAVAC_USE_DEPS=false
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use multiple cores for javac compilation" >&5
-$as_echo_n "checking whether to use multiple cores for javac compilation... " >&6; }
-# Check whether --enable-javac-multi-core was given.
-if test "${enable_javac_multi_core+set}" = set; then :
-  enableval=$enable_javac_multi_core; ENABLE_JAVAC_MULTICORE="${enableval}"
-else
-  ENABLE_JAVAC_MULTICORE='no'
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_MULTICORE" >&5
-$as_echo "$ENABLE_JAVAC_MULTICORE" >&6; }
-if test "x$ENABLE_JAVAC_MULTICORE" = xyes; then
-    JAVAC_USE_MODE=MULTI_CORE_CONCURRENT
-else
-    JAVAC_USE_MODE=SINGLE_THREADED_BATCH
-    if test "x$ENABLE_JAVAC_DEPS" = xyes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Dependency tracking is not supported with single threaded batch compiles of Java source roots. Please add --disable-javac-deps to your configure options." >&5
-$as_echo "$as_me: WARNING: Dependency tracking is not supported with single threaded batch compiles of Java source roots. Please add --disable-javac-deps to your configure options." >&2;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Disabling dependency tracking for you now." >&5
-$as_echo "$as_me: WARNING: Disabling dependency tracking for you now." >&2;}
-        JAVAC_USE_DEPS=false
-    fi
-    if test "x$ENABLE_JAVAC_SERVER" = xyes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The javac server will not be used since single threaded batch compiles are run within their own JVM. Please add --disable-javac-server to your configure options." >&5
-$as_echo "$as_me: WARNING: The javac server will not be used since single threaded batch compiles are run within their own JVM. Please add --disable-javac-server to your configure options." >&2;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Disabling javac server for you now." >&5
-$as_echo "$as_me: WARNING: Disabling javac server for you now." >&2;}
-        JAVAC_USE_REMOTE=false
+        SJAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&5
+$as_echo "yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&6; }
     fi
 fi
 
@@ -16440,6 +18163,13 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_SJAVAC" >&5
 $as_echo "$ENABLE_SJAVAC" >&6; }
+
+
+if test "x$ENABLE_SJAVAC" = xyes; then
+    SJAVAC_SERVER_DIR="$OUTPUT_ROOT/javacservers"
+else
+    SJAVAC_SERVER_DIR=
+fi
 
 
 
@@ -16666,7 +18396,7 @@ fi
 
 
 
-# At the end, call the closed hook. (Dummy macro if no closed sources available)
+# At the end, call the custom hook. (Dummy macro if no custom sources available)
 
 
 # We're messing a bit with internal autoconf variables to put the config.status
@@ -17365,6 +19095,9 @@ do
   case $ac_config_target in
     "$OUTPUT_ROOT/config.h") CONFIG_HEADERS="$CONFIG_HEADERS $OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config.h.in" ;;
     "$OUTPUT_ROOT/spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in" ;;
+    "$OUTPUT_ROOT/hotspot-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in" ;;
+    "$OUTPUT_ROOT/bootcycle-spec.gmk") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in" ;;
+    "$OUTPUT_ROOT/compare.sh") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in" ;;
     "$OUTPUT_ROOT/spec.sh") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in" ;;
     "$OUTPUT_ROOT/Makefile") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in" ;;
 
@@ -17945,6 +19678,9 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+# Make the compare script executable
+$CHMOD +x $OUTPUT_ROOT/compare.sh
 
 # Finally output some useful information to the user
 
