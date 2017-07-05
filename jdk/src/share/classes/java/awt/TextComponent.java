@@ -35,7 +35,7 @@ import java.text.BreakIterator;
 import javax.swing.text.AttributeSet;
 import javax.accessibility.*;
 import java.awt.im.InputMethodRequests;
-
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The <code>TextComponent</code> class is the superclass of
@@ -57,6 +57,8 @@ import java.awt.im.InputMethodRequests;
  * @author      Arthur van Hoff
  * @since       JDK1.0
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class TextComponent extends Component implements Accessible {
 
     /**

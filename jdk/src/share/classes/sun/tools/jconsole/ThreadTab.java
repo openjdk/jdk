@@ -35,14 +35,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.List;
 
-import sun.awt.*;
-
-import static sun.tools.jconsole.OverviewPanel.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 
@@ -51,7 +48,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
     PlotterPanel threadMeter;
     TimeComboBox timeComboBox;
     JTabbedPane threadListTabbedPane;
-    DefaultListModel listModel;
+    DefaultListModel<Long> listModel;
     JTextField filterTF;
     JLabel messageLabel;
     JSplitPane threadsSplitPane;
@@ -63,9 +60,6 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
     private static final String threadCountKey   = "threadCount";
     private static final String peakKey          = "peak";
-
-    private static final String threadCountName   = Resources.getText("Live Threads");
-    private static final String peakName          = Resources.getText("Peak");
 
     private static final Color  threadCountColor = Plotter.defaultColor;
     private static final Color  peakColor        = Color.red;
@@ -93,7 +87,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
 
     public static String getTabName() {
-        return Resources.getText("Threads");
+        return Messages.THREADS;
     }
 
     public ThreadTab(VMPanel vmPanel) {
@@ -111,28 +105,28 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
         topPanel.add(controlPanel, BorderLayout.CENTER);
 
-        threadMeter = new PlotterPanel(Resources.getText("Number of Threads"),
+        threadMeter = new PlotterPanel(Messages.NUMBER_OF_THREADS,
                                        Plotter.Unit.NONE, true);
-        threadMeter.plotter.createSequence(threadCountKey, threadCountName,  threadCountColor, true);
-        threadMeter.plotter.createSequence(peakKey,        peakName,         peakColor,        true);
+        threadMeter.plotter.createSequence(threadCountKey, Messages.LIVE_THREADS,  threadCountColor, true);
+        threadMeter.plotter.createSequence(peakKey,        Messages.PEAK,         peakColor,        true);
         setAccessibleName(threadMeter.plotter,
-                          getText("ThreadTab.threadPlotter.accessibleName"));
+                          Messages.THREAD_TAB_THREAD_PLOTTER_ACCESSIBLE_NAME);
 
         plotterPanel.add(threadMeter);
 
         timeComboBox = new TimeComboBox(threadMeter.plotter);
-        controlPanel.add(new LabeledComponent(Resources.getText("Time Range:"),
-                                              getMnemonicInt("Time Range:"),
+        controlPanel.add(new LabeledComponent(Messages.TIME_RANGE_COLON,
+                                              Resources.getMnemonicInt(Messages.TIME_RANGE_COLON),
                                               timeComboBox));
 
-        listModel = new DefaultListModel();
+        listModel = new DefaultListModel<Long>();
 
         JTextArea textArea = new JTextArea();
         textArea.setBorder(thinEmptyBorder);
         textArea.setEditable(false);
         setAccessibleName(textArea,
-                          getText("ThreadTab.threadInfo.accessibleName"));
-        JList list = new ThreadJList(listModel, textArea);
+                          Messages.THREAD_TAB_THREAD_INFO_ACCESSIBLE_NAME);
+        ThreadJList list = new ThreadJList(listModel, textArea);
 
         Dimension di = new Dimension(super.getPreferredSize());
         di.width = Math.min(di.width, 200);
@@ -165,11 +159,11 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                                                  filterTF.getPreferredSize().height));
         firstTabToolPanel.add(separator);
 
-        JButton detectDeadlockButton = new JButton(Resources.getText("Detect Deadlock"));
-        detectDeadlockButton.setMnemonic(getMnemonicInt("Detect Deadlock"));
+        JButton detectDeadlockButton = new JButton(Messages.DETECT_DEADLOCK);
+        detectDeadlockButton.setMnemonic(Resources.getMnemonicInt(Messages.DETECT_DEADLOCK));
         detectDeadlockButton.setActionCommand("detectDeadlock");
         detectDeadlockButton.addActionListener(this);
-        detectDeadlockButton.setToolTipText(getText("Detect Deadlock.toolTip"));
+        detectDeadlockButton.setToolTipText(Messages.DETECT_DEADLOCK_TOOLTIP);
         firstTabToolPanel.add(detectDeadlockButton);
 
         messageLabel = new JLabel();
@@ -177,7 +171,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
         firstTabPanel.add(threadsSplitPane, BorderLayout.CENTER);
         firstTabPanel.add(firstTabToolPanel, BorderLayout.SOUTH);
-        threadListTabbedPane.addTab(Resources.getText("Threads"), firstTabPanel);
+        threadListTabbedPane.addTab(Messages.THREADS, firstTabPanel);
 
         plotterPanel.add(threadListTabbedPane);
     }
@@ -356,32 +350,32 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                         }
                         if (ti != null) {
                             if (ti.getLockName() == null) {
-                                sb.append(Resources.getText("Name State",
+                                sb.append(Resources.format(Messages.NAME_STATE,
                                               ti.getThreadName(),
                                               ti.getThreadState().toString()));
                             } else if (ti.getLockOwnerName() == null) {
-                                sb.append(Resources.getText("Name State LockName",
+                                sb.append(Resources.format(Messages.NAME_STATE_LOCK_NAME,
                                               ti.getThreadName(),
                                               ti.getThreadState().toString(),
                                               ti.getLockName()));
                             } else {
-                                sb.append(Resources.getText("Name State LockName LockOwner",
+                                sb.append(Resources.format(Messages.NAME_STATE_LOCK_NAME_LOCK_OWNER,
                                               ti.getThreadName(),
                                               ti.getThreadState().toString(),
                                               ti.getLockName(),
                                               ti.getLockOwnerName()));
                             }
-                            sb.append(Resources.getText("BlockedCount WaitedCount",
+                            sb.append(Resources.format(Messages.BLOCKED_COUNT_WAITED_COUNT,
                                               ti.getBlockedCount(),
                                               ti.getWaitedCount()));
-                            sb.append(Resources.getText("Stack trace"));
+                            sb.append(Messages.STACK_TRACE);
                             int index = 0;
                             for (StackTraceElement e : ti.getStackTrace()) {
                                 sb.append(e.toString()+"\n");
                                 if (monitors != null) {
                                     for (MonitorInfo mi : monitors) {
                                         if (mi.getLockedStackDepth() == index) {
-                                            sb.append(Resources.getText("Monitor locked", mi.toString()));
+                                            sb.append(Resources.format(Messages.MONITOR_LOCKED, mi.toString()));
                                         }
                                     }
                                 }
@@ -429,7 +423,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                                 try {
                                     SwingUtilities.invokeAndWait(new Runnable() {
                                         public void run() {
-                                            String msg = Resources.getText("No deadlock detected");
+                                            String msg = Messages.NO_DEADLOCK_DETECTED;
                                             messageLabel.setText(msg);
                                             threadListTabbedPane.revalidate();
                                         }
@@ -459,13 +453,13 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
                             if (deadlockedThreads != null) {
                                 for (int i = 0; i < deadlockedThreads.length; i++) {
-                                    DefaultListModel listModel = new DefaultListModel();
+                                    DefaultListModel<Long> listModel = new DefaultListModel<Long>();
                                     JTextArea textArea = new JTextArea();
                                     textArea.setBorder(thinEmptyBorder);
                                     textArea.setEditable(false);
                                     setAccessibleName(textArea,
-                                        getText("ThreadTab.threadInfo.accessibleName"));
-                                    JList list = new ThreadJList(listModel, textArea);
+                                                      Messages.THREAD_TAB_THREAD_INFO_ACCESSIBLE_NAME);
+                                    ThreadJList list = new ThreadJList(listModel, textArea);
                                     JScrollPane threadlistSP = new JScrollPane(list);
                                     JScrollPane textAreaSP = new JScrollPane(textArea);
                                     threadlistSP.setBorder(null);
@@ -477,9 +471,9 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                                     splitPane.setDividerLocation(threadsSplitPane.getDividerLocation());
                                     String tabName;
                                     if (deadlockedThreads.length > 1) {
-                                        tabName = Resources.getText("deadlockTabN", i+1);
+                                        tabName = Resources.format(Messages.DEADLOCK_TAB_N, i+1);
                                     } else {
-                                        tabName = Resources.getText("deadlockTab");
+                                        tabName = Messages.DEADLOCK_TAB;
                                     }
                                     threadListTabbedPane.addTab(tabName, splitPane);
 
@@ -591,10 +585,10 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
 
 
-    private class ThreadJList extends JList {
+    private class ThreadJList extends JList<Long> {
         private JTextArea textArea;
 
-        ThreadJList(DefaultListModel listModel, JTextArea textArea) {
+        ThreadJList(DefaultListModel<Long> listModel, JTextArea textArea) {
             super(listModel);
 
             this.textArea = textArea;
@@ -603,7 +597,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
             addListSelectionListener(ThreadTab.this);
             setCellRenderer(new DefaultListCellRenderer() {
-                public Component getListCellRendererComponent(JList list, Object value, int index,
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                               boolean isSelected, boolean cellHasFocus) {
                     super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
@@ -691,12 +685,12 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
     private static class ThreadOverviewPanel extends OverviewPanel {
         ThreadOverviewPanel() {
-            super(getText("Threads"), threadCountKey, threadCountName, null);
+            super(Messages.THREADS, threadCountKey,  Messages.LIVE_THREADS, null);
         }
 
         private void updateThreadsInfo(long tlCount, long tpCount, long ttCount, long timeStamp) {
             getPlotter().addValues(timeStamp, tlCount);
-            getInfoLabel().setText(getText(infoLabelFormat, tlCount, tpCount, ttCount));
+            getInfoLabel().setText(Resources.format(infoLabelFormat, tlCount, tpCount, ttCount));
         }
     }
 }

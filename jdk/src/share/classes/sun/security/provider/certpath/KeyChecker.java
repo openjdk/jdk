@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.security.cert.*;
 import java.security.cert.PKIXReason;
 
 import sun.security.util.Debug;
-import sun.security.x509.PKIXExtensions;
+import static sun.security.x509.PKIXExtensions.*;
 
 /**
  * KeyChecker is a <code>PKIXCertPathChecker</code> that checks that the
@@ -45,33 +45,29 @@ import sun.security.x509.PKIXExtensions;
 class KeyChecker extends PKIXCertPathChecker {
 
     private static final Debug debug = Debug.getInstance("certpath");
-    // the index of keyCertSign in the boolean KeyUsage array
-    private static final int keyCertSign = 5;
     private final int certPathLen;
-    private CertSelector targetConstraints;
+    private final CertSelector targetConstraints;
     private int remainingCerts;
 
     private Set<String> supportedExts;
 
     /**
-     * Default Constructor
+     * Creates a KeyChecker.
      *
      * @param certPathLen allowable cert path length
      * @param targetCertSel a CertSelector object specifying the constraints
      * on the target certificate
      */
-    KeyChecker(int certPathLen, CertSelector targetCertSel)
-        throws CertPathValidatorException
-    {
+    KeyChecker(int certPathLen, CertSelector targetCertSel) {
         this.certPathLen = certPathLen;
         this.targetConstraints = targetCertSel;
-        init(false);
     }
 
     /**
      * Initializes the internal state of the checker from parameters
      * specified in the constructor
      */
+    @Override
     public void init(boolean forward) throws CertPathValidatorException {
         if (!forward) {
             remainingCerts = certPathLen;
@@ -81,16 +77,18 @@ class KeyChecker extends PKIXCertPathChecker {
         }
     }
 
-    public final boolean isForwardCheckingSupported() {
+    @Override
+    public boolean isForwardCheckingSupported() {
         return false;
     }
 
+    @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = new HashSet<String>();
-            supportedExts.add(PKIXExtensions.KeyUsage_Id.toString());
-            supportedExts.add(PKIXExtensions.ExtendedKeyUsage_Id.toString());
-            supportedExts.add(PKIXExtensions.SubjectAlternativeName_Id.toString());
+            supportedExts = new HashSet<String>(3);
+            supportedExts.add(KeyUsage_Id.toString());
+            supportedExts.add(ExtendedKeyUsage_Id.toString());
+            supportedExts.add(SubjectAlternativeName_Id.toString());
             supportedExts = Collections.unmodifiableSet(supportedExts);
         }
         return supportedExts;
@@ -102,20 +100,20 @@ class KeyChecker extends PKIXCertPathChecker {
      *
      * @param cert the Certificate
      * @param unresolvedCritExts the unresolved critical extensions
-     * @exception CertPathValidatorException Exception thrown if certificate
-     * does not verify
+     * @throws CertPathValidatorException if certificate does not verify
      */
+    @Override
     public void check(Certificate cert, Collection<String> unresCritExts)
         throws CertPathValidatorException
     {
-        X509Certificate currCert = (X509Certificate) cert;
+        X509Certificate currCert = (X509Certificate)cert;
 
         remainingCerts--;
 
         // if final certificate, check that target constraints are satisfied
         if (remainingCerts == 0) {
-            if ((targetConstraints != null) &&
-                (targetConstraints.match(currCert) == false)) {
+            if (targetConstraints != null &&
+                targetConstraints.match(currCert) == false) {
                 throw new CertPathValidatorException("target certificate " +
                     "constraints check failed");
             }
@@ -126,25 +124,26 @@ class KeyChecker extends PKIXCertPathChecker {
 
         // remove the extensions that we have checked
         if (unresCritExts != null && !unresCritExts.isEmpty()) {
-            unresCritExts.remove(PKIXExtensions.KeyUsage_Id.toString());
-            unresCritExts.remove(PKIXExtensions.ExtendedKeyUsage_Id.toString());
-            unresCritExts.remove(
-                PKIXExtensions.SubjectAlternativeName_Id.toString());
+            unresCritExts.remove(KeyUsage_Id.toString());
+            unresCritExts.remove(ExtendedKeyUsage_Id.toString());
+            unresCritExts.remove(SubjectAlternativeName_Id.toString());
         }
     }
 
+    // the index of keyCertSign in the boolean KeyUsage array
+    private static final int KEY_CERT_SIGN = 5;
     /**
-     * Static method to verify that the key usage and extended key usage
-     * extension in a CA cert. The key usage extension, if present, must
-     * assert the keyCertSign bit. The extended key usage extension, if
-     * present, must include anyExtendedKeyUsage.
+     * Verifies the key usage extension in a CA cert.
+     * The key usage extension, if present, must assert the keyCertSign bit.
+     * The extended key usage extension is not checked (see CR 4776794 for
+     * more information).
      */
     static void verifyCAKeyUsage(X509Certificate cert)
             throws CertPathValidatorException {
         String msg = "CA key usage";
         if (debug != null) {
             debug.println("KeyChecker.verifyCAKeyUsage() ---checking " + msg
-                + "...");
+                          + "...");
         }
 
         boolean[] keyUsageBits = cert.getKeyUsage();
@@ -156,7 +155,7 @@ class KeyChecker extends PKIXCertPathChecker {
         }
 
         // throw an exception if the keyCertSign bit is not set
-        if (!keyUsageBits[keyCertSign]) {
+        if (!keyUsageBits[KEY_CERT_SIGN]) {
             throw new CertPathValidatorException
                 (msg + " check failed: keyCertSign bit is not set", null,
                  null, -1, PKIXReason.INVALID_KEY_USAGE);
@@ -164,7 +163,7 @@ class KeyChecker extends PKIXCertPathChecker {
 
         if (debug != null) {
             debug.println("KeyChecker.verifyCAKeyUsage() " + msg
-                + " verified.");
+                          + " verified.");
         }
     }
 }

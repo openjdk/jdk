@@ -25,12 +25,9 @@
 
 package sun.nio.ch;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 // Constants for reporting I/O status
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public final class IOStatus {
 
     private IOStatus() { }

@@ -49,6 +49,8 @@ package java.text;
 public
 class ParseException extends Exception {
 
+    private static final long serialVersionUID = 2703218443322787634L;
+
     /**
      * Constructs a ParseException with the specified detail message and
      * offset.

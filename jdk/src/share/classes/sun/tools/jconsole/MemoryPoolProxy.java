@@ -26,7 +26,6 @@
 package sun.tools.jconsole;
 
 import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
 import com.sun.management.GarbageCollectorMXBean;
@@ -34,21 +33,18 @@ import com.sun.management.GcInfo;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static java.lang.management.ManagementFactory.*;
 
 public class MemoryPoolProxy {
     private String poolName;
     private ProxyClient client;
-    private ObjectName  objName;
     private MemoryPoolMXBean pool;
     private Map<ObjectName,Long> gcMBeans;
     private GcInfo lastGcInfo;
 
     public MemoryPoolProxy(ProxyClient client, ObjectName poolName) throws java.io.IOException {
         this.client = client;
-        this.objName = objName;
         this.pool = client.getMXBean(poolName, MemoryPoolMXBean.class);
         this.poolName = this.pool.getName();
         this.gcMBeans = new HashMap<ObjectName,Long>();
@@ -71,10 +67,6 @@ public class MemoryPoolProxy {
 
     public boolean isCollectedMemoryPool() {
         return (gcMBeans.size() != 0);
-    }
-
-    public ObjectName getObjectName() {
-        return objName;
     }
 
     public MemoryPoolStat getStat() throws java.io.IOException {

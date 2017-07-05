@@ -141,7 +141,7 @@ class XLabelPeer extends XComponentPeer implements LabelPeer {
     }
     public void setFont(Font f) {
         super.setFont(f);
-        target.repaint();
+        repaint();
     }
 
     public void setAlignment(int align) {

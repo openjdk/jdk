@@ -25,6 +25,8 @@
 
 package java.awt.print;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>Pageable</code> implementation represents a set of
  * pages to be printed. The <code>Pageable</code> object returns
@@ -33,6 +35,8 @@ package java.awt.print;
  * @see java.awt.print.PageFormat
  * @see java.awt.print.Printable
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface Pageable {
 
     /**

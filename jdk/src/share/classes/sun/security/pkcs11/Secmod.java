@@ -35,6 +35,8 @@ import java.security.cert.X509Certificate;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The Secmod class defines the interface to the native NSS
  * library and the configuration information it stores in its
@@ -55,6 +57,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class Secmod {
 
     private final static boolean DEBUG = false;

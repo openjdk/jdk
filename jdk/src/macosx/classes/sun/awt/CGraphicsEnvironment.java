@@ -181,6 +181,10 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
         return devices.values().toArray(new CGraphicsDevice[devices.values().size()]);
     }
 
+    public synchronized GraphicsDevice getScreenDevice(int displayID) {
+        return devices.get(displayID);
+    }
+
     @Override
     protected synchronized int getNumScreens() {
         return devices.size();

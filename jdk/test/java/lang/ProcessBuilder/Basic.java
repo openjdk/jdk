@@ -248,6 +248,7 @@ public class Basic {
 
     private static String getenvAsString(Map<String,String> environment) {
         StringBuilder sb = new StringBuilder();
+        environment = new TreeMap<>(environment);
         for (Map.Entry<String,String> e : environment.entrySet())
             // Ignore magic environment variables added by the launcher
             if (! e.getKey().equals("NLSPATH") &&
@@ -1625,7 +1626,7 @@ public class Basic {
             childArgs.add("System.getenv()");
             String[] cmdp = childArgs.toArray(new String[childArgs.size()]);
             String[] envp;
-            String[] envpWin = {"=ExitValue=3", "=C:=\\", "SystemRoot="+systemRoot};
+            String[] envpWin = {"=C:=\\", "=ExitValue=3", "SystemRoot="+systemRoot};
             String[] envpOth = {"=ExitValue=3", "=C:=\\"};
             if (Windows.is()) {
                 envp = envpWin;
@@ -1633,7 +1634,7 @@ public class Basic {
                 envp = envpOth;
             }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
-            String expected = Windows.is() ? "=C:=\\,SystemRoot="+systemRoot+",=ExitValue=3," : "=C:=\\,";
+            String expected = Windows.is() ? "=C:=\\,=ExitValue=3,SystemRoot="+systemRoot+"," : "=C:=\\,";
             String commandOutput = commandOutput(p);
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
@@ -1690,7 +1691,7 @@ public class Basic {
                 commandOutput = removeMacExpectedVars(commandOutput);
             }
             check(commandOutput.equals(Windows.is()
-                    ? "SystemRoot="+systemRoot+",LC_ALL=C,"
+                    ? "LC_ALL=C,SystemRoot="+systemRoot+","
                     : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
