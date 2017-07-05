@@ -1,204 +1,294 @@
-'\" t
-.\"
-.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH jps 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH ̾��
-jps \- Java ���ۥޥ���ץ��������ơ������ġ���
-.\"
-.SH ����
-.B jps 
-.BI [ options ] 
-.BI [ hostid ] 
+." Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jps 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
-.SH �ѥ�᡼��
-.if t .TP 20
-.if n .TP 15
-.I options
-���ޥ�ɹԥ��ץ����
-.if t .TP 20
-.if n .TP 15
-.I hostid
-�ץ�������ݡ��Ȥ���������ۥ��ȤΥۥ��ȼ��̻ҡ�
-.I hostid
-�ˤϡ��̿��ץ��ȥ��롢�ݡ����ֹ桢����Ӥ���¾��ͭ�μ����ǡ����򼨤����ץ���󥳥�ݡ��ͥ�Ȥ�ޤ�뤳�Ȥ��Ǥ��ޤ���
-.SH ��ǽ����
-.B jps
-�ġ���ϡ��������åȥ����ƥ��η�¬�����դ� HotSpot Java ���ۥޥ��� (JVM) ��ꥹ�Ȥ��ޤ������Υġ���ϡ����������������� JVM ��ξ����������𤷤ޤ���
-.LP
-�ۥ��� ID ����ꤻ����
-.B jps
-���¹Ԥ��줿���ϡ���������ۥ��Ⱦ�η�¬�����դ� JVM ��õ���ޤ����ۥ��� ID �����ꤵ�줿���ϡ����ꤵ�줿�ۥ��Ⱦ�� JVM �򡢻��ꤵ�줿�ץ��ȥ���ȥݡ��Ȥ���Ѥ���õ���ޤ���
-.B jstatd 
-�ץ��������������åȥۥ��Ⱦ�ǲ�ư���Ƥ��뤳�Ȥ�����Ȥʤ�ޤ���
-.LP
-.B jps 
-���ޥ�ɤϡ��������åȥ����ƥ��Ǹ��Ĥ��ä���¬�����դ� JVM �Τ��줾��ˤĤ��ơ��������� VM ���̻� (lvmid) ����𤷤ޤ���lvmid �ϡ����̤ˡ����ڥ졼�ƥ��󥰥����ƥ�� JVM �ץ������Υץ��������̻ҤǤ�����ɬ�����⤽���Ȥϸ¤�ޤ��󡣥��ץ���󤬻��ꤵ��ʤ��ä���硢
-.B jps 
-�ϳ� Java ���ץꥱ�������� lvmid �θ��û�������Υ��ץꥱ�������Υ��饹̾�ޤ��� jar �ե�����̾��³���ƥꥹ�Ȥ��ޤ���û�������Υ��饹̾�ޤ��� JAR �ե�����̾�Ǥϡ����饹�Υѥå���������� JAR �ե�����Υѥ�����Ͼʤ���ޤ���
-.LP
-.B jps 
-���ޥ�ɤ� java ��ư�ġ������Ѥ��ơ����饹̾�� main �᥽�åɤ��Ϥ��줿������õ���ޤ����������å� JVM ���������൯ư�ġ���ǵ�ư���줿��硢���饹̾ (�ޤ��� JAR �ե�����̾) �� main �᥽�åɤ��Ϥ��줿����������Ǥ��ޤ��󡣤��ξ�硢
-.B jps 
-���ޥ�ɤϡ����饹̾�ޤ��� JAR �ե�����̾�� main �᥽�åɤΰ����Ȥ��ơ�Unknown �Ȥ���ʸ�������Ϥ��ޤ���
-.LP
-.B jps
-���ޥ�ɤˤ�ä���������� JVM �Υꥹ�Ȥϡ����ޥ�ɤ�¹Ԥ������Τ˵��Ĥ���Ƥ��륢���������ˤ�ä����¤���뤳�Ȥ�����ޤ������Υ��ޥ�ɤϡ����ڥ졼�ƥ��󥰥����ƥ��ͭ�Υ����������浡���˽��äơ����Τ���������������äƤ��� JVM ������ꥹ�Ȥ��ޤ���
-.LP
-�� - ���Υ桼�ƥ���ƥ��ϥ��ݡ��Ȥ���Ƥ��ʤ����ᡢJDK �ξ���ΥС������Ǥϻ��ѤǤ��ʤ���ǽ��������ޤ������ߡ�Windows 98 ����� Windows ME �ץ�åȥե�����Ǥϻ��ѤǤ��ޤ���
-.SH ���ץ����
-.B jps 
-���ޥ�ɤϡ����ޥ�ɽ��Ϥ��ѹ�����¿���Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ��������Υ��ץ����ϡ����衢�ѹ��ޤ��Ϻ������뤳�Ȥ�����ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-q
-���饹̾��JAR �ե�����̾������� main �᥽�åɤ��Ϥ��줿�����ν��Ϥ��������ơ��������� VM ���̻ҤΥꥹ�Ȥ������������ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-m
-main �᥽�åɤ��Ϥ��줿��������Ϥ��ޤ��������� JVM �ξ�硢���Ϥ� NULL �ˤʤ뤳�Ȥ�����ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-l
-���ץꥱ�������� main ���饹�Υե�ѥå�����̾���ޤ��ϥ��ץꥱ�������� JAR �ե�����Υե�ѥ�̾����Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-v
-JVM ���Ϥ��줿��������Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-V
-�ե饰�ե����� (.hotspotrc �ե����롢�ޤ��� -XX:Flags=<filename> �����ˤ�äƻ��ꤵ�줿�ե�����) ���̤��� JVM ���Ϥ��줿��������Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-J "option"
-.B jps 
-�ˤ�äƸƤӽФ��줿 java ��ư�ġ���˥��ץ������Ϥ��ޤ���
-���Ȥ��С�-J-Xms48m �ϡ���ư����� 48M �Х��Ȥ����ꤷ�ޤ���Java �Ǻ������줿���ؤ� VM �¹ԥ��ץꥱ�������˥��ץ������Ϥ��Τ���\-J �ΰ���Ū��§�Ǥ���
-.SH �ۥ��ȼ��̻�
-�ۥ��ȼ��̻� (hostid) �ϡ��������åȥ����ƥ�򼨤�ʸ����Ǥ���hostid ʸ����ι�ʸ�ϡ�URI �ι�ʸ�Ȥۤ�Ʊ���Ǥ���
-.LP
-.RS
-.ft 3
-.nf
-[protocol:][[//]hostname][:port][/servername]
-.fi
-.ft 1
-.RE
-.if t .TP 20
-.if n .TP 15
-.B protocol
-�̿��ץ��ȥ��롣protocol ���ʤ��졢hostname �����ꤵ��ʤ��ä���硢�ǥե���ȤΥץ��ȥ���ϡ��ץ�åȥե�����˸�ͭ�κ�Ŭ�����줿��������ץ��ȥ���Ǥ���protocol ���ʤ��졢hostname �����ꤵ�줿��硢�ǥե���ȤΥץ��ȥ���� rmi �Ǥ���
-.if t .TP 20
-.if n .TP 15
-.I hostname
-�������åȥۥ��Ȥ򼨤��ۥ���̾�ޤ��� IP ���ɥ쥹��hostname ���ʤ��줿��硢�������åȥۥ��Ȥϥ�������ۥ��ȤǤ���
-.if t .TP 20
-.if n .TP 15
-.I port
-��⡼�ȥ����С����̿����뤿��Υǥե���ȥݡ��ȡ�hostname ���ʤ���뤫��protocol ����Ŭ�����줿��������ץ��ȥ������ꤷ�Ƥ����硢port ��̵�뤵��ޤ��������Ǥʤ���硢port �ѥ�᡼���ΰ����ϡ������˸�ͭ�Ǥ����ǥե���Ȥ� rmi �ץ��ȥ���ξ�硢port �ϥ�⡼�ȥۥ��Ⱦ�� rmiregistry �Υݡ����ֹ�򼨤��ޤ���port ���ʤ��졢protocol �� rmi �򼨤����ϡ��ǥե���Ȥ� rmiregistry �ݡ��� (1099) �����Ѥ���ޤ���
-.if t .TP 20
-.if n .TP 15
-.I servername
-���Υѥ�᡼���μ�갷���ϡ������ˤ�äưۤʤ�ޤ�����Ŭ�����줿��������ץ��ȥ���ξ�硢���Υե�����ɤ�̵�뤵��ޤ���rmi �ץ��ȥ���ξ�硢���Υѥ�᡼���ϡ���⡼�ȥۥ��Ⱦ�� RMI ��⡼�ȥ��֥������Ȥ�̾����ɽ��ʸ����Ǥ���
-.B jstatd
-���ޥ�ɤ� \-n ���ץ����򻲾Ȥ��Ƥ���������
-.SH ���Ϸ���
-jps ���ޥ�ɤν��Ϥϡ����Υѥ�����˽����ޤ���
-.LP
-.RS
-.ft 3
-.nf
-lvmid [ [ classname | JARfilename | "Unknown"] [ arg* ] [ jvmarg* ] ]
-.fi
-.ft 1
-.RE
-.LP
-���ϥȡ�����Ϥ��٤ơ�����Ƕ��ڤ��ޤ��������ޤ줿�����ޤ� arg ������ȡ�������ºݤΰ��֥ѥ�᡼���˥ޥåפ���Ȥ��ˤ����ޤ����������ޤ���
-.LP
-�� - ����Υ�꡼���Ƿ������ѹ�������ǽ��������Τǡ�
-.B jps 
-�ν��Ϥ���Ϥ��륹����ץȤϽ񤫤ʤ������褤�Ǥ��礦��jps ���Ϥ���Ϥ��륹����ץȤ�񤯾��ϡ����Υġ���ξ���Υ�꡼���ǤϽ�����ɬ�פˤʤ뤳�Ȥ�ͽ�ۤ��Ƥ����Ƥ���������
-.SH ������
-���Υ��������Ǥϡ�
-.B jps 
-���ޥ�ɤ���򼨤��ޤ���
-.LP
-��������ۥ��Ⱦ�η�¬�����դ� JVM ��ꥹ�Ȥ���:
-.LP
-.RS
-.ft 3
-.nf
-jps
-18027 Java2Demo.JAR
-18032 jps
-18005 jstat
-.fi
-.ft 1
-.RE
-.TP
-��⡼�ȥۥ��Ⱦ�η�¬�����դ� JVM ��ꥹ�Ȥ���:
-.LP
-������Ǥϡ�jstat �����С��Ȥ������� RMI �쥸���ȥ�ޤ��ϸ��̤γ��� rmiregistry �ץ���������⡼�ȥۥ��ȤΥǥե���ȥݡ��� (�ݡ��� 1099) �Ǽ¹Ԥ��Ƥ��뤳�Ȥ�����Ȥ��Ƥ��ޤ����ޤ�����������ۥ��Ȥϥ�⡼�ȥۥ��Ȥ˥����������뤿���Ŭ�ڤʥ�������������äƤ����ΤȤ��ޤ����ޤ���������ˤϡ�Ĺ�������Υ��饹̾�ޤ��� JAR �ե�����̾����Ϥ��뤿��� -l ���ץ���󤬴ޤޤ�Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jps -l remote.domain
-3002 /opt/j2sdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
-2857 sun.tools.jstatd.jstatd
-.fi
-.ft 1
-.RE
-.LP
-RMI �쥸���ȥ��Ѥ˥ǥե���Ȱʳ��Υݡ��Ȥ���Ѥ����⡼�ȥۥ��Ⱦ�η�¬�����դ� Java ���ۥޥ����ꥹ�Ȥ���:
-.LP
-������Ǥϡ�jstatd �����С�����⡼�ȥۥ��Ⱦ�Ǽ¹Ԥ��Ƥ��ơ����� RMI �쥸���ȥ꤬�ݡ��� 2002 �˥Х���ɤ���Ƥ��뤳�Ȥ�����Ȥ��Ƥ��ޤ����ޤ���������Ǥϡ��ꥹ�Ȥ����� Java ���ץꥱ�������� main �᥽�åɤ��Ϥ��줿������ޤ�뤿��ˡ�-m ���ץ�������Ѥ��Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jps -m remote.domain:2002
-3002 /opt/j2sdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
-3102 sun.tools.jstatd.jstatd -p 2002
-.fi
-.ft 1
-.RE
-.SH ��Ϣ����
+.SH "名前"
+jps \- Java 仮想マシンプロセスステータスツール
 .LP
 .RS 3
 .TP 2
-*
-java \- Java ���ץꥱ�������ư�ץ������
+o
+形式 
 .TP 2
-*
-jstat \- Java ���ۥޥ������״ƻ�ġ���
+o
+パラメータ 
 .TP 2
-*
-jstatd \- ���ۥޥ��� jstat �ǡ����
+o
+説明 
 .TP 2
-*
-rmiregistry \- Java ��⡼�ȥ��֥������ȥ쥸���ȥ�
+o
+オプション 
+.TP 2
+o
+ホスト識別子 
+.TP 2
+o
+出力形式 
+.TP 2
+o
+例 
+.TP 2
+o
+関連項目 
+.RE
+
+.LP
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps\fP [ \f2options\fP ] [ \f2hostid\fP ]
+.br
+
+.fl
+.fi
+
+.LP
+.SH "パラメータ"
+.LP
+
+.LP
+.RS 3
+.TP 3
+options 
+コマンド行オプション。 
+.TP 3
+hostid 
+プロセスレポートを生成するホストのホスト識別子。\f2hostid\fP には、通信プロトコル、ポート番号、実装に固有な他のデータを指定したオプションコンポーネントを含めることができます。 
+.RE
+
+.LP
+.SH " 説明"
+.LP
+
+.LP
+.LP
+\f3jps\fP ツールは、ターゲットシステム上で計測された HotSpot Java 仮想マシン (JVM) を一覧表示します。このツールで表示できるレポート情報は、アクセス権を持った JVM に関するものに限定されます。
+.LP
+.LP
+\f2hostid\fP を指定せずに \f3jps\fP を実行した場合、ローカルホストで計測された JVM が検索されます。\f2hostid\fP を指定して起動した場合、指定されたプロトコルとポートを使用して、指定されたホスト上の JVM を検索します。\f3jstatd\fP プロセスがターゲットホスト上で実行されていると想定されます。
+.LP
+.LP
+\f3jps\fP コマンドは、ターゲットシステムで計測された各 JVM について、ローカル VM 識別子、つまり \f2lvmid\fP をレポートします。\f3lvmid\fP は、必須ではありませんが、一般的には JVM プロセスに対するオペレーティングシステムのプロセス識別子です。オプションを指定しない場合、\f3jps\fP によって、各 Java アプリケーションの \f2lvmid\fP が一覧表示され、それぞれにアプリケーションのクラス名または JAR ファイル名が簡単な形式で示されます。この簡単な形式のクラス名と JAR ファイル名では、クラスのパッケージ情報または JAR ファイルパス情報が省略されています。
+.LP
+.LP
+\f3jps\fP コマンドは、\f3Java\fP 起動ツールを使用して、\f2main\fP メソッドに渡されるクラス名と引数を検索します。独自の起動ツールを使用してターゲット JVM を起動した場合は、\f2main\fP メソッドに渡されるクラス名 (または JAR ファイル名) と引数は利用できません。この場合、\f3jps\fP コマンドは、main メソッドへ渡されるクラス名 (または JAR ファイル名) と引数に対して、文字列 \f2Unknown\fP を出力します。
+.LP
+.LP
+\f3jps\fP コマンドで生成される JVM のリストは、このコマンドを実行する主体に与えられたアクセス権に基づき、制限される場合があります。このコマンドは、オペレーティングシステム独自のアクセス制御機構による決定に基づいて、主体にアクセス権が与えられている JVM だけを一覧表示します。
+.LP
+.LP
+\f3注:\fP このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
+.LP
+.SH "オプション"
+.LP
+
+.LP
+.LP
+\f3jps\fP コマンドでは、コマンドの出力を変更するオプションが多数サポートされています。将来、これらのオプションは、変更または廃止される可能性があります。
+.LP
+.RS 3
+.TP 3
+\-q 
+ローカル VM 識別子のリストだけを生成するように、\f2main\fP メソッドに渡されるクラス名、JAR ファイル名、および引数の出力を制御します。 
+.TP 3
+\-m 
+main メソッドに渡される引数を出力します。この出力は、組み込まれている JVM に対して null になることもあります。  
+.TP 3
+\-l 
+アプリケーションの主要なクラスのフルパッケージ名、またはアプリケーションの JAR ファイルへのフルパス名を出力します。 
+.TP 3
+\-v 
+JVM に渡される引数を出力します。 
+.TP 3
+\-V 
+フラグファイル (.hotspotrc ファイルまたは \-XX:Flags=<\f2filename\fP> の引数で指定されたファイル) を通じて JVM に渡される引数を出力します。 
+.TP 3
+\-Joption 
+\f3jps\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
+.RE
+
+.LP
+.SS 
+ホスト識別子
+.LP
+.RS 3
+
+.LP
+.LP
+ホスト識別子、つまり \f2hostid\fP は、ターゲットシステムを示す文字列です。\f2hostid\fP 文字列の構文の大部分は、URI の構文に対応しています。
+.LP
+.nf
+\f3
+.fl
+[\fP\f4protocol\fP\f3:][[//]\fP\f4hostname\fP\f3][:\fP\f4port\fP\f3][/\fP\f4servername\fP\f3]\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.RS 3
+.TP 3
+protocol 
+通信プロトコルです。\f2protocol\fP が省略され、\f2hostname\fP が指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカルプロトコルになります。\f2protocol\fP が省略され、\f2hostname\fP が指定されている場合は、デフォルトプロトコルは \f3rmi\fP になります。 
+.TP 3
+hostname 
+ターゲットホストを示すホスト名または IP アドレスです。\f2hostname\fP が省略されている場合は、ターゲットホストはローカルホストになります。 
+.TP 3
+port 
+リモートサーバーと通信するためのデフォルトポートです。\f2hostname\fP が省略されているか、\f2protocol\fP で最適化されたローカルプロトコルが指定されている場合、\f2port\fP は無視されます。そうでなければ、\f2port\fP パラメータの扱いは、実装によって異なります。デフォルトの \f3rmi\fP プロトコルの場合、\f2port\fP は、リモートホスト上の rmiregistry のポート番号を示します。\f2port\fP が省略され、\f2protocol\fP で \f3rmi\fP が指定されている場合、デフォルトの rmiregistry ポート (1099) が使用されます。 
+.TP 3
+servername 
+このパラメータの扱いは、実装によって異なります。最適化されたローカルプロトコルの場合、このフィールドは無視されます。\f3rmi\fP プロトコルの場合、このパラメータは、リモートホスト上の RMI リモートオブジェクトの名前を示す文字列になります。jstatd(1) コマンドについては、\f3\-n\fP オプションを参照してください。 
+.RE
+
+.LP
+.RE
+.SH "出力形式"
+.LP
+
+.LP
+.LP
+\f3jps\fP コマンドの出力は、次のパターンに従います。
+.LP
+.nf
+\f3
+.fl
+\fP\f4lvmid\fP\f3 [ [ \fP\f4classname\fP\f3 | \fP\f4JARfilename\fP\f3 | "Unknown"] [ \fP\f4arg\fP\f3* ] [ \fP\f4jvmarg\fP\f3* ] ]\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.LP
+すべての出力トークンは空白で区切ります。\f2arg\fP の中で空白を使用すると、実際の定位置パラメータに引数をマッピングしようとするときに、あいまいになります。
+.br
+.br
+\f3注\fP: 将来のリリースでこの形式は変更される可能性があるため、\f3jps\fP 出力を解析するスクリプトは作成しないことをお勧めします。\f3jps\fP 出力を解析するスクリプトを作成すると、このツールの将来のリリースで、作成したスクリプトを変更する必要が予測されます。
+.br
+
+.LP
+.SH "例"
+.LP
+
+.LP
+.LP
+この節では、\f3jps\fP コマンドの例を示します。
+.LP
+.LP
+ローカルホスト上で計測された JVM を一覧表示する場合:
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps\fP
+.br
+
+.fl
+18027 Java2Demo.JAR
+.br
+
+.fl
+18032 jps
+.br
+
+.fl
+18005 jstat
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+リモートホスト上で計測された JVM を一覧表示する場合:
+.LP
+.LP
+この例では、\f3jstat\fP サーバーと、その内部 RMI レジストリまたは別の外部 \f3rmiregistry\fP プロセスのいずれかとが、リモートホストのデフォルトポート (ポート 1099) で実行されていると想定しています。また、ローカルホストが、リモートホストへの有効なアクセス権を持っていることも想定しています。この例には、\f2\-l\fP オプションも含まれ、クラス名または JAR ファイル名を詳細な形式で出力します。
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps \-l remote.domain\fP
+.br
+
+.fl
+3002 /opt/jdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
+.br
+
+.fl
+2857 sun.tools.jstatd.jstatd
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+RMI レジストリにデフォルトではないポートを使用して、リモートホスト上で計測された JVM を一覧表示する場合:
+.LP
+.LP
+この例では、内部 RMI レジストリがポート 2002 にバインドされた \f3jstatd\fP サーバーが、リモートホスト上で実行していると想定しています。また、\f2\-m\fP オプションを使用して、一覧表示されたそれぞれの Java アプリケーションの \f2main\fP メソッドに渡される引数を組み込んでいます。
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps \-m remote.domain:2002\fP
+.br
+
+.fl
+3002 /opt/jdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
+.br
+
+.fl
+3102 sun.tools.jstatd.jstatd \-p 2002
+.fl
+.fi
+
+.LP
+.SH "関連項目"
+.LP
+.RS 3
+.TP 2
+o
+「java(1) \- Java アプリケーション起動ツール」 
+.TP 2
+o
+「jstat(1) \- Java 仮想マシン統計データ監視ツール」 
+.TP 2
+o
+「jstatd(1) \- 仮想マシン jstat デーモン」 
+.TP 2
+o
+「rmiregistry(1) \- Java リモートオブジェクトレジストリ」 
 .RE
 
 .LP

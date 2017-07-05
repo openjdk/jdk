@@ -1,31 +1,51 @@
-'\" t
-.\"
-.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\"
-.TH "jconsole" 1 "2006 Ç¯ 9 ·î 4 Æü" "Java SE 6" "¥æ¡¼¥¶¡¼¥³¥Ş¥ó¥É"
-.SH Ì¾Á°
-jconsole \- Java ´Æ»ë/´ÉÍı¥³¥ó¥½¡¼¥ë
-.SH ·Á¼°
+." Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jconsole 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "åå‰"
+jconsole \- Java ç›£è¦–ãŠã‚ˆã³ç®¡ç†ã‚³ãƒ³ã‚½ãƒ¼ãƒ«
+.LP
+.RS 3
+.TP 2
+o
+å½¢å¼ 
+.TP 2
+o
+ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ 
+.TP 2
+o
+èª¬æ˜ 
+.TP 2
+o
+ã‚ªãƒ—ã‚·ãƒ§ãƒ³ 
+.TP 2
+o
+é–¢é€£é …ç›® 
+.RE
+
+.LP
+.SH "å½¢å¼"
 .LP
 
 .LP
@@ -39,49 +59,63 @@ jconsole \- Java ´Æ»ë/´ÉÍı¥³¥ó¥½¡¼¥ë
 .fi
 
 .LP
-.SH "¥Ñ¥é¥á¡¼¥¿"
+.SH "ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿"
 .LP
 
 .LP
+.RS 3
 .TP 3
-options
-¥ª¥×¥·¥ç¥ó¤ò»ÈÍÑ¤¹¤ë¾ì¹ç¡¢¥³¥Ş¥ó¥ÉÌ¾¤ÎÄ¾¸å¤Ëµ­½Ò¤·¤Æ¤¯¤À¤µ¤¤¡£ 
-.TP 
+options 
+ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ä½¿ç”¨ã™ã‚‹å ´åˆã€ã‚³ãƒãƒ³ãƒ‰åã®ç›´å¾Œã«è¨˜è¿°ã—ã¦ãã ã•ã„ã€‚ 
+.br
+.TP 3
 connection = pid | host:port | jmxUrl 
-.LP
-\f2pid\fP\ \ \  ¥í¡¼¥«¥ë¤Î Java VM ¤Î¥×¥í¥»¥¹ ID¡£¤³¤Î Java VM ¤Ï¡¢jconsole ¤ò¼Â¹Ô¤·¤Æ¤¤¤ë¥æ¡¼¥¶ ID ¤ÈÆ±¤¸¥æ¡¼¥¶ ID ¤Ç¼Â¹Ô¤µ¤ì¤Æ¤¤¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£¾ÜºÙ¤Ë¤Ä¤¤¤Æ¤Ï¡¢
+.RS 3
+\f2pid\fP\ \ \ ãƒ­ãƒ¼ã‚«ãƒ«ã® Java VM ã®ãƒ—ãƒ­ã‚»ã‚¹ IDã€‚Java VM ã¯ã€jconsole ã‚’å®Ÿè¡Œã—ã¦ã„ã‚‹ãƒ¦ãƒ¼ã‚¶ãƒ¼ ID ã¨åŒã˜ãƒ¦ãƒ¼ã‚¶ãƒ¼ ID ã‚’ä½¿ç”¨ã—ã¦å®Ÿè¡Œã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚è©³ç´°ã«ã¤ã„ã¦ã¯ã€
 .na
-¡Ö\f2JMX Monitoring and Management\fP¡×
+\f2ã€ŒJMX ç›£è¦–ãŠã‚ˆã³ç®¡ç†ã€\fP @
 .fi
-(http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html) ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
-.LP
-\f2host\fP:\f2port\fP\ \  Java VM ¤¬¼Â¹Ô¤µ¤ì¤Æ¤¤¤ë¥Û¥¹¥È¥·¥¹¥Æ¥à¤ÎÌ¾Á°¤È¡¢¤½¤Î Java VM ¤Îµ¯Æ°»ş¤Ë¥·¥¹¥Æ¥à¥×¥í¥Ñ¥Æ¥£ \f2com.sun.management.jmxremote.port\fP ¤Ë»ØÄê¤µ¤ì¤¿¥İ¡¼¥ÈÈÖ¹æ¡£¾ÜºÙ¤Ë¤Ä¤¤¤Æ¤Ï¡¢
+http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚ 
+.br
+\f2host\fP:\f2port\fP\ \  Java VM ãŒå®Ÿè¡Œã—ã¦ã„ã‚‹ãƒ›ã‚¹ãƒˆã‚·ã‚¹ãƒ†ãƒ ã®åå‰ã¨ã€JVM ã‚’èµ·å‹•ã—ãŸã¨ãã«ã‚·ã‚¹ãƒ†ãƒ ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ãƒ¼ \f2com.sun.management.jmxremote.port\fP ã§æŒ‡å®šã—ãŸãƒãƒ¼ãƒˆç•ªå·ã€‚è©³ç´°ã«ã¤ã„ã¦ã¯ã€
 .na
-¡Ö\f2JMX Monitoring and Management\fP¡×
+\f2ã€ŒJMX ç›£è¦–ãŠã‚ˆã³ç®¡ç†ã€\fP @
 .fi
-(http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html) ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
-.LP
-\f2jmxUrl\fP\ \  ÀÜÂ³Àè¤Î JMX ¥¨¡¼¥¸¥§¥ó¥È¤Î¥¢¥É¥ì¥¹¡£¤³¤ì¤Ë¤Ä¤¤¤Æ¤Ï¡¢
+http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚ 
+.br
+\f2jmxUrl\fP æ¥ç¶šå…ˆã® JMX ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã€‚ ã“ã‚Œã«ã¤ã„ã¦ã¯ã€
 .na
-¡Ö\f2JMXServiceURL\fP¡×
+\f2JMXServiceURL\fP @
 .fi
-(http://java.sun.com/javase/6/docs/api/javax/management/remote/jmxserviceurl.html) ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
-.LP
-.SH µ¡Ç½ÀâÌÀ
+http://java.sun.com/javase/6/docs/api/javax/management/remote/JMXServiceURL.html ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚ 
+.RE
+.RE
 
-.B jconsole
-¥³¥Ş¥ó¥É¤Ï¡¢¥í¡¼¥«¥ë¤Ş¤¿¤Ï¥ê¥â¡¼¥È¥Ş¥·¥ó¾å¤Î Java ¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤È²¾ÁÛ¥Ş¥·¥ó¤ò´Æ»ë¤ª¤è¤Ó´ÉÍı¤¹¤ë¤¿¤á¤Î¥°¥é¥Õ¥£¥«¥ë¥³¥ó¥½¡¼¥ë¥Ä¡¼¥ë¤òµ¯Æ°¤·¤Ş¤¹¡£
 .LP
-.SH ¥ª¥×¥·¥ç¥ó
-.TP 15
-.B \-interval=n
-¹¹¿·´Ö³Ö¤ò n ÉÃ¤ËÀßÄê¤·¤Ş¤¹¡£(¥Ç¥Õ¥©¥ë¥È¤Ï 4 ÉÃ)
-.TP
-.B \-notile
-½é´ü¾õÂÖ¤Ç¥¦¥£¥ó¥É¥¦¤òÊÂ¤Ù¤ÆÉ½¼¨¤·¤Ş¤»¤ó¡£(ÀÜÂ³¤¬ 2 ¤Ä°Ê¾å¤¢¤ë¾ì¹ç)
+.SH " èª¬æ˜"
+.LP
+
+.LP
+.LP
+\f3jconsole\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€ãƒ­ãƒ¼ã‚«ãƒ«ãƒã‚·ãƒ³ã¾ãŸã¯ãƒªãƒ¢ãƒ¼ãƒˆãƒã‚·ãƒ³ä¸Šã® Java ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã¨ä»®æƒ³ãƒã‚·ãƒ³ã®ç›£è¦–ã¨ç®¡ç†ã‚’è¡Œã†ã‚°ãƒ©ãƒ•ã‚£ã‚«ãƒ«ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ãƒ„ãƒ¼ãƒ«ã‚’èµ·å‹•ã—ã¾ã™ã€‚
+.LP
+.LP
+Windows ä¸Šã§ã¯ã€\f3jconsole\fP ã¯ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¨é–¢é€£ä»˜ã‘ã‚‰ã‚Œã¦ã„ã¾ã›ã‚“ã€‚ãŸã ã—ã€ãªã‚“ã‚‰ã‹ã®ç†ç”±ã§ \f3jconsole\fP ã‚³ãƒãƒ³ãƒ‰ãŒå¤±æ•—ã™ã‚‹ã¨ã€ã‚¨ãƒ©ãƒ¼æƒ…å ±ã‚’ç¤ºã™ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ãƒœãƒƒã‚¯ã‚¹ãŒè¡¨ç¤ºã•ã‚Œã¾ã™ã€‚
+.LP
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-interval=n 
+æ›´æ–°é–“éš”ã‚’ \f2n\fP ç§’ã«è¨­å®šã—ã¾ã™ (ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ 4 ç§’)ã€‚ 
+.TP 3
+\-notile\  
+æœ€åˆã«ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ã‚¿ã‚¤ãƒªãƒ³ã‚°ã—ã¾ã›ã‚“ (è¤‡æ•°ã®æ¥ç¶šã®ãŸã‚)ã€‚ 
 .TP 3
 \-pluginpath\  plugins 
-JConsole ¥×¥é¥°¥¤¥ó¤Î¸¡º÷Àè¤È¤Ê¤ë¥Ç¥£¥ì¥¯¥È¥ê¤Ş¤¿¤Ï JAR ¥Õ¥¡¥¤¥ë¤Î¥ê¥¹¥È¤ò»ØÄê¤·¤Ş¤¹¡£\f2plugins\fP ¥Ñ¥¹¤Ë¤Ï¡¢¼¡¤ÎÌ¾Á°¤Î¥×¥í¥Ğ¥¤¥À¹½À®¥Õ¥¡¥¤¥ë¤ò´Ş¤á¤Æ¤¯¤À¤µ¤¤¡£
+JConsole ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã®æ¤œç´¢å…ˆã¨ãªã‚‹ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¾ãŸã¯ JAR ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒªã‚¹ãƒˆã‚’æŒ‡å®šã—ã¾ã™ã€‚\f2plugins\fP ãƒ‘ã‚¹ã«ã¯ã€æ¬¡ã®åå‰ã®ãƒ—ãƒ­ãƒã‚¤ãƒ€æ§‹æˆãƒ•ã‚¡ã‚¤ãƒ«ã‚’å«ã‚ã¦ãã ã•ã„ã€‚
 .br
 .nf
 \f3
@@ -91,38 +125,38 @@ JConsole ¥×¥é¥°¥¤¥ó¤Î¸¡º÷Àè¤È¤Ê¤ë¥Ç¥£¥ì¥¯¥È¥ê¤Ş¤¿¤Ï JAR ¥Õ¥¡¥¤¥ë¤Î¥ê¥¹¥È¤ò»ØÄê¤·
 \fP
 .fi
 .LP
-¤³¤ì¤Ë¤Ï¡¢
+ã“ã‚Œã«ã¯ã€
 .na
-\f2com.sun.tools.jconsole.JConsolePlugin\fP
+\f2com.sun.tools.jconsole.JConsolePlugin\fP @
 .fi
-(http://java.sun.com/javase/6/docs/jdk/api/jconsole/spec/com/sun/tools/jconsole/jconsoleplugin.html) ¥¯¥é¥¹¤ò¼ÂÁõ¤¹¤ë¥¯¥é¥¹¤Î´°Á´½¤¾ş¥¯¥é¥¹Ì¾¤ò»ØÄê¤¹¤ë¹Ô¤¬¡¢¥×¥é¥°¥¤¥ó¤´¤È¤Ë 1 ¹Ô¤º¤Ä´Ş¤Ş¤ì¤Æ¤¤¤Ş¤¹¡£
-.TP
-.B \-version
-¥Ğ¡¼¥¸¥ç¥ó¾ğÊó¤ò½ĞÎÏ¤·¤Æ½ªÎ»¤·¤Ş¤¹¡£
-.TP
-.B \-help
-¥Ø¥ë¥×¥á¥Ã¥»¡¼¥¸¤ò½ĞÎÏ¤·¤Æ½ªÎ»¤·¤Ş¤¹¡£
+http://java.sun.com/javase/6/docs/jdk/api/jconsole/spec/com/sun/tools/jconsole/JConsolePlugin.html ã‚¯ãƒ©ã‚¹ã‚’å®Ÿè£…ã™ã‚‹ã‚¯ãƒ©ã‚¹ã®å®Œå…¨ä¿®é£¾ã‚¯ãƒ©ã‚¹åã‚’æŒ‡å®šã™ã‚‹è¡ŒãŒã€ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã”ã¨ã« 1 è¡Œãšã¤å«ã¾ã‚Œã¦ã„ã¾ã™ã€‚  
+.TP 3
+\-version\  
+ãƒãƒ¼ã‚¸ãƒ§ãƒ³æƒ…å ±ã‚’å‡ºåŠ›ã—ã¦çµ‚äº†ã—ã¾ã™ã€‚ 
+.TP 3
+\-help\  
+ãƒ˜ãƒ«ãƒ—ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å‡ºåŠ›ã—ã¦çµ‚äº†ã—ã¾ã™ã€‚ 
 .TP 3
 \-J<flag>\  
-jconsole ¤¬¼Â¹Ô¤µ¤ì¤Æ¤¤¤ë Java ²¾ÁÛ¥Ş¥·¥ó¤Ë <flag> ¤òÅÏ¤·¤Ş¤¹¡£
+jconsole ãŒå®Ÿè¡Œã•ã‚Œã¦ã„ã‚‹ Java ä»®æƒ³ãƒã‚·ãƒ³ã« <flag> ã‚’æ¸¡ã—ã¾ã™ã€‚ 
+.RE
+
 .LP
-.SH "´ØÏ¢¹àÌÜ"
+.SH "é–¢é€£é …ç›®"
 .LP
 .RS 3
 .TP 2
-*
+o
+.na
+\f2jconsole ã®ä½¿ç”¨\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html 
-¤Î
-.na
-¡Ö\f2Using JConsole\fP¡×
 .TP 2
-*
+o
+.na
+\f2ã€ŒJava ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ã®ç›£è¦–ãŠã‚ˆã³ç®¡ç†ã€\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/management/index.html 
-¤Î
-.na
-¡Ö\f2Monitoring and Management for Java Platform\fP¡×
 .RE
 
 .LP

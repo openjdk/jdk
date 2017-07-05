@@ -34,23 +34,31 @@ import java.io.File;
  */
 
 class DeleteOnExitHook {
-    static {
-         sun.misc.SharedSecrets.getJavaLangAccess()
-             .registerShutdownHook(2 /* Shutdown hook invocation order */,
-                 new Runnable() {
-                     public void run() {
-                        runHooks();
-                     }
-                 });
-    }
-
     private static LinkedHashSet<String> files = new LinkedHashSet<String>();
+    static {
+        // DeleteOnExitHook must be the last shutdown hook to be invoked.
+        // Application shutdown hooks may add the first file to the
+        // delete on exit list and cause the DeleteOnExitHook to be
+        // registered during shutdown in progress. So set the
+        // registerShutdownInProgress parameter to true.
+        sun.misc.SharedSecrets.getJavaLangAccess()
+            .registerShutdownHook(2 /* Shutdown hook invocation order */,
+                true /* register even if shutdown in progress */,
+                new Runnable() {
+                    public void run() {
+                       runHooks();
+                    }
+                }
+        );
+    }
 
     private DeleteOnExitHook() {}
 
     static synchronized void add(String file) {
-        if(files == null)
+        if(files == null) {
+            // DeleteOnExitHook is running. Too late to add a file
             throw new IllegalStateException("Shutdown in progress");
+        }
 
         files.add(file);
     }
