@@ -704,6 +704,61 @@ PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
   return mem;
 }
 
+//------------------------split_out_instance-----------------------------------
+// Split out an instance type from a bottom phi.
+PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const {
+  assert(type() == Type::MEMORY && (adr_type() == TypePtr::BOTTOM ||
+         adr_type() == TypeRawPtr::BOTTOM) , "bottom or raw memory required");
+
+  // Check if an appropriate node already exists.
+  Node *region = in(0);
+  for (DUIterator_Fast kmax, k = region->fast_outs(kmax); k < kmax; k++) {
+    Node* use = region->fast_out(k);
+    if( use->is_Phi()) {
+      PhiNode *phi2 = use->as_Phi();
+      if (phi2->type() == Type::MEMORY && phi2->adr_type() == at) {
+        return phi2;
+      }
+    }
+  }
+  Compile *C = igvn->C;
+  Arena *a = Thread::current()->resource_area();
+  Node_Array node_map = new Node_Array(a);
+  Node_Stack stack(a, C->unique() >> 4);
+  PhiNode *nphi = slice_memory(at);
+  igvn->register_new_node_with_optimizer( nphi );
+  node_map.map(_idx, nphi);
+  stack.push((Node *)this, 1);
+  while(!stack.is_empty()) {
+    PhiNode *ophi = stack.node()->as_Phi();
+    uint i = stack.index();
+    assert(i >= 1, "not control edge");
+    stack.pop();
+    nphi = node_map[ophi->_idx]->as_Phi();
+    for (; i < ophi->req(); i++) {
+      Node *in = ophi->in(i);
+      if (in == NULL || igvn->type(in) == Type::TOP)
+        continue;
+      Node *opt = MemNode::optimize_simple_memory_chain(in, at, igvn);
+      PhiNode *optphi = opt->is_Phi() ? opt->as_Phi() : NULL;
+      if (optphi != NULL && optphi->adr_type() == TypePtr::BOTTOM) {
+        opt = node_map[optphi->_idx];
+        if (opt == NULL) {
+          stack.push(ophi, i);
+          nphi = optphi->slice_memory(at);
+          igvn->register_new_node_with_optimizer( nphi );
+          node_map.map(optphi->_idx, nphi);
+          ophi = optphi;
+          i = 0; // will get incremented at top of loop
+          continue;
+        }
+      }
+      nphi->set_req(i, opt);
+    }
+  }
+  return nphi;
+}
+
 //------------------------verify_adr_type--------------------------------------
 #ifdef ASSERT
 void PhiNode::verify_adr_type(VectorSet& visited, const TypePtr* at) const {
@@ -1734,6 +1789,18 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
         // Replace self with the result.
         return result;
+      }
+    }
+    //
+    // Other optimizations on the memory chain
+    //
+    const TypePtr* at = adr_type();
+    for( uint i=1; i<req(); ++i ) {// For all paths in
+      Node *ii = in(i);
+      Node *new_in = MemNode::optimize_memory_chain(ii, at, phase);
+      if (ii != new_in ) {
+        set_req(i, new_in);
+        progress = this;
       }
     }
   }

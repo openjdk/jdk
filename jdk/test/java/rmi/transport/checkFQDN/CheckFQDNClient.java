@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@
  *
  *
  * Client that will run in its own vm and tell the main CheckFQDN test
- * program what its rmi host name is, name obtained from TCPEndpoint.  
+ * program what its rmi host name is, name obtained from TCPEndpoint.
  */
 
 import java.rmi.*;
@@ -40,72 +40,72 @@ import sun.rmi.transport.tcp.TCPEndpoint;
 public class CheckFQDNClient implements Runnable {
 
     final static int NAME_SERVICE_TIME_OUT = 12000;
-    
+
     static TCPEndpoint ep = null;
 
-    /** 
+    /**
      * main, lookup remote object and tell it the rmi
      * hostname of this client vm.
      */
     public static void main (String args[]) {
-	
-	// start a registry and register a copy of this in it.
-	TellServerName tell;
-	String hostname = null;
-	
-	try {
-	    hostname = retrieveServerName();
-	    System.err.println("Client host name: " +
-			       hostname);
 
-	    tell = (TellServerName) Naming.lookup("rmi://:" + 
-						  TestLibrary.REGISTRY_PORT
-						  + "/CheckFQDN");
-	    tell.tellServerName(hostname);
-	    System.err.println("client has exited");
+        // start a registry and register a copy of this in it.
+        TellServerName tell;
+        String hostname = null;
 
-	} catch (Exception e ) {
-	    throw new RuntimeException(e.getMessage());
-	}
-	System.exit(0);
+        try {
+            hostname = retrieveServerName();
+            System.err.println("Client host name: " +
+                               hostname);
+
+            tell = (TellServerName) Naming.lookup("rmi://:" +
+                                                  TestLibrary.REGISTRY_PORT
+                                                  + "/CheckFQDN");
+            tell.tellServerName(hostname);
+            System.err.println("client has exited");
+
+        } catch (Exception e ) {
+            throw new RuntimeException(e.getMessage());
+        }
+        System.exit(0);
     }
-    
+
     /* what is the rmi hostname for this vm? */
     public static String retrieveServerName () {
-	try {
+        try {
 
-	    CheckFQDNClient chk = new CheckFQDNClient();
-	    
-	    synchronized(chk) {
-		(new Thread (chk)).start();
-		chk.wait(NAME_SERVICE_TIME_OUT);
-	    }
-	    
-	    if (ep == null) {
-		throw new RuntimeException 
-		    ("Timeout getting the local endpoint.");
-	    }
-	    
-	    // this is the name used by rmi for the client hostname
-	    return ep.getHost();
-	    
-	}catch (Exception e){
-	    throw new RuntimeException (e.getMessage());
-	}
+            CheckFQDNClient chk = new CheckFQDNClient();
+
+            synchronized(chk) {
+                (new Thread (chk)).start();
+                chk.wait(NAME_SERVICE_TIME_OUT);
+            }
+
+            if (ep == null) {
+                throw new RuntimeException
+                    ("Timeout getting the local endpoint.");
+            }
+
+            // this is the name used by rmi for the client hostname
+            return ep.getHost();
+
+        }catch (Exception e){
+            throw new RuntimeException (e.getMessage());
+        }
     }
 
     /* thread to geth the rmi hostname of this vm */
     public void run () {
-	try {
-	    synchronized(this) {
-		ep = TCPEndpoint.getLocalEndpoint(0);
-	    }
-	} catch (Exception e) {
-	    throw new RuntimeException();
-	} finally {
-	    synchronized(this) {
-		this.notify();
-	    }
-	}
+        try {
+            synchronized(this) {
+                ep = TCPEndpoint.getLocalEndpoint(0);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException();
+        } finally {
+            synchronized(this) {
+                this.notify();
+            }
+        }
     }
 }

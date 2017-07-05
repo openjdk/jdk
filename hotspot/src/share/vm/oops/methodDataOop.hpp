@@ -101,7 +101,8 @@ public:
     virtual_call_data_tag,
     ret_data_tag,
     branch_data_tag,
-    multi_branch_data_tag
+    multi_branch_data_tag,
+    arg_info_data_tag
   };
 
   enum {
@@ -245,6 +246,7 @@ class   JumpData;
 class     BranchData;
 class   ArrayData;
 class     MultiBranchData;
+class     ArgInfoData;
 
 
 // ProfileData
@@ -376,6 +378,8 @@ public:
   virtual bool is_BranchData()      { return false; }
   virtual bool is_ArrayData()       { return false; }
   virtual bool is_MultiBranchData() { return false; }
+  virtual bool is_ArgInfoData()     { return false; }
+
 
   BitData* as_BitData() {
     assert(is_BitData(), "wrong type");
@@ -412,6 +416,10 @@ public:
   MultiBranchData* as_MultiBranchData() {
     assert(is_MultiBranchData(), "wrong type");
     return is_MultiBranchData() ? (MultiBranchData*)this : NULL;
+  }
+  ArgInfoData* as_ArgInfoData() {
+    assert(is_ArgInfoData(), "wrong type");
+    return is_ArgInfoData() ? (ArgInfoData*)this : NULL;
   }
 
 
@@ -1047,6 +1055,33 @@ public:
 #endif
 };
 
+class ArgInfoData : public ArrayData {
+
+public:
+  ArgInfoData(DataLayout* layout) : ArrayData(layout) {
+    assert(layout->tag() == DataLayout::arg_info_data_tag, "wrong type");
+  }
+
+  virtual bool is_ArgInfoData() { return true; }
+
+
+  int number_of_args() {
+    return array_len();
+  }
+
+  uint arg_modified(int arg) {
+    return array_uint_at(arg);
+  }
+
+  void set_arg_modified(int arg, uint val) {
+    array_set_int_at(arg, val);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st);
+#endif
+};
+
 // methodDataOop
 //
 // A methodDataOop holds information which has been collected about
@@ -1183,6 +1218,9 @@ private:
   // Find or create an extra ProfileData:
   ProfileData* bci_to_extra_data(int bci, bool create_if_missing);
 
+  // return the argument info cell
+  ArgInfoData *arg_info();
+
 public:
   static int header_size() {
     return sizeof(methodDataOopDesc)/wordSize;
@@ -1215,18 +1253,28 @@ public:
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   enum EscapeFlag {
     estimated    = 1 << 0,
-    return_local = 1 << 1
+    return_local = 1 << 1,
+    return_allocated = 1 << 2,
+    allocated_escapes = 1 << 3,
+    unknown_modified = 1 << 4
   };
 
   intx eflags()                                  { return _eflags; }
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
+  uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
+                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+                                                   return aid->arg_modified(a); }
 
   void set_eflags(intx v)                        { _eflags = v; }
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
+  void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
+                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+
+                                                   aid->set_arg_modified(a, v); }
 
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
 

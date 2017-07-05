@@ -107,25 +107,3 @@ void PeriodicTask::disenroll() {
     _tasks[index] = _tasks[index+1];
   }
 }
-
-TimeMillisUpdateTask* TimeMillisUpdateTask::_task = NULL;
-
-void TimeMillisUpdateTask::task() {
-  os::update_global_time();
-}
-
-void TimeMillisUpdateTask::engage() {
-  assert(_task == NULL, "init twice?");
-  os::update_global_time(); // initial update
-  os::enable_global_time();
-  _task = new TimeMillisUpdateTask(CacheTimeMillisGranularity);
-  _task->enroll();
-}
-
-void TimeMillisUpdateTask::disengage() {
-  assert(_task != NULL, "uninit twice?");
-  os::disable_global_time();
-  _task->disenroll();
-  delete _task;
-  _task = NULL;
-}

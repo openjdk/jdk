@@ -151,7 +151,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
   LIR_Address* addr;
   if (index_opr->is_constant()) {
-    int elem_size = type2aelembytes[type];
+    int elem_size = type2aelembytes(type);
     addr = new LIR_Address(array_opr,
                            offset_in_bytes + index_opr->as_jint() * elem_size, type);
   } else {

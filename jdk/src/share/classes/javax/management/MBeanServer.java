@@ -50,7 +50,7 @@ import javax.management.loading.ClassLoaderRepository;
  * server.  A Java object cannot be registered in the MBean server
  * unless it is a JMX compliant MBean.</p>
  *
- * <p>When an MBean is registered or unregistered in the MBean server
+ * <p id="notif">When an MBean is registered or unregistered in the MBean server
  * a {@link javax.management.MBeanServerNotification
  * MBeanServerNotification} Notification is emitted. To register an
  * object as listener to MBeanServerNotifications you should call the
@@ -258,27 +258,43 @@ import javax.management.loading.ClassLoaderRepository;
  */
 public interface MBeanServer extends MBeanServerConnection {
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     * <p>If this method successfully creates an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
+     */
     public ObjectInstance createMBean(String className, ObjectName name)
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
                    NotCompliantMBeanException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     * <p>If this method successfully creates an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
+     */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName)
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
                    NotCompliantMBeanException, InstanceNotFoundException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     * <p>If this method successfully creates an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
+     */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       Object params[], String signature[])
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
                    NotCompliantMBeanException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     * <p>If this method successfully creates an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
+     */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName, Object params[],
                                       String signature[])
@@ -287,12 +303,15 @@ public interface MBeanServer extends MBeanServerConnection {
                    NotCompliantMBeanException, InstanceNotFoundException;
 
     /**
-     * Registers a pre-existing object as an MBean with the MBean
+     * <p>Registers a pre-existing object as an MBean with the MBean
      * server. If the object name given is null, the MBean must
      * provide its own name by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.
+     * MBeanRegistration#preRegister preRegister} method.</p>
+     *
+     * <p>If this method successfully registers an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
      *
      * @param object The  MBean to be registered as an MBean.
      * @param name The object name of the MBean. May be null.
@@ -319,7 +338,12 @@ public interface MBeanServer extends MBeanServerConnection {
             throws InstanceAlreadyExistsException, MBeanRegistrationException,
                    NotCompliantMBeanException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     *
+     * <p>If this method successfully unregisters an MBean, a notification
+     * is sent as described <a href="#notif">above</a>.</p>
+     */
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException;
 

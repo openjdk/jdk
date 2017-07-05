@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- * A remote factory for Orange instances.  This interface also 
+ * A remote factory for Orange instances.  This interface also
  * includes a method to test object array serialization.
  */
 public interface Apple extends Remote {

@@ -303,6 +303,8 @@ BUILDTOOLCLASSDIR   = $(OUTPUTDIR)/btclasses
 # for build tool jar files
 BUILDTOOLJARDIR     = $(OUTPUTDIR)/btjars
 ABS_BUILDTOOLJARDIR = $(ABS_OUTPUTDIR)/btjars
+# for generated tool class files
+BUILDTOOLBINDIR     = $(OUTPUTDIR)/btbins
 # for generated java source files
 GENSRCDIR           = $(OUTPUTDIR)/gensrc
 # for generated C source files (not javah)

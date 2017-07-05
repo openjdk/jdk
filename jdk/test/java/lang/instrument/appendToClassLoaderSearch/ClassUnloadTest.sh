@@ -34,11 +34,11 @@ then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
 fi
-                                                                                                        
+
 . ${TESTSRC}/CommonSetup.sh
 
 # Create Foo and Bar
-# Foo has a reference to Bar but we deleted Bar so that 
+# Foo has a reference to Bar but we deleted Bar so that
 # a NoClassDefFoundError will be thrown when Foo tries to
 # resolve the reference to Bar
 
@@ -53,11 +53,11 @@ cat << EOF > "${FOO}"
   public class Foo {
       public static boolean doSomething() {
           try {
-	      Bar b = new Bar();
-	      return true;
-	  } catch (NoClassDefFoundError x) {
-	      return false;
-	  }
+              Bar b = new Bar();
+              return true;
+          } catch (NoClassDefFoundError x) {
+              return false;
+          }
       }
   }
 EOF
@@ -79,5 +79,5 @@ $JAR -cfm "${TESTCLASSES}"/ClassUnloadTest.jar "${MANIFEST}" \
 
 # Finally we run the test
 (cd "${TESTCLASSES}"; \
-  $JAVA -Xverify:none -XX:+TraceClassUnloading -javaagent:ClassUnloadTest.jar \
-    ClassUnloadTest "${OTHERDIR}" Bar.jar)
+  $JAVA ${TESTVMOPTS} -Xverify:none -XX:+TraceClassUnloading \
+    -javaagent:ClassUnloadTest.jar ClassUnloadTest "${OTHERDIR}" Bar.jar)

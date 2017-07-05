@@ -23,24 +23,24 @@
 # have any questions.
 #
 
-                                                                                                              
+
 # @test
 # @bug 6173575 6388987
-# @summary Unit tests for appendToBootstrapClassLoaderSearch and 
+# @summary Unit tests for appendToBootstrapClassLoaderSearch and
 #   appendToSystemClasLoaderSearch methods.
 #
 # @build Agent AgentSupport BootSupport BasicTest PrematureLoadTest DynamicTest
-# @run shell run_tests.sh
+# @run shell/timeout=240 run_tests.sh
 
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
 fi
-                                                                                                        
+
 . ${TESTSRC}/CommonSetup.sh
 
-                                                                          
+
 # Simple tests
 
 echo "Creating jar files for simple tests..."
@@ -50,13 +50,13 @@ cd ${TESTCLASSES}
 "$JAR" -cfm Agent.jar "${TESTSRC}"/manifest.mf Agent.class
 "$JAR" -cf  AgentSupport.jar AgentSupport.class
 "$JAR" -cf  BootSupport.jar BootSupport.class
-"$JAR" -cf  SimpleTests.jar BasicTest.class PrematureLoadTest.class 
+"$JAR" -cf  SimpleTests.jar BasicTest.class PrematureLoadTest.class
 
 failures=0
 
 go() {
     echo ''
-    sh -xc "$JAVA -javaagent:Agent.jar -classpath SimpleTests.jar  $1 $2 $3" 2>&1
+    sh -xc "$JAVA ${TESTVMOPTS} -javaagent:Agent.jar -classpath SimpleTests.jar  $1 $2 $3" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
@@ -75,7 +75,7 @@ mkdir tmp
 "${JAVAC}" -d tmp "${TESTSRC}"/Tracer.java
 (cd tmp; "${JAR}" cf ../Tracer.jar org/tools/Tracer.class)
 
-# InstrumentedApplication is Application+instrmentation - don't copy as 
+# InstrumentedApplication is Application+instrmentation - don't copy as
 # we don't want the original file permission
 
 cat "${TESTSRC}"/InstrumentedApplication.java > ./Application.java
@@ -85,11 +85,11 @@ mv Application.class InstrumentedApplication.bytes
 cp "${TESTSRC}"/Application.java .
 "${JAVAC}" -d . Application.java
 
-sh -xc "$JAVA -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Repeat test with security manager
-sh -xc "$JAVA -classpath . -javaagent:Agent.jar -Djava.security.manager DynamicTest" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} -classpath . -javaagent:Agent.jar -Djava.security.manager DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 #

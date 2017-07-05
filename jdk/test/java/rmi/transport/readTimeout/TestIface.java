@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,5 +27,5 @@ public interface TestIface
     extends Remote
 {
     public String testCall(String ign)
-	throws RemoteException;
+        throws RemoteException;
 }

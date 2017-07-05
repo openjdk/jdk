@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@ import java.util.*;
 import java.rmi.registry.*;
 import java.rmi.server.*;
 
-public class TestImpl extends UnicastRemoteObject 
+public class TestImpl extends UnicastRemoteObject
     implements Test {
 
     static Thread locker = null;
@@ -46,197 +46,197 @@ public class TestImpl extends UnicastRemoteObject
 
     public String echo(String msg) throws RemoteException {
 
-	if (locker == null) {
-	    // hold the target if not already held
-	    locker = lockTargetExpireLeases(foo, DGCDeadLock.HOLD_TARGET_TIME);
-	}
+        if (locker == null) {
+            // hold the target if not already held
+            locker = lockTargetExpireLeases(foo, DGCDeadLock.HOLD_TARGET_TIME);
+        }
         return "Message received: " + msg;
     }
 
     static public void main(String[] args) {
-	Registry registry = null;
+        Registry registry = null;
 
         try {
-	    registry = java.rmi.registry.LocateRegistry.
-		createRegistry(TestLibrary.REGISTRY_PORT);
+            registry = java.rmi.registry.LocateRegistry.
+                createRegistry(TestLibrary.REGISTRY_PORT);
 
-	    //export "Foo"
-	    foo = new TestImpl();
-            Naming.rebind("rmi://:" + 
-			  TestLibrary.REGISTRY_PORT
-			  + "/Foo", foo);  
+            //export "Foo"
+            foo = new TestImpl();
+            Naming.rebind("rmi://:" +
+                          TestLibrary.REGISTRY_PORT
+                          + "/Foo", foo);
 
-	    try {
-		//export "Bar" after leases have been expired.
-		bar = new TestImpl();
-		Naming.rebind("rmi://localhost:" + 
-			      TestLibrary.REGISTRY_PORT
-			      + "/Bar", bar);  
-	    } catch (Exception e) {
-		throw new RemoteException(e.getMessage());
-	    }
-	    Thread.sleep(DGCDeadLock.TEST_FAIL_TIME);
-	    System.err.println("object vm exiting...");
-	    System.exit(0);
+            try {
+                //export "Bar" after leases have been expired.
+                bar = new TestImpl();
+                Naming.rebind("rmi://localhost:" +
+                              TestLibrary.REGISTRY_PORT
+                              + "/Bar", bar);
+            } catch (Exception e) {
+                throw new RemoteException(e.getMessage());
+            }
+            Thread.sleep(DGCDeadLock.TEST_FAIL_TIME);
+            System.err.println("object vm exiting...");
+            System.exit(0);
 
         } catch (Exception e) {
-	    System.err.println(e.getMessage());
-	    e.printStackTrace();
+            System.err.println(e.getMessage());
+            e.printStackTrace();
         } finally {
-	    TestLibrary.unexport(registry);
-	    registry = null;
-	}
+            TestLibrary.unexport(registry);
+            registry = null;
+        }
     }
 
     static Thread lockTargetExpireLeases(Remote toLock, int timeOut) {
-	Thread t = new Thread((Runnable) new TargetLocker(toLock, timeOut));
-	t.start();
-	return t;
+        Thread t = new Thread((Runnable) new TargetLocker(toLock, timeOut));
+        t.start();
+        return t;
     }
 
     static class TargetLocker implements Runnable {
 
-	Remote toLock = null;
-	int timeOut = 0;
+        Remote toLock = null;
+        int timeOut = 0;
 
-	TargetLocker(Remote toLock, int timeOut) {
-	    this.toLock = toLock;
-	    this.timeOut = timeOut;
-	}
+        TargetLocker(Remote toLock, int timeOut) {
+            this.toLock = toLock;
+            this.timeOut = timeOut;
+        }
 
-	public void run() {
-	    try {
-		// give dgc dirty calls time to finish.
-		Thread.currentThread().sleep(4000);
+        public void run() {
+            try {
+                // give dgc dirty calls time to finish.
+                Thread.currentThread().sleep(4000);
 
-		java.security.AccessController.
-		    doPrivileged(new LockTargetCheckLeases(toLock, 
-							   timeOut));
+                java.security.AccessController.
+                    doPrivileged(new LockTargetCheckLeases(toLock,
+                                                           timeOut));
 
-	    } catch (Exception e) {
-		System.err.println(e.getMessage());
-		e.printStackTrace();
-		System.exit(1);
-	    }
-	}
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
     }
 
-    static class LockTargetCheckLeases 
-	implements java.security.PrivilegedAction {
+    static class LockTargetCheckLeases
+        implements java.security.PrivilegedAction {
 
-	Remote toLock = null;
-	int timeOut = 0;
+        Remote toLock = null;
+        int timeOut = 0;
 
-	LockTargetCheckLeases(Remote toLock, int timeOut) {
-	    this.toLock = toLock;
-	    this.timeOut = timeOut;
-	}
+        LockTargetCheckLeases(Remote toLock, int timeOut) {
+            this.toLock = toLock;
+            this.timeOut = timeOut;
+        }
 
-	public Object run() {
-	    try {
-		
-		Class args[] = new Class[1];
-		
-		Class objTableClass = Class.forName
-		    ("sun.rmi.transport.ObjectTable");
-		
-		/* get the Target that corresponds to toLock from the
-		 * ObjectTable 
-		 */
-		args[0] = Class.forName("java.rmi.Remote");
-		Method objTableGetTarget = 
-		    objTableClass.getDeclaredMethod("getTarget", args );
-		objTableGetTarget.setAccessible(true);
-		
-		Target lockTarget = 
-		    ((Target) objTableGetTarget.invoke
-		     (null , new Object [] {toLock} ));
-		
-		// make sure the lease on this object has expired.
-		expireLeases(lockTarget);
-		
-		// stop other threads from using the target for toLock.
-		synchronized (lockTarget) {
-		    System.err.println("Locked the relevant target, sleeping " + 
-				       timeOut/1000 + " seconds");
-		    Thread.currentThread().sleep(timeOut);
-		    System.err.println("Target unlocked");
-		}
+        public Object run() {
+            try {
 
-	    } catch (Exception e) {
-		System.err.println(e.getMessage());
-		e.printStackTrace();
-		System.exit(1);
-	    }
-	    return null;
-	}
+                Class args[] = new Class[1];
+
+                Class objTableClass = Class.forName
+                    ("sun.rmi.transport.ObjectTable");
+
+                /* get the Target that corresponds to toLock from the
+                 * ObjectTable
+                 */
+                args[0] = Class.forName("java.rmi.Remote");
+                Method objTableGetTarget =
+                    objTableClass.getDeclaredMethod("getTarget", args );
+                objTableGetTarget.setAccessible(true);
+
+                Target lockTarget =
+                    ((Target) objTableGetTarget.invoke
+                     (null , new Object [] {toLock} ));
+
+                // make sure the lease on this object has expired.
+                expireLeases(lockTarget);
+
+                // stop other threads from using the target for toLock.
+                synchronized (lockTarget) {
+                    System.err.println("Locked the relevant target, sleeping " +
+                                       timeOut/1000 + " seconds");
+                    Thread.currentThread().sleep(timeOut);
+                    System.err.println("Target unlocked");
+                }
+
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
+            return null;
+        }
     }
 
     /* leases have long values, so no dirty calls which would lock out
      * a clean call, but the leases need to expire anyway, so we do it
-     * explicitly. 
+     * explicitly.
      */
     static void expireLeases(Target t) throws Exception {
 
-	final Target target = t;
+        final Target target = t;
 
-	java.security.AccessController.doPrivileged(
+        java.security.AccessController.doPrivileged(
 
-	    //  put this into another class?
-	    new java.security.PrivilegedAction() {
-	    public Object run() {
-		try {
+            //  put this into another class?
+            new java.security.PrivilegedAction() {
+            public Object run() {
+                try {
 
-		    Class DGCClass = Class.forName("sun.rmi.transport.DGCImpl");
-		    Method getDGCImpl = 
-			DGCClass.getDeclaredMethod("getDGCImpl", null );
-		    getDGCImpl.setAccessible(true);
-		    
-		    // make sure the lease on this object has expired.
-		    DGC dgcImpl = ((DGC) getDGCImpl.invoke(null, null));
-		    
-		    /* Get the lease table from the DGCImpl. */
-		    Field reflectedLeaseTable = 
-			dgcImpl.getClass().getDeclaredField("leaseTable");
-		    reflectedLeaseTable.setAccessible(true);
-		    
-		    Map leaseTable = (Map) reflectedLeaseTable.get(dgcImpl);
-		    
-		    // dont really need this synchronization...
-		    synchronized (leaseTable) {
-			Iterator en = leaseTable.values().iterator();
-			while (en.hasNext()) {
-			    Object info = en.next();
-			    
-			    /* Get the notifySet in the leaseInfo object. */
-			    Field notifySetField = 
-				info.getClass().getDeclaredField("notifySet");
-			    notifySetField.setAccessible(true);
-			    HashSet notifySet = (HashSet) notifySetField.get(info);
-			    
-			    Iterator iter = notifySet.iterator();
-			    while (iter.hasNext()) {
-				Target notified = (Target) iter.next();
-				
-				if (notified == target) {
-				    
-				/* Get and set the expiration field from the info object. */
-				    Field expirationField = info.getClass().
-					getDeclaredField("expiration");
-				    expirationField.setAccessible(true);
-				    expirationField.setLong(info, 0);
-				}
-			    }
-			}
-		    }
-		} catch (Exception e) {
-		    System.err.println(e.getMessage());
-		    e.printStackTrace();
-		    System.exit(1);
-		}
-		// no interesting return value for this privileged action
-		return null;
-	    }
-	});
+                    Class DGCClass = Class.forName("sun.rmi.transport.DGCImpl");
+                    Method getDGCImpl =
+                        DGCClass.getDeclaredMethod("getDGCImpl", null );
+                    getDGCImpl.setAccessible(true);
+
+                    // make sure the lease on this object has expired.
+                    DGC dgcImpl = ((DGC) getDGCImpl.invoke(null, null));
+
+                    /* Get the lease table from the DGCImpl. */
+                    Field reflectedLeaseTable =
+                        dgcImpl.getClass().getDeclaredField("leaseTable");
+                    reflectedLeaseTable.setAccessible(true);
+
+                    Map leaseTable = (Map) reflectedLeaseTable.get(dgcImpl);
+
+                    // dont really need this synchronization...
+                    synchronized (leaseTable) {
+                        Iterator en = leaseTable.values().iterator();
+                        while (en.hasNext()) {
+                            Object info = en.next();
+
+                            /* Get the notifySet in the leaseInfo object. */
+                            Field notifySetField =
+                                info.getClass().getDeclaredField("notifySet");
+                            notifySetField.setAccessible(true);
+                            HashSet notifySet = (HashSet) notifySetField.get(info);
+
+                            Iterator iter = notifySet.iterator();
+                            while (iter.hasNext()) {
+                                Target notified = (Target) iter.next();
+
+                                if (notified == target) {
+
+                                /* Get and set the expiration field from the info object. */
+                                    Field expirationField = info.getClass().
+                                        getDeclaredField("expiration");
+                                    expirationField.setAccessible(true);
+                                    expirationField.setLong(info, 0);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+                // no interesting return value for this privileged action
+                return null;
+            }
+        });
     }
 }
