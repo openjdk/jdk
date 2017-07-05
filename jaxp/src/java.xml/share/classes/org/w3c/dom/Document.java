@@ -353,37 +353,42 @@ public interface Document extends Node {
      *   instantiate.
      * @return A new <code>Element</code> object with the following
      *   attributes:
-     * <table border='1' cellpadding='3'>
+     * <table class="striped">
+     * <caption>Attributes of the {@code Element} object</caption>
+     * <thead>
      * <tr>
      * <th>Attribute</th>
      * <th>Value</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.nodeName</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td><code>Node.nodeName</code></td>
+     * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.namespaceURI</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td><code>Node.namespaceURI</code></td>
+     * <td>
      *   <code>namespaceURI</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.prefix</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>prefix, extracted
+     * <td><code>Node.prefix</code></td>
+     * <td>prefix, extracted
      *   from <code>qualifiedName</code>, or <code>null</code> if there is
      *   no prefix</td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.localName</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>local name, extracted from
+     * <td><code>Node.localName</code></td>
+     * <td>local name, extracted from
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Element.tagName</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td><code>Element.tagName</code></td>
+     * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
+     * </tbody>
      * </table>
      * @exception DOMException
      *   INVALID_CHARACTER_ERR: Raised if the specified
@@ -417,43 +422,48 @@ public interface Document extends Node {
      * @param qualifiedName The qualified name of the attribute to
      *   instantiate.
      * @return A new <code>Attr</code> object with the following attributes:
-     * <table border='1' cellpadding='3'>
+     * <table class="striped">
+     * <caption>Attributes of the {@code Attr} object </caption>
+     * <thead>
      * <tr>
      * <th>
      *   Attribute</th>
      * <th>Value</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.nodeName</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>qualifiedName</td>
+     * <td><code>Node.nodeName</code></td>
+     * <td>qualifiedName</td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td>
      *   <code>Node.namespaceURI</code></td>
-     * <td valign='top' rowspan='1' colspan='1'><code>namespaceURI</code></td>
+     * <td><code>namespaceURI</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td>
      *   <code>Node.prefix</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>prefix, extracted from
+     * <td>prefix, extracted from
      *   <code>qualifiedName</code>, or <code>null</code> if there is no
      *   prefix</td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.localName</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>local name, extracted from
+     * <td><code>Node.localName</code></td>
+     * <td>local name, extracted from
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Attr.name</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td><code>Attr.name</code></td>
+     * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'><code>Node.nodeValue</code></td>
-     * <td valign='top' rowspan='1' colspan='1'>the empty
+     * <td><code>Node.nodeValue</code></td>
+     * <td>the empty
      *   string</td>
      * </tr>
+     * </tbody>
      * </table>
      * @exception DOMException
      *   INVALID_CHARACTER_ERR: Raised if the specified

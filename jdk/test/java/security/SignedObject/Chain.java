@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Arrays;
 /*
  * @test
  * @bug 8050374
- * @key intermittent
  * @summary Verify a chain of signed objects
  */
 public class Chain {
@@ -137,8 +136,17 @@ public class Chain {
             PrivateKey[] privKeys = new PrivateKey[N];
             PublicKey[] pubKeys = new PublicKey[N];
             PublicKey[] anotherPubKeys = new PublicKey[N];
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance(
-                    test.keyAlg.name);
+            Signature signature;
+            KeyPairGenerator kpg;
+            if (test.provider != Provider.Default) {
+                signature = Signature.getInstance(test.sigAlg.name,
+                        test.provider.name);
+                kpg = KeyPairGenerator.getInstance(
+                    test.keyAlg.name, test.provider.name);
+            } else {
+                signature = Signature.getInstance(test.sigAlg.name);
+                kpg = KeyPairGenerator.getInstance(test.keyAlg.name);
+            }
             for (int j=0; j < N; j++) {
                 KeyPair kp = kpg.genKeyPair();
                 KeyPair anotherKp = kpg.genKeyPair();
@@ -152,14 +160,6 @@ public class Chain {
                             + "the same pair of public key");
                     return false;
                 }
-            }
-
-            Signature signature;
-            if (test.provider != Provider.Default) {
-                signature = Signature.getInstance(test.sigAlg.name,
-                        test.provider.name);
-            } else {
-                signature = Signature.getInstance(test.sigAlg.name);
             }
 
             // Create a chain of signed objects

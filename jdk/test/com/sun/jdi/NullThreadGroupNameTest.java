@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 
 /**
- *  @test
- *  @bug 7105883
- *  @summary Ensure that JDWP doesn't crash with a null thread group name
+ * @test
+ * @bug 7105883
+ * @summary Ensure that JDWP doesn't crash with a null thread group name
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run driver NullThreadGroupNameTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run driver NullThreadGroupNameTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

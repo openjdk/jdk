@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,16 +53,10 @@ import java.util.GregorianCalendar;
  * <a href="http://www.w3.org/TR/xmlschema-2/#isoformats">W3C XML Schema 1.0 Part 2, Appendix D,
  * <i>ISO 8601 Date and Time Formats</i></a>.
  *
- * <a name="datetimefieldmapping"></a>
- * <table border="2" rules="all" cellpadding="2">
+ * <a id="datetimefieldmapping"></a>
+ * <table class="striped">
+ *   <caption>Date/Time Datatype Field Mapping Between XML Schema 1.0 and Java Representation</caption>
  *   <thead>
- *     <tr>
- *       <th align="center" colspan="3">
- *         Date/Time Datatype Field Mapping Between XML Schema 1.0 and Java Representation
- *       </th>
- *     </tr>
- *   </thead>
- *   <tbody>
  *     <tr>
  *       <th>XML Schema 1.0<br>
  *           datatype<br>
@@ -70,8 +64,10 @@ import java.util.GregorianCalendar;
  *       <th>Related<br>XMLGregorianCalendar<br>Accessor(s)</th>
  *       <th>Value Range</th>
  *     </tr>
+ *   </thead>
+ *   <tbody>
  *     <tr>
- *       <td><a name="datetimefield-year">year</a></td>
+ *       <td><a id="datetimefield-year">year</a></td>
  *       <td> {@link #getYear()} + {@link #getEon()} or<br>
  *            {@link #getEonAndYear}
  *       </td>
@@ -89,12 +85,12 @@ import java.util.GregorianCalendar;
  *            </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-month">month</a></td>
+ *       <td><a id="datetimefield-month">month</a></td>
  *       <td> {@link #getMonth()} </td>
  *       <td> 1 to 12 or {@link DatatypeConstants#FIELD_UNDEFINED} </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-day">day</a></td>
+ *       <td><a id="datetimefield-day">day</a></td>
  *       <td> {@link #getDay()} </td>
  *       <td> Independent of month, max range is 1 to 31 or {@link DatatypeConstants#FIELD_UNDEFINED}.<br>
  *            The normative value constraint stated relative to month
@@ -102,7 +98,7 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-hour">hour</a></td>
+ *       <td><a id="datetimefield-hour">hour</a></td>
  *       <td>{@link #getHour()}</td>
  *       <td>
  *         0 to 23 or {@link DatatypeConstants#FIELD_UNDEFINED}.
@@ -114,12 +110,12 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-minute">minute</a></td>
+ *       <td><a id="datetimefield-minute">minute</a></td>
  *       <td> {@link #getMinute()} </td>
  *       <td> 0 to 59 or {@link DatatypeConstants#FIELD_UNDEFINED} </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-second">second</a></td>
+ *       <td><a id="datetimefield-second">second</a></td>
  *       <td>
  *         {@link #getSecond()} + {@link #getMillisecond()}/1000 or<br>
  *         {@link #getSecond()} + {@link #getFractionalSecond()}
@@ -135,7 +131,7 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-timezone">timezone</a></td>
+ *       <td><a id="datetimefield-timezone">timezone</a></td>
  *       <td> {@link #getTimezone()} </td>
  *       <td> Number of minutes or {@link DatatypeConstants#FIELD_UNDEFINED}.
  *         Value range from -14 hours (-14 * 60 minutes) to 14 hours (14 * 60 minutes).
@@ -748,25 +744,21 @@ public abstract class XMLGregorianCalendar
      * Return the name of the XML Schema date/time type that this instance
      * maps to. Type is computed based on fields that are set.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
+     *         <i>(timezone is optional for all date/time datatypes)</i></caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="7">
-     *         Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
-     *         <i>(timezone is optional for all date/time datatypes)</i>
-     *       </th>
+     *       <th>Datatype</th>
+     *       <th>year</th>
+     *       <th>month</th>
+     *       <th>day</th>
+     *       <th>hour</th>
+     *       <th>minute</th>
+     *       <th>second</th>
      *     </tr>
      *   </thead>
      *   <tbody>
-     *     <tr>
-     *       <td>Datatype</td>
-     *       <td>year</td>
-     *       <td>month</td>
-     *       <td>day</td>
-     *       <td>hour</td>
-     *       <td>minute</td>
-     *       <td>second</td>
-     *     </tr>
      *     <tr>
      *       <td>{@link DatatypeConstants#DATETIME}</td>
      *       <td>X</td>
@@ -911,20 +903,16 @@ public abstract class XMLGregorianCalendar
      * instance, see
      * {@link #toGregorianCalendar(TimeZone, Locale, XMLGregorianCalendar)}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Field by Field Conversion from this class to
+     *          {@code java.util.GregorianCalendar}</caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="2">
-     *          Field by Field Conversion from this class to
-     *          {@code java.util.GregorianCalendar}
-     *       </th>
+     *        <th>{@code java.util.GregorianCalendar} field</th>
+     *        <th>{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
      *     </tr>
      *   </thead>
      *   <tbody>
-     *     <tr>
-     *        <td>{@code java.util.GregorianCalendar} field</td>
-     *        <td>{@code javax.xml.datatype.XMLGregorianCalendar} field</td>
-     *     </tr>
      *     <tr>
      *       <td>{@code ERA}</td>
      *       <td>{@link #getEonAndYear()}{@code .signum() < 0 ? GregorianCalendar.BC : GregorianCalendar.AD}</td>

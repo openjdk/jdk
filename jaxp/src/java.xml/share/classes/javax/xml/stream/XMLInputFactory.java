@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,9 @@ import javax.xml.transform.Source;
  * Each property varies in the level of support required by each implementation.
  * The level of support required is described in the 'Required' column.
  *
- *   <table border="2" rules="all" cellpadding="4">
+ *   <table class="striped">
+ *    <caption>Configuration Parameters</caption>
  *    <thead>
- *      <tr>
- *        <th align="center" colspan="5">
- *          Configuration parameters
- *        </th>
- *      </tr>
- *    </thead>
- *    <tbody>
  *      <tr>
  *        <th>Property Name</th>
  *        <th>Behavior</th>
@@ -52,6 +46,8 @@ import javax.xml.transform.Source;
  *        <th>Default Value</th>
  *        <th>Required</th>
  *      </tr>
+ *    </thead>
+ *    <tbody>
  * <tr><td>javax.xml.stream.isValidating</td><td>Turns on/off implementation specific DTD validation</td><td>Boolean</td><td>False</td><td>No</td></tr>
  * <tr><td>javax.xml.stream.isNamespaceAware</td><td>Turns on/off namespace processing for XML 1.0 support</td><td>Boolean</td><td>True</td><td>True (required) / False (optional)</td></tr>
  * <tr><td>javax.xml.stream.isCoalescing</td><td>Requires the processor to coalesce adjacent character data</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
@@ -222,7 +218,7 @@ public abstract class XMLInputFactory {
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
@@ -244,7 +240,7 @@ public abstract class XMLInputFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)} method
    *              defines no changes in behavior.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
