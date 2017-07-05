@@ -25,9 +25,15 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 
+inline ClassLoaderData* ClassLoaderData::class_loader_data_or_null(oop loader) {
+  if (loader == NULL) {
+    return ClassLoaderData::the_null_class_loader_data();
+  }
+  return java_lang_ClassLoader::loader_data(loader);
+}
+
 inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
-  if (loader == NULL) return ClassLoaderData::the_null_class_loader_data();
-  ClassLoaderData* loader_data = java_lang_ClassLoader::loader_data(loader);
+  ClassLoaderData* loader_data = class_loader_data_or_null(loader);
   assert(loader_data != NULL, "Must be");
   return loader_data;
 }

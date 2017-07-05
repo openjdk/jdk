@@ -160,7 +160,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   CHECK_EXCEPTION_(0);
 
   unsigned long alignedAddress;
-  unsigned long alignedLength;
+  unsigned long alignedLength = 0;
   kern_return_t result;
   vm_offset_t *pages;
   int *mapped;
@@ -630,7 +630,7 @@ Java_sun_jvm_hotspot_asm_Disassembler_load_1library(
     /* Couldn't find entry point.  error_message should contain some
      * platform dependent error message.
      */
-    THROW_NEW_DEBUGGER_EXCEPTION(error_message);
+    THROW_NEW_DEBUGGER_EXCEPTION_(error_message, (jlong)func);
   }
   return (jlong)func;
 }

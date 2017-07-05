@@ -353,7 +353,7 @@ protected:
     assert(jp >= _begin && jp < _end,
            err_msg("Error: jp " PTR_FORMAT " should be within "
                    "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
-                   _begin, _end));
+                   jp, _begin, _end));
     oop obj = oopDesc::load_decode_heap_oop(p);
     guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
               err_msg("pointer " PTR_FORMAT " at " PTR_FORMAT " on "
