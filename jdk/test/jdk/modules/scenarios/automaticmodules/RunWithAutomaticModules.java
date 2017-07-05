@@ -100,15 +100,15 @@ public class RunWithAutomaticModules {
         compiled = CompilerUtils
             .compile(SRC_DIR.resolve(testModule),
                     MODS_DIR.resolve(testModule),
-                    "-mp", MODS_DIR.toString());
+                    "--module-path", MODS_DIR.toString());
         assertTrue(compiled);
 
 
-        // launch the test. Need -addmods because nothing explicitly depends on logging
+        // launch the test. Need --add-mdoules because nothing explicitly depends on logging
 
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", "logging",
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "--add-modules", "logging",
                               "-m", testModule + "/" + mainClass)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -159,7 +159,7 @@ public class RunWithAutomaticModules {
         compiled = CompilerUtils
                 .compile(SRC_DIR.resolve(testModule),
                         MODS_DIR.resolve(testModule),
-                        "-mp", MODS_DIR.toString());
+                        "--module-path", MODS_DIR.toString());
 
         assertTrue(compiled);
 
@@ -167,7 +167,7 @@ public class RunWithAutomaticModules {
         // launch the test
 
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
+            = executeTestJava("--module-path", MODS_DIR.toString(),
                               "-m", testModule + "/" + mainClass)
                 .outputTo(System.out)
                 .errorTo(System.out)

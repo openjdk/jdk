@@ -57,7 +57,7 @@ if [ "x$PROPS" != x ]; then
     done
 fi
 
-$JAVAC -g -d mods -modulesourcepath $TESTSRC/src \
+$JAVAC -g -d mods --module-source-path $TESTSRC/src \
        -cp mods/bundles `find $TESTSRC/src/test -name "*.java"`
 
 # Create a jar to be added to the class path. Expected properties files are
@@ -69,9 +69,9 @@ $JAR -cf extra.jar -C $TESTSRC/src/extra jdk/test/resources
 STATUS=0
 
 echo 'jdk.test.Main should load bundles local to named module "test".'
-$JAVA -mp mods -m test/jdk.test.Main de fr ja zh-tw en de || STATUS=1
+$JAVA -p mods -m test/jdk.test.Main de fr ja zh-tw en de || STATUS=1
 
 echo "jdk.test.Main should NOT load bundles from the jar file specified by the class-path."
-$JAVA -cp extra.jar -mp mods -m test/jdk.test.Main vi && STATUS=1
+$JAVA -cp extra.jar -p mods -m test/jdk.test.Main vi && STATUS=1
 
 exit $STATUS

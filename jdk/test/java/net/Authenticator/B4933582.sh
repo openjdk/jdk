@@ -44,7 +44,7 @@ case "$OS" in
     ;;
 esac
 
-EXTRAOPTS="-XaddExports:java.base/sun.net.www=ALL-UNNAMED -XaddExports:java.base/sun.net.www.protocol.http=ALL-UNNAMED"
+EXTRAOPTS="--add-exports java.base/sun.net.www=ALL-UNNAMED --add-exports java.base/sun.net.www.protocol.http=ALL-UNNAMED"
 export EXTRAOPTS
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . \

@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -52,7 +51,7 @@ public class HasExpiringCertTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create key pair for jar signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -65,7 +64,7 @@ public class HasExpiringCertTest extends Test {
                 .shouldHaveExitValue(0);
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", KEYSTORE,
                 "-verbose",
                 "-storepass", PASSWORD,
@@ -77,7 +76,7 @@ public class HasExpiringCertTest extends Test {
         checkSigning(analyzer, HAS_EXPIRING_CERT_SIGNING_WARNING);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", KEYSTORE,
@@ -89,7 +88,7 @@ public class HasExpiringCertTest extends Test {
         checkVerifying(analyzer, 0, HAS_EXPIRING_CERT_VERIFYING_WARNING);
 
         // verify signed jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

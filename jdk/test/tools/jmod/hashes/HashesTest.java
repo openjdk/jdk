@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class HashesTest {
         // build m1
         compileModule("m1", modSrc);
         // no hash is recorded since m1 has outgoing edges
-        jmod("m1", "--modulepath", jmods.toString(), "--hash-modules", ".*");
+        jmod("m1", "--module-path", jmods.toString(), "--hash-modules", ".*");
 
         // compile org.bar and org.foo
         compileModule("org.bar", modSrc);
@@ -109,17 +109,17 @@ public class HashesTest {
         }
 
         // hash m1 in m2
-        jmod("m2", "--modulepath", jmods.toString(), "--hash-modules", "m1");
+        jmod("m2", "--module-path", jmods.toString(), "--hash-modules", "m1");
         checkHashes(hashes("m2").get(), "m1");
 
         // hash m1 in m2
-        jmod("m2", "--modulepath", jmods.toString(), "--hash-modules", ".*");
+        jmod("m2", "--module-path", jmods.toString(), "--hash-modules", ".*");
         checkHashes(hashes("m2").get(), "m1");
 
         // create m2.jmod with no hash
         jmod("m2");
         // run jmod hash command to hash m1 in m2 and m3
-        runJmod(Arrays.asList("hash", "--modulepath", jmods.toString(),
+        runJmod(Arrays.asList("hash", "--module-path", jmods.toString(),
                 "--hash-modules", ".*"));
         checkHashes(hashes("m2").get(), "m1");
         checkHashes(hashes("m3").get(), "m1");
@@ -127,10 +127,10 @@ public class HashesTest {
         jmod("org.bar");
         jmod("org.foo");
 
-        jmod("org.bar", "--modulepath", jmods.toString(), "--hash-modules", "org.*");
+        jmod("org.bar", "--module-path", jmods.toString(), "--hash-modules", "org.*");
         checkHashes(hashes("org.bar").get(), "org.foo");
 
-        jmod("m3", "--modulepath", jmods.toString(), "--hash-modules", ".*");
+        jmod("m3", "--module-path", jmods.toString(), "--hash-modules", ".*");
         checkHashes(hashes("m3").get(), "org.foo", "org.bar", "m1");
     }
 
@@ -185,7 +185,7 @@ public class HashesTest {
 
     private void compileModule(String moduleName, Path src) throws IOException {
         Path msrc = src.resolve(moduleName);
-        assertTrue(CompilerUtils.compile(msrc, mods, "-modulesourcepath", src.toString()));
+        assertTrue(CompilerUtils.compile(msrc, mods, "--module-source-path", src.toString()));
     }
 
     private void jmod(String moduleName, String... options) throws IOException {

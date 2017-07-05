@@ -42,6 +42,6 @@ $(GENGRAPHS_DIR)/technology-summary.html: $(TOOLS_MODULE_SRCDIR)/technology-summ
 
 $(GENGRAPHS_DIR)/module-summary.html: $(BUILD_JIGSAW_TOOLS) $(GENGRAPHS_DIR)/technology-summary.html
 	$(MKDIR) -p $(@D)
-	$(TOOL_MODULESUMMARY) -o $@ -mp $(IMAGES_OUTPUTDIR)/jmods
+	$(TOOL_MODULESUMMARY) -o $@ --module-path $(IMAGES_OUTPUTDIR)/jmods
 
 all: $(GENGRAPHS_DIR)/jdk.dot $(GENGRAPHS_DIR)/module-summary.html

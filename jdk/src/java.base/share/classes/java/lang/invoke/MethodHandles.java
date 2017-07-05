@@ -77,7 +77,7 @@ public class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
 
-    private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
+    static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
 
     // See IMPL_LOOKUP below.
 
@@ -3115,7 +3115,7 @@ assert((int)twice.invokeExact(21) == 42);
         return dropArguments(zero(type.returnType()), 0, type.parameterList());
     }
 
-    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeIdentity(Class<?> ptype) {
         MethodType mtype = methodType(ptype, ptype);
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
@@ -3133,7 +3133,7 @@ assert((int)twice.invokeExact(21) == 42);
         assert(btw == Wrapper.OBJECT);
         return makeZero(rtype);
     }
-    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.values().length];
+    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeZero(Class<?> rtype) {
         MethodType mtype = methodType(rtype);
         LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
@@ -3268,12 +3268,11 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      */
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
-        return dropArguments0(target, pos, copyTypes(valueTypes));
+        return dropArguments0(target, pos, copyTypes(valueTypes.toArray()));
     }
 
-    private static List<Class<?>> copyTypes(List<Class<?>> types) {
-        Object[] a = types.toArray();
-        return Arrays.asList(Arrays.copyOf(a, a.length, Class[].class));
+    private static List<Class<?>> copyTypes(Object[] array) {
+        return Arrays.asList(Arrays.copyOf(array, array.length, Class[].class));
     }
 
     private static
@@ -3352,13 +3351,13 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      */
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
-        return dropArguments(target, pos, Arrays.asList(valueTypes));
+        return dropArguments0(target, pos, copyTypes(valueTypes));
     }
 
     // private version which allows caller some freedom with error handling
     private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos,
                                       boolean nullOnFailure) {
-        newTypes = copyTypes(newTypes);
+        newTypes = copyTypes(newTypes.toArray());
         List<Class<?>> oldTypes = target.type().parameterList();
         int match = oldTypes.size();
         if (skip != 0) {
@@ -3900,10 +3899,14 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         int foldVals = rtype == void.class ? 0 : 1;
         int afterInsertPos = foldPos + foldVals;
         boolean ok = (targetType.parameterCount() >= afterInsertPos + foldArgs);
-        if (ok && !(combinerType.parameterList()
-                    .equals(targetType.parameterList().subList(afterInsertPos,
-                                                               afterInsertPos + foldArgs))))
-            ok = false;
+        if (ok) {
+            for (int i = 0; i < foldArgs; i++) {
+                if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
         if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(foldPos))
             ok = false;
         if (!ok)
