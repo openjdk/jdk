@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import javax.management.*;
@@ -52,7 +53,7 @@ import jdk.testlibrary.JDKToolLauncher;
  * @bug 7110104
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* JMXStartStopTest JMXStartStopDoSomething
- * @run main/othervm JMXStartStopTest
+ * @run main/othervm/timeout=600 JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through
  *          JCMD achieves the desired results
  */
@@ -132,13 +133,13 @@ public class JMXStartStopTest {
     }
 
 
-    private static void testConnectLocal(int pid)
+    private static void testConnectLocal(long pid)
     throws Exception {
 
         String jmxUrlStr = null;
 
         try {
-            jmxUrlStr = sun.management.ConnectorAddressLink.importFrom(pid);
+            jmxUrlStr = sun.management.ConnectorAddressLink.importFrom((int)pid);
             dbg_print("Local Service URL: " +jmxUrlStr);
             if ( jmxUrlStr == null ) {
                 throw new Exception("No Service URL. Local agent not started?");
@@ -290,11 +291,14 @@ public class JMXStartStopTest {
     public static void main(String args[]) throws Exception {
         for (Method m : JMXStartStopTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test_")) {
+                long t1 = System.currentTimeMillis();
                 try {
                     m.invoke(null);
-                    System.out.println("=== PASSED\n");
+                    System.out.println("=== PASSED");
                 } catch (Throwable e) {
                     failures.add(new Failure(e, m.getName() + " failed"));
+                } finally {
+                    System.out.println("(took " + (System.currentTimeMillis() - t1) + "ms)\n");
                 }
             }
         }
@@ -313,7 +317,7 @@ public class JMXStartStopTest {
         private final ProcessBuilder pb;
         private final String name;
         private final AtomicBoolean started = new AtomicBoolean(false);
-        private volatile int pid = -1;
+        private volatile long pid = -1;
 
         public Something(ProcessBuilder pb, String name) {
             this.pb = pb;
@@ -326,15 +330,11 @@ public class JMXStartStopTest {
                     p = ProcessTools.startProcess(
                         "JMXStartStopDoSomething",
                         pb,
-                        (line) -> {
-                            if (line.toLowerCase().startsWith("pid:")) {
-                                pid = Integer.parseInt(line.split("\\:")[1]);
-                            }
-                            return line.equals("main enter");
-                        },
+                        (line) -> line.equals("main enter"),
                         5,
                         TimeUnit.SECONDS
                     );
+                    pid = p.getPid();
                 } catch (TimeoutException e) {
                     p.destroy();
                     p.waitFor();
@@ -343,7 +343,7 @@ public class JMXStartStopTest {
             }
         }
 
-        public int getPid() {
+        public long getPid() {
             return pid;
         }
 
@@ -585,11 +585,11 @@ public class JMXStartStopTest {
 
             testConnect(pa.getPort1(), pa.getPort2());
 
-            final boolean[] checks = new boolean[3];
+            final AtomicInteger checks = new AtomicInteger();
             jcmd(
                 line -> {
                     if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                        checks[0] = true;
+                        checks.getAndUpdate((op) -> op | 1);
                     }
                 },
                 CMD_START,
@@ -600,7 +600,7 @@ public class JMXStartStopTest {
             jcmd(
                 line -> {
                     if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                        checks[1] = true;
+                        checks.getAndUpdate((op) -> op | 2);
                     }
                 },
                 CMD_START,
@@ -611,12 +611,14 @@ public class JMXStartStopTest {
             jcmd(CMD_STOP);
             jcmd(CMD_STOP);
 
+            int busyPort;
             try (ServerSocket ss = new ServerSocket(0))
             {
+                busyPort = ss.getLocalPort();
                 jcmd(
                     line -> {
-                        if (line.contains("Port already in use: " + ss.getLocalPort())) {
-                            checks[2] = true;
+                        if (line.contains("Port already in use: " + busyPort)) {
+                            checks.getAndUpdate((op) -> op | 4);
                         }
                     },
                     CMD_START,
@@ -624,19 +626,18 @@ public class JMXStartStopTest {
                     "jmxremote.rmi.port=" + pa.getPort2(),
                     "jmxremote.authenticate=false",
                     "jmxremote.ssl=false");
-
-                if (!checks[0]) {
-                    throw new Exception("Starting agent on port " + pa.getPort1() + " should " +
-                                        "report an invalid agent state");
-                }
-                if (!checks[1]) {
-                    throw new Exception("Starting agent on poprt " + pa.getPort2() + " should " +
-                                        "report an invalid agent state");
-                }
-                if (!checks[2]) {
-                    throw new Exception("Starting agent on port " + ss.getLocalPort() + " should " +
-                                        "report port in use");
-                }
+            }
+            if ((checks.get() & 1) == 0) {
+                throw new Exception("Starting agent on port " + pa.getPort1() + " should " +
+                                    "report an invalid agent state");
+            }
+            if ((checks.get() & 2) == 0) {
+                throw new Exception("Starting agent on poprt " + pa.getPort2() + " should " +
+                                    "report an invalid agent state");
+            }
+            if ((checks.get() & 4) == 0) {
+                throw new Exception("Starting agent on port " + busyPort + " should " +
+                                    "report port in use");
             }
         } finally {
             s.stop();

@@ -32,14 +32,11 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
-          -I$(JDK_TOPDIR)/src/macosx/native/apple/applescript \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/macosx/native/apple/applescript, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := -framework Cocoa \
           -framework Carbon \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           $(LDFLAGS_JDKLIB_SUFFIX), \
       OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libAppleScriptEngine, \
@@ -63,9 +60,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
-          -I$(JDK_OUTPUTDIR)/gensrc_headers_icons \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+          -I$(JDK_OUTPUTDIR)/gensrc_headers_icons, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := \
@@ -76,7 +71,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Cocoa \
           -framework Security \
           -framework ExceptionHandling \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
@@ -107,16 +101,13 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(foreach dir, $(LIBOSX_DIRS), -I$(dir)) \
-          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := \
           -losxapp \
           -framework Cocoa \
           -framework ApplicationServices \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework Security \

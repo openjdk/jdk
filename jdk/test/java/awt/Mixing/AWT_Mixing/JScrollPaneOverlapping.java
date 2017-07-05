@@ -32,6 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JScrollPane } component.
@@ -41,6 +42,8 @@ import javax.swing.SwingUtilities;
 @test
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JScrollPaneOverlapping
  */
 public class JScrollPaneOverlapping extends OverlappingTestBase {

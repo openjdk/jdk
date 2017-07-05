@@ -492,7 +492,7 @@ public class Type1Font extends FileFont {
 
         //Conversion: Expand abbreviations in style portion (everything after '-'),
         //            replace '-' with space and insert missing spaces
-        pos = name.indexOf("-");
+        pos = name.indexOf('-');
         if (pos >= 0) {
             res =  expandName(name.substring(0, pos), false);
             res += " " + expandName(name.substring(pos+1), true);
@@ -513,8 +513,8 @@ public class Type1Font extends FileFont {
         //Conversion: Truncate style portion (everything after '-')
         //            and insert missing spaces
 
-        if (tmp.indexOf("-") > 0) {
-            tmp = tmp.substring(0, tmp.indexOf("-"));
+        if (tmp.indexOf('-') > 0) {
+            tmp = tmp.substring(0, tmp.indexOf('-'));
         }
 
         return expandName(tmp, false);

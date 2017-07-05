@@ -52,7 +52,7 @@ public interface AttributeException {
      *
      * @return unsupported attribute classes
      */
-    public Class[] getUnsupportedAttributes();
+    public Class<?>[] getUnsupportedAttributes();
 
     /**
      * Returns the array of printing attributes for which the Print Service

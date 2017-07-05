@@ -259,14 +259,14 @@ public class JvmRuntimeImpl implements JvmRuntimeMBean {
      * Getter for the "JvmRTUptimeMs" variable.
      */
     public Long getJvmRTUptimeMs() throws SnmpStatusException {
-        return new Long(getRuntimeMXBean().getUptime());
+        return getRuntimeMXBean().getUptime();
     }
 
     /**
      * Getter for the "JvmRTStartTimeMs" variable.
      */
     public Long getJvmRTStartTimeMs() throws SnmpStatusException {
-        return new Long(getRuntimeMXBean().getStartTime());
+        return getRuntimeMXBean().getStartTime();
     }
 
     /**

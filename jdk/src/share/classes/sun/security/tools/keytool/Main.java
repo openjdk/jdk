@@ -1675,7 +1675,7 @@ public final class Main {
             Object[] source = {new Integer(keysize),
                                 privKey.getAlgorithm(),
                                 chain[0].getSigAlgName(),
-                                new Long(validity),
+                                validity,
                                 x500Name};
             System.err.println(form.format(source));
         }

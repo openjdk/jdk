@@ -207,7 +207,7 @@ public class Launcher {
          * look in the extension directory itself.
          */
         public String findLibrary(String name) {
-            name = System.mapLibraryName(name);
+            final String libname = System.mapLibraryName(name);
             URL[] urls = super.getURLs();
             File prevDir = null;
             for (int i = 0; i < urls.length; i++) {
@@ -216,17 +216,26 @@ public class Launcher {
                 if (dir != null && !dir.equals(prevDir)) {
                     // Look in architecture-specific subdirectory first
                     // Read from the saved system properties to avoid deadlock
-                    String arch = VM.getSavedProperty("os.arch");
-                    if (arch != null) {
-                        File file = new File(new File(dir, arch), name);
-                        if (file.exists()) {
-                            return file.getAbsolutePath();
-                        }
-                    }
-                    // Then check the extension directory
-                    File file = new File(dir, name);
-                    if (file.exists()) {
-                        return file.getAbsolutePath();
+                    final String arch = VM.getSavedProperty("os.arch");
+                    String pathname = AccessController.doPrivileged(
+                        new PrivilegedAction<String>() {
+                            public String run() {
+                                if (arch != null) {
+                                    File file = new File(new File(dir, arch), libname);
+                                    if (file.exists()) {
+                                        return file.getAbsolutePath();
+                                    }
+                                }
+                                // Then check the extension directory
+                                File file = new File(dir, libname);
+                                if (file.exists()) {
+                                    return file.getAbsolutePath();
+                                }
+                                return null;
+                            }
+                        });
+                    if (pathname != null) {
+                        return pathname;
                     }
                 }
                 prevDir = dir;

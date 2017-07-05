@@ -77,6 +77,7 @@ import java.awt.Container;
  * @see JInternalFrame
  *
  * @author Hans Muller
+ * @since 1.2
  */
 public interface RootPaneContainer
 {

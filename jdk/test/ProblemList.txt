@@ -239,9 +239,6 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # jdk_tools
 
-# 8028474
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
-
 # Tests take too long, on sparcs see 7143279
 tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
 tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
@@ -297,8 +294,5 @@ sun/tools/jstatd/TestJstatdServer.java                          generic-all
 
 # 8046355
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
-
-# 8046352
-com/sun/tools/attach/TempDirTest.java                           generic-all
 
 ############################################################################

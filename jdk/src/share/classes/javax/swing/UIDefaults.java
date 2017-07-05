@@ -71,6 +71,7 @@ import sun.util.CoreResourceBundleControl;
  *
  * @see UIManager
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class UIDefaults extends Hashtable<Object,Object>

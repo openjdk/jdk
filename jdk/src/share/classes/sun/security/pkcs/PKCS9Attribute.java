@@ -309,26 +309,26 @@ public class PKCS9Attribute implements DerEncoder {
      */
     private static final Byte[][] PKCS9_VALUE_TAGS = {
         null,
-        {new Byte(DerValue.tag_IA5String)},   // EMailAddress
-        {new Byte(DerValue.tag_IA5String),   // UnstructuredName
-         new Byte(DerValue.tag_PrintableString)},
-        {new Byte(DerValue.tag_ObjectId)},    // ContentType
-        {new Byte(DerValue.tag_OctetString)}, // MessageDigest
-        {new Byte(DerValue.tag_UtcTime)},     // SigningTime
-        {new Byte(DerValue.tag_Sequence)},    // Countersignature
-        {new Byte(DerValue.tag_PrintableString),
-         new Byte(DerValue.tag_T61String)},   // ChallengePassword
-        {new Byte(DerValue.tag_PrintableString),
-         new Byte(DerValue.tag_T61String)},   // UnstructuredAddress
-        {new Byte(DerValue.tag_SetOf)},       // ExtendedCertificateAttributes
-        {new Byte(DerValue.tag_Sequence)},    // issuerAndSerialNumber
+        {DerValue.tag_IA5String},   // EMailAddress
+        {DerValue.tag_IA5String,   // UnstructuredName
+         DerValue.tag_PrintableString},
+        {DerValue.tag_ObjectId},    // ContentType
+        {DerValue.tag_OctetString}, // MessageDigest
+        {DerValue.tag_UtcTime},     // SigningTime
+        {DerValue.tag_Sequence},    // Countersignature
+        {DerValue.tag_PrintableString,
+         DerValue.tag_T61String},   // ChallengePassword
+        {DerValue.tag_PrintableString,
+         DerValue.tag_T61String},   // UnstructuredAddress
+        {DerValue.tag_SetOf},       // ExtendedCertificateAttributes
+        {DerValue.tag_Sequence},    // issuerAndSerialNumber
         null,
         null,
         null,
-        {new Byte(DerValue.tag_Sequence)},    // extensionRequest
-        {new Byte(DerValue.tag_Sequence)},    // SMIMECapability
-        {new Byte(DerValue.tag_Sequence)},    // SigningCertificate
-        {new Byte(DerValue.tag_Sequence)}     // SignatureTimestampToken
+        {DerValue.tag_Sequence},    // extensionRequest
+        {DerValue.tag_Sequence},    // SMIMECapability
+        {DerValue.tag_Sequence},    // SigningCertificate
+        {DerValue.tag_Sequence}     // SignatureTimestampToken
     };
 
     private static final Class<?>[] VALUE_CLASSES = new Class<?>[18];
@@ -511,7 +511,7 @@ public class PKCS9Attribute implements DerEncoder {
         // check for illegal element tags
         Byte tag;
         for (int i=0; i < elems.length; i++) {
-            tag = new Byte(elems[i].tag);
+            tag = elems[i].tag;
 
             if (indexOf(tag, PKCS9_VALUE_TAGS[index], 0) == -1)
                 throwTagException(tag);

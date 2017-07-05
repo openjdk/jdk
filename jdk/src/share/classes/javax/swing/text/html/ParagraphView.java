@@ -128,6 +128,11 @@ public class ParagraphView extends javax.swing.text.ParagraphView {
         }
     }
 
+    /**
+     * Convenient method to get the StyleSheet.
+     *
+     * @return the StyleSheet
+     */
     protected StyleSheet getStyleSheet() {
         HTMLDocument doc = (HTMLDocument) getDocument();
         return doc.getStyleSheet();

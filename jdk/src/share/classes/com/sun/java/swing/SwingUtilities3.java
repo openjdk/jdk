@@ -25,15 +25,13 @@
 
 package com.sun.java.swing;
 
-import sun.awt.EventQueueDelegate;
 import sun.awt.AppContext;
+import sun.awt.SunToolkit;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.applet.Applet;
-import java.awt.AWTEvent;
-import java.awt.EventQueue;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Window;
@@ -117,8 +115,8 @@ public class SwingUtilities3 {
     public static RepaintManager getDelegateRepaintManager(Component
                                                             component) {
         RepaintManager delegate = null;
-        if (Boolean.TRUE == AppContext.getAppContext().get(
-                                               DELEGATE_REPAINT_MANAGER_KEY)) {
+        if (Boolean.TRUE == SunToolkit.targetToAppContext(component)
+                                      .get(DELEGATE_REPAINT_MANAGER_KEY)) {
             while (delegate == null && component != null) {
                 while (component != null
                          && ! (component instanceof JComponent)) {
@@ -134,87 +132,5 @@ public class SwingUtilities3 {
             }
         }
         return delegate;
-    }
-
-    /*
-     * We use maps to avoid reflection. Hopefully it should perform better
-     * this way.
-     */
-    public static void setEventQueueDelegate(
-            Map<String, Map<String, Object>> map) {
-        EventQueueDelegate.setDelegate(new EventQueueDelegateFromMap(map));
-    }
-
-    private static class EventQueueDelegateFromMap
-    implements EventQueueDelegate.Delegate {
-        private final AWTEvent[] afterDispatchEventArgument;
-        private final Object[] afterDispatchHandleArgument;
-        private final Callable<Void> afterDispatchCallable;
-
-        private final AWTEvent[] beforeDispatchEventArgument;
-        private final Callable<Object> beforeDispatchCallable;
-
-        private final EventQueue[] getNextEventEventQueueArgument;
-        private final Callable<AWTEvent> getNextEventCallable;
-
-        @SuppressWarnings("unchecked")
-        public EventQueueDelegateFromMap(Map<String, Map<String, Object>> objectMap) {
-            Map<String, Object> methodMap = objectMap.get("afterDispatch");
-            afterDispatchEventArgument = (AWTEvent[]) methodMap.get("event");
-            afterDispatchHandleArgument = (Object[]) methodMap.get("handle");
-            afterDispatchCallable = (Callable<Void>) methodMap.get("method");
-
-            methodMap = objectMap.get("beforeDispatch");
-            beforeDispatchEventArgument = (AWTEvent[]) methodMap.get("event");
-            beforeDispatchCallable = (Callable<Object>) methodMap.get("method");
-
-            methodMap = objectMap.get("getNextEvent");
-            getNextEventEventQueueArgument =
-                (EventQueue[]) methodMap.get("eventQueue");
-            getNextEventCallable = (Callable<AWTEvent>) methodMap.get("method");
-        }
-
-        @Override
-        public void afterDispatch(AWTEvent event, Object handle) throws InterruptedException {
-            afterDispatchEventArgument[0] = event;
-            afterDispatchHandleArgument[0] = handle;
-            try {
-                afterDispatchCallable.call();
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public Object beforeDispatch(AWTEvent event) throws InterruptedException {
-            beforeDispatchEventArgument[0] = event;
-            try {
-                return beforeDispatchCallable.call();
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public AWTEvent getNextEvent(EventQueue eventQueue) throws InterruptedException {
-            getNextEventEventQueueArgument[0] = eventQueue;
-            try {
-                return getNextEventCallable.call();
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 }

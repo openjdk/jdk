@@ -30,6 +30,7 @@ package javax.swing;
  * @param <E> the type of the elements of this model
  *
  * @author Tom Santos
+ * @since 1.2
  */
 
 public interface MutableComboBoxModel<E> extends ComboBoxModel<E> {

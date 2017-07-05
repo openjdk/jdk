@@ -129,21 +129,21 @@ public class JvmClassLoadingImpl implements JvmClassLoadingMBean {
      * Getter for the "JvmClassesUnloadedCount" variable.
      */
     public Long getJvmClassesUnloadedCount() throws SnmpStatusException {
-        return new Long(getClassLoadingMXBean().getUnloadedClassCount());
+        return getClassLoadingMXBean().getUnloadedClassCount();
     }
 
     /**
      * Getter for the "JvmClassesTotalLoadedCount" variable.
      */
     public Long getJvmClassesTotalLoadedCount() throws SnmpStatusException {
-        return new Long(getClassLoadingMXBean().getTotalLoadedClassCount());
+        return getClassLoadingMXBean().getTotalLoadedClassCount();
     }
 
     /**
      * Getter for the "JvmClassesLoadedCount" variable.
      */
     public Long getJvmClassesLoadedCount() throws SnmpStatusException {
-        return new Long(getClassLoadingMXBean().getLoadedClassCount());
+        return (long)getClassLoadingMXBean().getLoadedClassCount();
     }
 
 }

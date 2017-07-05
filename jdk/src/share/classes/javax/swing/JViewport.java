@@ -97,6 +97,7 @@ import java.io.Serializable;
  * @author Hans Muller
  * @author Philip Milne
  * @see JScrollPane
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JViewport extends JComponent implements Accessible

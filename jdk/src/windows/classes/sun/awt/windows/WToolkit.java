@@ -843,6 +843,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends DragGestureRecognizer> T
         createDragGestureRecognizer(Class<T> abstractRecognizerClass,
                                     DragSource ds, Component c, int srcActions,

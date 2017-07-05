@@ -38,8 +38,9 @@ public class XFocusProxyWindow extends XBaseWindow {
     public XFocusProxyWindow(XWindowPeer owner) {
         super(new XCreateWindowParams(new Object[] {
             BOUNDS, new Rectangle(-1, -1, 1, 1),
-            PARENT_WINDOW, new Long(owner.getWindow()),
-            EVENT_MASK, new Long(XConstants.FocusChangeMask | XConstants.KeyPressMask | XConstants.KeyReleaseMask)
+            PARENT_WINDOW, Long.valueOf(owner.getWindow()),
+            EVENT_MASK, Long.valueOf(XConstants.FocusChangeMask | XConstants
+                .KeyPressMask | XConstants.KeyReleaseMask)
         }));
         this.owner = owner;
     }

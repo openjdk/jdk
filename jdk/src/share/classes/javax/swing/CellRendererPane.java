@@ -62,6 +62,7 @@ import javax.accessibility.*;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class CellRendererPane extends Container implements Accessible

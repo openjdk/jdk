@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.lang.reflect.Method;
  * An indexed property may also provide simple non-indexed read and write
  * methods.  If these are present, they read and write arrays of the type
  * returned by the indexed read method.
+ *
+ * @since 1.1
  */
 
 public class IndexedPropertyDescriptor extends PropertyDescriptor {
@@ -209,6 +211,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param readMethod The new indexed read method.
      * @throws IntrospectionException if an exception occurs during
      * introspection.
+     *
+     * @since 1.2
      */
     public synchronized void setIndexedReadMethod(Method readMethod)
         throws IntrospectionException {
@@ -288,6 +292,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param writeMethod The new indexed write method.
      * @throws IntrospectionException if an exception occurs during
      * introspection.
+     *
+     * @since 1.2
      */
     public synchronized void setIndexedWriteMethod(Method writeMethod)
         throws IntrospectionException {
@@ -353,7 +359,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
         Class<?> indexedPropertyType = null;
 
         if (indexedReadMethod != null) {
-            Class params[] = getParameterTypes(getClass0(), indexedReadMethod);
+            Class<?>[] params = getParameterTypes(getClass0(), indexedReadMethod);
             if (params.length != 1) {
                 throw new IntrospectionException("bad indexed read method arg count");
             }
@@ -366,7 +372,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
             }
         }
         if (indexedWriteMethod != null) {
-            Class params[] = getParameterTypes(getClass0(), indexedWriteMethod);
+            Class<?>[] params = getParameterTypes(getClass0(), indexedWriteMethod);
             if (params.length != 2) {
                 throw new IntrospectionException("bad indexed write method arg count");
             }

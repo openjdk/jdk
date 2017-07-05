@@ -32,6 +32,8 @@ import javax.swing.*;
 @test
 @summary Simple Overlapping test for javax.swing.JLabel
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JLabelOverlapping
  */
 public class JLabelOverlapping extends SimpleOverlappingTestBase {

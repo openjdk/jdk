@@ -66,7 +66,7 @@ public class PerfLongMonitor extends AbstractMonitor implements LongMonitor {
      *                  return type is guaranteed to be of type Long.
      */
     public Object getValue() {
-        return new Long(lb.get(0));
+        return Long.valueOf(lb.get(0));
     }
 
     /**

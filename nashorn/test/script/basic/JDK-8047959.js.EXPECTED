@@ -1,0 +1,15 @@
+delete x? false
+typeof x = number
+delete f? true
+typeof f = undefined
+delete foo? false
+typeof foo = number
+delete func? false
+typeof func = function
+delete foo? false
+typeof foo? number
+foo = 33
+x in function = local
+delete x? = true
+x after delete = global
+x = global

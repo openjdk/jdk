@@ -25,6 +25,10 @@
 
 package java.awt.event;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
+
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -217,8 +221,10 @@ public class InputMethodEvent extends AWTEvent {
     public InputMethodEvent(Component source, int id,
             AttributedCharacterIterator text, int committedCharacterCount,
             TextHitInfo caret, TextHitInfo visiblePosition) {
-        this(source, id, EventQueue.getMostRecentEventTime(), text,
-             committedCharacterCount, caret, visiblePosition);
+        this(source, id,
+                getMostRecentEventTimeForSource(source),
+                text, committedCharacterCount,
+                caret, visiblePosition);
     }
 
     /**
@@ -258,8 +264,9 @@ public class InputMethodEvent extends AWTEvent {
      */
     public InputMethodEvent(Component source, int id, TextHitInfo caret,
             TextHitInfo visiblePosition) {
-        this(source, id, EventQueue.getMostRecentEventTime(), null,
-             0, caret, visiblePosition);
+        this(source, id,
+                getMostRecentEventTimeForSource(source),
+                null, 0, caret, visiblePosition);
     }
 
     /**
@@ -411,7 +418,25 @@ public class InputMethodEvent extends AWTEvent {
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         s.defaultReadObject();
         if (when == 0) {
-            when = EventQueue.getMostRecentEventTime();
+            when = getMostRecentEventTimeForSource(this.source);
         }
+    }
+
+    /**
+     * Get the most recent event time in the {@code EventQueue} which the {@code source}
+     * belongs to.
+     *
+     * @param source the source of the event
+     * @exception  IllegalArgumentException  if source is null.
+     * @return most recent event time in the {@code EventQueue}
+     */
+    private static long getMostRecentEventTimeForSource(Object source) {
+        if (source == null) {
+            // throw the IllegalArgumentException to conform to EventObject spec
+            throw new IllegalArgumentException("null source");
+        }
+        AppContext appContext = SunToolkit.targetToAppContext(source);
+        EventQueue eventQueue = SunToolkit.getSystemEventQueueImplPP(appContext);
+        return AWTAccessor.getEventQueueAccessor().getMostRecentEventTime(eventQueue);
     }
 }

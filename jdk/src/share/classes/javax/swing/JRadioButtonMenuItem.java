@@ -82,6 +82,7 @@ import javax.accessibility.*;
  * @author Georges Saab
  * @author David Karlton
  * @see ButtonGroup
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JRadioButtonMenuItem extends JMenuItem implements Accessible {

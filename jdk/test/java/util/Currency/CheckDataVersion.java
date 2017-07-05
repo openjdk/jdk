@@ -64,7 +64,8 @@ class CheckDataVersion {
                 public Object run() {
                     try {
                         String sep = File.separator;
-                        DataInputStream dis = new DataInputStream(new FileInputStream(System.getProperty("java.home")+sep+"lib"+sep+"currency.data"));
+                        DataInputStream dis = new DataInputStream(
+                             new BufferedInputStream(getClass().getResourceAsStream("/java/util/currency.data")));
                         int magic = dis.readInt();
                         if (magic != 0x43757244) {
                             throw new RuntimeException("The magic number in the JRE's currency data is incorrect.  Expected: 0x43757244, Got: 0x"+magic);
