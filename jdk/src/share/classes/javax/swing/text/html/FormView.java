@@ -168,8 +168,8 @@ public class FormView extends ComponentView implements ActionListener {
         } else if (t == HTML.Tag.SELECT) {
 
             if (model instanceof OptionListModel) {
-
-                JList list = new JList((ListModel) model);
+                @SuppressWarnings("unchecked")
+                JList<?> list = new JList<>((ListModel) model);
                 int size = HTML.getIntegerAttributeValue(attr,
                                                          HTML.Attribute.SIZE,
                                                          1);
@@ -177,7 +177,9 @@ public class FormView extends ComponentView implements ActionListener {
                 list.setSelectionModel((ListSelectionModel)model);
                 c = new JScrollPane(list);
             } else {
-                c = new JComboBox((ComboBoxModel) model);
+                @SuppressWarnings("unchecked")
+                JComboBox<?> tmp = new JComboBox<>((ComboBoxModel) model);
+                c = tmp;
                 maxIsPreferred = 3;
             }
         } else if (t == HTML.Tag.TEXTAREA) {
@@ -342,7 +344,8 @@ public class FormView extends ComponentView implements ActionListener {
             // BasicListUI$Handler.
             // For JComboBox, there are 2 stale ListDataListeners, which are
             // BasicListUI$Handler and BasicComboBoxUI$Handler.
-            AbstractListModel listModel = (AbstractListModel) model;
+            @SuppressWarnings("unchecked")
+            AbstractListModel<?> listModel = (AbstractListModel) model;
             String listenerClass1 =
                     "javax.swing.plaf.basic.BasicListUI$Handler";
             String listenerClass2 =
@@ -788,6 +791,7 @@ public class FormView extends ComponentView implements ActionListener {
         }
         Object m = attr.getAttribute(StyleConstants.ModelAttribute);
         if (m instanceof OptionListModel) {
+            @SuppressWarnings("unchecked")
             OptionListModel<Option> model = (OptionListModel<Option>) m;
 
             for (int i = 0; i < model.getSize(); i++) {
@@ -797,7 +801,8 @@ public class FormView extends ComponentView implements ActionListener {
                 }
             }
         } else if (m instanceof ComboBoxModel) {
-            ComboBoxModel model = (ComboBoxModel)m;
+            @SuppressWarnings("unchecked")
+            ComboBoxModel<?> model = (ComboBoxModel)m;
             Option option = (Option)model.getSelectedItem();
             if (option != null) {
                 appendBuffer(buffer, name, option.getValue());
@@ -904,7 +909,8 @@ public class FormView extends ComponentView implements ActionListener {
                         } catch (BadLocationException e) {
                         }
                     } else if (m instanceof OptionListModel) {
-                        OptionListModel model = (OptionListModel) m;
+                        @SuppressWarnings("unchecked")
+                        OptionListModel<?> model = (OptionListModel) m;
                         int size = model.getSize();
                         for (int i = 0; i < size; i++) {
                             model.removeIndexInterval(i, i);
@@ -916,7 +922,8 @@ public class FormView extends ComponentView implements ActionListener {
                             }
                         }
                     } else if (m instanceof OptionComboBoxModel) {
-                        OptionComboBoxModel model = (OptionComboBoxModel) m;
+                        @SuppressWarnings("unchecked")
+                        OptionComboBoxModel<?> model = (OptionComboBoxModel) m;
                         Option option = model.getInitialSelection();
                         if (option != null) {
                             model.setSelectedItem(option);

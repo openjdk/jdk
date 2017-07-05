@@ -501,9 +501,6 @@ void before_exit(JavaThread * thread) {
     os::infinite_sleep();
   }
 
-  // Stop any ongoing concurrent GC work
-  Universe::heap()->stop();
-
   // Terminate watcher thread - must before disenrolling any periodic task
   if (PeriodicTask::num_tasks() > 0)
     WatcherThread::stop();
@@ -518,10 +515,8 @@ void before_exit(JavaThread * thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-  // We do not need to explicitly stop concurrent GC threads because the
-  // JVM will be taken down at a safepoint when such threads are inactive --
-  // except for some concurrent G1 threads, see (comment in)
-  // Threads::destroy_vm().
+  // Stop concurrent GC threads
+  Universe::heap()->stop();
 
   // Print GC/heap related information.
   if (PrintGCDetails) {

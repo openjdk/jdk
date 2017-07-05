@@ -36,7 +36,6 @@ import org.w3c.dom.TypeInfo;
  *
  * @author Elena Litani, IBM
  * @author Sandy Gao, IBM
- * @version $Id: XSComplexTypeDecl.java,v 1.8 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSComplexTypeDecl implements XSComplexTypeDefinition, TypeInfo {
 

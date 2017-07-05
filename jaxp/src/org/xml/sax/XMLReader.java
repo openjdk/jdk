@@ -75,7 +75,7 @@ import java.io.IOException;
  * <p>There are adapters available to convert a SAX1 Parser to
  * a SAX2 XMLReader and vice-versa.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.XMLFilter
  * @see org.xml.sax.helpers.ParserAdapter

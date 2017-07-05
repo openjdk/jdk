@@ -125,8 +125,7 @@
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
       <compilerarg value="-J-Djava.ext.dirs="/>
-      <compilerarg value="-Xlint:unchecked"/>
-      <compilerarg value="-Xlint:deprecation"/>
+      <compilerarg value="-Xlint:all"/>
       <compilerarg value="-XDignore.symbol.file"/>
       <compilerarg value="-Xdiags:verbose"/>
     </javac>

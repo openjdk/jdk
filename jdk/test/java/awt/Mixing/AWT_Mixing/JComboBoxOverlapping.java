@@ -30,6 +30,8 @@ import java.awt.event.ActionListener;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import test.java.awt.regtesthelpers.Util;
+
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JCombobox } component.
@@ -40,6 +42,8 @@ import javax.swing.JFrame;
 @test
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JComboBoxOverlapping
  */
 public class JComboBoxOverlapping extends OverlappingTestBase {

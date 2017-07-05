@@ -41,7 +41,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for a list of statements.
  */
 @Immutable
-public class Block extends Node implements BreakableNode, Flags<Block> {
+public class Block extends Node implements BreakableNode, Terminal, Flags<Block> {
     /** List of statements */
     protected final List<Statement> statements;
 
@@ -231,6 +231,11 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         return flags;
     }
 
+    /**
+     * Is this a terminal block, i.e. does it end control flow like ending with a throw or return?
+     *
+     * @return true if this node statement is terminal
+     */
     @Override
     public boolean isTerminal() {
         return getFlag(IS_TERMINAL);

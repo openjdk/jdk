@@ -69,7 +69,6 @@ import com.sun.xml.internal.stream.Entity;
  * @author Glenn Marcy, IBM
  * @author Eric Ye, IBM
  *
- * @version $Id: XMLDTDScannerImpl.java,v 1.8 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLDTDScannerImpl
 extends XMLScanner

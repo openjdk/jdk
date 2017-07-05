@@ -153,6 +153,7 @@ import javax.accessibility.*;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JLayeredPane extends JComponent implements Accessible {

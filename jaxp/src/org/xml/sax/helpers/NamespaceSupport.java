@@ -90,7 +90,7 @@ import java.util.Vector;
  * Applications must track namespace information themselves if they
  * want to use namespace information.
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  */
 public class NamespaceSupport
@@ -126,7 +126,7 @@ public class NamespaceSupport
      * <em>xmlns</em> and <em>xmlns:*</em> attributes, which are used to
      * declare namespaces.  </p>
      *
-     * @since SAX 2.1alpha
+     * @since 1.5, SAX 2.1alpha
      * @see #setNamespaceDeclUris
      * @see #isNamespaceDeclUris
      */
@@ -497,7 +497,7 @@ public class NamespaceSupport
      * by {@link #processName processName()}.  This may only be
      * changed before any contexts have been pushed.
      *
-     * @since SAX 2.1alpha
+     * @since 1.5, SAX 2.1alpha
      *
      * @exception IllegalStateException when attempting to set this
      *  after any context has been pushed.
@@ -521,7 +521,7 @@ public class NamespaceSupport
      * Returns true if namespace declaration attributes are placed into
      * a namespace.  This behavior is not the default.
      *
-     * @since SAX 2.1alpha
+     * @since 1.5, SAX 2.1alpha
      */
     public boolean isNamespaceDeclUris ()
         { return namespaceDeclUris; }

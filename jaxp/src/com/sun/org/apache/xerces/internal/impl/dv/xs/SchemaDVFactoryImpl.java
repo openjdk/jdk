@@ -32,7 +32,6 @@ import com.sun.org.apache.xerces.internal.util.SymbolHash;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: SchemaDVFactoryImpl.java,v 1.7 2010-11-01 04:39:47 joehw Exp $
  */
 public class SchemaDVFactoryImpl extends BaseSchemaDVFactory {
 

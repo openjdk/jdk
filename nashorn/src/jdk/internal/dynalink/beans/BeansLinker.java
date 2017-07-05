@@ -169,6 +169,26 @@ public class BeansLinker implements GuardingDynamicLinker {
     }
 
     /**
+     * Returns true if the object is a Dynalink Java constructor.
+     *
+     * @param obj the object we want to test for being a constructor
+     * @return true if it is a constructor, false otherwise.
+     */
+    public static boolean isDynamicConstructor(final Object obj) {
+        return obj instanceof DynamicMethod && ((DynamicMethod)obj).isConstructor();
+    }
+
+    /**
+     * Return the dynamic method of constructor of the given class and the given signature.
+     * @param clazz the class
+     * @param signature full signature of the constructor
+     * @return DynamicMethod for the constructor
+     */
+    public static Object getConstructorMethod(final Class<?> clazz, final String signature) {
+        return StaticClassLinker.getConstructorMethod(clazz, signature);
+    }
+
+    /**
      * Returns a collection of names of all readable instance properties of a class.
      * @param clazz the class
      * @return a collection of names of all readable instance properties of a class.

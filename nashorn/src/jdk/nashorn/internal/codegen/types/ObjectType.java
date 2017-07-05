@@ -171,6 +171,8 @@ class ObjectType extends Type {
             invokestatic(method, JSType.TO_BOOLEAN);
         } else if (to.isString()) {
             invokestatic(method, JSType.TO_PRIMITIVE_TO_STRING);
+        } else if (to.isCharSequence()) {
+            invokestatic(method, JSType.TO_PRIMITIVE_TO_CHARSEQUENCE);
         } else {
             throw new UnsupportedOperationException("Illegal conversion " + this + " -> " + to + " " + isString() + " " + toString);
         }

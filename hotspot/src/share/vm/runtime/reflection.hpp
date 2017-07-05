@@ -44,9 +44,6 @@ class FieldStream;
 
 class Reflection: public AllStatic {
  private:
-  // Access checking
-  static bool reflect_check_access(Klass* field_class, AccessFlags acc, Klass* target_class, bool is_method_invoke, TRAPS);
-
   // Conversion
   static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS);
   static oop      basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS);

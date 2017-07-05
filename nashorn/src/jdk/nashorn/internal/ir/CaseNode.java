@@ -36,7 +36,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Case nodes are not BreakableNodes, but the SwitchNode is
  */
 @Immutable
-public final class CaseNode extends Node implements JoinPredecessor, Labels {
+public final class CaseNode extends Node implements JoinPredecessor, Labels, Terminal {
     /** Test expression. */
     private final Expression test;
 
@@ -77,6 +77,11 @@ public final class CaseNode extends Node implements JoinPredecessor, Labels {
         this.conversion = conversion;
     }
 
+    /**
+     * Is this a terminal case node, i.e. does it end control flow like having a throw or return?
+     *
+     * @return true if this node statement is terminal
+     */
     @Override
     public boolean isTerminal() {
         return body.isTerminal();

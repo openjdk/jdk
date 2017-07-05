@@ -29,6 +29,7 @@ import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -59,6 +60,20 @@ public class TypeMap {
         returnTypeMap.put(functionNodeId, Type.typeFor(type.returnType()));
 
         this.needsCallee = needsCallee;
+    }
+
+    /**
+     * Returns the array of parameter types for a particular function node
+     * @param functionNodeId the ID of the function node
+     * @return an array of parameter types
+     * @throws NoSuchElementException if the type map has no mapping for the requested function
+     */
+    public Type[] getParameterTypes(final int functionNodeId) {
+        final Type[] paramTypes = paramTypeMap.get(functionNodeId);
+        if (paramTypes == null) {
+            throw new NoSuchElementException(Integer.toString(functionNodeId));
+        }
+        return paramTypes.clone();
     }
 
     MethodType getCallSiteType(final FunctionNode functionNode) {

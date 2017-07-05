@@ -101,7 +101,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
  * @author Andy Clark, IBM
  * @author Neil Graham, IBM
  *
- * @version $Id: DTDGrammar.java,v 1.4 2010/08/11 07:18:37 joehw Exp $
  */
 public class DTDGrammar
     implements XMLDTDHandler, XMLDTDContentModelHandler, EntityState, Grammar {

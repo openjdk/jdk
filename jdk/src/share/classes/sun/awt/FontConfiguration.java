@@ -272,9 +272,9 @@ public abstract class FontConfiguration {
             if (configFile != null) {
                 return configFile;
             }
-            int decimalPointIndex = osVersion.indexOf(".");
+            int decimalPointIndex = osVersion.indexOf('.');
             if (decimalPointIndex != -1) {
-                osMajorVersion = osVersion.substring(0, osVersion.indexOf("."));
+                osMajorVersion = osVersion.substring(0, osVersion.indexOf('.'));
                 configFile = findImpl(baseName + "." + osName + "." + osMajorVersion);
                 if (configFile != null) {
                     return configFile;

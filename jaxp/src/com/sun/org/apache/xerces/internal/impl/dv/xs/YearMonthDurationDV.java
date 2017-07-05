@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
  *
  * @author Ankit Pasricha, IBM
  *
- * @version $Id: YearMonthDurationDV.java,v 1.6 2010-11-01 04:39:47 joehw Exp $
  */
 class YearMonthDurationDV extends DurationDV {
 

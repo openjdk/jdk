@@ -44,7 +44,6 @@ import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
  *
  * @author Neil Graham, IBM
  *
- * @version $Id: SecurityConfiguration.java,v 1.6 2010-11-01 04:40:09 joehw Exp $
  */
 public class SecurityConfiguration extends XIncludeAwareParserConfiguration
 {

@@ -96,7 +96,7 @@ public class CodeStoreAndPathTest {
     final String codeCache = "build/nashorn_code_cache";
     final String oldUserDir = System.getProperty("user.dir");
 
-    private static final String[] ENGINE_OPTIONS = new String[]{"--persistent-code-cache", "--optimistic-types=false", "--lazy-compilation=false"};
+    private static final String[] ENGINE_OPTIONS = new String[]{"--persistent-code-cache"};
 
     public void checkCompiledScripts(final DirectoryStream<Path> stream, int numberOfScripts) throws IOException {
         for (final Path file : stream) {

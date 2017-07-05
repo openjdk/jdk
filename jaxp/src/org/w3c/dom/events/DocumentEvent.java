@@ -50,7 +50,7 @@ import org.w3c.dom.DOMException;
  * implemented on the same object which implements the <code>Document</code>
  * interface in an implementation which supports the Event model.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113'>Document Object Model (DOM) Level 2 Events Specification</a>.
- * @since DOM Level 2
+ * @since 1.5, DOM Level 2
  */
 public interface DocumentEvent {
     /**

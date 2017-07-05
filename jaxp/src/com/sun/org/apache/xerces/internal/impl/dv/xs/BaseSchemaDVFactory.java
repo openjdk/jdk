@@ -38,7 +38,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  * @author Sandy Gao, IBM
  * @author Khaled Noaman, IBM
  *
- * @version $Id: BaseSchemaDVFactory.java,v 1.2 2010-10-26 23:01:03 joehw Exp $
  */
 public abstract class BaseSchemaDVFactory extends SchemaDVFactory {
 

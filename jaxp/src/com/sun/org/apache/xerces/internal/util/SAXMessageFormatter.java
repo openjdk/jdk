@@ -29,7 +29,6 @@ import java.util.ResourceBundle;
  *
  * @author Michael Glavassevich, IBM
  *
- * @version $Id: SAXMessageFormatter.java,v 1.6 2010-11-01 04:40:14 joehw Exp $
  */
 public class SAXMessageFormatter {
 

@@ -40,7 +40,6 @@ import java.util.ServiceLoader;
  * Implementation of {@link XPathFactory#newInstance(String)}.
  *
  * @author <a href="Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @version $Revision: 1.7 $, $Date: 2010-11-01 04:36:14 $
  * @since 1.5
  */
 class XPathFactoryFinder  {

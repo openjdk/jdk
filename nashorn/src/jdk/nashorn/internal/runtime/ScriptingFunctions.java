@@ -107,8 +107,8 @@ public final class ScriptingFunctions {
 
         if (file instanceof File) {
             f = (File)file;
-        } else if (file instanceof String) {
-            f = new java.io.File((String)file);
+        } else if (file instanceof String || file instanceof ConsString) {
+            f = new java.io.File(((CharSequence)file).toString());
         }
 
         if (f == null || !f.isFile()) {

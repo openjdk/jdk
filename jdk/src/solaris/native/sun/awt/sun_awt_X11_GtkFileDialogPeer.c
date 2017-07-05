@@ -59,7 +59,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
 static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gpointer obj)
 {
     JNIEnv *env;
-    jclass cx;
     jstring filename;
 
     env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -158,62 +157,55 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_setBounds
     fp_gdk_threads_leave();
 }
 
-/**
- * Convert a GSList to an array of filenames (without the parent folder)
+/*
+ * baseDir should be freed by user.
  */
-static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list)
-{
-    jstring str;
-    jclass stringCls;
-    GSList *iterator;
-    jobjectArray array;
-    int i;
-    char* entry;
+static gboolean isFromSameDirectory(GSList* list, gchar** baseDir) {
 
-    if (NULL == list) {
-        return NULL;
-    }
+    GSList *it = list;
+    gchar* prevDir = NULL;
+    gboolean isAllDirsSame = TRUE;
 
-    stringCls = (*env)->FindClass(env, "java/lang/String");
-    if (stringCls == NULL) {
-        (*env)->ExceptionClear(env);
-        JNU_ThrowInternalError(env, "Could not get java.lang.String class");
-        return NULL;
-    }
+    while (it) {
+        gchar* dir = fp_g_path_get_dirname((gchar*) it->data);
 
-    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls, NULL);
-    if (array == NULL) {
-        (*env)->ExceptionClear(env);
-        JNU_ThrowInternalError(env, "Could not instantiate array files array");
-        return NULL;
-    }
-
-    i = 0;
-    for (iterator = list; iterator; iterator = iterator->next) {
-        entry = (char*) iterator->data;
-        entry = strrchr(entry, '/') + 1;
-        str = (*env)->NewStringUTF(env, entry);
-        if (str && !(*env)->ExceptionCheck(env)) {
-            (*env)->SetObjectArrayElement(env, array, i, str);
+        if (prevDir && strcmp(prevDir, dir) != 0) {
+            isAllDirsSame = FALSE;
+            fp_g_free(dir);
+            break;
         }
-        i++;
+
+        if (!prevDir) {
+            prevDir = strdup(dir);
+        }
+        fp_g_free(dir);
+
+        it = it->next;
     }
 
-    return array;
+    if (isAllDirsSame) {
+        *baseDir = prevDir;
+    } else {
+        free(prevDir);
+        *baseDir = strdup("/");
+    }
+
+    return isAllDirsSame;
 }
 
 /**
- * Convert a GSList to an array of filenames (with the parent folder)
+ * Convert a GSList to an array of filenames
  */
-static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
+static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list, jstring* jcurrent_folder)
 {
     jstring str;
     jclass stringCls;
     GSList *iterator;
     jobjectArray array;
     int i;
-    char* entry;
-
+    gchar* entry;
+    gchar * baseDir;
+    gboolean isFromSameDir;
 
     if (list == NULL) {
         return NULL;
@@ -233,12 +225,23 @@ static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
         return NULL;
     }
 
-    i = 0;
-    for (iterator = list; iterator; iterator = iterator->next) {
-        entry = (char*) iterator->data;
+    isFromSameDir = isFromSameDirectory(list, &baseDir);
 
-        //check for leading slash.
-        if (entry[0] == '/') {
+    *jcurrent_folder = (*env)->NewStringUTF(env, baseDir);
+    if (*jcurrent_folder == NULL) {
+        free(baseDir);
+        return NULL;
+    }
+
+    for (iterator = list, i=0;
+            iterator;
+            iterator = iterator->next, i++) {
+
+        entry = (gchar*) iterator->data;
+
+        if (isFromSameDir) {
+            entry = strrchr(entry, '/') + 1;
+        } else if (entry[0] == '/') {
             entry++;
         }
 
@@ -246,48 +249,33 @@ static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
         if (str && !(*env)->ExceptionCheck(env)) {
             (*env)->SetObjectArrayElement(env, array, i, str);
         }
-        i++;
     }
 
+    free(baseDir);
     return array;
 }
 
 static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
 {
     JNIEnv *env;
-    char *current_folder;
     GSList *filenames;
-    jclass cx;
-    jstring jcurrent_folder;
+    jstring jcurrent_folder = NULL;
     jobjectArray jfilenames;
 
     env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    current_folder = NULL;
     filenames = NULL;
-    gboolean full_path_names = FALSE;
 
     if (responseId == GTK_RESPONSE_ACCEPT) {
-        current_folder = fp_gtk_file_chooser_get_current_folder(
-                GTK_FILE_CHOOSER(aDialog));
-        if (current_folder == NULL) {
-            full_path_names = TRUE;
-        }
         filenames = fp_gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(aDialog));
     }
-    if (full_path_names) {
-        //This is a hack for use with "Recent Folders" in gtk where each
-        //file could have its own directory.
-        jfilenames = toPathAndFilenamesArray(env, filenames);
-        jcurrent_folder = (*env)->NewStringUTF(env, "/");
-    } else {
-        jfilenames = toFilenamesArray(env, filenames);
-        jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
-    }
+
+    jfilenames = toFilenamesArray(env, filenames, &jcurrent_folder);
+
     if (!(*env)->ExceptionCheck(env)) {
         (*env)->CallVoidMethod(env, obj, setFileInternalMethodID,
                                jcurrent_folder, jfilenames);
     }
-    fp_g_free(current_folder);
+
     quit(env, (jobject)obj, TRUE);
 }
 

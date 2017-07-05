@@ -77,7 +77,6 @@ import java.io.IOException;
  *
  * @author Michael Glavassevich, IBM
  * @author Neil Graham, IBM
- * @version $Id: XML11EntityScanner.java,v 1.5 2010-11-01 04:39:40 joehw Exp $
  */
 
 public class XML11EntityScanner

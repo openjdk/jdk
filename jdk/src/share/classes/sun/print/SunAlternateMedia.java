@@ -25,6 +25,7 @@
 
 package sun.print;
 
+import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.standard.Media;
 
@@ -47,7 +48,7 @@ public class SunAlternateMedia implements PrintRequestAttribute {
         return media;
     }
 
-    public final Class getCategory() {
+    public final Class<? extends Attribute> getCategory() {
         return SunAlternateMedia.class;
     }
 

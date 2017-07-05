@@ -184,9 +184,7 @@ bool VM_PrintThreads::doit_prologue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
 
   // Make sure AbstractOwnableSynchronizer is loaded
-  if (JDK_Version::is_gte_jdk16x_version()) {
-    java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
-  }
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
 
   // Get Heap_lock if concurrent locks will be dumped
   if (_print_concurrent_locks) {
@@ -225,7 +223,7 @@ bool VM_FindDeadlocks::doit_prologue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
 
   // Load AbstractOwnableSynchronizer class
-  if (_concurrent_locks && JDK_Version::is_gte_jdk16x_version()) {
+  if (_concurrent_locks) {
     java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
   }
 
@@ -283,9 +281,7 @@ bool VM_ThreadDump::doit_prologue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
 
   // Load AbstractOwnableSynchronizer class before taking thread snapshots
-  if (JDK_Version::is_gte_jdk16x_version()) {
-    java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
-  }
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
 
   if (_with_locked_synchronizers) {
     // Acquire Heap_lock to dump concurrent locks

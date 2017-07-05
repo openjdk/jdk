@@ -108,7 +108,7 @@ public abstract class AudioFileReader {
      * @param  stream the input stream from which the {@code AudioInputStream}
      *         should be constructed
      * @return an {@code AudioInputStream} object based on the audio file data
-     *         contained in the input stream.
+     *         contained in the input stream
      * @throws UnsupportedAudioFileException if the stream does not point to
      *         valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs

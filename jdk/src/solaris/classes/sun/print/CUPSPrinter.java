@@ -246,9 +246,9 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                OutputStream os = (OutputStream)java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction() {
-                        public Object run() {
+                OutputStream os = java.security.AccessController.
+                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
+                        public OutputStream run() {
                             try {
                                 return urlConnection.getOutputStream();
                             } catch (Exception e) {
@@ -274,10 +274,10 @@ public class CUPSPrinter  {
                                         IPPPrintService.OP_CUPS_GET_DEFAULT,
                                         attCl)) {
 
-                    HashMap defaultMap = null;
+                    HashMap<String, AttributeClass> defaultMap = null;
                     String[] printerInfo = new String[2];
                     InputStream is = urlConnection.getInputStream();
-                    HashMap[] responseMap = IPPPrintService.readIPPResponse(
+                    HashMap<String, AttributeClass>[] responseMap = IPPPrintService.readIPPResponse(
                                          is);
                     is.close();
 
@@ -309,13 +309,11 @@ public class CUPSPrinter  {
                     }
 
 
-                    AttributeClass attribClass = (AttributeClass)
-                        defaultMap.get("printer-name");
+                    AttributeClass attribClass = defaultMap.get("printer-name");
 
                     if (attribClass != null) {
                         printerInfo[0] = attribClass.getStringValue();
-                        attribClass = (AttributeClass)
-                            defaultMap.get("printer-uri-supported");
+                        attribClass = defaultMap.get("printer-uri-supported");
                         IPPPrintService.debug_println(debugPrefix+
                           "printer-uri-supported="+attribClass);
                         if (attribClass != null) {
@@ -348,9 +346,9 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                OutputStream os = (OutputStream)java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction() {
-                        public Object run() {
+                OutputStream os = java.security.AccessController.
+                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
+                        public OutputStream run() {
                             try {
                                 return urlConnection.getOutputStream();
                             } catch (Exception e) {
@@ -375,7 +373,7 @@ public class CUPSPrinter  {
                                 IPPPrintService.OP_CUPS_GET_PRINTERS, attCl)) {
 
                     InputStream is = urlConnection.getInputStream();
-                    HashMap[] responseMap =
+                    HashMap<String, AttributeClass>[] responseMap =
                         IPPPrintService.readIPPResponse(is);
 
                     is.close();
@@ -386,9 +384,9 @@ public class CUPSPrinter  {
                         return null;
                     }
 
-                    ArrayList printerNames = new ArrayList();
+                    ArrayList<String> printerNames = new ArrayList<>();
                     for (int i=0; i< responseMap.length; i++) {
-                        AttributeClass attribClass = (AttributeClass)
+                        AttributeClass attribClass =
                             responseMap[i].get("printer-uri-supported");
 
                         if (attribClass != null) {
@@ -396,7 +394,7 @@ public class CUPSPrinter  {
                             printerNames.add(nameStr);
                         }
                     }
-                    return (String[])printerNames.toArray(new String[] {});
+                    return printerNames.toArray(new String[] {});
                 } else {
                     os.close();
                     urlConnection.disconnect();

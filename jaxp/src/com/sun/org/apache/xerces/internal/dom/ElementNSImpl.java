@@ -42,7 +42,6 @@ import org.w3c.dom.DOMException;
  *
  * @author Elena litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems
- * @version $Id: ElementNSImpl.java,v 1.7 2010-11-01 04:39:39 joehw Exp $
  */
 public class ElementNSImpl
     extends ElementImpl {

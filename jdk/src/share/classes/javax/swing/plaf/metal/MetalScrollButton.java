@@ -59,6 +59,13 @@ public class MetalScrollButton extends BasicArrowButton
 
   private int buttonWidth;
 
+        /**
+         * Constructs an instance of {@code MetalScrollButton}.
+         *
+         * @param direction the direction
+         * @param width the width
+         * @param freeStanding the free standing value
+         */
         public MetalScrollButton( int direction, int width, boolean freeStanding )
         {
             super( direction );
@@ -70,6 +77,11 @@ public class MetalScrollButton extends BasicArrowButton
             isFreeStanding = freeStanding;
         }
 
+        /**
+         * Sets the free standing value.
+         *
+         * @param freeStanding the free standing value
+         */
         public void setFreeStanding( boolean freeStanding )
         {
             isFreeStanding = freeStanding;
@@ -115,14 +127,10 @@ public class MetalScrollButton extends BasicArrowButton
                 g.setColor( arrowColor );
                 int startY = ((h+1) - arrowHeight) / 2;
                 int startX = (w / 2);
-                //                  System.out.println( "startX :" + startX + " startY :"+startY);
+
                 for (int line = 0; line < arrowHeight; line++) {
                     g.drawLine( startX-line, startY+line, startX +line+1, startY+line);
                 }
-        /*      g.drawLine( 7, 6, 8, 6 );
-                g.drawLine( 6, 7, 9, 7 );
-                g.drawLine( 5, 8, 10, 8 );
-                g.drawLine( 4, 9, 11, 9 );*/
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -167,16 +175,9 @@ public class MetalScrollButton extends BasicArrowButton
                 int startY = (((h+1) - arrowHeight) / 2)+ arrowHeight-1;
                 int startX = (w / 2);
 
-                //          System.out.println( "startX2 :" + startX + " startY2 :"+startY);
-
                 for (int line = 0; line < arrowHeight; line++) {
                     g.drawLine( startX-line, startY-line, startX +line+1, startY-line);
                 }
-
-        /*      g.drawLine( 4, 5, 11, 5 );
-                g.drawLine( 5, 6, 10, 6 );
-                g.drawLine( 6, 7, 9, 7 );
-                g.drawLine( 7, 8, 8, 8 ); */
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -219,17 +220,9 @@ public class MetalScrollButton extends BasicArrowButton
                 int startX = (((w+1) - arrowHeight) / 2) + arrowHeight-1;
                 int startY = (h / 2);
 
-                //System.out.println( "startX2 :" + startX + " startY2 :"+startY);
-
                 for (int line = 0; line < arrowHeight; line++) {
                     g.drawLine( startX-line, startY-line, startX -line, startY+line+1);
                 }
-
-
-/*              g.drawLine( 5, 4, 5, 11 );
-                g.drawLine( 6, 5, 6, 10 );
-                g.drawLine( 7, 6, 7, 9 );
-                g.drawLine( 8, 7, 8, 8 );*/
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -273,11 +266,6 @@ public class MetalScrollButton extends BasicArrowButton
                 for (int line = 0; line < arrowHeight; line++) {
                     g.drawLine( startX+line, startY-line, startX +line, startY+line+1);
                 }
-
-        /*      g.drawLine( 6, 7, 6, 8 );
-                g.drawLine( 7, 6, 7, 9 );
-                g.drawLine( 8, 5, 8, 10 );
-                g.drawLine( 9, 4, 9, 11 );*/
 
                 if (isEnabled) {
                     g.setColor( highlightColor );
@@ -341,6 +329,11 @@ public class MetalScrollButton extends BasicArrowButton
             return new Dimension( Integer.MAX_VALUE, Integer.MAX_VALUE );
         }
 
+        /**
+         * Returns the width of the button.
+         *
+         * @return the width of the button
+         */
         public int getButtonWidth() {
             return buttonWidth;
         }

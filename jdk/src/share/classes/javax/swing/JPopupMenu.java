@@ -82,6 +82,7 @@ import java.applet.Applet;
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JPopupMenu extends JComponent implements Accessible,MenuElement {
