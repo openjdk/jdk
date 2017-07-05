@@ -38,8 +38,8 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.NumberAccessTest
- * @run testng/othervm jdk.nashorn.api.javaaccess.NumberAccessTest
+ * @build jdk.nashorn.api.javaaccess.test.SharedObject jdk.nashorn.api.javaaccess.test.Person jdk.nashorn.api.javaaccess.test.NumberAccessTest
+ * @run testng/othervm jdk.nashorn.api.javaaccess.test.NumberAccessTest
  */
 @SuppressWarnings("javadoc")
 public class NumberAccessTest {
@@ -57,7 +57,7 @@ public class NumberAccessTest {
         e = m.getEngineByName("nashorn");
         o = new SharedObject();
         e.put("o", o);
-        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
+        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.test.SharedObject;");
     }
 
     @AfterClass

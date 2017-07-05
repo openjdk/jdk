@@ -1229,7 +1229,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
             public int nextInt() {
                 if (next != -1) {
                     int ret = next;
-                    next = nextSetBit(next+1);
+                    next = (next == Integer.MAX_VALUE) ? -1 : nextSetBit(next+1);
                     return ret;
                 } else {
                     throw new NoSuchElementException();

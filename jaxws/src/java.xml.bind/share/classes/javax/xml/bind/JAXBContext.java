@@ -63,10 +63,10 @@ import java.io.InputStream;
  * <i><B>SPEC REQUIREMENT:</B> the provider must supply an implementation
  * class containing the following method signatures:</i>
  *
- * <pre>
- * public static JAXBContext createContext( String contextPath, ClassLoader classLoader, Map&lt;String,Object&gt; properties ) throws JAXBException
- * public static JAXBContext createContext( Class[] classes, Map&lt;String,Object&gt; properties ) throws JAXBException
- * </pre>
+ * <pre>{@code
+ * public static JAXBContext createContext( String contextPath, ClassLoader classLoader, Map<String,Object> properties ) throws JAXBException
+ * public static JAXBContext createContext( Class[] classes, Map<String,Object> properties ) throws JAXBException
+ * }</pre>
  *
  * <p><i>
  * The following JAXB 1.0 requirement is only required for schema to
@@ -352,7 +352,7 @@ public abstract class JAXBContext {
      * <p>
      * To maintain compatibility with JAXB 1.0 schema to java
      * interface/implementation binding, enabled by schema customization
-     * <tt>&lt;jaxb:globalBindings valueClass="false"&gt;</tt>,
+     * <tt>{@literal <jaxb:globalBindings valueClass="false">}</tt>,
      * the JAXB provider will ensure that each package on the context path
      * has a <tt>jaxb.properties</tt> file which contains a value for the
      * <tt>javax.xml.bind.context.factory</tt> property and that all values
@@ -526,7 +526,7 @@ public abstract class JAXBContext {
      * Not only the new context will recognize all the classes specified,
      * but it will also recognize any classes that are directly/indirectly
      * referenced statically from the specified classes. Subclasses of
-     * referenced classes nor <tt>&#64;XmlTransient</tt> referenced classes
+     * referenced classes nor <tt>@XmlTransient</tt> referenced classes
      * are not registered with JAXBContext.
      *
      * For example, in the following Java code, if you do

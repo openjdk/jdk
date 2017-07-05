@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.List;
 import com.sun.codemodel.internal.JClass;
 import com.sun.codemodel.internal.JDefinedClass;
 import com.sun.tools.internal.xjc.model.CClassInfo;
+import com.sun.tools.internal.xjc.model.CCustomizable;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.istack.internal.NotNull;
 
@@ -44,7 +45,7 @@ import com.sun.istack.internal.NotNull;
  *
  * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
-public abstract class ClassOutline {
+public abstract class ClassOutline implements CustomizableOutline {
 
     /**
      * A {@link Outline} that encloses all the class outlines.
@@ -121,5 +122,15 @@ public abstract class ClassOutline {
         CClassInfo s = target.getBaseClass();
         if(s==null)     return null;
         return parent().getClazz(s);
+    }
+
+    @Override
+    public JDefinedClass getImplClass() {
+        return implClass;
+    }
+
+    @Override
+    public CCustomizable getTarget() {
+        return target;
     }
 }

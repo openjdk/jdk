@@ -25,7 +25,11 @@
 
 package javax.crypto;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 /**
  * A CipherInputStream is composed of an InputStream and a Cipher so
@@ -88,8 +92,6 @@ public class CipherInputStream extends FilterInputStream {
     private int ofinish = 0;
     // stream status
     private boolean closed = false;
-    // The stream has been read from.  False if the stream has never been read.
-    private boolean read = false;
 
     /**
      * private convenience function.
@@ -101,11 +103,15 @@ public class CipherInputStream extends FilterInputStream {
      * return (ofinish-ostart) (we have this many bytes for you)
      * return 0 (no data now, but could have more later)
      * return -1 (absolutely no more data)
+     *
+     * Note:  Exceptions are only thrown after the stream is completely read.
+     * For AEAD ciphers a read() of any length will internally cause the
+     * whole stream to be read fully and verify the authentication tag before
+     * returning decrypted data or exceptions.
      */
     private int getMoreData() throws IOException {
         if (done) return -1;
         int readin = input.read(ibuffer);
-        read = true;
         if (readin == -1) {
             done = true;
             try {
@@ -301,17 +307,16 @@ public class CipherInputStream extends FilterInputStream {
 
         closed = true;
         input.close();
-        try {
-            // throw away the unprocessed data
-            if (!done) {
+
+        // Throw away the unprocessed data and throw no crypto exceptions.
+        // AEAD ciphers are fully readed before closing.  Any authentication
+        // exceptions would occur while reading.
+        if (!done) {
+            try {
                 cipher.doFinal();
             }
-        }
-        catch (BadPaddingException | IllegalBlockSizeException ex) {
-            /* If no data has been read from the stream to be en/decrypted,
-               we supress any exceptions, and close quietly. */
-            if (read) {
-                throw new IOException(ex);
+            catch (BadPaddingException | IllegalBlockSizeException ex) {
+                // Catch exceptions as the rest of the stream is unused.
             }
         }
         ostart = 0;

@@ -38,8 +38,8 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.BooleanAccessTest
- * @run testng/othervm jdk.nashorn.api.javaaccess.BooleanAccessTest
+ * @build jdk.nashorn.api.javaaccess.test.SharedObject jdk.nashorn.api.javaaccess.test.Person jdk.nashorn.api.javaaccess.test.BooleanAccessTest
+ * @run testng/othervm jdk.nashorn.api.javaaccess.test.BooleanAccessTest
  */
 @SuppressWarnings("javadoc")
 public class BooleanAccessTest {
@@ -57,7 +57,7 @@ public class BooleanAccessTest {
         e = m.getEngineByName("nashorn");
         o = new SharedObject();
         e.put("o", o);
-        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
+        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.test.SharedObject;");
     }
 
     @AfterClass

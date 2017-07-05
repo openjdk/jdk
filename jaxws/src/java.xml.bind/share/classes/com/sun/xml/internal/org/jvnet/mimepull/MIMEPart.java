@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.org.jvnet.mimepull;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -42,10 +43,11 @@ import java.util.logging.Logger;
  *
  * @author Jitendra Kotamraju, Martin Grebac
  */
-public class MIMEPart {
+public class MIMEPart implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(MIMEPart.class.getName());
 
+    private volatile boolean closed;
     private volatile InternetHeaders headers;
     private volatile String contentId;
     private String contentType;
@@ -54,6 +56,8 @@ public class MIMEPart {
     volatile boolean parsed;    // part is parsed or not
     final MIMEMessage msg;
     private final DataHead dataHead;
+
+    private final Object lock = new Object();
 
     MIMEPart(MIMEMessage msg) {
         this.msg = msg;
@@ -91,8 +95,16 @@ public class MIMEPart {
      * the temp file that is used to serve this part's content). After
      * calling this, one shouldn't call {@link #read()} or {@link #readOnce()}
      */
+    @Override
     public void close() {
-        dataHead.close();
+        if (!closed) {
+            synchronized (lock) {
+                if (!closed) {
+                    dataHead.close();
+                    closed = true;
+                }
+            }
+        }
     }
 
     /**
@@ -240,6 +252,15 @@ public class MIMEPart {
      */
     void setContentTransferEncoding(String cte) {
         this.contentTransferEncoding = cte;
+    }
+
+    /**
+     * Return {@code true} if this part has already been closed, {@code false} otherwise.
+     *
+     * @return {@code true} if this part has already been closed, {@code false} otherwise.
+     */
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override
