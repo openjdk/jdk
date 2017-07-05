@@ -743,6 +743,7 @@ public final class Secmod {
         Map<Bytes,TrustAttributes> trustMap = new HashMap<Bytes,TrustAttributes>();
         Token token = provider.getToken();
         Session session = null;
+        boolean exceptionOccurred = true;
         try {
             session = token.getOpSession();
             int MAX_NUM = 8192;
@@ -762,8 +763,13 @@ public final class Secmod {
                     // skip put on pkcs11 error
                 }
             }
+            exceptionOccurred = false;
         } finally {
-            token.releaseSession(session);
+            if (exceptionOccurred) {
+                token.killSession(session);
+            } else {
+                token.releaseSession(session);
+            }
         }
         return trustMap;
     }

@@ -703,6 +703,66 @@ assertEquals(120, loop.invoke(5));
         }}
     }
 
+    static int inc(int i) { return i + 1; } // drop acc, k
+    static int mult(int i, int acc) { return i * acc; } //drop k
+    static boolean cmp(int i, int k) { return i < k; }
+
+    @Test public void testSimplerLoop() throws Throwable {
+        MethodHandle MH_inc, MH_mult, MH_cmp;
+        Class<?> I = int.class;
+        MH_inc = LOOKUP.findStatic(THIS_CLASS, "inc", methodType(I, I));
+        MH_mult = LOOKUP.findStatic(THIS_CLASS, "mult", methodType(I, I, I));
+        MH_cmp = LOOKUP.findStatic(THIS_CLASS, "cmp", methodType(boolean.class, I, I));
+        {{
+{} /// JAVADOC
+// simplified implementation of the factorial function as a loop handle
+// null initializer for counter, should initialize to 0
+MethodHandle MH_one = MethodHandles.constant(int.class, 1);
+MethodHandle MH_pred = MethodHandles.dropArguments(MH_cmp, 1, int.class); // drop acc
+MethodHandle MH_fin = MethodHandles.dropArguments(MethodHandles.identity(int.class), 0, int.class); // drop i
+MethodHandle[] counterClause = new MethodHandle[]{null, MH_inc};
+MethodHandle[] accumulatorClause = new MethodHandle[]{MH_one, MH_mult, MH_pred, MH_fin};
+MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
+assertEquals(720, loop.invoke(6));
+{}
+        }}
+    }
+
+    // for testFacLoop
+{}
+static class FacLoop {
+  final int k;
+  FacLoop(int k) { this.k = k; }
+  int inc(int i) { return i + 1; }
+  int mult(int i, int acc) { return i * acc; }
+  boolean pred(int i) { return i < k; }
+  int fin(int i, int acc) { return acc; }
+}
+{}
+
+    // assume MH_inc, MH_mult, and MH_pred are handles to the above methods
+    @Test public void testFacLoop() throws Throwable {
+        MethodHandle MH_FacLoop, MH_inc, MH_mult, MH_pred, MH_fin;
+        Class<?> I = int.class;
+        MH_FacLoop = LOOKUP.findConstructor(FacLoop.class, methodType(void.class, I));
+        MH_inc = LOOKUP.findVirtual(FacLoop.class, "inc", methodType(I, I));
+        MH_mult = LOOKUP.findVirtual(FacLoop.class, "mult", methodType(I, I, I));
+        MH_pred = LOOKUP.findVirtual(FacLoop.class, "pred", methodType(boolean.class, I));
+        MH_fin = LOOKUP.findVirtual(FacLoop.class, "fin", methodType(I, I, I));
+        {{
+{} /// JAVADOC
+// instance-based implementation of the factorial function as a loop handle
+// null initializer for counter, should initialize to 0
+MethodHandle MH_one = MethodHandles.constant(int.class, 1);
+MethodHandle[] instanceClause = new MethodHandle[]{MH_FacLoop};
+MethodHandle[] counterClause = new MethodHandle[]{null, MH_inc};
+MethodHandle[] accumulatorClause = new MethodHandle[]{MH_one, MH_mult, MH_pred, MH_fin};
+MethodHandle loop = MethodHandles.loop(instanceClause, counterClause, accumulatorClause);
+assertEquals(5040, loop.invoke(7));
+{}
+        }}
+    }
+
     static List<String> initZip(Iterator<String> a, Iterator<String> b) { return new ArrayList<>(); }
     static boolean zipPred(List<String> zip, Iterator<String> a, Iterator<String> b) { return a.hasNext() && b.hasNext(); }
     static List<String> zipStep(List<String> zip, Iterator<String> a, Iterator<String> b) {
@@ -749,36 +809,81 @@ assertEquals(23, loop.invoke(23));
         }}
     }
 
-    static String start(String arg) { return arg; }
-    static String step(int counter, String v, String arg) { return "na " + v; }
+    static String step(String v, int counter, String start_) { return "na " + v; }  //#0
+    static String step(String v, int counter ) { return "na " + v; } //#1
+    static String step(String v, int counter, int iterations_, String pre, String start_) { return pre + " " + v; } //#2
+    static String step3(String v, int counter, String pre) { return pre + " " + v; } //#3
 
     @Test public void testCountedLoop() throws Throwable {
-        MethodHandle MH_start, MH_step;
-        Class<?> S = String.class;
-        MH_start = LOOKUP.findStatic(THIS_CLASS, "start", methodType(S, S));
-        MH_step = LOOKUP.findStatic(THIS_CLASS, "step", methodType(S, int.class, S, S));
+        MethodHandle MH_step;
+        Class<?> S = String.class, I = int.class;
+        // Theme:
+        MH_step = LOOKUP.findStatic(THIS_CLASS, "step", methodType(S, S, I, S));
         {{
 {} /// JAVADOC
 // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
 // => a variation on a well known theme
 MethodHandle fit13 = MethodHandles.constant(int.class, 13);
-MethodHandle loop = MethodHandles.countedLoop(fit13, MH_start, MH_step);
+MethodHandle start = MethodHandles.identity(String.class);
+MethodHandle loop = MethodHandles.countedLoop(fit13, start, MH_step);  // (v, i, _) -> "na " + v
 assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
+{}
+        }}
+        // Variation #1:
+        MH_step = LOOKUP.findStatic(THIS_CLASS, "step", methodType(S, S, I));
+        {{
+{} /// JAVADOC
+// String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
+// => a variation on a well known theme
+MethodHandle count = MethodHandles.dropArguments(MethodHandles.identity(int.class), 1, String.class);
+MethodHandle start = MethodHandles.dropArguments(MethodHandles.identity(String.class), 0, int.class);
+MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i) -> "na " + v
+assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "Lambdaman!"));
+{}
+            assertEquals("na na Lambdaman!", loop.invoke(2, "Lambdaman!"));
+            assertEquals("Lambdaman!", loop.invoke(0, "Lambdaman!"));
+            assertEquals("Lambdaman!", loop.invoke(-1, "Lambdaman!"));
+            assertEquals("Lambdaman!", loop.invoke(Integer.MIN_VALUE, "Lambdaman!"));
+        }}
+        // Variation #2:
+        MH_step = LOOKUP.findStatic(THIS_CLASS, "step", methodType(S, S, I, I, S, S));
+        {{
+{} /// JAVADOC
+// String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
+// => a variation on a well known theme
+MethodHandle count = MethodHandles.identity(int.class);
+MethodHandle start = MethodHandles.dropArguments(MethodHandles.identity(String.class), 0, int.class, String.class);
+MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i, _, pre, _) -> pre + " " + v
+assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "na", "Lambdaman!"));
+{}
+        }}
+        // Variation #3:
+        MH_step = LOOKUP.findStatic(THIS_CLASS, "step3", methodType(S, S, I, S));
+        {{
+{} /// JAVADOC
+// String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
+// => a variation on a well known theme
+MethodType loopType = methodType(String.class, String.class, int.class, String.class);
+MethodHandle count = MethodHandles.dropArgumentsToMatch(MethodHandles.identity(int.class),    0, loopType.parameterList(), 1);
+MethodHandle start = MethodHandles.dropArgumentsToMatch(MethodHandles.identity(String.class), 0, loopType.parameterList(), 2);
+MethodHandle body  = MethodHandles.dropArgumentsToMatch(MH_step,                              2, loopType.parameterList(), 0);
+MethodHandle loop = MethodHandles.countedLoop(count, start, body);  // (v, i, pre, _, _) -> pre + " " + v
+assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("na", 13, "Lambdaman!"));
 {}
         }}
     }
 
-    static List<String> reverseStep(String e, List<String> r, List<String> l) {
+    static List<String> reverseStep(List<String> r, String e) {
         r.add(0, e);
         return r;
     }
-    static List<String> newArrayList(List<String> l) { return new ArrayList<>(); }
+    static List<String> newArrayList() { return new ArrayList<>(); }
 
     @Test public void testIteratedLoop() throws Throwable {
         MethodHandle MH_newArrayList, MH_reverseStep;
-        Class<?> L = List.class;
-        MH_newArrayList = LOOKUP.findStatic(THIS_CLASS, "newArrayList", methodType(L, L));
-        MH_reverseStep = LOOKUP.findStatic(THIS_CLASS, "reverseStep", methodType(L, String.class, L, L));
+        Class<?> L = List.class, S = String.class;
+        MH_newArrayList = LOOKUP.findStatic(THIS_CLASS, "newArrayList", methodType(L));
+        MH_reverseStep = LOOKUP.findStatic(THIS_CLASS, "reverseStep", methodType(L, L, S));
         {{
 {} /// JAVADOC
 // reverse a list

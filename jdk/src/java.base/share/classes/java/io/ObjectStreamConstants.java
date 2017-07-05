@@ -199,6 +199,16 @@ public interface ObjectStreamConstants {
      */
     static final SerializablePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
                     new SerializablePermission("enableSubclassImplementation");
+
+    /**
+     * Enable setting the process-wide serial filter.
+     *
+     * @see java.io.ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter)
+     * @since 9
+     */
+    static final SerializablePermission SERIAL_FILTER_PERMISSION =
+            new SerializablePermission("serialFilter");
+
    /**
     * A Stream Protocol Version. <p>
     *

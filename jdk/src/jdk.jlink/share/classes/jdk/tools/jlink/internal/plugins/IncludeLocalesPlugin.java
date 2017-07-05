@@ -307,9 +307,10 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
 
     private boolean filterOutUnsupportedTags(byte[] b) {
         List<Locale> locales;
+        List<String> originalTags = Arrays.asList(new String(b).split(" "));
 
         try {
-            locales = Arrays.asList(new String(b).split(" ")).stream()
+            locales = originalTags.stream()
                 .filter(tag -> !tag.isEmpty())
                 .map(IncludeLocalesPlugin::tagToLocale)
                 .collect(Collectors.toList());
@@ -319,6 +320,9 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
         }
 
         byte[] filteredBytes = filterLocales(locales).stream()
+            // Make sure the filtered language tags do exist in the
+            // original supported tags for compatibility codes, e.g., "iw"
+            .filter(originalTags::contains)
             .collect(Collectors.joining(" "))
             .getBytes();
 
@@ -331,6 +335,11 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
         return true;
     }
 
+    /*
+     * Filter list of locales according to the secified priorityList. Note
+     * that returned list of language tags may include extra ones, such as
+     * compatibility ones (e.g., "iw" -> "iw", "he").
+     */
     private List<String> filterLocales(List<Locale> locales) {
         List<String> ret =
             Locale.filter(priorityList, locales, Locale.FilteringMode.EXTENDED_FILTERING).stream()

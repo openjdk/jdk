@@ -26,7 +26,7 @@
 # This must be the first rule
 default: all
 
--include $(SPEC)
+include $(SPEC)
 include MakeBase.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
@@ -42,7 +42,7 @@ MODULESOURCEPATH := $(NASHORN_TOPDIR)/src/*/share/classes
 
 # Need to use source and target 8 for nasgen to work.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
-    JVM := $(JAVA), \
+    JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -g -source 9 -target 9 --upgrade-module-path "$(JDK_OUTPUTDIR)/modules/" \
          --system none --module-source-path "$(MODULESOURCEPATH)", \
@@ -91,7 +91,7 @@ $(NASGEN_RUN_FILE): $(BUILD_NASGEN) $(jdk.scripting.nashorn)
 	$(MKDIR) -p $(@D)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
 	$(CP) -R -p $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/* $(@D)/
-	$(JAVA) $(NASGEN_OPTIONS) \
+	$(JAVA_SMALL) $(NASGEN_OPTIONS) \
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
 

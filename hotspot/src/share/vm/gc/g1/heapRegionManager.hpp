@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ class HeapRegion;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 class FreeRegionList;
+class WorkGang;
 
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
  protected:
@@ -94,10 +95,10 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
-  void make_regions_available(uint index, uint num_regions = 1);
+  void make_regions_available(uint index, uint num_regions = 1, WorkGang* pretouch_gang = NULL);
 
   // Pass down commit calls to the VirtualSpace.
-  void commit_regions(uint index, size_t num_regions = 1);
+  void commit_regions(uint index, size_t num_regions = 1, WorkGang* pretouch_gang = NULL);
   void uncommit_regions(uint index, size_t num_regions = 1);
 
   // Notify other data structures about change in the heap layout.
@@ -209,12 +210,12 @@ public:
   // HeapRegions, or re-use existing ones. Returns the number of regions the
   // sequence was expanded by. If a HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
-  uint expand_by(uint num_regions);
+  uint expand_by(uint num_regions, WorkGang* pretouch_workers = NULL);
 
   // Makes sure that the regions from start to start+num_regions-1 are available
   // for allocation. Returns the number of regions that were committed to achieve
   // this.
-  uint expand_at(uint start, uint num_regions);
+  uint expand_at(uint start, uint num_regions, WorkGang* pretouch_workers = NULL);
 
   // Find a contiguous set of empty regions of length num. Returns the start index of
   // that set, or G1_NO_HRM_INDEX.
