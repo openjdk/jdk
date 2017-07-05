@@ -1809,18 +1809,7 @@ int instanceKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void instanceKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(!pm->depth_first(), "invariant");
-  InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
-    obj, \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_breadth(p); \
-    }, \
-    assert_nothing )
-}
-
 void instanceKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  assert(pm->depth_first(), "invariant");
   InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
     obj, \
     if (PSScavenge::should_scavenge(p)) { \
@@ -1846,18 +1835,7 @@ int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
   return size_helper();
 }
 
-void instanceKlass::copy_static_fields(PSPromotionManager* pm) {
-  assert(!pm->depth_first(), "invariant");
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_breadth(p); \
-    }, \
-    assert_nothing )
-}
-
 void instanceKlass::push_static_fields(PSPromotionManager* pm) {
-  assert(pm->depth_first(), "invariant");
   InstanceKlass_OOP_ITERATE( \
     start_of_static_fields(), static_oop_field_size(), \
     if (PSScavenge::should_scavenge(p)) { \
