@@ -28,7 +28,7 @@
  *          logging is enabled.  Also validate some basic PlatformLogger
  *          operations.
  *
- * @build PlatformLoggerTest
+ * @compile -XDignore.symbol.file PlatformLoggerTest.java
  * @run main PlatformLoggerTest
  */
 

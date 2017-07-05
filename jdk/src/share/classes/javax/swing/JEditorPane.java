@@ -1330,7 +1330,7 @@ public class JEditorPane extends JTextComponent {
      */
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             TextUI ui = getUI();
             int prefWidth = d.width;
@@ -1452,7 +1452,7 @@ public class JEditorPane extends JTextComponent {
      * match its own, false otherwise
      */
     public boolean getScrollableTracksViewportWidth() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             TextUI ui = getUI();
             int w = port.getWidth();
@@ -1474,7 +1474,7 @@ public class JEditorPane extends JTextComponent {
      *          false otherwise
      */
     public boolean getScrollableTracksViewportHeight() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             TextUI ui = getUI();
             int h = port.getHeight();

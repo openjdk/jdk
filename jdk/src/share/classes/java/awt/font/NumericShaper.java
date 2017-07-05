@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,13 @@
  */
 
 package java.awt.font;
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * The <code>NumericShaper</code> class is used to convert Latin-1 (European)
@@ -64,13 +71,261 @@ package java.awt.font;
  *      NumericShaper.getContextualShaper(NumericShaper.ARABIC |
  *                                              NumericShaper.TAMIL,
  *                                              NumericShaper.EUROPEAN);
- *   shaper.shape(text. start, count);
+ *   shaper.shape(text, start, count);
  * </pre></blockquote>
+ *
+ * <p><b>Bit mask- and enum-based Unicode ranges</b></p>
+ *
+ * <p>This class supports two different programming interfaces to
+ * represent Unicode ranges for script-specific digits: bit
+ * mask-based ones, such as {@link #ARABIC NumericShaper.ARABIC}, and
+ * enum-based ones, such as {@link NumericShaper.Range#ARABIC}.
+ * Multiple ranges can be specified by ORing bit mask-based constants,
+ * such as:
+ * <blockquote><pre>
+ * NumericShaper.ARABIC | NumericShaper.TAMIL
+ * </pre></blockquote>
+ * or creating a {@code Set} with the {@link NumericShaper.Range}
+ * constants, such as:
+ * <blockquote><pre>
+ * EnumSet.of(NumericShaper.Scirpt.ARABIC, NumericShaper.Range.TAMIL)
+ * </pre></blockquote>
+ * The enum-based ranges are a super set of the bit mask-based ones.
+ *
+ * <p>If the two interfaces are mixed (including serialization),
+ * Unicode range values are mapped to their counterparts where such
+ * mapping is possible, such as {@code NumericShaper.Range.ARABIC}
+ * from/to {@code NumericShaper.ARABIC}.  If any unmappable range
+ * values are specified, such as {@code NumericShaper.Range.BALINESE},
+ * those ranges are ignored.
  *
  * @since 1.4
  */
 
 public final class NumericShaper implements java.io.Serializable {
+    /**
+     * A {@code NumericShaper.Range} represents a Unicode range of a
+     * script having its own decimal digits. For example, the {@link
+     * NumericShaper.Range#THAI} range has the Thai digits, THAI DIGIT
+     * ZERO (U+0E50) to THAI DIGIT NINE (U+0E59).
+     *
+     * <p>The <code>Range</code> enum replaces the traditional bit
+     * mask-based values (e.g., {@link NumericShaper#ARABIC}), and
+     * supports more Unicode ranges than the bit mask-based ones. For
+     * example, the following code using the bit mask:
+     * <blockquote><pre>
+     * NumericShaper.getContextualShaper(NumericShaper.ARABIC |
+     *                                     NumericShaper.TAMIL,
+     *                                   NumericShaper.EUROPEAN);
+     * </pre></blockquote>
+     * can be written using this enum as:
+     * <blockquote><pre>
+     * NumericShaper.getContextualShaper(EnumSet.of(
+     *                                     NumericShaper.Range.ARABIC,
+     *                                     NumericShaper.Range.TAMIL),
+     *                                   NumericShaper.Range.EUROPEAN);
+     * </pre></blockquote>
+     *
+     * @since 1.7
+     */
+    public static enum Range {
+        /**
+         * The Latin (European) range with the Latin (ASCII) digits.
+         */
+        EUROPEAN        ('\u0030', '\u0000', '\u0300'),
+        /**
+         * The Arabic range with the Arabic-Indic digits.
+         */
+        ARABIC          ('\u0660', '\u0600', '\u0780'),
+        /**
+         * The Arabic range with the Eastern Arabic-Indic digits.
+         */
+        EASTERN_ARABIC  ('\u06f0', '\u0600', '\u0780'),
+        /**
+         * The Devanagari range with the Devanagari digits.
+         */
+        DEVANAGARI      ('\u0966', '\u0900', '\u0980'),
+        /**
+         * The Bengali range with the Bengali digits.
+         */
+        BENGALI         ('\u09e6', '\u0980', '\u0a00'),
+        /**
+         * The Gurmukhi range with the Gurmukhi digits.
+         */
+        GURMUKHI        ('\u0a66', '\u0a00', '\u0a80'),
+        /**
+         * The Gujarati range with the Gujarati digits.
+         */
+        GUJARATI        ('\u0ae6', '\u0b00', '\u0b80'),
+        /**
+         * The Oriya range with the Oriya digits.
+         */
+        ORIYA           ('\u0b66', '\u0b00', '\u0b80'),
+        /**
+         * The Tamil range with the Tamil digits.
+         */
+        TAMIL           ('\u0be6', '\u0b80', '\u0c00'),
+        /**
+         * The Telugu range with the Telugu digits.
+         */
+        TELUGU          ('\u0c66', '\u0c00', '\u0c80'),
+        /**
+         * The Kannada range with the Kannada digits.
+         */
+        KANNADA         ('\u0ce6', '\u0c80', '\u0d00'),
+        /**
+         * The Malayalam range with the Malayalam digits.
+         */
+        MALAYALAM       ('\u0d66', '\u0d00', '\u0d80'),
+        /**
+         * The Thai range with the Thai digits.
+         */
+        THAI            ('\u0e50', '\u0e00', '\u0e80'),
+        /**
+         * The Lao range with the Lao digits.
+         */
+        LAO             ('\u0ed0', '\u0e80', '\u0f00'),
+        /**
+         * The Tibetan range with the Tibetan digits.
+         */
+        TIBETAN         ('\u0f20', '\u0f00', '\u1000'),
+        /**
+         * The Myanmar range with the Myanmar digits.
+         */
+        MYANMAR         ('\u1040', '\u1000', '\u1080'),
+        /**
+         * The Ethiopic range with the Ethiopic digits. Ethiopic
+         * does not have a decimal digit 0 so Latin (European) 0 is
+         * used.
+         */
+        ETHIOPIC        ('\u1369', '\u1200', '\u1380') {
+            @Override
+            char getNumericBase() { return 1; }
+        },
+        /**
+         * The Khmer range with the Khmer digits.
+         */
+        KHMER           ('\u17e0', '\u1780', '\u1800'),
+        /**
+         * The Mongolian range with the Mongolian digits.
+         */
+        MONGOLIAN       ('\u1810', '\u1800', '\u1900'),
+        /**
+         * The N'Ko range with the N'Ko digits.
+         */
+        NKO             ('\u07c0', '\u07c0', '\u0800'),
+        /**
+         * The Myanmar range with the Myanmar Shan digits.
+         */
+        MYANMAR_SHAN    ('\u1090', '\u1000', '\u10a0'),
+        /**
+         * The Limbu range with the Limbu digits.
+         */
+        LIMBU           ('\u1946', '\u1900', '\u1950'),
+        /**
+         * The New Tai Lue range with the New Tai Lue digits.
+         */
+        NEW_TAI_LUE     ('\u19d0', '\u1980', '\u19e0'),
+        /**
+         * The Balinese range with the Balinese digits.
+         */
+        BALINESE        ('\u1b50', '\u1b00', '\u1b80'),
+        /**
+         * The Sundanese range with the Sundanese digits.
+         */
+        SUNDANESE       ('\u1bb0', '\u1b80', '\u1bc0'),
+        /**
+         * The Lepcha range with the Lepcha digits.
+         */
+        LEPCHA          ('\u1c40', '\u1c00', '\u1c50'),
+        /**
+         * The Ol Chiki range with the Ol Chiki digits.
+         */
+        OL_CHIKI        ('\u1c50', '\u1c50', '\u1c80'),
+        /**
+         * The Vai range with the Vai digits.
+         */
+        VAI             ('\ua620', '\ua500', '\ua640'),
+        /**
+         * The Saurashtra range with the Saurashtra digits.
+         */
+        SAURASHTRA      ('\ua8d0', '\ua880', '\ua8e0'),
+        /**
+         * The Kayah Li range with the Kayah Li digits.
+         */
+        KAYAH_LI        ('\ua900', '\ua900', '\ua930'),
+        /**
+         * The Cham range with the Cham digits.
+         */
+        CHAM            ('\uaa50', '\uaa00', '\uaa60');
+
+        private static final Range[] ranges = Range.class.getEnumConstants();
+        static {
+            // sort ranges[] by base for binary search
+            Arrays.sort(ranges,
+                        new Comparator<Range>() {
+                            public int compare(Range s1, Range s2) {
+                                return s1.base > s2.base ? 1 : s1.base == s2.base ? 0 : -1;
+                            }
+                        });
+        }
+
+        private static int toRangeIndex(Range script) {
+            int index = script.ordinal();
+            return index < NUM_KEYS ? index : -1;
+        }
+
+        private static Range indexToRange(int index) {
+            return index < NUM_KEYS ? Range.values()[index] : null;
+        }
+
+        private static int toRangeMask(Set<Range> ranges) {
+            int m = 0;
+            for (Range range : ranges) {
+                int index = range.ordinal();
+                if (index < NUM_KEYS) {
+                    m |= 1 << index;
+                }
+            }
+            return m;
+        }
+
+        private static Set<Range> maskToRangeSet(int mask) {
+            Set<Range> set = EnumSet.noneOf(Range.class);
+            Range[] a = Range.values();
+            for (int i = 0; i < NUM_KEYS; i++) {
+                if ((mask & (1 << i)) != 0) {
+                    set.add(a[i]);
+                }
+            }
+            return set;
+        }
+
+        // base character of range digits
+        private final int base;
+        // Unicode range
+        private final int start, // inclusive
+                          end;   // exclusive
+
+        private Range(int base, int start, int end) {
+            this.base = base - ('0' + getNumericBase());
+            this.start = start;
+            this.end = end;
+        }
+
+        private int getDigitBase() {
+            return base;
+        }
+
+        char getNumericBase() {
+            return 0;
+        }
+
+        private boolean inRange(int c) {
+            return start <= c && c < end;
+        }
+    }
+
     /** index of context for contextual shaping - values range from 0 to 18 */
     private int key;
 
@@ -78,6 +333,25 @@ public final class NumericShaper implements java.io.Serializable {
      *  digit ranges to shape (bits 0-18)
      */
     private int mask;
+
+    /**
+     * The context {@code Range} for contextual shaping or the {@code
+     * Range} for non-contextual shaping. {@code null} for the bit
+     * mask-based API.
+     *
+     * @since 1.7
+     */
+    private Range shapingRange;
+
+    /**
+     * {@code Set<Range>} indicating which Unicode ranges to
+     * shape. {@code null} for the bit mask-based API.
+     *
+     * @since 1.7
+     */
+    private transient Set<Range> rangeSet;
+
+    private static final long serialVersionUID = -8022764705923730308L;
 
     /** Identifies the Latin-1 (European) and extended range, and
      *  Latin-1 (European) decimal base.
@@ -105,9 +379,8 @@ public final class NumericShaper implements java.io.Serializable {
     /** Identifies the ORIYA range and decimal base. */
     public static final int ORIYA = 1<<7;
 
-    /** Identifies the TAMIL range and decimal base. Tamil does not have a
-     *  decimal digit 0 so Latin-1 (European) 0 is used.
-     */
+    /** Identifies the TAMIL range and decimal base. */
+    // TAMIL DIGIT ZERO was added in Unicode 4.1
     public static final int TAMIL = 1<<8;
 
     /** Identifies the TELUGU range and decimal base. */
@@ -140,7 +413,12 @@ public final class NumericShaper implements java.io.Serializable {
     /** Identifies the MONGOLIAN range and decimal base. */
     public static final int MONGOLIAN = 1<<18;
 
-    /** Identifies all ranges, for full contextual shaping. */
+    /** Identifies all ranges, for full contextual shaping.
+     *
+     * <p>This constant specifies all of the bit mask-based
+     * ranges. Use {@code EmunSet.allOf(NumericShaper.Range.class)} to
+     * specify all of the enum-based ranges.
+     */
     public static final int ALL_RANGES = 0x0007ffff;
 
     private static final int EUROPEAN_KEY = 0;
@@ -163,42 +441,20 @@ public final class NumericShaper implements java.io.Serializable {
     private static final int KHMER_KEY = 17;
     private static final int MONGOLIAN_KEY = 18;
 
-    private static final int NUM_KEYS = 19;
-
-    private static final String[] keyNames = {
-        "EUROPEAN",
-        "ARABIC",
-        "EASTERN_ARABIC",
-        "DEVANAGARI",
-        "BENGALI",
-        "GURMUKHI",
-        "GUJARATI",
-        "ORIYA",
-        "TAMIL",
-        "TELUGU",
-        "KANNADA",
-        "MALAYALAM",
-        "THAI",
-        "LAO",
-        "TIBETAN",
-        "MYANMAR",
-        "ETHIOPIC",
-        "KHMER",
-        "MONGOLIAN"
-    };
+    private static final int NUM_KEYS = MONGOLIAN_KEY + 1; // fixed
 
     private static final int CONTEXTUAL_MASK = 1<<31;
 
     private static final char[] bases = {
         '\u0030' - '\u0030', // EUROPEAN
-        '\u0660' - '\u0030', // ARABIC
-        '\u06f0' - '\u0030', // EASTERN_ARABIC
+        '\u0660' - '\u0030', // ARABIC-INDIC
+        '\u06f0' - '\u0030', // EXTENDED ARABIC-INDIC (EASTERN_ARABIC)
         '\u0966' - '\u0030', // DEVANAGARI
         '\u09e6' - '\u0030', // BENGALI
         '\u0a66' - '\u0030', // GURMUKHI
         '\u0ae6' - '\u0030', // GUJARATI
         '\u0b66' - '\u0030', // ORIYA
-        '\u0be7' - '\u0030', // TAMIL - note missing zero
+        '\u0be6' - '\u0030', // TAMIL - zero was added in Unicode 4.1
         '\u0c66' - '\u0030', // TELUGU
         '\u0ce6' - '\u0030', // KANNADA
         '\u0d66' - '\u0030', // MALAYALAM
@@ -206,7 +462,7 @@ public final class NumericShaper implements java.io.Serializable {
         '\u0ed0' - '\u0030', // LAO
         '\u0f20' - '\u0030', // TIBETAN
         '\u1040' - '\u0030', // MYANMAR
-        '\u1369' - '\u0030', // ETHIOPIC
+        '\u1369' - '\u0031', // ETHIOPIC - no zero
         '\u17e0' - '\u0030', // KHMER
         '\u1810' - '\u0030', // MONGOLIAN
     };
@@ -215,14 +471,14 @@ public final class NumericShaper implements java.io.Serializable {
 
     private static final char[] contexts = {
         '\u0000', '\u0300', // 'EUROPEAN' (really latin-1 and extended)
-        '\u0600', '\u0700', // ARABIC
-        '\u0600', '\u0700', // EASTERN_ARABIC -- note overlap with arabic
+        '\u0600', '\u0780', // ARABIC
+        '\u0600', '\u0780', // EASTERN_ARABIC -- note overlap with arabic
         '\u0900', '\u0980', // DEVANAGARI
         '\u0980', '\u0a00', // BENGALI
         '\u0a00', '\u0a80', // GURMUKHI
         '\u0a80', '\u0b00', // GUJARATI
         '\u0b00', '\u0b80', // ORIYA
-        '\u0b80', '\u0c00', // TAMIL - note missing zero
+        '\u0b80', '\u0c00', // TAMIL
         '\u0c00', '\u0c80', // TELUGU
         '\u0c80', '\u0d00', // KANNADA
         '\u0d00', '\u0d80', // MALAYALAM
@@ -230,7 +486,7 @@ public final class NumericShaper implements java.io.Serializable {
         '\u0e80', '\u0f00', // LAO
         '\u0f00', '\u1000', // TIBETAN
         '\u1000', '\u1080', // MYANMAR
-        '\u1200', '\u1380', // ETHIOPIC
+        '\u1200', '\u1380', // ETHIOPIC - note missing zero
         '\u1780', '\u1800', // KHMER
         '\u1800', '\u1900', // MONGOLIAN
         '\uffff',
@@ -254,378 +510,290 @@ public final class NumericShaper implements java.io.Serializable {
         return (ctCache & 0x1) == 0 ? (ctCache / 2) : EUROPEAN_KEY;
     }
 
+    // cache for the NumericShaper.Range version
+    private transient volatile Range currentRange = Range.EUROPEAN;
+
+    private Range rangeForCodePoint(int codepoint) {
+        Range range = currentRange;
+        if (range.inRange(codepoint)) {
+            return range;
+        }
+
+        final Range[] ranges = Range.ranges;
+        int lo = 0;
+        int hi = ranges.length - 1;
+        while (lo <= hi) {
+            int mid = (lo + hi) / 2;
+            range = ranges[mid];
+            if (codepoint < range.start) {
+                hi = mid - 1;
+            } else if (codepoint >= range.end) {
+                lo = mid + 1;
+            } else {
+                currentRange = range;
+                return range;
+            }
+        }
+        return Range.EUROPEAN;
+    }
+
     /*
      * A range table of strong directional characters (types L, R, AL).
      * Even (left) indexes are starts of ranges of non-strong-directional (or undefined)
      * characters, odd (right) indexes are starts of ranges of strong directional
      * characters.
      */
-    private static char[] strongTable = {
-        '\u0000', '\u0041',
-        '\u005b', '\u0061',
-        '\u007b', '\u00aa',
-        '\u00ab', '\u00b5',
-        '\u00b6', '\u00ba',
-        '\u00bb', '\u00c0',
-        '\u00d7', '\u00d8',
-        '\u00f7', '\u00f8',
-        '\u0220', '\u0222',
-        '\u0234', '\u0250',
-        '\u02ae', '\u02b0',
-        '\u02b9', '\u02bb',
-        '\u02c2', '\u02d0',
-        '\u02d2', '\u02e0',
-        '\u02e5', '\u02ee',
-        '\u02ef', '\u037a',
-        '\u037b', '\u0386',
-        '\u0387', '\u0388',
-        '\u038b', '\u038c',
-        '\u038d', '\u038e',
-        '\u03a2', '\u03a3',
-        '\u03cf', '\u03d0',
-        '\u03d8', '\u03da',
-        '\u03f4', '\u0400',
-        '\u0483', '\u048c',
-        '\u04c5', '\u04c7',
-        '\u04c9', '\u04cb',
-        '\u04cd', '\u04d0',
-        '\u04f6', '\u04f8',
-        '\u04fa', '\u0531',
-        '\u0557', '\u0559',
-        '\u0560', '\u0561',
-        '\u0588', '\u0589',
-        '\u058a', '\u05be',
-        '\u05bf', '\u05c0',
-        '\u05c1', '\u05c3',
-        '\u05c4', '\u05d0',
-        '\u05eb', '\u05f0',
-        '\u05f5', '\u061b',
-        '\u061c', '\u061f',
-        '\u0620', '\u0621',
-        '\u063b', '\u0640',
-        '\u064b', '\u066d',
-        '\u066e', '\u0671',
-        '\u06d6', '\u06e5',
-        '\u06e7', '\u06fa',
-        '\u06ff', '\u0700',
-        '\u070e', '\u0710',
-        '\u0711', '\u0712',
-        '\u072d', '\u0780',
-        '\u07a6', '\u0903',
-        '\u0904', '\u0905',
-        '\u093a', '\u093d',
-        '\u0941', '\u0949',
-        '\u094d', '\u0950',
-        '\u0951', '\u0958',
-        '\u0962', '\u0964',
-        '\u0971', '\u0982',
-        '\u0984', '\u0985',
-        '\u098d', '\u098f',
-        '\u0991', '\u0993',
-        '\u09a9', '\u09aa',
-        '\u09b1', '\u09b2',
-        '\u09b3', '\u09b6',
-        '\u09ba', '\u09be',
-        '\u09c1', '\u09c7',
-        '\u09c9', '\u09cb',
-        '\u09cd', '\u09d7',
-        '\u09d8', '\u09dc',
-        '\u09de', '\u09df',
-        '\u09e2', '\u09e6',
-        '\u09f2', '\u09f4',
-        '\u09fb', '\u0a05',
-        '\u0a0b', '\u0a0f',
-        '\u0a11', '\u0a13',
-        '\u0a29', '\u0a2a',
-        '\u0a31', '\u0a32',
-        '\u0a34', '\u0a35',
-        '\u0a37', '\u0a38',
-        '\u0a3a', '\u0a3e',
-        '\u0a41', '\u0a59',
-        '\u0a5d', '\u0a5e',
-        '\u0a5f', '\u0a66',
-        '\u0a70', '\u0a72',
-        '\u0a75', '\u0a83',
-        '\u0a84', '\u0a85',
-        '\u0a8c', '\u0a8d',
-        '\u0a8e', '\u0a8f',
-        '\u0a92', '\u0a93',
-        '\u0aa9', '\u0aaa',
-        '\u0ab1', '\u0ab2',
-        '\u0ab4', '\u0ab5',
-        '\u0aba', '\u0abd',
-        '\u0ac1', '\u0ac9',
-        '\u0aca', '\u0acb',
-        '\u0acd', '\u0ad0',
-        '\u0ad1', '\u0ae0',
-        '\u0ae1', '\u0ae6',
-        '\u0af0', '\u0b02',
-        '\u0b04', '\u0b05',
-        '\u0b0d', '\u0b0f',
-        '\u0b11', '\u0b13',
-        '\u0b29', '\u0b2a',
-        '\u0b31', '\u0b32',
-        '\u0b34', '\u0b36',
-        '\u0b3a', '\u0b3d',
-        '\u0b3f', '\u0b40',
-        '\u0b41', '\u0b47',
-        '\u0b49', '\u0b4b',
-        '\u0b4d', '\u0b57',
-        '\u0b58', '\u0b5c',
-        '\u0b5e', '\u0b5f',
-        '\u0b62', '\u0b66',
-        '\u0b71', '\u0b83',
-        '\u0b84', '\u0b85',
-        '\u0b8b', '\u0b8e',
-        '\u0b91', '\u0b92',
-        '\u0b96', '\u0b99',
-        '\u0b9b', '\u0b9c',
-        '\u0b9d', '\u0b9e',
-        '\u0ba0', '\u0ba3',
-        '\u0ba5', '\u0ba8',
-        '\u0bab', '\u0bae',
-        '\u0bb6', '\u0bb7',
-        '\u0bba', '\u0bbe',
-        '\u0bc0', '\u0bc1',
-        '\u0bc3', '\u0bc6',
-        '\u0bc9', '\u0bca',
-        '\u0bcd', '\u0bd7',
-        '\u0bd8', '\u0be7',
-        '\u0bf3', '\u0c01',
-        '\u0c04', '\u0c05',
-        '\u0c0d', '\u0c0e',
-        '\u0c11', '\u0c12',
-        '\u0c29', '\u0c2a',
-        '\u0c34', '\u0c35',
-        '\u0c3a', '\u0c41',
-        '\u0c45', '\u0c60',
-        '\u0c62', '\u0c66',
-        '\u0c70', '\u0c82',
-        '\u0c84', '\u0c85',
-        '\u0c8d', '\u0c8e',
-        '\u0c91', '\u0c92',
-        '\u0ca9', '\u0caa',
-        '\u0cb4', '\u0cb5',
-        '\u0cba', '\u0cbe',
-        '\u0cbf', '\u0cc0',
-        '\u0cc5', '\u0cc7',
-        '\u0cc9', '\u0cca',
-        '\u0ccc', '\u0cd5',
-        '\u0cd7', '\u0cde',
-        '\u0cdf', '\u0ce0',
-        '\u0ce2', '\u0ce6',
-        '\u0cf0', '\u0d02',
-        '\u0d04', '\u0d05',
-        '\u0d0d', '\u0d0e',
-        '\u0d11', '\u0d12',
-        '\u0d29', '\u0d2a',
-        '\u0d3a', '\u0d3e',
-        '\u0d41', '\u0d46',
-        '\u0d49', '\u0d4a',
-        '\u0d4d', '\u0d57',
-        '\u0d58', '\u0d60',
-        '\u0d62', '\u0d66',
-        '\u0d70', '\u0d82',
-        '\u0d84', '\u0d85',
-        '\u0d97', '\u0d9a',
-        '\u0db2', '\u0db3',
-        '\u0dbc', '\u0dbd',
-        '\u0dbe', '\u0dc0',
-        '\u0dc7', '\u0dcf',
-        '\u0dd2', '\u0dd8',
-        '\u0de0', '\u0df2',
-        '\u0df5', '\u0e01',
-        '\u0e31', '\u0e32',
-        '\u0e34', '\u0e40',
-        '\u0e47', '\u0e4f',
-        '\u0e5c', '\u0e81',
-        '\u0e83', '\u0e84',
-        '\u0e85', '\u0e87',
-        '\u0e89', '\u0e8a',
-        '\u0e8b', '\u0e8d',
-        '\u0e8e', '\u0e94',
-        '\u0e98', '\u0e99',
-        '\u0ea0', '\u0ea1',
-        '\u0ea4', '\u0ea5',
-        '\u0ea6', '\u0ea7',
-        '\u0ea8', '\u0eaa',
-        '\u0eac', '\u0ead',
-        '\u0eb1', '\u0eb2',
-        '\u0eb4', '\u0ebd',
-        '\u0ebe', '\u0ec0',
-        '\u0ec5', '\u0ec6',
-        '\u0ec7', '\u0ed0',
-        '\u0eda', '\u0edc',
-        '\u0ede', '\u0f00',
-        '\u0f18', '\u0f1a',
-        '\u0f35', '\u0f36',
-        '\u0f37', '\u0f38',
-        '\u0f39', '\u0f3e',
-        '\u0f48', '\u0f49',
-        '\u0f6b', '\u0f7f',
-        '\u0f80', '\u0f85',
-        '\u0f86', '\u0f88',
-        '\u0f8c', '\u0fbe',
-        '\u0fc6', '\u0fc7',
-        '\u0fcd', '\u0fcf',
-        '\u0fd0', '\u1000',
-        '\u1022', '\u1023',
-        '\u1028', '\u1029',
-        '\u102b', '\u102c',
-        '\u102d', '\u1031',
-        '\u1032', '\u1038',
-        '\u1039', '\u1040',
-        '\u1058', '\u10a0',
-        '\u10c6', '\u10d0',
-        '\u10f7', '\u10fb',
-        '\u10fc', '\u1100',
-        '\u115a', '\u115f',
-        '\u11a3', '\u11a8',
-        '\u11fa', '\u1200',
-        '\u1207', '\u1208',
-        '\u1247', '\u1248',
-        '\u1249', '\u124a',
-        '\u124e', '\u1250',
-        '\u1257', '\u1258',
-        '\u1259', '\u125a',
-        '\u125e', '\u1260',
-        '\u1287', '\u1288',
-        '\u1289', '\u128a',
-        '\u128e', '\u1290',
-        '\u12af', '\u12b0',
-        '\u12b1', '\u12b2',
-        '\u12b6', '\u12b8',
-        '\u12bf', '\u12c0',
-        '\u12c1', '\u12c2',
-        '\u12c6', '\u12c8',
-        '\u12cf', '\u12d0',
-        '\u12d7', '\u12d8',
-        '\u12ef', '\u12f0',
-        '\u130f', '\u1310',
-        '\u1311', '\u1312',
-        '\u1316', '\u1318',
-        '\u131f', '\u1320',
-        '\u1347', '\u1348',
-        '\u135b', '\u1361',
-        '\u137d', '\u13a0',
-        '\u13f5', '\u1401',
-        '\u1677', '\u1681',
-        '\u169b', '\u16a0',
-        '\u16f1', '\u1780',
-        '\u17b7', '\u17be',
-        '\u17c6', '\u17c7',
-        '\u17c9', '\u17d4',
-        '\u17db', '\u17dc',
-        '\u17dd', '\u17e0',
-        '\u17ea', '\u1810',
-        '\u181a', '\u1820',
-        '\u1878', '\u1880',
-        '\u18a9', '\u1e00',
-        '\u1e9c', '\u1ea0',
-        '\u1efa', '\u1f00',
-        '\u1f16', '\u1f18',
-        '\u1f1e', '\u1f20',
-        '\u1f46', '\u1f48',
-        '\u1f4e', '\u1f50',
-        '\u1f58', '\u1f59',
-        '\u1f5a', '\u1f5b',
-        '\u1f5c', '\u1f5d',
-        '\u1f5e', '\u1f5f',
-        '\u1f7e', '\u1f80',
-        '\u1fb5', '\u1fb6',
-        '\u1fbd', '\u1fbe',
-        '\u1fbf', '\u1fc2',
-        '\u1fc5', '\u1fc6',
-        '\u1fcd', '\u1fd0',
-        '\u1fd4', '\u1fd6',
-        '\u1fdc', '\u1fe0',
-        '\u1fed', '\u1ff2',
-        '\u1ff5', '\u1ff6',
-        '\u1ffd', '\u200e',
-        '\u2010', '\u207f',
-        '\u2080', '\u2102',
-        '\u2103', '\u2107',
-        '\u2108', '\u210a',
-        '\u2114', '\u2115',
-        '\u2116', '\u2119',
-        '\u211e', '\u2124',
-        '\u2125', '\u2126',
-        '\u2127', '\u2128',
-        '\u2129', '\u212a',
-        '\u212e', '\u212f',
-        '\u2132', '\u2133',
-        '\u213a', '\u2160',
-        '\u2184', '\u2336',
-        '\u237b', '\u2395',
-        '\u2396', '\u249c',
-        '\u24ea', '\u3005',
-        '\u3008', '\u3021',
-        '\u302a', '\u3031',
-        '\u3036', '\u3038',
-        '\u303b', '\u3041',
-        '\u3095', '\u309d',
-        '\u309f', '\u30a1',
-        '\u30fb', '\u30fc',
-        '\u30ff', '\u3105',
-        '\u312d', '\u3131',
-        '\u318f', '\u3190',
-        '\u31b8', '\u3200',
-        '\u321d', '\u3220',
-        '\u3244', '\u3260',
-        '\u327c', '\u327f',
-        '\u32b1', '\u32c0',
-        '\u32cc', '\u32d0',
-        '\u32ff', '\u3300',
-        '\u3377', '\u337b',
-        '\u33de', '\u33e0',
-        '\u33ff', '\u3400',
-        '\u4db6', '\u4e00',
-        '\u9fa6', '\ua000',
-        '\ua48d', '\uac00',
-        '\ud7a4', '\uf900',
-        '\ufa2e', '\ufb00',
-        '\ufb07', '\ufb13',
-        '\ufb18', '\ufb1d',
-        '\ufb1e', '\ufb1f',
-        '\ufb29', '\ufb2a',
-        '\ufb37', '\ufb38',
-        '\ufb3d', '\ufb3e',
-        '\ufb3f', '\ufb40',
-        '\ufb42', '\ufb43',
-        '\ufb45', '\ufb46',
-        '\ufbb2', '\ufbd3',
-        '\ufd3e', '\ufd50',
-        '\ufd90', '\ufd92',
-        '\ufdc8', '\ufdf0',
-        '\ufdfc', '\ufe70',
-        '\ufe73', '\ufe74',
-        '\ufe75', '\ufe76',
-        '\ufefd', '\uff21',
-        '\uff3b', '\uff41',
-        '\uff5b', '\uff66',
-        '\uffbf', '\uffc2',
-        '\uffc8', '\uffca',
-        '\uffd0', '\uffd2',
-        '\uffd8', '\uffda',
-        '\uffdd', '\uffff' // last entry is sentinel, actually never checked
+    private static int[] strongTable = {
+        0x0000, 0x0041,
+        0x005b, 0x0061,
+        0x007b, 0x00aa,
+        0x00ab, 0x00b5,
+        0x00b6, 0x00ba,
+        0x00bb, 0x00c0,
+        0x00d7, 0x00d8,
+        0x00f7, 0x00f8,
+        0x02b9, 0x02bb,
+        0x02c2, 0x02d0,
+        0x02d2, 0x02e0,
+        0x02e5, 0x02ee,
+        0x02ef, 0x0370,
+        0x0374, 0x0376,
+        0x037e, 0x0386,
+        0x0387, 0x0388,
+        0x03f6, 0x03f7,
+        0x0483, 0x048a,
+        0x058a, 0x05be,
+        0x05bf, 0x05c0,
+        0x05c1, 0x05c3,
+        0x05c4, 0x05c6,
+        0x05c7, 0x05d0,
+        0x0600, 0x0608,
+        0x0609, 0x060b,
+        0x060c, 0x060d,
+        0x060e, 0x061b,
+        0x064b, 0x066d,
+        0x0670, 0x0671,
+        0x06d6, 0x06e5,
+        0x06e7, 0x06ee,
+        0x06f0, 0x06fa,
+        0x070f, 0x0710,
+        0x0711, 0x0712,
+        0x0730, 0x074d,
+        0x07a6, 0x07b1,
+        0x07eb, 0x07f4,
+        0x07f6, 0x07fa,
+        0x0901, 0x0903,
+        0x093c, 0x093d,
+        0x0941, 0x0949,
+        0x094d, 0x0950,
+        0x0951, 0x0958,
+        0x0962, 0x0964,
+        0x0981, 0x0982,
+        0x09bc, 0x09bd,
+        0x09c1, 0x09c7,
+        0x09cd, 0x09ce,
+        0x09e2, 0x09e6,
+        0x09f2, 0x09f4,
+        0x0a01, 0x0a03,
+        0x0a3c, 0x0a3e,
+        0x0a41, 0x0a59,
+        0x0a70, 0x0a72,
+        0x0a75, 0x0a83,
+        0x0abc, 0x0abd,
+        0x0ac1, 0x0ac9,
+        0x0acd, 0x0ad0,
+        0x0ae2, 0x0ae6,
+        0x0af1, 0x0b02,
+        0x0b3c, 0x0b3d,
+        0x0b3f, 0x0b40,
+        0x0b41, 0x0b47,
+        0x0b4d, 0x0b57,
+        0x0b62, 0x0b66,
+        0x0b82, 0x0b83,
+        0x0bc0, 0x0bc1,
+        0x0bcd, 0x0bd0,
+        0x0bf3, 0x0c01,
+        0x0c3e, 0x0c41,
+        0x0c46, 0x0c58,
+        0x0c62, 0x0c66,
+        0x0c78, 0x0c7f,
+        0x0cbc, 0x0cbd,
+        0x0ccc, 0x0cd5,
+        0x0ce2, 0x0ce6,
+        0x0cf1, 0x0d02,
+        0x0d41, 0x0d46,
+        0x0d4d, 0x0d57,
+        0x0d62, 0x0d66,
+        0x0dca, 0x0dcf,
+        0x0dd2, 0x0dd8,
+        0x0e31, 0x0e32,
+        0x0e34, 0x0e40,
+        0x0e47, 0x0e4f,
+        0x0eb1, 0x0eb2,
+        0x0eb4, 0x0ebd,
+        0x0ec8, 0x0ed0,
+        0x0f18, 0x0f1a,
+        0x0f35, 0x0f36,
+        0x0f37, 0x0f38,
+        0x0f39, 0x0f3e,
+        0x0f71, 0x0f7f,
+        0x0f80, 0x0f85,
+        0x0f86, 0x0f88,
+        0x0f90, 0x0fbe,
+        0x0fc6, 0x0fc7,
+        0x102d, 0x1031,
+        0x1032, 0x1038,
+        0x1039, 0x103b,
+        0x103d, 0x103f,
+        0x1058, 0x105a,
+        0x105e, 0x1061,
+        0x1071, 0x1075,
+        0x1082, 0x1083,
+        0x1085, 0x1087,
+        0x108d, 0x108e,
+        0x135f, 0x1360,
+        0x1390, 0x13a0,
+        0x1680, 0x1681,
+        0x169b, 0x16a0,
+        0x1712, 0x1720,
+        0x1732, 0x1735,
+        0x1752, 0x1760,
+        0x1772, 0x1780,
+        0x17b7, 0x17be,
+        0x17c6, 0x17c7,
+        0x17c9, 0x17d4,
+        0x17db, 0x17dc,
+        0x17dd, 0x17e0,
+        0x17f0, 0x1810,
+        0x18a9, 0x18aa,
+        0x1920, 0x1923,
+        0x1927, 0x1929,
+        0x1932, 0x1933,
+        0x1939, 0x1946,
+        0x19de, 0x1a00,
+        0x1a17, 0x1a19,
+        0x1b00, 0x1b04,
+        0x1b34, 0x1b35,
+        0x1b36, 0x1b3b,
+        0x1b3c, 0x1b3d,
+        0x1b42, 0x1b43,
+        0x1b6b, 0x1b74,
+        0x1b80, 0x1b82,
+        0x1ba2, 0x1ba6,
+        0x1ba8, 0x1baa,
+        0x1c2c, 0x1c34,
+        0x1c36, 0x1c3b,
+        0x1dc0, 0x1e00,
+        0x1fbd, 0x1fbe,
+        0x1fbf, 0x1fc2,
+        0x1fcd, 0x1fd0,
+        0x1fdd, 0x1fe0,
+        0x1fed, 0x1ff2,
+        0x1ffd, 0x200e,
+        0x2010, 0x2071,
+        0x2074, 0x207f,
+        0x2080, 0x2090,
+        0x20a0, 0x2102,
+        0x2103, 0x2107,
+        0x2108, 0x210a,
+        0x2114, 0x2115,
+        0x2116, 0x2119,
+        0x211e, 0x2124,
+        0x2125, 0x2126,
+        0x2127, 0x2128,
+        0x2129, 0x212a,
+        0x212e, 0x212f,
+        0x213a, 0x213c,
+        0x2140, 0x2145,
+        0x214a, 0x214e,
+        0x2153, 0x2160,
+        0x2190, 0x2336,
+        0x237b, 0x2395,
+        0x2396, 0x249c,
+        0x24ea, 0x26ac,
+        0x26ad, 0x2800,
+        0x2900, 0x2c00,
+        0x2ce5, 0x2d00,
+        0x2de0, 0x3005,
+        0x3008, 0x3021,
+        0x302a, 0x3031,
+        0x3036, 0x3038,
+        0x303d, 0x3041,
+        0x3099, 0x309d,
+        0x30a0, 0x30a1,
+        0x30fb, 0x30fc,
+        0x31c0, 0x31f0,
+        0x321d, 0x3220,
+        0x3250, 0x3260,
+        0x327c, 0x327f,
+        0x32b1, 0x32c0,
+        0x32cc, 0x32d0,
+        0x3377, 0x337b,
+        0x33de, 0x33e0,
+        0x33ff, 0x3400,
+        0x4dc0, 0x4e00,
+        0xa490, 0xa500,
+        0xa60d, 0xa610,
+        0xa66f, 0xa680,
+        0xa700, 0xa722,
+        0xa788, 0xa789,
+        0xa802, 0xa803,
+        0xa806, 0xa807,
+        0xa80b, 0xa80c,
+        0xa825, 0xa827,
+        0xa828, 0xa840,
+        0xa874, 0xa880,
+        0xa8c4, 0xa8ce,
+        0xa926, 0xa92e,
+        0xa947, 0xa952,
+        0xaa29, 0xaa2f,
+        0xaa31, 0xaa33,
+        0xaa35, 0xaa40,
+        0xaa43, 0xaa44,
+        0xaa4c, 0xaa4d,
+        0xfb1e, 0xfb1f,
+        0xfb29, 0xfb2a,
+        0xfd3e, 0xfd50,
+        0xfdfd, 0xfe70,
+        0xfeff, 0xff21,
+        0xff3b, 0xff41,
+        0xff5b, 0xff66,
+        0xffe0, 0x10000,
+        0x10101, 0x10102,
+        0x10140, 0x101d0,
+        0x101fd, 0x10280,
+        0x1091f, 0x10920,
+        0x10a01, 0x10a10,
+        0x10a38, 0x10a40,
+        0x1d167, 0x1d16a,
+        0x1d173, 0x1d183,
+        0x1d185, 0x1d18c,
+        0x1d1aa, 0x1d1ae,
+        0x1d200, 0x1d360,
+        0x1d7ce, 0x20000,
+        0xe0001, 0xf0000,
+        0x10fffe, 0x10ffff // sentinel
     };
 
 
     // use a binary search with a cache
 
-    private static int stCache = 0;
+    private transient volatile int stCache = 0;
 
-    // warning, synchronize access to this as it modifies state
-    private static boolean isStrongDirectional(char c) {
-        if (c < strongTable[stCache]) {
-            stCache = search(c, strongTable, 0, stCache);
-        } else if (c >= strongTable[stCache + 1]) {
-            stCache = search(c, strongTable, stCache + 1, strongTable.length - stCache - 1);
+    private boolean isStrongDirectional(char c) {
+        int cachedIndex = stCache;
+        if (c < strongTable[cachedIndex]) {
+            cachedIndex = search(c, strongTable, 0, cachedIndex);
+        } else if (c >= strongTable[cachedIndex + 1]) {
+            cachedIndex = search(c, strongTable, cachedIndex + 1,
+                                 strongTable.length - cachedIndex - 1);
         }
-        return (stCache & 0x1) == 1;
+        boolean val = (cachedIndex & 0x1) == 1;
+        stCache = cachedIndex;
+        return val;
     }
 
-    static private int getKeyFromMask(int mask) {
+    private static int getKeyFromMask(int mask) {
         int key = 0;
         while (key < NUM_KEYS && ((mask & (1<<key)) == 0)) {
             ++key;
@@ -644,9 +812,24 @@ public final class NumericShaper implements java.io.Serializable {
      * @return a non-contextual numeric shaper
      * @throws IllegalArgumentException if the range is not a single range
      */
-    static public NumericShaper getShaper(int singleRange) {
+    public static NumericShaper getShaper(int singleRange) {
         int key = getKeyFromMask(singleRange);
         return new NumericShaper(key, singleRange);
+    }
+
+    /**
+     * Returns a shaper for the provided Unicode
+     * range. All Latin-1 (EUROPEAN) digits are converted to the
+     * corresponding decimal digits of the specified Unicode range.
+     *
+     * @param singleRange the Unicode range given by a {@link
+     *                    NumericShaper.Range} constant.
+     * @return a non-contextual {@code NumericShaper}.
+     * @throws NullPointerException if {@code singleRange} is {@code null}
+     * @since 1.7
+     */
+    public static NumericShaper getShaper(Range singleRange) {
+        return new NumericShaper(singleRange, EnumSet.of(singleRange));
     }
 
     /**
@@ -663,9 +846,31 @@ public final class NumericShaper implements java.io.Serializable {
      * @param ranges the specified Unicode ranges
      * @return a shaper for the specified ranges
      */
-    static public NumericShaper getContextualShaper(int ranges) {
+    public static NumericShaper getContextualShaper(int ranges) {
         ranges |= CONTEXTUAL_MASK;
         return new NumericShaper(EUROPEAN_KEY, ranges);
+    }
+
+    /**
+     * Returns a contextual shaper for the provided Unicode
+     * range(s). The Latin-1 (EUROPEAN) digits are converted to the
+     * decimal digits corresponding to the range of the preceding
+     * text, if the range is one of the provided ranges.
+     *
+     * <p>The shaper assumes EUROPEAN as the starting context, that
+     * is, if EUROPEAN digits are encountered before any strong
+     * directional text in the string, the context is presumed to be
+     * EUROPEAN, and so the digits will not shape.
+     *
+     * @param ranges the specified Unicode ranges
+     * @return a contextual shaper for the specified ranges
+     * @throws NullPointerException if {@code ranges} is {@code null}.
+     * @since 1.7
+     */
+    public static NumericShaper getContextualShaper(Set<Range> ranges) {
+        NumericShaper shaper = new NumericShaper(Range.EUROPEAN, ranges);
+        shaper.mask = CONTEXTUAL_MASK;
+        return shaper;
     }
 
     /**
@@ -683,10 +888,35 @@ public final class NumericShaper implements java.io.Serializable {
      * @throws IllegalArgumentException if the specified
      * <code>defaultContext</code> is not a single valid range.
      */
-    static public NumericShaper getContextualShaper(int ranges, int defaultContext) {
+    public static NumericShaper getContextualShaper(int ranges, int defaultContext) {
         int key = getKeyFromMask(defaultContext);
         ranges |= CONTEXTUAL_MASK;
         return new NumericShaper(key, ranges);
+    }
+
+    /**
+     * Returns a contextual shaper for the provided Unicode range(s).
+     * The Latin-1 (EUROPEAN) digits will be converted to the decimal
+     * digits corresponding to the range of the preceding text, if the
+     * range is one of the provided ranges. The shaper uses {@code
+     * defaultContext} as the starting context.
+     *
+     * @param ranges the specified Unicode ranges
+     * @param defaultContext the starting context, such as
+     *                       {@code NumericShaper.Range.EUROPEAN}
+     * @return a contextual shaper for the specified Unicode ranges.
+     * @throws NullPointerException
+     *         if {@code ranges} or {@code defaultContext} is {@code null}
+     * @since 1.7
+     */
+    public static NumericShaper getContextualShaper(Set<Range> ranges,
+                                                    Range defaultContext) {
+        if (defaultContext == null) {
+            throw new NullPointerException();
+        }
+        NumericShaper shaper = new NumericShaper(defaultContext, ranges);
+        shaper.mask = CONTEXTUAL_MASK;
+        return shaper;
     }
 
     /**
@@ -695,6 +925,11 @@ public final class NumericShaper implements java.io.Serializable {
     private NumericShaper(int key, int mask) {
         this.key = key;
         this.mask = mask;
+    }
+
+    private NumericShaper(Range defaultContext, Set<Range> ranges) {
+        this.shapingRange = defaultContext;
+        this.rangeSet = EnumSet.copyOf(ranges); // throws NPE if ranges is null.
     }
 
     /**
@@ -710,19 +945,13 @@ public final class NumericShaper implements java.io.Serializable {
      * @throws NullPointerException if text is null
      */
     public void shape(char[] text, int start, int count) {
-        if (text == null) {
-            throw new NullPointerException("text is null");
-        }
-        if ((start < 0)
-            || (start > text.length)
-            || ((start + count) < 0)
-            || ((start + count) > text.length)) {
-            throw new IndexOutOfBoundsException(
-                "bad start or count for text of length " + text.length);
-        }
-
+        checkParams(text, start, count);
         if (isContextual()) {
-            shapeContextually(text, start, count, key);
+            if (rangeSet == null) {
+                shapeContextually(text, start, count, key);
+            } else {
+                shapeContextually(text, start, count, shapingRange);
+            }
         } else {
             shapeNonContextually(text, start, count);
         }
@@ -747,6 +976,60 @@ public final class NumericShaper implements java.io.Serializable {
      * range.
      */
     public void shape(char[] text, int start, int count, int context) {
+        checkParams(text, start, count);
+        if (isContextual()) {
+            int ctxKey = getKeyFromMask(context);
+            if (rangeSet == null) {
+                shapeContextually(text, start, count, ctxKey);
+            } else {
+                shapeContextually(text, start, count, Range.values()[ctxKey]);
+            }
+        } else {
+            shapeNonContextually(text, start, count);
+        }
+    }
+
+    /**
+     * Converts the digits in the text that occur between {@code
+     * start} and {@code start + count}, using the provided {@code
+     * context}. {@code Context} is ignored if the shaper is not a
+     * contextual shaper.
+     *
+     * @param text  a {@code char} array
+     * @param start the index into {@code text} to start converting
+     * @param count the number of {@code char}s in {@code text}
+     *              to convert
+     * @param context the context to which to convert the characters,
+     *                such as {@code NumericShaper.Range.EUROPEAN}
+     * @throws IndexOutOfBoundsException
+     *         if {@code start} or {@code start + count} is out of bounds
+     * @throws NullPointerException
+     *         if {@code text} or {@code context} is null
+     * @since 1.7
+     */
+    public void shape(char[] text, int start, int count, Range context) {
+        checkParams(text, start, count);
+        if (context == null) {
+            throw new NullPointerException("context is null");
+        }
+
+        if (isContextual()) {
+            if (rangeSet != null) {
+                shapeContextually(text, start, count, context);
+            } else {
+                int key = Range.toRangeIndex(context);
+                if (key >= 0) {
+                    shapeContextually(text, start, count, key);
+                } else {
+                    shapeContextually(text, start, count, shapingRange);
+                }
+            }
+        } else {
+            shapeNonContextually(text, start, count);
+        }
+    }
+
+    private void checkParams(char[] text, int start, int count) {
         if (text == null) {
             throw new NullPointerException("text is null");
         }
@@ -756,13 +1039,6 @@ public final class NumericShaper implements java.io.Serializable {
             || ((start + count) > text.length)) {
             throw new IndexOutOfBoundsException(
                 "bad start or count for text of length " + text.length);
-        }
-
-        if (isContextual()) {
-            int ctxKey = getKeyFromMask(context);
-            shapeContextually(text, start, count, ctxKey);
-        } else {
-            shapeNonContextually(text, start, count);
         }
     }
 
@@ -785,6 +1061,10 @@ public final class NumericShaper implements java.io.Serializable {
      * <blockquote>
      *   <code>if ((shaper.getRanges() & shaper.ARABIC) != 0) { ... </code>
      * </blockquote>
+     *
+     * <p>Note that this method supports only the bit mask-based
+     * ranges. Call {@link #getRangeSet()} for the enum-based ranges.
+     *
      * @return the values for all the ranges to be shaped.
      */
     public int getRanges() {
@@ -792,11 +1072,34 @@ public final class NumericShaper implements java.io.Serializable {
     }
 
     /**
+     * Returns a {@code Set} representing all the Unicode ranges in
+     * this {@code NumericShaper} that will be shaped.
+     *
+     * @return all the Unicode ranges to be shaped.
+     * @since 1.7
+     */
+    public Set<Range> getRangeSet() {
+        if (rangeSet != null) {
+            return EnumSet.copyOf(rangeSet);
+        }
+        return Range.maskToRangeSet(mask);
+    }
+
+    /**
      * Perform non-contextual shaping.
      */
     private void shapeNonContextually(char[] text, int start, int count) {
-        int base = bases[key];
-        char minDigit = key == TAMIL_KEY ? '\u0031' : '\u0030'; // Tamil doesn't use decimal zero
+        int base;
+        char minDigit = '0';
+        if (shapingRange != null) {
+            base = shapingRange.getDigitBase();
+            minDigit += shapingRange.getNumericBase();
+        } else {
+            base = bases[key];
+            if (key == ETHIOPIC_KEY) {
+                minDigit++; // Ethiopic doesn't use decimal zero
+            }
+        }
         for (int i = start, e = start + count; i < e; ++i) {
             char c = text[i];
             if (c >= minDigit && c <= '\u0039') {
@@ -807,7 +1110,7 @@ public final class NumericShaper implements java.io.Serializable {
 
     /**
      * Perform contextual shaping.
-     * Synchronized to protect caches used in getContextKey and isStrongDirectional.
+     * Synchronized to protect caches used in getContextKey.
      */
     private synchronized void shapeContextually(char[] text, int start, int count, int ctxKey) {
 
@@ -818,29 +1121,64 @@ public final class NumericShaper implements java.io.Serializable {
         int lastkey = ctxKey;
 
         int base = bases[ctxKey];
-        char minDigit = ctxKey == TAMIL_KEY ? '\u0031' : '\u0030'; // Tamil doesn't use decimal zero
+        char minDigit = ctxKey == ETHIOPIC_KEY ? '1' : '0'; // Ethiopic doesn't use decimal zero
 
-        for (int i = start, e = start + count; i < e; ++i) {
-            char c = text[i];
-            if (c >= minDigit && c <= '\u0039') {
-                text[i] = (char)(c + base);
+        synchronized (NumericShaper.class) {
+            for (int i = start, e = start + count; i < e; ++i) {
+                char c = text[i];
+                if (c >= minDigit && c <= '\u0039') {
+                    text[i] = (char)(c + base);
+                }
+
+                if (isStrongDirectional(c)) {
+                    int newkey = getContextKey(c);
+                    if (newkey != lastkey) {
+                        lastkey = newkey;
+
+                        ctxKey = newkey;
+                        if (((mask & EASTERN_ARABIC) != 0) && (ctxKey == ARABIC_KEY || ctxKey == EASTERN_ARABIC_KEY)) {
+                            ctxKey = EASTERN_ARABIC_KEY;
+                        } else if ((mask & (1<<ctxKey)) == 0) {
+                            ctxKey = EUROPEAN_KEY;
+                        }
+
+                        base = bases[ctxKey];
+
+                        minDigit = ctxKey == ETHIOPIC_KEY ? '1' : '0'; // Ethiopic doesn't use decimal zero
+                    }
+                }
             }
+        }
+    }
 
+    private void shapeContextually(char[] text, int start, int count, Range ctxKey) {
+        if (ctxKey == null) {
+            ctxKey = Range.EUROPEAN;
+        }
+
+        Range lastKey = ctxKey;
+        int base = ctxKey.getDigitBase();
+        char minDigit = (char)('0' + ctxKey.getNumericBase());
+        for (int i = start, end = start + count; i < end; ++i) {
+            char c = text[i];
+            if (c >= minDigit && c <= '9') {
+                text[i] = (char)(c + base);
+                continue;
+            }
             if (isStrongDirectional(c)) {
-                int newkey = getContextKey(c);
-                if (newkey != lastkey) {
-                    lastkey = newkey;
-
-                    ctxKey = newkey;
-                    if (((mask & EASTERN_ARABIC) != 0) && (ctxKey == ARABIC_KEY || ctxKey == EASTERN_ARABIC_KEY)) {
-                        ctxKey = EASTERN_ARABIC_KEY;
-                    } else if ((mask & (1<<ctxKey)) == 0) {
-                        ctxKey = EUROPEAN_KEY;
+                Range newKey = rangeForCodePoint(c);
+                if (newKey != lastKey) {
+                    lastKey = newKey;
+                    ctxKey = newKey;
+                    if (rangeSet.contains(Range.EUROPEAN)
+                        && (ctxKey == Range.ARABIC || ctxKey == Range.EASTERN_ARABIC)) {
+                        ctxKey = Range.EASTERN_ARABIC;
+                    } else if (!rangeSet.contains(ctxKey)) {
+                        ctxKey = Range.EUROPEAN;
                     }
 
-                    base = bases[ctxKey];
-
-                    minDigit = ctxKey == TAMIL_KEY ? '\u0031' : '\u0030'; // Tamil doesn't use decimal zero
+                    base = ctxKey.getDigitBase();
+                    minDigit = (char)('0' + ctxKey.getNumericBase());
                 }
             }
         }
@@ -852,12 +1190,28 @@ public final class NumericShaper implements java.io.Serializable {
      * @see java.lang.Object#hashCode
      */
     public int hashCode() {
-        return mask;
+        int hash = mask;
+        if (rangeSet != null) {
+            // Use the CONTEXTUAL_MASK bit only for the enum-based
+            // NumericShaper. A deserialized NumericShaper might have
+            // bit masks.
+            hash &= CONTEXTUAL_MASK;
+            hash ^= rangeSet.hashCode();
+        }
+        return hash;
     }
 
     /**
-     * Returns true if the specified object is an instance of
-     * <code>NumericShaper</code> and shapes identically to this one.
+     * Returns {@code true} if the specified object is an instance of
+     * <code>NumericShaper</code> and shapes identically to this one,
+     * regardless of the range representations, the bit mask or the
+     * enum. For example, the following code produces {@code "true"}.
+     * <blockquote><pre>
+     * NumericShaper ns1 = NumericShaper.getShaper(NumericShaper.ARABIC);
+     * NumericShaper ns2 = NumericShaper.getShaper(NumericShaper.Range.ARABIC);
+     * System.out.println(ns1.equals(ns2));
+     * </pre></blockquote>
+     *
      * @param o the specified object to compare to this
      *          <code>NumericShaper</code>
      * @return <code>true</code> if <code>o</code> is an instance
@@ -869,6 +1223,22 @@ public final class NumericShaper implements java.io.Serializable {
         if (o != null) {
             try {
                 NumericShaper rhs = (NumericShaper)o;
+                if (rangeSet != null) {
+                    if (rhs.rangeSet != null) {
+                        return isContextual() == rhs.isContextual()
+                            && rangeSet.equals(rhs.rangeSet)
+                            && shapingRange == rhs.shapingRange;
+                    }
+                    return isContextual() == rhs.isContextual()
+                        && rangeSet.equals(Range.maskToRangeSet(rhs.mask))
+                        && shapingRange == Range.indexToRange(rhs.key);
+                } else if (rhs.rangeSet != null) {
+                    Set<Range> rset = Range.maskToRangeSet(mask);
+                    Range srange = Range.indexToRange(key);
+                    return isContextual() == rhs.isContextual()
+                        && rset.equals(rhs.rangeSet)
+                        && srange == rhs.shapingRange;
+                }
                 return rhs.mask == mask && rhs.key == key;
             }
             catch (ClassCastException e) {
@@ -885,23 +1255,29 @@ public final class NumericShaper implements java.io.Serializable {
     public String toString() {
         StringBuilder buf = new StringBuilder(super.toString());
 
-        buf.append("[contextual:" + isContextual());
+        buf.append("[contextual:").append(isContextual());
 
+        String[] keyNames = null;
         if (isContextual()) {
-            buf.append(", context:" + keyNames[key]);
+            buf.append(", context:");
+            buf.append(shapingRange == null ? Range.values()[key] : shapingRange);
         }
 
-        buf.append(", range(s): ");
-        boolean first = true;
-        for (int i = 0; i < NUM_KEYS; ++i) {
-            if ((mask & (1 << i)) != 0) {
-                if (first) {
-                    first = false;
-                } else {
-                    buf.append(", ");
+        if (rangeSet == null) {
+            buf.append(", range(s): ");
+            boolean first = true;
+            for (int i = 0; i < NUM_KEYS; ++i) {
+                if ((mask & (1 << i)) != 0) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        buf.append(", ");
+                    }
+                    buf.append(Range.values()[i]);
                 }
-                buf.append(keyNames[i]);
             }
+        } else {
+            buf.append(", range set: ").append(rangeSet);
         }
         buf.append(']');
 
@@ -940,7 +1316,6 @@ public final class NumericShaper implements java.io.Serializable {
         }
 
         if (value >= 1 << 1) {
-            value >>= 1;
             bit += 1;
         }
 
@@ -950,7 +1325,7 @@ public final class NumericShaper implements java.io.Serializable {
     /**
      * fast binary search over subrange of array.
      */
-    private static int search(char value, char[] array, int start, int length)
+    private static int search(int value, int[] array, int start, int length)
     {
         int power = 1 << getHighBit(length);
         int extra = length - power;
@@ -970,5 +1345,28 @@ public final class NumericShaper implements java.io.Serializable {
         }
 
         return index;
+    }
+
+    /**
+     * Converts the {@code NumericShaper.Range} enum-based parameters,
+     * if any, to the bit mask-based counterparts and writes this
+     * object to the {@code stream}. Any enum constants that have no
+     * bit mask-based counterparts are ignored in the conversion.
+     *
+     * @param stream the output stream to write to
+     * @throws IOException if an I/O error occurs while writing to {@code stream}
+     * @since 1.7
+     */
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        if (shapingRange != null) {
+            int index = Range.toRangeIndex(shapingRange);
+            if (index >= 0) {
+                key = index;
+            }
+        }
+        if (rangeSet != null) {
+            mask |= Range.toRangeMask(rangeSet);
+        }
+        stream.defaultWriteObject();
     }
 }

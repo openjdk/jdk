@@ -122,6 +122,33 @@ class Deflater {
      */
     public static final int DEFAULT_STRATEGY = 0;
 
+    /**
+     * Compression flush mode used to achieve best compression result.
+     *
+     * @see Deflater#deflate(byte[], int, int, int)
+     * @since 1.7
+     */
+    public static final int NO_FLUSH = 0;
+
+    /**
+     * Compression flush mode used to flush out all pending output; may
+     * degrade compression for some compression algorithms.
+     *
+     * @see Deflater#deflate(byte[], int, int, int)
+     * @since 1.7
+     */
+    public static final int SYNC_FLUSH = 2;
+
+    /**
+     * Compression flush mode used to flush out all pending output and
+     * reset the deflater. Using this mode too often can seriously degrade
+     * compression.
+     *
+     * @see Deflater#deflate(byte[], int, int, int)
+     * @since 1.7
+     */
+    public static final int FULL_FLUSH = 3;
+
     static {
         /* Zip library is loaded from System.initializeSystemClass */
         initIDs();
@@ -289,35 +316,100 @@ class Deflater {
     }
 
     /**
-     * Fills specified buffer with compressed data. Returns actual number
-     * of bytes of compressed data. A return value of 0 indicates that
-     * needsInput() should be called in order to determine if more input
-     * data is required.
+     * Compresses the input data and fills specified buffer with compressed
+     * data. Returns actual number of bytes of compressed data. A return value
+     * of 0 indicates that {@link needsInput() needsInput} should be called
+     * in order to determine if more input data is required.
+     *
+     * <p>This method uses {@link #NO_FLUSH} as its compression flush mode.
+     * An invocation of this method of the form {@code deflater.deflate(b, off, len)}
+     * yields the same result as the invocation of
+     * {@code deflater.deflate(b, off, len, Deflater.NO_FLUSH)}.
+     *
      * @param b the buffer for the compressed data
      * @param off the start offset of the data
      * @param len the maximum number of bytes of compressed data
-     * @return the actual number of bytes of compressed data
+     * @return the actual number of bytes of compressed data written to the
+     *         output buffer
      */
-    public synchronized int deflate(byte[] b, int off, int len) {
+    public int deflate(byte[] b, int off, int len) {
+        return deflate(b, off, len, NO_FLUSH);
+    }
+
+    /**
+     * Compresses the input data and fills specified buffer with compressed
+     * data. Returns actual number of bytes of compressed data. A return value
+     * of 0 indicates that {@link needsInput() needsInput} should be called
+     * in order to determine if more input data is required.
+     *
+     * <p>This method uses {@link #NO_FLUSH} as its compression flush mode.
+     * An invocation of this method of the form {@code deflater.deflate(b)}
+     * yields the same result as the invocation of
+     * {@code deflater.deflate(b, 0, b.length, Deflater.NO_FLUSH)}.
+     *
+     * @param b the buffer for the compressed data
+     * @return the actual number of bytes of compressed data written to the
+     *         output buffer
+     */
+    public int deflate(byte[] b) {
+        return deflate(b, 0, b.length, NO_FLUSH);
+    }
+
+    /**
+     * Compresses the input data and fills the specified buffer with compressed
+     * data. Returns actual number of bytes of data compressed.
+     *
+     * <p>Compression flush mode is one of the following three modes:
+     *
+     * <ul>
+     * <li>{@link #NO_FLUSH}: allows the deflater to decide how much data
+     * to accumulate, before producing output, in order to achieve the best
+     * compression (should be used in normal use scenario). A return value
+     * of 0 in this flush mode indicates that {@link #needsInput()} should
+     * be called in order to determine if more input data is required.
+     *
+     * <li>{@link #SYNC_FLUSH}: all pending output in the deflater is flushed,
+     * to the specified output buffer, so that an inflater that works on
+     * compressed data can get all input data available so far (In particular
+     * the {@link #needsInput()} returns {@code true} after this invocation
+     * if enough output space is provided). Flushing with {@link #SYNC_FLUSH}
+     * may degrade compression for some compression algorithms and so it
+     * should be used only when necessary.
+     *
+     * <li>{@link #FULL_FLUSH}: all pending output is flushed out as with
+     * {@link #SYNC_FLUSH}. The compression state is reset so that the inflater
+     * that works on the compressed output data can restart from this point
+     * if previous compressed data has been damaged or if random access is
+     * desired. Using {@link #FULL_FLUSH} too often can seriously degrade
+     * compression.
+     * </ul>
+     *
+     * <p>In the case of {@link #FULL_FLUSH} or {@link #SYNC_FLUSH}, if
+     * the return value is {@code len}, the space available in output
+     * buffer {@code b}, this method should be invoked again with the same
+     * {@code flush} parameter and more output space.
+     *
+     * @param b the buffer for the compressed data
+     * @param off the start offset of the data
+     * @param len the maximum number of bytes of compressed data
+     * @param flush the compression flush mode
+     * @return the actual number of bytes of compressed data written to
+     *         the output buffer
+     *
+     * @throws IllegalArgumentException if the flush mode is invalid
+     * @since 1.7
+     */
+    public synchronized int deflate(byte[] b, int off, int len, int flush) {
         if (b == null) {
             throw new NullPointerException();
         }
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        return deflateBytes(b, off, len);
-    }
-
-    /**
-     * Fills specified buffer with compressed data. Returns actual number
-     * of bytes of compressed data. A return value of 0 indicates that
-     * needsInput() should be called in order to determine if more input
-     * data is required.
-     * @param b the buffer for the compressed data
-     * @return the actual number of bytes of compressed data
-     */
-    public int deflate(byte[] b) {
-        return deflate(b, 0, b.length);
+        if (flush == NO_FLUSH || flush == SYNC_FLUSH ||
+            flush == FULL_FLUSH)
+            return deflateBytes(b, off, len, flush);
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -420,7 +512,7 @@ class Deflater {
     private native static long init(int level, int strategy, boolean nowrap);
     private native static void setDictionary(long strm, byte[] b, int off,
                                              int len);
-    private native int deflateBytes(byte[] b, int off, int len);
+    private native int deflateBytes(byte[] b, int off, int len, int flush);
     private native static int getAdler(long strm);
     private native static long getBytesRead(long strm);
     private native static long getBytesWritten(long strm);

@@ -883,4 +883,53 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(pbeWithSHA1AndDESede_oid, "PBEWithSHA1AndDESede");
         nameTable.put(pbeWithSHA1AndRC2_40_oid, "PBEWithSHA1AndRC2_40");
     }
+
+    /**
+     * Creates a signature algorithm name from a digest algorithm
+     * name and a encryption algorithm name.
+     */
+    public static String makeSigAlg(String digAlg, String encAlg) {
+        digAlg = digAlg.replace("-", "").toUpperCase(Locale.ENGLISH);
+        if (digAlg.equalsIgnoreCase("SHA")) digAlg = "SHA1";
+
+        encAlg = encAlg.toUpperCase(Locale.ENGLISH);
+        if (encAlg.equals("EC")) encAlg = "ECDSA";
+
+        return digAlg + "with" + encAlg;
+    }
+
+    /**
+     * Extracts the encryption algorithm name from a signature
+     * algorithm name.
+      */
+    public static String getEncAlgFromSigAlg(String signatureAlgorithm) {
+        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
+        int with = signatureAlgorithm.indexOf("WITH");
+        String keyAlgorithm = null;
+        if (with > 0) {
+            int and = signatureAlgorithm.indexOf("AND", with + 4);
+            if (and > 0) {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
+            } else {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
+                keyAlgorithm = "EC";
+            }
+        }
+        return keyAlgorithm;
+    }
+
+    /**
+     * Extracts the digest algorithm name from a signature
+     * algorithm name.
+      */
+    public static String getDigAlgFromSigAlg(String signatureAlgorithm) {
+        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
+        int with = signatureAlgorithm.indexOf("WITH");
+        if (with > 0) {
+            return signatureAlgorithm.substring(0, with);
+        }
+        return null;
+    }
 }

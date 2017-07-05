@@ -69,9 +69,9 @@ public class ServiceName {
     /**
      * The version of the JMX specification implemented by this product.
      * <BR>
-     * The value is <CODE>2.0</CODE>.
+     * The value is <CODE>1.4</CODE>.
      */
-    public static final String JMX_SPEC_VERSION = "2.0";
+    public static final String JMX_SPEC_VERSION = "1.4";
 
     /**
      * The vendor of the JMX specification implemented by this product.

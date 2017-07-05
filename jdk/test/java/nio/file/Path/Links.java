@@ -26,6 +26,8 @@
  * @summary Unit test for java.nio.file.Path createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
+ * @build Links
+ * @run main/othervm Links
  */
 
 import java.nio.file.*;

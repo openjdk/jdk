@@ -453,10 +453,12 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @see java.awt.Container#validate
      * @see JComponent#revalidate
      * @see JComponent#isValidateRoot
+     * @see java.awt.Container#isValidateRoot
      *
      * @beaninfo
      *    hidden: true
      */
+    @Override
     public boolean isValidateRoot() {
         return true;
     }

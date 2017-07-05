@@ -62,4 +62,6 @@ public class PerfLongCounter extends AbstractCounter
                                        getFlags(),
                                        longValue());
     }
+
+    private static final long serialVersionUID = 857711729279242948L;
 }

@@ -268,7 +268,8 @@ public class KrbApReq {
     private void authenticate(EncryptionKey[] keys, InetAddress initiator)
         throws KrbException, IOException {
         int encPartKeyType = apReqMessg.ticket.encPart.getEType();
-        EncryptionKey dkey = EncryptionKey.findKey(encPartKeyType, keys);
+        Integer kvno = apReqMessg.ticket.encPart.getKeyVersionNumber();
+        EncryptionKey dkey = EncryptionKey.findKey(encPartKeyType, kvno, keys);
 
         if (dkey == null) {
             throw new KrbException(Krb5.API_INVALID_ARG,

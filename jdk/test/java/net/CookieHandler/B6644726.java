@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6644726
+ * @bug 6644726 6873543
  * @summary Cookie management issues
  */
 
@@ -169,6 +169,28 @@ public class B6644726 {
         }
         if (isIn(clst, "myCookie8=")) {
             fail("A cookie with an invalid port list was returned");
+        }
+
+        // Test httpOnly flag (CR# 6873543)
+        lst.clear();
+        map.clear();
+        cm.getCookieStore().removeAll();
+        lst.add("myCookie11=httpOnlyTest; httpOnly");
+        map.put("Set-Cookie", lst);
+        uri = new URI("http://www.sun.com/");
+        cm.put(uri, map);
+        m = cm.get(uri, emptyMap);
+        clst = m.get("Cookie");
+        // URI scheme was http: so we should get the cookie
+        if (!isIn(clst, "myCookie11=")) {
+            fail("Missing cookie with httpOnly flag");
+        }
+        uri = new URI("javascript://www.sun.com/");
+        m = cm.get(uri, emptyMap);
+        clst = m.get("Cookie");
+        // URI scheme was neither http or https so we shouldn't get the cookie
+        if (isIn(clst, "myCookie11=")) {
+            fail("Should get the cookie with httpOnly when scheme is javascript:");
         }
     }
 

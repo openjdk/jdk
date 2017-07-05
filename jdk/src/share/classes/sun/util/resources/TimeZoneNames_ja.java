@@ -141,6 +141,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                      "\u30de\u30ec\u30fc\u30b7\u30a2\u590f\u6642\u9593", "MYST"};
         String NORONHA[] = new String[] {"\u30d5\u30a7\u30eb\u30ca\u30f3\u30c9\u30fb\u30c7\u30fb\u30ce\u30ed\u30fc\u30cb\u30e3\u6642\u9593", "FNT",
                                          "\u30d5\u30a7\u30eb\u30ca\u30f3\u30c9\u30fb\u30c7\u30fb\u30ce\u30ed\u30fc\u30cb\u30e3\u590f\u6642\u9593", "FNST"};
+        String NOVT[] = new String[] {"\u30ce\u30dc\u30b7\u30d3\u30eb\u30b9\u30af\u6642\u9593", "NOVT",
+                                      "\u30ce\u30dc\u30b7\u30d3\u30eb\u30b9\u30af\u590f\u6642\u9593", "NOVST"};
         String NPT[] = new String[] {"\u30cd\u30d1\u30fc\u30eb\u6642\u9593", "NPT",
                                       "\u30cd\u30d1\u30fc\u30eb\u590f\u6642\u9593", "NPST"};
         String NST[] = new String[] {"\u30cb\u30e5\u30fc\u30d5\u30a1\u30f3\u30c9\u30e9\u30f3\u30c9\u6a19\u6e96\u6642", "NST",
@@ -441,7 +443,6 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
-            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"\u30c7\u30a4\u30d3\u30b9\u6642\u9593", "DAVT",
                                                "\u30c7\u30a4\u30d3\u30b9\u590f\u6642\u9593", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"\u30c7\u30e5\u30e2\u30f3\u30c7\u30e5\u30eb\u30f4\u30a3\u30eb\u6642\u9593", "DDUT",
@@ -529,8 +530,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                           "\u30d5\u30a3\u30ea\u30d4\u30f3\u590f\u6642\u9593", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-            {"Asia/Novosibirsk", new String[] {"\u30ce\u30dc\u30b7\u30d3\u30eb\u30b9\u30af\u6642\u9593", "NOVT",
-                                               "\u30ce\u30dc\u30b7\u30d3\u30eb\u30b9\u30af\u590f\u6642\u9593", "NOVST"}},
+            {"Asia/Novokuznetsk", NOVT},
+            {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"\u30aa\u30e9\u30eb\u6642\u9593", "ORAT",
                                         "\u30aa\u30e9\u30eb\u590f\u6642\u9593", "ORAST"}},
             {"Asia/Omsk", new String[] {"\u30aa\u30e0\u30b9\u30af\u6642\u9593", "OMST",

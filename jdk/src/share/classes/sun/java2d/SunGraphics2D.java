@@ -257,7 +257,6 @@ public final class SunGraphics2D
             font = defaultFont;
         }
 
-        loops = sd.getRenderLoops(this);
         setDevClip(sd.getBounds());
         invalidatePipe();
     }
@@ -367,6 +366,7 @@ public final class SunGraphics2D
         shapepipe = invalidpipe;
         textpipe = invalidpipe;
         imagepipe = invalidpipe;
+        loops = null;
     }
 
     public void validatePipe() {

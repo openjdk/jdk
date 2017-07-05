@@ -162,6 +162,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "source keystore type"}, //-srcstoretype
         {"SSL server host and port",
                 "SSL server host and port"}, //-sslserver
+        {"signed jar file",
+                "signed jar file"}, //=jarfile
         {"certificate validity start date/time",
                 "certificate validity start date/time"}, //-startdate
         {"keystore password",
@@ -370,6 +372,13 @@ public class Resources extends java.util.ListResourceBundle {
 
         {"*****************  WARNING WARNING WARNING  *****************",
             "*****************  WARNING WARNING WARNING  *****************"},
+        {"Signer #%d:", "Signer #%d:"},
+        {"Timestamp:", "Timestamp:"},
+        {"Signature:", "Signature:"},
+        {"Certificate owner: ", "Certificate owner: "},
+        {"Not a signed jar file", "Not a signed jar file"},
+        {"No certificate from the SSL server",
+                "No certificate from the SSL server"},
 
         // Translators of the following 5 pairs, ATTENTION:
         // the next 5 string pairs are meant to be combined into 2 paragraphs,

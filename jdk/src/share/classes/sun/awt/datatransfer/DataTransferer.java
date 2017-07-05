@@ -63,8 +63,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import java.rmi.MarshalledObject;
-
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -491,6 +489,13 @@ public abstract class DataTransferer {
         } catch (IllegalCharsetNameException icne) {
             return false;
         }
+    }
+
+    /**
+     * Returns {@code true} if the given type is a java.rmi.Remote.
+     */
+    public static boolean isRemote(Class<?> type) {
+        return RMI.isRemote(type);
     }
 
     /**
@@ -1360,7 +1365,7 @@ search:
 
         // Source data is an RMI object
         } else if (flavor.isRepresentationClassRemote()) {
-            MarshalledObject mo = new MarshalledObject(obj);
+            Object mo = RMI.newMarshalledObject(obj);
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(mo);
             oos.close();
@@ -1671,7 +1676,7 @@ search:
             try {
                 byte[] ba = inputStreamToByteArray(str);
                 ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(ba));
-                Object ret = ((MarshalledObject)(ois.readObject())).get();
+                Object ret = RMI.getMarshalledObject(ois.readObject());
                 ois.close();
                 str.close();
                 return ret;
@@ -2669,8 +2674,12 @@ search:
                                               Integer.valueOf(0));
                 nonTextRepresentationsMap.put(java.io.Serializable.class,
                                               Integer.valueOf(1));
-                nonTextRepresentationsMap.put(java.rmi.Remote.class,
-                                              Integer.valueOf(2));
+
+                Class<?> remoteClass = RMI.remoteClass();
+                if (remoteClass != null) {
+                    nonTextRepresentationsMap.put(remoteClass,
+                                                  Integer.valueOf(2));
+                }
 
                 nonTextRepresentations =
                     Collections.unmodifiableMap(nonTextRepresentationsMap);
@@ -2897,6 +2906,97 @@ search:
                 return -compareIndices(indexMap, obj1, obj2, FALLBACK_INDEX);
             } else {
                 return compareIndices(indexMap, obj1, obj2, FALLBACK_INDEX);
+            }
+        }
+    }
+
+    /**
+     * A class that provides access to java.rmi.Remote and java.rmi.MarshalledObject
+     * without creating a static dependency.
+     */
+    private static class RMI {
+        private static final Class<?> remoteClass = getClass("java.rmi.Remote");
+        private static final Class<?> marshallObjectClass =
+            getClass("java.rmi.MarshalledObject");
+        private static final Constructor<?> marshallCtor =
+            getConstructor(marshallObjectClass, Object.class);
+        private static final Method marshallGet =
+            getMethod(marshallObjectClass, "get");
+
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, null);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+
+        private static Constructor<?> getConstructor(Class<?> c, Class<?>... types) {
+            try {
+                return (c == null) ? null : c.getDeclaredConstructor(types);
+            } catch (NoSuchMethodException x) {
+                throw new AssertionError(x);
+            }
+        }
+
+        private static Method getMethod(Class<?> c, String name, Class<?>... types) {
+            try {
+                return (c == null) ? null : c.getMethod(name, types);
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        /**
+         * Returns {@code true} if the given class is java.rmi.Remote.
+         */
+        static boolean isRemote(Class<?> c) {
+            return (remoteClass == null) ? null : remoteClass.isAssignableFrom(c);
+        }
+
+        /**
+         * Returns java.rmi.Remote.class if RMI is present; otherwise {@code null}.
+         */
+        static Class<?> remoteClass() {
+            return remoteClass;
+        }
+
+        /**
+         * Returns a new MarshalledObject containing the serialized representation
+         * of the given object.
+         */
+        static Object newMarshalledObject(Object obj) throws IOException {
+            try {
+                return marshallCtor.newInstance(obj);
+            } catch (InstantiationException x) {
+                throw new AssertionError(x);
+            } catch (IllegalAccessException x) {
+                throw new AssertionError(x);
+            } catch (InvocationTargetException  x) {
+                Throwable cause = x.getCause();
+                if (cause instanceof IOException)
+                    throw (IOException)cause;
+                throw new AssertionError(x);
+            }
+        }
+
+        /**
+         * Returns a new copy of the contained marshalled object.
+         */
+        static Object getMarshalledObject(Object obj)
+            throws IOException, ClassNotFoundException
+        {
+            try {
+                return marshallGet.invoke(obj);
+            } catch (IllegalAccessException x) {
+                throw new AssertionError(x);
+            } catch (InvocationTargetException x) {
+                Throwable cause = x.getCause();
+                if (cause instanceof IOException)
+                    throw (IOException)cause;
+                if (cause instanceof ClassNotFoundException)
+                    throw (ClassNotFoundException)cause;
+                throw new AssertionError(x);
             }
         }
     }

@@ -31,7 +31,6 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * Base class for Standard MBeans.
@@ -58,11 +57,11 @@ public class StandardMBeanSupport extends MBeanSupport<Method> {
      */
     public <T> StandardMBeanSupport(T resource, Class<T> mbeanInterfaceType)
             throws NotCompliantMBeanException {
-        super(resource, mbeanInterfaceType, (MXBeanMappingFactory) null);
+        super(resource, mbeanInterfaceType);
     }
 
     @Override
-    MBeanIntrospector<Method> getMBeanIntrospector(MXBeanMappingFactory ignored) {
+    MBeanIntrospector<Method> getMBeanIntrospector() {
         return StandardMBeanIntrospector.getInstance();
     }
 
@@ -84,14 +83,13 @@ public class StandardMBeanSupport extends MBeanSupport<Method> {
     @Override
     public MBeanInfo getMBeanInfo() {
         MBeanInfo mbi = super.getMBeanInfo();
-        Class<?> resourceClass = getWrappedObject().getClass();
-        if (!getMBeanInterface().isInterface() ||
-                StandardMBeanIntrospector.isDefinitelyImmutableInfo(resourceClass))
+        Class<?> resourceClass = getResource().getClass();
+        if (StandardMBeanIntrospector.isDefinitelyImmutableInfo(resourceClass))
             return mbi;
         return new MBeanInfo(mbi.getClassName(), mbi.getDescription(),
                 mbi.getAttributes(), mbi.getConstructors(),
                 mbi.getOperations(),
-                MBeanIntrospector.findNotifications(getWrappedObject()),
+                MBeanIntrospector.findNotifications(getResource()),
                 mbi.getDescriptor());
     }
 }

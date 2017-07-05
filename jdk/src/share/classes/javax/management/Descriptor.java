@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenMBeanOperationInfoSupport;
 import javax.management.openmbean.OpenMBeanParameterInfoSupport;
@@ -118,22 +117,23 @@ import javax.management.openmbean.OpenType;
  * deprecation, for example {@code "1.3 Replaced by the Capacity
  * attribute"}.</td>
  *
- * <tr><td id="descriptionResourceBundleBaseName"><i>descriptionResource<br>
- * BundleBaseName</i></td><td>String</td><td>Any</td>
+ * <tr><td id="descriptionResourceBundleBaseName">descriptionResource<br>
+ * BundleBaseName</td><td>String</td><td>Any</td>
  *
  * <td>The base name for the {@link ResourceBundle} in which the key given in
  * the {@code descriptionResourceKey} field can be found, for example
- * {@code "com.example.myapp.MBeanResources"}.  See
- * {@link MBeanInfo#localizeDescriptions MBeanInfo.localizeDescriptions}.</td>
+ * {@code "com.example.myapp.MBeanResources"}.  The meaning of this
+ * field is defined by this specification but the field is not set or
+ * used by the JMX API itself.</td>
  *
- * <tr><td id="descriptionResourceKey"><i>descriptionResourceKey</i></td>
+ * <tr><td id="descriptionResourceKey">descriptionResourceKey</td>
  * <td>String</td><td>Any</td>
  *
  * <td>A resource key for the description of this element.  In
  * conjunction with the {@code descriptionResourceBundleBaseName},
  * this can be used to find a localized version of the description.
- * See {@link MBeanInfo#localizeDescriptions MBeanInfo.localizeDescriptions}.
- * </td>
+ * The meaning of this field is defined by this specification but the
+ * field is not set or used by the JMX API itself.</td>
  *
  * <tr><td>enabled</td><td>String</td>
  * <td>MBeanAttributeInfo<br>MBeanNotificationInfo<br>MBeanOperationInfo</td>
@@ -147,30 +147,15 @@ import javax.management.openmbean.OpenType;
  * might be disabled if it cannot currently be emitted but could be in
  * other circumstances.</td>
  *
- * <tr id="exceptions"><td><i>exceptions</i><td>String[]</td>
+ * <tr id="exceptions"><td>exceptions<td>String[]</td>
  * <td>MBeanAttributeInfo, MBeanConstructorInfo, MBeanOperationInfo</td>
  *
  * <td>The class names of the exceptions that can be thrown when invoking a
- * constructor or operation, or getting an attribute. Exceptions thrown when
+ * constructor or operation, or getting an attribute. The meaning of this field
+ * is defined by this specification but the field is not set or used by the
+ * JMX API itself. Exceptions thrown when
  * setting an attribute are specified by the field
  * <a href="#setExceptions">{@code setExceptions}</a>.
- *
- * <tr id="exceptionErrorCodes"><td>exceptionErrorCodes</td><td>String[]</td>
- * <td>MBeanAttributeInfo<br>MBeanConstructorInfo<br>MBeanOperationInfo</td>
- *
- * <td>The {@linkplain GenericMBeanException#getErrorCode() error codes}
- * that can appear in a {@link GenericMBeanException} thrown when getting
- * this attribute or invoking this operation or constructor.  See also
- * <a href="#setExceptionErrorCodes">{@code setExceptionErrorCodes}</a>.
- *
- * <tr id="exceptionUserDataTypes"><td>exceptionUserDataTypes</td>
- * <td>{@link javax.management.openmbean.CompositeType}[]</td>
- * <td>MBeanAttributeInfo<br>MBeanConstructorInfo<br>MBeanOperationInfo</td>
- *
- * <td>The types of {@linkplain GenericMBeanException#getUserData() userData}
- * that can appear in a {@link GenericMBeanException} thrown when getting
- * this attribute or invoking this operation or constructor.  See also
- * <a href="#setExceptionUserDataTypes">{@code setExceptionUserDataTypes}</a>.
  *
  * <tr id="immutableInfo"><td><i>immutableInfo</i><td>String</td>
  * <td>MBeanInfo</td>
@@ -213,7 +198,7 @@ import javax.management.openmbean.OpenType;
  * <td>Legal values for an attribute or parameter.  See
  * {@link javax.management.openmbean}.</td>
  *
- * <tr id="locale"><td><i>locale</i></td>
+ * <tr id="locale"><td>locale</td>
  * <td>String</td><td>Any</td>
  *
  * <td>The {@linkplain Locale locale} of the description in this
@@ -254,21 +239,6 @@ import javax.management.openmbean.OpenType;
  * StandardMBean} class will have this field in its MBeanInfo
  * Descriptor.</td>
  *
- * <tr><td id="mxbeanMappingFactoryClass"><i>mxbeanMappingFactoryClass</i>
- * </td><td>String</td>
- * <td>MBeanInfo</td>
- *
- * <td>The name of the {@link MXBeanMappingFactory} class that was used for this
- * MXBean, if it was not the {@linkplain MXBeanMappingFactory#DEFAULT default}
- * one.</td>
- *
- * <tr><td id="objectNameTemplate"><i>objectNameTemplate</i>
- * </td><td>String</td>
- * <td>MBeanInfo</td>
- *
- * <td>The template to use to name this MBean. Its value must be compliant with
- * the specification of the {@link ObjectNameTemplate} annotation.</td>
- *
  * <tr id="openType"><td><i>openType</i><td>{@link OpenType}</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
@@ -306,25 +276,10 @@ import javax.management.openmbean.OpenType;
  * <td>MBeanAttributeInfo</td>
  *
  * <td>The class names of the exceptions that can be thrown when setting
- * an attribute. Exceptions thrown when getting an attribute are specified
+ * an attribute. The meaning of this field
+ * is defined by this specification but the field is not set or used by the
+ * JMX API itself.  Exceptions thrown when getting an attribute are specified
  * by the field <a href="#exceptions">{@code exceptions}</a>.
- *
- * <tr id="setExceptionErrorCodes"><td>setExceptionErrorCodes</td>
- * <td>String[]</td><td>MBeanAttributeInfo</td>
- *
- * <td>The {@linkplain GenericMBeanException#getErrorCode() error codes}
- * that can appear in a {@link GenericMBeanException} thrown when setting
- * this attribute.  See also
- * <a href="#exceptionErrorCodes">{@code exceptionErrorCodes}</a>.
- *
- * <tr id="setExceptionUserDataTypes"><td>setExceptionUserDataTypes</td>
- * <td>{@link javax.management.openmbean.CompositeType}[]</td>
- * <td>MBeanAttributeInfo</td>
- *
- * <td>The types of {@linkplain GenericMBeanException#getUserData() userData}
- * that can appear in a {@link GenericMBeanException} thrown when setting
- * this attribute.  See also
- * <a href="#exceptionUserDataTypes">{@code exceptionUserDataTypes}</a>.
  *
  * <tr><td>severity</td><td>String<br>Integer</td>
  * <td>MBeanNotificationInfo</td>

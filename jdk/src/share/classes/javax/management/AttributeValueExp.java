@@ -51,8 +51,6 @@ public class AttributeValueExp implements ValueExp  {
      */
     private String attr;
 
-    private transient int dotIndex;
-
     /**
      * An <code>AttributeValueExp</code> with a null attribute.
      * @deprecated An instance created with this constructor cannot be
@@ -71,18 +69,6 @@ public class AttributeValueExp implements ValueExp  {
      */
     public AttributeValueExp(String attr) {
         this.attr = attr;
-        setDotIndex();
-    }
-
-    private void setDotIndex() {
-        if (attr != null)
-            dotIndex = attr.indexOf('.');
-    }
-
-    private void readObject(ObjectInputStream in)
-    throws ClassNotFoundException, IOException {
-        in.defaultReadObject();
-        setDotIndex();
     }
 
     /**
@@ -134,7 +120,7 @@ public class AttributeValueExp implements ValueExp  {
      */
     @Override
     public String toString()  {
-        return QueryParser.quoteId(attr);
+        return attr;
     }
 
 
@@ -160,18 +146,6 @@ public class AttributeValueExp implements ValueExp  {
      * If the attempt to access the attribute generates an exception,
      * return null.</p>
      *
-     * <p>Let <em>n</em> be the {@linkplain #getAttributeName attribute
-     * name}. Then this method proceeds as follows. First it calls
-     * {@link MBeanServer#getAttribute getAttribute(name, <em>n</em>)}. If that
-     * generates an {@link AttributeNotFoundException}, and if <em>n</em>
-     * contains at least one dot ({@code .}), then the method calls {@code
-     * getAttribute(name, }<em>n</em>{@code .substring(0, }<em>n</em>{@code
-     * .indexOf('.')))}; in other words it calls {@code getAttribute}
-     * with the substring of <em>n</em> before the first dot. Then it
-     * extracts a component from the retrieved value, as described in the <a
-     * href="monitor/package-summary.html#complex">documentation for the {@code
-     * monitor} package</a>.</p>
-     *
      * <p>The MBean Server used is the one returned by {@link
      * QueryEval#getMBeanServer()}.</p>
      *
@@ -186,34 +160,9 @@ public class AttributeValueExp implements ValueExp  {
 
             MBeanServer server = QueryEval.getMBeanServer();
 
-            try {
             return server.getAttribute(name, attr);
-            } catch (AttributeNotFoundException e) {
-                if (dotIndex < 0)
-                    throw e;
-            }
-
-            String toGet = attr.substring(0, dotIndex);
-
-            Object value = server.getAttribute(name, toGet);
-
-            return extractElement(value, attr.substring(dotIndex + 1));
         } catch (Exception re) {
             return null;
         }
     }
-
-    private Object extractElement(Object value, String elementWithDots)
-    throws AttributeNotFoundException {
-        while (true) {
-            int dot = elementWithDots.indexOf('.');
-            String element = (dot < 0) ?
-                elementWithDots : elementWithDots.substring(0, dot);
-            value = Introspector.elementFromComplex(value, element);
-            if (dot < 0)
-                return value;
-            elementWithDots = elementWithDots.substring(dot + 1);
-        }
-    }
-
 }

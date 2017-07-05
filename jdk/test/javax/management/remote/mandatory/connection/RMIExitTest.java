@@ -35,8 +35,6 @@
 import java.net.MalformedURLException;
 import java.io.IOException;
 
-import java.util.Collections;
-import java.util.Map;
 import javax.management.MBeanServerFactory;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -49,7 +47,6 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 /**
  * VM shutdown hook. Test that the hook is called less than 5 secs
@@ -85,15 +82,12 @@ public class RMIExitTest {
     public static void main(String[] args) {
         System.out.println("Start test");
         Runtime.getRuntime().addShutdownHook(new TimeChecker());
-        test(false);
-        test(true);
+        test();
         exitStartTime = System.currentTimeMillis();
         System.out.println("End test");
     }
 
-    private static void test(boolean eventService) {
-        System.out.println(
-                "---testing with" + (eventService ? "" : "out") + " Event Service");
+    private static void test() {
         try {
             JMXServiceURL u = new JMXServiceURL("rmi", null, 0);
             JMXConnectorServer server;
@@ -112,11 +106,8 @@ public class RMIExitTest {
                         }
                     };
 
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                    Boolean.toString(eventService));
             server = JMXConnectorServerFactory.newJMXConnectorServer(u,
-                                                                     env,
+                                                                     null,
                                                                      mbs);
             server.start();
 

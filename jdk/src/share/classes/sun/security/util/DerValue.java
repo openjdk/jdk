@@ -28,6 +28,7 @@ package sun.security.util;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
+import sun.misc.IOUtils;
 
 /**
  * Represents a single DER-encoded value.  DER encoding rules are a subset
@@ -382,12 +383,8 @@ public class DerValue {
         if (fullyBuffered && in.available() != length)
             throw new IOException("extra data given to DerValue constructor");
 
-        byte[] bytes = new byte[length];
+        byte[] bytes = IOUtils.readFully(in, length, true);
 
-        // n.b. readFully not needed in normal fullyBuffered case
-        DataInputStream dis = new DataInputStream(in);
-
-        dis.readFully(bytes);
         buffer = new DerInputBuffer(bytes);
         return new DerInputStream(buffer);
     }

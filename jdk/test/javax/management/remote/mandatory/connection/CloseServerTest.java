@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,11 @@
  * @run main CloseServerTest
  */
 
-import com.sun.jmx.remote.util.EnvHelp;
 import java.net.MalformedURLException;
+import java.io.IOException;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import javax.management.*;
 import javax.management.remote.*;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 public class CloseServerTest {
     private static final String[] protocols = {"rmi", "iiop", "jmxmp"};
@@ -136,54 +131,40 @@ public class CloseServerTest {
 
             server.stop();
 
-            List<Map<String, String>> envs = Arrays.asList(
-                    Collections.singletonMap(
-                        RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false"),
-                    Collections.singletonMap(
-                        RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "true"));
+            // with a client listener, but close the server first
+            System.out.println(">>> Open, start a server, create a client, add a listener, close the server then the client.");
+            server = JMXConnectorServerFactory.newJMXConnectorServer(u, null, mbs);
+            server.start();
 
-            for (Map<String, String> env : envs) {
-                    System.out.println(
-                            ">>>>>>>> " + RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE +
-                            " = " + env.get(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE));
+            addr = server.getAddress();
+            client = JMXConnectorFactory.newJMXConnector(addr, null);
+            client.connect(null);
 
-                // with a client listener, but close the server first
-                System.out.println(">>> Open, start a server, create a client, " +
-                        "add a listener, close the server then the client.");
-                server = JMXConnectorServerFactory.newJMXConnectorServer(u, env, mbs);
-                server.start();
+            mserver = client.getMBeanServerConnection();
+            mserver.addNotificationListener(delegateName, dummyListener, null, null);
 
-                addr = server.getAddress();
-                client = JMXConnectorFactory.newJMXConnector(addr, null);
-                client.connect(null);
+            server.stop();
 
-                mserver = client.getMBeanServerConnection();
-                mserver.addNotificationListener(delegateName, dummyListener, null, null);
-
-                server.stop();
-
-                try {
-                    client.close();
-                } catch (Exception e) {
-                    // ok, it is because the server has been closed.
-                }
-
-                // with a client listener, but close the client first
-                System.out.println(">>> Open, start a server, create a client, " +
-                        "add a listener, close the client then the server.");
-                server = JMXConnectorServerFactory.newJMXConnectorServer(u, env, mbs);
-                server.start();
-
-                addr = server.getAddress();
-                client = JMXConnectorFactory.newJMXConnector(addr, null);
-                client.connect(null);
-
-                mserver = client.getMBeanServerConnection();
-                mserver.addNotificationListener(delegateName, dummyListener, null, null);
-
+            try {
                 client.close();
-                server.stop();
+            } catch (Exception e) {
+                // ok, it is because the server has been closed.
             }
+
+            // with a client listener, but close the client first
+            System.out.println(">>> Open, start a server, create a client, add a listener, close the client then the server.");
+            server = JMXConnectorServerFactory.newJMXConnectorServer(u, null, mbs);
+            server.start();
+
+            addr = server.getAddress();
+            client = JMXConnectorFactory.newJMXConnector(addr, null);
+            client.connect(null);
+
+            mserver = client.getMBeanServerConnection();
+            mserver.addNotificationListener(delegateName, dummyListener, null, null);
+
+            client.close();
+            server.stop();
         } catch (MalformedURLException e) {
             System.out.println(">>> Skipping unsupported URL " + u);
             return true;

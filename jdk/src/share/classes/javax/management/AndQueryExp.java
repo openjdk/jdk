@@ -104,26 +104,4 @@ class AndQueryExp extends QueryEval implements QueryExp {
     public String toString() {
         return "(" + exp1 + ") and (" + exp2 + ")";
     }
-
-    @Override
-    String toQueryString() {
-        // Parentheses are only added if needed to disambiguate.
-        return parens(exp1) + " and " + parens(exp2);
-   }
-
-   // Add parens if needed to disambiguate an expression such as
-   // Query.and(Query.or(a, b), c).  We need to return
-   // (a or b) and c
-   // in such a case, because
-   // a or b and c
-   // would mean
-   // a or (b and c)
-   private static String parens(QueryExp exp) {
-       String s = Query.toString(exp);
-       if (exp instanceof OrQueryExp)
-           return "(" + s + ")";
-       else
-           return s;
-   }
-
 }

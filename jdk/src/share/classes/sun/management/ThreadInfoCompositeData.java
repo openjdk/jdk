@@ -410,4 +410,6 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
 
         }
     }
+
+    private static final long serialVersionUID = 2464378539119753175L;
 }

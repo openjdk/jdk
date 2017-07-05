@@ -21,7 +21,6 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
-# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -194,11 +193,30 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 #
 # No DST end date has been announced yet.
 
-# From Arthur David Olson (2009-07-11):
-# Arbitrarily end DST at the end of 2009 so that a POSIX-sytle time zone string
-# can appear in the Dhaka binary file and for the benefit of old glibc
-# reimplementations of the time zone software that mishandle permanent DST.
-# A change will be required once the end date is known.
+# From Alexander Krivenyshev (2009-09-25):
+# Bangladesh won't go back to Standard Time from October 1, 2009, 
+# instead it will continue DST measure till the cabinet makes a fresh decision. 
+#
+# Following report by same newspaper-"The Daily Star Friday":
+# "DST change awaits cabinet decision-Clock won't go back by 1-hr from Oct 1"
+# <a href="http://www.thedailystar.net/newDesign/news-details.php?nid=107021">
+# http://www.thedailystar.net/newDesign/news-details.php?nid=107021
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_bangladesh04.html">
+# http://www.worldtimezone.com/dst_news/dst_news_bangladesh04.html
+# </a>
+
+# From Steffen Thorsen (2009-10-13):
+# IANS (Indo-Asian News Service) now reports:
+# Bangladesh has decided that the clock advanced by an hour to make 
+# maximum use of daylight hours as an energy saving measure would 
+# "continue for an indefinite period."
+#
+# One of many places where it is published:
+# <a href="http://www.thaindian.com/newsportal/business/bangladesh-to-continue-indefinitely-with-advanced-time_100259987.html">
+# http://www.thaindian.com/newsportal/business/bangladesh-to-continue-indefinitely-with-advanced-time_100259987.html
+# </a>
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dhaka	6:01:40 -	LMT	1890
@@ -208,8 +226,7 @@ Zone	Asia/Dhaka	6:01:40 -	LMT	1890
 			6:30	-	BURT	1951 Sep 30
 			6:00	-	DACT	1971 Mar 26 # Dacca Time
 			6:00	-	BDT	2009 Jun 19 23:00 # Bangladesh Time
-			6:00	1:00	BDST	2010
-			6:00	-	BDT
+			6:00	1:00	BDST
 
 # Bhutan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -373,14 +390,84 @@ Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 			5:00	-	KAST	1980 May
 			8:00	PRC	C%sT
 
+
+# From Lee Yiu Chung (2009-10-24):
+# I found there are some mistakes for the historial DST rule for Hong
+# Kong. Accoring to the DST record from Hong Kong Observatory (actually,
+# it is not [an] observatory, but the official meteorological agency of HK,
+# and also serves as the official timing agency), there are some missing
+# and incorrect rules. Although the exact switch over time is missing, I
+# think 3:30 is correct. The official DST record for Hong Kong can be
+# obtained from
+# <a href="http://www.hko.gov.hk/gts/time/Summertime.htm">
+# http://www.hko.gov.hk/gts/time/Summertime.htm
+# </a>.
+
+# From Arthur David Olson (2009-10-28):
+# Here are the dates given at
+# <a href="http://www.hko.gov.hk/gts/time/Summertime.htm">
+# http://www.hko.gov.hk/gts/time/Summertime.htm
+# </a>
+# as of 2009-10-28:
+# Year        Period
+# 1941        1 Apr to 30 Sep
+# 1942        Whole year 
+# 1943        Whole year
+# 1944        Whole year
+# 1945        Whole year
+# 1946        20 Apr to 1 Dec
+# 1947        13 Apr to 30 Dec
+# 1948        2 May to 31 Oct
+# 1949        3 Apr to 30 Oct
+# 1950        2 Apr to 29 Oct
+# 1951        1 Apr to 28 Oct
+# 1952        6 Apr to 25 Oct
+# 1953        5 Apr to 1 Nov
+# 1954        21 Mar to 31 Oct
+# 1955        20 Mar to 6 Nov
+# 1956        18 Mar to 4 Nov
+# 1957        24 Mar to 3 Nov
+# 1958        23 Mar to 2 Nov
+# 1959        22 Mar to 1 Nov
+# 1960        20 Mar to 6 Nov
+# 1961        19 Mar to 5 Nov
+# 1962        18 Mar to 4 Nov
+# 1963        24 Mar to 3 Nov
+# 1964        22 Mar to 1 Nov
+# 1965        18 Apr to 17 Oct
+# 1966        17 Apr to 16 Oct
+# 1967        16 Apr to 22 Oct
+# 1968        21 Apr to 20 Oct
+# 1969        20 Apr to 19 Oct
+# 1970        19 Apr to 18 Oct
+# 1971        18 Apr to 17 Oct
+# 1972        16 Apr to 22 Oct
+# 1973        22 Apr to 21 Oct
+# 1973/74     30 Dec 73 to 20 Oct 74
+# 1975        20 Apr to 19 Oct
+# 1976        18 Apr to 17 Oct
+# 1977        Nil
+# 1978        Nil
+# 1979        13 May to 21 Oct
+# 1980 to Now Nil
+# The page does not give start or end times of day.
+# The page does not give a start date for 1942.
+# The page does not givw an end date for 1945.
+# The Japanese occupation of Hong Kong began on 1941-12-25.
+# The Japanese surrender of Hong Kong was signed 1945-09-15.
+# For lack of anything better, use start of those days as the transition times.
+
 # Hong Kong (Xianggang)
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	HK	1941	only	-	Apr	1	3:30	1:00	S
+Rule	HK	1941	only	-	Sep	30	3:30	0	-
 Rule	HK	1946	only	-	Apr	20	3:30	1:00	S
 Rule	HK	1946	only	-	Dec	1	3:30	0	-
 Rule	HK	1947	only	-	Apr	13	3:30	1:00	S
 Rule	HK	1947	only	-	Dec	30	3:30	0	-
 Rule	HK	1948	only	-	May	2	3:30	1:00	S
-Rule	HK	1948	1952	-	Oct	lastSun	3:30	0	-
+Rule	HK	1948	1951	-	Oct	lastSun	3:30	0	-
+Rule	HK	1952	only	-	Oct	25	3:30	0	-
 Rule	HK	1949	1953	-	Apr	Sun>=1	3:30	1:00	S
 Rule	HK	1953	only	-	Nov	1	3:30	0	-
 Rule	HK	1954	1964	-	Mar	Sun>=18	3:30	1:00	S
@@ -388,12 +475,14 @@ Rule	HK	1954	only	-	Oct	31	3:30	0	-
 Rule	HK	1955	1964	-	Nov	Sun>=1	3:30	0	-
 Rule	HK	1965	1977	-	Apr	Sun>=16	3:30	1:00	S
 Rule	HK	1965	1977	-	Oct	Sun>=16	3:30	0	-
-Rule	HK	1979	1980	-	May	Sun>=8	3:30	1:00	S
-Rule	HK	1979	1980	-	Oct	Sun>=16	3:30	0	-
+Rule	HK	1973	only	-	Dec	30	3:30	1:00	S
+Rule	HK	1979	only	-	May	Sun>=8	3:30	1:00	S
+Rule	HK	1979	only	-	Oct	Sun>=16	3:30	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Hong_Kong	7:36:36 -	LMT	1904 Oct 30
+			8:00	HK	HK%sT	1941 Dec 25
+			9:00	-	JST	1945 Sep 15
 			8:00	HK	HK%sT
-
 
 ###############################################################################
 
@@ -1696,16 +1785,66 @@ Zone	Asia/Muscat	3:54:20 -	LMT	1920
 # advance clocks in the country by one hour from April 15 to
 # conserve energy"
 
-# From Arthur David Olson (2009-04-10):
-# Assume for now that Pakistan will end DST in 2009 as it did in 2008.
+# From Steffen Thorsen (2009-09-17):
+# "The News International," Pakistan reports that: "The Federal
+# Government has decided to restore the previous time by moving the
+# clocks backward by one hour from October 1. A formal announcement to
+# this effect will be made after the Prime Minister grants approval in
+# this regard." 
+# <a href="http://www.thenews.com.pk/updates.asp?id=87168">
+# http://www.thenews.com.pk/updates.asp?id=87168
+# </a>
+
+# From Alexander Krivenyshev (2009-09-28):
+# According to Associated Press Of Pakistan, it is confirmed that
+# Pakistan clocks across the country would be turned back by an hour from October
+# 1, 2009.
+#
+# "Clocks to go back one hour from 1 Oct"
+# <a href="http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=86715&Itemid=2">
+# http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=86715&Itemid=2
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_pakistan07.htm">
+# http://www.worldtimezone.com/dst_news/dst_news_pakistan07.htm
+# </a>
+
+# From Steffen Thorsen (2009-09-29):
+# Alexander Krivenyshev wrote:
+# > According to Associated Press Of Pakistan, it is confirmed that
+# > Pakistan clocks across the country would be turned back by an hour from October
+# > 1, 2009.
+#
+# Now they seem to have changed their mind, November 1 is the new date:
+# <a href="http://www.thenews.com.pk/top_story_detail.asp?Id=24742">
+# http://www.thenews.com.pk/top_story_detail.asp?Id=24742
+# </a>
+# "The country's clocks will be reversed by one hour on November 1.
+# Officials of Federal Ministry for Interior told this to Geo News on
+# Monday."
+#
+# And more importantly, it seems that these dates will be kept every year:
+# "It has now been decided that clocks will be wound forward by one hour
+# on April 15 and reversed by an hour on November 1 every year without
+# obtaining prior approval, the officials added."
+#
+# We have confirmed this year's end date with both with the Ministry of
+# Water and Power and the Pakistan Electric Power Company:
+# <a href="http://www.timeanddate.com/news/time/pakistan-ends-dst09.html">
+# http://www.timeanddate.com/news/time/pakistan-ends-dst09.html
+# </a>
+
+# From Christoph Goehre (2009-10-01):
+# [T]he German Consulate General in Karachi reported me today that Pakistan
+# will go back to standard time on 1st of November.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule Pakistan	2002	only	-	Apr	Sun>=2	0:01	1:00	S
 Rule Pakistan	2002	only	-	Oct	Sun>=2	0:01	0	-
 Rule Pakistan	2008	only	-	Jun	1	0:00	1:00	S
 Rule Pakistan	2008	only	-	Nov	1	0:00	0	-
-Rule Pakistan	2009	only	-	Apr	15	0:00	1:00	S
-Rule Pakistan	2009	only	-	Nov	1	0:00	0	-
+Rule Pakistan	2009	max	-	Apr	15	0:00	1:00	S
+Rule Pakistan	2009	max	-	Nov	1	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Karachi	4:28:12 -	LMT	1907
 			5:30	-	IST	1942 Sep
@@ -1858,6 +1997,42 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.worldtimezone.com/dst_news/dst_news_westbank01.html
 # </a>
 
+# From Steffen Thorsen (2009-08-31):
+# Palestine's Council of Ministers announced that they will revert back to
+# winter time on Friday, 2009-09-04.
+#
+# One news source:
+# <a href="http://www.safa.ps/ara/?action=showdetail&seid=4158">
+# http://www.safa.ps/ara/?action=showdetail&seid=4158
+# </a>
+# (Palestinian press agency, Arabic),
+# Google translate: "Decided that the Palestinian government in Ramallah
+# headed by Salam Fayyad, the start of work in time for the winter of
+# 2009, starting on Friday approved the fourth delay Sept. clock sixty
+# minutes per hour as of Friday morning."
+#
+# We are not sure if Gaza will do the same, last year they had a different
+# end date, we will keep this page updated:
+# <a href="http://www.timeanddate.com/news/time/westbank-gaza-dst-2009.html">
+# http://www.timeanddate.com/news/time/westbank-gaza-dst-2009.html
+# </a>
+
+# From Alexander Krivenyshev (2009-09-02):
+# Seems that Gaza Strip will go back to Winter Time same date as West Bank.
+#
+# According to Palestinian Ministry Of Interior, West Bank and Gaza Strip plan
+# to change time back to Standard time on September 4, 2009.
+#
+# "Winter time unite the West Bank and Gaza"
+# (from Palestinian National Authority):
+# <a href="http://www.moi.gov.ps/en/?page=633167343250594025&nid=11505
+# http://www.moi.gov.ps/en/?page=633167343250594025&nid=11505
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_gazastrip02.html>
+# http://www.worldtimezone.com/dst_news/dst_news_gazastrip02.html
+# </a>
+
 # The rules for Egypt are stolen from the `africa' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -1876,7 +2051,7 @@ Rule Palestine	2006	only	-	Sep	22	0:00	0	-
 Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
 Rule Palestine	2008	only	-	Aug	lastFri	2:00	0	-
 Rule Palestine	2009	max	-	Mar	lastFri	0:00	1:00	S
-Rule Palestine	2009	max	-	Sep	lastMon	2:00	0	-
+Rule Palestine	2009	max	-	Sep	Fri>=1	2:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -2154,9 +2329,23 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # http://www.timeanddate.com/news/time/syria-dst-starts-march-27-2009.html
 # </a>
 
+# From Steffen Thorsen (2009-10-27):
+# The Syrian Arab News Network on 2009-09-29 reported that Syria will 
+# revert back to winter (standard) time on midnight between Thursday 
+# 2009-10-29 and Friday 2009-10-30:
+# <a href="http://www.sana.sy/ara/2/2009/09/29/247012.htm">
+# http://www.sana.sy/ara/2/2009/09/29/247012.htm (Arabic)
+# </a>
+
+# From Arthur David Olson (2009-10-28):
+# We'll see if future DST switching times turn out to be end of the last
+# Thursday of the month or the start of the last Friday of the month or
+# something else. For now, use the start of the last Friday.
+
 Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
-Rule	Syria	2008	max	-	Nov	1	0:00	0	-
+Rule	Syria	2008	only	-	Nov	1	0:00	0	-
 Rule	Syria	2009	max	-	Mar	lastFri	0:00	1:00	S
+Rule	Syria	2009	max	-	Oct	lastFri	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920	# Dimashq
