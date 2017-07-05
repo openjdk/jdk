@@ -20,6 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package jdk.test.lib.apps;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,7 +108,7 @@ public class LingeredApp {
      */
     public LingeredApp(String lockFileName) {
         this.lockFileName = lockFileName;
-        this.storedAppOutput = new ArrayList();
+        this.storedAppOutput = new ArrayList<String>();
     }
 
     /**
@@ -147,7 +150,7 @@ public class LingeredApp {
      *
      * @return application output as string array. Empty array if application produced no output
      */
-    List<String> getAppOutput() {
+    public List<String> getAppOutput() {
         if (appProcess.isAlive()) {
             throw new RuntimeException("Process is still alive. Can't get its output.");
         }
@@ -270,7 +273,7 @@ public class LingeredApp {
         String osname = System.getProperty("os.name");
         String javapath = jdkPath + ((osname.startsWith("window")) ? "/bin/java.exe" : "/bin/java");
 
-        List<String> cmd = new ArrayList();
+        List<String> cmd = new ArrayList<String>();
         cmd.add(javapath);
 
 

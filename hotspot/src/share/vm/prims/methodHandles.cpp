@@ -677,24 +677,24 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_METHOD:
     {
       CallInfo result;
+      LinkInfo link_info(defc, name, type, caller, caller.not_null());
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else if (mh_invoke_id != vmIntrinsics::_none) {
           assert(!is_signature_polymorphic_static(mh_invoke_id), "");
-          LinkResolver::resolve_handle_call(result,
-                        defc, name, type, caller, THREAD);
+          LinkResolver::resolve_handle_call(result, link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeSpecial) {
           LinkResolver::resolve_special_call(result,
-                        defc, name, type, caller, caller.not_null(), THREAD);
+                        link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeVirtual) {
           LinkResolver::resolve_virtual_call(result, Handle(), defc,
-                        defc, name, type, caller, caller.not_null(), false, THREAD);
+                        link_info, false, THREAD);
         } else {
           assert(false, err_msg("ref_kind=%d", ref_kind));
         }
@@ -714,11 +714,11 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_CONSTRUCTOR:
     {
       CallInfo result;
+      LinkInfo link_info(defc, name, type, caller, caller.not_null());
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
-          LinkResolver::resolve_special_call(result,
-                        defc, name, type, caller, caller.not_null(), THREAD);
+          LinkResolver::resolve_special_call(result, link_info, THREAD);
         } else {
           break;                // will throw after end of switch
         }
@@ -735,7 +735,8 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkResolver::resolve_field(result, defc, name, type, caller, Bytecodes::_nop, false, false, THREAD);
+        LinkInfo link_info(defc, name, type, caller, /*check_access*/false);
+        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           return empty;
         }
@@ -942,22 +943,56 @@ int MethodHandles::find_MemberNames(KlassHandle k,
   return rfill + overflow;
 }
 
-// Get context class for a CallSite instance: either extract existing context or use default one.
-InstanceKlass* MethodHandles::get_call_site_context(oop call_site) {
-  // In order to extract a context the following traversal is performed:
-  //   CallSite.context => Cleaner.referent => Class._klass => Klass
-  assert(java_lang_invoke_CallSite::is_instance(call_site), "");
-  oop context_oop = java_lang_invoke_CallSite::context_volatile(call_site);
-  if (oopDesc::is_null(context_oop)) {
-    return NULL; // The context hasn't been initialized yet.
+void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  oop context = java_lang_invoke_CallSite::context(call_site);
+  nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+
+  nmethodBucket* new_deps = nmethodBucket::add_dependent_nmethod(deps, nm);
+  if (deps != new_deps) {
+    java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
   }
-  oop context_class_oop = java_lang_ref_Reference::referent(context_oop);
-  if (oopDesc::is_null(context_class_oop)) {
-    // The context reference was cleared by GC, so current dependency context
-    // isn't usable anymore. Context should be fetched from CallSite again.
-    return NULL;
+}
+
+void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  oop context = java_lang_invoke_CallSite::context(call_site);
+  nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+
+  if (nmethodBucket::remove_dependent_nmethod(deps, nm)) {
+    nmethodBucket* new_deps = nmethodBucket::clean_dependent_nmethods(deps);
+    if (deps != new_deps) {
+      java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
+    }
   }
-  return InstanceKlass::cast(java_lang_Class::as_Klass(context_class_oop));
+}
+
+void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
+  assert_lock_strong(Compile_lock);
+
+  int marked = 0;
+  CallSiteDepChange changes(call_site(), target());
+  {
+    MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+    oop context = java_lang_invoke_CallSite::context(call_site());
+    nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+
+    marked = nmethodBucket::mark_dependent_nmethods(deps, changes);
+    if (marked > 0) {
+      nmethodBucket* new_deps = nmethodBucket::clean_dependent_nmethods(deps);
+      if (deps != new_deps) {
+        java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
+      }
+    }
+  }
+  if (marked > 0) {
+    // At least one nmethod has been marked for deoptimization
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -1276,7 +1311,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
-    CodeCache::flush_dependents_on(call_site, target);
+    MethodHandles::flush_dependent_nmethods(call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
   }
 }
@@ -1288,30 +1323,34 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
-    CodeCache::flush_dependents_on(call_site, target);
+    MethodHandles::flush_dependent_nmethods(call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
   }
 }
 JVM_END
 
-JVM_ENTRY(void, MHN_invalidateDependentNMethods(JNIEnv* env, jobject igcls, jobject call_site_jh)) {
-  Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
+JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
+  Handle context(THREAD, JNIHandles::resolve_non_null(context_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu1(Compile_lock, thread);
 
-    CallSiteDepChange changes(call_site(), Handle());
-
-    InstanceKlass* ctxk = MethodHandles::get_call_site_context(call_site());
-    if (ctxk == NULL) {
-      return; // No dependencies to invalidate yet.
-    }
     int marked = 0;
     {
       MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      marked = ctxk->mark_dependent_nmethods(changes);
+      nmethodBucket* b = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
+      while(b != NULL) {
+        nmethod* nm = b->get_nmethod();
+        if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
+          nm->mark_for_deoptimization();
+          marked++;
+        }
+        nmethodBucket* next = b->next();
+        delete b;
+        b = next;
+      }
+      java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context(), NULL); // reset context
     }
-    java_lang_invoke_CallSite::set_context_volatile(call_site(), NULL); // Reset call site to initial state
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization
       VM_Deoptimize op;
@@ -1357,6 +1396,7 @@ JVM_END
 #define MT    JLINV"MethodType;"
 #define MH    JLINV"MethodHandle;"
 #define MEM   JLINV"MemberName;"
+#define CTX   JLINV"MethodHandleNatives$CallSiteContext;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -1374,7 +1414,7 @@ static JNINativeMethod MHN_methods[] = {
   {CC"objectFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC"setCallSiteTargetNormal",   CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC"setCallSiteTargetVolatile", CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetVolatile)},
-  {CC"invalidateDependentNMethods", CC"("CS")V",                         FN_PTR(MHN_invalidateDependentNMethods)},
+  {CC"clearCallSiteContext",      CC"("CTX")V",                          FN_PTR(MHN_clearCallSiteContext)},
   {CC"staticFieldOffset",         CC"("MEM")J",                          FN_PTR(MHN_staticFieldOffset)},
   {CC"staticFieldBase",           CC"("MEM")"OBJ,                        FN_PTR(MHN_staticFieldBase)},
   {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
