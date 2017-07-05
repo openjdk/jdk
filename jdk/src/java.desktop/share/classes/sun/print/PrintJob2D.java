@@ -71,6 +71,7 @@ import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 
+import sun.misc.ManagedLocalsThread;
 import sun.print.SunPageSelection;
 import sun.print.SunMinMaxPage;
 
@@ -986,8 +987,12 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     }
 
     private void startPrinterJobThread() {
-
-        printerJobThread = new Thread(this, "printerJobThread");
+        String name = "printerJobThread";
+        if (System.getSecurityManager() == null) {
+            printerJobThread = new Thread(this, name);
+        } else {
+            printerJobThread = new ManagedLocalsThread(this, name);
+        }
         printerJobThread.start();
     }
 

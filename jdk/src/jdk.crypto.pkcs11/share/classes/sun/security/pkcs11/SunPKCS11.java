@@ -42,6 +42,7 @@ import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.TextOutputCallback;
 
+import sun.misc.ManagedLocalsThread;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 
@@ -811,7 +812,7 @@ public final class SunPKCS11 extends AuthProvider {
             return;
         }
         TokenPoller poller = new TokenPoller(this);
-        Thread t = new Thread(poller, "Poller " + getName());
+        Thread t = new ManagedLocalsThread(poller, "Poller " + getName());
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();

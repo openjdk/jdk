@@ -123,7 +123,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
             // it won't be invoced if focuse is moved to a html element
             // on the same page.
             CClipboard clipboard = (CClipboard) Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.checkPasteboard();
+            clipboard.checkPasteboardAndNotify();
         }
         if (parentWindowActive) {
             responder.handleWindowFocusEvent(focused, null);
@@ -164,7 +164,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         }
         // ignore focus "lost" native request as it may mistakenly
         // deactivate active window (see 8001161)
-        if (globalFocusedWindow == this && parentWindowActive) {
+        if (globalFocusedWindow == this) {
             responder.handleWindowFocusEvent(parentWindowActive, null);
         }
     }

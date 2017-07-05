@@ -42,6 +42,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.EmbeddedFrame;
 import sun.awt.SunToolkit;
+import sun.misc.ManagedLocalsThread;
 import sun.misc.MessageUtils;
 import sun.misc.PerformanceLogger;
 import sun.misc.Queue;
@@ -176,8 +177,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
 
         ThreadGroup appletGroup = loader.getThreadGroup();
-
-        handler = new Thread(appletGroup, this, "thread " + nm);
+        handler = new ManagedLocalsThread(appletGroup, this, "thread " + nm);
         // set the context class loader for this thread
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
@@ -410,7 +410,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                       if (loaderThread == null) {
                           // REMIND: do we want a name?
                           //System.out.println("------------------- loading applet");
-                          setLoaderThread(new Thread(this));
+                          setLoaderThread(new ManagedLocalsThread(this));
                           loaderThread.start();
                           // we get to go to sleep while this runs
                           loaderThread.join();

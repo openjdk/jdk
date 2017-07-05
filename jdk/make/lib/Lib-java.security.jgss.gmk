@@ -36,7 +36,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       LIBRARY := j2gss, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJ2GSS_SRC), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
           $(LIBJAVA_HEADER_FLAGS) \
@@ -79,7 +78,6 @@ ifneq ($(BUILD_CRYPTO), no)
         LIBRARY := $(BUILD_LIBKRB5_NAME), \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(BUILD_LIBKRB5_SRC), \
-        LANG := C, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
             $(addprefix -I, $(BUILD_LIBKRB5_SRC)) \

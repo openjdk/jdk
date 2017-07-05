@@ -27,6 +27,7 @@ package sun.awt.image;
 
 import java.util.Vector;
 import sun.awt.AppContext;
+import sun.misc.ManagedLocalsThread;
 
 /**
   * An ImageFetcher is a thread used to fetch ImageFetchable objects.
@@ -41,7 +42,7 @@ import sun.awt.AppContext;
   * @author Jim Graham
   * @author Fred Ecks
   */
-class ImageFetcher extends Thread {
+class ImageFetcher extends ManagedLocalsThread {
     static final int HIGH_PRIORITY = 8;
     static final int LOW_PRIORITY = 3;
     static final int ANIM_PRIORITY = 2;
@@ -54,7 +55,7 @@ class ImageFetcher extends Thread {
       * Constructor for ImageFetcher -- only called by add() below.
       */
     private ImageFetcher(ThreadGroup threadGroup, int index) {
-        super(threadGroup, "Image Fetcher " + index);
+        super(threadGroup, null, "Image Fetcher " + index);
         setDaemon(true);
     }
 

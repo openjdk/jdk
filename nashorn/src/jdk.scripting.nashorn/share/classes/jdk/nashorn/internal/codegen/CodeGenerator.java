@@ -297,6 +297,20 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     /**
+     * Gets the flags for a scope call site.
+     * @param symbol a scope symbol
+     * @return the correct flags for the scope call site
+     */
+    private int getScopeCallSiteFlags(final Symbol symbol) {
+        assert symbol.isScope();
+        final int flags = getCallSiteFlags() | CALLSITE_SCOPE;
+        if (isEvalCode() && symbol.isGlobal()) {
+            return flags; // Don't set fast-scope flag on non-declared globals in eval code - see JDK-8077955.
+        }
+        return isFastScope(symbol) ? flags | CALLSITE_FAST_SCOPE : flags;
+    }
+
+    /**
      * Are we generating code for 'eval' code?
      * @return true if currently compiled code is 'eval' code.
      */
@@ -333,7 +347,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         assert identNode.getSymbol().isScope() : identNode + " is not in scope!";
-        final int flags = CALLSITE_SCOPE | getCallSiteFlags();
+        final int flags = getScopeCallSiteFlags(symbol);
         if (isFastScope(symbol)) {
             // Only generate shared scope getter for fast-scope symbols so we know we can dial in correct scope.
             if (symbol.getUseCount() > SharedScopeCall.FAST_SCOPE_GET_THRESHOLD && !isOptimisticOrRestOf()) {
@@ -457,7 +471,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         } else {
             method.load(-1);
         }
-        return lc.getScopeGet(unit, symbol, valueType, flags | CALLSITE_FAST_SCOPE).generateInvoke(method);
+        return lc.getScopeGet(unit, symbol, valueType, flags).generateInvoke(method);
     }
 
     private class LoadScopeVar extends OptimisticOperation {
@@ -495,7 +509,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private class LoadFastScopeVar extends LoadScopeVar {
         LoadFastScopeVar(final IdentNode identNode, final TypeBounds resultBounds, final int flags) {
-            super(identNode, resultBounds, flags | CALLSITE_FAST_SCOPE);
+            super(identNode, resultBounds, flags);
         }
 
         @Override
@@ -506,7 +520,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter storeFastScopeVar(final Symbol symbol, final int flags) {
         loadFastScopeProto(symbol, true);
-        method.dynamicSet(symbol.getName(), flags | CALLSITE_FAST_SCOPE, false);
+        method.dynamicSet(symbol.getName(), flags, false);
         return method;
     }
 
@@ -1426,7 +1440,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             private MethodEmitter sharedScopeCall(final IdentNode identNode, final int flags) {
                 final Symbol symbol = identNode.getSymbol();
                 final boolean isFastScope = isFastScope(symbol);
-                final int scopeCallFlags = flags | (isFastScope ? CALLSITE_FAST_SCOPE : 0);
                 new OptimisticOperation(callNode, resultBounds) {
                     @Override
                     void loadStack() {
@@ -1449,7 +1462,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         // As shared scope calls are only used in non-optimistic compilation, we switch from using
                         // TypeBounds to just a single definitive type, resultBounds.widest.
                         final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol,
-                                identNode.getType(), resultBounds.widest, paramTypes, scopeCallFlags);
+                                identNode.getType(), resultBounds.widest, paramTypes, flags);
                         scopeCall.generateInvoke(method);
                     }
                 }.emit();
@@ -1550,7 +1563,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 final Symbol symbol = node.getSymbol();
 
                 if (symbol.isScope()) {
-                    final int flags = getCallSiteFlags() | CALLSITE_SCOPE;
+                    final int flags = getScopeCallSiteFlags(symbol);
                     final int useCount = symbol.getUseCount();
 
                     // Threshold for generating shared scope callsite is lower for fast scope symbols because we know
@@ -3292,7 +3305,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
                 method.loadCompilerConstant(SCOPE);
                 method.loadUndefined(Type.OBJECT);
-                final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
+                final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
                 assert isFastScope(identSymbol);
                 storeFastScopeVar(identSymbol, flags);
             }
@@ -3309,7 +3322,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (needsScope) {
             loadExpressionUnbounded(init);
             // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
-            final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
+            final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
             if (isFastScope(identSymbol)) {
                 storeFastScopeVar(identSymbol, flags);
             } else {
@@ -4443,7 +4456,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     final Symbol symbol = node.getSymbol();
                     assert symbol != null;
                     if (symbol.isScope()) {
-                        final int flags = CALLSITE_SCOPE | getCallSiteFlags();
+                        final int flags = getScopeCallSiteFlags(symbol);
                         if (isFastScope(symbol)) {
                             storeFastScopeVar(symbol, flags);
                         } else {

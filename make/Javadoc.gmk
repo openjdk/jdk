@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ NASHORNAPI_FIRST_COPYRIGHT_YEAR = 2014
 JNLP_FIRST_COPYRIGHT_YEAR = 1998
 PLUGIN2_FIRST_COPYRIGHT_YEAR = 2007
 JDKNET_FIRST_COPYRIGHT_YEAR = 2014
+JACCESSAPI_FIRST_COPYRIGHT_YEAR = 2002
+
 
 # Oracle name
 FULL_COMPANY_NAME = Oracle and/or its affiliates
@@ -1230,6 +1232,58 @@ $(SCTPAPI_OPTIONS_FILE):
 $(SCTPAPI_PACKAGES_FILE): $(call PackageDependencies,$(SCTPAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(SCTPAPI_PKGS))
+
+#############################################################
+#
+# jaccessdocs - Java Accessibility Utilities
+#
+
+ALL_OTHER_TARGETS += jaccessdocs
+
+JACCESSAPI_DOCDIR := $(JRE_API_DOCSDIR)/accessibility/jaccess/spec
+JACCESSAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
+JACCESSAPI_DOCTITLE := JACCESS API
+JACCESSAPI_WINDOWTITLE := JACCESS API
+JACCESSAPI_HEADER := <strong>JACCESS API</strong>
+JACCESSAPI_BOTTOM := $(call CommonBottom,$(JACCESSAPI_FIRST_COPYRIGHT_YEAR))
+# JACCESSAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+JACCESSAPI_INDEX_HTML = $(JACCESSAPI_DOCDIR)/index.html
+JACCESSAPI_OPTIONS_FILE = $(DOCSTMPDIR)/jaccess.options
+JACCESSAPI_PACKAGES_FILE = $(DOCSTMPDIR)/jaccess.packages
+
+jaccessdocs: $(JACCESSAPI_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JACCESSAPI_INDEX_HTML): GET2DOCSDIR=$(JACCESSAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JACCESSAPI_INDEX_HTML): $(JACCESSAPI_OPTIONS_FILE) $(JACCESSAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JACCESSAPI_OPTIONS_FILE),$(JACCESSAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD) -d $(@D) \
+	    @$(JACCESSAPI_OPTIONS_FILE) @$(JACCESSAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JACCESSAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+	  $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
+	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionOnly,-nodeprecatedlist) ; \
+	  $(call OptionPair,-doctitle,$(JACCESSAPI_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(JACCESSAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(JACCESSAPI_HEADER)$(DRAFT_HEADER)) ; \
+	  $(call OptionPair,-bottom,$(JACCESSAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
+	  $(call OptionTrip,-linkoffline,$(JACCESSAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(JACCESSAPI_PACKAGES_FILE): $(call PackageDependencies,$(JACCESSAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JACCESSAPI_PKGS))
 
 #############################################################
 #
