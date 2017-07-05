@@ -205,8 +205,8 @@ public class Disposer implements Runnable {
         int freed = 0;
         int deferred = 0;
         try {
-            while ((obj = queue.poll()) != null
-                   && freed < 10000 && deferred < 100) {
+            while ( freed < 10000 && deferred < 100 &&
+                    (obj = queue.poll()) != null ) {
                 freed++;
                 ((Reference)obj).clear();
                 DisposerRecord rec = records.remove(obj);

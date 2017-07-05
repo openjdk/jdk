@@ -50,6 +50,7 @@
 #else
 #define BLOCK_COMMENT(str) block_comment(str)
 #endif
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 #ifdef ASSERT
 // On RISC, there's no benefit to verifying instruction boundaries.
@@ -3433,6 +3434,418 @@ void MacroAssembler::char_arrays_equalsImm(Register str1_reg, Register str2_reg,
   bind(Ldone_false);
 }
 
+// Helpers for Intrinsic Emitters
+//
+// Revert the byte order of a 32bit value in a register
+//   src: 0x44556677
+//   dst: 0x77665544
+// Three steps to obtain the result:
+//  1) Rotate src (as doubleword) left 5 bytes. That puts the leftmost byte of the src word
+//     into the rightmost byte position. Afterwards, everything left of the rightmost byte is cleared.
+//     This value initializes dst.
+//  2) Rotate src (as word) left 3 bytes. That puts the rightmost byte of the src word into the leftmost
+//     byte position. Furthermore, byte 5 is rotated into byte 6 position where it is supposed to go.
+//     This value is mask inserted into dst with a [0..23] mask of 1s.
+//  3) Rotate src (as word) left 1 byte. That puts byte 6 into byte 5 position.
+//     This value is mask inserted into dst with a [8..15] mask of 1s.
+void MacroAssembler::load_reverse_32(Register dst, Register src) {
+  assert_different_registers(dst, src);
+
+  rldicl(dst, src, (4+1)*8, 56);       // Rotate byte 4 into position 7 (rightmost), clear all to the left.
+  rlwimi(dst, src,     3*8,  0, 23);   // Insert byte 5 into position 6, 7 into 4, leave pos 7 alone.
+  rlwimi(dst, src,     1*8,  8, 15);   // Insert byte 6 into position 5, leave the rest alone.
+}
+
+// Calculate the column addresses of the crc32 lookup table into distinct registers.
+// This loop-invariant calculation is moved out of the loop body, reducing the loop
+// body size from 20 to 16 instructions.
+// Returns the offset that was used to calculate the address of column tc3.
+// Due to register shortage, setting tc3 may overwrite table. With the return offset
+// at hand, the original table address can be easily reconstructed.
+int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3) {
+
+#ifdef VM_LITTLE_ENDIAN
+  // This is what we implement (the DOLIT4 part):
+  // ========================================================================= */
+  // #define DOLIT4 c ^= *buf4++; \
+  //         c = crc_table[3][c & 0xff] ^ crc_table[2][(c >> 8) & 0xff] ^ \
+  //             crc_table[1][(c >> 16) & 0xff] ^ crc_table[0][c >> 24]
+  // #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
+  // ========================================================================= */
+  const int ix0 = 3*(4*CRC32_COLUMN_SIZE);
+  const int ix1 = 2*(4*CRC32_COLUMN_SIZE);
+  const int ix2 = 1*(4*CRC32_COLUMN_SIZE);
+  const int ix3 = 0*(4*CRC32_COLUMN_SIZE);
+#else
+  // This is what we implement (the DOBIG4 part):
+  // =========================================================================
+  // #define DOBIG4 c ^= *++buf4; \
+  //         c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ \
+  //             crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
+  // #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
+  // =========================================================================
+  const int ix0 = 4*(4*CRC32_COLUMN_SIZE);
+  const int ix1 = 5*(4*CRC32_COLUMN_SIZE);
+  const int ix2 = 6*(4*CRC32_COLUMN_SIZE);
+  const int ix3 = 7*(4*CRC32_COLUMN_SIZE);
+#endif
+  assert_different_registers(table, tc0, tc1, tc2);
+  assert(table == tc3, "must be!");
+
+  if (ix0 != 0) addi(tc0, table, ix0);
+  if (ix1 != 0) addi(tc1, table, ix1);
+  if (ix2 != 0) addi(tc2, table, ix2);
+  if (ix3 != 0) addi(tc3, table, ix3);
+
+  return ix3;
+}
+
+/**
+ * uint32_t crc;
+ * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
+ */
+void MacroAssembler::fold_byte_crc32(Register crc, Register val, Register table, Register tmp) {
+  assert_different_registers(crc, table, tmp);
+  assert_different_registers(val, table);
+
+  if (crc == val) {                   // Must rotate first to use the unmodified value.
+    rlwinm(tmp, val, 2, 24-2, 31-2);  // Insert (rightmost) byte 7 of val, shifted left by 2, into byte 6..7 of tmp, clear the rest.
+                                      // As we use a word (4-byte) instruction, we have to adapt the mask bit positions.
+    srwi(crc, crc, 8);                // Unsigned shift, clear leftmost 8 bits.
+  } else {
+    srwi(crc, crc, 8);                // Unsigned shift, clear leftmost 8 bits.
+    rlwinm(tmp, val, 2, 24-2, 31-2);  // Insert (rightmost) byte 7 of val, shifted left by 2, into byte 6..7 of tmp, clear the rest.
+  }
+  lwzx(tmp, table, tmp);
+  xorr(crc, crc, tmp);
+}
+
+/**
+ * uint32_t crc;
+ * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
+ */
+void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp) {
+  fold_byte_crc32(crc, crc, table, tmp);
+}
+
+/**
+ * Emits code to update CRC-32 with a byte value according to constants in table.
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]val       Register containing the byte to fold into the CRC.
+ * @param [in]table     Register containing the table of crc constants.
+ *
+ * uint32_t crc;
+ * val = crc_table[(val ^ crc) & 0xFF];
+ * crc = val ^ (crc >> 8);
+ */
+void MacroAssembler::update_byte_crc32(Register crc, Register val, Register table) {
+  BLOCK_COMMENT("update_byte_crc32:");
+  xorr(val, val, crc);
+  fold_byte_crc32(crc, val, table, val);
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register pointing to CRC table
+ */
+void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
+                                           Register data, bool loopAlignment, bool invertCRC) {
+  assert_different_registers(crc, buf, len, table, data);
+
+  Label L_mainLoop, L_done;
+  const int mainLoop_stepping  = 1;
+  const int mainLoop_alignment = loopAlignment ? 32 : 4; // (InputForNewCode > 4 ? InputForNewCode : 32) : 4;
+
+  // Process all bytes in a single-byte loop.
+  cmpdi(CCR0, len, 0);                           // Anything to do?
+  mtctr(len);
+  beq(CCR0, L_done);
+
+  if (invertCRC) {
+    nand(crc, crc, crc);                         // ~c
+  }
+
+  align(mainLoop_alignment);
+  BIND(L_mainLoop);
+    lbz(data, 0, buf);                           // Byte from buffer, zero-extended.
+    addi(buf, buf, mainLoop_stepping);           // Advance buffer position.
+    update_byte_crc32(crc, data, table);
+    bdnz(L_mainLoop);                            // Iterate.
+
+  if (invertCRC) {
+    nand(crc, crc, crc);                         // ~c
+  }
+
+  bind(L_done);
+}
+
+/**
+ * Emits code to update CRC-32 with a 4-byte value according to constants in table
+ * Implementation according to jdk/src/share/native/java/util/zip/zlib-1.2.8/crc32.c
+ */
+// A not on the lookup table address(es):
+// The lookup table consists of two sets of four columns each.
+// The columns {0..3} are used for little-endian machines.
+// The columns {4..7} are used for big-endian machines.
+// To save the effort of adding the column offset to the table address each time
+// a table element is looked up, it is possible to pass the pre-calculated
+// column addresses.
+// Uses R9..R12 as work register. Must be saved/restored by caller, if necessary.
+void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register table, int bufDisp, int bufInc,
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        Register tc0, Register tc1, Register tc2, Register tc3) {
+  assert_different_registers(crc, t3);
+
+  // XOR crc with next four bytes of buffer.
+  lwz(t3, bufDisp, buf);
+  if (bufInc != 0) {
+    addi(buf, buf, bufInc);
+  }
+  xorr(t3, t3, crc);
+
+  // Chop crc into 4 single-byte pieces, shifted left 2 bits, to form the table indices.
+  rlwinm(t0, t3,  2,         24-2, 31-2);  // ((t1 >>  0) & 0xff) << 2
+  rlwinm(t1, t3,  32+(2- 8), 24-2, 31-2);  // ((t1 >>  8) & 0xff) << 2
+  rlwinm(t2, t3,  32+(2-16), 24-2, 31-2);  // ((t1 >> 16) & 0xff) << 2
+  rlwinm(t3, t3,  32+(2-24), 24-2, 31-2);  // ((t1 >> 24) & 0xff) << 2
+
+  // Use the pre-calculated column addresses.
+  // Load pre-calculated table values.
+  lwzx(t0, tc0, t0);
+  lwzx(t1, tc1, t1);
+  lwzx(t2, tc2, t2);
+  lwzx(t3, tc3, t3);
+
+  // Calculate new crc from table values.
+  xorr(t0,  t0, t1);
+  xorr(t2,  t2, t3);
+  xorr(crc, t0, t2);  // Now crc contains the final checksum value.
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register pointing to CRC table
+ *
+ * Uses R9..R12 as work register. Must be saved/restored by caller!
+ */
+void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        Register tc0, Register tc1, Register tc2, Register tc3) {
+  assert_different_registers(crc, buf, len, table);
+
+  Label L_mainLoop, L_tail;
+  Register  tmp  = t0;
+  Register  data = t0;
+  Register  tmp2 = t1;
+  const int mainLoop_stepping  = 8;
+  const int tailLoop_stepping  = 1;
+  const int log_stepping       = exact_log2(mainLoop_stepping);
+  const int mainLoop_alignment = 32; // InputForNewCode > 4 ? InputForNewCode : 32;
+  const int complexThreshold   = 2*mainLoop_stepping;
+
+  // Don't test for len <= 0 here. This pathological case should not occur anyway.
+  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles.
+  // The situation itself is detected and handled correctly by the conditional branches
+  // following  aghi(len, -stepping) and aghi(len, +stepping).
+  assert(tailLoop_stepping == 1, "check tailLoop_stepping!");
+
+  BLOCK_COMMENT("kernel_crc32_2word {");
+
+  nand(crc, crc, crc);                           // ~c
+
+  // Check for short (<mainLoop_stepping) buffer.
+  cmpdi(CCR0, len, complexThreshold);
+  blt(CCR0, L_tail);
+
+  // Pre-mainLoop alignment did show a slight (1%) positive effect on performance.
+  // We leave the code in for reference. Maybe we need alignment when we exploit vector instructions.
+  {
+    // Align buf addr to mainLoop_stepping boundary.
+    neg(tmp2, buf);                           // Calculate # preLoop iterations for alignment.
+    rldicl(tmp2, tmp2, 0, 64-log_stepping);   // Rotate tmp2 0 bits, insert into tmp2, anding with mask with 1s from 62..63.
+
+    if (complexThreshold > mainLoop_stepping) {
+      sub(len, len, tmp2);                       // Remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
+    } else {
+      sub(tmp, len, tmp2);                       // Remaining bytes for main loop.
+      cmpdi(CCR0, tmp, mainLoop_stepping);
+      blt(CCR0, L_tail);                         // For less than one mainloop_stepping left, do only tail processing
+      mr(len, tmp);                              // remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
+    }
+    update_byteLoop_crc32(crc, buf, tmp2, table, data, false, false);
+  }
+
+  srdi(tmp2, len, log_stepping);                 // #iterations for mainLoop
+  andi(len, len, mainLoop_stepping-1);           // remaining bytes for tailLoop
+  mtctr(tmp2);
+
+#ifdef VM_LITTLE_ENDIAN
+  Register crc_rv = crc;
+#else
+  Register crc_rv = tmp;                         // Load_reverse needs separate registers to work on.
+                                                 // Occupies tmp, but frees up crc.
+  load_reverse_32(crc_rv, crc);                  // Revert byte order because we are dealing with big-endian data.
+  tmp = crc;
+#endif
+
+  int reconstructTableOffset = crc32_table_columns(table, tc0, tc1, tc2, tc3);
+
+  align(mainLoop_alignment);                     // Octoword-aligned loop address. Shows 2% improvement.
+  BIND(L_mainLoop);
+    update_1word_crc32(crc_rv, buf, table, 0, 0, crc_rv, t1, t2, t3, tc0, tc1, tc2, tc3);
+    update_1word_crc32(crc_rv, buf, table, 4, mainLoop_stepping, crc_rv, t1, t2, t3, tc0, tc1, tc2, tc3);
+    bdnz(L_mainLoop);
+
+#ifndef VM_LITTLE_ENDIAN
+  load_reverse_32(crc, crc_rv);                  // Revert byte order because we are dealing with big-endian data.
+  tmp = crc_rv;                                  // Tmp uses it's original register again.
+#endif
+
+  // Restore original table address for tailLoop.
+  if (reconstructTableOffset != 0) {
+    addi(table, table, -reconstructTableOffset);
+  }
+
+  // Process last few (<complexThreshold) bytes of buffer.
+  BIND(L_tail);
+  update_byteLoop_crc32(crc, buf, len, table, data, false, false);
+
+  nand(crc, crc, crc);                           // ~c
+  BLOCK_COMMENT("} kernel_crc32_2word");
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register pointing to CRC table
+ *
+ * uses R9..R12 as work register. Must be saved/restored by caller!
+ */
+void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        Register tc0, Register tc1, Register tc2, Register tc3) {
+  assert_different_registers(crc, buf, len, table);
+
+  Label L_mainLoop, L_tail;
+  Register  tmp          = t0;
+  Register  data         = t0;
+  Register  tmp2         = t1;
+  const int mainLoop_stepping  = 4;
+  const int tailLoop_stepping  = 1;
+  const int log_stepping       = exact_log2(mainLoop_stepping);
+  const int mainLoop_alignment = 32; // InputForNewCode > 4 ? InputForNewCode : 32;
+  const int complexThreshold   = 2*mainLoop_stepping;
+
+  // Don't test for len <= 0 here. This pathological case should not occur anyway.
+  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles.
+  // The situation itself is detected and handled correctly by the conditional branches
+  // following  aghi(len, -stepping) and aghi(len, +stepping).
+  assert(tailLoop_stepping == 1, "check tailLoop_stepping!");
+
+  BLOCK_COMMENT("kernel_crc32_1word {");
+
+  nand(crc, crc, crc);                           // ~c
+
+  // Check for short (<mainLoop_stepping) buffer.
+  cmpdi(CCR0, len, complexThreshold);
+  blt(CCR0, L_tail);
+
+  // Pre-mainLoop alignment did show a slight (1%) positive effect on performance.
+  // We leave the code in for reference. Maybe we need alignment when we exploit vector instructions.
+  {
+    // Align buf addr to mainLoop_stepping boundary.
+    neg(tmp2, buf);                              // Calculate # preLoop iterations for alignment.
+    rldicl(tmp2, tmp2, 0, 64-log_stepping);      // Rotate tmp2 0 bits, insert into tmp2, anding with mask with 1s from 62..63.
+
+    if (complexThreshold > mainLoop_stepping) {
+      sub(len, len, tmp2);                       // Remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
+    } else {
+      sub(tmp, len, tmp2);                       // Remaining bytes for main loop.
+      cmpdi(CCR0, tmp, mainLoop_stepping);
+      blt(CCR0, L_tail);                         // For less than one mainloop_stepping left, do only tail processing
+      mr(len, tmp);                              // remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
+    }
+    update_byteLoop_crc32(crc, buf, tmp2, table, data, false, false);
+  }
+
+  srdi(tmp2, len, log_stepping);                 // #iterations for mainLoop
+  andi(len, len, mainLoop_stepping-1);           // remaining bytes for tailLoop
+  mtctr(tmp2);
+
+#ifdef VM_LITTLE_ENDIAN
+  Register crc_rv = crc;
+#else
+  Register crc_rv = tmp;                         // Load_reverse needs separate registers to work on.
+                                                 // Occupies tmp, but frees up crc.
+  load_reverse_32(crc_rv, crc);                  // evert byte order because we are dealing with big-endian data.
+  tmp = crc;
+#endif
+
+  int reconstructTableOffset = crc32_table_columns(table, tc0, tc1, tc2, tc3);
+
+  align(mainLoop_alignment);                     // Octoword-aligned loop address. Shows 2% improvement.
+  BIND(L_mainLoop);
+    update_1word_crc32(crc_rv, buf, table, 0, mainLoop_stepping, crc_rv, t1, t2, t3, tc0, tc1, tc2, tc3);
+    bdnz(L_mainLoop);
+
+#ifndef VM_LITTLE_ENDIAN
+  load_reverse_32(crc, crc_rv);                  // Revert byte order because we are dealing with big-endian data.
+  tmp = crc_rv;                                  // Tmp uses it's original register again.
+#endif
+
+  // Restore original table address for tailLoop.
+  if (reconstructTableOffset != 0) {
+    addi(table, table, -reconstructTableOffset);
+  }
+
+  // Process last few (<complexThreshold) bytes of buffer.
+  BIND(L_tail);
+  update_byteLoop_crc32(crc, buf, len, table, data, false, false);
+
+  nand(crc, crc, crc);                           // ~c
+  BLOCK_COMMENT("} kernel_crc32_1word");
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register pointing to CRC table
+ *
+ * Uses R7_ARG5, R8_ARG6 as work registers.
+ */
+void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
+                                        Register t0,  Register t1,  Register t2,  Register t3) {
+  assert_different_registers(crc, buf, len, table);
+
+  Register  data = t0;                   // Holds the current byte to be folded into crc.
+
+  BLOCK_COMMENT("kernel_crc32_1byte {");
+
+  // Process all bytes in a single-byte loop.
+  update_byteLoop_crc32(crc, buf, len, table, data, true, true);
+
+  BLOCK_COMMENT("} kernel_crc32_1byte");
+}
+
+void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp) {
+  assert_different_registers(crc, buf, /* len,  not used!! */ table, tmp);
+
+  BLOCK_COMMENT("kernel_crc32_singleByte:");
+  nand(crc, crc, crc);       // ~c
+
+  lbz(tmp, 0, buf);          // Byte from buffer, zero-extended.
+  update_byte_crc32(crc, tmp, table);
+
+  nand(crc, crc, crc);       // ~c
+}
+
 // dest_lo += src1 + src2
 // dest_hi += carry1 + carry2
 void MacroAssembler::add2_with_carry(Register dest_hi,
@@ -3515,7 +3928,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart,
   b(L_multiply);
 
 
-  bind( L_one_x ); // Load one 32 bit portion of x as (0,value).
+  bind(L_one_x); // Load one 32 bit portion of x as (0,value).
 
   lwz(x_xstart, 0, x);
   b(L_first_loop);
@@ -3534,7 +3947,7 @@ void MacroAssembler::multiply_add_128_x_128(Register x_xstart, Register y,
   //  z[kdx] = (jlong)product;
 
   sldi(tmp, idx, LogBytesPerInt);
-  if ( offset ) {
+  if (offset) {
     addi(tmp, tmp, offset);
   }
   ldx(yz_idx, y, tmp);
@@ -3551,7 +3964,7 @@ void MacroAssembler::multiply_add_128_x_128(Register x_xstart, Register y,
   add2_with_carry(product_high, product, carry, yz_idx);
 
   sldi(tmp, idx, LogBytesPerInt);
-  if ( offset ) {
+  if (offset) {
     addi(tmp, tmp, offset);
   }
 #ifdef VM_LITTLE_ENDIAN

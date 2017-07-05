@@ -25,21 +25,17 @@
  * @test
  * @modules java.xml/com.sun.org.apache.xerces.internal.impl
  *          java.xml/com.sun.org.apache.xalan.internal
- *          java.xml/com.sun.org.apache.xalan.internal.xslt
  * @bug 6979306
  * @summary Test JAXP component version.
  */
 
 import org.testng.annotations.Test;
 
-import com.sun.org.apache.xalan.internal.xslt.EnvironmentCheck;
-
 public class Bug6979306Test {
 
     @Test
     public void test() {
         String[] input = {};
-        EnvironmentCheck.main(input);
         com.sun.org.apache.xerces.internal.impl.Version.main(input);
         com.sun.org.apache.xalan.internal.Version._main(input);
     }
