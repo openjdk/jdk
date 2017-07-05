@@ -3735,6 +3735,7 @@ text: .text%__1cITemplateKinitialize6MinITosState_1pFi_vi_v_;
 text: .text%__1cQjava_lang_ThreadRget_thread_status6FpnHoopDesc__n0AMThreadStatus__;
 text: .text%__1cIMulINodeGadd_id6kM_pknEType__: classes.o;
 text: .text%JVM_FindClassFromClassLoader;
+text: .text%JVM_FindClassFromBootLoader;
 text: .text%__1cHTypePtrFempty6kM_i_;
 text: .text%__1cQaddP_reg_regNodeEsize6kMpnNPhaseRegAlloc__I_;
 text: .text%__1cbFunnecessary_membar_volatileNodePoper_input_base6kM_I_: ad_sparc_misc.o;
