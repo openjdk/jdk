@@ -2,19 +2,19 @@ The files contained in the golden.jar have been harvested from many
 different sources, some are hand-crafted invalid class files (odds directory),
 or from random JDK builds.
 
-Generally these files serve to ensure the integrity of the packer and unpacker
-by,
-   1. maximizing the test coverage.
-   2. exercising all the Bands in the pack200 specification.
-   2. testing the behavior of the packer with invalid classes.
-   3. testing the archive integrity, ordering and description (date, sizes,
+Generally these files serve to ensure the integrity of the packer and 
+unpacker by,
+   * maximizing the test coverage.
+   * exercising all the Bands in the pack200 specification.
+   * testing the behavior of the packer with invalid classes.
+   * testing the archive integrity, ordering and description (date, sizes,
       CRC etc.)
 
 Build:
 To rebuild this JAR follow these steps:
     1. unzip the golden.jar to some directory lets call it "example"
     2. now we can add any directories with files into example.
-    2. run the script BUILDME.sh  as
+    3. run the script BUILDME.sh  as
        % sh BUILDME.sh example
 
 Note: the BUILDME.sh is known to work on all Unix platforms as well as Windows
@@ -32,7 +32,7 @@ Test:
     Basic:
         % pack200 --repack test.jar golden.jar
 
-    Advanced:
+    Advanced: inspection of band contents
        Create a pack.conf as follows:
        % cat pack.conf
        com.sun.java.util.jar.pack.dump.bands=true
@@ -41,5 +41,6 @@ Test:
            --verbose golden.jar.pack golden.jar
 
        This command will dump the Bands in a unique directory BD_XXXXXX,
-       one can inspect the directory to ensure all of the bands are being
-       generated. Familiarity of the  Pack200 specification is suggested.
+       one can then inspect the directory to ensure all of the bands are being
+       generated. Familiarity of the Pack200 specification is strongly
+       suggested.

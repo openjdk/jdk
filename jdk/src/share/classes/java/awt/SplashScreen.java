@@ -119,7 +119,12 @@ public final class SplashScreen {
             // SplashScreen class is now a singleton
             if (!wasClosed && theInstance == null) {
                 java.security.AccessController.doPrivileged(
-                        new sun.security.action.LoadLibraryAction("splashscreen"));
+                    new java.security.PrivilegedAction<Void>() {
+                        public Void run() {
+                            System.loadLibrary("splashscreen");
+                            return null;
+                        }
+                    });
                 long ptr = _getInstance();
                 if (ptr != 0 && _isVisible(ptr)) {
                     theInstance = new SplashScreen(ptr);

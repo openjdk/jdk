@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class DemoRun {
         String os_name   = System.getProperty("os.name");
         String libprefix = os_name.contains("Windows")?"":"lib";
         String libsuffix = os_name.contains("Windows")?".dll":
-                                os_name.startsWith("Mac OS")?".dylib":".so";
+                                os_name.contains("OS X")?".dylib":".so";
         boolean d64      =    ( os_name.contains("Solaris") ||
                                 os_name.contains("SunOS") )
                            && ( os_arch.equals("sparcv9") ||

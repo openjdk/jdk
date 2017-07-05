@@ -726,7 +726,7 @@ readCEN(jzfile *zip, jint knownTotal)
  * Opens a zip file with the specified mode. Returns the jzfile object
  * or NULL if an error occurred. If a zip error occurred then *pmsg will
  * be set to the error message text if pmsg != 0. Otherwise, *pmsg will be
- * set to NULL.
+ * set to NULL. Caller is responsible to free the error message.
  */
 jzfile *
 ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
@@ -751,12 +751,12 @@ ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
  * Returns the jzfile corresponding to the given file name from the cache of
  * zip files, or NULL if the file is not in the cache.  If the name is longer
  * than PATH_MAX or a zip error occurred then *pmsg will be set to the error
- * message text if pmsg != 0. Otherwise, *pmsg will be set to NULL.
+ * message text if pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller
+ * is responsible to free the error message.
  */
 jzfile *
 ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
 {
-    static char errbuf[256];
     char buf[PATH_MAX];
     jzfile *zip;
 
@@ -771,7 +771,7 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
 
     if (strlen(name) >= PATH_MAX) {
         if (pmsg) {
-            *pmsg = "zip file name too long";
+            *pmsg = strdup("zip file name too long");
         }
         return NULL;
     }
@@ -796,7 +796,8 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
  * Reads data from the given file descriptor to create a jzfile, puts the
  * jzfile in a cache, and returns that jzfile.  Returns NULL in case of error.
  * If a zip error occurs, then *pmsg will be set to the error message text if
- * pmsg != 0. Otherwise, *pmsg will be set to NULL.
+ * pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller is responsible to
+ * free the error message.
  */
 
 jzfile *
@@ -809,7 +810,7 @@ jzfile *
 ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
                  jboolean usemmap)
 {
-    static char errbuf[256];
+    char errbuf[256];
     jlong len;
     jzfile *zip;
 
@@ -825,7 +826,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
 
     if (zfd == -1) {
         if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
-            *pmsg = errbuf;
+            *pmsg = strdup(errbuf);
         freeZip(zip);
         return NULL;
     }
@@ -834,11 +835,11 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     if (len <= 0) {
         if (len == 0) { /* zip file is empty */
             if (pmsg) {
-                *pmsg = "zip file is empty";
+                *pmsg = strdup("zip file is empty");
             }
         } else { /* error */
             if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
-                *pmsg = errbuf;
+                *pmsg = strdup(errbuf);
         }
         ZFILE_Close(zfd);
         freeZip(zip);
@@ -850,7 +851,8 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
         /* An error occurred while trying to read the zip file */
         if (pmsg != 0) {
             /* Set the zip error message */
-            *pmsg = zip->msg;
+            if (zip->msg != NULL)
+                *pmsg = strdup(zip->msg);
         }
         freeZip(zip);
         return NULL;
@@ -867,12 +869,17 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
  * Opens a zip file for reading. Returns the jzfile object or NULL
  * if an error occurred. If a zip error occurred then *msg will be
  * set to the error message text if msg != 0. Otherwise, *msg will be
- * set to NULL.
+ * set to NULL. Caller doesn't need to free the error message.
  */
 jzfile * JNICALL
 ZIP_Open(const char *name, char **pmsg)
 {
-    return ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
+    jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
+    if (file == NULL && pmsg != NULL && *pmsg != NULL) {
+        free(*pmsg);
+        *pmsg = "Zip file open error";
+    }
+    return file;
 }
 
 /*

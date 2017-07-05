@@ -314,7 +314,7 @@ class SolarisWatchService
             fileKey2WatchKey.put(fileKey, watchKey);
 
             // register all entries in directory
-            registerChildren(dir, watchKey, false);
+            registerChildren(dir, watchKey, false, false);
 
             return watchKey;
         }
@@ -486,7 +486,8 @@ class SolarisWatchService
         void processDirectoryEvents(SolarisWatchKey key, int mask) {
             if ((mask & (FILE_MODIFIED | FILE_ATTRIB)) != 0) {
                 registerChildren(key.getDirectory(), key,
-                    key.events().contains(StandardWatchEventKinds.ENTRY_CREATE));
+                    key.events().contains(StandardWatchEventKinds.ENTRY_CREATE),
+                    key.events().contains(StandardWatchEventKinds.ENTRY_DELETE));
             }
         }
 
@@ -535,14 +536,16 @@ class SolarisWatchService
         /**
          * Registers all entries in the given directory
          *
-         * The {@code sendEvents} parameter indicates if ENTRY_CREATE events
-         * should be queued when new entries are found. When initially
-         * registering a directory then will always be false. When re-scanning
-         * a directory then it depends on if the event is enabled or not.
+         * The {@code sendCreateEvents} and {@code sendDeleteEvents} parameters
+         * indicates if ENTRY_CREATE and ENTRY_DELETE events should be queued
+         * when new entries are found. When initially registering a directory
+         * they will always be false. When re-scanning a directory then it
+         * depends on if the events are enabled or not.
          */
         void registerChildren(UnixPath dir,
                               SolarisWatchKey parent,
-                              boolean sendEvents)
+                              boolean sendCreateEvents,
+                              boolean sendDeleteEvents)
         {
             // if the ENTRY_MODIFY event is not enabled then we don't need
             // modification events for entries in the directory
@@ -550,14 +553,7 @@ class SolarisWatchService
             if (parent.events().contains(StandardWatchEventKinds.ENTRY_MODIFY))
                 events |= (FILE_MODIFIED | FILE_ATTRIB);
 
-            DirectoryStream<Path> stream = null;
-            try {
-                stream = Files.newDirectoryStream(dir);
-            } catch (IOException x) {
-                // nothing we can do
-                return;
-            }
-            try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
                 for (Path entry: stream) {
                     Path name = entry.getFileName();
 
@@ -565,32 +561,34 @@ class SolarisWatchService
                     if (parent.getChild(name) != null)
                         continue;
 
-                    // send ENTRY_CREATE if enabled
-                    if (sendEvents) {
-                        parent.signalEvent(StandardWatchEventKinds.ENTRY_CREATE, name);
-                    }
-
-                    // register it
+                    // attempt to register entry
                     long object = 0L;
+                    int errno = 0;
                     try {
                         object = registerImpl((UnixPath)entry, events);
                     } catch (UnixException x) {
-                        // can't register so ignore for now.
-                        continue;
+                        errno = x.errno();
                     }
 
-                    // create node
-                    EntryNode node = new EntryNode(object, entry.getFileName(), parent);
-                    // tell the parent about it
-                    parent.addChild(entry.getFileName(), node);
-                    object2Node.put(object, node);
+                    boolean registered = (object != 0L);
+                    boolean deleted = (errno == ENOENT);
+
+                    if (registered) {
+                        // create node
+                        EntryNode node = new EntryNode(object, entry.getFileName(), parent);
+                        // tell the parent about it
+                        parent.addChild(entry.getFileName(), node);
+                        object2Node.put(object, node);
+                    }
+
+                    if (sendCreateEvents && (registered || deleted))
+                        parent.signalEvent(StandardWatchEventKinds.ENTRY_CREATE, name);
+                    if (sendDeleteEvents && deleted)
+                        parent.signalEvent(StandardWatchEventKinds.ENTRY_DELETE, name);
+
                 }
-            } catch (ConcurrentModificationException x) {
-                // error during iteration which we ignore for now
-            } finally {
-                try {
-                    stream.close();
-                } catch (IOException x) { }
+            } catch (DirectoryIteratorException | IOException x) {
+                // nothing we can do
             }
         }
 

@@ -27,6 +27,7 @@
 
 #import "java_awt_print_Pageable.h"
 #import "java_awt_print_Printable.h"
+#import "java_awt_print_PageFormat.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -35,6 +36,7 @@
 
 
 static JNF_CLASS_CACHE(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
+static JNF_CLASS_CACHE(sjc_PageFormat, "java/awt/print/PageFormat");
 
 @implementation PrinterView
 
@@ -152,6 +154,7 @@ static JNF_CLASS_CACHE(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
 
     static JNF_MEMBER_CACHE(jm_getPageformatPrintablePeekgraphics, sjc_CPrinterJob, "getPageformatPrintablePeekgraphics", "(I)[Ljava/lang/Object;");
     static JNF_MEMBER_CACHE(jm_printAndGetPageFormatArea, sjc_CPrinterJob, "printAndGetPageFormatArea", "(Ljava/awt/print/Printable;Ljava/awt/Graphics;Ljava/awt/print/PageFormat;I)Ljava/awt/geom/Rectangle2D;");
+    static JNF_MEMBER_CACHE(jm_getOrientation, sjc_PageFormat, "getOrientation", "()I");
 
     // Assertions removed, and corresponding JNFDeleteGlobalRefs added, for radr://3962543
     // Actual fix that will keep these assertions from being true is radr://3205462 ,
@@ -201,6 +204,26 @@ static JNF_CLASS_CACHE(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
         // Actually print and get the PageFormatArea
         jobject pageFormatArea = JNFCallObjectMethod(env, fPrinterJob, jm_printAndGetPageFormatArea, fCurPainter, fCurPeekGraphics, fCurPageFormat, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
         if (pageFormatArea != NULL) {
+            NSPrintingOrientation currentOrientation = 
+                    [[[NSPrintOperation currentOperation] printInfo] orientation];
+            // set page orientation
+            switch (JNFCallIntMethod(env, fCurPageFormat, jm_getOrientation)) { 
+                case java_awt_print_PageFormat_PORTRAIT:
+                default:
+                    if (currentOrientation != NSPortraitOrientation) {
+                        [[[NSPrintOperation currentOperation] printInfo] 
+                                            setOrientation:NSPortraitOrientation];
+                    }
+                    break;
+
+                case java_awt_print_PageFormat_LANDSCAPE:
+                case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
+                    if (currentOrientation != NSLandscapeOrientation) {
+                        [[[NSPrintOperation currentOperation] printInfo] 
+                                            setOrientation:NSLandscapeOrientation];
+                    }
+                    break;
+                }
             result = JavaToNSRect(env, pageFormatArea);
             (*env)->DeleteLocalRef(env, pageFormatArea);
         } else {

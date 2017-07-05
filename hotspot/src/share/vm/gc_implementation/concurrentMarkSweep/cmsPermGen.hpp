@@ -45,7 +45,7 @@ class CMSPermGen:  public PermGen {
 
  public:
   CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
-             CardTableRS* ct, FreeBlockDictionary::DictionaryChoice);
+             CardTableRS* ct, FreeBlockDictionary<FreeChunk>::DictionaryChoice);
 
   HeapWord* mem_allocate(size_t size);
 
@@ -65,7 +65,7 @@ public:
     // regarding not using adaptive free lists for a perm gen.
     ConcurrentMarkSweepGeneration(rs, initial_byte_size, // MinPermHeapExapnsion
       level, ct, false /* use adaptive freelists */,
-      (FreeBlockDictionary::DictionaryChoice)CMSDictionaryChoice)
+      (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice)
   {}
 
   void initialize_performance_counters();
