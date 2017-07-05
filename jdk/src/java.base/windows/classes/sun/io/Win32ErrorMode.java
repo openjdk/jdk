@@ -66,7 +66,7 @@ public class Win32ErrorMode {
      * has completed.
      */
     public static void initialize() {
-        if (!sun.misc.VM.isBooted()) {
+        if (!jdk.internal.misc.VM.isBooted()) {
             String s = System.getProperty("sun.io.allowCriticalErrorMessageBox");
             if (s == null || s.equals(Boolean.FALSE.toString())) {
                 long mode = setErrorMode(0);

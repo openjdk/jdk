@@ -583,7 +583,7 @@ public class ManagementFactory {
         ClassLoader loader =
             AccessController.doPrivileged(
                 (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
-        if (!sun.misc.VM.isSystemDomainLoader(loader)) {
+        if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
         }

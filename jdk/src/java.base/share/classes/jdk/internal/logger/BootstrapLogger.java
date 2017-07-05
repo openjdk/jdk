@@ -48,7 +48,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import sun.misc.InnocuousThread;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
 import jdk.internal.logger.LazyLoggers.LazyLoggerAccessor;
 

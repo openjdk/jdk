@@ -39,7 +39,6 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public interface ClassPrepareEvent extends Event {
     /**
      * Returns the thread in which this event has occurred.

@@ -66,6 +66,7 @@ import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import jdk.internal.misc.VM;
 
 public enum LauncherHelper {
     INSTANCE;
@@ -86,9 +87,9 @@ public enum LauncherHelper {
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
 
-    // sync with java.c and sun.misc.VM
+    // sync with java.c and jdk.internal.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
-    static final boolean trace = sun.misc.VM.getSavedProperty(diagprop) != null;
+    static final boolean trace = VM.getSavedProperty(diagprop) != null;
 
     private static final String defaultBundleName =
             "sun.launcher.resources.launcher";
