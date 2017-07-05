@@ -1,0 +1,99 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+################################################################################
+# Copy native libraries and executables to a secondary location to strip them
+# and filter out files that shouldn't go into the image.
+
+MODULES_CMDS_STRIPPED := $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped
+MODULES_LIBS_STRIPPED := $(SUPPORT_OUTPUTDIR)/modules_libs-stripped
+
+ifneq ($(POST_STRIP_CMD), )
+  define StripRecipe
+	$(ECHO) Stripping $(LOG_INFO) $(patsubst $(OUTPUT_ROOT)/%,%,$<)
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@.tmp
+	$(CHMOD) u+w $@.tmp
+	$(POST_STRIP_CMD) $@.tmp
+	$(if $(POST_MCS_CMD), $(POST_MCS_CMD) $@.tmp)
+	$(CHMOD) go-w $@.tmp
+	$(MV) $@.tmp $@
+  endef
+else
+  define StripRecipe
+    $(call install-file)
+  endef
+endif
+
+# Don't include debug info for executables.
+ALL_CMDS_SRC := $(filter-out %.debuginfo %.diz %.map %.pdb, \
+    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds -type f -o -type l))
+COPY_CMDS_SRC := $(filter %.cgi, $(ALL_CMDS_SRC))
+STRIP_CMDS_SRC := $(filter-out $(COPY_CMDS_SRC), $(ALL_CMDS_SRC))
+
+# Make sure symbolic links are copied and not stripped
+COPY_LIBS_SRC := \
+    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
+        \( ! -name '*$(SHARED_LIBRARY_SUFFIX)' -type f \) -o -type l)
+STRIP_LIBS_SRC := \
+    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
+        -name '*$(SHARED_LIBRARY_SUFFIX)' -type f)
+
+# On Windows, don't include debug info for libs either.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  COPY_LIBS_SRC := $(filter-out %.diz %.map %.pdb, $(COPY_LIBS_SRC))
+endif
+
+$(eval $(call SetupCopyFiles,STRIP_MODULES_CMDS, \
+    SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \
+    DEST := $(MODULES_CMDS_STRIPPED), \
+    FILES := $(STRIP_CMDS_SRC), \
+    MACRO := StripRecipe))
+
+$(eval $(call SetupCopyFiles,COPY_MODULES_CMDS, \
+    SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \
+    DEST := $(MODULES_CMDS_STRIPPED), \
+    FILES := $(COPY_CMDS_SRC)))
+
+$(eval $(call SetupCopyFiles,STRIP_MODULES_LIBS, \
+    SRC := $(SUPPORT_OUTPUTDIR)/modules_libs, \
+    DEST := $(MODULES_LIBS_STRIPPED), \
+    FILES := $(STRIP_LIBS_SRC), \
+    MACRO := StripRecipe))
+
+$(eval $(call SetupCopyFiles,COPY_MODULES_LIBS, \
+    SRC := $(SUPPORT_OUTPUTDIR)/modules_libs, \
+    DEST := $(MODULES_LIBS_STRIPPED), \
+    FILES := $(COPY_LIBS_SRC)))
+
+TARGETS += $(STRIP_MODULES_CMDS) $(COPY_MODULES_CMDS) \
+    $(STRIP_MODULES_LIBS) $(COPY_MODULES_LIBS)
+
+all: $(TARGETS)
