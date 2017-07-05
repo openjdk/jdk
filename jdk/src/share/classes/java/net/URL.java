@@ -1004,16 +1004,18 @@ public final class URL implements java.io.Serializable {
             throw new IllegalArgumentException("proxy can not be null");
         }
 
+        // Create a copy of Proxy as a security measure
+        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
         SecurityManager sm = System.getSecurityManager();
-        if (proxy.type() != Proxy.Type.DIRECT && sm != null) {
-            InetSocketAddress epoint = (InetSocketAddress) proxy.address();
+        if (p.type() != Proxy.Type.DIRECT && sm != null) {
+            InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.isUnresolved())
                 sm.checkConnect(epoint.getHostName(), epoint.getPort());
             else
                 sm.checkConnect(epoint.getAddress().getHostAddress(),
                                 epoint.getPort());
         }
-        return handler.openConnection(this, proxy);
+        return handler.openConnection(this, p);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,15 @@ import javax.sound.midi.spi.MidiFileReader;
 import javax.sound.midi.spi.MidiFileWriter;
 import javax.sound.midi.spi.SoundbankReader;
 import javax.sound.midi.spi.MidiDeviceProvider;
+
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequencer;
+import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Transmitter;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.Port;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
 
 
 /**
@@ -186,6 +195,16 @@ public class JDK13Services {
         If the property is not set, null is returned.
      */
     private static synchronized String getDefaultProvider(Class typeClass) {
+        if (!SourceDataLine.class.equals(typeClass)
+                && !TargetDataLine.class.equals(typeClass)
+                && !Clip.class.equals(typeClass)
+                && !Port.class.equals(typeClass)
+                && !Receiver.class.equals(typeClass)
+                && !Transmitter.class.equals(typeClass)
+                && !Synthesizer.class.equals(typeClass)
+                && !Sequencer.class.equals(typeClass)) {
+            return null;
+        }
         String value;
         String propertyName = typeClass.getName();
         value = JSSecurityManager.getProperty(propertyName);

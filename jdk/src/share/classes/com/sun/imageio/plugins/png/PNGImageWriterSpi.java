@@ -34,6 +34,7 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.spi.ImageWriterSpi;
+import javax.imageio.stream.ImageOutputStream;
 
 public class PNGImageWriterSpi extends ImageWriterSpi {
 
@@ -61,7 +62,7 @@ public class PNGImageWriterSpi extends ImageWriterSpi {
                 suffixes,
                 MIMETypes,
                 writerClassName,
-                STANDARD_OUTPUT_TYPE,
+                new Class[] { ImageOutputStream.class },
                 readerSpiNames,
                 false,
                 null, null,

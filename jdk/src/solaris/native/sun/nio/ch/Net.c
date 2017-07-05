@@ -541,7 +541,7 @@ Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow)
 {
     int how = (jhow == sun_nio_ch_Net_SHUT_RD) ? SHUT_RD :
         (jhow == sun_nio_ch_Net_SHUT_WR) ? SHUT_WR : SHUT_RDWR;
-    if (shutdown(fdval(env, fdo), how) < 0)
+    if ((shutdown(fdval(env, fdo), how) < 0) && (errno != ENOTCONN))
         handleSocketError(env, errno);
 }
 

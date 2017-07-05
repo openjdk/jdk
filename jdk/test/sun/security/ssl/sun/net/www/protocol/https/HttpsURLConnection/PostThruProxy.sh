@@ -36,6 +36,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
+    ;;
   Windows* )
     PS=";"
     FS="\\"
@@ -46,6 +50,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}OriginServer.java ${TESTSRC}${FS}ProxyTunnelServer.java ${TESTSRC}${FS}PostThruProxy.java
+${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}OriginServer.java \
+    ${TESTSRC}${FS}ProxyTunnelServer.java ${TESTSRC}${FS}PostThruProxy.java
 ${TESTJAVA}${FS}bin${FS}java PostThruProxy ${HOSTNAME} ${TESTSRC}
 exit

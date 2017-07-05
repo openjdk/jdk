@@ -48,6 +48,11 @@ case "$OS" in
     FS="/"
     TMP=/tmp
     ;;
+  CYGWIN* )
+    NULL=/dev/null
+    FS="/"
+    TMP=/tmp
+    ;;
   Windows_* )
     NULL=NUL
     FS="\\"
