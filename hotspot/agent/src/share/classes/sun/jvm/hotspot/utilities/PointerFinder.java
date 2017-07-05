@@ -96,15 +96,15 @@ public class PointerFinder {
         if (Assert.ASSERTS_ENABLED) {
           Assert.that(loc.blob != null, "Should have found CodeBlob");
         }
-        loc.inBlobInstructions = loc.blob.instructionsContains(a);
-        loc.inBlobData         = loc.blob.dataContains(a);
+        loc.inBlobCode = loc.blob.codeContains(a);
+        loc.inBlobData = loc.blob.dataContains(a);
 
         if (loc.blob.isNMethod()) {
             NMethod nm = (NMethod) loc.blob;
             loc.inBlobOops = nm.oopsContains(a);
         }
 
-        loc.inBlobUnknownLocation = (!(loc.inBlobInstructions ||
+        loc.inBlobUnknownLocation = (!(loc.inBlobCode ||
                                        loc.inBlobData ||
                                        loc.inBlobOops));
         return loc;

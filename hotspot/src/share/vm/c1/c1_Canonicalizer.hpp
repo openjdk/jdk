@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 
 class Canonicalizer: InstructionVisitor {
  private:
+  Compilation *_compilation;
   Instruction* _canonical;
   int _bci;
 
+  Compilation *compilation()                     { return _compilation; }
   void set_canonical(Value x);
   void set_bci(int bci)                          { _bci = bci; }
   void set_constant(jint x)                      { set_canonical(new Constant(new IntConstant(x))); }
@@ -43,7 +45,9 @@ class Canonicalizer: InstructionVisitor {
                         int* scale);
 
  public:
-  Canonicalizer(Value x, int bci)                { _canonical = x; _bci = bci; if (CanonicalizeNodes) x->visit(this); }
+  Canonicalizer(Compilation* c, Value x, int bci) : _compilation(c), _canonical(x), _bci(bci) {
+    if (CanonicalizeNodes) x->visit(this);
+  }
   Value canonical() const                        { return _canonical; }
   int bci() const                                { return _bci; }
 
@@ -92,5 +96,5 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
-  virtual void do_ProfileCounter (ProfileCounter*  x);
+  virtual void do_ProfileInvoke  (ProfileInvoke*   x);
 };

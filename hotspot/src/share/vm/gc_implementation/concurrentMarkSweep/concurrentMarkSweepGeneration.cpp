@@ -1332,7 +1332,7 @@ ConcurrentMarkSweepGeneration::allocation_limit_reached(Space* space,
 // -----------------------------------------------------
 // FREE:      klass_word & 1 == 1; mark_word holds block size
 //
-// OBJECT:    klass_word installed; klass_word != 0 && klass_word & 0 == 0;
+// OBJECT:    klass_word installed; klass_word != 0 && klass_word & 1 == 0;
 //            obj->size() computes correct size
 //            [Perm Gen objects needs to be "parsable" before they can be navigated]
 //

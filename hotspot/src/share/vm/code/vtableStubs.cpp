@@ -48,7 +48,7 @@ void* VtableStub::operator new(size_t size, int code_size) {
     if (blob == NULL) {
       vm_exit_out_of_memory(bytes, "CodeCache: no room for vtable chunks");
     }
-    _chunk = blob->instructions_begin();
+    _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;
     Forte::register_stub("vtable stub", _chunk, _chunk_end);
     // Notify JVMTI about this stub. The event will be recorded by the enclosing

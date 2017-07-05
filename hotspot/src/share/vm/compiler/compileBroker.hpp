@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class CompileTask : public CHeapObj {
   int          _comp_level;
   int          _num_inlined_bytecodes;
   nmethodLocker* _code_handle;  // holder of eventual result
-  CompileTask* _next;
+  CompileTask* _next, *_prev;
 
   // Fields used for logging why the compilation was initiated:
   jlong        _time_queued;  // in units of os::elapsed_counter()
@@ -49,6 +49,7 @@ class CompileTask : public CHeapObj {
   int          _hot_count;    // information about its invocation counter
   const char*  _comment;      // more info about the task
 
+  void print_compilation(outputStream *st, methodOop method, char* method_name);
  public:
   CompileTask() {
     _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock");
@@ -85,15 +86,17 @@ class CompileTask : public CHeapObj {
 
   CompileTask* next() const                      { return _next; }
   void         set_next(CompileTask* next)       { _next = next; }
+  CompileTask* prev() const                      { return _prev; }
+  void         set_prev(CompileTask* prev)       { _prev = prev; }
 
   void         print();
   void         print_line();
+
   void         print_line_on_error(outputStream* st, char* buf, int buflen);
   void         log_task(xmlStream* log);
   void         log_task_queued();
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
-
 };
 
 // CompilerCounters
@@ -141,7 +144,6 @@ class CompilerCounters : public CHeapObj {
     PerfCounter* compile_counter()           { return _perf_compiles; }
 };
 
-
 // CompileQueue
 //
 // A list of CompileTasks.
@@ -153,24 +155,40 @@ class CompileQueue : public CHeapObj {
   CompileTask* _first;
   CompileTask* _last;
 
+  int _size;
  public:
   CompileQueue(const char* name, Monitor* lock) {
     _name = name;
     _lock = lock;
     _first = NULL;
     _last = NULL;
+    _size = 0;
   }
 
   const char*  name() const                      { return _name; }
   Monitor*     lock() const                      { return _lock; }
 
   void         add(CompileTask* task);
+  void         remove(CompileTask* task);
+  CompileTask* first()                           { return _first; }
+  CompileTask* last()                            { return _last;  }
 
   CompileTask* get();
 
   bool         is_empty() const                  { return _first == NULL; }
+  int          size()     const                  { return _size;          }
 
   void         print();
+};
+
+// CompileTaskWrapper
+//
+// Assign this task to the current thread.  Deallocate the task
+// when the compilation is complete.
+class CompileTaskWrapper : StackObj {
+public:
+  CompileTaskWrapper(CompileTask* task);
+  ~CompileTaskWrapper();
 };
 
 
@@ -208,7 +226,8 @@ class CompileBroker: AllStatic {
   static int  _last_compile_level;
   static char _last_method_compiled[name_buffer_length];
 
-  static CompileQueue* _method_queue;
+  static CompileQueue* _c2_method_queue;
+  static CompileQueue* _c1_method_queue;
   static CompileTask* _task_free_list;
 
   static GrowableArray<CompilerThread*>* _method_threads;
@@ -256,19 +275,9 @@ class CompileBroker: AllStatic {
   static int _sum_nmethod_size;
   static int _sum_nmethod_code_size;
 
-  static int compiler_count() {
-    return CICompilerCountPerCPU
-      // Example: if CICompilerCountPerCPU is true, then we get
-      // max(log2(8)-1,1) = 2 compiler threads on an 8-way machine.
-      // May help big-app startup time.
-      ? (MAX2(log2_intptr(os::active_processor_count())-1,1))
-      : CICompilerCount;
-  }
-
   static CompilerThread* make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, TRAPS);
-  static void init_compiler_threads(int compiler_count);
+  static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
-  static bool compilation_is_in_queue  (methodHandle method, int osr_bci);
   static bool compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level);
   static uint assign_compile_id        (methodHandle method, int osr_bci);
   static bool is_compile_blocking      (methodHandle method, int osr_bci);
@@ -301,23 +310,35 @@ class CompileBroker: AllStatic {
                                   int hot_count,
                                   const char* comment,
                                   TRAPS);
-
+  static CompileQueue* compile_queue(int comp_level) {
+    if (is_c2_compile(comp_level)) return _c2_method_queue;
+    if (is_c1_compile(comp_level)) return _c1_method_queue;
+    return NULL;
+  }
  public:
   enum {
     // The entry bci used for non-OSR compilations.
     standard_entry_bci = InvocationEntryBci
   };
 
-  static AbstractCompiler* compiler(int level ) {
-    if (level == CompLevel_fast_compile) return _compilers[0];
-    assert(level == CompLevel_highest_tier, "what level?");
-    return _compilers[1];
+  static AbstractCompiler* compiler(int comp_level) {
+    if (is_c2_compile(comp_level)) return _compilers[1]; // C2
+    if (is_c1_compile(comp_level)) return _compilers[0]; // C1
+    return NULL;
   }
 
+  static bool compilation_is_in_queue(methodHandle method, int osr_bci);
+  static int queue_size(int comp_level) {
+    CompileQueue *q = compile_queue(comp_level);
+    return q != NULL ? q->size() : 0;
+  }
   static void compilation_init();
   static void init_compiler_thread_log();
-  static nmethod* compile_method(methodHandle method, int osr_bci,
-                                 methodHandle hot_method, int hot_count,
+  static nmethod* compile_method(methodHandle method,
+                                 int osr_bci,
+                                 int comp_level,
+                                 methodHandle hot_method,
+                                 int hot_count,
                                  const char* comment, TRAPS);
 
   static void compiler_thread_loop();

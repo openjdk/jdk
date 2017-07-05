@@ -604,7 +604,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
   nonstatic_field(CodeBlob,                    _header_size,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
-  nonstatic_field(CodeBlob,                    _instructions_offset,                          int)                                   \
+  nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
+  nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
