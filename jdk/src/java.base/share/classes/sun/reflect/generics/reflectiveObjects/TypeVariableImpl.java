@@ -46,7 +46,7 @@ import sun.reflect.generics.visitor.Reifier;
 import sun.reflect.misc.ReflectUtil;
 
 /**
- * Implementation of <tt>java.lang.reflect.TypeVariable</tt> interface
+ * Implementation of {@code java.lang.reflect.TypeVariable} interface
  * for core reflection.
  */
 public class TypeVariableImpl<D extends GenericDeclaration>
@@ -99,9 +99,9 @@ public class TypeVariableImpl<D extends GenericDeclaration>
 
 
     /**
-     * Returns an array of <tt>Type</tt> objects representing the
+     * Returns an array of {@code Type} objects representing the
      * upper bound(s) of this type variable.  Note that if no upper bound is
-     * explicitly declared, the upper bound is <tt>Object</tt>.
+     * explicitly declared, the upper bound is {@code Object}.
      *
      * <p>For each upper bound B:
      * <ul>
@@ -111,9 +111,9 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      *  <li>Otherwise, B is resolved.
      * </ul>
      *
-     * @throws <tt>TypeNotPresentException</tt> if any of the
+     * @throws {@code TypeNotPresentException} if any of the
      *     bounds refers to a non-existent type declaration
-     * @throws <tt>MalformedParameterizedTypeException</tt> if any of the
+     * @throws {@code MalformedParameterizedTypeException} if any of the
      *     bounds refer to a parameterized type that cannot be instantiated
      *     for any reason
      * @return an array of Types representing the upper bound(s) of this
@@ -129,7 +129,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     }
 
     /**
-     * Returns the <tt>GenericDeclaration</tt> object representing the
+     * Returns the {@code GenericDeclaration} object representing the
      * generic declaration that declared this type variable.
      *
      * @return the generic declaration that declared this type variable.

@@ -88,23 +88,19 @@ diff_text() {
         TMP=$(LC_ALL=C $DIFF $OTHER_FILE $THIS_FILE | \
             $GREP '^[<>]' | \
             $SED -e '/[<>] \* from.*\.idl/d' \
-                 -e '/[<>] \*.*[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}.*/d' \
+                 -e '/[<>] .*[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}.*/d' \
                  -e '/[<>] \*.*[0-9]\{4\} [0-9][0-9]*:[0-9]\{2\}:[0-9]\{2\}.*/d' \
                  -e '/\/\/ Generated from input file.*/d' \
                  -e '/\/\/ This file was generated AUTOMATICALLY from a template file.*/d' \
                  -e '/\/\/ java GenerateCharacter.*/d')
     fi
     # Ignore date strings in class files.
-    # On Macosx the system sources for generated java classes produce different output on
-    # consequtive invocations seemingly randomly.
-    # For example a method parameter randomly named "thePoint" or "aPoint". Ignore this.
     # Anonymous lambda classes get randomly assigned counters in their names.
     if test "x$SUFFIX" = "xclass"; then
         # To improve performance when large diffs are found, do a rough filtering of classes
         # elibeble for these exceptions
         if $GREP -R -e '[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}' \
                 -e '[0-9]\{2\}/[0-9]\{2\}/[0-9]\{4\}' \
-                -e thePoint -e aPoint -e setItemsPtr \
                 -e 'lambda\$[a-zA-Z0-9]*\$[0-9]' ${THIS_FILE} > /dev/null; then
             $JAVAP -c -constants -l -p "${OTHER_FILE}" >  ${OTHER_FILE}.javap
             $JAVAP -c -constants -l -p "${THIS_FILE}" > ${THIS_FILE}.javap
@@ -112,9 +108,6 @@ diff_text() {
                 $GREP '^[<>]' | \
                 $SED -e '/[<>].*[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}.*/d' \
                      -e '/[0-9]\{2\}\/[0-9]\{2\}\/[0-9]\{4\}/d' \
-                     -e '/[<>].*Point   Lcom\/apple\/jobjc\/foundation\/NSPoint;/d' \
-                     -e '/[<>].*public com\.apple\.jobjc\.Pointer<com\.apple\.jobjc\..*itemsPtr();/d' \
-                     -e '/[<>].*public void setItemsPtr(com\.apple\.jobjc\.Pointer<com\.apple\.jobjc\..*);/d' \
                      -e '/[<>].*lambda\$[a-zA-Z0-9]*\$[0-9]*/d')
         fi
     fi
@@ -313,7 +306,7 @@ compare_general_files() {
         ! -name "jspawnhelper" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
-    echo General files...
+    echo Other files with binary differences...
     for f in $GENERAL_FILES
     do
         if [ -e $OTHER_DIR/$f ]; then
@@ -590,7 +583,7 @@ compare_bin_file() {
     ORIG_THIS_FILE="$THIS_FILE"
     ORIG_OTHER_FILE="$OTHER_FILE"
 
-    if [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
         THIS_STRIPPED_FILE=$FILE_WORK_DIR/this/$NAME
         OTHER_STRIPPED_FILE=$FILE_WORK_DIR/other/$NAME
         $MKDIR -p $FILE_WORK_DIR/this $FILE_WORK_DIR/other
@@ -722,7 +715,7 @@ compare_bin_file() {
         fi
     fi
 
-    if [[ "$SORT_SYMBOLS" = *"$BIN_FILE"* ]]; then
+    if [ "$SORT_ALL_SYMBOLS" = "true" ] || [[ "$SORT_SYMBOLS" = *"$BIN_FILE"* ]]; then
         SYM_SORT_CMD="sort"
     else
         SYM_SORT_CMD="cat"
@@ -810,31 +803,34 @@ compare_bin_file() {
         if [ -z "$FULLDUMP_DIFF_FILTER" ]; then
             FULLDUMP_DIFF_FILTER="$CAT"
         fi
-        $FULLDUMP_CMD $OTHER_FILE | eval "$FULLDUMP_DIFF_FILTER" > $WORK_FILE_BASE.fulldump.other 2>&1
-        $FULLDUMP_CMD $THIS_FILE  | eval "$FULLDUMP_DIFF_FILTER" > $WORK_FILE_BASE.fulldump.this  2>&1
+        $FULLDUMP_CMD $OTHER_FILE | eval "$FULLDUMP_DIFF_FILTER" \
+            > $WORK_FILE_BASE.fulldump.other 2>&1
+        $FULLDUMP_CMD $THIS_FILE  | eval "$FULLDUMP_DIFF_FILTER" \
+            > $WORK_FILE_BASE.fulldump.this  2>&1
 
-        LC_ALL=C $DIFF $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this > $WORK_FILE_BASE.fulldump.diff
+        LC_ALL=C $DIFF $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this \
+            > $WORK_FILE_BASE.fulldump.diff
 
         if [ -s $WORK_FILE_BASE.fulldump.diff ]; then
-            ELF_DIFF_SIZE=$(ls -n $WORK_FILE_BASE.fulldump.diff | awk '{print $5}')
-            ELF_MSG=$($PRINTF "%8d" $ELF_DIFF_SIZE)
-            if [[ "$ACCEPTED_ELF_DIFF" != *"$BIN_FILE"* ]]; then
-                DIFF_ELF=true
-                if [[ "$KNOWN_ELF_DIFF" != *"$BIN_FILE"* ]]; then
-                    ELF_MSG="*$ELF_MSG*"
+            FULLDUMP_DIFF_SIZE=$(ls -n $WORK_FILE_BASE.fulldump.diff | awk '{print $5}')
+            FULLDUMP_MSG=$($PRINTF "%8d" $FULLDUMP_DIFF_SIZE)
+            if [[ "$ACCEPTED_FULLDUMP_DIFF" != *"$BIN_FILE"* ]]; then
+                DIFF_FULLDUMP=true
+                if [[ "$KNOWN_FULLDUMP_DIFF" != *"$BIN_FILE"* ]]; then
+                    FULLDUMP_MSG="*$FULLDUMP_MSG*"
                     REGRESSIONS=true
                 else
-                    ELF_MSG=" $ELF_MSG "
+                    FULLDUMP_MSG=" $FULLDUMP_MSG "
                 fi
             else
-                ELF_MSG="($ELF_MSG)"
-                DIFF_ELF=
+                FULLDUMP_MSG="($FULLDUMP_MSG)"
+                DIFF_FULLDUMP=
             fi
         else
-            ELF_MSG="          "
-            DIFF_ELF=
-            if [[ "$KNOWN_DEP_DIFF $ACCEPTED_DEP_DIFF" = *"$BIN_FILE"* ]]; then
-                ELF_MSG="    !    "
+            FULLDUMP_MSG="          "
+            DIFF_FULLDUMP=
+            if [[ "$KNOWN_FULLDUMP_DIFF $ACCEPTED_FULLDUMP_DIFF" = *"$BIN_FILE"* ]]; then
+                FULLDUMP_MSG="    !    "
             fi
         fi
     fi
@@ -845,7 +841,7 @@ compare_bin_file() {
         # To get a raw diff with the complete disassembly, set
         # DIS_DIFF_FILTER="$CAT"
         if [ -z "$DIS_DIFF_FILTER" ]; then
-            DIS_DIFF_FILTER="$GREP -v ' # .* <.*>$'"
+            DIS_DIFF_FILTER="$GREP -v ' # .* <.*>$' | $SED -r -e 's/(\b|x)([0-9a-fA-F]+)(\b|:|>)/X/g'"
         fi
         $DIS_CMD $OTHER_FILE | $GREP -v $NAME | eval "$DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.other 2>&1
         $DIS_CMD $THIS_FILE  | $GREP -v $NAME | eval "$DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.this  2>&1
@@ -877,12 +873,12 @@ compare_bin_file() {
     fi
 
 
-    if [ -n "$DIFF_BIN$DIFF_SIZE$DIFF_SYM$DIFF_DEP$DIFF_ELF$DIFF_DIS" ] || [ -n "$VERBOSE" ]; then
+    if [ -n "$DIFF_BIN$DIFF_SIZE$DIFF_SYM$DIFF_DEP$DIFF_FULLDUMP$DIFF_DIS" ] || [ -n "$VERBOSE" ]; then
         if [ -n "$BIN_MSG" ]; then echo -n "$BIN_MSG:"; fi
         if [ -n "$SIZE_MSG" ]; then echo -n "$SIZE_MSG:"; fi
         if [ -n "$SYM_MSG" ]; then echo -n "$SYM_MSG:"; fi
         if [ -n "$DEP_MSG" ]; then echo -n "$DEP_MSG:"; fi
-        if [ -n "$ELF_MSG" ]; then echo -n "$ELF_MSG:"; fi
+        if [ -n "$FULLDUMP_MSG" ]; then echo -n "$FULLDUMP_MSG:"; fi
         if [ -n "$DIS_MSG" ]; then echo -n "$DIS_MSG:"; fi
         echo " $BIN_FILE"
         if [ "$SHOW_DIFFS" = "true" ]; then
@@ -1015,6 +1011,9 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-vv                 More verbose output, shows diff output of all comparisons"
     echo "-o [OTHER]          Compare with build in other directory. Will default to the old build directory"
     echo ""
+    echo "--sort-symbols      Sort all symbols before comparing"
+    echo "--strip             Strip all binaries before comparing"
+    echo ""
     echo "[FILTER]            List filenames in the image to compare, works for jars, zips, libs and execs"
     echo "Example:"
     echo "bash ./common/bin/compareimages.sh CodePointIM.jar"
@@ -1106,6 +1105,12 @@ while [ -n "$1" ]; do
             OTHER_FILE=$3
             shift
             shift
+            ;;
+        --sort-symbols)
+            SORT_ALL_SYMBOLS=true
+            ;;
+        --strip)
+            STRIP_ALL=true
             ;;
         *)
             CMP_NAMES=false
@@ -1223,7 +1228,7 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
             OTHER_JDK_BUNDLE="$OTHER/images/jdk-bundle"
             OTHER_JRE_BUNDLE="$OTHER/images/jre-bundle"
 	fi
-        echo "Also comparing macosx bundles"
+        echo "Also comparing jdk macosx bundles"
         echo "  $THIS_JDK_BUNDLE"
         echo "  $OTHER_JDK_BUNDLE"
     fi

@@ -153,7 +153,7 @@ public:
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
 
-  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) gen_policy(); }
+  virtual CollectorPolicy* collector_policy() const { return gen_policy(); }
 
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {

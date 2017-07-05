@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,37 @@
 public class HypotTests {
     private HypotTests(){}
 
+    /**
+     * The hypot implementation is commutative, {@code hypot(a, b) ==
+     * hypot(b, a)}, and independent of sign, {@code hypot(a, b) ==
+     * hypot(-a, b) == hypot(a, -b) == hypot(-a, -b)}.
+     */
     static int testHypotCase(double input1, double input2, double expected) {
-        return Tests.test("StrictMath.hypot(double)", input1, input2,
-                          StrictMath.hypot(input1, input2), expected);
+        int failures = 0;
+        failures += Tests.test("StrictMath.hypot(double)", input1, input2,
+                               StrictMath.hypot(input1, input2), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", input2, input1,
+                          StrictMath.hypot(input2, input1), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", -input1, input2,
+                               StrictMath.hypot(-input1, input2), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", input2, -input1,
+                          StrictMath.hypot(input2, -input1), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", input1, -input2,
+                               StrictMath.hypot(input1, -input2), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", -input2, input1,
+                          StrictMath.hypot(-input2, input1), expected);
+
+        failures += Tests.test("StrictMath.hypot(double)", -input1, -input2,
+                               StrictMath.hypot(-input1, -input2), expected);
+
+        failures +=  Tests.test("StrictMath.hypot(double)", -input2, -input1,
+                          StrictMath.hypot(-input2, -input1), expected);
+        return failures;
     }
 
     static int testHypot() {
@@ -611,21 +639,60 @@ public class HypotTests {
             {0x1.8p1,   0x1.8bffffffffff6p6,    0x1.8c2e88e6f44b1p6},
             {0x1.8p1,   0x1.8ffffffffffe8p6,    0x1.902e11d3b5549p6},
             {0x1.8p1,   0x1.8fffffffffffep6,    0x1.902e11d3b556p6},
+
+            // Test near decision points of the fdlibm algorithm
+            {0x1.0000000000001p501,   0x1.000000000000p501,    0x1.6a09e667f3bcdp501},
+            {0x1.0p501,               0x1.0p499,               0x1.07e0f66afed07p501},
+
+            {0x1.0p500,               0x1.0p450,               0x1.0p500},
+            {0x1.0000000000001p500,   0x1.0p450,               0x1.0000000000001p500},
+
+            {0x1.0p500,               0x1.0p440,               0x1.0p500},
+            {0x1.0000000000001p500,   0x1.0p440,               0x1.0000000000001p500},
+            {0x1.0p500,               0x1.0p439,               0x1.0p500},
+            {0x1.0000000000001p500,   0x1.0p439,               0x1.0000000000001p500},
+
+            {0x1.0p-450,              0x1.0p-500,              0x1.0p-450},
+            {0x1.0000000000001p-450,  0x1.0p-500,              0x1.0000000000001p-450},
+            {0x1.0p-450,              0x1.fffffffffffffp-499,  0x1.0p-450},
+            {0x1.0000000000001p-450,  0x1.fffffffffffffp-499,  0x1.0000000000001p-450},
+
+
+            {0x1.0p-450,              0x1.0p-500,              0x1.0p-450},
+            {0x1.0000000000001p-450,  0x1.0p-500,              0x1.0000000000001p-450},
+            {0x1.0p-450,              0x1.fffffffffffffp-499,  0x1.0p-450},
+            {0x1.0000000000001p-450,  0x1.fffffffffffffp-499,  0x1.0000000000001p-450},
+
+            // 0x1.0p-1022 is MIN_NORMAL
+            {0x1.0000000000001p-1022, 0x1.0000000000001p-1022, 0x1.6a09e667f3bcep-1022},
+            {0x1.0000000000001p-1022, 0x1.0p-1022,             0x1.6a09e667f3bcdp-1022},
+            {0x1.0000000000001p-1022, 0x0.fffffffffffffp-1022, 0x1.6a09e667f3bcdp-1022},
+            {0x1.0000000000001p-1022, 0x0.0000000000001P-1022, 0x1.0000000000001p-1022},
+            {0x1.0000000000001p-1022, 0.0,                     0x1.0000000000001p-1022},
+
+            {0x1.0000000000000p-1022, 0x0.fffffffffffffp-1022, 0x1.6a09e667f3bccp-1022},
+            {0x1.0000000000000p-1021, 0x0.fffffffffffffp-1022, 0x1.1e3779b97f4a8p-1021},
+            {0x1.0000000000000p-1020, 0x0.fffffffffffffp-1022, 0x1.07e0f66afed07p-1020},
+
+            // 0x0.0000000000001P-1022 is MIN_VALUE (smallest nonzero number)
+            {0x0.0000000000001p-1022, 0x0.0000000000001p-1022, 0x0.0000000000001p-1022},
+            {0x0.0000000000002p-1022, 0x0.0000000000001p-1022, 0x0.0000000000002p-1022},
+            {0x0.0000000000003p-1022, 0x0.0000000000002p-1022, 0x0.0000000000004p-1022},
         };
 
         for (double[] testCase: testCases)
-            failures+=testHypotCase(testCase[0], testCase[1], testCase[2]);
+            failures += testHypotCase(testCase[0], testCase[1], testCase[2]);
 
         return failures;
     }
 
-    public static void main(String [] argv) {
+    public static void main(String... args) {
         int failures = 0;
 
         failures += testHypot();
 
         if (failures > 0) {
-            System.err.println("Testing log1p incurred "
+            System.err.println("Testing hypot incurred "
                                + failures + " failures.");
             throw new RuntimeException();
         }
