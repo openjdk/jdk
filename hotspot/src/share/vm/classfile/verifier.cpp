@@ -327,7 +327,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
 
   const char* bad_type_msg = "Bad type on operand stack in %s";
 
-  int32_t max_stack = m->max_stack();
+  int32_t max_stack = m->verifier_max_stack();
   int32_t max_locals = m->max_locals();
   constantPoolHandle cp(THREAD, m->constants());
 

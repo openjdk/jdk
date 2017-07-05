@@ -505,7 +505,7 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
 void InterpreterMacroAssembler::load_receiver(Register param_count,
                                               Register recv) {
   sll(param_count, Interpreter::logStackElementSize, param_count);
-  ld_ptr(Lesp, param_count, recv);                      // gets receiver Oop
+  ld_ptr(Lesp, param_count, recv);  // gets receiver oop
 }
 
 void InterpreterMacroAssembler::empty_expression_stack() {
@@ -767,8 +767,12 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   get_cache_and_index_at_bcp(cache, temp, bcp_offset, index_size);
   ld_ptr(cache, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset(), bytecode);
   const int shift_count = (1 + byte_no) * BitsPerByte;
-  srl( bytecode, shift_count, bytecode);
-  and3(bytecode,        0xFF, bytecode);
+  assert((byte_no == TemplateTable::f1_byte && shift_count == ConstantPoolCacheEntry::bytecode_1_shift) ||
+         (byte_no == TemplateTable::f2_byte && shift_count == ConstantPoolCacheEntry::bytecode_2_shift),
+         "correct shift count");
+  srl(bytecode, shift_count, bytecode);
+  assert(ConstantPoolCacheEntry::bytecode_1_mask == ConstantPoolCacheEntry::bytecode_2_mask, "common mask");
+  and3(bytecode, ConstantPoolCacheEntry::bytecode_1_mask, bytecode);
 }
 
 

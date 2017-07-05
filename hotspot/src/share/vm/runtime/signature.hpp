@@ -396,6 +396,8 @@ class SignatureStream : public StackObj {
   enum FailureMode { ReturnNull, CNFException, NCDFError };
   klassOop as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  const jbyte* raw_bytes()  { return _signature->bytes() + _begin; }
+  int          raw_length() { return _end - _begin; }
 
   // return same as_symbol except allocation of new symbols is avoided.
   Symbol* as_symbol_or_null();
