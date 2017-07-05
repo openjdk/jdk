@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1652,6 +1652,64 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // This optimization only modifies phi - don't need to check for dead loop.
     assert(opt == NULL || phase->eqv(opt, this), "do not elide phi");
     if (opt != NULL)  return opt;
+  }
+
+  if (in(1) != NULL && in(1)->Opcode() == Op_AddP && can_reshape) {
+    // Try to undo Phi of AddP:
+    // (Phi (AddP base base y) (AddP base2 base2 y))
+    // becomes:
+    // newbase := (Phi base base2)
+    // (AddP newbase newbase y)
+    //
+    // This occurs as a result of unsuccessful split_thru_phi and
+    // interferes with taking advantage of addressing modes. See the
+    // clone_shift_expressions code in matcher.cpp
+    Node* addp = in(1);
+    const Type* type = addp->in(AddPNode::Base)->bottom_type();
+    Node* y = addp->in(AddPNode::Offset);
+    if (y != NULL && addp->in(AddPNode::Base) == addp->in(AddPNode::Address)) {
+      // make sure that all the inputs are similar to the first one,
+      // i.e. AddP with base == address and same offset as first AddP
+      bool doit = true;
+      for (uint i = 2; i < req(); i++) {
+        if (in(i) == NULL ||
+            in(i)->Opcode() != Op_AddP ||
+            in(i)->in(AddPNode::Base) != in(i)->in(AddPNode::Address) ||
+            in(i)->in(AddPNode::Offset) != y) {
+          doit = false;
+          break;
+        }
+        // Accumulate type for resulting Phi
+        type = type->meet(in(i)->in(AddPNode::Base)->bottom_type());
+      }
+      Node* base = NULL;
+      if (doit) {
+        // Check for neighboring AddP nodes in a tree.
+        // If they have a base, use that it.
+        for (DUIterator_Fast kmax, k = this->fast_outs(kmax); k < kmax; k++) {
+          Node* u = this->fast_out(k);
+          if (u->is_AddP()) {
+            Node* base2 = u->in(AddPNode::Base);
+            if (base2 != NULL && !base2->is_top()) {
+              if (base == NULL)
+                base = base2;
+              else if (base != base2)
+                { doit = false; break; }
+            }
+          }
+        }
+      }
+      if (doit) {
+        if (base == NULL) {
+          base = new (phase->C, in(0)->req()) PhiNode(in(0), type, NULL);
+          for (uint i = 1; i < req(); i++) {
+            base->init_req(i, in(i)->in(AddPNode::Base));
+          }
+          phase->is_IterGVN()->register_new_node_with_optimizer(base);
+        }
+        return new (phase->C, 4) AddPNode(base, base, y);
+      }
+    }
   }
 
   // Split phis through memory merges, so that the memory merges will go away.
