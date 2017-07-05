@@ -49,7 +49,7 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
     private boolean registered = false;
 
     public WBMPImageReaderSpi() {
-        super("Sun Microsystems, Inc.",
+        super("Oracle Corporation",
               "1.0",
               formatNames,
               entensions,

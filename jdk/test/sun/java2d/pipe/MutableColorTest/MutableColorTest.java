@@ -105,7 +105,7 @@ public class MutableColorTest {
         for (int y = 0; y < snapshot.getHeight(); y++) {
             for (int x = 0; x < snapshot.getWidth(); x++) {
                 int snapRGB = snapshot.getRGB(x, y);
-                if (snapRGB != evilColor) {
+                if (!isSameColor(snapRGB, evilColor)) {
                     System.err.printf("Wrong RGB for %s at (%d,%d): 0x%x " +
                         "instead of 0x%x\n", desc, x, y, snapRGB, evilColor);
                     String fileName = "MutableColorTest_"+desc+".png";
@@ -165,5 +165,25 @@ public class MutableColorTest {
         testResult("bi_noclip_tx", bi, color);
 
         System.err.println("Test passed.");
+    }
+
+    /*
+     * We assume that colors with slightly different components
+     * are the same. This is done just in order to workaround
+     * peculiarities of OGL rendering pipeline on some platforms.
+     * See CR 6989217 for more details.
+     */
+     private static boolean isSameColor(int color1, int color2) {
+        final int tolerance = 2;
+
+        for (int i = 0; i < 32; i += 8) {
+            int c1 = 0xff & (color1 >> i);
+            int c2 = 0xff & (color2 >> i);
+
+            if (Math.abs(c1 - c2) > tolerance) {
+                return false;
+            }
+        }
+        return true;
     }
 }

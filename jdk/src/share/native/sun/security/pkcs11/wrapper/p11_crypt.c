@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -114,8 +114,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE IBUF[MAX_STACK_BUFFER_LEN];
-    CK_BYTE OBUF[MAX_STACK_BUFFER_LEN];
+
     CK_BYTE_PTR inBufP;
     CK_BYTE_PTR outBufP;
     CK_ULONG ckEncryptedPartLen;
@@ -125,50 +124,27 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
-    if (jInLen > MAX_STACK_BUFFER_LEN) {
-      inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
-      if (inBufP == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+    inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+    if (inBufP == NULL) { return 0; }
+
+    outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+    if (outBufP == NULL) {
+        // Make sure to release inBufP
+        (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         return 0;
-      }
-    } else {
-      inBufP = IBUF;
-    }
-    (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
-    if ((*env)->ExceptionCheck(env)) {
-      if (inBufP != IBUF) { free(inBufP); }
-      return 0;
     }
 
     ckEncryptedPartLen = jOutLen;
-    if (jOutLen > MAX_STACK_BUFFER_LEN) {
-      outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
-      if (outBufP == NULL) {
-        if (inBufP != IBUF) {
-          free(inBufP);
-        }
-        JNU_ThrowOutOfMemoryError(env, 0);
-        return 0;
-      }
-    } else {
-      outBufP = OBUF;
-    }
 
-    rv = (*ckpFunctions->C_Encrypt)(ckSessionHandle, inBufP, jInLen,
-                                    outBufP, &ckEncryptedPartLen);
+    rv = (*ckpFunctions->C_Encrypt)(ckSessionHandle,
+                                    (CK_BYTE_PTR)(inBufP + jInOfs), jInLen,
+                                    (CK_BYTE_PTR)(outBufP + jOutOfs),
+                                    &ckEncryptedPartLen);
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (ckEncryptedPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckEncryptedPartLen,
-                                   (jbyte *)outBufP);
-      }
-    }
-    if (inBufP != IBUF) {
-      free(inBufP);
-    }
-    if (outBufP != OBUF) {
-      free(outBufP);
-    }
+    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+
+    ckAssertReturnValueOK(env, rv);
     return ckEncryptedPartLen;
 }
 #endif
@@ -193,8 +169,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE IBUF[MAX_STACK_BUFFER_LEN];
-    CK_BYTE OBUF[MAX_STACK_BUFFER_LEN];
+
     CK_BYTE_PTR inBufP;
     CK_BYTE_PTR outBufP;
     CK_ULONG ckEncryptedPartLen;
@@ -205,64 +180,45 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-      inBufP = (CK_BYTE_PTR)(directIn + jInOfs);
+      inBufP = (CK_BYTE_PTR) directIn;
     } else {
-      if (jInLen > MAX_STACK_BUFFER_LEN) {
-        inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
-        if (inBufP == NULL) {
-          JNU_ThrowOutOfMemoryError(env, 0);
+      inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      if (inBufP == NULL) { return 0; }
+    }
+
+    if (directOut != 0) {
+      outBufP = (CK_BYTE_PTR) directOut;
+    } else {
+      outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+      if (outBufP == NULL) {
+          // Make sure to release inBufP
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
           return 0;
-        }
-      } else {
-        inBufP = IBUF;
-      }
-      (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
-      if ((*env)->ExceptionCheck(env)) {
-        if (directIn == 0 && inBufP != IBUF) { free(inBufP); }
-        return 0;
       }
     }
 
     ckEncryptedPartLen = jOutLen;
-    if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR)(directOut + jOutOfs);
-    } else {
-      if (jOutLen > MAX_STACK_BUFFER_LEN) {
-        outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
-        if (outBufP == NULL) {
-          if (directIn == 0 && inBufP != IBUF) {
-            free(inBufP);
-          }
-          JNU_ThrowOutOfMemoryError(env, 0);
-          return 0;
-        }
-      } else {
-        outBufP = OBUF;
-      }
-    }
 
     //printf("EU: inBufP=%i, jInOfs=%i, jInLen=%i, outBufP=%i\n",
     //       inBufP, jInOfs, jInLen, outBufP);
 
     rv = (*ckpFunctions->C_EncryptUpdate)(ckSessionHandle,
-                                          inBufP, jInLen,
-                                          outBufP, &ckEncryptedPartLen);
+                                          (CK_BYTE_PTR)(inBufP + jInOfs), jInLen,
+                                          (CK_BYTE_PTR)(outBufP + jOutOfs),
+                                          &ckEncryptedPartLen);
 
     //printf("EU: ckEncryptedPartLen=%i\n", ckEncryptedPartLen);
 
-    if (directIn == 0 && inBufP != IBUF) {
-      free(inBufP);
+    if (directIn == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (directOut == 0 && ckEncryptedPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckEncryptedPartLen,
-                                   (jbyte *)outBufP);
-      }
+    if (directOut == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != OBUF) {
-      free(outBufP);
-    }
+
+    ckAssertReturnValueOK(env, rv);
+
     return ckEncryptedPartLen;
 }
 #endif
@@ -284,7 +240,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptFinal
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE BUF[MAX_STACK_BUFFER_LEN];
     CK_BYTE_PTR outBufP;
     CK_ULONG ckLastEncryptedPartLen;
 
@@ -293,31 +248,29 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptFinal
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
-    ckLastEncryptedPartLen = jOutLen;
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR)(directOut + jOutOfs);
+      outBufP = (CK_BYTE_PTR) directOut;
     } else {
-      // output length should always be less than MAX_STACK_BUFFER_LEN
-      outBufP = BUF;
+      outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+      if (outBufP == NULL) { return 0; }
     }
+
+    ckLastEncryptedPartLen = jOutLen;
 
     //printf("EF: outBufP=%i\n", outBufP);
 
-    rv = (*ckpFunctions->C_EncryptFinal)(ckSessionHandle, outBufP,
+    rv = (*ckpFunctions->C_EncryptFinal)(ckSessionHandle,
+                                         (CK_BYTE_PTR)(outBufP + jOutOfs),
                                          &ckLastEncryptedPartLen);
 
     //printf("EF: ckLastEncryptedPartLen=%i", ckLastEncryptedPartLen);
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (directOut == 0 && ckLastEncryptedPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckLastEncryptedPartLen,
-                                   (jbyte *)outBufP);
-      }
+    if (directOut == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
     }
 
-    if (directOut == 0 && outBufP != BUF) {
-      free(outBufP);
-    }
+    ckAssertReturnValueOK(env, rv);
+
     return ckLastEncryptedPartLen;
 }
 #endif
@@ -381,8 +334,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE IBUF[MAX_STACK_BUFFER_LEN];
-    CK_BYTE OBUF[MAX_STACK_BUFFER_LEN];
+
     CK_BYTE_PTR inBufP;
     CK_BYTE_PTR outBufP;
     CK_ULONG ckPartLen;
@@ -392,49 +344,27 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
-    if (jInLen > MAX_STACK_BUFFER_LEN) {
-      inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
-      if (inBufP == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+    inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+    if (inBufP == NULL) { return 0; }
+
+    outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+    if (outBufP == NULL) {
+        // Make sure to release inBufP
+        (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         return 0;
-      }
-    } else {
-      inBufP = IBUF;
-    }
-    (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
-    if ((*env)->ExceptionCheck(env)) {
-      if (inBufP != IBUF) { free(inBufP); }
-      return 0;
     }
 
     ckPartLen = jOutLen;
-    if (jOutLen > MAX_STACK_BUFFER_LEN) {
-      outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
-      if (outBufP == NULL) {
-        if (inBufP != IBUF) {
-          free(inBufP);
-        }
-        JNU_ThrowOutOfMemoryError(env, 0);
-        return 0;
-      }
-    } else {
-      outBufP = OBUF;
-    }
-    rv = (*ckpFunctions->C_Decrypt)(ckSessionHandle, inBufP, jInLen,
-                                    outBufP, &ckPartLen);
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (ckPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckPartLen,
-                                   (jbyte *)outBufP);
-      }
-    }
-    if (inBufP != IBUF) {
-      free(inBufP);
-    }
-    if (outBufP != OBUF) {
-      free(outBufP);
-    }
+    rv = (*ckpFunctions->C_Decrypt)(ckSessionHandle,
+                                    (CK_BYTE_PTR)(inBufP + jInOfs), jInLen,
+                                    (CK_BYTE_PTR)(outBufP + jOutOfs),
+                                    &ckPartLen);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
+
+    ckAssertReturnValueOK(env, rv);
 
     return ckPartLen;
 }
@@ -460,8 +390,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE IBUF[MAX_STACK_BUFFER_LEN];
-    CK_BYTE OBUF[MAX_STACK_BUFFER_LEN];
+
     CK_BYTE_PTR inBufP;
     CK_BYTE_PTR outBufP;
     CK_ULONG ckDecryptedPartLen;
@@ -472,59 +401,39 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-      inBufP = (CK_BYTE_PTR)(directIn + jInOfs);
+      inBufP = (CK_BYTE_PTR) directIn;
     } else {
-      if (jInLen > MAX_STACK_BUFFER_LEN) {
-        inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
-        if (inBufP == NULL) {
-          JNU_ThrowOutOfMemoryError(env, 0);
+      inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      if (inBufP == NULL) { return 0; }
+    }
+
+    if (directOut != 0) {
+      outBufP = (CK_BYTE_PTR) directOut;
+    } else {
+      outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+      if (outBufP == NULL) {
+          // Make sure to release inBufP
+          (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
           return 0;
-        }
-      } else {
-        inBufP = IBUF;
-      }
-      (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
-      if ((*env)->ExceptionCheck(env)) {
-        if (directIn == 0 && inBufP != IBUF) { free(inBufP); }
-        return 0;
       }
     }
 
     ckDecryptedPartLen = jOutLen;
-    if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR)(directOut + jOutOfs);
-    } else {
-      if (jOutLen > MAX_STACK_BUFFER_LEN) {
-        outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
-        if (outBufP == NULL) {
-          if (directIn == 0 && inBufP != IBUF) {
-            free(inBufP);
-          }
-          JNU_ThrowOutOfMemoryError(env, 0);
-          return 0;
-      }
-      } else {
-        outBufP = OBUF;
-      }
+
+    rv = (*ckpFunctions->C_DecryptUpdate)(ckSessionHandle,
+                                          (CK_BYTE_PTR)(inBufP + jInOfs), jInLen,
+                                          (CK_BYTE_PTR)(outBufP + jOutOfs),
+                                          &ckDecryptedPartLen);
+    if (directIn == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
 
-    rv = (*ckpFunctions->C_DecryptUpdate)(ckSessionHandle, inBufP, jInLen,
-                                          outBufP, &ckDecryptedPartLen);
-
-    if (directIn == 0 && inBufP != IBUF) {
-      free(inBufP);
+    if (directOut == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
     }
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (directOut == 0 && ckDecryptedPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckDecryptedPartLen,
-                                   (jbyte *)outBufP);
-      }
-    }
+    ckAssertReturnValueOK(env, rv);
 
-    if (directOut == 0 && outBufP != OBUF) {
-      free(outBufP);
-    }
     return ckDecryptedPartLen;
 }
 
@@ -547,7 +456,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptFinal
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE BUF[MAX_STACK_BUFFER_LEN];
     CK_BYTE_PTR outBufP;
     CK_ULONG ckLastPartLen;
 
@@ -556,27 +464,26 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptFinal
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
-    ckLastPartLen = jOutLen;
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR)(directOut + jOutOfs);
+      outBufP = (CK_BYTE_PTR) directOut;
     } else {
-      // jOutLen should always be less than MAX_STACK_BUFFER_LEN
-      outBufP = BUF;
+      outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
+      if (outBufP == NULL) { return 0; }
     }
 
-    rv = (*ckpFunctions->C_DecryptFinal)(ckSessionHandle, outBufP,
+    ckLastPartLen = jOutLen;
+
+    rv = (*ckpFunctions->C_DecryptFinal)(ckSessionHandle,
+                                         (CK_BYTE_PTR)(outBufP + jOutOfs),
                                          &ckLastPartLen);
 
-    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-      if (directOut == 0 && ckLastPartLen > 0) {
-        (*env)->SetByteArrayRegion(env, jOut, jOutOfs, ckLastPartLen,
-                                   (jbyte *)outBufP);
-      }
+    if (directOut == 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_ABORT);
+
     }
 
-    if (directOut == 0 && outBufP != BUF) {
-      free(outBufP);
-    }
+    ckAssertReturnValueOK(env, rv);
+
     return ckLastPartLen;
 }
 #endif

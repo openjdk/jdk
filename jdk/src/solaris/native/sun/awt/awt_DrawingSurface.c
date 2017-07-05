@@ -264,7 +264,7 @@ awt_DrawingSurface_GetDrawingSurfaceInfo(JAWT_DrawingSurface* ds)
 #ifndef XAWT
     px->drawable = XtWindow(cdata->widget);
 #else
-    px->drawable = JNU_GetLongFieldAsPtr(env, peer, windowID);
+    px->drawable = (*env)->GetLongField(env, peer, windowID);
 #endif
     px->display = awt_display;
 

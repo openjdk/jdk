@@ -158,7 +158,7 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
   char *phost = NULL;
   char *mode = NULL;
   int pport = 0;
-  int use_proxy;
+  int use_proxy = 0;
   int use_same_proxy = 0;
   const char* urlhost;
   jobject isa = NULL;

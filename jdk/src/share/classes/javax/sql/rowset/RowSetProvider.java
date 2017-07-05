@@ -28,6 +28,7 @@ package javax.sql.rowset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.SQLException;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -255,13 +256,19 @@ public class RowSetProvider {
      * Use the ServiceLoader mechanism to load  the default RowSetFactory
      * @return default RowSetFactory Implementation
      */
-    static private RowSetFactory loadViaServiceLoader() {
+    static private RowSetFactory loadViaServiceLoader() throws SQLException {
         RowSetFactory theFactory = null;
-        trace("***in loadViaServiceLoader()");
-        for (RowSetFactory factory : ServiceLoader.load(javax.sql.rowset.RowSetFactory.class)) {
-            trace(" Loading done by the java.util.ServiceLoader :" + factory.getClass().getName());
-            theFactory = factory;
-            break;
+        try {
+            trace("***in loadViaServiceLoader():");
+            for (RowSetFactory factory : ServiceLoader.load(javax.sql.rowset.RowSetFactory.class)) {
+                trace(" Loading done by the java.util.ServiceLoader :" + factory.getClass().getName());
+                theFactory = factory;
+                break;
+            }
+        } catch (ServiceConfigurationError e) {
+            throw new SQLException(
+                    "RowSetFactory: Error locating RowSetFactory using Service "
+                    + "Loader API: " + e, e);
         }
         return theFactory;
 
