@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.security.SecureRandom;
  * - ARCFOUR (RC4 compatible)
  *
  * - Cipher modes ECB, CBC, CFB, OFB, PCBC, CTR, and CTS for all block ciphers
+ *   and mode GCM for AES cipher
  *
  * - Cipher padding ISO10126Padding for non-PKCS#5 block ciphers and
  *   NoPadding and PKCS5Padding for all block ciphers
@@ -90,7 +91,12 @@ public final class SunJCE extends Provider {
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
 
-    static final SecureRandom RANDOM = new SecureRandom();
+    // lazy initialize SecureRandom to avoid potential recursion if Sun
+    // provider has not been installed yet
+    private static class SecureRandomHolder {
+        static final SecureRandom RANDOM = new SecureRandom();
+    }
+    static SecureRandom getRandom() { return SecureRandomHolder.RANDOM; }
 
     public SunJCE() {
         /* We are the "SunJCE" provider */
@@ -100,7 +106,7 @@ public final class SunJCE extends Provider {
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
-            "|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
+            "|GCM|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
             "|OFB72|OFB80|OFB88|OFB96|OFB104|OFB112|OFB120|OFB128";
         final String BLOCK_PADS = "NOPADDING|PKCS5PADDING|ISO10126PADDING";
 
@@ -258,6 +264,9 @@ public final class SunJCE extends Provider {
                     put("Cipher.AES_128/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_CFB_NoPadding");
                     put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.4", "AES_128/CFB/NoPadding");
                     put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.4", "AES_128/CFB/NoPadding");
+                    put("Cipher.AES_128/GCM/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_GCM_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.6", "AES_128/GCM/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.6", "AES_128/GCM/NoPadding");
 
                     put("Cipher.AES_192/ECB/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_ECB_NoPadding");
                     put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.21", "AES_192/ECB/NoPadding");
@@ -271,7 +280,9 @@ public final class SunJCE extends Provider {
                     put("Cipher.AES_192/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_CFB_NoPadding");
                     put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.24", "AES_192/CFB/NoPadding");
                     put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.24", "AES_192/CFB/NoPadding");
-
+                    put("Cipher.AES_192/GCM/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_GCM_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.26", "AES_192/GCM/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.26", "AES_192/GCM/NoPadding");
 
                     put("Cipher.AES_256/ECB/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_ECB_NoPadding");
                     put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.41", "AES_256/ECB/NoPadding");
@@ -285,6 +296,9 @@ public final class SunJCE extends Provider {
                     put("Cipher.AES_256/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_CFB_NoPadding");
                     put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.44", "AES_256/CFB/NoPadding");
                     put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.44", "AES_256/CFB/NoPadding");
+                    put("Cipher.AES_256/GCM/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_GCM_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.46", "AES_256/GCM/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.46", "AES_256/GCM/NoPadding");
 
                     put("Cipher.AESWrap", "com.sun.crypto.provider.AESWrapCipher$General");
                     put("Cipher.AESWrap SupportedModes", "ECB");
@@ -509,6 +523,8 @@ public final class SunJCE extends Provider {
                     put("AlgorithmParameters.AES",
                         "com.sun.crypto.provider.AESParameters");
                     put("Alg.Alias.AlgorithmParameters.Rijndael", "AES");
+                    put("AlgorithmParameters.GCM",
+                        "com.sun.crypto.provider.GCMParameters");
 
 
                     put("AlgorithmParameters.RC2",

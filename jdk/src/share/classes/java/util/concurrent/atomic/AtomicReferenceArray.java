@@ -159,13 +159,9 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param newValue the new value
      * @return the previous value
      */
+    @SuppressWarnings("unchecked")
     public final E getAndSet(int i, E newValue) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            E current = getRaw(offset);
-            if (compareAndSetRaw(offset, current, newValue))
-                return current;
-        }
+        return (E)unsafe.getAndSetObject(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -197,7 +193,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param i the index
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public final boolean weakCompareAndSet(int i, E expect, E update) {
         return compareAndSet(i, expect, update);

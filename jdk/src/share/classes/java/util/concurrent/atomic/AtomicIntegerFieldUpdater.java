@@ -159,11 +159,11 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the previous value
      */
     public int getAndSet(T obj, int newValue) {
-        for (;;) {
-            int current = get(obj);
-            if (compareAndSet(obj, current, newValue))
-                return current;
-        }
+        int prev;
+        do {
+            prev = get(obj);
+        } while (!compareAndSet(obj, prev, newValue));
+        return prev;
     }
 
     /**
@@ -174,12 +174,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the previous value
      */
     public int getAndIncrement(T obj) {
-        for (;;) {
-            int current = get(obj);
-            int next = current + 1;
-            if (compareAndSet(obj, current, next))
-                return current;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev + 1;
+        } while (!compareAndSet(obj, prev, next));
+        return prev;
     }
 
     /**
@@ -190,12 +190,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the previous value
      */
     public int getAndDecrement(T obj) {
-        for (;;) {
-            int current = get(obj);
-            int next = current - 1;
-            if (compareAndSet(obj, current, next))
-                return current;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev - 1;
+        } while (!compareAndSet(obj, prev, next));
+        return prev;
     }
 
     /**
@@ -207,12 +207,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the previous value
      */
     public int getAndAdd(T obj, int delta) {
-        for (;;) {
-            int current = get(obj);
-            int next = current + delta;
-            if (compareAndSet(obj, current, next))
-                return current;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev + delta;
+        } while (!compareAndSet(obj, prev, next));
+        return prev;
     }
 
     /**
@@ -223,12 +223,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the updated value
      */
     public int incrementAndGet(T obj) {
-        for (;;) {
-            int current = get(obj);
-            int next = current + 1;
-            if (compareAndSet(obj, current, next))
-                return next;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev + 1;
+        } while (!compareAndSet(obj, prev, next));
+        return next;
     }
 
     /**
@@ -239,12 +239,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the updated value
      */
     public int decrementAndGet(T obj) {
-        for (;;) {
-            int current = get(obj);
-            int next = current - 1;
-            if (compareAndSet(obj, current, next))
-                return next;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev - 1;
+        } while (!compareAndSet(obj, prev, next));
+        return next;
     }
 
     /**
@@ -256,12 +256,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @return the updated value
      */
     public int addAndGet(T obj, int delta) {
-        for (;;) {
-            int current = get(obj);
-            int next = current + delta;
-            if (compareAndSet(obj, current, next))
-                return next;
-        }
+        int prev, next;
+        do {
+            prev = get(obj);
+            next = prev + delta;
+        } while (!compareAndSet(obj, prev, next));
+        return next;
     }
 
     /**
@@ -359,6 +359,36 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         public final int get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
             return unsafe.getIntVolatile(obj, offset);
+        }
+
+        public int getAndSet(T obj, int newValue) {
+            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+            return unsafe.getAndSetInt(obj, offset, newValue);
+        }
+
+        public int getAndIncrement(T obj) {
+            return getAndAdd(obj, 1);
+        }
+
+        public int getAndDecrement(T obj) {
+            return getAndAdd(obj, -1);
+        }
+
+        public int getAndAdd(T obj, int delta) {
+            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+            return unsafe.getAndAddInt(obj, offset, delta);
+        }
+
+        public int incrementAndGet(T obj) {
+            return getAndAdd(obj, 1) + 1;
+        }
+
+        public int decrementAndGet(T obj) {
+             return getAndAdd(obj, -1) - 1;
+        }
+
+        public int addAndGet(T obj, int delta) {
+            return getAndAdd(obj, delta) + delta;
         }
 
         private void ensureProtectedAccess(T obj) {
