@@ -1024,7 +1024,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 return;
             }
         }
-
+        @SuppressWarnings("deprecation")
         public void mouseDragged(MouseEvent e) {
 
             if ( startingBounds == null ) {

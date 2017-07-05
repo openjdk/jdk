@@ -128,7 +128,7 @@ public class JConsole extends JFrame
             hotspotMI.setMnemonic(Resources.getMnemonicInt(Messages.HOTSPOT_MBEANS_ELLIPSIS));
             hotspotMI.setAccelerator(KeyStroke.
                                      getKeyStroke(KeyEvent.VK_H,
-                                                  InputEvent.CTRL_MASK));
+                                                  InputEvent.CTRL_DOWN_MASK));
             hotspotMI.addActionListener(this);
             connectionMenu.add(hotspotMI);
 
@@ -138,7 +138,7 @@ public class JConsole extends JFrame
         connectMI = new JMenuItem(Messages.NEW_CONNECTION_ELLIPSIS);
         connectMI.setMnemonic(Resources.getMnemonicInt(Messages.NEW_CONNECTION_ELLIPSIS));
         connectMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
-                                                        InputEvent.CTRL_MASK));
+                                                        InputEvent.CTRL_DOWN_MASK));
         connectMI.addActionListener(this);
         connectionMenu.add(connectMI);
 
@@ -147,7 +147,7 @@ public class JConsole extends JFrame
         exitMI = new JMenuItem(Messages.EXIT);
         exitMI.setMnemonic(Resources.getMnemonicInt(Messages.EXIT));
         exitMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4,
-                                                     InputEvent.ALT_MASK));
+                                                     InputEvent.ALT_DOWN_MASK));
         exitMI.addActionListener(this);
         connectionMenu.add(exitMI);
 
@@ -223,7 +223,7 @@ public class JConsole extends JFrame
             tileMI = new JMenuItem(Messages.TILE);
             tileMI.setMnemonic(Resources.getMnemonicInt(Messages.TILE));
             tileMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
-                                                         InputEvent.CTRL_MASK));
+                                                         InputEvent.CTRL_DOWN_MASK));
             tileMI.addActionListener(JConsole.this);
             add(tileMI);
 
