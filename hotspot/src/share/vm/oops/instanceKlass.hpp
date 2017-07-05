@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1359,7 +1359,7 @@ public:
   // JSR-292 support
   MemberNameTable* member_names() { return _member_names; }
   void set_member_names(MemberNameTable* member_names) { _member_names = member_names; }
-  bool add_member_name(Handle member_name);
+  oop add_member_name(Handle member_name, bool intern);
 
 public:
   // JVMTI support

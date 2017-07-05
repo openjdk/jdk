@@ -28,7 +28,6 @@
  *          ManagementFactory.getPlatformManagementInterfaces() method
  * @author  Frederic Parain
  *
- * @modules jdk.management
  * @run main GetPlatformManagementInterfaces
  */
 

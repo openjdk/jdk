@@ -20,6 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @modules jdk.aot/jdk.tools.jaotc
+ *          jdk.aot/jdk.tools.jaotc.collect
+ * @run junit/othervm jdk.tools.jaotc.test.collect.ClassSourceTest
+ */
+
 package jdk.tools.jaotc.test.collect;
 
 import org.junit.Assert;

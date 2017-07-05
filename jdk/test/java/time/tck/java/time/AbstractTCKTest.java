@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,13 +69,34 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.Formatter;
+import java.util.Map;
 
 /**
  * Base test class.
  */
 public abstract class AbstractTCKTest {
+
+    /**
+     * Map from package name to the serialVersionUID of the .Ser class for the package.
+     */
+    private static Map<String, Long> serialVersionUIDs = Map.of(
+                "java.time",        -7683839454370182990L,
+                "java.time.chrono", -6103370247208168577L,
+                "java.time.zone",   -8885321777449118786L
+                );
+
+    /**
+     * Returns the serialVersionUID for the class.
+     * The SUIDs are defined by the specification for each class.
+     * @param serClass the class to return the SUID of
+     * @return returns the serialVersionUID for the class
+     */
+    public final static long getSUID(Class<?> serClass) {
+        String pkgName = serClass.getPackageName();
+        return serialVersionUIDs.get(pkgName);
+    }
+
 
     protected static boolean isIsoLeap(long year) {
         if (year % 4 != 0) {
@@ -111,10 +132,8 @@ public abstract class AbstractTCKTest {
 
     protected static void assertSerializedBySer(Object object, byte[] expectedBytes, byte[]... matches) throws Exception {
         String serClass = object.getClass().getPackage().getName() + ".Ser";
-        Class<?> serCls = Class.forName(serClass);
-        Field field = serCls.getDeclaredField("serialVersionUID");
-        field.setAccessible(true);
-        long serVer = (Long) field.get(null);
+        long serVer = getSUID(object.getClass());
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos) ) {
             oos.writeObject(object);
@@ -172,9 +191,8 @@ public abstract class AbstractTCKTest {
      * @throws Exception if an unexpected condition occurs
      */
     protected static void assertNotSerializable(Class<?> serClass) throws Exception {
-        Field field = serClass.getDeclaredField("serialVersionUID");
-        field.setAccessible(true);
-        long serVer = (Long) field.get(null);
+        long serVer = getSUID(serClass);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream out = new DataOutputStream(baos)) {
             out.writeShort(ObjectStreamConstants.STREAM_MAGIC);
@@ -200,7 +218,6 @@ public abstract class AbstractTCKTest {
         }
         fail("Class should not be deserializable " + serClass.getName());
     }
-
 
     /**
      * Utility method to dump a byte array in a java syntax.
