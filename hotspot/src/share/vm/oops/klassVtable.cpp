@@ -61,7 +61,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(int &vtable_length,
                                                        objArrayOop methods,
                                                        AccessFlags class_flags,
                                                        Handle classloader,
-                                                       symbolHandle classname,
+                                                       Symbol* classname,
                                                        objArrayOop local_interfaces,
                                                        TRAPS
                                                        ) {
@@ -210,7 +210,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 // the superclass's method, but might indirectly override a super-super class's vtable entry
 // If none found, return a null superk, else return the superk of the method this does override
 instanceKlass* klassVtable::find_transitive_override(instanceKlass* initialsuper, methodHandle target_method,
-                            int vtable_index, Handle target_loader, symbolHandle target_classname, Thread * THREAD) {
+                            int vtable_index, Handle target_loader, Symbol* target_classname, Thread * THREAD) {
   instanceKlass* superk = initialsuper;
   while (superk != NULL && superk->super() != NULL) {
     instanceKlass* supersuperklass = instanceKlass::cast(superk->super());
@@ -218,9 +218,9 @@ instanceKlass* klassVtable::find_transitive_override(instanceKlass* initialsuper
     if (vtable_index < ssVtable->length()) {
       methodOop super_method = ssVtable->method_at(vtable_index);
 #ifndef PRODUCT
-      symbolHandle name(THREAD,target_method()->name());
-      symbolHandle signature(THREAD,target_method()->signature());
-      assert(super_method->name() == name() && super_method->signature() == signature(), "vtable entry name/sig mismatch");
+      Symbol* name= target_method()->name();
+      Symbol* signature = target_method()->signature();
+      assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
       if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
 #ifndef PRODUCT
@@ -294,14 +294,14 @@ bool klassVtable::update_inherited_vtable(instanceKlass* klass, methodHandle tar
   // which can block for gc, once we are in this loop, use handles
   // For classfiles built with >= jdk7, we now look for transitive overrides
 
-  symbolHandle name(THREAD,target_method()->name());
-  symbolHandle signature(THREAD,target_method()->signature());
+  Symbol* name = target_method()->name();
+  Symbol* signature = target_method()->signature();
   Handle target_loader(THREAD, _klass->class_loader());
-  symbolHandle target_classname(THREAD, _klass->name());
+  Symbol*  target_classname = _klass->name();
   for(int i = 0; i < super_vtable_len; i++) {
     methodOop super_method = method_at(i);
     // Check if method name matches
-    if (super_method->name() == name() && super_method->signature() == signature()) {
+    if (super_method->name() == name && super_method->signature() == signature) {
 
       // get super_klass for method_holder for the found method
       instanceKlass* super_klass =  instanceKlass::cast(super_method->method_holder());
@@ -406,7 +406,7 @@ void klassVtable::put_method_at(methodOop m, int index) {
 bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
                                          klassOop super,
                                          Handle classloader,
-                                         symbolHandle classname,
+                                         Symbol* classname,
                                          AccessFlags class_flags,
                                          TRAPS) {
   if ((class_flags.is_final() || target_method()->is_final()) ||
@@ -436,8 +436,8 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // search through the super class hierarchy to see if we need
   // a new entry
   ResourceMark rm;
-  symbolOop name = target_method()->name();
-  symbolOop signature = target_method()->signature();
+  Symbol* name = target_method()->name();
+  Symbol* signature = target_method()->signature();
   klassOop k = super;
   methodOop super_method = NULL;
   instanceKlass *holder = NULL;
@@ -485,7 +485,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
 // Support for miranda methods
 
 // get the vtable index of a miranda method with matching "name" and "signature"
-int klassVtable::index_of_miranda(symbolOop name, symbolOop signature) {
+int klassVtable::index_of_miranda(Symbol* name, Symbol* signature) {
   // search from the bottom, might be faster
   for (int i = (length() - 1); i >= 0; i--) {
     methodOop m = table()[i].method();
@@ -516,9 +516,8 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // check if a method is a miranda method, given a class's methods table and it's super
 // the caller must make sure that the method belongs to an interface implemented by the class
 bool klassVtable::is_miranda(methodOop m, objArrayOop class_methods, klassOop super) {
-  symbolOop name = m->name();
-  symbolOop signature = m->signature();
-
+  Symbol* name = m->name();
+  Symbol* signature = m->signature();
   if (instanceKlass::find_method(class_methods, name, signature) == NULL) {
     // did not find it in the method table of the current class
     if (super == NULL) {
@@ -929,8 +928,8 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   // methods needs a handle in case of gc from check_signature_loaders
   for(; i < nof_methods; i++) {
     methodOop m = (methodOop)methods()->obj_at(i);
-    symbolOop method_name = m->name();
-    symbolOop method_signature = m->signature();
+    Symbol* method_name = m->name();
+    Symbol* method_signature = m->signature();
 
     // This is same code as in Linkresolver::lookup_instance_method_in_klasses
     methodOop target = klass->uncached_lookup_method(method_name, method_signature);

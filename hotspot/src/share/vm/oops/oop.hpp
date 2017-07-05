@@ -127,7 +127,6 @@ class oopDesc {
   bool is_instanceRef()        const;
   bool is_array()              const;
   bool is_objArray()           const;
-  bool is_symbol()             const;
   bool is_klass()              const;
   bool is_thread()             const;
   bool is_method()             const;

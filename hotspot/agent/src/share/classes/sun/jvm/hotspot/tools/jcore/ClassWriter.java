@@ -229,7 +229,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_Class: {
                      dos.writeByte(cpConstType);
                      // Klass already resolved. ConstantPool constains klassOop.
-                     Klass refKls = (Klass) cpool.getObjAt(ci);
+                     Klass refKls = (Klass) cpool.getObjAtRaw(ci);
                      String klassName = refKls.getName().asString();
 
                      Short s = (Short) utf8ToIndex.get(klassName);
@@ -255,7 +255,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
                 case JVM_CONSTANT_String: {
                      dos.writeByte(cpConstType);
-                     String str = OopUtilities.stringOopToString(cpool.getObjAt(ci));
+                     String str = OopUtilities.stringOopToString(cpool.getObjAtRaw(ci));
                      Short s = (Short) utf8ToIndex.get(str);
                      dos.writeShort(s.shortValue());
                      if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);

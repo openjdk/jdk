@@ -111,7 +111,7 @@ void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 MarkSweep::MarkAndPushClosure MarkSweep::mark_and_push_closure;
 
-void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(p); }
+void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { assert(*p == NULL || (*p)->is_oop(), ""); mark_and_push(p); }
 void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(p); }
 
 void MarkSweep::follow_stack() {

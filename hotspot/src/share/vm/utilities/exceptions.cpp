@@ -102,10 +102,10 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   return false;
 }
 
-bool Exceptions::special_exception(Thread* thread, const char* file, int line, symbolHandle h_name, const char* message) {
+bool Exceptions::special_exception(Thread* thread, const char* file, int line, Symbol* h_name, const char* message) {
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
-    if (h_name.is_null()) {
+    if (h_name == NULL) {
       // atleast an informative message.
       vm_exit_during_initialization("Exception", message);
     } else {
@@ -161,7 +161,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
 }
 
 
-void Exceptions::_throw_msg(Thread* thread, const char* file, int line, symbolHandle h_name, const char* message, Handle h_loader, Handle h_protection_domain) {
+void Exceptions::_throw_msg(Thread* thread, const char* file, int line, Symbol* h_name, const char* message, Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_name, message)) return;
   // Create and throw exception
@@ -171,7 +171,7 @@ void Exceptions::_throw_msg(Thread* thread, const char* file, int line, symbolHa
 }
 
 // Throw an exception with a message and a cause
-void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line, symbolHandle h_name, const char* message, Handle h_cause, Handle h_loader, Handle h_protection_domain) {
+void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line, Symbol* h_name, const char* message, Handle h_cause, Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_name, message)) return;
   // Create and throw exception and init cause
@@ -179,18 +179,9 @@ void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line, sy
   _throw(thread, file, line, h_exception, message);
 }
 
-// This version creates handles and calls the other version
-void Exceptions::_throw_msg(Thread* thread, const char* file, int line,
-                            symbolOop name, const char* message) {
-  symbolHandle h_name(thread, name);
-  Handle       h_loader(thread, NULL);
-  Handle       h_protection_domain(thread, NULL);
-  Exceptions::_throw_msg(thread, file, line, h_name, message, h_loader, h_protection_domain);
-}
-
 // This version already has a handle for name
 void Exceptions::_throw_msg(Thread* thread, const char* file, int line,
-                            symbolHandle name, const char* message) {
+                            Symbol* name, const char* message) {
   Handle       h_loader(thread, NULL);
   Handle       h_protection_domain(thread, NULL);
   Exceptions::_throw_msg(thread, file, line, name, message, h_loader, h_protection_domain);
@@ -198,13 +189,13 @@ void Exceptions::_throw_msg(Thread* thread, const char* file, int line,
 
 // This version already has a handle for name
 void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line,
-                            symbolHandle name, const char* message, Handle cause) {
+                            Symbol* name, const char* message, Handle cause) {
   Handle       h_loader(thread, NULL);
   Handle       h_protection_domain(thread, NULL);
   Exceptions::_throw_msg_cause(thread, file, line, name, message, cause, h_loader, h_protection_domain);
 }
 
-void Exceptions::_throw_args(Thread* thread, const char* file, int line, symbolHandle h_name, symbolHandle h_signature, JavaCallArguments *args) {
+void Exceptions::_throw_args(Thread* thread, const char* file, int line, Symbol* h_name, Symbol* h_signature, JavaCallArguments *args) {
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_name, NULL)) return;
   // Create and throw exception
@@ -233,7 +224,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
   _throw_oop(THREAD, file, line, exception());
 }
 
-void Exceptions::fthrow(Thread* thread, const char* file, int line, symbolHandle h_name, const char* format, ...) {
+void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
   va_start(ap, format);
@@ -247,8 +238,8 @@ void Exceptions::fthrow(Thread* thread, const char* file, int line, symbolHandle
 // Creates an exception oop, calls the <init> method with the given signature.
 // and returns a Handle
 // Initializes the cause if cause non-null
-Handle Exceptions::new_exception(Thread *thread, symbolHandle h_name,
-                                 symbolHandle signature,
+Handle Exceptions::new_exception(Thread *thread, Symbol* h_name,
+                                 Symbol* signature,
                                  JavaCallArguments *args,
                                  Handle h_cause, Handle h_loader,
                                  Handle h_protection_domain) {
@@ -275,7 +266,7 @@ Handle Exceptions::new_exception(Thread *thread, symbolHandle h_name,
         args->set_receiver(h_exception);
         // Call constructor
         JavaCalls::call_special(&result, klass,
-                                         vmSymbolHandles::object_initializer_name(),
+                                         vmSymbols::object_initializer_name(),
                                          signature,
                                          args,
                                          thread);
@@ -292,8 +283,8 @@ Handle Exceptions::new_exception(Thread *thread, symbolHandle h_name,
       args1.set_receiver(h_exception);
       args1.push_oop(h_cause);
       JavaCalls::call_virtual(&result1, klass,
-                                     vmSymbolHandles::initCause_name(),
-                                     vmSymbolHandles::throwable_throwable_signature(),
+                                     vmSymbols::initCause_name(),
+                                     vmSymbols::throwable_throwable_signature(),
                                      &args1,
                                      thread);
     }
@@ -309,15 +300,15 @@ Handle Exceptions::new_exception(Thread *thread, symbolHandle h_name,
 
 // Convenience method. Calls either the <init>() or <init>(String) method when
 // creating a new exception
-Handle Exceptions::new_exception(Thread* thread, symbolHandle h_name,
+Handle Exceptions::new_exception(Thread* thread, Symbol* h_name,
                                  const char* message, Handle h_cause,
                                  Handle h_loader,
                                  Handle h_protection_domain,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
-  symbolHandle signature;
+  Symbol* signature = NULL;
   if (message == NULL) {
-    signature = vmSymbolHandles::void_method_signature();
+    signature = vmSymbols::void_method_signature();
   } else {
     // We want to allocate storage, but we can't do that if there's
     // a pending exception, so we preserve any pending exception
@@ -348,7 +339,7 @@ Handle Exceptions::new_exception(Thread* thread, symbolHandle h_name,
       return incoming_exception;
     }
     args.push_oop(msg);
-    signature = vmSymbolHandles::string_void_signature();
+    signature = vmSymbols::string_void_signature();
   }
   return new_exception(thread, h_name, signature, &args, h_cause, h_loader, h_protection_domain);
 }
@@ -362,15 +353,14 @@ Handle Exceptions::new_exception(Thread* thread, symbolHandle h_name,
 // point is to push this flag down to class java_lang_String since other
 // classes may need similar functionalities.
 Handle Exceptions::new_exception(Thread* thread,
-                                 symbolOop name,
+                                 Symbol* name,
                                  const char* message,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
 
-  symbolHandle h_name(thread, name);
   Handle       h_loader(thread, NULL);
   Handle       h_prot(thread, NULL);
   Handle       h_cause(thread, NULL);
-  return Exceptions::new_exception(thread, h_name, message, h_cause, h_loader,
+  return Exceptions::new_exception(thread, name, message, h_cause, h_loader,
                                    h_prot, to_utf8_safe);
 }
 

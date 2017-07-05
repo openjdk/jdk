@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/handles.inline.hpp"

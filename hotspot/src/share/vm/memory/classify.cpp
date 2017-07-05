@@ -68,8 +68,6 @@ object_type ClassifyObjectClosure::classify_object(oop obj, bool count) {
     type = typeArray_type;
   } else if (obj->is_objArray()) {
     type = objArray_type;
-  } else if (obj->is_symbol()) {
-    type = symbol_type;
   } else if (obj->is_klass()) {
     Klass* k = ((klassOop)obj)->klass_part();
     if (k->oop_is_instance()) {
@@ -158,8 +156,6 @@ void ClassifyInstanceKlassClosure::do_object(oop obj) {
           name = "_typeArrayKlassKlassObj";
         } else if (obj == Universe::instanceKlassKlassObj()) {
           name = "_instanceKlassKlassObj";
-        } else if (obj == Universe::symbolKlassObj()) {
-          name = "_symbolKlassObj";
         } else if (obj == Universe::methodKlassObj()) {
           name = "_methodKlassObj";
         } else if (obj == Universe::constMethodKlassObj()) {

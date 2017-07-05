@@ -196,7 +196,6 @@ DEF_HANDLE(constantPool     , is_constantPool     )
 DEF_HANDLE(constantPoolCache, is_constantPoolCache)
 DEF_HANDLE(objArray         , is_objArray         )
 DEF_HANDLE(typeArray        , is_typeArray        )
-DEF_HANDLE(symbol           , is_symbol           )
 
 //------------------------------------------------------------------------------------------------------------------------
 // Specific KlassHandles for different Klass types
@@ -233,7 +232,6 @@ DEF_KLASS_HANDLE(typeArrayKlassKlass   , oop_is_typeArrayKlass)
 DEF_KLASS_HANDLE(arrayKlass            , oop_is_array         )
 DEF_KLASS_HANDLE(typeArrayKlass        , oop_is_typeArray_slow)
 DEF_KLASS_HANDLE(objArrayKlass         , oop_is_objArray_slow )
-DEF_KLASS_HANDLE(symbolKlass           , oop_is_symbol        )
 DEF_KLASS_HANDLE(constantPoolKlass     , oop_is_constantPool  )
 DEF_KLASS_HANDLE(constantPoolCacheKlass, oop_is_constantPool  )
 

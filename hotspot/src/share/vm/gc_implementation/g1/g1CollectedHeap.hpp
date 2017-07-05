@@ -40,6 +40,7 @@
 
 class HeapRegion;
 class HeapRegionSeq;
+class HRRSCleanupTask;
 class PermanentGenerationSpec;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
@@ -1099,11 +1100,12 @@ public:
   // all dead. It calls either free_region() or
   // free_humongous_region() depending on the type of the region that
   // is passed to it.
-  void free_region_if_totally_empty(HeapRegion* hr,
-                                    size_t* pre_used,
-                                    FreeRegionList* free_list,
-                                    HumongousRegionSet* humongous_proxy_set,
-                                    bool par);
+  void free_region_if_empty(HeapRegion* hr,
+                            size_t* pre_used,
+                            FreeRegionList* free_list,
+                            HumongousRegionSet* humongous_proxy_set,
+                            HRRSCleanupTask* hrrs_cleanup_task,
+                            bool par);
 
   // It appends the free list to the master free list and updates the
   // master humongous list according to the contents of the proxy

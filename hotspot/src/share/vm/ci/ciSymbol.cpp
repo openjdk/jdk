@@ -30,23 +30,27 @@
 // ------------------------------------------------------------------
 // ciSymbol::ciSymbol
 //
-// Preallocated handle variant.  Used with handles from vmSymboHandles.
-ciSymbol::ciSymbol(symbolHandle h_s, vmSymbols::SID sid)
-  : ciObject(h_s), _sid(sid)
+// Preallocated symbol variant.  Used with symbols from vmSymbols.
+ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
+  : _symbol(s), _sid(sid)
 {
+  assert(_symbol != NULL, "adding null symbol");
+  _symbol->increment_refcount();  // increment ref count
   assert(sid_ok(), "must be in vmSymbols");
 }
 
 // Normal case for non-famous symbols.
-ciSymbol::ciSymbol(symbolOop s)
-  : ciObject(s), _sid(vmSymbols::NO_SID)
+ciSymbol::ciSymbol(Symbol* s)
+  : _symbol(s), _sid(vmSymbols::NO_SID)
 {
+  assert(_symbol != NULL, "adding null symbol");
+  _symbol->increment_refcount();  // increment ref count
   assert(sid_ok(), "must not be in vmSymbols");
 }
 
 // ciSymbol
 //
-// This class represents a symbolOop in the HotSpot virtual
+// This class represents a Symbol* in the HotSpot virtual
 // machine.
 
 // ------------------------------------------------------------------
@@ -55,20 +59,20 @@ ciSymbol::ciSymbol(symbolOop s)
 // The text of the symbol as a null-terminated C string.
 const char* ciSymbol::as_utf8() {
   VM_QUICK_ENTRY_MARK;
-  symbolOop s = get_symbolOop();
+  Symbol* s = get_symbol();
   return s->as_utf8();
 }
 
 // ------------------------------------------------------------------
 // ciSymbol::base
-jbyte* ciSymbol::base() {
-  GUARDED_VM_ENTRY(return get_symbolOop()->base();)
+const jbyte* ciSymbol::base() {
+  GUARDED_VM_ENTRY(return get_symbol()->base();)
 }
 
 // ------------------------------------------------------------------
 // ciSymbol::byte_at
 int ciSymbol::byte_at(int i) {
-  GUARDED_VM_ENTRY(return get_symbolOop()->byte_at(i);)
+  GUARDED_VM_ENTRY(return get_symbol()->byte_at(i);)
 }
 
 // ------------------------------------------------------------------
@@ -76,7 +80,7 @@ int ciSymbol::byte_at(int i) {
 //
 // Tests if the symbol starts with the given prefix.
 bool ciSymbol::starts_with(const char* prefix, int len) const {
-  GUARDED_VM_ENTRY(return get_symbolOop()->starts_with(prefix, len);)
+  GUARDED_VM_ENTRY(return get_symbol()->starts_with(prefix, len);)
 }
 
 // ------------------------------------------------------------------
@@ -84,13 +88,13 @@ bool ciSymbol::starts_with(const char* prefix, int len) const {
 //
 // Determines where the symbol contains the given substring.
 int ciSymbol::index_of_at(int i, const char* str, int len) const {
-  GUARDED_VM_ENTRY(return get_symbolOop()->index_of_at(i, str, len);)
+  GUARDED_VM_ENTRY(return get_symbol()->index_of_at(i, str, len);)
 }
 
 // ------------------------------------------------------------------
 // ciSymbol::utf8_length
 int ciSymbol::utf8_length() {
-  GUARDED_VM_ENTRY(return get_symbolOop()->utf8_length();)
+  GUARDED_VM_ENTRY(return get_symbol()->utf8_length();)
 }
 
 // ------------------------------------------------------------------
@@ -107,7 +111,7 @@ void ciSymbol::print_impl(outputStream* st) {
 //
 // Print the value of this symbol on an outputStream
 void ciSymbol::print_symbol_on(outputStream *st) {
-  GUARDED_VM_ENTRY(get_symbolOop()->print_symbol_on(st);)
+  GUARDED_VM_ENTRY(get_symbol()->print_symbol_on(st);)
 }
 
 // ------------------------------------------------------------------
@@ -116,15 +120,13 @@ void ciSymbol::print_symbol_on(outputStream *st) {
 // Make a ciSymbol from a C string (implementation).
 ciSymbol* ciSymbol::make_impl(const char* s) {
   EXCEPTION_CONTEXT;
-  // For some reason, oopFactory::new_symbol doesn't declare its
-  // char* argument as const.
-  symbolOop sym = oopFactory::new_symbol((char*)s, (int)strlen(s), THREAD);
+  TempNewSymbol sym = SymbolTable::new_symbol(s, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     CURRENT_THREAD_ENV->record_out_of_memory_failure();
     return ciEnv::_unloaded_cisymbol;
   }
-  return CURRENT_THREAD_ENV->get_object(sym)->as_symbol();
+  return CURRENT_THREAD_ENV->get_symbol(sym);
 }
 
 // ------------------------------------------------------------------

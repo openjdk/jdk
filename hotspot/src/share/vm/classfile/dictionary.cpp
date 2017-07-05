@@ -36,7 +36,7 @@ int               Dictionary::_current_class_index =    0;
 
 
 Dictionary::Dictionary(int table_size)
-  : TwoOopHashtable(table_size, sizeof(DictionaryEntry)) {
+  : TwoOopHashtable<klassOop>(table_size, sizeof(DictionaryEntry)) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
@@ -45,7 +45,7 @@ Dictionary::Dictionary(int table_size)
 
 Dictionary::Dictionary(int table_size, HashtableBucket* t,
                        int number_of_entries)
-  : TwoOopHashtable(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
+  : TwoOopHashtable<klassOop>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
@@ -54,7 +54,7 @@ Dictionary::Dictionary(int table_size, HashtableBucket* t,
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, klassOop klass,
                                        oop loader) {
   DictionaryEntry* entry;
-  entry = (DictionaryEntry*)Hashtable::new_entry(hash, klass);
+  entry = (DictionaryEntry*)Hashtable<klassOop>::new_entry(hash, klass);
   entry->set_loader(loader);
   entry->set_pd_set(NULL);
   return entry;
@@ -62,7 +62,7 @@ DictionaryEntry* Dictionary::new_entry(unsigned int hash, klassOop klass,
 
 
 DictionaryEntry* Dictionary::new_entry() {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable::new_entry(0L, NULL);
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<klassOop>::new_entry(0L, NULL);
   entry->set_loader(NULL);
   entry->set_pd_set(NULL);
   return entry;
@@ -76,7 +76,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
     entry->set_pd_set(to_delete->next());
     delete to_delete;
   }
-  Hashtable::free_entry(entry);
+  Hashtable<klassOop>::free_entry(entry);
 }
 
 
@@ -298,7 +298,7 @@ void Dictionary::always_strong_classes_do(OopClosure* blk) {
     for (DictionaryEntry *probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      oop e = probe->klass();
+      klassOop e = probe->klass();
       oop class_loader = probe->loader();
       if (is_strongly_reachable(class_loader, e)) {
         blk->do_oop((oop*)probe->klass_addr());
@@ -421,11 +421,11 @@ klassOop Dictionary::try_get_next_class() {
 // also cast to volatile;  we do this to ensure store order is maintained
 // by the compilers.
 
-void Dictionary::add_klass(symbolHandle class_name, Handle class_loader,
+void Dictionary::add_klass(Symbol* class_name, Handle class_loader,
                            KlassHandle obj) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(obj() != NULL, "adding NULL obj");
-  assert(Klass::cast(obj())->name() == class_name(), "sanity check on name");
+  assert(Klass::cast(obj())->name() == class_name, "sanity check on name");
 
   unsigned int hash = compute_hash(class_name, class_loader);
   int index = hash_to_index(hash);
@@ -444,15 +444,14 @@ void Dictionary::add_klass(symbolHandle class_name, Handle class_loader,
 // Callers should be aware that an entry could be added just after
 // _buckets[index] is read here, so the caller will not see the new entry.
 DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
-                                       symbolHandle class_name,
+                                       Symbol* class_name,
                                        Handle class_loader) {
-  symbolOop name_ = class_name();
-  oop loader_ = class_loader();
+  oop loader = class_loader();
   debug_only(_lookup_count++);
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
-    if (entry->hash() == hash && entry->equals(name_, loader_)) {
+    if (entry->hash() == hash && entry->equals(class_name, loader)) {
       return entry;
     }
     debug_only(_lookup_length++);
@@ -461,7 +460,7 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
-klassOop Dictionary::find(int index, unsigned int hash, symbolHandle name,
+klassOop Dictionary::find(int index, unsigned int hash, Symbol* name,
                           Handle loader, Handle protection_domain, TRAPS) {
   DictionaryEntry* entry = get_entry(index, hash, name, loader);
   if (entry != NULL && entry->is_valid_protection_domain(protection_domain)) {
@@ -473,7 +472,7 @@ klassOop Dictionary::find(int index, unsigned int hash, symbolHandle name,
 
 
 klassOop Dictionary::find_class(int index, unsigned int hash,
-                                symbolHandle name, Handle loader) {
+                                Symbol* name, Handle loader) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert (index == index_for(name, loader), "incorrect index?");
 
@@ -486,7 +485,7 @@ klassOop Dictionary::find_class(int index, unsigned int hash,
 // that table is static.
 
 klassOop Dictionary::find_shared_class(int index, unsigned int hash,
-                                       symbolHandle name) {
+                                       Symbol* name) {
   assert (index == index_for(name, Handle()), "incorrect index?");
 
   DictionaryEntry* entry = get_entry(index, hash, name, Handle());
@@ -498,7 +497,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
                                        instanceKlassHandle klass,
                                        Handle loader, Handle protection_domain,
                                        TRAPS) {
-  symbolHandle klass_name(THREAD, klass->name());
+  Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(index, hash, klass_name, loader);
 
   assert(entry != NULL,"entry must be present, we just created it");
@@ -513,7 +512,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
 
 
 bool Dictionary::is_valid_protection_domain(int index, unsigned int hash,
-                                            symbolHandle name,
+                                            Symbol* name,
                                             Handle loader,
                                             Handle protection_domain) {
   DictionaryEntry* entry = get_entry(index, hash, name, loader);
@@ -545,7 +544,7 @@ void Dictionary::reorder_dictionary() {
     DictionaryEntry* p = master_list;
     master_list = master_list->next();
     p->set_next(NULL);
-    symbolHandle class_name (thread, instanceKlass::cast((klassOop)(p->klass()))->name());
+    Symbol* class_name = instanceKlass::cast((klassOop)(p->klass()))->name();
     unsigned int hash = compute_hash(class_name, Handle(thread, p->loader()));
     int index = hash_to_index(hash);
     p->set_hash(hash);
@@ -555,22 +554,22 @@ void Dictionary::reorder_dictionary() {
 }
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
-  : Hashtable(table_size, sizeof(SymbolPropertyEntry))
+  : Hashtable<Symbol*>(table_size, sizeof(SymbolPropertyEntry))
 {
 }
 SymbolPropertyTable::SymbolPropertyTable(int table_size, HashtableBucket* t,
                                          int number_of_entries)
-  : Hashtable(table_size, sizeof(SymbolPropertyEntry), t, number_of_entries)
+  : Hashtable<Symbol*>(table_size, sizeof(SymbolPropertyEntry), t, number_of_entries)
 {
 }
 
 
 SymbolPropertyEntry* SymbolPropertyTable::find_entry(int index, unsigned int hash,
-                                                     symbolHandle sym,
+                                                     Symbol* sym,
                                                      intptr_t sym_mode) {
   assert(index == index_for(sym, sym_mode), "incorrect index?");
   for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-    if (p->hash() == hash && p->symbol() == sym() && p->symbol_mode() == sym_mode) {
+    if (p->hash() == hash && p->symbol() == sym && p->symbol_mode() == sym_mode) {
       return p;
     }
   }
@@ -579,13 +578,13 @@ SymbolPropertyEntry* SymbolPropertyTable::find_entry(int index, unsigned int has
 
 
 SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash,
-                                                    symbolHandle sym, intptr_t sym_mode) {
+                                                    Symbol* sym, intptr_t sym_mode) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(index == index_for(sym, sym_mode), "incorrect index?");
   assert(find_entry(index, hash, sym, sym_mode) == NULL, "no double entry");
 
-  SymbolPropertyEntry* p = new_entry(hash, sym(), sym_mode);
-  Hashtable::add_entry(index, p);
+  SymbolPropertyEntry* p = new_entry(hash, sym, sym_mode);
+  Hashtable<Symbol*>::add_entry(index, p);
   return p;
 }
 
@@ -593,7 +592,6 @@ SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash
 void SymbolPropertyTable::oops_do(OopClosure* f) {
   for (int index = 0; index < table_size(); index++) {
     for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-      f->do_oop((oop*) p->symbol_addr());
       if (p->property_oop() != NULL) {
         f->do_oop(p->property_oop_addr());
       }

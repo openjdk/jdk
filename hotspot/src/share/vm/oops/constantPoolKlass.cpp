@@ -33,7 +33,7 @@
 #include "oops/constantPoolOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
@@ -388,8 +388,12 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
       case JVM_CONSTANT_UnresolvedClass :               // fall-through
       case JVM_CONSTANT_UnresolvedClassInError: {
         // unresolved_klass_at requires lock or safe world.
-        oop entry = *cp->obj_at_addr(index);
-        entry->print_value_on(st);
+        CPSlot entry = cp->slot_at(index);
+        if (entry.is_oop()) {
+          entry.get_oop()->print_value_on(st);
+        } else {
+          entry.get_symbol()->print_value_on(st);
+        }
         }
         break;
       case JVM_CONSTANT_MethodHandle :
@@ -450,36 +454,43 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
   constantPoolOop cp = constantPoolOop(obj);
   guarantee(cp->is_perm(), "should be in permspace");
   if (!cp->partially_loaded()) {
-    oop* base = (oop*)cp->base();
     for (int i = 0; i< cp->length();  i++) {
+      CPSlot entry = cp->slot_at(i);
       if (cp->tag_at(i).is_klass()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_klass(),    "should be klass");
+        if (entry.is_oop()) {
+          guarantee(entry.get_oop()->is_perm(),     "should be in permspace");
+          guarantee(entry.get_oop()->is_klass(),    "should be klass");
+        }
       }
       if (cp->tag_at(i).is_unresolved_klass()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_symbol() || (*base)->is_klass(),
-                  "should be symbol or klass");
+        if (entry.is_oop()) {
+          guarantee(entry.get_oop()->is_perm(),     "should be in permspace");
+          guarantee(entry.get_oop()->is_klass(),    "should be klass");
+        }
       }
       if (cp->tag_at(i).is_symbol()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_symbol(),   "should be symbol");
+        guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
       }
       if (cp->tag_at(i).is_unresolved_string()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_symbol() || (*base)->is_instance(),
-                  "should be symbol or instance");
+        if (entry.is_oop()) {
+          guarantee(entry.get_oop()->is_perm(),     "should be in permspace");
+          guarantee(entry.get_oop()->is_instance(), "should be instance");
+        }
+        else {
+          guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+        }
       }
       if (cp->tag_at(i).is_string()) {
         if (!cp->has_pseudo_string()) {
-          guarantee((*base)->is_perm(),   "should be in permspace");
-          guarantee((*base)->is_instance(), "should be instance");
+          if (entry.is_oop()) {
+            guarantee(entry.get_oop()->is_perm(),   "should be in permspace");
+            guarantee(entry.get_oop()->is_instance(), "should be instance");
+          }
         } else {
           // can be non-perm, can be non-instance (array)
         }
       }
       // FIXME: verify JSR 292 tags JVM_CONSTANT_MethodHandle, etc.
-      base++;
     }
     guarantee(cp->tags()->is_perm(),         "should be in permspace");
     guarantee(cp->tags()->is_typeArray(),    "should be type array");

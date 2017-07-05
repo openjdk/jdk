@@ -287,7 +287,7 @@ class MethodHandles: AllStatic {
   static void init_MemberName(oop mname_oop, oop target); // compute vmtarget/vmindex from target
   static void init_MemberName(oop mname_oop, methodOop m, bool do_dispatch = true);
   static void init_MemberName(oop mname_oop, klassOop field_holder, AccessFlags mods, int offset);
-  static int find_MemberNames(klassOop k, symbolOop name, symbolOop sig,
+  static int find_MemberNames(klassOop k, Symbol* name, Symbol* sig,
                               int mflags, klassOop caller,
                               int skip, objArrayOop results);
   // bit values for suppress argument to expand_MemberName:
@@ -466,6 +466,8 @@ class MethodHandles: AllStatic {
                                Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
+
+  static Symbol* convert_to_signature(oop type_str, bool polymorphic, TRAPS);
 };
 
 

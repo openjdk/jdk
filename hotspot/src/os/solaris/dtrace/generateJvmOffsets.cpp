@@ -49,7 +49,7 @@
 #include "oops/klass.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmStructs.hpp"
 #include "utilities/accessFlags.hpp"
@@ -215,8 +215,8 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_VALUE(AccessFlags_NATIVE, JVM_ACC_NATIVE);
   GEN_VALUE(constMethodOopDesc_has_linenumber_table, constMethodOopDesc::_has_linenumber_table);
   GEN_OFFS(AccessFlags, _flags);
-  GEN_OFFS(symbolOopDesc, _length);
-  GEN_OFFS(symbolOopDesc, _body);
+  GEN_OFFS(Symbol, _length);
+  GEN_OFFS(Symbol, _body);
   printf("\n");
 
   GEN_OFFS(methodOopDesc, _constMethod);

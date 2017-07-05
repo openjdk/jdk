@@ -79,7 +79,6 @@ private:
   // Distinguished instances of certain ciObjects..
   static ciObject*              _null_object_instance;
   static ciMethodKlass*         _method_klass_instance;
-  static ciSymbolKlass*         _symbol_klass_instance;
   static ciKlassKlass*          _klass_klass_instance;
   static ciInstanceKlassKlass*  _instance_klass_klass_instance;
   static ciTypeArrayKlassKlass* _type_array_klass_klass_instance;
@@ -160,8 +159,8 @@ private:
                                       klassOop resolved_klassOop);
   methodOop  lookup_method(instanceKlass*  accessor,
                            instanceKlass*  holder,
-                           symbolOop       name,
-                           symbolOop       sig,
+                           Symbol*         name,
+                           Symbol*         sig,
                            Bytecodes::Code bc);
 
   // Get a ciObject from the object factory.  Ensures uniqueness
@@ -174,9 +173,18 @@ private:
     }
   }
 
+  ciSymbol* get_symbol(Symbol* o) {
+    if (o == NULL) {
+      ShouldNotReachHere();
+      return NULL;
+    } else {
+      return _factory->get_symbol(o);
+    }
+  }
+
   ciMethod* get_method_from_handle(jobject method);
 
-  ciInstance* get_or_create_exception(jobject& handle, symbolHandle name);
+  ciInstance* get_or_create_exception(jobject& handle, Symbol* name);
 
   // Get a ciMethod representing either an unfound method or
   // a method with an unloaded holder.  Ensures uniqueness of
