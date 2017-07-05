@@ -215,7 +215,7 @@ double AdvancedThresholdPolicy::threshold_scale(CompLevel level, int feedback_k)
   // The main intention is to keep enough free space for C2 compiled code
   // to achieve peak performance if the code cache is under stress.
   if ((TieredStopAtLevel == CompLevel_full_optimization) && (level != CompLevel_full_optimization))  {
-    double current_reverse_free_ratio = CodeCache::reverse_free_ratio();
+    double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
     if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
       k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
     }

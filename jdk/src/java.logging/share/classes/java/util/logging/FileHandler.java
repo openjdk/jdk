@@ -260,6 +260,11 @@ public class FileHandler extends StreamHandler {
     public FileHandler() throws IOException, SecurityException {
         checkPermission();
         configure();
+        // pattern will have been set by configure. check that it's not
+        // empty.
+        if (pattern.isEmpty()) {
+            throw new NullPointerException();
+        }
         openFiles();
     }
 
@@ -402,6 +407,14 @@ public class FileHandler extends StreamHandler {
         openFiles();
     }
 
+    private  boolean isParentWritable(Path path) {
+        Path parent = path.getParent();
+        if (parent == null) {
+            parent = path.toAbsolutePath().getParent();
+        }
+        return parent != null && Files.isWritable(parent);
+    }
+
     /**
      * Open the set of output files, based on the configured
      * instance variables.
@@ -415,6 +428,10 @@ public class FileHandler extends StreamHandler {
         if (limit < 0) {
             limit = 0;
         }
+
+        // All constructors check that pattern is neither null nor empty.
+        assert pattern != null : "pattern should not be null";
+        assert !pattern.isEmpty() : "pattern should not be empty";
 
         // We register our own ErrorManager during initialization
         // so we can record exceptions.
@@ -458,7 +475,7 @@ public class FileHandler extends StreamHandler {
                         // Note that this is a situation that may happen,
                         // but not too frequently.
                         if (Files.isRegularFile(lockFilePath, LinkOption.NOFOLLOW_LINKS)
-                            && Files.isWritable(lockFilePath.getParent())) {
+                            && isParentWritable(lockFilePath)) {
                             try {
                                 channel = FileChannel.open(lockFilePath,
                                     WRITE, APPEND);

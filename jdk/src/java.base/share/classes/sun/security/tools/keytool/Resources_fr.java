@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"New.prompt.", "Nouveau {0} : "},
         {"Passwords.must.differ", "Les mots de passe doivent diff\u00E9rer"},
         {"Re.enter.new.prompt.", "Indiquez encore le nouveau {0} : "},
-        {"Re.enter.passpword.", "R\u00E9p\u00E9tez le mot de passe : "},
+        {"Re.enter.password.", "R\u00E9p\u00E9tez le mot de passe : "},
         {"Re.enter.new.password.", "Ressaisissez le nouveau mot de passe : "},
         {"They.don.t.match.Try.again", "Ils sont diff\u00E9rents. R\u00E9essayez."},
         {"Enter.prompt.alias.name.", "Indiquez le nom d''alias {0} :  "},

@@ -826,6 +826,7 @@ void Thread::print_on(outputStream* st) const {
       st->print("os_prio=%d ", os_prio);
     }
     st->print("tid=" INTPTR_FORMAT " ", this);
+    ext().print_on(st);
     osthread()->print_on(st);
   }
   debug_only(if (WizardMode) print_owned_locks_on(st);)
@@ -2964,6 +2965,8 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // Push the Java priority down to the native thread; needs Threads_lock
   Thread::set_priority(this, prio);
 
+  prepare_ext();
+
   // Add the new thread to the Threads list and set it in motion.
   // We must have threads lock in order to call Threads::add.
   // It is crucial that we do not block before the thread is
@@ -3794,6 +3797,24 @@ void Threads::create_vm_init_libraries() {
     }
   }
 }
+
+JavaThread* Threads::find_java_thread_from_java_tid(jlong java_tid) {
+  assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
+
+  JavaThread* java_thread = NULL;
+  // Sequential search for now.  Need to do better optimization later.
+  for (JavaThread* thread = Threads::first(); thread != NULL; thread = thread->next()) {
+    oop tobj = thread->threadObj();
+    if (!thread->is_exiting() &&
+        tobj != NULL &&
+        java_tid == java_lang_Thread::thread_id(tobj)) {
+      java_thread = thread;
+      break;
+    }
+  }
+  return java_thread;
+}
+
 
 // Last thread running calls java.lang.Shutdown.shutdown()
 void JavaThread::invoke_shutdown_hooks() {
