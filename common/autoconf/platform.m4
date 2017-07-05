@@ -48,7 +48,7 @@ AC_DEFUN([CHECK_FIND_DELETE],
 AC_DEFUN([CHECK_NONEMPTY],
 [
     # Test that variable $1 is not empty.
-    if test "" = "[$]$1"; then AC_ERROR(Could not find translit($1,A-Z,a-z) !); fi
+    if test "" = "[$]$1"; then AC_MSG_ERROR(Could not find translit($1,A-Z,a-z) !); fi
 ])
 
 AC_DEFUN([ADD_JVM_ARG_IF_OK],
@@ -97,7 +97,7 @@ AC_DEFUN([SPACESAFE],
             $1=`$CYGPATH -s -m -a "[$]$1"`
             $1=`$CYGPATH -u "[$]$1"`            
         else
-            AC_ERROR([You cannot have spaces in $2! "[$]$1"])
+            AC_MSG_ERROR([You cannot have spaces in $2! "[$]$1"])
         fi
     fi
 ])
@@ -215,7 +215,7 @@ AC_DEFUN([SETUP_CCACHE_USAGE],
             AC_MSG_CHECKING([if C-compiler supports ccache precompiled headers])
             PUSHED_FLAGS="$CXXFLAGS"
             CXXFLAGS="-fpch-preprocess $CXXFLAGS"
-            AC_TRY_COMPILE([], [], [CC_KNOWS_CCACHE_TRICK=yes], [CC_KNOWS_CCACHE_TRICK=no])
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [CC_KNOWS_CCACHE_TRICK=yes], [CC_KNOWS_CCACHE_TRICK=no])
             CXXFLAGS="$PUSHED_FLAGS"
             if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
                 AC_MSG_RESULT([yes])
@@ -257,7 +257,7 @@ AC_DEFUN([EXTRACT_HOST_AND_BUILD_AND_LEGACY_VARS],
     # The same values are setup for BUILD_...
     # 
     # And the legacy variables, for controlling the old makefiles.
-    # LEGACY_HOST_CPU1=i586,amd64,sparc,sparcv9,arm,arm64...
+    # LEGACY_HOST_CPU1=i586,amd64/x86_64,sparc,sparcv9,arm,arm64...
     # LEGACY_HOST_CPU2=i386,amd64,sparc,sparcv9,arm,arm64...
     # LEGACY_HOST_CPU3=sparcv9,amd64 (but only on solaris)
     # LEGACY_HOST_OS_API=solaris,windows
@@ -276,7 +276,14 @@ AC_DEFUN([EXTRACT_HOST_AND_BUILD_AND_LEGACY_VARS],
     if test "x$HOST_OS" != xsolaris; then
         LEGACY_HOST_CPU3=""
         LEGACY_BUILD_CPU3=""
-    fi   
+    fi
+
+    # On MacOSX and MacOSX only, we have a different name for the x64 CPU in ARCH (LEGACY_HOST_CPU1) ...
+    if test "x$HOST_OS" = xmacosx && test "x$HOST_CPU" = xx64; then
+        LEGACY_HOST_CPU1="x86_64"
+    fi
+
+    SET_RELEASE_FILE_OS_VALUES()
 ])
 
 AC_DEFUN([EXTRACT_VARS_FROM_OS_TO],
@@ -427,7 +434,7 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU],
       VAR_LEGACY_CPU=s390x
        ;;
     *)
-      AC_ERROR([unsupported cpu $1])
+      AC_MSG_ERROR([unsupported cpu $1])
       ;;
   esac
 
@@ -514,4 +521,27 @@ AC_DEFUN([WIN_FIX_PATH],
         tmp=`$CYGPATH -s -m "$tmp"`
         $1="$tmp"
     fi
+])
+
+AC_DEFUN([SET_RELEASE_FILE_OS_VALUES],
+[
+    if test "x$HOST_OS" = "xsolaris"; then
+       REQUIRED_OS_NAME=SunOS
+       REQUIRED_OS_VERSION=5.10
+    fi
+    if test "x$HOST_OS" = "xlinux"; then
+       REQUIRED_OS_NAME=Linux
+       REQUIRED_OS_VERSION=2.6
+    fi
+    if test "x$HOST_OS" = "xwindows"; then
+        REQUIRED_OS_NAME=Windows
+        REQUIRED_OS_VERSION=5.1
+    fi
+    if test "x$HOST_OS" = "xmacosx"; then
+        REQUIRED_OS_NAME=Darwin
+        REQUIRED_OS_VERSION=11.2
+    fi
+
+    AC_SUBST(REQUIRED_OS_NAME)
+    AC_SUBST(REQUIRED_OS_VERSION)
 ])
