@@ -41,7 +41,7 @@ AUTO_FILES_JAVA_DIRS = com/sun/rowset
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-RESOURCE_BUNDLES_PROPERTIES = $(PKGDIR)/RowSetResourceBundle.properties
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/RowSetResourceBundle.properties
 
 #
 # Rules

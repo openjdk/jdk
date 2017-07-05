@@ -141,6 +141,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                      "\u9a6c\u6765\u897f\u4e9a\u590f\u4ee4\u65f6", "MYST"};
         String NORONHA[] = new String[] {"\u8d39\u5c14\u5357\u591a\u5fb7\u8bfa\u7f57\u5c3c\u4e9a\u65f6\u95f4", "FNT",
                                          "\u8d39\u5c14\u5357\u591a\u5fb7\u8bfa\u7f57\u5c3c\u4e9a\u590f\u4ee4\u65f6", "FNST"};
+        String NPT[] = new String[] {"\u5c3c\u6cca\u5c14\u65f6\u95f4", "NPT",
+                                     "\u5c3c\u6cca\u5c14\u590f\u4ee4\u65f6", "NPST"};
         String NST[] = new String[] {"\u7ebd\u82ac\u5170\u6807\u51c6\u65f6\u95f4", "NST",
                                      "\u7ebd\u82ac\u5170\u590f\u4ee4\u65f6", "NDT"};
         String NZST[] = new String[] {"\u65b0\u897f\u5170\u6807\u51c6\u65f6\u95f4", "NZST",
@@ -151,6 +153,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                      "\u5df4\u57fa\u65af\u5766\u590f\u4ee4\u65f6", "PKST"};
         String PST[] = new String[] {"\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4", "PST",
                                      "\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6", "PDT"};
+        String RST[] = new String[] {"\u4e1c\u90e8\u6807\u51c6\u65f6\u95f4", "EST",
+                                     "\u4e2d\u592e\u590f\u4ee4\u65f6", "CDT"};
         String SAST[] = new String[] {"\u5357\u975e\u6807\u51c6\u65f6\u95f4", "SAST",
                                       "\u5357\u975e\u590f\u4ee4\u65f6", "SAST"};
         String SBT[] = new String[] {"\u6240\u7f57\u95e8\u7fa4\u5c9b\u65f6\u95f4", "SBT",
@@ -290,6 +294,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"America/Argentina/La_Rioja", AGT},
             {"America/Argentina/Mendoza", AGT},
             {"America/Argentina/Rio_Gallegos", AGT},
+            {"America/Argentina/Salta", AGT},
             {"America/Argentina/San_Juan", AGT},
             {"America/Argentina/San_Luis", AGT},
             {"America/Argentina/Tucuman", AGT},
@@ -407,7 +412,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"America/Rankin_Inlet", CST},
             {"America/Recife", BRT},
             {"America/Regina", CST},
-            {"America/Resolute", EST},
+            {"America/Resolute", RST},
             {"America/Rio_Branco", AMT},
             {"America/Rosario", AGT},
             {"America/Santarem", BRT},
@@ -505,8 +510,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                              "\u5f7c\u5f97\u7f57\u5df4\u752b\u6d1b\u592b\u65af\u514b\u590f\u4ee4\u65f6", "PETST"}},
             {"Asia/Karachi", PKT},
             {"Asia/Kashgar", CTT},
-            {"Asia/Katmandu", new String[] {"\u5c3c\u6cca\u5c14\u65f6\u95f4", "NPT",
-                                            "\u5c3c\u6cca\u5c14\u590f\u4ee4\u65f6", "NPST"}},
+            {"Asia/Kathmandu", NPT},
+            {"Asia/Katmandu", NPT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", new String[] {"\u514b\u62c9\u65af\u8bfa\u4e9a\u5c14\u65af\u514b\u65f6\u95f4", "KRAT",
                                                "\u514b\u62c9\u65af\u8bfa\u4e9a\u5c14\u65af\u514b\u590f\u4ee4\u65f6", "KRAST"}},

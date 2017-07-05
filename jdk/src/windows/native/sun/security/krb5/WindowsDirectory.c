@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#define UNICODE
 #include <jni.h>
 #include <windows.h>
 #include <stdlib.h>
@@ -30,22 +31,20 @@
 /*
  * Class:     sun_security_krb5_Config
  * Method:    getWindowsDirectory
- * Signature: ()Ljava/lang/String;
+ * Signature: (Z)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_sun_security_krb5_Config_getWindowsDirectory(
-    JNIEnv* env, jclass configClass) {
-    LPTSTR lpPath = NULL;
-    UINT uLength ;
-    jstring path = NULL;
-
-    if (uLength = GetWindowsDirectory(lpPath, 0)) {
-        lpPath = (LPTSTR)malloc(sizeof(TCHAR) * uLength);
-        if (lpPath != NULL) {
-            if (GetWindowsDirectory(lpPath, uLength)) {
-                path = (*env)->NewStringUTF(env, lpPath);
-            }
-            free(lpPath);
-        }
+        JNIEnv* env, jclass configClass, jboolean isSystem) {
+    TCHAR lpPath[MAX_PATH+1];
+    UINT len;
+    if (isSystem) {
+        len = GetSystemWindowsDirectory(lpPath, MAX_PATH);
+    } else {
+        len = GetWindowsDirectory(lpPath, MAX_PATH);
     }
-    return path;
+    if (len) {
+        return (*env)->NewString(env, lpPath, len);
+    } else {
+        return NULL;
+    }
 }

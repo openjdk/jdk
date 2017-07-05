@@ -24,7 +24,7 @@
  * @test
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
- * 4147315 4147317 4147552 4335196 4778440 5010672 6475525 6544471
+ * 4147315 4147317 4147552 4335196 4778440 5010672 6475525 6544471 6627549 6786276
  * @summary test Locales
  */
 /*
@@ -439,8 +439,8 @@ public class LocaleTest extends LocaleTestFmwk {
         String[] spotCheck2 = { "US", "CA", "GB", "FR", "DE", "IT", "JP", "KR", "CN", "TW", "TH" };
 
 
-        if (test.length != 245)
-            errln("Expected getISOCountries to return 245 countries; it returned " + test.length);
+        if (test.length != 246)
+            errln("Expected getISOCountries to return 246 countries; it returned " + test.length);
         else {
             for (int i = 0; i < spotCheck2.length; i++) {
                 int j;

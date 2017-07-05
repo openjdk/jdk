@@ -1554,10 +1554,10 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Tree.selectionBackground", SelectionBackgroundColor,
             "Tree.expandedIcon", treeExpandedIcon,
             "Tree.collapsedIcon", treeCollapsedIcon,
-            "Tree.openIcon",   new ActiveWindowsIcon("win.icon.shellIconBPP", "shell32Icon 5",
-                                                     (Icon)table.get("Tree.openIcon")),
-            "Tree.closedIcon", new ActiveWindowsIcon("win.icon.shellIconBPP", "shell32Icon 4",
-                                                     (Icon)table.get("Tree.closedIcon")),
+            "Tree.openIcon",   new ActiveWindowsIcon("win.icon.shellIconBPP",
+                                   "shell32Icon 5", "icons/TreeOpen.gif"),
+            "Tree.closedIcon", new ActiveWindowsIcon("win.icon.shellIconBPP",
+                                   "shell32Icon 4", "icons/TreeClosed.gif"),
             "Tree.focusInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                                     "ADD", "expand",
@@ -2205,21 +2205,21 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      */
     private class ActiveWindowsIcon implements UIDefaults.ActiveValue {
         private Icon icon;
-        private Icon fallback;
         private String nativeImageName;
+        private String fallbackName;
         private DesktopProperty desktopProperty;
 
         ActiveWindowsIcon(String desktopPropertyName,
-                          String nativeImageName, Icon fallback) {
+                            String nativeImageName, String fallbackName) {
             this.nativeImageName = nativeImageName;
-            this.fallback = fallback;
+            this.fallbackName = fallbackName;
 
             if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
                     OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) < 0) {
                 // This desktop property is needed to trigger reloading the icon.
                 // It is kept in member variable to avoid GC.
                 this.desktopProperty = new TriggerDesktopProperty(desktopPropertyName) {
-                    protected void updateUI() {
+                    @Override protected void updateUI() {
                         icon = null;
                         super.updateUI();
                     }
@@ -2227,6 +2227,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             }
         }
 
+        @Override
         public Object createValue(UIDefaults table) {
             if (icon == null) {
                 Image image = (Image)ShellFolder.get(nativeImageName);
@@ -2234,8 +2235,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                     icon = new ImageIconUIResource(image);
                 }
             }
-            if (icon == null && fallback != null) {
-                icon = fallback;
+            if (icon == null && fallbackName != null) {
+                UIDefaults.LazyValue fallback = (UIDefaults.LazyValue)
+                        SwingUtilities2.makeIcon(WindowsLookAndFeel.class,
+                            BasicLookAndFeel.class, fallbackName);
+                icon = (Icon) fallback.createValue(table);
             }
             return icon;
         }
