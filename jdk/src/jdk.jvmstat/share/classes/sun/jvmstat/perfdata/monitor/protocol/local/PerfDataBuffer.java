@@ -25,7 +25,7 @@
 
 package sun.jvmstat.perfdata.monitor.protocol.local;
 
-import sun.misc.Perf;
+import jdk.internal.perf.Perf;
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.perfdata.monitor.*;
 import java.util.*;
