@@ -148,10 +148,17 @@ LoadMSVCRT()
          * assumed to be present in the "JRE path" directory.  If it is not found
          * there (or "JRE path" fails to resolve), skip the explicit load and let
          * nature take its course, which is likely to be a failure to execute.
+         * This is clearly completely specific to the exact compiler version
+         * which isn't very nice, but its hardly the only place.
+         * No attempt to look for compiler versions in between 2003 and 2010
+         * as we aren't supporting building with those.
          */
 #ifdef _MSC_VER
 #if _MSC_VER < 1400
 #define CRT_DLL "msvcr71.dll"
+#endif
+#if _MSC_VER >= 1600
+#define CRT_DLL "msvcr100.dll"
 #endif
 #ifdef CRT_DLL
         if (GetJREPath(crtpath, MAXPATHLEN)) {

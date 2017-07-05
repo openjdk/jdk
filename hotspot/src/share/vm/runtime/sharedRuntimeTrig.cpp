@@ -41,6 +41,26 @@
 # pragma optimize ( "", off )
 #endif
 
+/* The above workaround now causes more problems with the latest MS compiler.
+ * Visual Studio 2010's /GS option tries to guard against buffer overruns.
+ * /GS is on by default if you specify optimizations, which we do globally
+ * via /W3 /O2. However the above selective turning off of optimizations means
+ * that /GS issues a warning "4748". And since we treat warnings as errors (/WX)
+ * then the compilation fails. There are several possible solutions
+ * (1) Remove that pragma above as obsolete with VS2010 - requires testing.
+ * (2) Stop treating warnings as errors - would be a backward step
+ * (3) Disable /GS - may help performance but you lose the security checks
+ * (4) Disable the warning with "#pragma warning( disable : 4748 )"
+ * (5) Disable planting the code with  __declspec(safebuffers)
+ * I've opted for (5) although we should investigate the local performance
+ * benefits of (1) and global performance benefit of (3).
+ */
+#if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER >= 1600))
+#define SAFEBUF __declspec(safebuffers)
+#else
+#define SAFEBUF
+#endif
+
 #include <math.h>
 
 // VM_LITTLE_ENDIAN is #defined appropriately in the Makefiles
@@ -235,7 +255,7 @@ one     = 1.0,
 two24B  = 1.67772160000000000000e+07, /* 0x41700000, 0x00000000 */
 twon24  = 5.96046447753906250000e-08; /* 0x3E700000, 0x00000000 */
 
-static int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2) {
+static SAFEBUF int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int *ipio2) {
   int jz,jx,jv,jp,jk,carry,n,iq[20],i,j,k,m,q0,ih;
   double z,fw,f[20],fq[20],q[20];
 
@@ -451,7 +471,7 @@ pio2_2t =  2.02226624879595063154e-21, /* 0x3BA3198A, 0x2E037073 */
 pio2_3  =  2.02226624871116645580e-21, /* 0x3BA3198A, 0x2E000000 */
 pio2_3t =  8.47842766036889956997e-32; /* 0x397B839A, 0x252049C1 */
 
-static int __ieee754_rem_pio2(double x, double *y) {
+static SAFEBUF int __ieee754_rem_pio2(double x, double *y) {
   double z,w,t,r,fn;
   double tx[3];
   int e0,i,j,nx,n,ix,hx,i0;
