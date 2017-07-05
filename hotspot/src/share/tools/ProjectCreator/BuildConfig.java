@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,14 @@ class BuildConfig {
         if (vars == null) vars = new Hashtable();
 
         String flavourBuild =  flavour + "_" + build;
+        String platformName = getFieldString(null, "PlatformName");
         System.out.println();
         System.out.println(flavourBuild);
 
-        put("Name", getCI().makeCfgName(flavourBuild));
+        put("Name", getCI().makeCfgName(flavourBuild, platformName));
         put("Flavour", flavour);
         put("Build", build);
+        put("PlatformName", platformName);
 
         // ones mentioned above were needed to expand format
         String buildBase = expandFormat(getFieldString(null, "BuildBase"));
@@ -93,7 +95,7 @@ class BuildConfig {
     protected void initDefaultLinkerFlags() {
         Vector linkerFlags = new Vector();
 
-        linkerFlags.addAll(getCI().getBaseLinkerFlags( get("OutputDir"), get("OutputDll")));
+        linkerFlags.addAll(getCI().getBaseLinkerFlags( get("OutputDir"), get("OutputDll"), get("PlatformName")));
 
         put("LinkerFlags", linkerFlags);
     }
@@ -115,18 +117,15 @@ class BuildConfig {
     }
 
 
-    Vector getPreferredPaths(MacroDefinitions macros) {
+    Vector getPreferredPaths() {
         Vector preferredPaths = new Vector();
+
         // In the case of multiple files with the same name in
-        // different subdirectories, prefer the versions specified in
-        // the platform file as the "os_family" and "arch" macros.
-        for (Iterator iter = macros.getMacros(); iter.hasNext(); ) {
-            Macro macro = (Macro) iter.next();
-            if (macro.name.equals("os_family") ||
-                macro.name.equals("arch")) {
-                preferredPaths.add(macro.contents);
-            }
-        }
+        // different subdirectories, prefer these versions
+        preferredPaths.add("windows");
+        preferredPaths.add("x86");
+        preferredPaths.add("closed");
+
         // Also prefer "opto" over "adlc" for adlcVMDeps.hpp
         preferredPaths.add("opto");
 
@@ -137,18 +136,7 @@ class BuildConfig {
     void handleDB() {
         WinGammaPlatform platform = (WinGammaPlatform)getField(null, "PlatformObject");
 
-        File incls = new File(get("OutputDir")+Util.sep+"incls");
-
-        incls.mkdirs();
-
-        MacroDefinitions macros = new MacroDefinitions();
-        try {
-            macros.readFrom(getFieldString(null, "Platform"), false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        putSpecificField("AllFilesHash", computeAllFiles(platform, macros));
+        putSpecificField("AllFilesHash", computeAllFiles(platform));
     }
 
 
@@ -190,10 +178,10 @@ class BuildConfig {
         ht.put(expandFormat(key), expandFormat(value));
     }
 
-    Hashtable computeAllFiles(WinGammaPlatform platform, MacroDefinitions macros) {
+    Hashtable computeAllFiles(WinGammaPlatform platform) {
         Hashtable rv = new Hashtable();
         DirectoryTree tree = getSourceTree(get("SourceBase"), getFieldString(null, "StartAt"));
-        Vector preferredPaths = getPreferredPaths(macros);
+        Vector preferredPaths = getPreferredPaths();
 
         // Hold errors until end
         Vector filesNotFound = new Vector();
@@ -228,8 +216,7 @@ class BuildConfig {
             System.err.println("Error: some files were not found or " +
                                "appeared in multiple subdirectories of " +
                                "directory " + get("SourceBase") + " and could not " +
-                               "be resolved with the os_family and arch " +
-                               "macros in the platform file.");
+                               "be resolved with os_family and arch.");
             if (filesNotFound.size() != 0) {
                 System.err.println("Files not found:");
                 for (Iterator iter = filesNotFound.iterator();
@@ -254,10 +241,14 @@ class BuildConfig {
         Vector sysDefines = new Vector();
         sysDefines.add("WIN32");
         sysDefines.add("_WINDOWS");
-        sysDefines.add("HOTSPOT_BUILD_USER="+System.getProperty("user.name"));
+        sysDefines.add("HOTSPOT_BUILD_USER=\\\""+System.getProperty("user.name")+"\\\"");
         sysDefines.add("HOTSPOT_BUILD_TARGET=\\\""+get("Build")+"\\\"");
         sysDefines.add("_JNI_IMPLEMENTATION_");
-        sysDefines.add("HOTSPOT_LIB_ARCH=\\\"i386\\\"");
+        if (vars.get("PlatformName").equals("Win32")) {
+            sysDefines.add("HOTSPOT_LIB_ARCH=\\\"i386\\\"");
+        } else {
+            sysDefines.add("HOTSPOT_LIB_ARCH=\\\"amd64\\\"");
+        }
 
         sysDefines.addAll(defines);
 
@@ -710,7 +701,7 @@ class KernelProductConfig extends ProductConfig {
 }
 abstract class CompilerInterface {
     abstract Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir);
-    abstract Vector getBaseLinkerFlags(String outDir, String outDll);
+    abstract Vector getBaseLinkerFlags(String outDir, String outDll, String platformName);
     abstract Vector getDebugCompilerFlags(String opt);
     abstract Vector getDebugLinkerFlags();
     abstract void   getAdditionalNonKernelLinkerFlags(Vector rv);
@@ -718,7 +709,7 @@ abstract class CompilerInterface {
     abstract Vector getProductLinkerFlags();
     abstract String getOptFlag();
     abstract String getNoOptFlag();
-    abstract String makeCfgName(String flavourBuild);
+    abstract String makeCfgName(String flavourBuild, String platformName);
 
     void addAttr(Vector receiver, String attr, String value) {
         receiver.add(attr); receiver.add(value);

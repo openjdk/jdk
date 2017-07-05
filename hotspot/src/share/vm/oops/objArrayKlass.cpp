@@ -470,16 +470,6 @@ int objArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   ObjArrayKlass_OOP_ITERATE(a, p, PSParallelCompact::adjust_pointer(p))
   return a->object_size();
 }
-
-int objArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                       HeapWord* beg_addr, HeapWord* end_addr) {
-  assert (obj->is_objArray(), "obj must be obj array");
-  objArrayOop a = objArrayOop(obj);
-  ObjArrayKlass_BOUNDED_OOP_ITERATE( \
-     a, p, beg_addr, end_addr, \
-     PSParallelCompact::adjust_pointer(p))
-  return a->object_size();
-}
 #endif // SERIALGC
 
 // JVM support
