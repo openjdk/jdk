@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,12 @@ BootStrapDir=$(HOTSPOTJDKDIST)
 !endif
 !endif
 
+# if hotspot-only build and/or OPENJDK isn't passed down, need to set OPENJDK
+!ifndef OPENJDK
+!if !exists($(WorkSpace)\src\closed)
+OPENJDK=true
+!endif
+!endif
 
 
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/projectcreator.make
@@ -53,6 +59,10 @@ BootStrapDir=$(HOTSPOTJDKDIST)
 # Pick up rules for building JVMTI (JSR-163)
 JvmtiOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\jvmtifiles
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/jvmti.make
+
+# Pick up rules for building trace
+TraceOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\tracefiles
+!include $(HOTSPOTWORKSPACE)/make/windows/makefiles/trace.make
 
 !if "$(Variant)" == "compiler2"
 # Pick up rules for building adlc
@@ -66,7 +76,7 @@ JvmtiOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\jvmtifiles
 
 HS_INTERNAL_NAME=jvm
 
-default:: $(AdditionalTargets) $(JvmtiGeneratedFiles)
+default:: $(AdditionalTargets) $(JvmtiGeneratedFiles) $(TraceGeneratedFiles)
 
 !include $(HOTSPOTWORKSPACE)/make/hotspot_version
 

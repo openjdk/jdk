@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
+#include "trace/tracing.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
 
@@ -62,19 +63,21 @@ void VM_Operation::evaluate() {
   }
 }
 
+const char* VM_Operation::mode_to_string(Mode mode) {
+  switch(mode) {
+    case _safepoint      : return "safepoint";
+    case _no_safepoint   : return "no safepoint";
+    case _concurrent     : return "concurrent";
+    case _async_safepoint: return "async safepoint";
+    default              : return "unknown";
+  }
+}
 // Called by fatal error handler.
 void VM_Operation::print_on_error(outputStream* st) const {
   st->print("VM_Operation (" PTR_FORMAT "): ", this);
   st->print("%s", name());
 
-  const char* mode;
-  switch(evaluation_mode()) {
-    case _safepoint      : mode = "safepoint";       break;
-    case _no_safepoint   : mode = "no safepoint";    break;
-    case _concurrent     : mode = "concurrent";      break;
-    case _async_safepoint: mode = "async safepoint"; break;
-    default              : mode = "unknown";         break;
-  }
+  const char* mode = mode_to_string(evaluation_mode());
   st->print(", mode: %s", mode);
 
   if (calling_thread()) {

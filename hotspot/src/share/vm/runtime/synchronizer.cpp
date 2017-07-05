@@ -213,7 +213,7 @@ void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
      }
   }
 
-  ObjectSynchronizer::inflate(THREAD, object)->exit (THREAD) ;
+  ObjectSynchronizer::inflate(THREAD, object)->exit (true, THREAD) ;
 }
 
 // -----------------------------------------------------------------------------
@@ -343,7 +343,7 @@ void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
   // If this thread has locked the object, exit the monitor.  Note:  can't use
   // monitor->check(CHECK); must exit even if an exception is pending.
   if (monitor->check(THREAD)) {
-     monitor->exit(THREAD);
+     monitor->exit(true, THREAD);
   }
 }
 
