@@ -868,6 +868,9 @@ final class RegExpScanner extends Scanner {
      *      \ ClassEscape
      */
     private boolean classAtomNoDash() {
+        if (atEOF()) {
+            return false;
+        }
         final int startIn  = position;
         final int startOut = sb.length();
 

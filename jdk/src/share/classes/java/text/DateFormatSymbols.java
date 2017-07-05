@@ -59,7 +59,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <code>DateFormatSymbols</code> is a public class for encapsulating
  * localizable date-time formatting data, such as the names of the
  * months, the names of the days of the week, and the time zone data.
- * <code>DateFormat</code> and <code>SimpleDateFormat</code> both use
+ * <code>SimpleDateFormat</code> uses
  * <code>DateFormatSymbols</code> to encapsulate this information.
  *
  * <p>

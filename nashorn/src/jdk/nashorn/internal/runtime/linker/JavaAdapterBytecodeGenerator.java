@@ -310,7 +310,34 @@ final class JavaAdapterBytecodeGenerator extends JavaAdapterGeneratorBase {
                 Type.getMethodDescriptor(Type.VOID_TYPE), null, null));
 
         mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getClassOverrides", GET_CLASS_INITIALIZER_DESCRIPTOR);
-        // Assign MethodHandle fields through invoking getHandle()
+        final Label initGlobal;
+        if(samName != null) {
+            // If the class is a SAM, allow having a ScriptFunction passed as class overrides
+            final Label notAFunction = new Label();
+            mv.dup();
+            mv.instanceOf(SCRIPT_FUNCTION_TYPE);
+            mv.ifeq(notAFunction);
+            mv.checkcast(SCRIPT_FUNCTION_TYPE);
+
+            // Assign MethodHandle fields through invoking getHandle() for a ScriptFunction, only assigning the SAM
+            // method(s).
+            for (final MethodInfo mi : methodInfos) {
+                if(mi.getName().equals(samName)) {
+                    mv.dup();
+                    mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
+                    mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_FUNCTION_DESCRIPTOR);
+                } else {
+                    mv.visitInsn(ACONST_NULL);
+                }
+                mv.putstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+            }
+            initGlobal = new Label();
+            mv.goTo(initGlobal);
+            mv.visitLabel(notAFunction);
+        } else {
+            initGlobal = null;
+        }
+        // Assign MethodHandle fields through invoking getHandle() for a ScriptObject
         for (final MethodInfo mi : methodInfos) {
             mv.dup();
             mv.aconst(mi.getName());
@@ -319,6 +346,9 @@ final class JavaAdapterBytecodeGenerator extends JavaAdapterGeneratorBase {
             mv.putstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
 
+        if(initGlobal != null) {
+            mv.visitLabel(initGlobal);
+        }
         // Assign "staticGlobal = Context.getGlobal()"
         invokeGetGlobalWithNullCheck(mv);
         mv.putstatic(generatedClassName, STATIC_GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);

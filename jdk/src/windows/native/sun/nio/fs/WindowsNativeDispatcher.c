@@ -162,7 +162,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     }
     completionStatus_error = (*env)->GetFieldID(env, clazz, "error", "I");
     completionStatus_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
-    completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "I");
+    completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "J");
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$BackupResult");
     if (clazz == NULL) {
@@ -1169,12 +1169,11 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFinalPathNameByHandle(JNIEnv* env,
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_CreateIoCompletionPort(JNIEnv* env, jclass this,
-    jlong fileHandle, jlong existingPort, jint completionKey)
+    jlong fileHandle, jlong existingPort, jlong completionKey)
 {
-    ULONG_PTR ck = completionKey;
     HANDLE port = CreateIoCompletionPort((HANDLE)jlong_to_ptr(fileHandle),
                                          (HANDLE)jlong_to_ptr(existingPort),
-                                         ck,
+                                         (ULONG_PTR)completionKey,
                                          0);
     if (port == NULL) {
         throwWindowsException(env, GetLastError());
@@ -1203,21 +1202,20 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetQueuedCompletionStatus0(JNIEnv* env, 
         (*env)->SetIntField(env, obj, completionStatus_error, ioResult);
         (*env)->SetIntField(env, obj, completionStatus_bytesTransferred,
             (jint)bytesTransferred);
-        (*env)->SetIntField(env, obj, completionStatus_completionKey,
-            (jint)completionKey);
-
+        (*env)->SetLongField(env, obj, completionStatus_completionKey,
+            (jlong)completionKey);
     }
 }
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_PostQueuedCompletionStatus(JNIEnv* env, jclass this,
-    jlong completionPort, jint completionKey)
+    jlong completionPort, jlong completionKey)
 {
     BOOL res;
 
     res = PostQueuedCompletionStatus((HANDLE)jlong_to_ptr(completionPort),
                                      (DWORD)0,  /* dwNumberOfBytesTransferred */
-                                     (DWORD)completionKey,
+                                     (ULONG_PTR)completionKey,
                                      NULL);  /* lpOverlapped */
     if (res == 0) {
         throwWindowsException(env, GetLastError());
@@ -1232,7 +1230,17 @@ Java_sun_nio_fs_WindowsNativeDispatcher_ReadDirectoryChangesW(JNIEnv* env, jclas
     BOOL res;
     BOOL subtree = (watchSubTree == JNI_TRUE) ? TRUE : FALSE;
 
-    ((LPOVERLAPPED)jlong_to_ptr(pOverlapped))->hEvent = NULL;
+    /* Any unused members of [OVERLAPPED] structure should always be initialized to zero
+       before the structure is used in a function call.
+       Otherwise, the function may fail and return ERROR_INVALID_PARAMETER.
+       http://msdn.microsoft.com/en-us/library/windows/desktop/ms684342%28v=vs.85%29.aspx
+
+       The [Offset] and [OffsetHigh] members of this structure are not used.
+       http://msdn.microsoft.com/en-us/library/windows/desktop/aa365465%28v=vs.85%29.aspx
+
+       [hEvent] should be zero, other fields are the return values. */
+    ZeroMemory((LPOVERLAPPED)jlong_to_ptr(pOverlapped), sizeof(OVERLAPPED));
+
     res = ReadDirectoryChangesW((HANDLE)jlong_to_ptr(hDirectory),
                                 (LPVOID)jlong_to_ptr(bufferAddress),
                                 (DWORD)bufferLength,

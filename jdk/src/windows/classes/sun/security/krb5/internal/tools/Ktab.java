@@ -80,42 +80,24 @@ public class Ktab {
         } else {
             ktab.processArgs(args);
         }
-        try {
+        ktab.table = KeyTab.getInstance(ktab.name);
+        if (ktab.table.isMissing() && ktab.action != 'a') {
             if (ktab.name == null) {
-                //  ktab.admin = new KeyTabAdmin();    // use the default keytab.
-                ktab.table = KeyTab.getInstance();
-                if (ktab.table == null) {
-                    if (ktab.action == 'a') {
-                        ktab.table = KeyTab.create();
-                    } else {
-                        System.out.println("No default key table exists.");
-                        System.exit(-1);
-                    }
-                }
+                System.out.println("No default key table exists.");
             } else {
-                if ((ktab.action != 'a') &&
-                    !(new File(ktab.name)).exists()) {
-                    System.out.println("Key table " +
-                                ktab.name + " does not exist.");
-                    System.exit(-1);
-                } else {
-                    ktab.table = KeyTab.getInstance(ktab.name);
-                }
-                if (ktab.table == null) {
-                    if (ktab.action == 'a') {
-                        ktab.table = KeyTab.create(ktab.name);
-                    } else {
-                        System.out.println("The format of key table " +
-                                ktab.name + " is incorrect.");
-                        System.exit(-1);
-                    }
-                }
+                System.out.println("Key table " +
+                        ktab.name + " does not exist.");
             }
-        } catch (RealmException e) {
-            System.err.println("Error loading key table.");
             System.exit(-1);
-        } catch (IOException e) {
-            System.err.println("Error loading key table.");
+        }
+        if (!ktab.table.isValid()) {
+            if (ktab.name == null) {
+                System.out.println("The format of the default key table " +
+                        " is incorrect.");
+            } else {
+                System.out.println("The format of key table " +
+                        ktab.name + " is incorrect.");
+            }
             System.exit(-1);
         }
         switch (ktab.action) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,14 +168,14 @@ final class XDropTargetRegistry {
                 if (dest_x >= 0 && dest_y >= 0) {
                     XWindowAttributes wattr = new XWindowAttributes();
                     try {
-                        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                        XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                         int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                                       window, wattr.pData);
-                        XToolkit.RESTORE_XERROR_HANDLER();
+                        XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                        if (status == 0 ||
-                            (XToolkit.saved_error != null &&
-                             XToolkit.saved_error.get_error_code() != XConstants.Success)) {
+                        if ((status == 0) ||
+                            ((XErrorHandlerUtil.saved_error != null) &&
+                            (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success))) {
                             continue;
                         }
 
@@ -222,14 +222,14 @@ final class XDropTargetRegistry {
             long event_mask = 0;
             XWindowAttributes wattr = new XWindowAttributes();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                               embedder, wattr.pData);
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                if (status == 0 ||
-                    (XToolkit.saved_error != null &&
-                     XToolkit.saved_error.get_error_code() != XConstants.Success)) {
+                if ((status == 0) ||
+                    ((XErrorHandlerUtil.saved_error != null) &&
+                    (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success))) {
                     throw new XException("XGetWindowAttributes failed");
                 }
 
@@ -240,13 +240,13 @@ final class XDropTargetRegistry {
             }
 
             if ((event_mask & XConstants.PropertyChangeMask) == 0) {
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
                                          event_mask | XConstants.PropertyChangeMask);
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                if (XToolkit.saved_error != null &&
-                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
+                if ((XErrorHandlerUtil.saved_error != null) &&
+                    (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                     throw new XException("XSelectInput failed");
                 }
             }
@@ -394,13 +394,13 @@ final class XDropTargetRegistry {
 
             /* Restore the original event mask for the embedder. */
             if ((event_mask & XConstants.PropertyChangeMask) == 0) {
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
                                          event_mask);
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                if (XToolkit.saved_error != null &&
-                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
+                if ((XErrorHandlerUtil.saved_error != null) &&
+                    (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                     throw new XException("XSelectInput failed");
                 }
             }

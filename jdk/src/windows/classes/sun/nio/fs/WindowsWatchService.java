@@ -41,6 +41,7 @@ import static sun.nio.fs.WindowsConstants.*;
 class WindowsWatchService
     extends AbstractWatchService
 {
+    private final static int WAKEUP_COMPLETION_KEY = 0;
     private final Unsafe unsafe = Unsafe.getUnsafe();
 
     // background thread to service I/O completion port
@@ -83,7 +84,7 @@ class WindowsWatchService
      */
     private class WindowsWatchKey extends AbstractWatchKey {
         // file key (used to detect existing registrations)
-        private FileKey fileKey;
+        private final FileKey fileKey;
 
         // handle to directory
         private volatile long handle = INVALID_HANDLE_VALUE;
@@ -223,8 +224,7 @@ class WindowsWatchService
             FileKey other = (FileKey)obj;
             if (this.volSerialNumber != other.volSerialNumber) return false;
             if (this.fileIndexHigh != other.fileIndexHigh) return false;
-            if (this.fileIndexLow != other.fileIndexLow) return false;
-            return true;
+            return this.fileIndexLow == other.fileIndexLow;
         }
     }
 
@@ -268,6 +268,7 @@ class WindowsWatchService
         private static final short OFFSETOF_FILENAME        = 12;
 
         // size of per-directory buffer for events (FIXME - make this configurable)
+        // Need to be less than 4*16384 = 65536. DWORD align.
         private static final int CHANGES_BUFFER_SIZE    = 16 * 1024;
 
         private final WindowsFileSystem fs;
@@ -275,27 +276,28 @@ class WindowsWatchService
         private final long port;
 
         // maps completion key to WatchKey
-        private final Map<Integer,WindowsWatchKey> int2key;
+        private final Map<Integer,WindowsWatchKey> ck2key;
 
         // maps file key to WatchKey
         private final Map<FileKey,WindowsWatchKey> fk2key;
 
         // unique completion key for each directory
+        // native completion key capacity is 64 bits on Win64.
         private int lastCompletionKey;
 
         Poller(WindowsFileSystem fs, WindowsWatchService watcher, long port) {
             this.fs = fs;
             this.watcher = watcher;
             this.port = port;
-            this.int2key = new HashMap<Integer,WindowsWatchKey>();
-            this.fk2key = new HashMap<FileKey,WindowsWatchKey>();
+            this.ck2key = new HashMap<>();
+            this.fk2key = new HashMap<>();
             this.lastCompletionKey = 0;
         }
 
         @Override
         void wakeup() throws IOException {
             try {
-                PostQueuedCompletionStatus(port, 0);
+                PostQueuedCompletionStatus(port, WAKEUP_COMPLETION_KEY);
             } catch (WindowsException x) {
                 throw new IOException(x.getMessage());
             }
@@ -322,7 +324,6 @@ class WindowsWatchService
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == ExtendedWatchEventModifier.FILE_TREE) {
                     watchSubtree = true;
-                    continue;
                 } else {
                     if (modifier == null)
                         return new NullPointerException();
@@ -333,7 +334,7 @@ class WindowsWatchService
             }
 
             // open directory
-            long handle = -1L;
+            long handle;
             try {
                 handle = CreateFile(dir.getPathForWin32Calls(),
                                     FILE_LIST_DIRECTORY,
@@ -347,7 +348,7 @@ class WindowsWatchService
             boolean registered = false;
             try {
                 // read attributes and check file is a directory
-                WindowsFileAttributes attrs = null;
+                WindowsFileAttributes attrs;
                 try {
                     attrs = WindowsFileAttributes.readAttributes(handle);
                 } catch (WindowsException x) {
@@ -370,9 +371,10 @@ class WindowsWatchService
                     return existing;
                 }
 
-                // unique completion key (skip 0)
+                // Can overflow the int type capacity.
+                // Skip WAKEUP_COMPLETION_KEY value.
                 int completionKey = ++lastCompletionKey;
-                if (completionKey == 0)
+                if (completionKey == WAKEUP_COMPLETION_KEY)
                     completionKey = ++lastCompletionKey;
 
                 // associate handle with completion port
@@ -418,13 +420,13 @@ class WindowsWatchService
                     // 1. remove mapping from old completion key to existing watch key
                     // 2. release existing key's resources (handle/buffer)
                     // 3. re-initialize key with new handle/buffer
-                    int2key.remove(existing.completionKey());
+                    ck2key.remove(existing.completionKey());
                     existing.releaseResources();
                     watchKey = existing.init(handle, events, watchSubtree, buffer,
                         countAddress, overlappedAddress, completionKey);
                 }
                 // map completion map to watch key
-                int2key.put(completionKey, watchKey);
+                ck2key.put(completionKey, watchKey);
 
                 registered = true;
                 return watchKey;
@@ -440,7 +442,7 @@ class WindowsWatchService
             WindowsWatchKey key = (WindowsWatchKey)obj;
             if (key.isValid()) {
                 fk2key.remove(key.fileKey());
-                int2key.remove(key.completionKey());
+                ck2key.remove(key.completionKey());
                 key.invalidate();
             }
         }
@@ -449,11 +451,11 @@ class WindowsWatchService
         @Override
         void implCloseAll() {
             // cancel all keys
-            for (Map.Entry<Integer,WindowsWatchKey> entry: int2key.entrySet()) {
+            for (Map.Entry<Integer, WindowsWatchKey> entry: ck2key.entrySet()) {
                 entry.getValue().invalidate();
             }
             fk2key.clear();
-            int2key.clear();
+            ck2key.clear();
 
             // close I/O completion port
             CloseHandle(port);
@@ -517,7 +519,7 @@ class WindowsWatchService
         @Override
         public void run() {
             for (;;) {
-                CompletionStatus info = null;
+                CompletionStatus info;
                 try {
                     info = GetQueuedCompletionStatus(port);
                 } catch (WindowsException x) {
@@ -527,7 +529,7 @@ class WindowsWatchService
                 }
 
                 // wakeup
-                if (info.completionKey() == 0) {
+                if (info.completionKey() == WAKEUP_COMPLETION_KEY) {
                     boolean shutdown = processRequests();
                     if (shutdown) {
                         return;
@@ -536,7 +538,7 @@ class WindowsWatchService
                 }
 
                 // map completionKey to get WatchKey
-                WindowsWatchKey key = int2key.get(info.completionKey());
+                WindowsWatchKey key = ck2key.get((int)info.completionKey());
                 if (key == null) {
                     // We get here when a registration is changed. In that case
                     // the directory is closed which causes an event with the
@@ -544,38 +546,44 @@ class WindowsWatchService
                     continue;
                 }
 
-                // ReadDirectoryChangesW failed
-                if (info.error() != 0) {
+                boolean criticalError = false;
+                int errorCode = info.error();
+                int messageSize = info.bytesTransferred();
+                if (errorCode == ERROR_NOTIFY_ENUM_DIR) {
                     // buffer overflow
-                    if (info.error() == ERROR_NOTIFY_ENUM_DIR) {
-                        key.signalEvent(StandardWatchEventKinds.OVERFLOW, null);
-                    } else {
-                        // other error so cancel key
-                        implCancelKey(key);
-                        key.signal();
-                    }
-                    continue;
-                }
-
-                // process the events
-                if (info.bytesTransferred() > 0) {
-                    processEvents(key, info.bytesTransferred());
-                } else {
-                    // insufficient buffer size
                     key.signalEvent(StandardWatchEventKinds.OVERFLOW, null);
-                }
+                } else if (errorCode != 0 && errorCode != ERROR_MORE_DATA) {
+                    // ReadDirectoryChangesW failed
+                    criticalError = true;
+                } else {
+                    // ERROR_MORE_DATA is a warning about incomplite
+                    // data transfer over TCP/UDP stack. For the case
+                    // [messageSize] is zero in the most of cases.
 
-                // start read for next batch of changes
-                try {
-                    ReadDirectoryChangesW(key.handle(),
-                                          key.buffer().address(),
-                                          CHANGES_BUFFER_SIZE,
-                                          key.watchSubtree(),
-                                          ALL_FILE_NOTIFY_EVENTS,
-                                          key.countAddress(),
-                                          key.overlappedAddress());
-                } catch (WindowsException x) {
-                    // no choice but to cancel key
+                    if (messageSize > 0) {
+                        // process non-empty events.
+                        processEvents(key, messageSize);
+                    } else if (errorCode == 0) {
+                        // insufficient buffer size
+                        // not described, but can happen.
+                        key.signalEvent(StandardWatchEventKinds.OVERFLOW, null);
+                    }
+
+                    // start read for next batch of changes
+                    try {
+                        ReadDirectoryChangesW(key.handle(),
+                                              key.buffer().address(),
+                                              CHANGES_BUFFER_SIZE,
+                                              key.watchSubtree(),
+                                              ALL_FILE_NOTIFY_EVENTS,
+                                              key.countAddress(),
+                                              key.overlappedAddress());
+                    } catch (WindowsException x) {
+                        // no choice but to cancel key
+                        criticalError = true;
+                    }
+                }
+                if (criticalError) {
                     implCancelKey(key);
                     key.signal();
                 }

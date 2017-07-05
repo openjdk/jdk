@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,15 +301,15 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         try {
             XWindowAttributes wattr = new XWindowAttributes();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                               xembed.handle, wattr.pData);
 
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                if (status == 0 ||
-                    (XToolkit.saved_error != null &&
-                     XToolkit.saved_error.get_error_code() != XConstants.Success)) {
+                if ((status == 0) ||
+                    ((XErrorHandlerUtil.saved_error != null) &&
+                    (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success))) {
                     return null;
                 }
 

@@ -24,258 +24,270 @@
 <project name="nashorn-benchmarks" default="all" basedir="..">
 
   <target name="octane-init" depends="jar">
-    <fileset id="octane-set"
-	     dir="${octane-test-sys-prop.test.js.roots}"
-	     excludes="${octane-test-sys-prop.test.js.exclude.list}">
-      <include name="*.js"/>
-    </fileset>
-    <pathconvert pathsep=" " property="octane-tests" refid="octane-set"/>
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes pdfjs raytrace regexp richards splay"/>
+  </target>
+  
+  <!-- ignore benchmarks where rhino crashes -->
+  <target name="octane-init-rhino" depends="jar">
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes raytrace regexp richards splay"/>
   </target>
 
   <!-- box2d -->
   <target name="octane-box2d" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/box2d.js"/>
+      <param name="octane-tests" value="box2d"/>
     </antcall>
   </target>
 
   <target name="octane-box2d-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/box2d.js"/>
+      <param name="octane-tests" value="box2d"/>
     </antcall>
   </target>
 
   <target name="octane-box2d-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/box2d.js"/>
+      <param name="octane-tests" value="box2d"/>
     </antcall>
   </target>
+
 
   <!-- code-load -->  
   <target name="octane-code-load" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/code-load.js"/>
+      <param name="octane-tests" value="code-load"/>
     </antcall>
   </target>
 
   <target name="octane-code-load-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/code-load.js"/>
+      <param name="octane-tests" value="code-load"/>
     </antcall>
   </target>
 
   <target name="octane-code-load-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/code-load.js"/>
+      <param name="octane-tests" value="code-load"/>
     </antcall>
   </target>
+
 
   <!-- crypto -->
   <target name="octane-crypto" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/crypto.js"/>
+      <param name="octane-tests" value="crypto"/>
     </antcall>
   </target>
 
   <target name="octane-crypto-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/crypto.js"/>
+      <param name="octane-tests" value="crypto"/>
     </antcall>
   </target>
 
   <target name="octane-crypto-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/crypto.js"/>
+      <param name="octane-tests" value="crypto"/>
     </antcall>
   </target>
+
 
   <!-- deltablue -->
   <target name="octane-deltablue" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/deltablue.js"/>
+      <param name="octane-tests" value="deltablue"/>
     </antcall>
   </target>
 
   <target name="octane-deltablue-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/deltablue.js"/>
+      <param name="octane-tests" value="deltablue"/>
     </antcall>
   </target>
 
   <target name="octane-deltablue-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/deltablue.js"/>
+      <param name="octane-tests" value="deltablue"/>
     </antcall>
   </target>
+
 
   <!-- earley-boyer -->
   <target name="octane-earley-boyer" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/earley-boyer.js"/>
+      <param name="octane-tests" value="earley-boyer"/>
     </antcall>
   </target>
 
   <target name="octane-earley-boyer-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/earley-boyer.js"/>
+      <param name="octane-tests" value="earley-boyer"/>
     </antcall>
   </target>
 
   <target name="octane-earley-boyer-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/earley-boyer.js"/>
+      <param name="octane-tests" value="earley-boyer"/>
     </antcall>
   </target>
+
 
   <!-- gbemu -->  
   <target name="octane-gbemu" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/gbemu.js"/>
+      <param name="octane-tests" value="gbemu"/>
     </antcall>
   </target>
 
   <target name="octane-gbemu-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/gbemu.js"/>
+      <param name="octane-tests" value="gbemu"/>
     </antcall>
   </target>
 
   <target name="octane-gbemu-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/gbemu.js"/>
+      <param name="octane-tests" value="gbemu"/>
     </antcall>
   </target>
+
 
   <!-- mandreel -->  
   <target name="octane-mandreel" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/mandreel.js"/>
+      <param name="octane-tests" value="mandreel"/>
     </antcall>
   </target>
 
   <target name="octane-mandreel-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/mandreel.js"/>
+      <param name="octane-tests" value="mandreel"/>
     </antcall>
   </target>
 
   <target name="octane-mandreel-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/mandreel.js"/>
+      <param name="octane-tests" value="mandreel"/>
     </antcall>
   </target>
+
 
   <!-- navier-stokes -->
   <target name="octane-navier-stokes" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/navier-stokes.js"/>
+      <param name="octane-tests" value="navier-stokes"/>
     </antcall>
   </target>
 
   <target name="octane-navier-stokes-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/navier-stokes.js"/>
+      <param name="octane-tests" value="navier-stokes"/>
     </antcall>
   </target>
 
   <target name="octane-navier-stokes-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/navier-stokes.js"/>
+      <param name="octane-tests" value="navier-stokes"/>
     </antcall>
   </target>
+
 
   <!-- pdfjs -->  
   <target name="octane-pdfjs" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/pdfjs.js"/>
+      <param name="octane-tests" value="pdfjs"/>
     </antcall>
   </target>
 
   <target name="octane-pdfjs-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/pdfjs.js"/>
+      <param name="octane-tests" value="pdfjs"/>
     </antcall>
   </target>
 
   <target name="octane-pdfjs-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/pdfjs.js"/>
+      <param name="octane-tests" value="pdfjs"/>
     </antcall>
   </target>
+
 
   <!-- raytrace -->
   <target name="octane-raytrace" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/raytrace.js"/>
+      <param name="octane-tests" value="raytrace"/>
     </antcall>
   </target>
 
   <target name="octane-raytrace-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/raytrace.js"/>
+      <param name="octane-tests" value="raytrace"/>
     </antcall>
   </target>
 
   <target name="octane-raytrace-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/raytrace.js"/>
+      <param name="octane-tests" value="raytrace"/>
     </antcall>
   </target>
+
 
   <!-- regexp -->
   <target name="octane-regexp" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/regexp.js"/>
+      <param name="octane-tests" value="regexp"/>
     </antcall>
   </target>
 
   <target name="octane-regexp-octane-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/regexp.js"/>
+      <param name="octane-tests" value="regexp"/>
     </antcall>
   </target>
 
   <target name="octane-regexp-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/regexp.js"/>
+      <param name="octane-tests" value="regexp"/>
     </antcall>
   </target>
+
 
   <!-- richards -->
   <target name="octane-richards" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/richards.js"/>
+      <param name="octane-tests" value="richards"/>
     </antcall>
   </target>
 
   <target name="octane-richards-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/richards.js"/>
+      <param name="octane-tests" value="richards"/>
     </antcall>
   </target>
 
   <target name="octane-richards-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/richards.js"/>
+      <param name="octane-tests" value="richards"/>
     </antcall>
   </target>
+
 
   <!-- splay -->
   <target name="octane-splay" depends="jar">
     <antcall target="run-octane">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/splay.js"/>
+      <param name="octane-tests" value="splay"/>
     </antcall>
   </target>
 
   <target name="octane-splay-v8" depends="jar">
     <antcall target="run-octane-v8">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/splay.js"/>
+      <param name="octane-tests" value="splay"/>
     </antcall>
   </target>
 
   <target name="octane-splay-rhino" depends="jar">
     <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="${octane-test-sys-prop.test.js.roots}/splay.js"/>
+      <param name="octane-tests" value="splay"/>
     </antcall>
   </target>
 
@@ -307,7 +319,7 @@
   </target>
 
   <!-- run octane benchmarks using Rhino as runtime -->
-  <target name="octane-rhino" depends="octane-init">
+  <target name="octane-rhino" depends="octane-init-rhino">
     <antcall target="run-octane-rhino"/>
   </target>
   

@@ -36,6 +36,7 @@ import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LabelNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
@@ -53,7 +54,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  *
  * see the flags --print-parse and --print-lower-parse
  */
-public final class PrintVisitor extends NodeVisitor {
+public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     /** Tab width */
     private static final int TABWIDTH = 4;
 
@@ -84,6 +85,7 @@ public final class PrintVisitor extends NodeVisitor {
      * @param printLineNumbers  should line number nodes be included in the output?
      */
     public PrintVisitor(final boolean printLineNumbers) {
+        super(new LexicalContext());
         this.EOLN             = System.lineSeparator();
         this.sb               = new StringBuilder();
         this.printLineNumbers = printLineNumbers;

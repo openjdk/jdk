@@ -43,6 +43,10 @@ include $(BUILDDIR)/sun/awt/FILES_export_unix.gmk
 # compiled based on the motif version.
 FILES_c = $(FILES_NO_MOTIF_c)
 
+ifeq ($(PLATFORM), macosx)
+FILES_objc = $(FILES_NO_MOTIF_objc)
+endif # PLATFORM
+
 ifeq ($(PLATFORM), solaris)
   ifneq ($(ARCH), amd64)
     FILES_reorder += reorder-$(ARCH)
@@ -96,6 +100,10 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/loops
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/pipe
 vpath %.cpp $(SHARE_SRC)/native/$(PKGDIR)/image
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/robot_child
+
+ifeq ($(PLATFORM), macosx)
+vpath %.m   $(call NativeSrcDirList,,native/sun/font)
+endif # PLATFORM
 
 #
 # Libraries to link in.
@@ -192,13 +200,21 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/debug \
         $(EVENT_MODEL)
 
 ifeq ($(PLATFORM), macosx)
-CPPFLAGS += -I$(CUPS_HEADERS_PATH)
+CPPFLAGS += -I$(CUPS_HEADERS_PATH) \
+			$(call NativeSrcDirList,-I,native/sun/awt) \
+			$(call NativeSrcDirList,-I,native/sun/font)
 
 ifndef HEADLESS
 CPPFLAGS += -I$(MOTIF_DIR)/include \
             -I$(OPENWIN_HOME)/include 
 LDFLAGS  += -L$(MOTIF_LIB) -L$(OPENWIN_LIB)
-
+else
+LDFLAGS  += -framework Accelerate \
+			-framework ApplicationServices \
+			-framework Cocoa \
+			-F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+			-framework JavaNativeFoundation \
+			-framework JavaRuntimeSupport
 endif # !HEADLESS
 endif # PLATFORM
 

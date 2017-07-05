@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation which accepts a single integer argument and returns no result.
  * This is the primitive type specialization of {@link Consumer} for {@code int}.
@@ -41,5 +43,26 @@ public interface IntConsumer {
      *
      * @param value the input value
      */
-    public void accept(int value);
+    void accept(int value);
+
+    /**
+     * Returns an {@code IntConsumer} which performs, in sequence, the operation
+     * represented by this object followed by the operation represented by
+     * another {@code IntConsumer}.
+     *
+     * <p>Any exceptions thrown by either {@code accept} method are relayed
+     * to the caller; if performing this operation throws an exception, the
+     * other operation will not be performed.
+     *
+     * @param other an IntConsumer which will be chained after this
+     * IntConsumer
+     * @return an IntConsumer which performs in sequence the {@code accept} method
+     * of this IntConsumer and the {@code accept} method of the specified IntConsumer
+     * operation
+     * @throws NullPointerException if other is null
+     */
+    default IntConsumer chain(IntConsumer other) {
+        Objects.requireNonNull(other);
+        return (int t) -> { accept(t); other.accept(t); };
+    }
 }
