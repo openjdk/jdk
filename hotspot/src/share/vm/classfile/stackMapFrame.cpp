@@ -27,7 +27,7 @@
 #include "classfile/verifier.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -90,8 +90,7 @@ void StackMapFrame::initialize_object(
 
 VerificationType StackMapFrame::set_locals_from_arg(
     const methodHandle m, VerificationType thisKlass, TRAPS) {
-  symbolHandle signature(THREAD, m->signature());
-  SignatureStream ss(signature);
+  SignatureStream ss(m->signature());
   int init_local_num = 0;
   if (!m->is_static()) {
     init_local_num++;
@@ -118,8 +117,14 @@ VerificationType StackMapFrame::set_locals_from_arg(
     case T_OBJECT:
     case T_ARRAY:
     {
-      symbolOop sig = ss.as_symbol(CHECK_(VerificationType::bogus_type()));
-      return VerificationType::reference_type(symbolHandle(THREAD, sig));
+      Symbol* sig = ss.as_symbol(CHECK_(VerificationType::bogus_type()));
+      // Create another symbol to save as signature stream unreferences
+      // this symbol.
+      Symbol* sig_copy =
+        verifier()->create_temporary_symbol(sig, 0, sig->utf8_length(),
+                                 CHECK_(VerificationType::bogus_type()));
+      assert(sig_copy == sig, "symbols don't match");
+      return VerificationType::reference_type(sig_copy);
     }
     case T_INT:     return VerificationType::integer_type();
     case T_BYTE:    return VerificationType::byte_type();
@@ -157,7 +162,7 @@ bool StackMapFrame::is_assignable_to(
     VerificationType* from, VerificationType* to, int32_t len, TRAPS) const {
   for (int32_t i = 0; i < len; i++) {
     bool subtype = to[i].is_assignable_from(
-      from[i], verifier()->current_class(), THREAD);
+      from[i], verifier(), THREAD);
     if (!subtype) {
       return false;
     }
@@ -187,7 +192,7 @@ VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
   }
   VerificationType top = _stack[--_stack_size];
   bool subtype = type.is_assignable_from(
-    top, verifier()->current_class(), CHECK_(VerificationType::bogus_type()));
+    top, verifier(), CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
     verifier()->verify_error(_offset, "Bad type on operand stack");
     return VerificationType::bogus_type();
@@ -203,7 +208,7 @@ VerificationType StackMapFrame::get_local(
     return VerificationType::bogus_type();
   }
   bool subtype = type.is_assignable_from(_locals[index],
-    verifier()->current_class(), CHECK_(VerificationType::bogus_type()));
+    verifier(), CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
     verifier()->verify_error(_offset, "Bad local variable type");
     return VerificationType::bogus_type();
@@ -221,9 +226,9 @@ void StackMapFrame::get_local_2(
     return;
   }
   bool subtype1 = type1.is_assignable_from(
-    _locals[index], verifier()->current_class(), CHECK);
+    _locals[index], verifier(), CHECK);
   bool subtype2 = type2.is_assignable_from(
-    _locals[index+1], verifier()->current_class(), CHECK);
+    _locals[index+1], verifier(), CHECK);
   if (!subtype1 || !subtype2) {
     verifier()->verify_error(_offset, "Bad local variable type");
     return;

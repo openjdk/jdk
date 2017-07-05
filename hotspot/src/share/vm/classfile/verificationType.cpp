@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/verificationType.hpp"
+#include "classfile/verifier.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {
   switch (tag) {
@@ -41,7 +42,8 @@ VerificationType VerificationType::from_tag(u1 tag) {
 }
 
 bool VerificationType::is_reference_assignable_from(
-    const VerificationType& from, instanceKlassHandle context, TRAPS) const {
+    const VerificationType& from, ClassVerifier* context, TRAPS) const {
+  instanceKlassHandle klass = context->current_class();
   if (from.is_null()) {
     // null is assignable to any reference
     return true;
@@ -56,8 +58,8 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
     klassOop obj = SystemDictionary::resolve_or_fail(
-        name_handle(), Handle(THREAD, context->class_loader()),
-        Handle(THREAD, context->protection_domain()), true, CHECK_false);
+        name(), Handle(THREAD, klass->class_loader()),
+        Handle(THREAD, klass->protection_domain()), true, CHECK_false);
     KlassHandle this_class(THREAD, obj);
 
     if (this_class->is_interface()) {
@@ -66,13 +68,13 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     } else if (from.is_object()) {
       klassOop from_class = SystemDictionary::resolve_or_fail(
-          from.name_handle(), Handle(THREAD, context->class_loader()),
-          Handle(THREAD, context->protection_domain()), true, CHECK_false);
+          from.name(), Handle(THREAD, klass->class_loader()),
+          Handle(THREAD, klass->protection_domain()), true, CHECK_false);
       return instanceKlass::cast(from_class)->is_subclass_of(this_class());
     }
   } else if (is_array() && from.is_array()) {
-    VerificationType comp_this = get_component(CHECK_false);
-    VerificationType comp_from = from.get_component(CHECK_false);
+    VerificationType comp_this = get_component(context, CHECK_false);
+    VerificationType comp_from = from.get_component(context, CHECK_false);
     if (!comp_this.is_bogus() && !comp_from.is_bogus()) {
       return comp_this.is_assignable_from(comp_from, context, CHECK_false);
     }
@@ -80,9 +82,9 @@ bool VerificationType::is_reference_assignable_from(
   return false;
 }
 
-VerificationType VerificationType::get_component(TRAPS) const {
+VerificationType VerificationType::get_component(ClassVerifier *context, TRAPS) const {
   assert(is_array() && name()->utf8_length() >= 2, "Must be a valid array");
-  symbolOop component;
+  Symbol* component;
   switch (name()->byte_at(1)) {
     case 'Z': return VerificationType(Boolean);
     case 'B': return VerificationType(Byte);
@@ -93,12 +95,12 @@ VerificationType VerificationType::get_component(TRAPS) const {
     case 'F': return VerificationType(Float);
     case 'D': return VerificationType(Double);
     case '[':
-      component = SymbolTable::lookup(
+      component = context->create_temporary_symbol(
         name(), 1, name()->utf8_length(),
         CHECK_(VerificationType::bogus_type()));
       return VerificationType::reference_type(component);
     case 'L':
-      component = SymbolTable::lookup(
+      component = context->create_temporary_symbol(
         name(), 2, name()->utf8_length() - 1,
         CHECK_(VerificationType::bogus_type()));
       return VerificationType::reference_type(component);

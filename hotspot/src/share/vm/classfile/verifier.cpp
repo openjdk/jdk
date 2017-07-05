@@ -98,10 +98,10 @@ bool Verifier::relax_verify_for(oop loader) {
 }
 
 bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool should_verify_class, TRAPS) {
-  ResourceMark rm(THREAD);
   HandleMark hm;
+  ResourceMark rm(THREAD);
 
-  symbolHandle exception_name;
+  Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
   char* message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
 
@@ -141,7 +141,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
         tty->print("Verification for %s has", klassName);
         tty->print_cr(" exception pending %s ",
           instanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
-      } else if (!exception_name.is_null()) {
+      } else if (exception_name != NULL) {
         tty->print_cr("Verification for %s failed", klassName);
       }
       tty->print_cr("End class verification for: %s", klassName);
@@ -150,7 +150,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 
   if (HAS_PENDING_EXCEPTION) {
     return false; // use the existing exception
-  } else if (exception_name.is_null()) {
+  } else if (exception_name == NULL) {
     return true; // verifcation succeeded
   } else { // VerifyError or ClassFormatError to be created and thrown
     ResourceMark rm(THREAD);
@@ -172,7 +172,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 }
 
 bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class) {
-  symbolOop name = klass->name();
+  Symbol* name = klass->name();
   klassOop refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
 
   return (should_verify_for(klass->class_loader(), should_verify_class) &&
@@ -202,7 +202,7 @@ bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool shou
   );
 }
 
-symbolHandle Verifier::inference_verify(
+Symbol* Verifier::inference_verify(
     instanceKlassHandle klass, char* message, size_t message_len, TRAPS) {
   JavaThread* thread = (JavaThread*)THREAD;
   JNIEnv *env = thread->jni_environment();
@@ -245,18 +245,17 @@ symbolHandle Verifier::inference_verify(
   // These numbers are chosen so that VerifyClassCodes interface doesn't need
   // to be changed (still return jboolean (unsigned char)), and result is
   // 1 when verification is passed.
-  symbolHandle nh(NULL);
   if (result == 0) {
     return vmSymbols::java_lang_VerifyError();
   } else if (result == 1) {
-    return nh; // verified.
+    return NULL; // verified.
   } else if (result == 2) {
-    THROW_MSG_(vmSymbols::java_lang_OutOfMemoryError(), message, nh);
+    THROW_MSG_(vmSymbols::java_lang_OutOfMemoryError(), message, NULL);
   } else if (result == 3) {
     return vmSymbols::java_lang_ClassFormatError();
   } else {
     ShouldNotReachHere();
-    return nh;
+    return NULL;
   }
 }
 
@@ -266,12 +265,19 @@ bool ClassVerifier::_verify_verbose = false;
 
 ClassVerifier::ClassVerifier(
     instanceKlassHandle klass, char* msg, size_t msg_len, TRAPS)
-    : _thread(THREAD), _exception_type(symbolHandle()), _message(msg),
+    : _thread(THREAD), _exception_type(NULL), _message(msg),
       _message_buffer_len(msg_len), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
+  // Create list to hold symbols in reference area.
+  _symbols = new GrowableArray<Symbol*>(100, 0, NULL);
 }
 
 ClassVerifier::~ClassVerifier() {
+  // Decrement the reference count for any symbols created.
+  for (int i = 0; i < _symbols->length(); i++) {
+    Symbol* s = _symbols->at(i);
+    s->decrement_refcount();
+  }
 }
 
 VerificationType ClassVerifier::object_type() const {
@@ -308,7 +314,6 @@ void ClassVerifier::verify_class(TRAPS) {
 }
 
 void ClassVerifier::verify_method(methodHandle m, TRAPS) {
-  ResourceMark rm(THREAD);
   _method = m;   // initialize _method
   if (_verify_verbose) {
     tty->print_cr("Verifying method %s", m->name_and_sig_as_C_string());
@@ -615,7 +620,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
               VerificationType::null_type(), CHECK_VERIFY(this));
           } else {
             VerificationType component =
-              atype.get_component(CHECK_VERIFY(this));
+              atype.get_component(this, CHECK_VERIFY(this));
             current_frame.push_stack(component, CHECK_VERIFY(this));
           }
           no_control_flow = false; break;
@@ -1386,7 +1391,7 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
         VerificationType throwable =
           VerificationType::reference_type(vmSymbols::java_lang_Throwable());
         bool is_subclass = throwable.is_assignable_from(
-          catch_type, current_class(), CHECK_VERIFY(this));
+          catch_type, this, CHECK_VERIFY(this));
         if (!is_subclass) {
           // 4286534: should throw VerifyError according to recent spec change
           verify_error(
@@ -1473,8 +1478,6 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit, S
       if(bci >= start_pc && bci < end_pc) {
         u1 flags = current_frame->flags();
         if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
-
-        ResourceMark rm(THREAD);
         StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
         if (catch_type_index != 0) {
           // We know that this index refers to a subclass of Throwable
@@ -1575,7 +1578,7 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
   va_end(va);
 }
 
-klassOop ClassVerifier::load_class(symbolHandle name, TRAPS) {
+klassOop ClassVerifier::load_class(Symbol* name, TRAPS) {
   // Get current loader and protection domain first.
   oop loader = current_class()->class_loader();
   oop protection_domain = current_class()->protection_domain();
@@ -1587,8 +1590,8 @@ klassOop ClassVerifier::load_class(symbolHandle name, TRAPS) {
 
 bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
                                         klassOop target_class,
-                                        symbolOop field_name,
-                                        symbolOop field_sig,
+                                        Symbol* field_name,
+                                        Symbol* field_sig,
                                         bool is_method) {
   No_Safepoint_Verifier nosafepoint;
 
@@ -1736,7 +1739,7 @@ void ClassVerifier::verify_switch(
 }
 
 bool ClassVerifier::name_in_supers(
-    symbolOop ref_name, instanceKlassHandle current) {
+    Symbol* ref_name, instanceKlassHandle current) {
   klassOop super = current->super();
   while (super != NULL) {
     if (super->klass_part()->name() == ref_name) {
@@ -1755,8 +1758,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   verify_cp_type(index, cp, 1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
-  symbolHandle field_name = symbolHandle(THREAD, cp->name_ref_at(index));
-  symbolHandle field_sig = symbolHandle(THREAD, cp->signature_ref_at(index));
+  Symbol* field_name = cp->name_ref_at(index);
+  Symbol* field_sig = cp->signature_ref_at(index);
 
   if (!SignatureVerifier::is_valid_type_signature(field_sig)) {
     class_format_error(
@@ -1823,11 +1826,11 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       fieldDescriptor fd;
       if (stack_object_type == VerificationType::uninitialized_this_type() &&
           target_class_type.equals(current_type()) &&
-          _klass->find_local_field(field_name(), field_sig(), &fd)) {
+          _klass->find_local_field(field_name, field_sig, &fd)) {
         stack_object_type = current_type();
       }
       is_assignable = target_class_type.is_assignable_from(
-        stack_object_type, current_class(), CHECK_VERIFY(this));
+        stack_object_type, this, CHECK_VERIFY(this));
       if (!is_assignable) {
         verify_error(bci, "Bad type on operand stack in putfield");
         return;
@@ -1836,9 +1839,9 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
     check_protected: {
       if (_this_type == stack_object_type)
         break; // stack_object_type must be assignable to _current_class_type
-      symbolHandle ref_class_name = symbolHandle(THREAD,
-        cp->klass_name_at(cp->klass_ref_index_at(index)));
-      if (!name_in_supers(ref_class_name(), current_class()))
+      Symbol* ref_class_name =
+        cp->klass_name_at(cp->klass_ref_index_at(index));
+      if (!name_in_supers(ref_class_name, current_class()))
         // stack_object_type must be assignable to _current_class_type since:
         // 1. stack_object_type must be assignable to ref_class.
         // 2. ref_class must be _current_class or a subclass of it. It can't
@@ -1846,12 +1849,12 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         break;
 
       klassOop ref_class_oop = load_class(ref_class_name, CHECK);
-      if (is_protected_access(current_class(), ref_class_oop, field_name(),
-                              field_sig(), false)) {
+      if (is_protected_access(current_class(), ref_class_oop, field_name,
+                              field_sig, false)) {
         // It's protected access, check if stack object is assignable to
         // current class.
         is_assignable = current_type().is_assignable_from(
-          stack_object_type, current_class(), CHECK_VERIFY(this));
+          stack_object_type, this, CHECK_VERIFY(this));
         if (!is_assignable) {
           verify_error(bci, "Bad access to protected data in getfield");
           return;
@@ -1911,7 +1914,7 @@ void ClassVerifier::verify_invoke_init(
       instanceKlassHandle mh(THREAD, m->method_holder());
       if (m->is_protected() && !mh->is_same_class_package(_klass())) {
         bool assignable = current_type().is_assignable_from(
-          objectref_type, current_class(), CHECK_VERIFY(this));
+          objectref_type, this, CHECK_VERIFY(this));
         if (!assignable) {
           verify_error(bci, "Bad access to protected <init> method");
           return;
@@ -1941,8 +1944,8 @@ void ClassVerifier::verify_invoke_instructions(
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
-  symbolHandle method_name(THREAD, cp->name_ref_at(index));
-  symbolHandle method_sig(THREAD, cp->signature_ref_at(index));
+  Symbol* method_name = cp->name_ref_at(index);
+  Symbol* method_sig = cp->signature_ref_at(index);
 
   if (!SignatureVerifier::is_valid_method_signature(method_sig)) {
     class_format_error(
@@ -2035,7 +2038,7 @@ void ClassVerifier::verify_invoke_instructions(
   if (method_name->byte_at(0) == '<') {
     // Make sure <init> can only be invoked by invokespecial
     if (opcode != Bytecodes::_invokespecial ||
-        method_name() != vmSymbols::object_initializer_name()) {
+        method_name != vmSymbols::object_initializer_name()) {
       verify_error(bci, "Illegal call to internal method");
       return;
     }
@@ -2044,7 +2047,7 @@ void ClassVerifier::verify_invoke_instructions(
              && !ref_class_type.equals(VerificationType::reference_type(
                   current_class()->super()->klass_part()->name()))) {
     bool subtype = ref_class_type.is_assignable_from(
-      current_type(), current_class(), CHECK_VERIFY(this));
+      current_type(), this, CHECK_VERIFY(this));
     if (!subtype) {
       verify_error(bci, "Bad invokespecial instruction: "
           "current class isn't assignable to reference class.");
@@ -2058,7 +2061,7 @@ void ClassVerifier::verify_invoke_instructions(
   // Check objectref on operand stack
   if (opcode != Bytecodes::_invokestatic &&
       opcode != Bytecodes::_invokedynamic) {
-    if (method_name() == vmSymbols::object_initializer_name()) {  // <init> method
+    if (method_name == vmSymbols::object_initializer_name()) {  // <init> method
       verify_invoke_init(bcs, ref_class_type, current_frame,
         code_length, this_uninit, cp, CHECK_VERIFY(this));
     } else {   // other methods
@@ -2070,22 +2073,22 @@ void ClassVerifier::verify_invoke_instructions(
           current_frame->pop_stack(ref_class_type, CHECK_VERIFY(this));
         if (current_type() != stack_object_type) {
           assert(cp->cache() == NULL, "not rewritten yet");
-          symbolHandle ref_class_name = symbolHandle(THREAD,
-            cp->klass_name_at(cp->klass_ref_index_at(index)));
+          Symbol* ref_class_name =
+            cp->klass_name_at(cp->klass_ref_index_at(index));
           // See the comments in verify_field_instructions() for
           // the rationale behind this.
-          if (name_in_supers(ref_class_name(), current_class())) {
+          if (name_in_supers(ref_class_name, current_class())) {
             klassOop ref_class = load_class(ref_class_name, CHECK);
             if (is_protected_access(
-                  _klass, ref_class, method_name(), method_sig(), true)) {
+                  _klass, ref_class, method_name, method_sig, true)) {
               // It's protected access, check if stack object is
               // assignable to current class.
               bool is_assignable = current_type().is_assignable_from(
-                stack_object_type, current_class(), CHECK_VERIFY(this));
+                stack_object_type, this, CHECK_VERIFY(this));
               if (!is_assignable) {
                 if (ref_class_type.name() == vmSymbols::java_lang_Object()
                     && stack_object_type.is_array()
-                    && method_name() == vmSymbols::clone_name()) {
+                    && method_name == vmSymbols::clone_name()) {
                   // Special case: arrays pretend to implement public Object
                   // clone().
                 } else {
@@ -2105,7 +2108,7 @@ void ClassVerifier::verify_invoke_instructions(
   }
   // Push the result type.
   if (sig_stream.type() != T_VOID) {
-    if (method_name() == vmSymbols::object_initializer_name()) {
+    if (method_name == vmSymbols::object_initializer_name()) {
       // <init> method must have a void return type
       verify_error(bci, "Return type must be void in <init> method");
       return;
@@ -2130,7 +2133,7 @@ VerificationType ClassVerifier::get_newarray_type(
   }
 
   // from_bt[index] contains the array signature which has a length of 2
-  symbolHandle sig = oopFactory::new_symbol_handle(
+  Symbol* sig = create_temporary_symbol(
     from_bt[index], 2, CHECK_(VerificationType::bogus_type()));
   return VerificationType::reference_type(sig);
 }
@@ -2143,7 +2146,6 @@ void ClassVerifier::verify_anewarray(
 
   VerificationType component_type =
     cp_index_to_type(index, cp, CHECK_VERIFY(this));
-  ResourceMark rm(THREAD);
   int length;
   char* arr_sig_str;
   if (component_type.is_array()) {     // it's an array
@@ -2163,7 +2165,7 @@ void ClassVerifier::verify_anewarray(
     strncpy(&arr_sig_str[2], component_name, length - 2);
     arr_sig_str[length - 1] = ';';
   }
-  symbolHandle arr_sig = oopFactory::new_symbol_handle(
+  Symbol* arr_sig = create_temporary_symbol(
     arr_sig_str, length, CHECK_VERIFY(this));
   VerificationType new_array_type = VerificationType::reference_type(arr_sig);
   current_frame->push_stack(new_array_type, CHECK_VERIFY(this));
@@ -2256,9 +2258,25 @@ void ClassVerifier::verify_return_value(
     verify_error(bci, "Method expects a return value");
     return;
   }
-  bool match = return_type.is_assignable_from(type, _klass, CHECK_VERIFY(this));
+  bool match = return_type.is_assignable_from(type, this, CHECK_VERIFY(this));
   if (!match) {
     verify_error(bci, "Bad return type");
     return;
   }
+}
+
+// The verifier creates symbols which are substrings of Symbols.
+// These are stored in the verifier until the end of verification so that
+// they can be reference counted.
+Symbol* ClassVerifier::create_temporary_symbol(const Symbol *s, int begin,
+                                               int end, TRAPS) {
+  Symbol* sym = SymbolTable::new_symbol(s, begin, end, CHECK_NULL);
+  _symbols->push(sym);
+  return sym;
+}
+
+Symbol* ClassVerifier::create_temporary_symbol(const char *s, int length, TRAPS) {
+  Symbol* sym = SymbolTable::new_symbol(s, length, CHECK_NULL);
+  _symbols->push(sym);
+  return sym;
 }

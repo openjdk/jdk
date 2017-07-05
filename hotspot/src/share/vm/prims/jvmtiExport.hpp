@@ -306,7 +306,7 @@ class JvmtiExport : public AllStatic {
   static bool _should_post_class_file_load_hook;
   inline static void set_should_post_class_file_load_hook(bool on)     { _should_post_class_file_load_hook = on;  }
   inline static bool should_post_class_file_load_hook()           { return _should_post_class_file_load_hook; }
-  static void post_class_file_load_hook(symbolHandle h_name, Handle class_loader,
+  static void post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
                                         unsigned char **data_ptr, unsigned char **end_ptr,
                                         unsigned char **cached_data_ptr,

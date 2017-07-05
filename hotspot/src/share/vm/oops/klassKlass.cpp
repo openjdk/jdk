@@ -37,8 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "oops/symbolKlass.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 #ifndef SERIALGC
@@ -70,7 +69,6 @@ void klassKlass::oop_follow_contents(oop obj) {
   MarkSweep::mark_and_push(k->adr_secondary_super_cache());
   MarkSweep::mark_and_push(k->adr_secondary_supers());
   MarkSweep::mark_and_push(k->adr_java_mirror());
-  MarkSweep::mark_and_push(k->adr_name());
   // We follow the subklass and sibling links at the end of the
   // marking phase, since otherwise following them will prevent
   // class unloading (all classes are transitively linked from
@@ -90,7 +88,6 @@ void klassKlass::oop_follow_contents(ParCompactionManager* cm,
   PSParallelCompact::mark_and_push(cm, k->adr_secondary_super_cache());
   PSParallelCompact::mark_and_push(cm, k->adr_secondary_supers());
   PSParallelCompact::mark_and_push(cm, k->adr_java_mirror());
-  PSParallelCompact::mark_and_push(cm, k->adr_name());
   // We follow the subklass and sibling links at the end of the
   // marking phase, since otherwise following them will prevent
   // class unloading (all classes are transitively linked from
@@ -110,7 +107,6 @@ int klassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   blk->do_oop(k->adr_secondary_super_cache());
   blk->do_oop(k->adr_secondary_supers());
   blk->do_oop(k->adr_java_mirror());
-  blk->do_oop(k->adr_name());
   // The following are in the perm gen and are treated
   // specially in a later phase of a perm gen collection; ...
   assert(oop(k)->is_perm(), "should be in perm");
@@ -144,8 +140,6 @@ int klassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = k->adr_java_mirror();
   if (mr.contains(adr)) blk->do_oop(adr);
-  adr = k->adr_name();
-  if (mr.contains(adr)) blk->do_oop(adr);
   // The following are "weak links" in the perm gen and are
   // treated specially in a later phase of a perm gen collection.
   assert(oop(k)->is_perm(), "should be in perm");
@@ -174,7 +168,6 @@ int klassKlass::oop_adjust_pointers(oop obj) {
   MarkSweep::adjust_pointer(k->adr_secondary_super_cache());
   MarkSweep::adjust_pointer(k->adr_secondary_supers());
   MarkSweep::adjust_pointer(k->adr_java_mirror());
-  MarkSweep::adjust_pointer(k->adr_name());
   MarkSweep::adjust_pointer(k->adr_subklass());
   MarkSweep::adjust_pointer(k->adr_next_sibling());
   return size;
@@ -255,10 +248,5 @@ void klassKlass::oop_verify_on(oop obj, outputStream* st) {
     guarantee(k->java_mirror() != NULL,          "should be allocated");
     guarantee(k->java_mirror()->is_perm(),       "should be in permspace");
     guarantee(k->java_mirror()->is_instance(),   "should be instance");
-  }
-  if (k->name() != NULL) {
-    guarantee(Universe::heap()->is_in_permanent(k->name()),
-              "should be in permspace");
-    guarantee(k->name()->is_symbol(), "should be symbol");
   }
 }
