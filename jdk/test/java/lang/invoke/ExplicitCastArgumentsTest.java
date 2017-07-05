@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,9 @@
  * questions.
  */
 
-import com.oracle.testlibrary.jsr292.Helper;
+import sun.invoke.util.Wrapper;
+import test.java.lang.invoke.lib.Helper;
+
 import java.io.File;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
@@ -31,13 +33,12 @@ import java.lang.invoke.WrongMethodTypeException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import sun.invoke.util.Wrapper;
 
 /*
  * @test
  * @bug 8060483 8066746
  * @key randomness
- * @library /lib/testlibrary /lib/testlibrary/jsr292
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @modules java.base/sun.invoke.util
  * @summary unit tests for MethodHandles.explicitCastArguments()
  * @run main ExplicitCastArgumentsTest
@@ -249,21 +250,27 @@ public class ExplicitCastArgumentsTest {
             for (Class parent : parents) {
                 for (int j = 0; j < children.length; j++) {
                     // Child type to parent type non-null conversion, shoud succeed
-                    testConversion(mode, children[j], parent, childInst[j], childInst[j], false, null);
+                    testConversion(mode, children[j], parent, childInst[j],
+                            childInst[j], false, null);
                     // Child type to parent type null conversion, shoud succeed
-                    testConversion(mode, children[j], parent, null, null, false, null);
+                    testConversion(mode, children[j], parent, null,
+                            null, false, null);
                     // Parent type to child type non-null conversion with parent
                     // type instance, should fail
-                    testConversion(mode, parent, children[j], testSuperObj, null, true, ClassCastException.class);
+                    testConversion(mode, parent, children[j], testSuperObj,
+                            null, true, ClassCastException.class);
                     // Parent type to child type non-null conversion with child
                     // type instance, should succeed
-                    testConversion(mode, parent, children[j], childInst[j], childInst[j], false, null);
+                    testConversion(mode, parent, children[j], childInst[j],
+                            childInst[j], false, null);
                     // Parent type to child type null conversion, should succeed
-                    testConversion(mode, parent, children[j], null, null, false, null);
+                    testConversion(mode, parent, children[j], null,
+                            null, false, null);
                 }
                 // Parent type to child type non-null conversion with sibling
                 // type instance, should fail
-                testConversion(mode, parent, testSubClass1, testObj02, null, true, ClassCastException.class);
+                testConversion(mode, parent, testSubClass1, testObj02,
+                        null, true, ClassCastException.class);
             }
             // Sibling type non-null conversion, should fail
             testConversion(mode, testSubClass1,

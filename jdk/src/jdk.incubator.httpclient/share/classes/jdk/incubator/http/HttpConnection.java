@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,12 +323,9 @@ abstract class HttpConnection implements Closeable {
         }
     }
 
-    final int read(ByteBuffer buffer) throws IOException {
-        return readImpl(buffer);
-    }
-
     final ByteBuffer read() throws IOException {
-        return readImpl();
+        ByteBuffer b = readImpl();
+        return b;
     }
 
     /*
@@ -336,9 +333,6 @@ abstract class HttpConnection implements Closeable {
      * reached EOF.
      */
     protected abstract ByteBuffer readImpl() throws IOException;
-
-    /** Reads as much as possible into given buffer and returns amount read. */
-    protected abstract int readImpl(ByteBuffer buffer) throws IOException;
 
     @Override
     public String toString() {

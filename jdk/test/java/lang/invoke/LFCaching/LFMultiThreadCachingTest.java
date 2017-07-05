@@ -27,7 +27,7 @@
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with multiple threads
  * @author kshefov
- * @library /lib/testlibrary/jsr292 /lib/testlibrary
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @modules java.base/java.lang.invoke:open
  *          java.base/java.lang.ref:open
  *          java.management
@@ -38,16 +38,16 @@
  * @run main/othervm LFMultiThreadCachingTest
  */
 
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
+
 import java.lang.invoke.MethodHandle;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 /**
  * Multiple threaded lambda forms caching test class.
@@ -57,13 +57,16 @@ public final class LFMultiThreadCachingTest extends LFCachingTestCase {
     private static final TestMethods.Kind[] KINDS;
 
     static {
-        EnumSet<TestMethods.Kind> set = EnumSet.complementOf(EnumSet.of(TestMethods.Kind.EXCEPT));
+        EnumSet<TestMethods.Kind> set
+                = EnumSet.complementOf(EnumSet.of(TestMethods.Kind.EXCEPT));
         KINDS = set.toArray(new TestMethods.Kind[set.size()]);
         if (KINDS.length < 2) {
-            throw new Error("TESTBUG: KINDS.length[" + KINDS.length + "] should be at least 2");
+            throw new Error("TESTBUG: KINDS.length[" + KINDS.length
+                    + "] should be at least 2");
         }
     }
-    private static final int CORES = Math.max(KINDS.length, Runtime.getRuntime().availableProcessors());
+    private static final int CORES
+            = Math.max(KINDS.length, Runtime.getRuntime().availableProcessors());
 
     /**
      * Constructor a for multiple threaded lambda forms caching test case.
@@ -144,6 +147,7 @@ public final class LFMultiThreadCachingTest extends LFCachingTestCase {
      * @param args Accepts no arguments.
      */
     public static void main(String[] args) {
-        LambdaFormTestCase.runTests(LFMultiThreadCachingTest::new, EnumSet.allOf(TestMethods.class));
+        LambdaFormTestCase.runTests(LFMultiThreadCachingTest::new,
+                                    EnumSet.allOf(TestMethods.class));
     }
 }
