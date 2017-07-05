@@ -38,9 +38,9 @@ TARGETS :=
 $(eval $(call IncludeCustomExtension, hotspot, CompileTools.gmk))
 
 ifeq ($(INCLUDE_GRAAL), true)
-  VM_CI_SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.vm.ci/share/classes
+  VM_CI_SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.internal.vm.ci/share/classes
 
-  SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.vm.compiler/share/classes
+  SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.internal.vm.compiler/share/classes
 
   ##############################################################################
   # Compile the annotation processors
