@@ -1568,15 +1568,16 @@ class LIR_Op2: public LIR_Op {
     assert(code == lir_cmp, "code check");
   }
 
-  LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result)
+  LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type)
     : LIR_Op(code, result, NULL)
     , _opr1(opr1)
     , _opr2(opr2)
-    , _type(T_ILLEGAL)
+    , _type(type)
     , _condition(condition)
     , _fpu_stack_size(0)
     , _tmp(LIR_OprFact::illegalOpr) {
     assert(code == lir_cmove, "code check");
+    assert(type != T_ILLEGAL, "cmove should have type");
   }
 
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result = LIR_OprFact::illegalOpr,
@@ -1993,8 +1994,8 @@ class LIR_List: public CompilationResourceObj {
   void cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info);
   void cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Address* addr, CodeEmitInfo* info);
 
-  void cmove(LIR_Condition condition, LIR_Opr src1, LIR_Opr src2, LIR_Opr dst) {
-    append(new LIR_Op2(lir_cmove, condition, src1, src2, dst));
+  void cmove(LIR_Condition condition, LIR_Opr src1, LIR_Opr src2, LIR_Opr dst, BasicType type) {
+    append(new LIR_Op2(lir_cmove, condition, src1, src2, dst, type));
   }
 
   void cas_long(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -820,7 +820,20 @@ void Assembler::emit_farith(int b1, int b2, int i) {
 }
 
 
-// Now the Assembler instruction (identical for 32/64 bits)
+// Now the Assembler instructions (identical for 32/64 bits)
+
+void Assembler::adcl(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_arith_operand(0x81, rdx, dst, imm32);
+}
+
+void Assembler::adcl(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_byte(0x11);
+  emit_operand(src, dst);
+}
 
 void Assembler::adcl(Register dst, int32_t imm32) {
   prefix(dst);
@@ -2195,9 +2208,7 @@ void Assembler::notl(Register dst) {
 void Assembler::orl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
-  emit_byte(0x81);
-  emit_operand(rcx, dst, 4);
-  emit_long(imm32);
+  emit_arith_operand(0x81, rcx, dst, imm32);
 }
 
 void Assembler::orl(Register dst, int32_t imm32) {
@@ -2205,14 +2216,12 @@ void Assembler::orl(Register dst, int32_t imm32) {
   emit_arith(0x81, 0xC8, dst, imm32);
 }
 
-
 void Assembler::orl(Register dst, Address src) {
   InstructionMark im(this);
   prefix(src, dst);
   emit_byte(0x0B);
   emit_operand(dst, src);
 }
-
 
 void Assembler::orl(Register dst, Register src) {
   (void) prefix_and_encode(dst->encoding(), src->encoding());
@@ -2692,20 +2701,7 @@ void Assembler::stmxcsr( Address dst) {
 void Assembler::subl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
-  if (is8bit(imm32)) {
-    emit_byte(0x83);
-    emit_operand(rbp, dst, 1);
-    emit_byte(imm32 & 0xFF);
-  } else {
-    emit_byte(0x81);
-    emit_operand(rbp, dst, 4);
-    emit_long(imm32);
-  }
-}
-
-void Assembler::subl(Register dst, int32_t imm32) {
-  prefix(dst);
-  emit_arith(0x81, 0xE8, dst, imm32);
+  emit_arith_operand(0x81, rbp, dst, imm32);
 }
 
 void Assembler::subl(Address dst, Register src) {
@@ -2713,6 +2709,11 @@ void Assembler::subl(Address dst, Register src) {
   prefix(dst, src);
   emit_byte(0x29);
   emit_operand(src, dst);
+}
+
+void Assembler::subl(Register dst, int32_t imm32) {
+  prefix(dst);
+  emit_arith(0x81, 0xE8, dst, imm32);
 }
 
 void Assembler::subl(Register dst, Address src) {
@@ -4333,6 +4334,7 @@ void Assembler::sarq(Register dst) {
   emit_byte(0xD3);
   emit_byte(0xF8 | encode);
 }
+
 void Assembler::sbbq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);
@@ -4392,20 +4394,7 @@ void Assembler::shrq(Register dst) {
 void Assembler::subq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);
-  if (is8bit(imm32)) {
-    emit_byte(0x83);
-    emit_operand(rbp, dst, 1);
-    emit_byte(imm32 & 0xFF);
-  } else {
-    emit_byte(0x81);
-    emit_operand(rbp, dst, 4);
-    emit_long(imm32);
-  }
-}
-
-void Assembler::subq(Register dst, int32_t imm32) {
-  (void) prefixq_and_encode(dst->encoding());
-  emit_arith(0x81, 0xE8, dst, imm32);
+  emit_arith_operand(0x81, rbp, dst, imm32);
 }
 
 void Assembler::subq(Address dst, Register src) {
@@ -4413,6 +4402,11 @@ void Assembler::subq(Address dst, Register src) {
   prefixq(dst, src);
   emit_byte(0x29);
   emit_operand(src, dst);
+}
+
+void Assembler::subq(Register dst, int32_t imm32) {
+  (void) prefixq_and_encode(dst->encoding());
+  emit_arith(0x81, 0xE8, dst, imm32);
 }
 
 void Assembler::subq(Register dst, Address src) {
@@ -7136,9 +7130,9 @@ void MacroAssembler::tlab_allocate(Register obj,
 }
 
 // Preserves rbx, and rdx.
-void MacroAssembler::tlab_refill(Label& retry,
-                                 Label& try_eden,
-                                 Label& slow_case) {
+Register MacroAssembler::tlab_refill(Label& retry,
+                                     Label& try_eden,
+                                     Label& slow_case) {
   Register top = rax;
   Register t1  = rcx;
   Register t2  = rsi;
@@ -7185,7 +7179,7 @@ void MacroAssembler::tlab_refill(Label& retry,
 
   // if tlab is currently allocated (top or end != null) then
   // fill [top, end + alignment_reserve) with array object
-  testptr (top, top);
+  testptr(top, top);
   jcc(Assembler::zero, do_refill);
 
   // set up the mark word
@@ -7197,16 +7191,20 @@ void MacroAssembler::tlab_refill(Label& retry,
   movl(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
   // set klass to intArrayKlass
   // dubious reloc why not an oop reloc?
-  movptr(t1, ExternalAddress((address) Universe::intArrayKlassObj_addr()));
+  movptr(t1, ExternalAddress((address)Universe::intArrayKlassObj_addr()));
   // store klass last.  concurrent gcs assumes klass length is valid if
   // klass field is not null.
   store_klass(top, t1);
+
+  movptr(t1, top);
+  subptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
+  incr_allocated_bytes(thread_reg, t1, 0);
 
   // refill the tlab with an eden allocation
   bind(do_refill);
   movptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_size_offset())));
   shlptr(t1, LogHeapWordSize);
-  // add object_size ??
+  // allocate new tlab, address returned in top
   eden_allocate(top, t1, 0, t2, slow_case);
 
   // Check that t1 was preserved in eden_allocate.
@@ -7234,6 +7232,34 @@ void MacroAssembler::tlab_refill(Label& retry,
   movptr(Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())), top);
   verify_tlab();
   jmp(retry);
+
+  return thread_reg; // for use by caller
+}
+
+void MacroAssembler::incr_allocated_bytes(Register thread,
+                                          Register var_size_in_bytes,
+                                          int con_size_in_bytes,
+                                          Register t1) {
+#ifdef _LP64
+  if (var_size_in_bytes->is_valid()) {
+    addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
+  } else {
+    addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
+  }
+#else
+  if (!thread->is_valid()) {
+    assert(t1->is_valid(), "need temp reg");
+    thread = t1;
+    get_thread(thread);
+  }
+
+  if (var_size_in_bytes->is_valid()) {
+    addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
+  } else {
+    addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
+  }
+  adcl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())+4), 0);
+#endif
 }
 
 static const double     pi_4 =  0.7853981633974483;
