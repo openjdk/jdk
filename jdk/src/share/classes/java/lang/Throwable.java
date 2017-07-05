@@ -108,7 +108,7 @@ import  java.util.*;
  * @author  unascribed
  * @author  Josh Bloch (Added exception chaining and programmatic access to
  *          stack trace in 1.4.)
- * @jls3 11.2 Compile-Time Checking of Exceptions
+ * @jls 11.2 Compile-Time Checking of Exceptions
  * @since JDK1.0
  */
 public class Throwable implements Serializable {

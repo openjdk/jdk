@@ -408,13 +408,20 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 #ifndef SERIALGC
 
 void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
+  // At this point we know that marking is in progress.
+  // If do_load() is true then we have to emit the
+  // load of the previous value; otherwise it has already
+  // been loaded into _pre_val.
+
   __ bind(_entry);
 
   assert(pre_val()->is_register(), "Precondition.");
-
   Register pre_val_reg = pre_val()->as_register();
 
-  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
+  if (do_load()) {
+    ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
+  }
+
   if (__ is_in_wdisp16_range(_continuation)) {
     __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
                       pre_val_reg, _continuation);
@@ -429,6 +436,96 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   __ br(Assembler::always, false, Assembler::pt, _continuation);
   __ delayed()->nop();
 
+}
+
+void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
+  // At this point we know that offset == referent_offset.
+  //
+  // So we might have to emit:
+  //   if (src == null) goto continuation.
+  //
+  // and we definitely have to emit:
+  //   if (klass(src).reference_type == REF_NONE) goto continuation
+  //   if (!marking_active) goto continuation
+  //   if (pre_val == null) goto continuation
+  //   call pre_barrier(pre_val)
+  //   goto continuation
+  //
+  __ bind(_entry);
+
+  assert(src()->is_register(), "sanity");
+  Register src_reg = src()->as_register();
+
+  if (gen_src_check()) {
+    // The original src operand was not a constant.
+    // Generate src == null?
+    if (__ is_in_wdisp16_range(_continuation)) {
+      __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                        src_reg, _continuation);
+    } else {
+      __ cmp(src_reg, G0);
+      __ brx(Assembler::equal, false, Assembler::pt, _continuation);
+    }
+    __ delayed()->nop();
+  }
+
+  // Generate src->_klass->_reference_type() == REF_NONE)?
+  assert(tmp()->is_register(), "sanity");
+  Register tmp_reg = tmp()->as_register();
+
+  __ load_klass(src_reg, tmp_reg);
+
+  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset_in_bytes() + sizeof(oopDesc));
+  __ ld(ref_type_adr, tmp_reg);
+
+  if (__ is_in_wdisp16_range(_continuation)) {
+    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                      tmp_reg, _continuation);
+  } else {
+    __ cmp(tmp_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pt, _continuation);
+  }
+  __ delayed()->nop();
+
+  // Is marking active?
+  assert(thread()->is_register(), "precondition");
+  Register thread_reg = thread()->as_pointer_register();
+
+  Address in_progress(thread_reg, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                       PtrQueue::byte_offset_of_active()));
+
+  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+    __ ld(in_progress, tmp_reg);
+  } else {
+    assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
+    __ ldsb(in_progress, tmp_reg);
+  }
+  if (__ is_in_wdisp16_range(_continuation)) {
+    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                      tmp_reg, _continuation);
+  } else {
+    __ cmp(tmp_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pt, _continuation);
+  }
+  __ delayed()->nop();
+
+  // val == null?
+  assert(val()->is_register(), "Precondition.");
+  Register val_reg = val()->as_register();
+
+  if (__ is_in_wdisp16_range(_continuation)) {
+    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                      val_reg, _continuation);
+  } else {
+    __ cmp(val_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pt, _continuation);
+  }
+  __ delayed()->nop();
+
+  __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_pre_barrier_slow_id));
+  __ delayed()->mov(val_reg, G4);
+  __ br(Assembler::always, false, Assembler::pt, _continuation);
+  __ delayed()->nop();
 }
 
 jbyte* G1PostBarrierStub::_byte_map_base = NULL;

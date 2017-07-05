@@ -243,8 +243,10 @@ public abstract class GraphicsDevice {
      * a non-client of the input method framework.
      * </ul>
      * <p>
-     * Simulated full-screen mode resizes
-     * the window to the size of the screen and positions it at (0,0).
+     * The simulated full-screen mode places and resizes the window to the maximum
+     * possible visible area of the screen. However, the native windowing system
+     * may modify the requested geometry-related data, so that the {@code Window} object
+     * is placed and sized in a way that corresponds closely to the desktop settings.
      * <p>
      * When entering full-screen mode, if the window to be used as a
      * full-screen window is not visible, this method will make it visible.

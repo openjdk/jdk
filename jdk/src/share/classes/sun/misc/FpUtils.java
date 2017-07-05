@@ -531,10 +531,9 @@ public class FpUtils {
      * Return {@code d} &times;
      * 2<sup>{@code scale_factor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
-     * member of the double value set.  See <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/typesValues.doc.html#9208">&sect;4.2.3</a>
-     * of the <a href="http://java.sun.com/docs/books/jls/html/">Java
-     * Language Specification</a> for a discussion of floating-point
+     * member of the double value set.  See section 4.2.3 of
+     * <cite>The Java&trade; Language Specification</cite>
+     * for a discussion of floating-point
      * value sets.  If the exponent of the result is between the
      * {@code double}'s minimum exponent and maximum exponent,
      * the answer is calculated exactly.  If the exponent of the
@@ -641,11 +640,10 @@ public class FpUtils {
      * Return {@code f} &times;
      * 2<sup>{@code scale_factor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
-     * member of the float value set.  See <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/typesValues.doc.html#9208">&sect;4.2.3</a>
-     * of the <a href="http://java.sun.com/docs/books/jls/html/">Java
-     * Language Specification</a> for a discussion of floating-point
-     * value set. If the exponent of the result is between the
+     * member of the float value set.  See section 4.2.3 of
+     * <cite>The Java&trade; Language Specification</cite>
+     * for a discussion of floating-point
+     * value sets. If the exponent of the result is between the
      * {@code float}'s minimum exponent and maximum exponent, the
      * answer is calculated exactly.  If the exponent of the result
      * would be larger than {@code float}'s maximum exponent, an

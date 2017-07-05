@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ import java.io.InputStream;
  * to retrieve the next result from a sequence of multiple results.
  *
  * <P>The number, types and properties of a <code>ResultSet</code>
- * object's columns are provided by the <code>ResulSetMetaData</code>
+ * object's columns are provided by the <code>ResultSetMetaData</code>
  * object returned by the <code>ResultSet.getMetaData</code> method.
  *
  * @see Statement#executeQuery
@@ -422,7 +422,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * of this <code>ResultSet</code> object as
      * a stream of ASCII characters. The value can then be read in chunks from the
      * stream. This method is particularly
-     * suitable for retrieving large <char>LONGVARCHAR</char> values.
+     * suitable for retrieving large <code>LONGVARCHAR</code> values.
      * The JDBC driver will
      * do any necessary conversion from the database format into ASCII.
      *

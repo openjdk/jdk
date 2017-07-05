@@ -166,6 +166,10 @@ class LibraryCallKit : public GraphKit {
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset);
   Node* make_unsafe_address(Node* base, Node* offset);
+  // Helper for inline_unsafe_access.
+  // Generates the guards that check whether the result of
+  // Unsafe.getObject should be recorded in an SATB log buffer.
+  void insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* pre_val);
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile);
   bool inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static);
   bool inline_unsafe_allocate();
@@ -240,6 +244,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_numberOfTrailingZeros(vmIntrinsics::ID id);
   bool inline_bitCount(vmIntrinsics::ID id);
   bool inline_reverseBytes(vmIntrinsics::ID id);
+
+  bool inline_reference_get();
 };
 
 
@@ -336,6 +342,14 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UsePopCountInstruction)  return NULL;
     break;
 
+  case vmIntrinsics::_Reference_get:
+    // It is only when G1 is enabled that we absolutely
+    // need to use the intrinsic version of Reference.get()
+    // so that the value in the referent field, if necessary,
+    // can be registered by the pre-barrier code.
+    if (!UseG1GC) return NULL;
+    break;
+
  default:
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
     assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
@@ -387,6 +401,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     tty->print_cr("Intrinsic %s", str);
   }
 #endif
+
   if (kit.try_to_inline()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
       CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, kit.bci(), is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
@@ -402,11 +417,19 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   if (PrintIntrinsics) {
-    tty->print("Did not inline intrinsic %s%s at bci:%d in",
+    if (jvms->has_method()) {
+      // Not a root compile.
+      tty->print("Did not inline intrinsic %s%s at bci:%d in",
+                 vmIntrinsics::name_at(intrinsic_id()),
+                 (is_virtual() ? " (virtual)" : ""), kit.bci());
+      kit.caller()->print_short_name(tty);
+      tty->print_cr(" (%d bytes)", kit.caller()->code_size());
+    } else {
+      // Root compile
+      tty->print("Did not generate intrinsic %s%s at bci:%d in",
                vmIntrinsics::name_at(intrinsic_id()),
                (is_virtual() ? " (virtual)" : ""), kit.bci());
-    kit.caller()->print_short_name(tty);
-    tty->print_cr(" (%d bytes)", kit.caller()->code_size());
+    }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
   return NULL;
@@ -417,6 +440,14 @@ bool LibraryCallKit::try_to_inline() {
   const bool is_store       = true;
   const bool is_native_ptr  = true;
   const bool is_static      = true;
+
+  if (!jvms()->has_method()) {
+    // Root JVMState has a null method.
+    assert(map()->memory()->Opcode() == Op_Parm, "");
+    // Insert the memory aliasing node
+    set_all_memory(reset_memory());
+  }
+  assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
   case vmIntrinsics::_hashCode:
@@ -657,6 +688,9 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_getCallerClass:
     return inline_native_Reflection_getCallerClass();
+
+  case vmIntrinsics::_Reference_get:
+    return inline_reference_get();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -2076,6 +2110,106 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
 
 const static BasicType T_ADDRESS_HOLDER = T_LONG;
 
+// Helper that guards and inserts a G1 pre-barrier.
+void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* pre_val) {
+  assert(UseG1GC, "should not call this otherwise");
+
+  // We could be accessing the referent field of a reference object. If so, when G1
+  // is enabled, we need to log the value in the referent field in an SATB buffer.
+  // This routine performs some compile time filters and generates suitable
+  // runtime filters that guard the pre-barrier code.
+
+  // Some compile time checks.
+
+  // If offset is a constant, is it java_lang_ref_Reference::_reference_offset?
+  const TypeX* otype = offset->find_intptr_t_type();
+  if (otype != NULL && otype->is_con() &&
+      otype->get_con() != java_lang_ref_Reference::referent_offset) {
+    // Constant offset but not the reference_offset so just return
+    return;
+  }
+
+  // We only need to generate the runtime guards for instances.
+  const TypeOopPtr* btype = base_oop->bottom_type()->isa_oopptr();
+  if (btype != NULL) {
+    if (btype->isa_aryptr()) {
+      // Array type so nothing to do
+      return;
+    }
+
+    const TypeInstPtr* itype = btype->isa_instptr();
+    if (itype != NULL) {
+      // Can the klass of base_oop be statically determined
+      // to be _not_ a sub-class of Reference?
+      ciKlass* klass = itype->klass();
+      if (klass->is_subtype_of(env()->Reference_klass()) &&
+          !env()->Reference_klass()->is_subtype_of(klass)) {
+        return;
+      }
+    }
+  }
+
+  // The compile time filters did not reject base_oop/offset so
+  // we need to generate the following runtime filters
+  //
+  // if (offset == java_lang_ref_Reference::_reference_offset) {
+  //   if (base != null) {
+  //     if (klass(base)->reference_type() != REF_NONE)) {
+  //       pre_barrier(_, pre_val, ...);
+  //     }
+  //   }
+  // }
+
+  float likely  = PROB_LIKELY(0.999);
+  float unlikely  = PROB_UNLIKELY(0.999);
+
+  IdealKit ideal(this);
+#define __ ideal.
+
+  const int reference_type_offset = instanceKlass::reference_type_offset_in_bytes() +
+                                        sizeof(oopDesc);
+
+  Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
+
+  __ if_then(offset, BoolTest::eq, referent_off, unlikely); {
+    __ if_then(base_oop, BoolTest::ne, null(), likely); {
+
+      // Update graphKit memory and control from IdealKit.
+      sync_kit(ideal);
+
+      Node* ref_klass_con = makecon(TypeKlassPtr::make(env()->Reference_klass()));
+      Node* is_instof = gen_instanceof(base_oop, ref_klass_con);
+
+      // Update IdealKit memory and control from graphKit.
+      __ sync_kit(this);
+
+      Node* one = __ ConI(1);
+
+      __ if_then(is_instof, BoolTest::eq, one, unlikely); {
+
+        // Update graphKit from IdeakKit.
+        sync_kit(ideal);
+
+        // Use the pre-barrier to record the value in the referent field
+        pre_barrier(false /* do_load */,
+                    __ ctrl(),
+                    NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
+                    pre_val /* pre_val */,
+                    T_OBJECT);
+
+        // Update IdealKit from graphKit.
+        __ sync_kit(this);
+
+      } __ end_if(); // _ref_type != ref_none
+    } __ end_if(); // base  != NULL
+  } __ end_if(); // offset == referent_offset
+
+  // Final sync IdealKit and GraphKit.
+  final_sync(ideal);
+#undef __
+}
+
+
 // Interpret Unsafe.fieldOffset cookies correctly:
 extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
 
@@ -2152,9 +2286,11 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // Build address expression.  See the code in inline_unsafe_prefetch.
   Node *adr;
   Node *heap_base_oop = top();
+  Node* offset = top();
+
   if (!is_native_ptr) {
     // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-    Node* offset = pop_pair();
+    offset = pop_pair();
     // The base is either a Java object or a value produced by Unsafe.staticFieldBase
     Node* base   = pop();
     // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
@@ -2194,6 +2330,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // the alias analysis of the rest of the graph, either Compile::can_alias
   // or Compile::must_alias will throw a diagnostic assert.)
   bool need_mem_bar = (alias_type->adr_type() == TypeOopPtr::BOTTOM);
+
+  // If we are reading the value of the referent field of a Reference
+  // object (either by using Unsafe directly or through reflection)
+  // then, if G1 is enabled, we need to record the referent in an
+  // SATB log buffer using the pre-barrier mechanism.
+  bool need_read_barrier = UseG1GC && !is_native_ptr && !is_store &&
+                           offset != top() && heap_base_oop != top();
 
   if (!is_store && type == T_OBJECT) {
     // Attempt to infer a sharper value type from the offset and base type.
@@ -2278,8 +2421,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     case T_SHORT:
     case T_INT:
     case T_FLOAT:
+      push(p);
+      break;
     case T_OBJECT:
-      push( p );
+      if (need_read_barrier) {
+        insert_g1_pre_barrier(heap_base_oop, offset, p);
+      }
+      push(p);
       break;
     case T_ADDRESS:
       // Cast to an int type.
@@ -2534,7 +2682,10 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   case T_OBJECT:
      // reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
-    pre_barrier(control(), base, adr, alias_idx, newval, value_type->make_oopptr(), T_OBJECT);
+    pre_barrier(true /* do_load*/,
+                control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
+                NULL /* pre_val*/,
+                T_OBJECT);
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = _gvn.transform(new (C, 2) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
@@ -5235,3 +5386,44 @@ LibraryCallKit::generate_unchecked_arraycopy(const TypePtr* adr_type,
                     copyfunc_addr, copyfunc_name, adr_type,
                     src_start, dest_start, copy_length XTOP);
 }
+
+//----------------------------inline_reference_get----------------------------
+
+bool LibraryCallKit::inline_reference_get() {
+  const int nargs = 1; // self
+
+  guarantee(java_lang_ref_Reference::referent_offset > 0,
+            "should have already been set");
+
+  int referent_offset = java_lang_ref_Reference::referent_offset;
+
+  // Restore the stack and pop off the argument
+  _sp += nargs;
+  Node *reference_obj = pop();
+
+  // Null check on self without removing any arguments.
+  _sp += nargs;
+  reference_obj = do_null_check(reference_obj, T_OBJECT);
+  _sp -= nargs;;
+
+  if (stopped()) return true;
+
+  Node *adr = basic_plus_adr(reference_obj, reference_obj, referent_offset);
+
+  ciInstanceKlass* klass = env()->Object_klass();
+  const TypeOopPtr* object_type = TypeOopPtr::make_from_klass(klass);
+
+  Node* no_ctrl = NULL;
+  Node *result = make_load(no_ctrl, adr, object_type, T_OBJECT);
+
+  // Use the pre-barrier to record the value in the referent field
+  pre_barrier(false /* do_load */,
+              control(),
+              NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
+              result /* pre_val */,
+              T_OBJECT);
+
+  push(result);
+  return true;
+}
+

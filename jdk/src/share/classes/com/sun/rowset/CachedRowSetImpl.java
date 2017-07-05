@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,13 +111,13 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     private String tableName;
 
-
     /**
      * A <code>Vector</code> object containing the <code>Row</code>
      * objects that comprise  this <code>CachedRowSetImpl</code> object.
      * @serial
      */
-    private Vector rvh;
+    private Vector<Object> rvh;
+
     /**
      * The current postion of the cursor in this <code>CachedRowSetImpl</code>
      * object.
@@ -293,12 +293,12 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * The Vector holding the Match Columns
      */
-       private Vector iMatchColumns;
+    private Vector<Integer> iMatchColumns;
 
     /**
      * The Vector that will hold the Match Column names.
      */
-       private Vector strMatchColumns;
+    private Vector<String> strMatchColumns;
 
     /**
      * Trigger that indicates whether the active SyncProvider is exposes the
@@ -484,7 +484,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     private void initContainer() {
 
-        rvh = new Vector(100);
+        rvh = new Vector<Object>(100);
         cursorPos = 0;
         absolutePos = 0;
         numRows = 0;
@@ -523,12 +523,12 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         //Instantiating the vector for MatchColumns
 
-        iMatchColumns = new Vector(10);
+        iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
            iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
-        strMatchColumns = new Vector(10);
+        strMatchColumns = new Vector<String>(10);
         for(int j = 0; j < 10; j++) {
            strMatchColumns.add(j,null);
         }
@@ -622,7 +622,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         Row currentRow;
         int numCols;
         int i;
-        Map map = getTypeMap();
+        Map<String, Class<?>> map = getTypeMap();
         Object obj;
         int mRows;
 
@@ -939,14 +939,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public void acceptChanges(Connection con) throws SyncProviderException{
 
-      try{
-         setConnection(con);
-         acceptChanges();
-      } catch (SyncProviderException spe) {
-          throw spe;
-      } catch(SQLException sqle){
-          throw new SyncProviderException(sqle.getMessage());
-      }
+      setConnection(con);
+      acceptChanges();
+
     }
 
     /**
@@ -1289,14 +1284,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public Collection<?> toCollection() throws SQLException {
 
-        TreeMap tMap;
-        int count = 0;
-        Row origRow;
-        Vector newRow;
-
-        int colCount = ((RowSetMetaDataImpl)this.getMetaData()).getColumnCount();
-
-        tMap = new TreeMap();
+        TreeMap<Integer, Object> tMap = new TreeMap<>();
 
         for (int i = 0; i<numRows; i++) {
             tMap.put(Integer.valueOf(i), rvh.get(i));
@@ -1325,10 +1313,8 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public Collection<?> toCollection(int column) throws SQLException {
 
-        Vector vec;
-        Row origRow;
         int nRows = numRows;
-        vec = new Vector(nRows);
+        Vector<Object> vec = new Vector<>(nRows);
 
         // create a copy
         CachedRowSetImpl crsTemp;
@@ -2953,7 +2939,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public Object getObject(int columnIndex) throws SQLException {
         Object value;
-        java.util.Map map;
+        Map<String, Class<?>> map;
 
         // sanity check.
         checkIndex(columnIndex);
@@ -7257,7 +7243,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         Row currentRow;
         int numCols;
         int i;
-        Map map = getTypeMap();
+        Map<String, Class<?>> map = getTypeMap();
         Object obj;
         int mRows;
 
@@ -7304,11 +7290,11 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             resultSet.absolute(start -1);
         }
         if( pageSize == 0) {
-           rvh = new Vector(getMaxRows());
+           rvh = new Vector<Object>(getMaxRows());
 
         }
         else{
-            rvh = new Vector(getPageSize());
+            rvh = new Vector<Object>(getPageSize());
         }
 
         if (data == null) {

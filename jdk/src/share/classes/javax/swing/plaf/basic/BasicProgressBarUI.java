@@ -1211,9 +1211,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
 
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicProgressBarUI.
+     * Instantiate it only within subclasses of {@code BasicProgressBarUI}.
      */
     public class ChangeHandler implements ChangeListener {
         // NOTE: This class exists only for backward compatability. All

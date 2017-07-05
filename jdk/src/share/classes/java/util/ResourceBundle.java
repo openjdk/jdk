@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 
 import sun.util.locale.BaseLocale;
-import sun.util.locale.LocaleExtensions;
 import sun.util.locale.LocaleObjectCache;
 
 
@@ -290,7 +289,7 @@ public abstract class ResourceBundle {
      * name for compatibility with some workarounds for bug 4212439.
      */
     private static final ConcurrentMap<CacheKey, BundleReference> cacheList
-        = new ConcurrentHashMap<CacheKey, BundleReference>(INITIAL_CACHE_SIZE);
+        = new ConcurrentHashMap<>(INITIAL_CACHE_SIZE);
 
     /**
      * Queue for reference objects referring to class loaders or bundles.
@@ -1755,7 +1754,7 @@ public abstract class ResourceBundle {
      * @since 1.6
      */
     public Set<String> keySet() {
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         for (ResourceBundle rb = this; rb != null; rb = rb.parent) {
             keys.addAll(rb.handleKeySet());
         }
@@ -1783,7 +1782,7 @@ public abstract class ResourceBundle {
         if (keySet == null) {
             synchronized (this) {
                 if (keySet == null) {
-                    Set<String> keys = new HashSet<String>();
+                    Set<String> keys = new HashSet<>();
                     Enumeration<String> enumKeys = getKeys();
                     while (enumKeys.hasMoreElements()) {
                         String key = enumKeys.nextElement();
@@ -2301,7 +2300,7 @@ public abstract class ResourceBundle {
             if (baseName == null) {
                 throw new NullPointerException();
             }
-            return new ArrayList<Locale>(CANDIDATES_CACHE.get(locale.getBaseLocale()));
+            return new ArrayList<>(CANDIDATES_CACHE.get(locale.getBaseLocale()));
         }
 
         private static final CandidateListCache CANDIDATES_CACHE = new CandidateListCache();
@@ -2327,14 +2326,14 @@ public abstract class ResourceBundle {
                 if (language.equals("nb") || isNorwegianBokmal) {
                     List<Locale> tmpList = getDefaultList("nb", script, region, variant);
                     // Insert a locale replacing "nb" with "no" for every list entry
-                    List<Locale> bokmalList = new LinkedList<Locale>();
+                    List<Locale> bokmalList = new LinkedList<>();
                     for (Locale l : tmpList) {
                         bokmalList.add(l);
                         if (l.getLanguage().length() == 0) {
                             break;
                         }
                         bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
-                                l.getVariant(), LocaleExtensions.EMPTY_EXTENSIONS));
+                                l.getVariant(), null));
                     }
                     return bokmalList;
                 } else if (language.equals("nn") || isNorwegianNynorsk) {
@@ -2374,7 +2373,7 @@ public abstract class ResourceBundle {
                 List<String> variants = null;
 
                 if (variant.length() > 0) {
-                    variants = new LinkedList<String>();
+                    variants = new LinkedList<>();
                     int idx = variant.length();
                     while (idx != -1) {
                         variants.add(variant.substring(0, idx));
@@ -2382,32 +2381,32 @@ public abstract class ResourceBundle {
                     }
                 }
 
-                LinkedList<Locale> list = new LinkedList<Locale>();
+                List<Locale> list = new LinkedList<>();
 
                 if (variants != null) {
                     for (String v : variants) {
-                        list.add(Locale.getInstance(language, script, region, v, LocaleExtensions.EMPTY_EXTENSIONS));
+                        list.add(Locale.getInstance(language, script, region, v, null));
                     }
                 }
                 if (region.length() > 0) {
-                    list.add(Locale.getInstance(language, script, region, "", LocaleExtensions.EMPTY_EXTENSIONS));
+                    list.add(Locale.getInstance(language, script, region, "", null));
                 }
                 if (script.length() > 0) {
-                    list.add(Locale.getInstance(language, script, "", "", LocaleExtensions.EMPTY_EXTENSIONS));
+                    list.add(Locale.getInstance(language, script, "", "", null));
 
                     // With script, after truncating variant, region and script,
                     // start over without script.
                     if (variants != null) {
                         for (String v : variants) {
-                            list.add(Locale.getInstance(language, "", region, v, LocaleExtensions.EMPTY_EXTENSIONS));
+                            list.add(Locale.getInstance(language, "", region, v, null));
                         }
                     }
                     if (region.length() > 0) {
-                        list.add(Locale.getInstance(language, "", region, "", LocaleExtensions.EMPTY_EXTENSIONS));
+                        list.add(Locale.getInstance(language, "", region, "", null));
                     }
                 }
                 if (language.length() > 0) {
-                    list.add(Locale.getInstance(language, "", "", "", LocaleExtensions.EMPTY_EXTENSIONS));
+                    list.add(Locale.getInstance(language, "", "", "", null));
                 }
                 // Add root locale at the end
                 list.add(Locale.ROOT);
