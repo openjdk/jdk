@@ -355,9 +355,9 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
       } else {
         base = iframe()->interpreter_frame_expression_stack();
       }
-      Copy::conjoint_bytes(saved_args,
-                           base,
-                           popframe_preserved_args_size_in_bytes);
+      Copy::conjoint_jbytes(saved_args,
+                            base,
+                            popframe_preserved_args_size_in_bytes);
       thread->popframe_free_preserved_args();
     }
   }

@@ -815,6 +815,16 @@ void LoadNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+#ifdef ASSERT
+//----------------------------is_immutable_value-------------------------------
+// Helper function to allow a raw load without control edge for some cases
+bool LoadNode::is_immutable_value(Node* adr) {
+  return (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
+          adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
+          (adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
+           in_bytes(JavaThread::osthread_offset())));
+}
+#endif
 
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
@@ -828,6 +838,11 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
   assert(!(adr_type->isa_aryptr() &&
            adr_type->offset() == arrayOopDesc::length_offset_in_bytes()),
          "use LoadRangeNode instead");
+  // Check control edge of raw loads
+  assert( ctl != NULL || C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
+          // oop will be recorded in oop map if load crosses safepoint
+          rt->isa_oopptr() || is_immutable_value(adr),
+          "raw memory operations should have control edge");
   switch (bt) {
   case T_BOOLEAN: return new (C, 3) LoadUBNode(ctl, mem, adr, adr_type, rt->is_int()    );
   case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
@@ -2064,6 +2079,8 @@ Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
 // Polymorphic factory method:
 StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt ) {
   Compile* C = gvn.C;
+  assert( C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
+          ctl != NULL, "raw memory operations should have control edge");
 
   switch (bt) {
   case T_BOOLEAN:

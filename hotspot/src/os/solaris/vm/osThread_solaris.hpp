@@ -123,7 +123,7 @@
 
   int set_interrupt_callback    (Sync_Interrupt_Callback * cb);
   void remove_interrupt_callback(Sync_Interrupt_Callback * cb);
-  void OSThread::do_interrupt_callbacks_at_interrupt(InterruptArguments *args);
+  void do_interrupt_callbacks_at_interrupt(InterruptArguments *args);
 
  // ***************************************************************
  // java.lang.Thread.interrupt state.

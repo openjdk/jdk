@@ -26,7 +26,7 @@ static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
 #ifdef AMD64
   (void)memmove(to, from, count * HeapWordSize);
 #else
-  // Same as pd_aligned_conjoint_words, except includes a zero-count check.
+  // Includes a zero-count check.
   intx temp;
   __asm__ volatile("        testl   %6,%6         ;"
                    "        jz      7f            ;"
@@ -84,7 +84,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
     break;
   }
 #else
-  // Same as pd_aligned_disjoint_words, except includes a zero-count check.
+  // Includes a zero-count check.
   intx temp;
   __asm__ volatile("        testl   %6,%6       ;"
                    "        jz      3f          ;"
@@ -130,75 +130,18 @@ static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count)
 }
 
 static void pd_aligned_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
-  (void)memmove(to, from, count * HeapWordSize);
-#else
-  // Same as pd_conjoint_words, except no zero-count check.
-  intx temp;
-  __asm__ volatile("        cmpl    %4,%5         ;"
-                   "        leal    -4(%4,%6,4),%3;"
-                   "        jbe     1f            ;"
-                   "        cmpl    %7,%5         ;"
-                   "        jbe     4f            ;"
-                   "1:      cmpl    $32,%6        ;"
-                   "        ja      3f            ;"
-                   "        subl    %4,%1         ;"
-                   "2:      movl    (%4),%3       ;"
-                   "        movl    %7,(%5,%4,1)  ;"
-                   "        addl    $4,%0         ;"
-                   "        subl    $1,%2          ;"
-                   "        jnz     2b            ;"
-                   "        jmp     7f            ;"
-                   "3:      rep;    smovl         ;"
-                   "        jmp     7f            ;"
-                   "4:      cmpl    $32,%2        ;"
-                   "        movl    %7,%0         ;"
-                   "        leal    -4(%5,%6,4),%1;"
-                   "        ja      6f            ;"
-                   "        subl    %4,%1         ;"
-                   "5:      movl    (%4),%3       ;"
-                   "        movl    %7,(%5,%4,1)  ;"
-                   "        subl    $4,%0         ;"
-                   "        subl    $1,%2          ;"
-                   "        jnz     5b            ;"
-                   "        jmp     7f            ;"
-                   "6:      std                   ;"
-                   "        rep;    smovl         ;"
-                   "        cld                   ;"
-                   "7:      nop                    "
-                   : "=S" (from), "=D" (to), "=c" (count), "=r" (temp)
-                   : "0"  (from), "1"  (to), "2"  (count), "3"  (temp)
-                   : "memory", "flags");
-#endif // AMD64
+  pd_conjoint_words(from, to, count);
 }
 
 static void pd_aligned_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   pd_disjoint_words(from, to, count);
-#else
-  // Same as pd_disjoint_words, except no zero-count check.
-  intx temp;
-  __asm__ volatile("        cmpl    $32,%6      ;"
-                   "        ja      2f          ;"
-                   "        subl    %4,%1       ;"
-                   "1:      movl    (%4),%3     ;"
-                   "        movl    %7,(%5,%4,1);"
-                   "        addl    $4,%0       ;"
-                   "        subl    $1,%2        ;"
-                   "        jnz     1b          ;"
-                   "        jmp     3f          ;"
-                   "2:      rep;    smovl       ;"
-                   "3:      nop                  "
-                   : "=S" (from), "=D" (to), "=c" (count), "=r" (temp)
-                   : "0"  (from), "1"  (to), "2"  (count), "3"  (temp)
-                   : "memory", "cc");
-#endif // AMD64
 }
 
 static void pd_conjoint_bytes(void* from, void* to, size_t count) {
 #ifdef AMD64
   (void)memmove(to, from, count);
 #else
+  // Includes a zero-count check.
   intx temp;
   __asm__ volatile("        testl   %6,%6          ;"
                    "        jz      13f            ;"

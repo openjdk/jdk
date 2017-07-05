@@ -375,6 +375,32 @@ void TemplateTable::ldc(bool wide) {
   __ bind(Done);
 }
 
+// Fast path for caching oop constants.
+// %%% We should use this to handle Class and String constants also.
+// %%% It will simplify the ldc/primitive path considerably.
+void TemplateTable::fast_aldc(bool wide) {
+  transition(vtos, atos);
+
+  if (!EnableMethodHandles) {
+    // We should not encounter this bytecode if !EnableMethodHandles.
+    // The verifier will stop it.  However, if we get past the verifier,
+    // this will stop the thread in a reasonable way, without crashing the JVM.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_IncompatibleClassChangeError));
+    // the call_VM checks for exception, so we should never return here.
+    __ should_not_reach_here();
+    return;
+  }
+
+  const Register cache = rcx;
+  const Register index = rdx;
+
+  resolve_cache_and_index(f1_oop, rax, cache, index, wide ? sizeof(u2) : sizeof(u1));
+  if (VerifyOops) {
+    __ verify_oop(rax);
+  }
+}
+
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
   Label Long, Done;
@@ -2055,6 +2081,8 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
     case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic); break;
+    case Bytecodes::_fast_aldc      : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
+    case Bytecodes::_fast_aldc_w    : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
     default                         : ShouldNotReachHere();                                 break;
   }
   __ movl(temp, (int)bytecode());
