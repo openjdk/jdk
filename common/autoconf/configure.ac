@@ -236,7 +236,7 @@ CONFIG_STATUS="$OUTPUT_ROOT/config.status"
 # Create the actual output files. Now the main work of configure is done.
 AC_OUTPUT
 
-# Try to move the config.log file to the output directory. 
+# Try to move the config.log file to the output directory.
 if test -e ./config.log; then
   $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
 fi

@@ -85,42 +85,42 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
         ImageInputStream stream = (ImageInputStream)source;
 
         stream.mark();
-        int type = stream.readByte();   // TypeField
-        int fixHeaderField = stream.readByte();
-        // check WBMP "header"
-        if (type != 0 || fixHeaderField != 0) {
-            // while WBMP reader does not support ext WBMP headers
+        try {
+            int type = stream.readByte();   // TypeField
+            int fixHeaderField = stream.readByte();
+            // check WBMP "header"
+            if (type != 0 || fixHeaderField != 0) {
+                // while WBMP reader does not support ext WBMP headers
+                return false;
+            }
+
+            int width = ReaderUtil.readMultiByteInteger(stream);
+            int height = ReaderUtil.readMultiByteInteger(stream);
+            // check image dimension
+            if (width <= 0 || height <= 0) {
+                return false;
+            }
+
+            long dataLength = stream.length();
+            if (dataLength == -1) {
+                // We can't verify that amount of data in the stream
+                // corresponds to image dimension because we do not know
+                // the length of the data stream.
+                // Assuming that wbmp image are used for mobile devices,
+                // let's introduce an upper limit for image dimension.
+                // In case if exact amount of raster data is unknown,
+                // let's reject images with dimension above the limit.
+                return (width < MAX_WBMP_WIDTH) && (height < MAX_WBMP_HEIGHT);
+            }
+
+            dataLength -= stream.getStreamPosition();
+
+            long scanSize = (width / 8) + ((width % 8) == 0 ? 0 : 1);
+
+            return (dataLength == scanSize * height);
+        } finally {
             stream.reset();
-            return false;
         }
-
-        int width = ReaderUtil.readMultiByteInteger(stream);
-        int height = ReaderUtil.readMultiByteInteger(stream);
-        // check image dimension
-        if (width <= 0 || height <= 0) {
-            stream.reset();
-            return false;
-        }
-
-        long dataLength = stream.length();
-        if (dataLength == -1) {
-            // We can't verify that amount of data in the stream
-            // corresponds to image dimension because we do not know
-            // the length of the data stream.
-            // Assuming that wbmp image are used for mobile devices,
-            // let's introduce an upper limit for image dimension.
-            // In case if exact amount of raster data is unknown,
-            // let's reject images with dimension above the limit.
-            stream.reset();
-            return (width < MAX_WBMP_WIDTH) && (height < MAX_WBMP_HEIGHT);
-        }
-
-        dataLength -= stream.getStreamPosition();
-        stream.reset();
-
-        long scanSize = (width / 8) + ((width % 8) == 0 ? 0 : 1);
-
-        return (dataLength == scanSize * height);
     }
 
     public ImageReader createReaderInstance(Object extension)

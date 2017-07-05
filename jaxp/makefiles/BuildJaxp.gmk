@@ -30,25 +30,25 @@ default: all
 include MakeBase.gmk
 include JavaCompilation.gmk
 
-DISABLE_JAXP_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough
+DISABLE_JAXP_WARNINGS := -Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough
 
 # The generate new bytecode uses the new compiler for to generate bytecode
 # for the new jdk that is being built. The code compiled by this setup
 # cannot necessarily be run with the boot jdk.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g,\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g, \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-$(eval $(call SetupJavaCompilation,BUILD_JAXP,\
-		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-		SRC:=$(JAXP_TOPDIR)/src,\
-		BIN:=$(JAXP_OUTPUTDIR)/classes,\
-		SRCZIP:=$(JAXP_OUTPUTDIR)/dist/lib/src.zip))
+$(eval $(call SetupJavaCompilation,BUILD_JAXP, \
+    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SRC := $(JAXP_TOPDIR)/src, \
+    BIN := $(JAXP_OUTPUTDIR)/classes, \
+    SRCZIP := $(JAXP_OUTPUTDIR)/dist/lib/src.zip))
 
-# Imitate the property cleaning mechanism in the old build. This will likely be replaced 
+# Imitate the property cleaning mechanism in the old build. This will likely be replaced
 # by the unified functionality in JavaCompilation.gmk, but keep it the same as old build
 # for now, even though it actually breaks properties containing # in the value.
 # Using nawk to avoid solaris sed.
@@ -59,13 +59,13 @@ $(JAXP_OUTPUTDIR)/classes/%.properties: $(JAXP_TOPDIR)/src/%.properties
 	$(MV) $@.tmp $@
 
 SRC_PROP_FILES := $(shell $(FIND) $(JAXP_TOPDIR)/src -name "*.properties")
-TARGET_PROP_FILES := $(patsubst $(JAXP_TOPDIR)/src/%,$(JAXP_OUTPUTDIR)/classes/%,$(SRC_PROP_FILES))
+TARGET_PROP_FILES := $(patsubst $(JAXP_TOPDIR)/src/%, $(JAXP_OUTPUTDIR)/classes/%, $(SRC_PROP_FILES))
 
-$(eval $(call SetupArchive,ARCHIVE_JAXP,$(BUILD_JAXP) $(TARGET_PROP_FILES),\
-		SRCS:=$(JAXP_OUTPUTDIR)/classes,\
-		SUFFIXES:=.class .properties,\
-		JAR:=$(JAXP_OUTPUTDIR)/dist/lib/classes.jar))
+$(eval $(call SetupArchive,ARCHIVE_JAXP, $(BUILD_JAXP) $(TARGET_PROP_FILES), \
+    SRCS := $(JAXP_OUTPUTDIR)/classes, \
+    SUFFIXES := .class .properties, \
+    JAR := $(JAXP_OUTPUTDIR)/dist/lib/classes.jar))
 
 all: $(JAXP_OUTPUTDIR)/dist/lib/classes.jar $(JAXP_OUTPUTDIR)/dist/lib/src.zip
 
-.PHONY: default all 
+.PHONY: default all

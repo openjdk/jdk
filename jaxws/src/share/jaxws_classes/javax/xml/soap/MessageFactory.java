@@ -104,8 +104,6 @@ public abstract class MessageFactory {
                     MESSAGE_FACTORY_PROPERTY,
                     DEFAULT_MESSAGE_FACTORY,
                     false);
-                FactoryFinder.find(MESSAGE_FACTORY_PROPERTY,
-                        DEFAULT_MESSAGE_FACTORY, false);
 
             if (factory != null) {
                 return factory;

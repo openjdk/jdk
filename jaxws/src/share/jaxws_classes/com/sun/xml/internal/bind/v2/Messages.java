@@ -42,6 +42,8 @@ public enum Messages {
     INVALID_JAXP_IMPLEMENTATION, // 1 arg
     JAXP_SUPPORTED_PROPERTY, // 1 arg
     JAXP_UNSUPPORTED_PROPERTY, // 1 arg
+    JAXP_XML_SECURITY_DISABLED, // no arg
+    JAXP_EXTERNAL_ACCESS_CONFIGURED, // no arg
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

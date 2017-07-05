@@ -91,6 +91,11 @@ public final class Context {
      */
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
 
+    // nashorn load psuedo URL prefixes
+    private static final String LOAD_CLASSPATH = "classpath:";
+    private static final String LOAD_FX = "fx:";
+    private static final String LOAD_NASHORN = "nashorn:";
+
     /* Force DebuggerSupport to be loaded. */
     static {
         DebuggerSupport.FORCELOAD = true;
@@ -501,21 +506,26 @@ public final class Context {
         // or a ScriptObject that has "name" and "source" (string valued) properties.
         if (src instanceof String) {
             final String srcStr = (String)src;
-            final File file = new File(srcStr);
-            if (srcStr.indexOf(':') != -1) {
-                if ((source = loadInternal(srcStr, "nashorn:", "resources/")) == null &&
-                    (source = loadInternal(srcStr, "fx:", "resources/fx/")) == null) {
-                    URL url;
-                    try {
-                        //check for malformed url. if malformed, it may still be a valid file
-                        url = new URL(srcStr);
-                    } catch (final MalformedURLException e) {
-                        url = file.toURI().toURL();
+            if (srcStr.startsWith(LOAD_CLASSPATH)) {
+                URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
+                source = (url != null)? new Source(url.toString(), url) : null;
+            } else {
+                final File file = new File(srcStr);
+                if (srcStr.indexOf(':') != -1) {
+                    if ((source = loadInternal(srcStr, LOAD_NASHORN, "resources/")) == null &&
+                        (source = loadInternal(srcStr, LOAD_FX, "resources/fx/")) == null) {
+                        URL url;
+                        try {
+                            //check for malformed url. if malformed, it may still be a valid file
+                            url = new URL(srcStr);
+                        } catch (final MalformedURLException e) {
+                            url = file.toURI().toURL();
+                        }
+                        source = new Source(url.toString(), url);
                     }
-                    source = new Source(url.toString(), url);
+                } else if (file.isFile()) {
+                    source = new Source(srcStr, file);
                 }
-            } else if (file.isFile()) {
-                source = new Source(srcStr, file);
             }
         } else if (src instanceof File && ((File)src).isFile()) {
             final File file = (File)src;
@@ -610,36 +620,53 @@ public final class Context {
     }
 
     /**
-     * Checks that the given package can be accessed from no permissions context.
+     * Checks that the given Class can be accessed from no permissions context.
      *
-     * @param fullName fully qualified package name
+     * @param clazz Class object
      * @throw SecurityException if not accessible
      */
-    public static void checkPackageAccess(final String fullName) {
-        final int index = fullName.lastIndexOf('.');
-        if (index != -1) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        sm.checkPackageAccess(fullName.substring(0, index));
-                        return null;
-                    }
-                }, NO_PERMISSIONS_ACC_CTXT);
+    public static void checkPackageAccess(final Class clazz) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Class bottomClazz = clazz;
+            while(bottomClazz.isArray()) {
+                bottomClazz = bottomClazz.getComponentType();
             }
+            checkPackageAccess(sm, bottomClazz.getName());
         }
     }
 
     /**
      * Checks that the given package can be accessed from no permissions context.
      *
+     * @param sm current security manager instance
      * @param fullName fully qualified package name
+     * @throw SecurityException if not accessible
+     */
+    private static void checkPackageAccess(final SecurityManager sm, final String fullName) {
+        sm.getClass(); // null check
+        final int index = fullName.lastIndexOf('.');
+        if (index != -1) {
+            final String pkgName = fullName.substring(0, index);
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    sm.checkPackageAccess(pkgName);
+                    return null;
+                }
+            }, NO_PERMISSIONS_ACC_CTXT);
+        }
+    }
+
+    /**
+     * Checks that the given Class can be accessed from no permissions context.
+     *
+     * @param clazz Class object
      * @return true if package is accessible, false otherwise
      */
-    public static boolean isAccessiblePackage(final String fullName) {
+    private static boolean isAccessiblePackage(final Class clazz) {
         try {
-            checkPackageAccess(fullName);
+            checkPackageAccess(clazz);
             return true;
         } catch (final SecurityException se) {
             return false;
@@ -653,7 +680,7 @@ public final class Context {
      * @return true if Class is accessible, false otherwise
      */
     public static boolean isAccessibleClass(final Class<?> clazz) {
-        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz.getName());
+        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz);
     }
 
     /**
@@ -667,8 +694,16 @@ public final class Context {
      * @throws ClassNotFoundException if class cannot be resolved
      */
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
+        if (fullName.indexOf('[') != -1 || fullName.indexOf('/') != -1) {
+            // don't allow array class names or internal names.
+            throw new ClassNotFoundException(fullName);
+        }
+
         // check package access as soon as possible!
-        checkPackageAccess(fullName);
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkPackageAccess(sm, fullName);
+        }
 
         // try the script -classpath loader, if that is set
         if (classPathLoader != null) {
@@ -801,6 +836,18 @@ public final class Context {
         }
 
         return Context.getContextTrusted();
+    }
+
+    private URL getResourceURL(final String resName) throws IOException {
+        // try the classPathLoader if we have and then
+        // try the appLoader if non-null.
+        if (classPathLoader != null) {
+            return classPathLoader.getResource(resName);
+        } else if (appLoader != null) {
+            return appLoader.getResource(resName);
+        }
+
+        return null;
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {

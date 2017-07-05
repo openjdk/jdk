@@ -24,22 +24,22 @@
 #
 
 # Included or excluded types must take one of two forms
-# - *.class   to indicate all classes; or else
+# - *.class to indicate all classes; or else
 # - a full single type name e.g.
-#      com/sun/security/auth/callback/DialogCallbackHandler$$1.class
+#     com/sun/security/auth/callback/DialogCallbackHandler$$1.class
 # You can not use arbitrary wildcards like DialogCallbackHandler*.class.
 #
 # Notes:
-#  -  Nested types must use $$ in place of $ as $ is the make meta-character
-#  -  If a package is not listed in any profile's inclusion list then it will
-#     not appear in any profile. But if a package is also missing from the
-#     full JRE's inclusion list then it will still be part of the full JRE.
-#     This is because the full JRE's inclusion lists are only used to define
-#     the exclusion lists for profiles; they are not used to define the full
-#     JRE contents - that is still done with the pre-profile legacy mechanism
-#     (all packagesthat can be found, less those not intended for rt.jar).
-#     This was done to minimize the impact of profiles on the regular
-#     non-profile build.
+# - Nested types must use $$ in place of $ as $ is the make meta-character
+# - If a package is not listed in any profile's inclusion list then it will
+#   not appear in any profile. But if a package is also missing from the
+#   full JRE's inclusion list then it will still be part of the full JRE.
+#   This is because the full JRE's inclusion lists are only used to define
+#   the exclusion lists for profiles; they are not used to define the full
+#   JRE contents - that is still done with the pre-profile legacy mechanism
+#   (all packagesthat can be found, less those not intended for rt.jar).
+#   This was done to minimize the impact of profiles on the regular
+#   non-profile build.
 #
 PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     com/sun/demo/jvmti/hprof \
@@ -71,11 +71,11 @@ PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     sun/usagetracker \
     sun/util
 
-PROFILE_1_RTJAR_INCLUDE_TYPES := 
+PROFILE_1_RTJAR_INCLUDE_TYPES :=
 
-PROFILE_1_RTJAR_EXCLUDE_TYPES := 
+PROFILE_1_RTJAR_EXCLUDE_TYPES :=
 
-PROFILE_1_INCLUDE_METAINF_SERVICES := 
+PROFILE_1_INCLUDE_METAINF_SERVICES :=
 
 
 PROFILE_2_RTJAR_INCLUDE_PACKAGES := \
@@ -96,12 +96,12 @@ PROFILE_2_RTJAR_INCLUDE_PACKAGES := \
     sun/rmi \
     sun/util/xml
 
-PROFILE_2_RTJAR_INCLUDE_TYPES := 
+PROFILE_2_RTJAR_INCLUDE_TYPES :=
 
-PROFILE_2_RTJAR_EXCLUDE_TYPES := 
+PROFILE_2_RTJAR_EXCLUDE_TYPES :=
 
 PROFILE_2_INCLUDE_METAINF_SERVICES := \
-    META-INF/services/sun.util.spi.XmlPropertiesProvider 
+    META-INF/services/sun.util.spi.XmlPropertiesProvider
 
 
 PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
@@ -146,7 +146,7 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
     sun/security/smartcardio \
     sun/tracing
 
-PROFILE_3_RTJAR_INCLUDE_TYPES := 
+PROFILE_3_RTJAR_INCLUDE_TYPES :=
 
 PROFILE_3_RTJAR_EXCLUDE_TYPES := \
     com/sun/security/auth/callback/DialogCallbackHandler$$1.class \
@@ -237,22 +237,20 @@ FULL_JRE_RTJAR_INCLUDE_TYPES := \
     javax/management/remote/rmi/_RMIServer_Stub.class \
     javax/rmi/*.class
 
-FULL_JRE_RTJAR_EXCLUDE_TYPES := 
+FULL_JRE_RTJAR_EXCLUDE_TYPES :=
 
 FULL_JRE_INCLUDE_METAINF_SERVICES := \
-    META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin  \
-    META-INF/services/com.sun.tools.internal.xjc.Plugin  \
-    META-INF/services/javax.print.PrintServiceLookup  \
-    META-INF/services/javax.print.StreamPrintServiceFactory  \
-    META-INF/services/javax.sound.midi.spi.MidiDeviceProvider  \
-    META-INF/services/javax.sound.midi.spi.MidiFileReader  \
-    META-INF/services/javax.sound.midi.spi.MidiFileWriter  \
-    META-INF/services/javax.sound.midi.spi.SoundbankReader  \
-    META-INF/services/javax.sound.sampled.spi.AudioFileReader  \
-    META-INF/services/javax.sound.sampled.spi.AudioFileWriter  \
-    META-INF/services/javax.sound.sampled.spi.FormatConversionProvider  \
-    META-INF/services/javax.sound.sampled.spi.MixerProvider  \
-    META-INF/services/sun.java2d.cmm.PCMM  \
-    META-INF/services/sun.java2d.pipe.RenderingEngine 
-
-
+    META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
+    META-INF/services/com.sun.tools.internal.xjc.Plugin \
+    META-INF/services/javax.print.PrintServiceLookup \
+    META-INF/services/javax.print.StreamPrintServiceFactory \
+    META-INF/services/javax.sound.midi.spi.MidiDeviceProvider \
+    META-INF/services/javax.sound.midi.spi.MidiFileReader \
+    META-INF/services/javax.sound.midi.spi.MidiFileWriter \
+    META-INF/services/javax.sound.midi.spi.SoundbankReader \
+    META-INF/services/javax.sound.sampled.spi.AudioFileReader \
+    META-INF/services/javax.sound.sampled.spi.AudioFileWriter \
+    META-INF/services/javax.sound.sampled.spi.FormatConversionProvider \
+    META-INF/services/javax.sound.sampled.spi.MixerProvider \
+    META-INF/services/sun.java2d.cmm.PCMM \
+    META-INF/services/sun.java2d.pipe.RenderingEngine

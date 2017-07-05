@@ -25,14 +25,18 @@
 
 package com.sun.xml.internal.ws.client;
 
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
 import com.sun.xml.internal.ws.api.server.Container;
-import com.sun.xml.internal.ws.model.wsdl.WSDLServiceImpl;
+
 import java.util.Map;
+
 import javax.xml.namespace.QName;
+
 import com.sun.org.glassfish.gmbal.AMXMetadata;
 import com.sun.org.glassfish.gmbal.Description;
 import com.sun.org.glassfish.gmbal.ManagedAttribute;
 import com.sun.org.glassfish.gmbal.ManagedObject;
+
 import java.net.URL;
 
 /**
@@ -74,7 +78,7 @@ public final class MonitorRootClient extends com.sun.xml.internal.ws.server.Moni
     private URL wsdlDocumentLocation() { return stub.owner.getWSDLDocumentLocation(); }
 
     @ManagedAttribute
-    private WSDLServiceImpl wsdlService() { return stub.owner.getWsdlService(); }
+    private WSDLService wsdlService() { return stub.owner.getWsdlService(); }
 
 
 

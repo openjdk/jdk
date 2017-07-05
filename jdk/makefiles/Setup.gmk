@@ -23,40 +23,40 @@
 # questions.
 #
 
-DISABLE_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
+DISABLE_WARNINGS := -Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
 
 # To build with all warnings enabled, do the following:
-# make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000" 
-JAVAC_WARNINGS:=-Xlint:-unchecked,-deprecation,-overrides,classfile,dep-ann,divzero,varargs -Werror
+# make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000"
+JAVAC_WARNINGS := -Xlint:-unchecked,-deprecation,-overrides,classfile,dep-ann,divzero,varargs -Werror
 
 # The generate old bytecode javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
 # Thus we force the target bytecode to 7.
-$(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-source 7 -target 7 -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -source 7 -target 7 -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 # The generate new bytecode javac setup uses the new compiler to compile for the
 # new jdk. This new bytecode might only be possible to run using the new jvm.
-$(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 \
-	    -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS) \
-	    $(GENERATE_JDKBYTECODE_EXTRA_FLAGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 \
+        -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS) \
+        $(GENERATE_JDKBYTECODE_EXTRA_FLAGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 # After the jdk is built, we want to build demos using only the recently
 # generated jdk classes and nothing else, no jdk source, etc etc.
 # I.e. the rt.jar, but since rt.jar has not yet been generated
 # (it will be in "make images") therefore we use classes instead.
-$(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -bootclasspath $(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))

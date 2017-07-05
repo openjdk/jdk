@@ -39,9 +39,9 @@ import java.io.IOException;
  * docs. A multidoc object is like a node in the linked list, containing the
  * current doc in the list and a pointer to the next node (multidoc) in the
  * list. The Print Job can call the multidoc's {@link #getDoc()
- * <CODE>getDoc()</CODE>} method to get the current doc. When it's ready to go
+ * getDoc()} method to get the current doc. When it's ready to go
  * on to the next doc, the Print Job can call the multidoc's {@link #next()
- * <CODE>next()</CODE>} method to get the next multidoc, which contains the
+ * next()} method to get the next multidoc, which contains the
  * next doc. So Print Job code for accessing a multidoc might look like this:
  * <PRE>
  *      void processMultiDoc(MultiDoc theMultiDoc) {
@@ -88,12 +88,12 @@ import java.io.IOException;
 * multiple docs to a Print Job, every Print Service proxy that supports
  * multidoc print jobs is required to access a MultiDoc object using the
  * interleaved pattern. That is, given a MultiDoc object, the print service
- * proxy will call {@link #getDoc() <CODE>getDoc()</CODE>} one or more times
+ * proxy will call {@link #getDoc() getDoc()} one or more times
  * until it successfully obtains the current Doc object. The print service proxy
  * will then obtain the current doc's print data, not proceeding until all the
  * print data is obtained or an unrecoverable error occurs. If it is able to
  * continue, the print service proxy will then call {@link #next()
- * <CODE>next()</CODE>} one or more times until it successfully obtains either
+ * next()} one or more times until it successfully obtains either
  * the next MultiDoc object or an indication that there are no more. An
  * implementation of interface MultiDoc can assume the print service proxy will
  * follow this interleaved pattern; for any other pattern of usage, the MultiDoc

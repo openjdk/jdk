@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
@@ -397,14 +395,68 @@ public abstract class OpTestCase extends LoggingTestCase {
 
     // Exercise terminal operations
 
-    static enum TerminalTestScenario {
-        SINGLE_SEQUENTIAL,
-        SINGLE_SEQUENTIAL_SHORT_CIRCUIT,
-        SINGLE_PARALLEL,
-        ALL_SEQUENTIAL,
-        ALL_SEQUENTIAL_SHORT_CIRCUIT,
-        ALL_PARALLEL,
-        ALL_PARALLEL_SEQUENTIAL,
+    interface BaseTerminalTestScenario<U, R, S_OUT extends BaseStream<U, S_OUT>> {
+        boolean requiresSingleStageSource();
+
+        boolean requiresParallelSource();
+
+        default R run(Function<S_OUT, R> terminalF, S_OUT source, StreamShape shape) {
+            return terminalF.apply(source);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static enum TerminalTestScenario implements BaseTerminalTestScenario {
+        SINGLE_SEQUENTIAL(true, false),
+
+        SINGLE_SEQUENTIAL_SHORT_CIRCUIT(true, false) {
+            @Override
+            public Object run(Function terminalF, BaseStream source, StreamShape shape) {
+                source = (BaseStream) chain(source, new ShortCircuitOp(shape));
+                return terminalF.apply(source);
+            }
+        },
+
+        SINGLE_PARALLEL(true, true),
+
+        ALL_SEQUENTIAL(false, false),
+
+        ALL_SEQUENTIAL_SHORT_CIRCUIT(false, false) {
+            @Override
+            public Object run(Function terminalF, BaseStream source, StreamShape shape) {
+                source = (BaseStream) chain(source, new ShortCircuitOp(shape));
+                return terminalF.apply(source);
+            }
+        },
+
+        ALL_PARALLEL(false, true),
+
+        ALL_PARALLEL_SEQUENTIAL(false, false) {
+            @Override
+            public Object run(Function terminalF, BaseStream source, StreamShape shape) {
+                return terminalF.apply(source.sequential());
+            }
+        },
+        ;
+
+        private final boolean requiresSingleStageSource;
+        private final boolean isParallel;
+
+        TerminalTestScenario(boolean requiresSingleStageSource, boolean isParallel) {
+            this.requiresSingleStageSource = requiresSingleStageSource;
+            this.isParallel = isParallel;
+        }
+
+        @Override
+        public boolean requiresSingleStageSource() {
+            return requiresSingleStageSource;
+        }
+
+        @Override
+        public boolean requiresParallelSource() {
+            return isParallel;
+        }
+
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -414,8 +466,6 @@ public abstract class OpTestCase extends LoggingTestCase {
         final Function<S_OUT, R> terminalF;
 
         R refResult;
-
-        Set<TerminalTestScenario> testSet = EnumSet.allOf(TerminalTestScenario.class);
 
         ResultAsserter<R> resultAsserter = (act, exp, ord, par) -> LambdaTestHelpers.assertContentsEqual(act, exp);
 
@@ -442,27 +492,6 @@ public abstract class OpTestCase extends LoggingTestCase {
             return this;
         }
 
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> without(TerminalTestScenario... tests) {
-            return without(Arrays.asList(tests));
-        }
-
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> without(Collection<TerminalTestScenario> tests) {
-            testSet.removeAll(tests);
-            if (testSet.isEmpty()) {
-                throw new IllegalStateException("Terminal test scenario set is empty");
-            }
-            return this;
-        }
-
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> with(TerminalTestScenario... tests) {
-            return with(Arrays.asList(tests));
-        }
-
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> with(Collection<TerminalTestScenario> tests) {
-            testSet.addAll(tests);
-            return this;
-        }
-
         // Build method
 
         public R exercise() {
@@ -471,70 +500,36 @@ public abstract class OpTestCase extends LoggingTestCase {
             boolean isOrdered = StreamOpFlag.ORDERED.isKnown(ap.getStreamFlags());
             StreamShape shape = ap.getOutputShape();
 
+            EnumSet<TerminalTestScenario> tests = EnumSet.allOf(TerminalTestScenario.class);
+            // Sequentially collect the output that will be input to the terminal op
             Node<U> node = ap.evaluateToArrayNode(size -> (U[]) new Object[size]);
             if (refResult == null) {
-                // Sequentially collect the output that will be input to the terminal op
-                refResult = terminalF.apply((S_OUT) createPipeline(shape, node.spliterator(),
-                                                                   StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
-                                                                   false));
-            } else if (testSet.contains(TerminalTestScenario.SINGLE_SEQUENTIAL)) {
+                // Induce the reference result
                 S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
                                                       StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
                                                       false);
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
-                                                   () -> String.format("Single sequential: %s != %s", refResult, result));
+
+                refResult = (R) TerminalTestScenario.SINGLE_SEQUENTIAL.run(terminalF, source, shape);
+                tests.remove(TerminalTestScenario.SINGLE_SEQUENTIAL);
             }
 
-            if (testSet.contains(TerminalTestScenario.SINGLE_SEQUENTIAL_SHORT_CIRCUIT)) {
-                S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
-                                                      StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
-                                                      false);
-                // Force short-circuit
-                source = (S_OUT) chain(source, new ShortCircuitOp<U>(shape));
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
-                                                   () -> String.format("Single sequential pull: %s != %s", refResult, result));
-            }
+            for (BaseTerminalTestScenario test : tests) {
+                S_OUT source;
+                if (test.requiresSingleStageSource()) {
+                    source = (S_OUT) createPipeline(shape, node.spliterator(),
+                                                    StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
+                                                    test.requiresParallelSource());
+                }
+                else {
+                    source = streamF.apply(test.requiresParallelSource()
+                                           ? data.parallelStream() : data.stream());
+                }
 
-            if (testSet.contains(TerminalTestScenario.SINGLE_PARALLEL)) {
-                S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
-                                                      StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
-                                                      true);
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, true),
-                                                   () -> String.format("Single parallel: %s != %s", refResult, result));
-            }
+                R result = (R) test.run(terminalF, source, shape);
 
-            if (testSet.contains(TerminalTestScenario.ALL_SEQUENTIAL)) {
-                // This may forEach or tryAdvance depending on the terminal op implementation
-                S_OUT source = streamF.apply(data.stream());
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
-                                                   () -> String.format("All sequential: %s != %s", refResult, result));
-            }
-
-            if (testSet.contains(TerminalTestScenario.ALL_SEQUENTIAL_SHORT_CIRCUIT)) {
-                S_OUT source = streamF.apply(data.stream());
-                // Force short-circuit
-                source = (S_OUT) chain(source, new ShortCircuitOp<U>(shape));
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
-                                                   () -> String.format("All sequential pull: %s != %s", refResult, result));
-            }
-
-            if (testSet.contains(TerminalTestScenario.ALL_PARALLEL)) {
-                S_OUT source = streamF.apply(data.parallelStream());
-                R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, true),
-                                                   () -> String.format("All parallel: %s != %s", refResult, result));
-            }
-
-            if (testSet.contains(TerminalTestScenario.ALL_PARALLEL_SEQUENTIAL)) {
-                S_OUT source = streamF.apply(data.parallelStream());
-                R result = terminalF.apply(source.sequential());
-                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
-                                                   () -> String.format("All parallel then sequential: %s != %s", refResult, result));
+                LambdaTestHelpers.launderAssertion(
+                        () -> resultAsserter.assertResult(result, refResult, isOrdered, test.requiresParallelSource()),
+                        () -> String.format("%s: %s != %s", test, refResult, result));
             }
 
             return refResult;
@@ -596,10 +591,10 @@ public abstract class OpTestCase extends LoggingTestCase {
 
     // Test data
 
-    private class ShortCircuitOp<T> implements StatelessTestOp<T,T> {
+    static class ShortCircuitOp<T> implements StatelessTestOp<T,T> {
         private final StreamShape shape;
 
-        private ShortCircuitOp(StreamShape shape) {
+        ShortCircuitOp(StreamShape shape) {
             this.shape = shape;
         }
 

@@ -38,6 +38,20 @@ public class GrowableRectArray extends GrowableIntArray {
         super(RECT_SIZE, initialSize);
     }
 
+    public final void pushRectValues(int x, int y, int width, int height) {
+        int currSize = size;
+        size += RECT_SIZE;
+
+        if (size >= array.length) {
+            growArray();
+        }
+
+        array[currSize] = x;
+        array[currSize + 1] = y;
+        array[currSize + 2] = width;
+        array[currSize + 3] = height;
+    }
+
     public final void setX(int index, int x) {
         array[getCellIndex(index)] = x;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,12 @@
  */
 
 package com.sun.xml.internal.ws.api.model.wsdl;
+
+import java.util.List;
+
+import javax.xml.namespace.QName;
+
+import org.xml.sax.Locator;
 
 /**
  * Interface that represents WSDL concepts that
@@ -82,4 +88,23 @@ public interface WSDLExtensible extends WSDLObject {
      *      must not be null.
      */
     void addExtension(WSDLExtension extension);
+
+    /**
+     * True if all required WSDL extensions on Port and Binding are understood
+     * @return true if all wsdl required extensions on Port and Binding are understood
+     */
+    public boolean areRequiredExtensionsUnderstood();
+
+    /**
+     * Marks extension as not understood
+     * @param extnEl QName of extension
+     * @param locator Locator
+     */
+    public void addNotUnderstoodExtension(QName extnEl, Locator locator);
+
+    /**
+     * Lists extensions marked as not understood
+     * @return List of not understood extensions
+     */
+    public List<? extends WSDLExtension> getNotUnderstoodExtensions();
 }

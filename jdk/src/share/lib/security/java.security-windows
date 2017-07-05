@@ -127,7 +127,7 @@ securerandom.source=file:/dev/random
 # This is a comma-separated list of algorithm and/or algorithm:provider
 # entries.
 #
-securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI
+securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI,SHA1PRNG:SUN
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration

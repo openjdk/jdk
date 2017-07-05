@@ -130,8 +130,7 @@ class LinkResolver: AllStatic {
   static void lookup_polymorphic_method         (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature,
                                                  KlassHandle current_klass, Handle *appendix_result_or_null, Handle *method_type_result, TRAPS);
 
-  static int vtable_index_of_miranda_method(KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
-
+  static int vtable_index_of_interface_method(KlassHandle klass, methodHandle resolved_method, TRAPS);
   static void resolve_klass           (KlassHandle& result, constantPoolHandle  pool, int index, TRAPS);
 
   static void resolve_pool  (KlassHandle& resolved_klass, Symbol*& method_name, Symbol*& method_signature, KlassHandle& current_klass, constantPoolHandle pool, int index, TRAPS);

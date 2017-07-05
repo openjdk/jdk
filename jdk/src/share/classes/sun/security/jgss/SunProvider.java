@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public final class SunProvider extends Provider {
 
     public SunProvider() {
         /* We are the Sun JGSS provider */
-        super("SunJGSS", 1.7d, INFO);
+        super("SunJGSS", 1.8d, INFO);
 
         AccessController.doPrivileged(
                         new java.security.PrivilegedAction<Void>() {

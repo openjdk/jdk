@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package com.sun.xml.internal.ws.wsdl.parser;
 
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLModel;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLModel;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtensionContext;
 import com.sun.xml.internal.ws.api.policy.PolicyResolver;
@@ -38,7 +38,7 @@ import com.sun.xml.internal.ws.api.policy.PolicyResolver;
  */
 final class WSDLParserExtensionContextImpl implements WSDLParserExtensionContext {
     private final boolean isClientSide;
-    private final WSDLModel wsdlModel;
+    private final EditableWSDLModel wsdlModel;
     private final Container container;
     private final PolicyResolver policyResolver;
 
@@ -46,7 +46,7 @@ final class WSDLParserExtensionContextImpl implements WSDLParserExtensionContext
      * Construct {@link WSDLParserExtensionContextImpl} with information that whether its on client side
      * or server side.
      */
-    protected WSDLParserExtensionContextImpl(WSDLModel model, boolean isClientSide, Container container, PolicyResolver policyResolver) {
+    protected WSDLParserExtensionContextImpl(EditableWSDLModel model, boolean isClientSide, Container container, PolicyResolver policyResolver) {
         this.wsdlModel = model;
         this.isClientSide = isClientSide;
         this.container = container;
@@ -57,7 +57,7 @@ final class WSDLParserExtensionContextImpl implements WSDLParserExtensionContext
         return isClientSide;
     }
 
-    public WSDLModel getWSDLModel() {
+    public EditableWSDLModel getWSDLModel() {
         return wsdlModel;
     }
 

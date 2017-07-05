@@ -36,216 +36,218 @@ include JavaCompilation.gmk
 include IdlCompilation.gmk
 
 # The Corba sources are old and generates a LOT of warnings.
-# Disable these using Xlint, until someone cares to fix them. 
-DISABLE_CORBA_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-serial,-fallthrough,-cast,-rawtypes,-static,-dep-ann
+# Disable these using Xlint, until someone cares to fix them.
+DISABLE_CORBA_WARNINGS := -Xlint:all,-deprecation,-unchecked,-serial,-fallthrough,-cast,-rawtypes,-static,-dep-ann
 
 # The "generate old bytecode" javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
 # Thus we force the target bytecode to the boot jdk bytecode.
-$(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=$(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_CORBA_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := $(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_CORBA_WARNINGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 # The "generate new bytecode" uses the new compiler to generate bytecode
 # for the new jdk that is being built. The code compiled by this setup
 # cannot necessarily be run with the boot jdk.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-cp $(BOOT_TOOLSJAR) -XDignore.symbol.file=true $(DISABLE_CORBA_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -cp $(BOOT_TOOLSJAR) -XDignore.symbol.file=true $(DISABLE_CORBA_WARNINGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-$(eval $(call SetupJavaCompilation,BUILD_STRIPPROP,\
-		SETUP:=GENERATE_OLDBYTECODE,\
-		SRC:=$(CORBA_TOPDIR)/make/tools/src,\
-		BIN:=$(CORBA_OUTPUTDIR)/btclasses/stripprop_classes))
+$(eval $(call SetupJavaCompilation,BUILD_STRIPPROP, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(CORBA_TOPDIR)/make/tools/src, \
+    BIN := $(CORBA_OUTPUTDIR)/btclasses/stripprop_classes))
 
-$(eval $(call SetupArchive,ARCHIVE_STRIPPROP,$(BUILD_STRIPPROP),\
-		SRCS:=$(CORBA_OUTPUTDIR)/btclasses/stripprop_classes,\
-		JAR:=$(CORBA_OUTPUTDIR)/btjars/stripproperties.jar,\
-		JARMAIN:=build.tools.stripproperties.StripPropertiesCorba))
+$(eval $(call SetupArchive,ARCHIVE_STRIPPROP, $(BUILD_STRIPPROP), \
+    SRCS := $(CORBA_OUTPUTDIR)/btclasses/stripprop_classes, \
+    JAR := $(CORBA_OUTPUTDIR)/btjars/stripproperties.jar, \
+    JARMAIN := build.tools.stripproperties.StripPropertiesCorba))
 
-$(eval $(call SetupJavaCompilation,BUILD_IDLJ,\
-		SETUP:=GENERATE_OLDBYTECODE,\
-		SRC:=$(CORBA_TOPDIR)/src/share/classes,\
-		BIN:=$(CORBA_OUTPUTDIR)/btclasses/idlj_classes,\
-		COPY:=.prp,\
-		INCLUDES:=com/sun/tools/corba/se/idl,\
-		EXCLUDE_FILES:=ResourceBundleUtil.java))
+$(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(CORBA_TOPDIR)/src/share/classes, \
+    BIN := $(CORBA_OUTPUTDIR)/btclasses/idlj_classes, \
+    COPY := .prp, \
+    INCLUDES := com/sun/tools/corba/se/idl, \
+    EXCLUDE_FILES := ResourceBundleUtil.java))
 
-$(eval $(call SetupArchive,ARCHIVE_IDLJ,$(BUILD_IDLJ),\
-		SRCS:=$(CORBA_OUTPUTDIR)/btclasses/idlj_classes,\
-		SUFFIXES:=.class .prp,\
-		JAR:=$(CORBA_OUTPUTDIR)/btjars/idlj.jar,\
-		JARMAIN:=com.sun.tools.corba.se.idl.toJavaPortable.Compile))
+$(eval $(call SetupArchive,ARCHIVE_IDLJ, $(BUILD_IDLJ), \
+    SRCS := $(CORBA_OUTPUTDIR)/btclasses/idlj_classes, \
+    SUFFIXES := .class .prp, \
+    JAR := $(CORBA_OUTPUTDIR)/btjars/idlj.jar, \
+    JARMAIN := com.sun.tools.corba.se.idl.toJavaPortable.Compile))
 
-$(eval $(call SetupJavaCompilation,BUILD_LOGUTIL,\
-		SETUP:=GENERATE_OLDBYTECODE,\
-		SRC:=$(CORBA_TOPDIR)/src/share/classes,\
-		BIN:=$(CORBA_OUTPUTDIR)/btclasses/logutil_classes,\
-		INCLUDES:=com/sun/tools/corba/se/logutil))
+$(eval $(call SetupJavaCompilation,BUILD_LOGUTIL, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(CORBA_TOPDIR)/src/share/classes, \
+    BIN := $(CORBA_OUTPUTDIR)/btclasses/logutil_classes, \
+    INCLUDES := com/sun/tools/corba/se/logutil))
 
-$(eval $(call SetupArchive,ARCHIVE_LOGUTIL,$(BUILD_LOGUTIL),\
-		SRCS:=$(CORBA_OUTPUTDIR)/btclasses/logutil_classes,\
-		JAR:=$(CORBA_OUTPUTDIR)/btjars/logutil.jar,\
-		JARMAIN:=com.sun.tools.corba.se.logutil.MC))
+$(eval $(call SetupArchive,ARCHIVE_LOGUTIL, $(BUILD_LOGUTIL), \
+    SRCS := $(CORBA_OUTPUTDIR)/btclasses/logutil_classes, \
+    JAR := $(CORBA_OUTPUTDIR)/btjars/logutil.jar, \
+    JARMAIN := com.sun.tools.corba.se.logutil.MC))
 
-# Generate LogWrapper classes 
-$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/%SystemException.java : \
-			$(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
-			$(CORBA_OUTPUTDIR)/btjars/logutil.jar
+# Generate LogWrapper classes
+$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/%SystemException.java: \
+    $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
+    $(CORBA_OUTPUTDIR)/btjars/logutil.jar
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
-	$(ECHO) $(LOG_INFO) Generating class file from $*.mc 
+	$(ECHO) $(LOG_INFO) Generating class file from $*.mc
 	$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/logutil.jar make-class $< $(@D)
 
-# Generate LogWrapper properties file by concatening resource files 
+# Generate LogWrapper properties file by concatening resource files
 $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/LogStrings.properties: \
-		$(CORBA_OUTPUTDIR)/logwrappers/ActivationSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/IORSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/InterceptorsSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/NamingSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/OMGSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/ORBUtilSystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/POASystemException.resource \
-		$(CORBA_OUTPUTDIR)/logwrappers/UtilSystemException.resource
+    $(CORBA_OUTPUTDIR)/logwrappers/ActivationSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/IORSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/InterceptorsSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/NamingSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/OMGSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/ORBUtilSystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/POASystemException.resource \
+    $(CORBA_OUTPUTDIR)/logwrappers/UtilSystemException.resource
 	$(MKDIR) -p $(@D)
 	$(ECHO) $(LOG_INFO) Concatenating 8 resource files into $(@F)
 	$(CAT) $^ > $@
 
 # The resources files are generated from lisp-like .mc files.
-$(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource : $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc $(CORBA_OUTPUTDIR)/btjars/logutil.jar
+$(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource: $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc $(CORBA_OUTPUTDIR)/btjars/logutil.jar
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
-	$(ECHO) $(LOG_INFO) Generating resource file from $*.mc 
+	$(ECHO) $(LOG_INFO) Generating resource file from $*.mc
 	$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/logutil.jar make-resource $< $(@D)
 
 
-$(CORBA_OUTPUTDIR)/logwrappers/_the_wrappers.d : $(CORBA_OUTPUTDIR)/btjars/logutil.jar \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/ActivationSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/IORSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/InterceptorsSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/NamingSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/OMGSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/ORBUtilSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/POASystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/UtilSystemException.java \
-	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/LogStrings.properties
-	$(MKDIR) -p $(@D) 
-	$(ECHO) LOGWRAPPERS_ARE_CREATED=yes > $@
+$(CORBA_OUTPUTDIR)/logwrappers/_the_wrappers.d: $(CORBA_OUTPUTDIR)/btjars/logutil.jar \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/ActivationSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/IORSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/InterceptorsSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/NamingSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/OMGSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/ORBUtilSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/POASystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/UtilSystemException.java \
+    $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/LogStrings.properties
+	$(MKDIR) -p $(@D)
+	$(ECHO) LOGWRAPPERS_ARE_CREATED = yes > $@
 
 # Trigger the generation of the logwrappers. After the logwrapper classes and
 # resources have been created, then the makefile will restart and the newly
 # created java files will become part of the build further along in the makefile.
 -include $(CORBA_OUTPUTDIR)/logwrappers/_the_wrappers.d
 
-ifeq ($(LOGWRAPPERS_ARE_CREATED),yes)
-        $(eval $(call SetupIdlCompilation,BUILD_IDLS,\
-                IDLJ:=$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/idlj.jar,\
-		SRC:=$(CORBA_TOPDIR)/src/share/classes,\
-		BIN:=$(CORBA_OUTPUTDIR)/gensrc,\
-		EXCLUDES:=com/sun/tools/corba/se/idl/% \
-			org/omg/CORBA/% \
-			com/sun/corba/se/GiopIDL/% \
-			org/omg/PortableServer/corba.idl,\
-		INCLUDES:=%,\
-		OLDIMPLBASES:=com/sun/corba/se/PortableActivationIDL/activation.idl \
-			      com/sun/corba/se/spi/activation/activation.idl,\
-		DELETES:=DYNANYDELETEFILES org/omg/DynamicAny/*POA* org/omg/DynamicAny/*Holder* org/omg/DynamicAny/DynValueBoxHelper.java org/omg/DynamicAny/DynValueCommonHelper.java org/omg/DynamicAny/_DynValueCommonStub.java org/omg/DynamicAny/_DynValueBoxStub.java org/omg/DynamicAny/DynAnyPackage/TypeMismatchHolder.java org/omg/DynamicAny/DynAnyPackage/InvalidValueHolder.java org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCodeHolder.java IOPDELETEFILES org/omg/IOP/BI_DIR_IIOP.java org/omg/IOP/ChainBypassCheck.java org/omg/IOP/ChainBypassInfo.java org/omg/IOP/FORWARDED_IDENTITY.java org/omg/IOP/INVOCATION_POLICIES.java org/omg/IOP/LogicalThreadId.java org/omg/IOP/SendingContextRunTime.java org/omg/IOP/UnknownExceptionInfo.java org/omg/IOP/TaggedComponentSeqHolder.java POAHELHOLFILES org/omg/PortableServer/CurrentPackage/NoContextHolder.java org/omg/PortableServer/ForwardRequestHolder.java org/omg/PortableServer/IdAssignmentPolicyValueHelper.java org/omg/PortableServer/IdAssignmentPolicyValueHolder.java org/omg/PortableServer/IdUniquenessPolicyValueHelper.java org/omg/PortableServer/IdUniquenessPolicyValueHolder.java org/omg/PortableServer/ImplicitActivationPolicyValueHelper.java org/omg/PortableServer/ImplicitActivationPolicyValueHolder.java org/omg/PortableServer/LifespanPolicyValueHelper.java org/omg/PortableServer/LifespanPolicyValueHolder.java org/omg/PortableServer/ServantRetentionPolicyValueHelper.java org/omg/PortableServer/ServantRetentionPolicyValueHolder.java org/omg/PortableServer/ObjectIdHelper.java org/omg/PortableServer/ObjectIdHolder.java org/omg/PortableServer/POAListHelper.java org/omg/PortableServer/POAListHolder.java org/omg/PortableServer/POAManagerPackage/AdapterInactiveHolder.java org/omg/PortableServer/POAManagerPackage/StateHelper.java org/omg/PortableServer/POAManagerPackage/StateHolder.java org/omg/PortableServer/POAPackage/AdapterAlreadyExistsHolder.java org/omg/PortableServer/POAPackage/AdapterNonExistentHolder.java org/omg/PortableServer/POAPackage/InvalidPolicyHolder.java org/omg/PortableServer/POAPackage/NoServantHolder.java org/omg/PortableServer/POAPackage/ObjectAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ObjectNotActiveHolder.java org/omg/PortableServer/POAPackage/ServantAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ServantNotActiveHolder.java org/omg/PortableServer/POAPackage/WrongAdapterHolder.java org/omg/PortableServer/POAPackage/WrongPolicyHolder.java org/omg/PortableServer/RequestProcessingPolicyValueHelper.java org/omg/PortableServer/RequestProcessingPolicyValueHolder.java org/omg/PortableServer/ServantActivatorHolder.java org/omg/PortableServer/ServantLocatorHolder.java org/omg/PortableServer/ThreadPolicyValueHelper.java org/omg/PortableServer/ThreadPolicyValueHolder.java PIHELHOLFILES org/omg/PortableInterceptor/ClientRequestInfoHelper.java org/omg/PortableInterceptor/ClientRequestInterceptorHelper.java org/omg/PortableInterceptor/IORInfoHelper.java org/omg/PortableInterceptor/IORInterceptorHelper.java org/omg/PortableInterceptor/InterceptorHelper.java org/omg/PortableInterceptor/ORBInitInfoHelper.java org/omg/PortableInterceptor/ORBInitializerHelper.java org/omg/PortableInterceptor/PolicyFactoryHelper.java org/omg/PortableInterceptor/ReplyStatusHelper.java org/omg/PortableInterceptor/RequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInterceptorHelper.java org/omg/PortableInterceptor/SlotIdHelper.java org/omg/PortableInterceptor/ClientRequestInfoHolder.java org/omg/PortableInterceptor/ClientRequestInterceptorHolder.java org/omg/PortableInterceptor/CurrentHolder.java org/omg/PortableInterceptor/ForwardRequestHolder.java org/omg/PortableInterceptor/IORInfoHolder.java org/omg/PortableInterceptor/IORInterceptorHolder.java org/omg/PortableInterceptor/InterceptorHolder.java org/omg/PortableInterceptor/InvalidSlotHolder.java org/omg/PortableInterceptor/ORBInitInfoHolder.java org/omg/PortableInterceptor/ORBInitializerHolder.java org/omg/PortableInterceptor/PolicyFactoryHolder.java org/omg/PortableInterceptor/RequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInterceptorHolder.java org/omg/PortableInterceptor/TaggedComponentSeqHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateNameHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/InvalidNameHolder.java org/omg/IOP/CodecPackage/FormatMismatchHolder.java org/omg/IOP/CodecPackage/InvalidTypeForEncodingHolder.java org/omg/IOP/CodecPackage/TypeMismatchHolder.java org/omg/IOP/CodecHelper.java org/omg/IOP/EncodingFormatHelper.java org/omg/IOP/EncodingHelper.java org/omg/IOP/CodecFactoryPackage/UnknownEncodingHolder.java org/omg/IOP/CodecFactoryHolder.java org/omg/IOP/CodecHolder.java org/omg/IOP/EncodingHolder.java org/omg/IOP/TaggedComponentSeqHelper.java org/omg/Dynamic/ContextListHelper.java org/omg/Dynamic/ExceptionListHelper.java org/omg/Dynamic/ParameterHolder.java org/omg/Dynamic/ParameterListHolder.java org/omg/Dynamic/ExceptionListHolder.java org/omg/Dynamic/ParameterHelper.java org/omg/Dynamic/ParameterListHelper.java org/omg/Dynamic/RequestContextHelper.java CORBAX org/omg/CORBA/OctetSeqHelper.java org/omg/CORBA/OctetSeqHolder.java org/omg/CORBA/PolicyError.java org/omg/CORBA/RepositoryIdHelper.java)) 
+ifeq ($(LOGWRAPPERS_ARE_CREATED), yes)
 
-        $(BUILD_IDLS) : $(CORBA_OUTPUTDIR)/btjars/idlj.jar
+  $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
+      IDLJ := $(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/idlj.jar, \
+      SRC := $(CORBA_TOPDIR)/src/share/classes, \
+      BIN := $(CORBA_OUTPUTDIR)/gensrc, \
+      EXCLUDES := com/sun/tools/corba/se/idl/% \
+          org/omg/CORBA/% \
+          com/sun/corba/se/GiopIDL/% \
+          org/omg/PortableServer/corba.idl, \
+      INCLUDES := %, \
+      OLDIMPLBASES := com/sun/corba/se/PortableActivationIDL/activation.idl \
+          com/sun/corba/se/spi/activation/activation.idl, \
+      DELETES := DYNANYDELETEFILES org/omg/DynamicAny/*POA* org/omg/DynamicAny/*Holder* org/omg/DynamicAny/DynValueBoxHelper.java org/omg/DynamicAny/DynValueCommonHelper.java org/omg/DynamicAny/_DynValueCommonStub.java org/omg/DynamicAny/_DynValueBoxStub.java org/omg/DynamicAny/DynAnyPackage/TypeMismatchHolder.java org/omg/DynamicAny/DynAnyPackage/InvalidValueHolder.java org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCodeHolder.java IOPDELETEFILES org/omg/IOP/BI_DIR_IIOP.java org/omg/IOP/ChainBypassCheck.java org/omg/IOP/ChainBypassInfo.java org/omg/IOP/FORWARDED_IDENTITY.java org/omg/IOP/INVOCATION_POLICIES.java org/omg/IOP/LogicalThreadId.java org/omg/IOP/SendingContextRunTime.java org/omg/IOP/UnknownExceptionInfo.java org/omg/IOP/TaggedComponentSeqHolder.java POAHELHOLFILES org/omg/PortableServer/CurrentPackage/NoContextHolder.java org/omg/PortableServer/ForwardRequestHolder.java org/omg/PortableServer/IdAssignmentPolicyValueHelper.java org/omg/PortableServer/IdAssignmentPolicyValueHolder.java org/omg/PortableServer/IdUniquenessPolicyValueHelper.java org/omg/PortableServer/IdUniquenessPolicyValueHolder.java org/omg/PortableServer/ImplicitActivationPolicyValueHelper.java org/omg/PortableServer/ImplicitActivationPolicyValueHolder.java org/omg/PortableServer/LifespanPolicyValueHelper.java org/omg/PortableServer/LifespanPolicyValueHolder.java org/omg/PortableServer/ServantRetentionPolicyValueHelper.java org/omg/PortableServer/ServantRetentionPolicyValueHolder.java org/omg/PortableServer/ObjectIdHelper.java org/omg/PortableServer/ObjectIdHolder.java org/omg/PortableServer/POAListHelper.java org/omg/PortableServer/POAListHolder.java org/omg/PortableServer/POAManagerPackage/AdapterInactiveHolder.java org/omg/PortableServer/POAManagerPackage/StateHelper.java org/omg/PortableServer/POAManagerPackage/StateHolder.java org/omg/PortableServer/POAPackage/AdapterAlreadyExistsHolder.java org/omg/PortableServer/POAPackage/AdapterNonExistentHolder.java org/omg/PortableServer/POAPackage/InvalidPolicyHolder.java org/omg/PortableServer/POAPackage/NoServantHolder.java org/omg/PortableServer/POAPackage/ObjectAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ObjectNotActiveHolder.java org/omg/PortableServer/POAPackage/ServantAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ServantNotActiveHolder.java org/omg/PortableServer/POAPackage/WrongAdapterHolder.java org/omg/PortableServer/POAPackage/WrongPolicyHolder.java org/omg/PortableServer/RequestProcessingPolicyValueHelper.java org/omg/PortableServer/RequestProcessingPolicyValueHolder.java org/omg/PortableServer/ServantActivatorHolder.java org/omg/PortableServer/ServantLocatorHolder.java org/omg/PortableServer/ThreadPolicyValueHelper.java org/omg/PortableServer/ThreadPolicyValueHolder.java PIHELHOLFILES org/omg/PortableInterceptor/ClientRequestInfoHelper.java org/omg/PortableInterceptor/ClientRequestInterceptorHelper.java org/omg/PortableInterceptor/IORInfoHelper.java org/omg/PortableInterceptor/IORInterceptorHelper.java org/omg/PortableInterceptor/InterceptorHelper.java org/omg/PortableInterceptor/ORBInitInfoHelper.java org/omg/PortableInterceptor/ORBInitializerHelper.java org/omg/PortableInterceptor/PolicyFactoryHelper.java org/omg/PortableInterceptor/ReplyStatusHelper.java org/omg/PortableInterceptor/RequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInterceptorHelper.java org/omg/PortableInterceptor/SlotIdHelper.java org/omg/PortableInterceptor/ClientRequestInfoHolder.java org/omg/PortableInterceptor/ClientRequestInterceptorHolder.java org/omg/PortableInterceptor/CurrentHolder.java org/omg/PortableInterceptor/ForwardRequestHolder.java org/omg/PortableInterceptor/IORInfoHolder.java org/omg/PortableInterceptor/IORInterceptorHolder.java org/omg/PortableInterceptor/InterceptorHolder.java org/omg/PortableInterceptor/InvalidSlotHolder.java org/omg/PortableInterceptor/ORBInitInfoHolder.java org/omg/PortableInterceptor/ORBInitializerHolder.java org/omg/PortableInterceptor/PolicyFactoryHolder.java org/omg/PortableInterceptor/RequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInterceptorHolder.java org/omg/PortableInterceptor/TaggedComponentSeqHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateNameHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/InvalidNameHolder.java org/omg/IOP/CodecPackage/FormatMismatchHolder.java org/omg/IOP/CodecPackage/InvalidTypeForEncodingHolder.java org/omg/IOP/CodecPackage/TypeMismatchHolder.java org/omg/IOP/CodecHelper.java org/omg/IOP/EncodingFormatHelper.java org/omg/IOP/EncodingHelper.java org/omg/IOP/CodecFactoryPackage/UnknownEncodingHolder.java org/omg/IOP/CodecFactoryHolder.java org/omg/IOP/CodecHolder.java org/omg/IOP/EncodingHolder.java org/omg/IOP/TaggedComponentSeqHelper.java org/omg/Dynamic/ContextListHelper.java org/omg/Dynamic/ExceptionListHelper.java org/omg/Dynamic/ParameterHolder.java org/omg/Dynamic/ParameterListHolder.java org/omg/Dynamic/ExceptionListHolder.java org/omg/Dynamic/ParameterHelper.java org/omg/Dynamic/ParameterListHelper.java org/omg/Dynamic/RequestContextHelper.java CORBAX org/omg/CORBA/OctetSeqHelper.java org/omg/CORBA/OctetSeqHolder.java org/omg/CORBA/PolicyError.java org/omg/CORBA/RepositoryIdHelper.java))
 
-        $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d : $(BUILD_IDLS) $(CORBA_OUTPUTDIR)/btjars/idlj.jar
-		$(MKDIR) -p $(@D)
-		$(ECHO) IDLS_ARE_CREATED=yes > $@
+  $(BUILD_IDLS): $(CORBA_OUTPUTDIR)/btjars/idlj.jar
 
-        -include $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d
+  $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d: $(BUILD_IDLS) $(CORBA_OUTPUTDIR)/btjars/idlj.jar
+	$(MKDIR) -p $(@D)
+	$(ECHO) IDLS_ARE_CREATED = yes > $@
 
-        ifeq ($(IDLS_ARE_CREATED),yes)
-                $(eval $(call SetupJavaCompilation,BUILD_CORBA,\
-		    SETUP:=GENERATE_NEWBYTECODE,\
-		    SRC:=$(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc $(CORBA_OUTPUTDIR)/logwrappers,\
-		    EXCLUDES:=com/sun/corba/se/PortableActivationIDL\
-			      com/sun/tools/corba/se/logutil,\
-		    EXCLUDE_FILES:=com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
-				   com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
-				   com/sun/org/omg/CORBA/IDLTypeOperations.java \
-				   com/sun/org/omg/CORBA/IRObjectOperations.java \
-				   org/omg/PortableInterceptor/UNKNOWN.java \
-				   com/sun/tools/corba/se/idl/ResourceBundleUtil.java\
-				   com/sun/corba/se/impl/presentation/rmi/jndi.properties,\
-		    COPY:=.prp LogStrings.properties,\
-		    BIN:=$(CORBA_OUTPUTDIR)/classes))
+  -include $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d
 
-                # Separate src.zip call to include sources that were excluded in the build to 
-                # mimic behavior in old build system.
-                $(eval $(call SetupZipArchive,ARCHIVE_BUILD_CORBA,\
-		    SRC:=$(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc $(CORBA_OUTPUTDIR)/logwrappers,\
-		    ZIP:=$(CORBA_OUTPUTDIR)/dist/lib/src.zip))
+  ifeq ($(IDLS_ARE_CREATED), yes)
 
-                $(BUILD_CORBA) : $(BUILD_IDLS) $(LOGWRAPPER_DEPENDENCIES)
+    $(eval $(call SetupJavaCompilation,BUILD_CORBA, \
+        SETUP := GENERATE_NEWBYTECODE, \
+        SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc $(CORBA_OUTPUTDIR)/logwrappers, \
+        EXCLUDES := com/sun/corba/se/PortableActivationIDL \
+            com/sun/tools/corba/se/logutil, \
+        EXCLUDE_FILES := com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
+            com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
+            com/sun/org/omg/CORBA/IDLTypeOperations.java \
+            com/sun/org/omg/CORBA/IRObjectOperations.java \
+            org/omg/PortableInterceptor/UNKNOWN.java \
+            com/sun/tools/corba/se/idl/ResourceBundleUtil.java \
+            com/sun/corba/se/impl/presentation/rmi/jndi.properties, \
+        COPY := .prp LogStrings.properties, \
+        BIN := $(CORBA_OUTPUTDIR)/classes))
 
-                # Run stripproperties on all sunorb resource files.
-                STRIP_PROP_SRC_FILES:=$(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb*.properties")
-                STRIP_PROP_FILES:=$(patsubst  $(CORBA_TOPDIR)/src/share/classes/%,$(CORBA_OUTPUTDIR)/classes/%,\
-			$(STRIP_PROP_SRC_FILES))
-                # Simple delivery of zh_HK properties files just copies zh_TW properties files
-                STRIP_PROP_FILES+=$(patsubst  $(CORBA_TOPDIR)/src/share/classes/%_zh_TW.properties,\
-			$(CORBA_OUTPUTDIR)/classes/%_zh_HK.properties,\
-			$(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb_zh_TW.properties"))
-                STRIP_PROP_SRC_FILES+=$(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb_zh_TW.properties")
-		STRIP_PROP_CMDLINE:=$(subst _SPACE_,$(SPACE),\
-			$(join $(addprefix -clean_SPACE_,$(STRIP_PROP_SRC_FILES)), \
-			$(addprefix _SPACE_,$(STRIP_PROP_FILES))))
+    # Separate src.zip call to include sources that were excluded in the build to
+    # mimic behavior in old build system.
+    $(eval $(call SetupZipArchive,ARCHIVE_BUILD_CORBA, \
+        SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc $(CORBA_OUTPUTDIR)/logwrappers, \
+        ZIP := $(CORBA_OUTPUTDIR)/dist/lib/src.zip))
 
-                $(CORBA_OUTPUTDIR)/_the.stripped_properties: $(STRIP_PROP_SRC_FILES) \
-					$(CORBA_OUTPUTDIR)/btjars/stripproperties.jar
-			$(MKDIR) -p $(sort $(dir $(STRIP_PROP_FILES)))
-			$(call ListPathsSafely,STRIP_PROP_CMDLINE,\n, >> $(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline)
-			$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/stripproperties.jar \
-				@$(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline
-			$(TOUCH) $@
+    $(BUILD_CORBA): $(BUILD_IDLS) $(LOGWRAPPER_DEPENDENCIES)
 
-                $(eval $(call SetupArchive,ARCHIVE_CORBA,\
-		     $(BUILD_CORBA) $(CORBA_OUTPUTDIR)/_the.stripped_properties,\
-		     SRCS:=$(CORBA_OUTPUTDIR)/classes,\
-		     SUFFIXES:=.class .prp .properties,\
-		     JAR:=$(CORBA_OUTPUTDIR)/dist/lib/classes.jar))
+    # Run stripproperties on all sunorb resource files.
+    STRIP_PROP_SRC_FILES := $(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb*.properties")
+    STRIP_PROP_FILES := $(patsubst $(CORBA_TOPDIR)/src/share/classes/%, $(CORBA_OUTPUTDIR)/classes/%, \
+        $(STRIP_PROP_SRC_FILES))
+    # Simple delivery of zh_HK properties files just copies zh_TW properties files
+    STRIP_PROP_FILES += $(patsubst $(CORBA_TOPDIR)/src/share/classes/%_zh_TW.properties, \
+        $(CORBA_OUTPUTDIR)/classes/%_zh_HK.properties, \
+        $(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb_zh_TW.properties"))
+    STRIP_PROP_SRC_FILES += $(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb_zh_TW.properties")
+    STRIP_PROP_CMDLINE := $(subst _SPACE_, $(SPACE), \
+        $(join $(addprefix -clean_SPACE_, $(STRIP_PROP_SRC_FILES)), \
+        $(addprefix _SPACE_, $(STRIP_PROP_FILES))))
 
-                # The created classes.jar now contains Corba compiled to run on the target JDK
-                # and is ready for inclusion in jdk rt.jar.
+    $(CORBA_OUTPUTDIR)/_the.stripped_properties: $(STRIP_PROP_SRC_FILES) \
+        $(CORBA_OUTPUTDIR)/btjars/stripproperties.jar
+		$(MKDIR) -p $(sort $(dir $(STRIP_PROP_FILES)))
+		$(call ListPathsSafely,STRIP_PROP_CMDLINE,\n, >> $(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline)
+		$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/stripproperties.jar \
+		    @$(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline
+		$(TOUCH) $@
 
-                # The created src.zip now contains .java and .properties files used to create the classes in classes.jar
-                # and is ready for inclusion into the jdk src.zip
+    $(eval $(call SetupArchive,ARCHIVE_CORBA, \
+        $(BUILD_CORBA) $(CORBA_OUTPUTDIR)/_the.stripped_properties, \
+        SRCS := $(CORBA_OUTPUTDIR)/classes, \
+        SUFFIXES := .class .prp .properties, \
+        JAR := $(CORBA_OUTPUTDIR)/dist/lib/classes.jar))
 
-                BIN_FILES:=$(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/orb.idl \
-			   $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/ir.idl
+    # The created classes.jar now contains Corba compiled to run on the target JDK
+    # and is ready for inclusion in jdk rt.jar.
 
-                $(CORBA_OUTPUTDIR)/dist/lib/bin.zip : $(BIN_FILES) $(CORBA_OUTPUTDIR)/dist/lib/classes.jar
-			$(MKDIR) -p $(CORBA_OUTPUTDIR)/dist/lib
-			$(MKDIR) -p $(CORBA_OUTPUTDIR)/lib
-			$(RM) -f $@
-			$(ECHO) Creating `basename $@`
-			$(CP) $(BIN_FILES) $(CORBA_OUTPUTDIR)/lib
-			$(CHMOD) ug+w $(CORBA_OUTPUTDIR)/lib/*
-			(cd $(CORBA_OUTPUTDIR); $(ZIP) -q $@ lib/orb.idl lib/ir.idl)
+    # The created src.zip now contains .java and .properties files used to create the classes in classes.jar
+    # and is ready for inclusion into the jdk src.zip
 
-                # The created bin.zip now contains the corba specific binaries: orb.idl, ir.idl
+    BIN_FILES := $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/orb.idl \
+        $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/ir.idl
 
-                all: 	$(CORBA_OUTPUTDIR)/btjars/stripproperties.jar \
-			$(CORBA_OUTPUTDIR)/btjars/idlj.jar \
-			$(CORBA_OUTPUTDIR)/btjars/logutil.jar \
-			$(CORBA_OUTPUTDIR)/dist/lib/classes.jar \
-			$(CORBA_OUTPUTDIR)/dist/lib/src.zip \
-			$(CORBA_OUTPUTDIR)/dist/lib/bin.zip
-        endif
+    $(CORBA_OUTPUTDIR)/dist/lib/bin.zip: $(BIN_FILES) $(CORBA_OUTPUTDIR)/dist/lib/classes.jar
+	$(MKDIR) -p $(CORBA_OUTPUTDIR)/dist/lib
+	$(MKDIR) -p $(CORBA_OUTPUTDIR)/lib
+	$(RM) -f $@
+	$(ECHO) Creating `basename $@`
+	$(CP) $(BIN_FILES) $(CORBA_OUTPUTDIR)/lib
+	$(CHMOD) ug+w $(CORBA_OUTPUTDIR)/lib/*
+	(cd $(CORBA_OUTPUTDIR); $(ZIP) -q $@ lib/orb.idl lib/ir.idl)
+
+    # The created bin.zip now contains the corba specific binaries: orb.idl, ir.idl
+
+    all: $(CORBA_OUTPUTDIR)/btjars/stripproperties.jar \
+        $(CORBA_OUTPUTDIR)/btjars/idlj.jar \
+        $(CORBA_OUTPUTDIR)/btjars/logutil.jar \
+        $(CORBA_OUTPUTDIR)/dist/lib/classes.jar \
+        $(CORBA_OUTPUTDIR)/dist/lib/src.zip \
+        $(CORBA_OUTPUTDIR)/dist/lib/bin.zip
+  endif
 endif
 
 clean:
 	$(RM) -rf $(CORBA_OUTPUTDIR)
 
-.PHONY: default all clean clobber 
+.PHONY: default all clean clobber

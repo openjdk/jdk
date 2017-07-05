@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,18 @@
 package com.sun.xml.internal.ws.wsdl.parser;
 
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
-import com.sun.xml.internal.ws.api.model.wsdl.*;
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLFeaturedObject;
+import static com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation.ANONYMOUS;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.*;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtensionContext;
-import com.sun.xml.internal.ws.model.wsdl.*;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
-import com.sun.xml.internal.ws.resources.AddressingMessages;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.AddressingFeature;
-import java.util.Map;
 
 /**
  * W3C WS-Addressing Runtime WSDL parser extension
@@ -47,12 +46,12 @@ import java.util.Map;
  */
 public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
     @Override
-    public boolean bindingElements(WSDLBoundPortType binding, XMLStreamReader reader) {
+    public boolean bindingElements(EditableWSDLBoundPortType binding, XMLStreamReader reader) {
         return addressibleElement(reader, binding);
     }
 
     @Override
-    public boolean portElements(WSDLPort port, XMLStreamReader reader) {
+    public boolean portElements(EditableWSDLPort port, XMLStreamReader reader) {
         return addressibleElement(reader, port);
     }
 
@@ -69,8 +68,8 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
     }
 
     @Override
-    public boolean bindingOperationElements(WSDLBoundOperation operation, XMLStreamReader reader) {
-        WSDLBoundOperationImpl impl = (WSDLBoundOperationImpl)operation;
+    public boolean bindingOperationElements(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
+        EditableWSDLBoundOperation edit = (EditableWSDLBoundOperation) operation;
 
         QName anon = reader.getName();
         if (anon.equals(AddressingVersion.W3C.wsdlAnonymousTag)) {
@@ -81,11 +80,11 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
                     // TODO: throw exception only if wsdl:required=true
                     // TODO: is this the right exception ?
                 } else if (value.equals("optional")) {
-                    impl.setAnonymous(WSDLBoundOperation.ANONYMOUS.optional);
+                    edit.setAnonymous(ANONYMOUS.optional);
                 } else if (value.equals("required")) {
-                    impl.setAnonymous(WSDLBoundOperation.ANONYMOUS.required);
+                    edit.setAnonymous(ANONYMOUS.required);
                 } else if (value.equals("prohibited")) {
-                    impl.setAnonymous(WSDLBoundOperation.ANONYMOUS.prohibited);
+                    edit.setAnonymous(ANONYMOUS.prohibited);
                 } else {
                     throw new WebServiceException("wsaw:Anonymous value \"" + value + "\" not understood.");
                     // TODO: throw exception only if wsdl:required=true
@@ -101,29 +100,29 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
         return false;
     }
 
-    public void portTypeOperationInputAttributes(WSDLInput input, XMLStreamReader reader) {
+    public void portTypeOperationInputAttributes(EditableWSDLInput input, XMLStreamReader reader) {
        String action = ParserUtil.getAttribute(reader, getWsdlActionTag());
        if (action != null) {
-            ((WSDLInputImpl)input).setAction(action);
-            ((WSDLInputImpl)input).setDefaultAction(false);
+            input.setAction(action);
+            input.setDefaultAction(false);
         }
     }
 
 
-    public void portTypeOperationOutputAttributes(WSDLOutput output, XMLStreamReader reader) {
+    public void portTypeOperationOutputAttributes(EditableWSDLOutput output, XMLStreamReader reader) {
        String action = ParserUtil.getAttribute(reader, getWsdlActionTag());
        if (action != null) {
-            ((WSDLOutputImpl)output).setAction(action);
-            ((WSDLOutputImpl)output).setDefaultAction(false);
+            output.setAction(action);
+            output.setDefaultAction(false);
         }
     }
 
 
-    public void portTypeOperationFaultAttributes(WSDLFault fault, XMLStreamReader reader) {
+    public void portTypeOperationFaultAttributes(EditableWSDLFault fault, XMLStreamReader reader) {
         String action = ParserUtil.getAttribute(reader, getWsdlActionTag());
         if (action != null) {
-            ((WSDLFaultImpl) fault).setAction(action);
-            ((WSDLFaultImpl) fault).setDefaultAction(false);
+            fault.setAction(action);
+            fault.setDefaultAction(false);
         }
     }
 
@@ -139,11 +138,10 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
      */
     @Override
     public void finished(WSDLParserExtensionContext context) {
-        WSDLModel model = context.getWSDLModel();
-        for (WSDLService service : model.getServices().values()) {
-            for (WSDLPort wp : service.getPorts()) {
-                WSDLPortImpl port = (WSDLPortImpl)wp;
-                WSDLBoundPortTypeImpl binding = port.getBinding();
+        EditableWSDLModel model = context.getWSDLModel();
+        for (EditableWSDLService service : model.getServices().values()) {
+            for (EditableWSDLPort port : service.getPorts()) {
+                EditableWSDLBoundPortType binding = port.getBinding();
 
                 // populate actions for the messages that do not have an explicit wsaw:Action
                 populateActions(binding);
@@ -166,12 +164,12 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
      *
      * @param binding soapbinding:operation
      */
-    private void populateActions(WSDLBoundPortTypeImpl binding) {
-        WSDLPortTypeImpl porttype = binding.getPortType();
-        for (WSDLOperationImpl o : porttype.getOperations()) {
+    private void populateActions(EditableWSDLBoundPortType binding) {
+        EditableWSDLPortType porttype = binding.getPortType();
+        for (EditableWSDLOperation o : porttype.getOperations()) {
             // TODO: this may be performance intensive. Alternatively default action
             // TODO: can be calculated when the operation is actually invoked.
-            WSDLBoundOperationImpl wboi = binding.get(o.getName());
+                EditableWSDLBoundOperation wboi = binding.get(o.getName());
 
             if (wboi == null) {
                 //If this operation is unbound set the action to default
@@ -202,9 +200,9 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
             if (o.getFaults() == null || !o.getFaults().iterator().hasNext())
                 continue;
 
-            for (WSDLFault f : o.getFaults()) {
+            for (EditableWSDLFault f : o.getFaults()) {
                 if (f.getAction() == null || f.getAction().equals("")) {
-                    ((WSDLFaultImpl)f).setAction(defaultFaultAction(f.getName(), o));
+                    f.setAction(defaultFaultAction(f.getName(), o));
                 }
 
             }
@@ -216,26 +214,26 @@ public class W3CAddressingWSDLParserExtension extends WSDLParserExtension {
      *
      * @param binding WSDLBoundPortTypeImpl
      */
-    protected void patchAnonymousDefault(WSDLBoundPortTypeImpl binding) {
-        for (WSDLBoundOperationImpl wbo : binding.getBindingOperations()) {
+    protected void patchAnonymousDefault(EditableWSDLBoundPortType binding) {
+        for (EditableWSDLBoundOperation wbo : binding.getBindingOperations()) {
             if (wbo.getAnonymous() == null)
-                wbo.setAnonymous(WSDLBoundOperation.ANONYMOUS.optional);
+                wbo.setAnonymous(ANONYMOUS.optional);
         }
     }
 
-    private String defaultInputAction(WSDLOperation o) {
+    private String defaultInputAction(EditableWSDLOperation o) {
         return buildAction(o.getInput().getName(), o, false);
     }
 
-    private String defaultOutputAction(WSDLOperation o) {
+    private String defaultOutputAction(EditableWSDLOperation o) {
         return buildAction(o.getOutput().getName(), o, false);
     }
 
-    private String defaultFaultAction(String name, WSDLOperation o) {
+    private String defaultFaultAction(String name, EditableWSDLOperation o) {
         return buildAction(name, o, true);
     }
 
-    protected static final String buildAction(String name, WSDLOperation o, boolean isFault) {
+    protected static final String buildAction(String name, EditableWSDLOperation o, boolean isFault) {
         String tns = o.getName().getNamespaceURI();
 
         String delim = SLASH_DELIMITER;

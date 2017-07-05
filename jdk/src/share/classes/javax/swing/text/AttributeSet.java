@@ -89,7 +89,7 @@ public interface AttributeSet {
      * Returns the number of attributes that are defined locally in this set.
      * Attributes that are defined in the parent set are not included.
      *
-     * @return the number of attributes >= 0
+     * @return the number of attributes &gt;= 0
      */
     public int getAttributeCount();
 

@@ -30,64 +30,64 @@ include MakeBase.gmk
 include RMICompilation.gmk
 
 # To ensure the latest stub generator files are picked up from corba repo
-# when available, we need to run with latest rmic version available. 
-ifneq ($(COMPILE_TYPE),cross)
-    RMIC := $(FIXPATH) $(JDK_OUTPUTDIR)/bin/rmic
-endif  
+# when available, we need to run with latest rmic version available.
+ifneq ($(COMPILE_TYPE), cross)
+  RMIC := $(FIXPATH) $(JDK_OUTPUTDIR)/bin/rmic
+endif
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
-# NOTE: If the smart javac dependency management is reintroduced, these classes risk 
+# NOTE: If the smart javac dependency management is reintroduced, these classes risk
 # interfering with the dependency checking. In that case they will need to be kept separate.
 STUB_CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
 RMIC_GENSRC_DIR := $(JDK_OUTPUTDIR)/gendocsrc_rmic
 
-GENCLASSES :=
+GENCLASSES := 
 
 ##########################################################################################
 #
 # Generate RMI stubs
 #
 
-$(eval $(call SetupRMICompilation,RMI_12,\
-		CLASSES:=sun.rmi.server.Activation$$$$ActivationSystemImpl\
-			 java.rmi.activation.ActivationGroup\
-			 com.sun.jndi.rmi.registry.ReferenceWrapper,\
-		CLASSES_DIR:=$(CLASSES_DIR),\
-		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
-		RUN_V12:=true))
+$(eval $(call SetupRMICompilation,RMI_12, \
+    CLASSES := sun.rmi.server.Activation$$$$ActivationSystemImpl \
+        java.rmi.activation.ActivationGroup \
+        com.sun.jndi.rmi.registry.ReferenceWrapper, \
+    CLASSES_DIR := $(CLASSES_DIR), \
+    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR), \
+    RUN_V12 := true))
 GENCLASSES += $(RMI_12)
 
-$(eval $(call SetupRMICompilation,RMI_11,\
-		CLASSES:=sun.rmi.registry.RegistryImpl\
-			 sun.rmi.transport.DGCImpl,\
-		CLASSES_DIR:=$(CLASSES_DIR),\
-		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
-		RUN_V11:=true))
+$(eval $(call SetupRMICompilation,RMI_11, \
+    CLASSES := sun.rmi.registry.RegistryImpl \
+        sun.rmi.transport.DGCImpl, \
+    CLASSES_DIR := $(CLASSES_DIR), \
+    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR), \
+    RUN_V11 := true))
 GENCLASSES += $(RMI_11)
 
 # For RMI/IIOP call rmic a second time with -standardPackage option
 # so that *_tie classes are generated in package without the prefix
 # org.omg.stub (6375696)
-JMAN_RMI_CLASSES:=javax.management.remote.rmi.RMIConnectionImpl\
-		  javax.management.remote.rmi.RMIServerImpl
-$(eval $(call SetupRMICompilation,RMI_IIOP,\
-		CLASSES:=$(JMAN_RMI_CLASSES),\
-		CLASSES_DIR:=$(CLASSES_DIR),\
-		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
-		RUN_V12:=true,\
-		RUN_IIOP:=true,\
-		RUN_IIOP_STDPKG:=true))
+JMAN_RMI_CLASSES := javax.management.remote.rmi.RMIConnectionImpl \
+    javax.management.remote.rmi.RMIServerImpl
+$(eval $(call SetupRMICompilation,RMI_IIOP, \
+    CLASSES := $(JMAN_RMI_CLASSES), \
+    CLASSES_DIR := $(CLASSES_DIR), \
+    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR), \
+    RUN_V12 := true, \
+    RUN_IIOP := true, \
+    RUN_IIOP_STDPKG := true))
 GENCLASSES += $(RMI_IIOP)
 
 # Keep generated RMI/JRMP Stub source files and copy them to RMIC_GENSRC_DIR
 # so that javadoc can include them in the API (4997471)
-$(eval $(call SetupRMICompilation,RMI_SRC,\
-		CLASSES:=$(JMAN_RMI_CLASSES),\
-		CLASSES_DIR:=$(CLASSES_DIR),\
-		STUB_CLASSES_DIR:=$(RMIC_GENSRC_DIR),\
-		RUN_V12:=true,\
-		KEEP_GENERATED:=true))
-GENCLASSES += $(filter %.java,$(RMI_SRC))
+$(eval $(call SetupRMICompilation,RMI_SRC, \
+    CLASSES := $(JMAN_RMI_CLASSES), \
+    CLASSES_DIR := $(CLASSES_DIR), \
+    STUB_CLASSES_DIR := $(RMIC_GENSRC_DIR), \
+    RUN_V12 := true, \
+    KEEP_GENERATED := true))
+GENCLASSES += $(filter %.java, $(RMI_SRC))
 
 ##########################################################################################
 

@@ -35,7 +35,7 @@ import org.w3c.dom.Element;
 /**
  * Handles SubjectKeyIdentifier (SKI) for X.509v3.
  *
- * @see <A HREF="http://java.sun.com/j2se/1.5.0/docs/api/java/security/cert/X509Extension.html">
+ * @see <A HREF="http://docs.oracle.com/javase/1.5.0/docs/api/java/security/cert/X509Extension.html">
  * Interface X509Extension</A>
  */
 public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataContent {

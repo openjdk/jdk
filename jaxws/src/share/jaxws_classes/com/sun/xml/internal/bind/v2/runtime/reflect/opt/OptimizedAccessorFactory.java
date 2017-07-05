@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,11 @@ public abstract class OptimizedAccessorFactory {
             return null;
 
         Accessor<B,V> acc = instanciate(opt);
-        if(acc!=null)
-            logger.log(Level.FINE,"Using optimized Accessor for "+getter+" and "+setter);
+        if (acc!=null) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Using optimized Accessor for {0} and {1}", new Object[]{getter, setter});
+            }
+        }
         return acc;
     }
 
@@ -174,8 +177,11 @@ public abstract class OptimizedAccessorFactory {
             return null;
 
         Accessor<B,V> acc = instanciate(opt);
-        if(acc!=null)
-            logger.log(Level.FINE,"Using optimized Accessor for "+field);
+        if (acc!=null) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Using optimized Accessor for {0}", field);
+            }
+        }
         return acc;
     }
 
