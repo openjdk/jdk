@@ -77,6 +77,18 @@ public:
 
 #define G1_PARTIAL_ARRAY_MASK 1
 
+inline bool has_partial_array_mask(oop* ref) {
+  return (intptr_t) ref & G1_PARTIAL_ARRAY_MASK;
+}
+
+inline oop* set_partial_array_mask(oop obj) {
+  return (oop*) ((intptr_t) obj | G1_PARTIAL_ARRAY_MASK);
+}
+
+inline oop clear_partial_array_mask(oop* ref) {
+  return oop((intptr_t) ref & ~G1_PARTIAL_ARRAY_MASK);
+}
+
 class G1ParScanPartialArrayClosure : public G1ParClosureSuper {
   G1ParScanClosure _scanner;
   template <class T> void process_array_chunk(oop obj, int start, int end);
@@ -101,7 +113,8 @@ public:
     G1ParClosureSuper(g1, par_scan_state), _scanner(scanner) { }
 };
 
-template<bool do_gen_barrier, G1Barrier barrier, bool do_mark_forwardee>
+template<bool do_gen_barrier, G1Barrier barrier,
+         bool do_mark_forwardee, bool skip_cset_test>
 class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
   void do_oop_work(oop* p);
@@ -119,14 +132,22 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
-typedef G1ParCopyClosure<false, G1BarrierNone, false> G1ParScanExtRootClosure;
-typedef G1ParCopyClosure<true, G1BarrierNone, false> G1ParScanPermClosure;
-typedef G1ParCopyClosure<false, G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
-typedef G1ParCopyClosure<true, G1BarrierNone, true> G1ParScanAndMarkPermClosure;
-typedef G1ParCopyClosure<false, G1BarrierRS, false> G1ParScanHeapRSClosure;
-typedef G1ParCopyClosure<false, G1BarrierRS, true> G1ParScanAndMarkHeapRSClosure;
-typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
-
+typedef G1ParCopyClosure<false, G1BarrierNone, false, false> G1ParScanExtRootClosure;
+typedef G1ParCopyClosure<true,  G1BarrierNone, false, false> G1ParScanPermClosure;
+typedef G1ParCopyClosure<false, G1BarrierNone, true,  false> G1ParScanAndMarkExtRootClosure;
+typedef G1ParCopyClosure<true,  G1BarrierNone, true,  false> G1ParScanAndMarkPermClosure;
+typedef G1ParCopyClosure<false, G1BarrierRS,   false, false> G1ParScanHeapRSClosure;
+typedef G1ParCopyClosure<false, G1BarrierRS,   true,  false> G1ParScanAndMarkHeapRSClosure;
+// This is the only case when we set skip_cset_test. Basically, this
+// closure is (should?) only be called directly while we're draining
+// the overflow and task queues. In that case we know that the
+// reference in question points into the collection set, otherwise we
+// would not have pushed it on the queue.
+typedef G1ParCopyClosure<false, G1BarrierEvac, false, true> G1ParScanHeapEvacClosure;
+// We need a separate closure to handle references during evacuation
+// failure processing, as it cannot asume that the reference already
+ // points to the collection set (like G1ParScanHeapEvacClosure does).
+typedef G1ParCopyClosure<false, G1BarrierEvac, false, false> G1ParScanHeapEvacFailureClosure;
 
 class FilterIntoCSClosure: public OopClosure {
   G1CollectedHeap* _g1;

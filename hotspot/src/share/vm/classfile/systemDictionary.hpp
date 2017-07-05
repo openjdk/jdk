@@ -526,6 +526,7 @@ private:
   static instanceKlassHandle load_instance_class(symbolHandle class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
+  static bool is_parallelCapable(Handle class_loader);
 
   static klassOop find_shared_class(symbolHandle class_name);
 

@@ -502,8 +502,8 @@ struct FileMapHeader {
 };
 
 static bool
-read_int(struct ps_prochandle* ph, psaddr_t addr, int* pvalue) {
-  int i;
+read_jboolean(struct ps_prochandle* ph, psaddr_t addr, jboolean* pvalue) {
+  jboolean i;
   if (ps_pread(ph, addr, &i, sizeof(i)) == PS_OK) {
     *pvalue = i;
     return true;
@@ -575,10 +575,13 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   }
 
   // read the value of the flag "UseSharedSpaces"
-  int value = 0;
-  if (read_int(ph, useSharedSpacesAddr, &value) != true) {
+  // Since hotspot types are not available to build this library. So
+  // equivalent type "jboolean" is used to read the value of "UseSharedSpaces"
+  // which is same as hotspot type "bool".
+  jboolean value = 0;
+  if (read_jboolean(ph, useSharedSpacesAddr, &value) != true) {
     THROW_NEW_DEBUGGER_EXCEPTION_("can't read 'UseSharedSpaces' flag", 1);
-  } else if (value == 0) {
+  } else if ((int)value == 0) {
     print_debug("UseSharedSpaces is false, assuming -Xshare:off!\n");
     return 1;
   }

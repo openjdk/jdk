@@ -192,64 +192,46 @@ JRT_END
 
 
 JRT_LEAF(jint, SharedRuntime::f2i(jfloat  x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  jint ltmp   = (jint)lltmp;
-  if (ltmp == lltmp) {
-    return ltmp;
-  } else {
-    if (x < 0) {
-      return min_jint;
-    } else {
-      return max_jint;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jfloat) max_jint)
+    return max_jint;
+  if (x <= (jfloat) min_jint)
+    return min_jint;
+  return (jint) x;
 JRT_END
 
 
 JRT_LEAF(jlong, SharedRuntime::f2l(jfloat  x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  if (lltmp != min_jlong) {
-    return lltmp;
-  } else {
-    if (x < 0) {
-      return min_jlong;
-    } else {
-      return max_jlong;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jfloat) max_jlong)
+    return max_jlong;
+  if (x <= (jfloat) min_jlong)
+    return min_jlong;
+  return (jlong) x;
 JRT_END
 
 
 JRT_LEAF(jint, SharedRuntime::d2i(jdouble x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  jint ltmp   = (jint)lltmp;
-  if (ltmp == lltmp) {
-    return ltmp;
-  } else {
-    if (x < 0) {
-      return min_jint;
-    } else {
-      return max_jint;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jdouble) max_jint)
+    return max_jint;
+  if (x <= (jdouble) min_jint)
+    return min_jint;
+  return (jint) x;
 JRT_END
 
 
 JRT_LEAF(jlong, SharedRuntime::d2l(jdouble x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  if (lltmp != min_jlong) {
-    return lltmp;
-  } else {
-    if (x < 0) {
-      return min_jlong;
-    } else {
-      return max_jlong;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jdouble) max_jlong)
+    return max_jlong;
+  if (x <= (jdouble) min_jlong)
+    return min_jlong;
+  return (jlong) x;
 JRT_END
 
 

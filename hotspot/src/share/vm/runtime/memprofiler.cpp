@@ -104,21 +104,22 @@ void MemProfiler::do_trace() {
   }
 
   // Print trace line in log
-  fprintf(_log_fp, "%6.1f,%5d,%5d,%6ld,%6ld,%6ld,%6ld,",
-      os::elapsedTime(),
-      Threads::number_of_threads(),
-      SystemDictionary::number_of_classes(),
-      Universe::heap()->used() / K,
-      Universe::heap()->capacity() / K,
-      Universe::heap()->permanent_used() / HWperKB,
-      Universe::heap()->permanent_capacity() / HWperKB);
+  fprintf(_log_fp, "%6.1f,%5d,%5d," UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ","
+          UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",",
+          os::elapsedTime(),
+          Threads::number_of_threads(),
+          SystemDictionary::number_of_classes(),
+          Universe::heap()->used() / K,
+          Universe::heap()->capacity() / K,
+          Universe::heap()->permanent_used() / HWperKB,
+          Universe::heap()->permanent_capacity() / HWperKB);
 
-  fprintf(_log_fp, "%6ld,", CodeCache::capacity() / K);
+  fprintf(_log_fp, UINTX_FORMAT_W(6) ",", CodeCache::capacity() / K);
 
-  fprintf(_log_fp, "%6ld,%6ld,%6ld\n",
-      handles_memory_usage / K,
-      resource_memory_usage / K,
-      OopMapCache::memory_usage() / K);
+  fprintf(_log_fp, UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",%6ld\n",
+          handles_memory_usage / K,
+          resource_memory_usage / K,
+          OopMapCache::memory_usage() / K);
   fflush(_log_fp);
 }
 
