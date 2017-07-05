@@ -624,8 +624,11 @@ class UnixPath
     public boolean endsWith(Path other) {
         UnixPath that = checkPath(other);
 
+        int thisLen = path.length;
+        int thatLen = that.path.length;
+
         // other path is longer
-        if (that.path.length > path.length)
+        if (thatLen > thisLen)
             return false;
 
         // other path is absolute so this path must be absolute
@@ -643,10 +646,10 @@ class UnixPath
             if (thatOffsetCount == thisOffsetCount) {
                 if (thisOffsetCount == 0)
                     return true;
-                int expectedLen = path.length;
+                int expectedLen = thisLen;
                 if (this.isAbsolute() && !that.isAbsolute())
                     expectedLen--;
-                if (that.path.length != expectedLen)
+                if (thatLen != expectedLen)
                     return false;
             } else {
                 // this path has more elements so given path must be relative
@@ -658,7 +661,9 @@ class UnixPath
         // compare bytes
         int thisPos = offsets[thisOffsetCount - thatOffsetCount];
         int thatPos = that.offsets[0];
-        while (thatPos < that.path.length) {
+        if ((thatLen - thatPos) != (thisLen - thisPos))
+            return false;
+        while (thatPos < thatLen) {
             if (this.path[thisPos++] != that.path[thatPos++])
                 return false;
         }

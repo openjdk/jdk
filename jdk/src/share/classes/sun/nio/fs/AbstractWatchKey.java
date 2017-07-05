@@ -59,10 +59,15 @@ abstract class AbstractWatchKey extends WatchKey {
     // pending events
     private List<WatchEvent<?>> events;
 
+    // maps a context to the last event for the context (iff the last queued
+    // event for the context is an ENTRY_MODIFY event).
+    private Map<Object,WatchEvent<?>> lastModifyEvents;
+
     protected AbstractWatchKey(AbstractWatchService watcher) {
         this.watcher = watcher;
         this.state = State.READY;
         this.events = new ArrayList<WatchEvent<?>>();
+        this.lastModifyEvents = new HashMap<Object,WatchEvent<?>>();
     }
 
     final AbstractWatchService watcher() {
@@ -86,6 +91,7 @@ abstract class AbstractWatchKey extends WatchKey {
      */
     @SuppressWarnings("unchecked")
     final void signalEvent(WatchEvent.Kind<?> kind, Object context) {
+        boolean isModify = (kind == StandardWatchEventKind.ENTRY_MODIFY);
         synchronized (this) {
             int size = events.size();
             if (size > 0) {
@@ -100,17 +106,43 @@ abstract class AbstractWatchKey extends WatchKey {
                     return;
                 }
 
+                // if this is a modify event and the last entry for the context
+                // is a modify event then we simply increment the count
+                if (!lastModifyEvents.isEmpty()) {
+                    if (isModify) {
+                        WatchEvent<?> ev = lastModifyEvents.get(context);
+                        if (ev != null) {
+                            assert ev.kind() == StandardWatchEventKind.ENTRY_MODIFY;
+                            ((Event<?>)ev).increment();
+                            return;
+                        }
+                    } else {
+                        // not a modify event so remove from the map as the
+                        // last event will no longer be a modify event.
+                        lastModifyEvents.remove(context);
+                    }
+                }
+
                 // if the list has reached the limit then drop pending events
                 // and queue an OVERFLOW event
                 if (size >= MAX_EVENT_LIST_SIZE) {
-                    events.clear();
                     kind = StandardWatchEventKind.OVERFLOW;
+                    isModify = false;
                     context = null;
                 }
             }
 
             // non-repeated event
-            events.add(new Event<Object>((WatchEvent.Kind<Object>)kind, context));
+            Event<Object> ev =
+                new Event<Object>((WatchEvent.Kind<Object>)kind, context);
+            if (isModify) {
+                lastModifyEvents.put(context, ev);
+            } else if (kind == StandardWatchEventKind.OVERFLOW) {
+                // drop all pending events
+                events.clear();
+                lastModifyEvents.clear();
+            }
+            events.add(ev);
             signal();
         }
     }
@@ -120,6 +152,7 @@ abstract class AbstractWatchKey extends WatchKey {
         synchronized (this) {
             List<WatchEvent<?>> result = events;
             events = new ArrayList<WatchEvent<?>>();
+            lastModifyEvents.clear();
             return result;
         }
     }
