@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,16 @@ class CompileTask : public CHeapObj {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
 
 private:
-  static void  print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level, bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false, const char* msg = NULL);
+  static void  print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level,
+                                      bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
+                                      const char* msg = NULL, bool short_form = false);
 
 public:
-  void         print_compilation(outputStream* st = tty);
+  void         print_compilation(outputStream* st = tty, bool short_form = false);
   static void  print_compilation(outputStream* st, const nmethod* nm, const char* msg = NULL) {
-    print_compilation_impl(st, nm->method(), nm->compile_id(), nm->comp_level(), nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false, msg);
+    print_compilation_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
+                           nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
+                           msg);
   }
 
   static void  print_inlining(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = NULL);

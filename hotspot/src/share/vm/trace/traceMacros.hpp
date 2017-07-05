@@ -40,4 +40,8 @@
 #define TRACE_START() true
 #define TRACE_INITIALIZE() 0
 
+#define TRACE_SET_KLASS_TRACE_ID(x1, x2) do { } while (0)
+#define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
+#define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
+
 #endif
