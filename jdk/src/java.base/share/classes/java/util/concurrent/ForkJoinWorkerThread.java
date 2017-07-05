@@ -36,6 +36,8 @@
 package java.util.concurrent;
 
 import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 
 /**
@@ -88,11 +90,26 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
+     * Version for use by the default pool.  Supports setting the
+     * context class loader.  This is a separate constructor to avoid
+     * affecting the protected constructor.
+     */
+    ForkJoinWorkerThread(ForkJoinPool pool, ClassLoader ccl) {
+        super("aForkJoinWorkerThread");
+        super.setContextClassLoader(ccl);
+        this.pool = pool;
+        this.workQueue = pool.registerWorker(this);
+    }
+
+    /**
      * Version for InnocuousForkJoinWorkerThread.
      */
-    ForkJoinWorkerThread(ForkJoinPool pool, ThreadGroup threadGroup,
+    ForkJoinWorkerThread(ForkJoinPool pool,
+                         ClassLoader ccl,
+                         ThreadGroup threadGroup,
                          AccessControlContext acc) {
         super(threadGroup, null, "aForkJoinWorkerThread");
+        super.setContextClassLoader(ccl);
         ThreadLocalRandom.setInheritedAccessControlContext(this, acc);
         ThreadLocalRandom.eraseThreadLocals(this); // clear before registering
         this.pool = pool;
@@ -179,20 +196,21 @@ public class ForkJoinWorkerThread extends Thread {
 
     /**
      * A worker thread that has no permissions, is not a member of any
-     * user-defined ThreadGroup, and erases all ThreadLocals after
+     * user-defined ThreadGroup, uses the system class loader as
+     * thread context class loader, and erases all ThreadLocals after
      * running each top-level task.
      */
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
         private static final ThreadGroup innocuousThreadGroup =
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<>() {
-                        public ThreadGroup run() {
-                            ThreadGroup group = Thread.currentThread().getThreadGroup();
-                            for (ThreadGroup p; (p = group.getParent()) != null; )
-                                group = p;
-                            return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
-                        }});
+            java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<>() {
+                    public ThreadGroup run() {
+                        ThreadGroup group = Thread.currentThread().getThreadGroup();
+                        for (ThreadGroup p; (p = group.getParent()) != null; )
+                            group = p;
+                        return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
+                    }});
 
         /** An AccessControlContext supporting no privileges */
         private static final AccessControlContext INNOCUOUS_ACC =
@@ -202,17 +220,15 @@ public class ForkJoinWorkerThread extends Thread {
                 });
 
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
-            super(pool, innocuousThreadGroup, INNOCUOUS_ACC);
+            super(pool,
+                  ClassLoader.getSystemClassLoader(),
+                  innocuousThreadGroup,
+                  INNOCUOUS_ACC);
         }
 
         @Override // to erase ThreadLocals
         void afterTopLevelExec() {
             ThreadLocalRandom.eraseThreadLocals(this);
-        }
-
-        @Override // to always report system loader
-        public ClassLoader getContextClassLoader() {
-            return ClassLoader.getSystemClassLoader();
         }
 
         @Override // to silently fail

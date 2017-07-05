@@ -214,7 +214,7 @@ private:
     case 2: do_conjoint_swap<uint16_t,D>(src, dst, byte_count); break;
     case 4: do_conjoint_swap<uint32_t,D>(src, dst, byte_count); break;
     case 8: do_conjoint_swap<uint64_t,D>(src, dst, byte_count); break;
-    default: guarantee(false, "do_conjoint_swap: Invalid elem_size %zd\n", elem_size);
+    default: guarantee(false, "do_conjoint_swap: Invalid elem_size " SIZE_FORMAT "\n", elem_size);
     }
   }
 };

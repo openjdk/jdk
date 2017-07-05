@@ -66,7 +66,7 @@ public class ListOptionTest {
             throw new Error("TESTBUG: can't write list file " + e, e);
         }
         OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--compile-commands", COMPILE_COMMAND_FILE.toString(),
-                JaotcTestHelper.getClassAotCompilationName(HelloWorldOne.class));
+                "--class-name", JaotcTestHelper.getClassAotCompilationName(HelloWorldOne.class));
         oa.shouldHaveExitValue(0);
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
         Asserts.assertTrue(compiledLibrary.exists(), "Compiled library file missing");

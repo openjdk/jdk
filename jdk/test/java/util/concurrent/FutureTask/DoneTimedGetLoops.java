@@ -66,9 +66,9 @@ public class DoneTimedGetLoops {
         final long timeoutMillis = 10L * 1000L;
 
         final AtomicReference<PublicFutureTask> normalRef
-            = new AtomicReference<PublicFutureTask>();
+            = new AtomicReference<>();
         final AtomicReference<PublicFutureTask> abnormalRef
-            = new AtomicReference<PublicFutureTask>();
+            = new AtomicReference<>();
 
         final Throwable throwable = new Throwable();
 

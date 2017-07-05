@@ -265,8 +265,8 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
      * default timeout duration).
      */
     void assertAwaitTimesOut(ConditionObject c, AwaitMethod awaitMethod) {
-        long timeoutMillis = timeoutMillis();
-        long startTime;
+        final long timeoutMillis = timeoutMillis();
+        final long startTime;
         try {
             switch (awaitMethod) {
             case awaitTimed:
@@ -285,7 +285,7 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
             case awaitUntil:
                 // We shouldn't assume that nanoTime and currentTimeMillis
                 // use the same time source, so don't use nanoTime here.
-                java.util.Date delayedDate = delayedDate(timeoutMillis());
+                java.util.Date delayedDate = delayedDate(timeoutMillis);
                 assertFalse(c.awaitUntil(delayedDate(timeoutMillis)));
                 assertTrue(new java.util.Date().getTime() >= delayedDate.getTime());
                 break;

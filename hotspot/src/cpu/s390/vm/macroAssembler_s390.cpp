@@ -2666,6 +2666,32 @@ void MacroAssembler::bang_stack_with_offset(int offset) {
   }
 }
 
+void MacroAssembler::reserved_stack_check(Register return_pc) {
+  // Test if reserved zone needs to be enabled.
+  Label no_reserved_zone_enabling;
+  assert(return_pc == Z_R14, "Return pc must be in R14 before z_br() to StackOverflow stub.");
+  BLOCK_COMMENT("reserved_stack_check {");
+
+  z_clg(Z_SP, Address(Z_thread, JavaThread::reserved_stack_activation_offset()));
+  z_brl(no_reserved_zone_enabling);
+
+  // Enable reserved zone again, throw stack overflow exception.
+  save_return_pc();
+  push_frame_abi160(0);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), Z_thread);
+  pop_frame();
+  restore_return_pc();
+
+  load_const_optimized(Z_R1, StubRoutines::throw_delayed_StackOverflowError_entry());
+  // Don't use call() or z_basr(), they will invalidate Z_R14 which contains the return pc.
+  z_br(Z_R1);
+
+  should_not_reach_here();
+
+  bind(no_reserved_zone_enabling);
+  BLOCK_COMMENT("} reserved_stack_check");
+}
+
 // Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
 void MacroAssembler::tlab_allocate(Register obj,
                                    Register var_size_in_bytes,

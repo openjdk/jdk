@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,9 @@ import java.util.Date;
  *             This Certificate interface is entirely deprecated and
  *             is here to allow for a smooth transition to the new
  *             package.
- *             This class is subject to removal in a future version of Java SE.
  * @see java.security.cert.Certificate
  */
-@Deprecated(since="1.2", forRemoval=true)
+@Deprecated(since="1.2")
 public interface Certificate {
 
     /**

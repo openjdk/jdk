@@ -375,7 +375,8 @@ void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp
   fr._unextended_sp = unextended_sp;
 
   address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains(original_pc), "original PC must be in nmethod");
+  assert(nm->insts_contains_inclusive(original_pc),
+         "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
 }
 #endif
 
@@ -629,6 +630,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
     DESCRIBE_FP_OFFSET(interpreter_frame_bcp);

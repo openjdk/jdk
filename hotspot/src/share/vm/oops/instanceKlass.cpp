@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2139,8 +2139,6 @@ void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
 }
 
 void InstanceKlass::release_C_heap_structures() {
-  assert(!this->is_shared(), "should not be called for a shared class");
-
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
   // redefine classes.
@@ -2191,7 +2189,7 @@ void InstanceKlass::release_C_heap_structures() {
   }
 
   // deallocate the cached class file
-  if (_cached_class_file != NULL) {
+  if (_cached_class_file != NULL && !MetaspaceShared::is_in_shared_space(_cached_class_file)) {
     os::free(_cached_class_file);
     _cached_class_file = NULL;
   }

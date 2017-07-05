@@ -40,13 +40,11 @@
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import java.util.SplittableRandom;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class CancelledLockLoops {
-    static final SplittableRandom rnd = new SplittableRandom();
-
     public static void main(String[] args) throws Exception {
         final int maxThreads = (args.length > 0) ? Integer.parseInt(args[0]) : 5;
         final int reps = 1;     // increase for stress testing
@@ -61,7 +59,7 @@ public final class CancelledLockLoops {
     static final class Loops implements Runnable {
         private final boolean print = false;
         private volatile boolean done = false;
-        private int v = rnd.nextInt();
+        private int v = ThreadLocalRandom.current().nextInt();
         private int completed = 0;
         private volatile int result = 17;
         private final ReentrantLock lock = new ReentrantLock();
@@ -76,6 +74,7 @@ public final class CancelledLockLoops {
         }
 
         final void test() throws Exception {
+            final ThreadLocalRandom rnd = ThreadLocalRandom.current();
             Thread[] threads = new Thread[nthreads];
             for (int i = 0; i < threads.length; ++i)
                 threads[i] = new Thread(this);

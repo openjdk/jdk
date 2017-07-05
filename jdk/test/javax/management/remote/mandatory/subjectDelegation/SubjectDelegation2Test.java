@@ -27,7 +27,8 @@
  * @summary Tests the use of the subject delegation feature on the authenticated
  *          principals within the RMI connector server's creator codebase.
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation2Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation2Test SimpleStandard SimpleStandardMBean
  * @run main SubjectDelegation2Test policy21 ok

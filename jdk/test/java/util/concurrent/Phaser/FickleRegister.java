@@ -93,7 +93,7 @@ public class FickleRegister {
         };
 
         int reps = 4;
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         for (int j = 0; j < reps; ++j) {
             threads.add(new Thread(new Runner(subchild1)));
             threads.add(new Thread(new Runner(child1)));
