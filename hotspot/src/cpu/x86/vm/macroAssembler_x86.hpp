@@ -1069,6 +1069,9 @@ public:
   void vsubss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vsubss(dst, nds, src); }
   void vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
+  void vnegatess(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+  void vnegatesd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
   // AVX Vector instructions
 
   void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vxorpd(dst, nds, src, vector_len); }

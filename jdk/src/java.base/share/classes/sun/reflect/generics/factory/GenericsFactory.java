@@ -47,32 +47,32 @@ import sun.reflect.generics.tree.FieldTypeSignature;
  */
 public interface GenericsFactory {
     /**
-     * Returns a new type variable declaration. Note that <tt>name</tt>
-     * may be empty (but not <tt>null</tt>). If <tt>bounds</tt> is
-     * empty, a bound of <tt>java.lang.Object</tt> is used.
+     * Returns a new type variable declaration. Note that {@code name}
+     * may be empty (but not {@code null}). If {@code bounds} is
+     * empty, a bound of {@code java.lang.Object} is used.
      * @param name The name of the type variable
      * @param bounds An array of abstract syntax trees representing
      * the upper bound(s) on the type variable being declared
      * @return a new type variable declaration
-     * @throws NullPointerException - if any of the actual parameters
-     * or any of the elements of <tt>bounds</tt> are <tt>null</tt>.
+     * @throws NullPointerException if any of the actual parameters
+     * or any of the elements of {@code bounds} are {@code null}.
      */
     TypeVariable<?> makeTypeVariable(String name,
                                      FieldTypeSignature[] bounds);
     /**
-     * Returns an instance of the <tt>ParameterizedType</tt> interface
+     * Returns an instance of the {@code ParameterizedType} interface
      * that corresponds to a generic type instantiation of the
-     * generic declaration <tt>declaration</tt> with actual type arguments
-     * <tt>typeArgs</tt>.
-     * If <tt>owner</tt> is <tt>null</tt>, the declaring class of
-     * <tt>declaration</tt> is used as the owner of this parameterized
+     * generic declaration {@code declaration} with actual type arguments
+     * {@code typeArgs}.
+     * If {@code owner} is {@code null}, the declaring class of
+     * {@code declaration} is used as the owner of this parameterized
      * type.
      * <p> This method throws a MalformedParameterizedTypeException
      * under the following circumstances:
      * If the type declaration does not represent a generic declaration
-     * (i.e., it is not an instance of <tt>GenericDeclaration</tt>).
+     * (i.e., it is not an instance of {@code GenericDeclaration}).
      * If the number of actual type arguments (i.e., the size of the
-     * array <tt>typeArgs</tt>) does not correspond to the number of
+     * array {@code typeArgs}) does not correspond to the number of
      * formal type arguments.
      * If any of the actual type arguments is not an instance of the
      * bounds on the corresponding formal.
@@ -81,39 +81,39 @@ public interface GenericsFactory {
      * @param typeArgs - the list of actual type arguments
      * @return - a parameterized type representing the instantiation
      * of the declaration with the actual type arguments
-     * @throws MalformedParameterizedTypeException - if the instantiation
+     * @throws MalformedParameterizedTypeException if the instantiation
      * is invalid
-     * @throws NullPointerException - if any of <tt>declaration</tt>
-     * , <tt>typeArgs</tt>
-     * or any of the elements of <tt>typeArgs</tt> are <tt>null</tt>
+     * @throws NullPointerException if any of {@code declaration},
+     * {@code typeArgs}
+     * or any of the elements of {@code typeArgs} are {@code null}
      */
     ParameterizedType makeParameterizedType(Type declaration,
                                             Type[] typeArgs,
                                             Type owner);
 
     /**
-     * Returns the type variable with name <tt>name</tt>, if such
+     * Returns the type variable with name {@code name}, if such
      * a type variable is declared in the
      * scope used to create this factory.
-     * Returns <tt>null</tt> otherwise.
+     * Returns {@code null} otherwise.
      * @param name - the name of the type variable to search for
-     * @return - the type variable with name <tt>name</tt>, or <tt>null</tt>
-     * @throws  NullPointerException - if any of actual parameters are
-     * <tt>null</tt>
+     * @return - the type variable with name {@code name}, or {@code null}
+     * @throws  NullPointerException if any of actual parameters are
+     * {@code null}
      */
     TypeVariable<?> findTypeVariable(String name);
 
     /**
      * Returns a new wildcard type variable. If
-     * <tt>ubs</tt> is empty, a bound of <tt>java.lang.Object</tt> is used.
+     * {@code ubs} is empty, a bound of {@code java.lang.Object} is used.
      * @param ubs An array of abstract syntax trees representing
      * the upper bound(s) on the type variable being declared
      * @param lbs An array of abstract syntax trees representing
      * the lower bound(s) on the type variable being declared
      * @return a new wildcard type variable
-     * @throws NullPointerException - if any of the actual parameters
-     * or any of the elements of <tt>ubs</tt> or <tt>lbs</tt>are
-     * <tt>null</tt>
+     * @throws NullPointerException if any of the actual parameters
+     * or any of the elements of {@code ubs} or {@code lbs} are
+     * {@code null}
      */
     WildcardType makeWildcard(FieldTypeSignature[] ubs,
                               FieldTypeSignature[] lbs);
@@ -127,64 +127,64 @@ public interface GenericsFactory {
      * a MalformedParameterizedTypeException is thrown.
      * @param componentType - the component type of the array
      * @return a (possibly generic) array type.
-     * @throws MalformedParameterizedTypeException if <tt>componentType</tt>
+     * @throws MalformedParameterizedTypeException if {@code componentType}
      * is a parameterized type with non-wildcard type arguments
-     * @throws NullPointerException - if any of the actual parameters
-     * are <tt>null</tt>
+     * @throws NullPointerException if any of the actual parameters
+     * are {@code null}
      */
     Type makeArrayType(Type componentType);
 
     /**
-     * Returns the reflective representation of type <tt>byte</tt>.
-     * @return the reflective representation of type <tt>byte</tt>.
+     * Returns the reflective representation of type {@code byte}.
+     * @return the reflective representation of type {@code byte}.
      */
     Type makeByte();
 
     /**
-     * Returns the reflective representation of type <tt>boolean</tt>.
-     * @return the reflective representation of type <tt>boolean</tt>.
+     * Returns the reflective representation of type {@code boolean}.
+     * @return the reflective representation of type {@code boolean}.
      */
     Type makeBool();
 
     /**
-     * Returns the reflective representation of type <tt>short</tt>.
-     * @return the reflective representation of type <tt>short</tt>.
+     * Returns the reflective representation of type {@code short}.
+     * @return the reflective representation of type {@code short}.
      */
     Type makeShort();
 
     /**
-     * Returns the reflective representation of type <tt>char</tt>.
-     * @return the reflective representation of type <tt>char</tt>.
+     * Returns the reflective representation of type {@code char}.
+     * @return the reflective representation of type {@code char}.
      */
     Type makeChar();
 
     /**
-     * Returns the reflective representation of type <tt>int</tt>.
-     * @return the reflective representation of type <tt>int</tt>.
+     * Returns the reflective representation of type {@code int}.
+     * @return the reflective representation of type {@code int}.
      */
     Type makeInt();
 
     /**
-     * Returns the reflective representation of type <tt>long</tt>.
-     * @return the reflective representation of type <tt>long</tt>.
+     * Returns the reflective representation of type {@code long}.
+     * @return the reflective representation of type {@code long}.
      */
     Type makeLong();
 
     /**
-     * Returns the reflective representation of type <tt>float</tt>.
-     * @return the reflective representation of type <tt>float</tt>.
+     * Returns the reflective representation of type {@code float}.
+     * @return the reflective representation of type {@code float}.
      */
     Type makeFloat();
 
     /**
-     * Returns the reflective representation of type <tt>double</tt>.
-     * @return the reflective representation of type <tt>double</tt>.
+     * Returns the reflective representation of type {@code double}.
+     * @return the reflective representation of type {@code double}.
      */
     Type makeDouble();
 
     /**
-     * Returns the reflective representation of <tt>void</tt>.
-     * @return the reflective representation of <tt>void</tt>.
+     * Returns the reflective representation of {@code void}.
+     * @return the reflective representation of {@code void}.
      */
     Type makeVoid();
 }

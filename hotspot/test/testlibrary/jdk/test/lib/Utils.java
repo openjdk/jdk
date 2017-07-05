@@ -428,4 +428,28 @@ public final class Utils {
     public static long adjustTimeout(long tOut) {
         return Math.round(tOut * Utils.TIMEOUT_FACTOR);
     }
+
+    /**
+     * Runs runnable and checks that it throws expected exception. If exceptionException is null it means
+     * that we expect no exception to be thrown.
+     * @param runnable what we run
+     * @param expectedException expected exception
+     */
+    public static void runAndCheckException(Runnable runnable, Class<? extends Throwable> expectedException) {
+        try {
+            runnable.run();
+            if (expectedException != null) {
+                throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+            }
+        } catch (Throwable t) {
+            if (expectedException == null) {
+                throw new AssertionError("Got unexpected exception ", t);
+            }
+            if (!expectedException.isAssignableFrom(t.getClass())) {
+                throw new AssertionError(String.format("Got unexpected exception %s instead of %s",
+                        t.getClass().getSimpleName(), expectedException.getSimpleName()), t);
+            }
+        }
+    }
+
 }

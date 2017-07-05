@@ -26,7 +26,8 @@
 package java.lang;
 
 /**
- * Port of the "Freely Distributable Math Library", version 5.3, from C to Java.
+ * Port of the "Freely Distributable Math Library", version 5.3, from
+ * C to Java.
  *
  * <p>The C version of fdlibm relied on the idiom of pointer aliasing
  * a 64-bit double floating-point value as a two-element array of
@@ -37,7 +38,7 @@ package java.lang;
  * operated on as integer values, the standard library methods for
  * bitwise floating-point to integer conversion,
  * Double.longBitsToDouble and Double.doubleToRawLongBits, are directly
- * or indirectly used .
+ * or indirectly used.
  *
  * <p>The C version of fdlibm also took some pains to signal the
  * correct IEEE 754 exceptional conditions divide by zero, invalid,
@@ -47,13 +48,21 @@ package java.lang;
  * handling is not supported natively in the JVM, such coding patterns
  * have been omitted from this port. For example, rather than {@code
  * return huge * huge}, this port will use {@code return INFINITY}.
+ *
+ * <p>Various comparison and arithmetic operations in fdlibm could be
+ * done either based on the integer view of a value or directly on the
+ * floating-point representation. Which idiom is faster may depend on
+ * platform specific factors. However, for code clarity if no other
+ * reason, this port will favor expressing the semantics of those
+ * operations in terms of floating-point operations when convenient to
+ * do so.
  */
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
 
     private FdLibm() {
-        throw new UnsupportedOperationException("No instances for you.");
+        throw new UnsupportedOperationException("No FdLibm instances for you.");
     }
 
     /**
@@ -91,13 +100,146 @@ class FdLibm {
     }
 
     /**
+     * hypot(x,y)
+     *
+     * Method :
+     *      If (assume round-to-nearest) z = x*x + y*y
+     *      has error less than sqrt(2)/2 ulp, than
+     *      sqrt(z) has error less than 1 ulp (exercise).
+     *
+     *      So, compute sqrt(x*x + y*y) with some care as
+     *      follows to get the error below 1 ulp:
+     *
+     *      Assume x > y > 0;
+     *      (if possible, set rounding to round-to-nearest)
+     *      1. if x > 2y  use
+     *              x1*x1 + (y*y + (x2*(x + x1))) for x*x + y*y
+     *      where x1 = x with lower 32 bits cleared, x2 = x - x1; else
+     *      2. if x <= 2y use
+     *              t1*y1 + ((x-y) * (x-y) + (t1*y2 + t2*y))
+     *      where t1 = 2x with lower 32 bits cleared, t2 = 2x - t1,
+     *      y1= y with lower 32 bits chopped, y2 = y - y1.
+     *
+     *      NOTE: scaling may be necessary if some argument is too
+     *            large or too tiny
+     *
+     * Special cases:
+     *      hypot(x,y) is INF if x or y is +INF or -INF; else
+     *      hypot(x,y) is NAN if x or y is NAN.
+     *
+     * Accuracy:
+     *      hypot(x,y) returns sqrt(x^2 + y^2) with error less
+     *      than 1 ulp (unit in the last place)
+     */
+    public static class Hypot {
+        public static final double TWO_MINUS_600 = 0x1.0p-600;
+        public static final double TWO_PLUS_600  = 0x1.0p+600;
+
+        public static strictfp double compute(double x, double y) {
+            double a = Math.abs(x);
+            double b = Math.abs(y);
+
+            if (!Double.isFinite(a) || !Double.isFinite(b)) {
+                if (a == INFINITY || b == INFINITY)
+                    return INFINITY;
+                else
+                    return a + b; // Propagate NaN significand bits
+            }
+
+            if (b > a) {
+                double tmp = a;
+                a = b;
+                b = tmp;
+            }
+            assert a >= b;
+
+            // Doing bitwise conversion after screening for NaN allows
+            // the code to not worry about the possibility of
+            // "negative" NaN values.
+
+            // Note: the ha and hb variables are the high-order
+            // 32-bits of a and b stored as integer values. The ha and
+            // hb values are used first for a rough magnitude
+            // comparison of a and b and second for simulating higher
+            // precision by allowing a and b, respectively, to be
+            // decomposed into non-overlapping portions. Both of these
+            // uses could be eliminated. The magnitude comparison
+            // could be eliminated by extracting and comparing the
+            // exponents of a and b or just be performing a
+            // floating-point divide.  Splitting a floating-point
+            // number into non-overlapping portions can be
+            // accomplished by judicious use of multiplies and
+            // additions. For details see T. J. Dekker, A Floating
+            // Point Technique for Extending the Available Precision ,
+            // Numerische Mathematik, vol. 18, 1971, pp.224-242 and
+            // subsequent work.
+
+            int ha = __HI(a);        // high word of a
+            int hb = __HI(b);        // high word of b
+
+            if ((ha - hb) > 0x3c00000) {
+                return a + b;  // x / y > 2**60
+            }
+
+            int k = 0;
+            if (a > 0x1.0p500) {   // a > 2**500
+                // scale a and b by 2**-600
+                ha -= 0x25800000;
+                hb -= 0x25800000;
+                a = a * TWO_MINUS_600;
+                b = b * TWO_MINUS_600;
+                k += 600;
+            }
+            double t1, t2;
+            if (b < 0x1.0p-500) {   // b < 2**-500
+                if (b < Double.MIN_NORMAL) {      // subnormal b or 0 */
+                    if (b == 0.0)
+                        return a;
+                    t1 = 0x1.0p1022;   // t1 = 2^1022
+                    b *= t1;
+                    a *= t1;
+                    k -= 1022;
+                } else {            // scale a and b by 2^600
+                    ha += 0x25800000;       // a *= 2^600
+                    hb += 0x25800000;       // b *= 2^600
+                    a = a * TWO_PLUS_600;
+                    b = b * TWO_PLUS_600;
+                    k -= 600;
+                }
+            }
+            // medium size a and b
+            double w = a - b;
+            if (w > b) {
+                t1 = 0;
+                t1 = __HI(t1, ha);
+                t2 = a - t1;
+                w  = Math.sqrt(t1*t1 - (b*(-b) - t2 * (a + t1)));
+            } else {
+                double y1, y2;
+                a  = a + a;
+                y1 = 0;
+                y1 = __HI(y1, hb);
+                y2 = b - y1;
+                t1 = 0;
+                t1 = __HI(t1, ha + 0x00100000);
+                t2 = a - t1;
+                w  = Math.sqrt(t1*y1 - (w*(-w) - (t1*y2 + t2*b)));
+            }
+            if (k != 0) {
+                return Math.powerOfTwoD(k) * w;
+            } else
+                return w;
+        }
+    }
+
+    /**
      * Compute x**y
      *                    n
      * Method:  Let x =  2   * (1+f)
      *      1. Compute and return log2(x) in two pieces:
      *              log2(x) = w1 + w2,
      *         where w1 has 53 - 24 = 29 bit trailing zeros.
-     *      2. Perform y*log2(x) = n+y' by simulating muti-precision
+     *      2. Perform y*log2(x) = n+y' by simulating multi-precision
      *         arithmetic, where |y'| <= 0.5.
      *      3. Return x**y = 2**n*exp(y'*log2)
      *

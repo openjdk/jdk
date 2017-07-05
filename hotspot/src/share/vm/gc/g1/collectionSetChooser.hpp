@@ -48,12 +48,10 @@ class CollectionSetChooser: public CHeapObj<mtGC> {
 
   // The index of the next candidate old region to be considered for
   // addition to the CSet.
-  uint _curr_index;
+  uint _front;
 
-  // The number of candidate old regions added to the CSet chooser.
-  // Note: this is not updated when removing a region using
-  // remove_and_move_to_next() below.
-  uint _length;
+  // The index of the last candidate old region
+  uint _end;
 
   // Keeps track of the start of the next array chunk to be claimed by
   // parallel GC workers.
@@ -73,30 +71,32 @@ public:
   // collection without removing it from the CSet chooser.
   HeapRegion* peek() {
     HeapRegion* res = NULL;
-    if (_curr_index < _length) {
-      res = regions_at(_curr_index);
+    if (_front < _end) {
+      res = regions_at(_front);
       assert(res != NULL,
              err_msg("Unexpected NULL hr in _regions at index %u",
-                     _curr_index));
+                     _front));
     }
     return res;
   }
 
   // Remove the given region from the CSet chooser and move to the
-  // next one. The given region should be the current candidate region
-  // in the CSet chooser.
-  void remove_and_move_to_next(HeapRegion* hr) {
+  // next one.
+  HeapRegion* pop() {
+    HeapRegion* hr = regions_at(_front);
     assert(hr != NULL, "pre-condition");
-    assert(_curr_index < _length, "pre-condition");
-    assert(regions_at(_curr_index) == hr, "pre-condition");
-    regions_at_put(_curr_index, NULL);
+    assert(_front < _end, "pre-condition");
+    regions_at_put(_front, NULL);
     assert(hr->reclaimable_bytes() <= _remaining_reclaimable_bytes,
            err_msg("remaining reclaimable bytes inconsistent "
                    "from region: " SIZE_FORMAT " remaining: " SIZE_FORMAT,
                    hr->reclaimable_bytes(), _remaining_reclaimable_bytes));
     _remaining_reclaimable_bytes -= hr->reclaimable_bytes();
-    _curr_index += 1;
+    _front += 1;
+    return hr;
   }
+
+  void push(HeapRegion* hr);
 
   CollectionSetChooser();
 
@@ -113,7 +113,7 @@ public:
   }
 
   // Returns the number candidate old regions added
-  uint length() { return _length; }
+  uint length() { return _end; }
 
   // Serial version.
   void add_region(HeapRegion *hr);
@@ -135,7 +135,7 @@ public:
   void clear();
 
   // Return the number of candidate regions that remain to be collected.
-  uint remaining_regions() { return _length - _curr_index; }
+  uint remaining_regions() { return _end - _front; }
 
   // Determine whether the CSet chooser has more candidate regions or not.
   bool is_empty() { return remaining_regions() == 0; }

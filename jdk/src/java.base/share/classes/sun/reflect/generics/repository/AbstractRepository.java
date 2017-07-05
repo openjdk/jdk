@@ -48,15 +48,15 @@ public abstract class AbstractRepository<T extends Tree> {
     private GenericsFactory getFactory() { return factory;}
 
     /**
-     * Accessor for <tt>tree</tt>.
+     * Accessor for {@code tree}.
      * @return the cached AST this repository holds
      */
     protected T getTree(){ return tree;}
 
     /**
-     * Returns a <tt>Reifier</tt> used to convert parts of the
+     * Returns a {@code Reifier} used to convert parts of the
      * AST into reflective objects.
-     * @return a <tt>Reifier</tt> used to convert parts of the
+     * @return a {@code Reifier} used to convert parts of the
      * AST into reflective objects
      */
     protected Reifier getReifier(){return Reifier.make(getFactory());}
