@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -969,23 +969,22 @@ OperandForm *ArchDesc::constructOperand(const char *ident,
 void ArchDesc::initBaseOpTypes() {
   // Create OperandForm and assign type for each opcode.
   for (int i = 1; i < _last_machine_leaf; ++i) {
-    char        *ident   = (char *)NodeClassNames[i];
+    char *ident = (char *)NodeClassNames[i];
     constructOperand(ident, true);
   }
   // Create InstructForm and assign type for each ideal instruction.
-  for ( int j = _last_machine_leaf+1; j < _last_opcode; ++j) {
-    char         *ident    = (char *)NodeClassNames[j];
-    if(!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
-       !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
-       !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
-       !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
-       !strcmp(ident, "Bool") ) {
+  for (int j = _last_machine_leaf+1; j < _last_opcode; ++j) {
+    char *ident = (char *)NodeClassNames[j];
+    if (!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
+        !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
+        !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
+        !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
+        !strcmp(ident, "Bool")) {
       constructOperand(ident, true);
-    }
-    else {
-      InstructForm *insForm  = new InstructForm(ident, true);
-      // insForm->_opcode       = nextUserOpType(ident);
-      _globalNames.Insert(ident,insForm);
+    } else {
+      InstructForm *insForm = new InstructForm(ident, true);
+      // insForm->_opcode = nextUserOpType(ident);
+      _globalNames.Insert(ident, insForm);
       addForm(insForm);
     }
   }
@@ -1038,6 +1037,9 @@ void ArchDesc::initBaseOpTypes() {
     ident = "TEMP";
     eForm = new Effect(ident);
     _globalNames.Insert(ident, eForm);
+    ident = "TEMP_DEF";
+    eForm = new Effect(ident);
+    _globalNames.Insert(ident, eForm);
     ident = "CALL";
     eForm = new Effect(ident);
     _globalNames.Insert(ident, eForm);
@@ -1050,8 +1052,8 @@ void ArchDesc::initBaseOpTypes() {
     const char *idealName = NodeClassNames[idealIndex];
     _idealIndex.Insert((void*) idealName, (void*) (intptr_t) idealIndex);
   }
-  for ( idealIndex = _last_machine_leaf+1;
-        idealIndex < _last_opcode; ++idealIndex) {
+  for (idealIndex = _last_machine_leaf+1;
+       idealIndex < _last_opcode; ++idealIndex) {
     const char *idealName = NodeClassNames[idealIndex];
     _idealIndex.Insert((void*) idealName, (void*) (intptr_t) idealIndex);
   }

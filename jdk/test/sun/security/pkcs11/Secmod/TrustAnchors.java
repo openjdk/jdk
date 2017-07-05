@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6298106 6275523 6420252
+ * @bug 6298106 6275523 6420252 8059627
  * @summary make sure we can access the NSS trust anchor module
  * @author Andreas Sterbenz
  * @library ..
@@ -43,10 +43,12 @@ public class TrustAnchors extends SecmodTest {
             return;
         }
 
-        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
-            // our secmod.db file says nssckbi.*so*, so NSS does not find the
-            // *DLL* on windows.
-            System.out.println("Test currently does not work on Windows, skipping");
+        // our secmod.db file says nssckbi.*so*, so NSS does not find the
+        // *DLL* on Windows nor the *DYLIB* on Mac OSX.
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.startsWith("win") || osName.startsWith("mac")) {
+            System.out.println("Test currently does not work on " + osName +
+                ", skipping");
             return;
         }
 

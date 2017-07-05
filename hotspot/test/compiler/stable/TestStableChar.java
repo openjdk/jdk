@@ -53,44 +53,32 @@
  *           java/lang/invoke/TestStableChar$DefaultStaticValue
  *           java/lang/invoke/TestStableChar$ObjectArrayLowerDim2
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:-TieredCompilation
+ *                   -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableChar
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:-TieredCompilation
+ *                   -XX:-TieredCompilation
  *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableChar
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableChar
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableChar
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -client -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableChar
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -client -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableChar
  */
 package java.lang.invoke;
 
