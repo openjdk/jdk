@@ -97,6 +97,7 @@ CORE_PKGS =                                      \
   java.awt.print                                 \
   java.beans                                     \
   java.beans.beancontext                         \
+  java.dyn                                       \
   java.io                                        \
   java.lang                                      \
   java.lang.annotation                           \

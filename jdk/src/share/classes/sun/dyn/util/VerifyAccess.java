@@ -95,7 +95,7 @@ public class VerifyAccess {
     public static boolean isSamePackage(Class<?> class1, Class<?> class2) {
         if (class1 == class2)
             return true;
-        if (loadersAreRelated(class1.getClassLoader(), class2.getClassLoader()))
+        if (!loadersAreRelated(class1.getClassLoader(), class2.getClassLoader()))
             return false;
         String name1 = class1.getName(), name2 = class2.getName();
         int dot = name1.lastIndexOf('.');
@@ -159,7 +159,7 @@ public class VerifyAccess {
      */
     public static void checkBootstrapPrivilege(Class requestingClass, Class subjectClass,
                                                String permissionName) {
-        if (requestingClass == Access.class)  return;
+        if (requestingClass == null)          return;
         if (requestingClass == subjectClass)  return;
         SecurityManager security = System.getSecurityManager();
         if (security == null)  return;  // open season

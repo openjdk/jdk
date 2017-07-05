@@ -528,7 +528,7 @@ HeapRegion* G1CollectedHeap::newAllocRegion_work(size_t word_size,
            res->zero_fill_state() == HeapRegion::Allocated)),
          "Non-young alloc Regions must be zero filled (and non-H)");
 
-  if (G1TraceRegions) {
+  if (G1PrintRegions) {
     if (res != NULL) {
       gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
                              "top "PTR_FORMAT,
@@ -2282,13 +2282,13 @@ void G1CollectedHeap::print_tracing_info() const {
     // to that.
     g1_policy()->print_tracing_info();
   }
-  if (SummarizeG1RSStats) {
+  if (G1SummarizeRSetStats) {
     g1_rem_set()->print_summary_info();
   }
-  if (SummarizeG1ConcMark) {
+  if (G1SummarizeConcurrentMark) {
     concurrent_mark()->print_summary_info();
   }
-  if (SummarizeG1ZFStats) {
+  if (G1SummarizeZFStats) {
     ConcurrentZFThread::print_summary_info();
   }
   g1_policy()->print_yg_surv_rate_info();
@@ -3255,7 +3255,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   HeapRegion* r = heap_region_containing(old);
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
-    if (G1TraceRegions) {
+    if (G1PrintRegions) {
       gclog_or_tty->print("evacuation failed in heap region "PTR_FORMAT" "
                           "["PTR_FORMAT","PTR_FORMAT")\n",
                           r, r->bottom(), r->end());
@@ -3466,7 +3466,7 @@ private:
   }
 
   static size_t gclab_word_size() {
-    return ParallelGCG1AllocBufferSize / HeapWordSize;
+    return G1ParallelGCAllocBufferSize / HeapWordSize;
   }
 
   static size_t bitmap_size_in_bits() {
@@ -3616,7 +3616,7 @@ private:
 
 public:
   G1ParGCAllocBuffer() :
-    ParGCAllocBuffer(ParallelGCG1AllocBufferSize / HeapWordSize),
+    ParGCAllocBuffer(G1ParallelGCAllocBufferSize / HeapWordSize),
     _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
     _bitmap(G1CollectedHeap::heap()->reserved_region().start()),
     _retired(false)
@@ -3812,14 +3812,14 @@ public:
 
     HeapWord* obj = NULL;
     if (word_sz * 100 <
-        (size_t)(ParallelGCG1AllocBufferSize / HeapWordSize) *
+        (size_t)(G1ParallelGCAllocBufferSize / HeapWordSize) *
                                                   ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
       alloc_buf->retire(false, false);
 
       HeapWord* buf =
-        _g1h->par_allocate_during_gc(purpose, ParallelGCG1AllocBufferSize / HeapWordSize);
+        _g1h->par_allocate_during_gc(purpose, G1ParallelGCAllocBufferSize / HeapWordSize);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
       // Otherwise.
       alloc_buf->set_buf(buf);
@@ -4331,7 +4331,7 @@ public:
       _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
       _g1h->g1_policy()->record_termination_time(i, term_ms);
     }
-    if (G1UseSurvivorSpace) {
+    if (G1UseSurvivorSpaces) {
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
     }
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
@@ -4435,28 +4435,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   // XXX What should this be doing in the parallel case?
   g1_policy()->record_collection_pause_end_CH_strong_roots();
-  if (G1VerifyRemSet) {
-    // :::: FIXME ::::
-    // The stupid remembered set doesn't know how to filter out dead
-    // objects, which the smart one does, and so when it is created
-    // and then compared the number of entries in each differs and
-    // the verification code fails.
-    guarantee(false, "verification code is broken, see note");
-
-    // Let's make sure that the current rem set agrees with the stupidest
-    // one possible!
-    bool refs_enabled = ref_processor()->discovery_enabled();
-    if (refs_enabled) ref_processor()->disable_discovery();
-    StupidG1RemSet stupid(this);
-    count_closure.n = 0;
-    stupid.oops_into_collection_set_do(&count_closure, worker_i);
-    int stupid_n = count_closure.n;
-    count_closure.n = 0;
-    g1_rem_set()->oops_into_collection_set_do(&count_closure, worker_i);
-    guarantee(count_closure.n == stupid_n, "Old and new rem sets differ.");
-    gclog_or_tty->print_cr("\nFound %d pointers in heap RS.", count_closure.n);
-    if (refs_enabled) ref_processor()->enable_discovery();
-  }
   if (scan_so != NULL) {
     scan_scan_only_set(scan_so, worker_i);
   }

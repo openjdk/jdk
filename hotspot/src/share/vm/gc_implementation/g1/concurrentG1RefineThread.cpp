@@ -53,7 +53,9 @@ void ConcurrentG1RefineThread::traversalBasedRefinement() {
     ResourceMark rm;
     HandleMark   hm;
 
-    if (TraceG1Refine) gclog_or_tty->print_cr("G1-Refine starting pass");
+    if (G1TraceConcurrentRefinement) {
+      gclog_or_tty->print_cr("G1-Refine starting pass");
+    }
     _sts.join();
     bool no_sleep = _cg1r->refine();
     _sts.leave();
@@ -207,9 +209,9 @@ void ConcurrentG1RefineThread::run() {
 
 
 void ConcurrentG1RefineThread::yield() {
-  if (TraceG1Refine) gclog_or_tty->print_cr("G1-Refine-yield");
+  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-yield");
   _sts.yield("G1 refine");
-  if (TraceG1Refine) gclog_or_tty->print_cr("G1-Refine-yield-end");
+  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-yield-end");
 }
 
 void ConcurrentG1RefineThread::stop() {
@@ -230,7 +232,7 @@ void ConcurrentG1RefineThread::stop() {
       Terminator_lock->wait();
     }
   }
-  if (TraceG1Refine) gclog_or_tty->print_cr("G1-Refine-stop");
+  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-stop");
 }
 
 void ConcurrentG1RefineThread::print() {

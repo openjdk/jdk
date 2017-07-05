@@ -306,8 +306,6 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
 
       entryAddr = entryAddr.addOffsetTo(intConstantEntryArrayStride);
     } while (nameAddr != null);
-      String symbol = "heapOopSize"; // global int constant and value is initialized at runtime.
-      addIntConstant(symbol, (int)lookupInProcess(symbol).getCIntegerAt(0, 4, false));
   }
 
   private void readVMLongConstants() {
