@@ -46,7 +46,7 @@ ifndef OPENJDK
     SAMPLE_TARGET += $(SAMPLE_CLOSED_TARGET)
 endif
 
-ifeq ($(PLATFORM),solaris)
+ifneq (, $(filter $(PLATFORM), solaris macosx))
     SAMPLE_SOLARIS_SOURCE := $(shell $(FIND) $(SAMPLE_SOLARIS_SOURCE_DIR) -type f -print)
     SAMPLE_SOLARIS_TARGET := $(subst $(SAMPLE_SOLARIS_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOLARIS_SOURCE))
     SAMPLE_TARGET += $(SAMPLE_SOLARIS_TARGET)
@@ -54,17 +54,17 @@ endif
 
 $(SAMPLE_TARGET_DIR)/dtrace/%: $(SAMPLE_SOLARIS_SOURCE_DIR)/dtrace/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 $(SAMPLE_TARGET_DIR)/webservices/%: $(SAMPLE_CLOSED_SOURCE_DIR)/webservices/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 $(SAMPLE_TARGET_DIR)/%: $(SAMPLE_SOURCE_DIR)/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(SAMPLE_TARGET)

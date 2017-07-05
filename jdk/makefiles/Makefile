@@ -23,6 +23,7 @@
 # questions.
 #
 
+# This must be the first rule
 default: all
 
 include $(SPEC)
@@ -36,38 +37,43 @@ include Setup.gmk
 # Setup the build tools.
 include Tools.gmk
 
-
 all: $(BUILD_TOOLS)
-	+make -f GenerateJavaSources.gmk
+	+$(MAKE) -f GenerateJavaSources.gmk
 #       Drop back to the old makefiles for
 #       packages/libs that have not yet been converted.
-	+make -f LegacyMakefiles.gmk
+	+$(MAKE) -f LegacyMakefiles.gmk
 #       Ok, now gensrc is fully populated.
-	+make -f GenerateData.gmk
-	+make -f CompileJavaClasses.gmk
+	+$(MAKE) -f GenerateData.gmk
+	+$(MAKE) -f CompileJavaClasses.gmk
 #	The classes have been built, now generate
 #	classes that have other sources.
-	+make -f GenerateClasses.gmk
+	+$(MAKE) -f GenerateClasses.gmk
 #       The classes are now built and
 #       any javah files have now been generated.
-	+make -f CompileNativeLibraries.gmk
+	+$(MAKE) -f CompileNativeLibraries.gmk
 #       Finally compile the launchers.
-	+make -f CompileLaunchers.gmk
+	+$(MAKE) -f CompileLaunchers.gmk
 #       Now we have a complete jdk, which you can run.
 #       It is not yet wrapped up as an installed image.
 #       The demos are compiled against this jdk.
 ifndef NO_DEMOS
-	+make -f CompileDemos.gmk
+	+$(MAKE) -f CompileDemos.gmk
 endif
 #	Now copy the sample sources into the jdk.
 ifndef NO_SAMPLES
-	+make -f CopySamples.gmk
+	+$(MAKE) -f CopySamples.gmk
 endif
 
+# Create the final jdk and jre images in the old way. Kept for reference
+# until conversion is fully done.
+old-images:
+	+$(MAKE) $(IMAGES_MAKE_ARGS) -f OldImages.gmk 
+
 # Create the final jdk and jre images, to be wrapped up
-# into packages, or instealled.
-images: all
-	+make $(IMAGES_MAKE_ARGS) -f Images.gmk 
+# into packages, or installed.
+images:
+	+$(MAKE) -f CreateJars.gmk
+	+$(MAKE) $(IMAGES_MAKE_ARGS) -f Images.gmk 
 
 
 BINARIES:=$(shell if test -d $(IMAGES_OUTPUTDIR)/j2sdk-image/bin; then cd $(IMAGES_OUTPUTDIR)/j2sdk-image/bin && $(LS) ; fi)
@@ -89,4 +95,4 @@ packages: images
 	echo Creating packages...well, in the future.
 	$(MKDIR) -p $(OUTPUT_ROOT)/packages
 
-.PHONY: all install
+.PHONY: all install images

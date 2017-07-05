@@ -203,12 +203,6 @@ public class PopupFactory {
                     popupType = HEAVY_WEIGHT_POPUP;
                     break;
                 }
-            } else if (c instanceof Window) {
-                Window w = (Window) c;
-                if (!w.isOpaque() || w.getOpacity() < 1 || w.getShape() != null) {
-                    popupType = HEAVY_WEIGHT_POPUP;
-                    break;
-                }
             }
             c = c.getParent();
         }

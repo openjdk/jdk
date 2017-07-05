@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@ package sun.security.provider.certpath;
 
 import java.io.*;
 import java.net.URI;
-import java.util.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
+import java.util.*;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.Debug;
 import sun.security.util.DerOutputStream;
+import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.*;
 
 /**
@@ -58,44 +58,23 @@ class DistributionPointFetcher {
         {true, true, true, true, true, true, true, true, true};
 
     /**
-     * Flag indicating whether support for the CRL distribution point
-     * extension shall be enabled. Currently disabled by default for
-     * compatibility and legal reasons.
-     */
-    private final static boolean USE_CRLDP = AccessController.doPrivileged
-        (new GetBooleanAction("com.sun.security.enableCRLDP"));
-
-    // singleton instance
-    private static final DistributionPointFetcher INSTANCE =
-        new DistributionPointFetcher();
-
-    /**
      * Private instantiation only.
      */
     private DistributionPointFetcher() {}
 
     /**
-     * Return a DistributionPointFetcher instance.
-     */
-    static DistributionPointFetcher getInstance() {
-        return INSTANCE;
-    }
-
-    /**
      * Return the X509CRLs matching this selector. The selector must be
      * an X509CRLSelector with certificateChecking set.
-     *
-     * If CRLDP support is disabled, this method always returns an
-     * empty set.
      */
-    Collection<X509CRL> getCRLs(X509CRLSelector selector, boolean signFlag,
-        PublicKey prevKey, String provider, List<CertStore> certStores,
-        boolean[] reasonsMask, Set<TrustAnchor> trustAnchors,
-        Date validity) throws CertStoreException {
-
-        if (USE_CRLDP == false) {
-            return Collections.emptySet();
-        }
+    static Collection<X509CRL> getCRLs(X509CRLSelector selector,
+                                       boolean signFlag, PublicKey prevKey,
+                                       String provider,
+                                       List<CertStore> certStores,
+                                       boolean[] reasonsMask,
+                                       Set<TrustAnchor> trustAnchors,
+                                       Date validity)
+        throws CertStoreException
+    {
         X509Certificate cert = selector.getCertificateChecking();
         if (cert == null) {
             return Collections.emptySet();
@@ -116,7 +95,7 @@ class DistributionPointFetcher {
             }
             List<DistributionPoint> points =
                     ext.get(CRLDistributionPointsExtension.POINTS);
-            Set<X509CRL> results = new HashSet<X509CRL>();
+            Set<X509CRL> results = new HashSet<>();
             for (Iterator<DistributionPoint> t = points.iterator();
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
                 DistributionPoint point = t.next();
@@ -129,9 +108,7 @@ class DistributionPointFetcher {
                 debug.println("Returning " + results.size() + " CRLs");
             }
             return results;
-        } catch (CertificateException e) {
-            return Collections.emptySet();
-        } catch (IOException e) {
+        } catch (CertificateException | IOException e) {
             return Collections.emptySet();
         }
     }
@@ -140,7 +117,7 @@ class DistributionPointFetcher {
      * Download CRLs from the given distribution point, verify and return them.
      * See the top of the class for current limitations.
      */
-    private Collection<X509CRL> getCRLs(X509CRLSelector selector,
+    private static Collection<X509CRL> getCRLs(X509CRLSelector selector,
         X509CertImpl certImpl, DistributionPoint point, boolean[] reasonsMask,
         boolean signFlag, PublicKey prevKey, String provider,
         List<CertStore> certStores, Set<TrustAnchor> trustAnchors,
@@ -200,7 +177,7 @@ class DistributionPointFetcher {
                         certStores, validity)) {
                     crls.add(crl);
                 }
-            } catch (Exception e) {
+            } catch (IOException | CRLException e) {
                 // don't add the CRL
                 if (debug != null) {
                     debug.println("Exception verifying CRL: " + e.getMessage());
@@ -214,7 +191,7 @@ class DistributionPointFetcher {
     /**
      * Download CRL from given URI.
      */
-    private X509CRL getCRL(URIName name) {
+    private static X509CRL getCRL(URIName name) {
         URI uri = name.getURI();
         if (debug != null) {
             debug.println("Trying to fetch CRL from DP " + uri);
@@ -240,7 +217,7 @@ class DistributionPointFetcher {
     /**
      * Fetch CRLs from certStores.
      */
-    private Collection<X509CRL> getCRLs(X500Name name,
+    private static Collection<X509CRL> getCRLs(X500Name name,
         X500Principal certIssuer, List<CertStore> certStores)
     {
         if (debug != null) {
@@ -249,7 +226,7 @@ class DistributionPointFetcher {
         X509CRLSelector xcs = new X509CRLSelector();
         xcs.addIssuer(name.asX500Principal());
         xcs.addIssuer(certIssuer);
-        Collection<X509CRL> crls = new ArrayList<X509CRL>();
+        Collection<X509CRL> crls = new ArrayList<>();
         for (CertStore store : certStores) {
             try {
                 for (CRL crl : store.getCRLs(xcs)) {
@@ -285,7 +262,7 @@ class DistributionPointFetcher {
      *        certification path should be determined
      * @return true if ok, false if not
      */
-    boolean verifyCRL(X509CertImpl certImpl, DistributionPoint point,
+    static boolean verifyCRL(X509CertImpl certImpl, DistributionPoint point,
         X509CRL crl, boolean[] reasonsMask, boolean signFlag,
         PublicKey prevKey, String provider,
         Set<TrustAnchor> trustAnchors, List<CertStore> certStores,
@@ -340,9 +317,9 @@ class DistributionPointFetcher {
         } else {
             // in case of self-issued indirect CRL issuer.
             byte[] certAKID = certImpl.getExtensionValue(
-                                PKIXExtensions.AuthorityKey_Id.toString());
+                                AuthorityKey_Id.toString());
             byte[] crlAKID = crlImpl.getExtensionValue(
-                                PKIXExtensions.AuthorityKey_Id.toString());
+                                AuthorityKey_Id.toString());
 
             if (certAKID == null || crlAKID == null) {
                 // cannot recognize indirect CRL without AKID
@@ -539,7 +516,7 @@ class DistributionPointFetcher {
         // verify that interim reasons mask includes one or more reasons
         // not included in the reasons mask
         boolean oneOrMore = false;
-        for (int i=0; i < interimReasonsMask.length && !oneOrMore; i++) {
+        for (int i = 0; i < interimReasonsMask.length && !oneOrMore; i++) {
             if (!reasonsMask[i] && interimReasonsMask[i]) {
                 oneOrMore = true;
             }
@@ -615,7 +592,7 @@ class DistributionPointFetcher {
                 PKIXCertPathBuilderResult result =
                     (PKIXCertPathBuilderResult) builder.build(params);
                 prevKey = result.getPublicKey();
-            } catch (Exception e) {
+            } catch (GeneralSecurityException e) {
                 throw new CRLException(e);
             }
         }
@@ -633,7 +610,7 @@ class DistributionPointFetcher {
         // validate the signature on the CRL
         try {
             crl.verify(prevKey, provider);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             if (debug != null) {
                 debug.println("CRL signature failed to verify");
             }
@@ -644,22 +621,21 @@ class DistributionPointFetcher {
         Set<String> unresCritExts = crl.getCriticalExtensionOIDs();
         // remove any that we have processed
         if (unresCritExts != null) {
-            unresCritExts.remove
-                (PKIXExtensions.IssuingDistributionPoint_Id.toString());
+            unresCritExts.remove(IssuingDistributionPoint_Id.toString());
             if (!unresCritExts.isEmpty()) {
                 if (debug != null) {
                     debug.println("Unrecognized critical extension(s) in CRL: "
                         + unresCritExts);
-                    Iterator<String> i = unresCritExts.iterator();
-                    while (i.hasNext())
-                        debug.println(i.next());
+                    for (String ext : unresCritExts) {
+                        debug.println(ext);
+                    }
                 }
                 return false;
             }
         }
 
         // update reasonsMask
-        for (int i=0; i < interimReasonsMask.length; i++) {
+        for (int i = 0; i < interimReasonsMask.length; i++) {
             if (!reasonsMask[i] && interimReasonsMask[i]) {
                 reasonsMask[i] = true;
             }
@@ -671,9 +647,10 @@ class DistributionPointFetcher {
      * Append relative name to the issuer name and return a new
      * GeneralNames object.
      */
-    private GeneralNames getFullNames(X500Name issuer, RDN rdn)
-        throws IOException {
-        List<RDN> rdns = new ArrayList<RDN>(issuer.rdns());
+    private static GeneralNames getFullNames(X500Name issuer, RDN rdn)
+        throws IOException
+    {
+        List<RDN> rdns = new ArrayList<>(issuer.rdns());
         rdns.add(rdn);
         X500Name fullName = new X500Name(rdns.toArray(new RDN[0]));
         GeneralNames fullNames = new GeneralNames();
@@ -681,15 +658,16 @@ class DistributionPointFetcher {
         return fullNames;
     }
 
-    /** Verifies whether a CRL is issued by a certain certificate
+    /**
+     * Verifies whether a CRL is issued by a certain certificate
      *
      * @param cert the certificate
      * @param crl the CRL to be verified
      * @param provider the name of the signature provider
      */
     private static boolean issues(X509CertImpl cert, X509CRLImpl crl,
-            String provider) throws IOException {
-
+                                  String provider) throws IOException
+    {
         boolean matched = false;
 
         AdaptableX509CertSelector issuerSelector =
@@ -727,7 +705,7 @@ class DistributionPointFetcher {
             try {
                 crl.verify(cert.getPublicKey(), provider);
                 matched = true;
-            } catch (Exception e) {
+            } catch (GeneralSecurityException e) {
                 matched = false;
             }
         }

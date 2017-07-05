@@ -25,12 +25,15 @@
 
 package java.awt.dnd;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * This class contains constant values representing
  * the type of action(s) to be performed by a Drag and Drop operation.
  * @since 1.2
  */
-
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class DnDConstants {
 
     private DnDConstants() {} // define null private constructor.

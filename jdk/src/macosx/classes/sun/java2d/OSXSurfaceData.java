@@ -37,9 +37,13 @@ import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 import sun.lwawt.macosx.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /*
  * This is the SurfaceData for a CGContextRef.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class OSXSurfaceData extends BufImgSurfaceData {
     final static float UPPER_BND = Float.MAX_VALUE / 2.0f;
     final static float LOWER_BND = -UPPER_BND;

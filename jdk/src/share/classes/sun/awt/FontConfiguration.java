@@ -947,7 +947,7 @@ public abstract class FontConfiguration {
                     public Object run() {
                         try {
                             return Class.forName(charsetName, true,
-                                                 Thread.currentThread().getContextClassLoader());
+                                                 ClassLoader.getSystemClassLoader());
                         } catch (ClassNotFoundException e) {
                         }
                         return null;

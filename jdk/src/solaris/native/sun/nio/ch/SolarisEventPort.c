@@ -32,17 +32,12 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <sys/types.h>
-#include <port.h>       // Solaris 10
+#include <port.h>
 
 #include "sun_nio_ch_SolarisEventPort.h"
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_init(JNIEnv *env, jclass clazz)
-{
-}
-
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_SolarisEventPort_portCreate
+Java_sun_nio_ch_SolarisEventPort_port_1create
     (JNIEnv* env, jclass clazz)
 {
     int port = port_create();
@@ -53,37 +48,44 @@ Java_sun_nio_ch_SolarisEventPort_portCreate
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_portClose
+Java_sun_nio_ch_SolarisEventPort_port_1close
     (JNIEnv* env, jclass clazz, jint port)
 {
     int res;
     RESTARTABLE(close(port), res);
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_portAssociate
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_SolarisEventPort_port_1associate
     (JNIEnv* env, jclass clazz, jint port, jint source, jlong objectAddress, jint events)
 {
     uintptr_t object = (uintptr_t)jlong_to_ptr(objectAddress);
-
-    if (port_associate((int)port, (int)source, object, (int)events, NULL) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "port_associate");
+    if (port_associate((int)port, (int)source, object, (int)events, NULL) == 0) {
+        return JNI_TRUE;
+    } else {
+        if (errno != EBADFD)
+            JNU_ThrowIOExceptionWithLastError(env, "port_associate");
+        return JNI_FALSE;
     }
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_portDissociate
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_SolarisEventPort_port_1dissociate
     (JNIEnv* env, jclass clazz, jint port, jint source, jlong objectAddress)
 {
     uintptr_t object = (uintptr_t)jlong_to_ptr(objectAddress);
 
-    if (port_dissociate((int)port, (int)source, object) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "port_dissociate");
+    if (port_dissociate((int)port, (int)source, object) == 0) {
+        return JNI_TRUE;
+    } else {
+        if (errno != ENOENT)
+            JNU_ThrowIOExceptionWithLastError(env, "port_dissociate");
+        return JNI_FALSE;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_portSend(JNIEnv* env, jclass clazz,
+Java_sun_nio_ch_SolarisEventPort_port_1send(JNIEnv* env, jclass clazz,
     jint port, jint events)
 {
     if (port_send((int)port, (int)events, NULL) == -1) {
@@ -92,7 +94,7 @@ Java_sun_nio_ch_SolarisEventPort_portSend(JNIEnv* env, jclass clazz,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SolarisEventPort_portGet(JNIEnv* env, jclass clazz,
+Java_sun_nio_ch_SolarisEventPort_port_1get(JNIEnv* env, jclass clazz,
     jint port, jlong eventAddress)
 {
     int res;
@@ -105,16 +107,28 @@ Java_sun_nio_ch_SolarisEventPort_portGet(JNIEnv* env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_SolarisEventPort_portGetn(JNIEnv* env, jclass clazz,
-    jint port, jlong arrayAddress, jint max)
+Java_sun_nio_ch_SolarisEventPort_port_1getn(JNIEnv* env, jclass clazz,
+    jint port, jlong arrayAddress, jint max, jlong timeout)
 {
     int res;
     uint_t n = 1;
     port_event_t* list = (port_event_t*)jlong_to_ptr(arrayAddress);
+    timespec_t ts;
+    timespec_t* tsp;
 
-    RESTARTABLE(port_getn((int)port, list, (uint_t)max, &n, NULL), res);
-    if (res == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "port_getn");
+    if (timeout >= 0L) {
+        ts.tv_sec = timeout / 1000;
+        ts.tv_nsec = 1000000 * (timeout % 1000);
+        tsp = &ts;
+    } else {
+        tsp = NULL;
     }
+
+    res = port_getn((int)port, list, (uint_t)max, &n, tsp);
+    if (res == -1) {
+        if (errno != ETIME && errno != EINTR)
+            JNU_ThrowIOExceptionWithLastError(env, "port_getn");
+    }
+
     return (jint)n;
 }

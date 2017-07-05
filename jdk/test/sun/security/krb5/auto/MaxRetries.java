@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 6844193
+ * @compile -XDignore.symbol.file MaxRetries.java
  * @run main/othervm/timeout=300 MaxRetries
  * @summary support max_retries in krb5.conf
  */
 
 import java.io.*;
+import java.net.DatagramSocket;
 import java.security.Security;
 
 public class MaxRetries {
@@ -37,6 +39,10 @@ public class MaxRetries {
 
         System.setProperty("sun.security.krb5.debug", "true");
         new OneKDC(null).writeJAASConf();
+
+        // An idle UDP socket to revent PortUnreachableException
+        DatagramSocket ds = new DatagramSocket(33333);
+
         System.setProperty("java.security.krb5.conf", "alternative-krb5.conf");
 
         // For tryLast
@@ -78,6 +84,8 @@ public class MaxRetries {
 
         rewriteUdpPrefLimit(10000, 10); // realm rules
         test2("TCP");
+
+        ds.close();
     }
 
     /**

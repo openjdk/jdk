@@ -22,5 +22,5 @@
 # questions.
 #
 
-autoconf configure.ac > configure
+autoconf -W all configure.ac > configure
 rm -rf config.status config.log autom4te.cache

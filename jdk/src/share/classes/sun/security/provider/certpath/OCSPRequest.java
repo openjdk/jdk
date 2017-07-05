@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
+import java.security.cert.Extension;
 import java.util.Collections;
 import java.util.List;
+
 import sun.misc.HexDumpEncoder;
 import sun.security.util.*;
 
@@ -74,22 +76,29 @@ import sun.security.util.*;
 
 class OCSPRequest {
 
-    private static final Debug debug = Debug.getInstance("certpath");
     private static final boolean dump = false;
 
     // List of request CertIds
     private final List<CertId> certIds;
+    private final List<Extension> extensions;
+    private byte[] nonce;
 
     /*
      * Constructs an OCSPRequest. This constructor is used
      * to construct an unsigned OCSP Request for a single user cert.
      */
     OCSPRequest(CertId certId) {
-        this.certIds = Collections.singletonList(certId);
+        this(Collections.singletonList(certId));
     }
 
     OCSPRequest(List<CertId> certIds) {
         this.certIds = certIds;
+        this.extensions = Collections.<Extension>emptyList();
+    }
+
+    OCSPRequest(List<CertId> certIds, List<Extension> extensions) {
+        this.certIds = certIds;
+        this.extensions = extensions;
     }
 
     byte[] encodeBytes() throws IOException {
@@ -104,7 +113,20 @@ class OCSPRequest {
         }
 
         tmp.write(DerValue.tag_Sequence, requestsOut);
-        // No extensions supported
+        if (!extensions.isEmpty()) {
+            DerOutputStream extOut = new DerOutputStream();
+            for (Extension ext : extensions) {
+                ext.encode(extOut);
+                if (ext.getId().equals(OCSP.NONCE_EXTENSION_OID.toString())) {
+                    nonce = ext.getValue();
+                }
+            }
+            DerOutputStream extsOut = new DerOutputStream();
+            extsOut.write(DerValue.tag_Sequence, extOut);
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                                         true, (byte)2), extsOut);
+        }
+
         DerOutputStream tbsRequest = new DerOutputStream();
         tbsRequest.write(DerValue.tag_Sequence, tmp);
 
@@ -125,5 +147,9 @@ class OCSPRequest {
 
     List<CertId> getCertIds() {
         return certIds;
+    }
+
+    byte[] getNonce() {
+        return nonce;
     }
 }

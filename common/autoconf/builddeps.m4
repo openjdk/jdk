@@ -34,7 +34,7 @@ AC_DEFUN([BDEPS_SCAN_FOR_BUILDDEPS],
                 . $builddepsfile
                 AC_MSG_RESULT([loaded!])
             else
-               AC_ERROR([The given builddeps conf file $with_builddeps_conf could not be loaded!])
+               AC_MSG_ERROR([The given builddeps conf file $with_builddeps_conf could not be loaded!])
            fi
         else
             AC_MSG_CHECKING([for builddeps.conf files in sources...])
@@ -47,7 +47,7 @@ AC_DEFUN([BDEPS_SCAN_FOR_BUILDDEPS],
                 . $builddepsfile
                 AC_MSG_RESULT([found at least one!])
             else
-               AC_ERROR([Could not find any builddeps.conf at all!])
+               AC_MSG_ERROR([Could not find any builddeps.conf at all!])
            fi
         fi
         # Create build and host names that use _ instead of "-" and ".".
@@ -117,7 +117,7 @@ AC_DEFUN([BDEPS_FTPGET],
         ) | ftp -in $FTPSERVER
     fi
     if test "x$VALID_TOOL" != xyes; then
-       AC_ERROR([I do not know how to use the tool: $BDEPS_FTP])
+       AC_MSG_ERROR([I do not know how to use the tool: $BDEPS_FTP])
     fi
 ])
 
@@ -159,7 +159,7 @@ AC_DEFUN([BDEPS_CHECK_MODULE],
             thecflags=${builddep_$2_CFLAGS}
             thelibs=${builddep_$2_LIBS}
             if test "x$depdir" = x; then
-                AC_ERROR([Could not download build dependency $2])
+                AC_MSG_ERROR([Could not download build dependency $2])
             fi
             $1=$depdir
             if test "x$theroot" != x; then
@@ -198,17 +198,17 @@ AC_DEFUN([BDEPS_FETCH],
             mkdir -p $installdir
         fi
         if test ! -d $installdir; then
-            AC_ERROR([Could not create directory $installdir])
+            AC_MSG_ERROR([Could not create directory $installdir])
         fi
         tmpfile=`mktemp $installdir/$1.XXXXXXXXX`
         touch $tmpfile    
         if test ! -f $tmpfile; then
-            AC_ERROR([Could not create files in directory $installdir])
+            AC_MSG_ERROR([Could not create files in directory $installdir])
         fi
         BDEPS_FTPGET([$3/$2] , [$tmpfile])
         mv $tmpfile $installdir/$filename
         if test ! -s $installdir/$filename; then 
-            AC_ERROR([Could not download $3/$2])
+            AC_MSG_ERROR([Could not download $3/$2])
         fi
         case "$extension" in
             zip)  echo "Unzipping $installdir/$filename..."
@@ -220,7 +220,7 @@ AC_DEFUN([BDEPS_FETCH],
             tgz) echo "Untaring $installdir/$filename..."
                (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
             ;;
-            *) AC_ERROR([Cannot handle build depency archive with extension $extension])
+            *) AC_MSG_ERROR([Cannot handle build depency archive with extension $extension])
             ;;
         esac
     fi
@@ -228,4 +228,3 @@ AC_DEFUN([BDEPS_FETCH],
         $5=$installdir
     fi
 ])
-

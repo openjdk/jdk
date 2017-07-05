@@ -29,10 +29,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>PageFormat</code> class describes the size and
  * orientation of a page to be printed.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class PageFormat implements Cloneable
 {
 

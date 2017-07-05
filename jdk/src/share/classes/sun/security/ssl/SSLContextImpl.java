@@ -144,7 +144,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             throws KeyManagementException {
         for (int i = 0; kms != null && i < kms.length; i++) {
             KeyManager km = kms[i];
-            if (km instanceof X509KeyManager == false) {
+            if (!(km instanceof X509KeyManager)) {
                 continue;
             }
             if (SunJSSE.isFIPS()) {
@@ -331,11 +331,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         Collection<CipherSuite> allowedCipherSuites =
                                     CipherSuite.allowedCipherSuites();
 
-        ArrayList<CipherSuite> suites = new ArrayList<>();
+        TreeSet<CipherSuite> suites = new TreeSet<>();
         if (!(protocols.collection().isEmpty()) &&
                 protocols.min.v != ProtocolVersion.NONE.v) {
             for (CipherSuite suite : allowedCipherSuites) {
-                if (suite.allowed == false || suite.priority < minPriority) {
+                if (!suite.allowed || suite.priority < minPriority) {
                     continue;
                 }
 

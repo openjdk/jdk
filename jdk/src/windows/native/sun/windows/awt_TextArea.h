@@ -51,14 +51,10 @@ public:
 
     virtual void Dispose();
 
-    LPCTSTR GetClassName();
-
     static AwtTextArea* Create(jobject self, jobject parent);
 
     static size_t CountNewLines(JNIEnv *env, jstring jStr, size_t maxlen);
     static size_t GetALength(JNIEnv* env, jstring jStr, size_t maxlen);
-
-    MsgRouting PreProcessMsg(MSG& msg);
 
     LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK EditProc(HWND hWnd, UINT message,
@@ -72,9 +68,6 @@ public:
 
     INLINE void SetIgnoreEnChange(BOOL b) { m_bIgnoreEnChange = b; }
 
-    virtual void SetColor(COLORREF c);
-    virtual void SetBackgroundColor(COLORREF c);
-    virtual void Enable(BOOL bEnable);
     virtual BOOL InheritsNativeMouseWheelBehavior();
     virtual void Reshape(int x, int y, int w, int h);
 
@@ -87,40 +80,8 @@ public:
 
 protected:
 
-    /*****************************************************************
-     * Inner class OleCallback declaration.
-     */
-    class OleCallback : public IRichEditOleCallback {
-    public:
-        OleCallback();
-
-        STDMETHODIMP QueryInterface(REFIID riid, LPVOID * ppvObj);
-        STDMETHODIMP_(ULONG) AddRef();
-        STDMETHODIMP_(ULONG) Release();
-        STDMETHODIMP GetNewStorage(LPSTORAGE FAR * ppstg);
-        STDMETHODIMP GetInPlaceContext(LPOLEINPLACEFRAME FAR * ppipframe,
-                                       LPOLEINPLACEUIWINDOW FAR* ppipuiDoc,
-                                       LPOLEINPLACEFRAMEINFO pipfinfo);
-        STDMETHODIMP ShowContainerUI(BOOL fShow);
-        STDMETHODIMP QueryInsertObject(LPCLSID pclsid, LPSTORAGE pstg, LONG cp);
-        STDMETHODIMP DeleteObject(LPOLEOBJECT poleobj);
-        STDMETHODIMP QueryAcceptData(LPDATAOBJECT pdataobj, CLIPFORMAT *pcfFormat,
-                                     DWORD reco, BOOL fReally, HGLOBAL hMetaPict);
-        STDMETHODIMP ContextSensitiveHelp(BOOL fEnterMode);
-        STDMETHODIMP GetClipboardData(CHARRANGE *pchrg, DWORD reco,
-                                      LPDATAOBJECT *ppdataobj);
-        STDMETHODIMP GetDragDropEffect(BOOL fDrag, DWORD grfKeyState,
-                                       LPDWORD pdwEffect);
-        STDMETHODIMP GetContextMenu(WORD seltype, LPOLEOBJECT poleobj,
-                                    CHARRANGE FAR * pchrg, HMENU FAR * phmenu);
-    private:
-        ULONG             m_refs; // Reference count
-    };//OleCallback class
-
-    INLINE static OleCallback& GetOleCallback() { return sm_oleCallback; }
     void EditSetSel(CHARRANGE &cr);
     void EditGetSel(CHARRANGE &cr);
-    LONG EditGetCharFromPos(POINT& pt);
   private:
     // RichEdit 1.0 control generates EN_CHANGE notifications not only
     // on text changes, but also on any character formatting change.
@@ -139,8 +100,6 @@ protected:
     LONG    m_lHDeltaAccum;
     LONG    m_lVDeltaAccum;
 
-
-    static OleCallback sm_oleCallback;
 
 };
 

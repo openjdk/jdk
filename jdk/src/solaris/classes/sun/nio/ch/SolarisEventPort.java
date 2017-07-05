@@ -31,8 +31,8 @@ import java.io.IOException;
 import sun.misc.Unsafe;
 
 /**
- * AsynchronousChannelGroup implementation based on the Solaris 10 event port
- * framework.
+ * Provides an AsynchronousChannelGroup implementation based on the Solaris 10
+ * event port framework and also provides direct access to that framework.
  */
 
 class SolarisEventPort
@@ -54,14 +54,14 @@ class SolarisEventPort
      *     void            *portev_user;
      * } port_event_t;
      */
-    private static final int SIZEOF_PORT_EVENT  = dependsArch(16, 24);
-    private static final int OFFSETOF_EVENTS    = 0;
-    private static final int OFFSETOF_SOURCE    = 4;
-    private static final int OFFSETOF_OBJECT    = 8;
+    static final int SIZEOF_PORT_EVENT  = dependsArch(16, 24);
+    static final int OFFSETOF_EVENTS    = 0;
+    static final int OFFSETOF_SOURCE    = 4;
+    static final int OFFSETOF_OBJECT    = 8;
 
     // port sources
-    private static final short PORT_SOURCE_USER     = 3;
-    private static final short PORT_SOURCE_FD       = 4;
+    static final short PORT_SOURCE_USER     = 3;
+    static final short PORT_SOURCE_FD       = 4;
 
     // file descriptor to event port.
     private final int port;
@@ -75,7 +75,7 @@ class SolarisEventPort
         super(provider, pool);
 
         // create event port
-        this.port = portCreate();
+        this.port = port_create();
     }
 
     SolarisEventPort start() {
@@ -90,12 +90,12 @@ class SolarisEventPort
                 return;
             closed = true;
         }
-        portClose(port);
+        port_close(port);
     }
 
     private void wakeup() {
         try {
-            portSend(port, 0);
+            port_send(port, 0);
         } catch (IOException x) {
             throw new AssertionError(x);
         }
@@ -124,7 +124,7 @@ class SolarisEventPort
             // send user event to wakeup each thread
             while (nThreads-- > 0) {
                 try {
-                    portSend(port, 0);
+                    port_send(port, 0);
                 } catch (IOException x) {
                     throw new AssertionError(x);
                 }
@@ -137,7 +137,7 @@ class SolarisEventPort
         // (re-)associate file descriptor
         // no need to translate events
         try {
-            portAssociate(port, PORT_SOURCE_FD, fd, events);
+            port_associate(port, PORT_SOURCE_FD, fd, events);
         } catch (IOException x) {
             throw new AssertionError();     // should not happen
         }
@@ -164,7 +164,7 @@ class SolarisEventPort
                     // A error here is fatal (thread will not be replaced)
                     replaceMe = false;
                     try {
-                        portGet(port, address);
+                        port_get(port, address);
                     } catch (IOException x) {
                         x.printStackTrace();
                         return;
@@ -220,26 +220,46 @@ class SolarisEventPort
         }
     }
 
-    // -- Native methods --
+    /**
+     * Creates an event port
+     */
+    static native int port_create() throws IOException;
 
-    private static native void init();
-
-    private static native int portCreate() throws IOException;
-
-    private static native void portAssociate(int port, int source, long object,
-        int events) throws IOException;
-
-    private static native void portGet(int port, long pe) throws IOException;
-
-    private static native int portGetn(int port, long address, int max)
+    /**
+     * Associates specific events of a given object with a port
+     */
+    static native boolean port_associate(int port, int source, long object, int events)
         throws IOException;
 
-    private static native void portSend(int port, int events) throws IOException;
+    /**
+     * Removes the association of an object with a port.
+     */
+    static native boolean port_dissociate(int port, int source, long object)
+        throws IOException;
 
-    private static native void portClose(int port);
+    /**
+     * Retrieves a single event from a port
+     */
+    static native void port_get(int port, long pe) throws IOException;
+
+    /**
+     * Retrieves at most {@code max} events from a port.
+     */
+    static native int port_getn(int port, long address, int max, long timeout)
+        throws IOException;
+
+    /**
+     * Sends a user-defined eventto a specified  port.
+     */
+    static native void port_send(int port, int events) throws IOException;
+
+    /**
+     * Closes a port.
+     */
+    static native void port_close(int port);
+
 
     static {
         Util.load();
-        init();
     }
 }
