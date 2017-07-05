@@ -50,6 +50,7 @@
 #include "memory/genMarkSweep.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/padded.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/tenuredGeneration.hpp"

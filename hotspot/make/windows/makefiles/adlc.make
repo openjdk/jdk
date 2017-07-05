@@ -55,13 +55,11 @@ CXX_INCLUDE_DIRS=\
 
 !if "$(Platform_arch_model)" == "$(Platform_arch)"
 SOURCES_AD=\
-  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad \
-  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
+  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad 
 !else
 SOURCES_AD=\
   $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad \
-  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch).ad \
-  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
+  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch).ad 
 !endif
 
 # NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_DIR

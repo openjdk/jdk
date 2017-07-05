@@ -36,10 +36,6 @@ CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT"
 CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
 !endif
 
-!if "$(Variant)" == "core"
-# No need to define anything, CORE is defined as !COMPILER1 && !COMPILER2
-!endif
-
 !if "$(Variant)" == "compiler1"
 CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1"
 !endif
