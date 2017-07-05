@@ -115,7 +115,7 @@ public final class ReleaseInfoPlugin implements Plugin {
                 try (FileInputStream fis = new FileInputStream(operation)) {
                     props.load(fis);
                 } catch (IOException exp) {
-                    throw new RuntimeException(exp);
+                    throw new UncheckedIOException(exp);
                 }
                 props.forEach((k, v) -> release.put(k.toString(), v.toString()));
             }

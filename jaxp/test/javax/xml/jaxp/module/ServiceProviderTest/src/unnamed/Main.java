@@ -23,6 +23,7 @@
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
+import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.util.Arrays;
@@ -48,7 +49,8 @@ public class Main {
                 .map(xmlProviderName -> Layer.boot().findModule(xmlProviderName).get())
                 .mapToLong(
                         // services provided by the implementation in provider module
-                        provider -> provider.getDescriptor().provides().keySet().stream()
+                        provider -> provider.getDescriptor().provides().stream()
+                                .map(Provides::service)
                                 .filter(serviceName -> {
                                     allServices.remove(serviceName); // remove service provided by
                                                                      // customized module from allServices

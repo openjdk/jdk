@@ -26,7 +26,7 @@
  * @author Gary Ellison
  * @bug 4170635
  * @summary Verify equals()/hashCode() contract honored
- * @modules java.base/sun.security.util
+ * @modules java.base/sun.security.util:+open
  *          java.base/sun.security.x509
  * @run main/othervm/policy=Allow.policy DerInputBufferEqualsHashCode
  */

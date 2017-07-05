@@ -34,6 +34,7 @@
 
 /*
  * @test
+ * @modules java.base/java.util.concurrent:open
  * @summary Test Phaser phase integer overflow behavior
  */
 

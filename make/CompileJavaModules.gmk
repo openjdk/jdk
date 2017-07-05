@@ -356,10 +356,6 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
-jdk.jshell_ADD_JAVAC_FLAGS := -Xlint:-exports
-
-################################################################################
-
 jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
 jdk.hotspot.agent_COPY := .gif .png sa.js .properties
 

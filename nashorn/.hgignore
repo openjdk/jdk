@@ -1,6 +1,5 @@
 syntax: glob
 
-^.hgtip
 build/*
 dist/*
 /nbproject/private/

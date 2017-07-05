@@ -152,6 +152,9 @@ public class CallerSensitiveFinder {
         try {
             ClassFileReader reader = ClassFileReader.newInstance(path);
             for (ClassFile cf : reader.getClassFiles()) {
+                if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+                    continue;
+
                 String classFileName = cf.getName();
                 // for each ClassFile
                 //    parse constant pool to find matching method refs

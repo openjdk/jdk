@@ -66,8 +66,16 @@ public class DelayQueueTest extends JSR166TestCase {
     }
 
     public static Test suite() {
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return DelayQueue.class; }
+            public Collection emptyCollection() { return new DelayQueue(); }
+            public Object makeElement(int i) { return new PDelay(i); }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return false; }
+        }
         return newTestSuite(DelayQueueTest.class,
-                            new Generic().testSuite());
+                            new Generic().testSuite(),
+                            CollectionTest.testSuite(new Implementation()));
     }
 
     /**
@@ -144,7 +152,7 @@ public class DelayQueueTest extends JSR166TestCase {
 
     /**
      * Returns a new queue of given size containing consecutive
-     * PDelays 0 ... n.
+     * PDelays 0 ... n - 1.
      */
     private DelayQueue<PDelay> populatedQueue(int n) {
         DelayQueue<PDelay> q = new DelayQueue<PDelay>();
@@ -156,6 +164,7 @@ public class DelayQueueTest extends JSR166TestCase {
         assertFalse(q.isEmpty());
         assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
         assertEquals(n, q.size());
+        assertEquals(new PDelay(0), q.peek());
         return q;
     }
 

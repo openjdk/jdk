@@ -26,6 +26,7 @@
  * @bug 8048209
  * @summary Check that Collections.synchronizedNavigableSet().tailSet() is using
  * the same lock object as it's source.
+ * @modules java.base/java.util:open
  * @run testng SyncSubMutexes
  */
 import java.lang.reflect.Field;

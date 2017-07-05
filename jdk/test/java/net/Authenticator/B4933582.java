@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4933582
+ * @library ../../../sun/net/www/httptest
+ * @modules java.base/sun.net.www
+ *          java.base/sun.net.www.protocol.http
+ * @build HttpCallback HttpTransaction TestHttpServer B4933582
+ * @run main/othervm B4933582
+ */
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -44,7 +53,7 @@ public class B4933582 implements HttpCallback {
         req.orderlyClose();
     }
 
-    static boolean firstTime = true;
+    static volatile boolean firstTime = true;
 
     public void request (HttpTransaction req) {
         try {
@@ -114,43 +123,67 @@ public class B4933582 implements HttpCallback {
         URL url = new URL (u);
         System.out.println ("client opening connection to: " + u);
         URLConnection urlc = url.openConnection ();
-        InputStream is = urlc.getInputStream ();
-        read (is);
-        is.close();
+        try(InputStream is = urlc.getInputStream ()) {
+            read (is);
+        }
     }
 
     static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
-        firstTime = args[0].equals ("first");
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         CacheImpl cache;
         try {
-            if (firstTime) {
-                server = new TestHttpServer (new B4933582(), 1, 10, 0);
-                cache = new CacheImpl (server.getLocalPort());
-            } else {
-                cache = new CacheImpl ();
-                server = new TestHttpServer(new B4933582(), 1, 10, cache.getPort());
-            }
+            server = new TestHttpServer (new B4933582(), 1, 10, 0);
+            cache = new CacheImpl (server.getLocalPort());
             AuthCacheValue.setAuthCache (cache);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
             client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
-        } catch (Exception e) {
+        } finally {
             if (server != null) {
                 server.terminate();
             }
-            throw e;
         }
+
         int f = auth.getCount();
-        if (firstTime && f != 1) {
-            except ("Authenticator was called "+f+" times. Should be 1");
+        if (f != 1) {
+            except("Authenticator was called " + f + " times. Should be 1");
         }
-        if (!firstTime && f != 0) {
-            except ("Authenticator was called "+f+" times. Should be 0");
+
+        firstTime = false;
+
+        int retries = 0;
+        cache = new CacheImpl();
+        while (true) {
+            try {
+                server = new TestHttpServer(new B4933582(), 1, 10,
+                        cache.getPort());
+                break;
+            } catch (BindException e) {
+                if (retries++ < 5) {
+                    Thread.sleep(200L);
+                    System.out.println("BindException \"" + e.getMessage()
+                            + "\", retrying...");
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
         }
-        server.terminate();
+
+        try {
+            AuthCacheValue.setAuthCache(cache);
+            client("http://localhost:" + server.getLocalPort() + "/d1/foo.html");
+        } finally {
+            if (server != null) {
+                server.terminate();
+            }
+        }
+
+        f = auth.getCount();
+        if (f != 1) {
+            except("Authenticator was called " + f + " times. Should be 1");
+        }
     }
 
     public static void except (String s) {
@@ -163,7 +196,7 @@ public class B4933582 implements HttpCallback {
             super ();
         }
 
-        int count = 0;
+        volatile int count = 0;
 
         public PasswordAuthentication getPasswordAuthentication () {
             PasswordAuthentication pw;
@@ -178,7 +211,7 @@ public class B4933582 implements HttpCallback {
     }
 
     static class CacheImpl extends AuthCacheImpl {
-        HashMap map;
+        HashMap<String,LinkedList<AuthCacheValue>> map;
         int port; // need to store the port number the server is using
 
         CacheImpl () throws IOException {
@@ -190,20 +223,18 @@ public class B4933582 implements HttpCallback {
             this.port = port;
             File src = new File ("cache.ser");
             if (src.exists()) {
-                ObjectInputStream is = new ObjectInputStream (
-                    new FileInputStream (src)
-                );
-                try {
-                    map = (HashMap)is.readObject ();
+                try (ObjectInputStream is = new ObjectInputStream(
+                        new FileInputStream(src))) {
+                    map = (HashMap<String,LinkedList<AuthCacheValue>>)is
+                              .readObject();
                     this.port = (Integer)is.readObject ();
                     System.out.println ("read port from file " + port);
                 } catch (ClassNotFoundException e) {
                     assert false;
                 }
-                is.close();
                 System.out.println ("setMap from cache.ser");
             } else {
-                map = new HashMap();
+                map = new HashMap<>();
             }
             setMap (map);
         }
@@ -213,20 +244,22 @@ public class B4933582 implements HttpCallback {
         }
 
         private void writeMap () {
+            File dst = new File("cache.ser");
             try {
-                File dst = new File ("cache.ser");
                 dst.delete();
                 if (!dst.createNewFile()) {
                     return;
                 }
-                ObjectOutputStream os = new ObjectOutputStream (
-                        new FileOutputStream (dst)
-                );
+            } catch (IOException e) {
+            }
+
+            try (ObjectOutputStream os = new ObjectOutputStream(
+                    new FileOutputStream(dst))) {
                 os.writeObject(map);
                 os.writeObject(port);
-                System.out.println ("wrote port " + port);
-                os.close();
-            } catch (IOException e) {}
+                System.out.println("wrote port " + port);
+            } catch (IOException e) {
+            }
         }
 
         public void put (String pkey, AuthCacheValue value) {

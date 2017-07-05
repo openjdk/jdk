@@ -49,14 +49,13 @@ public abstract class TestCipher {
     private final String[] MODES;
     private final String[] PADDINGS;
 
-    /* Used to test cipher with different key strengths
-       Key size tested is increment of KEYCUTTER from MINIMUM_KEY_SIZE to
-       maximum allowed keysize.
-       DES/DESede/Blowfish work with currently selected key sizes.
+    /* Used to test variable-key-length ciphers:
+       Key size tested is increment of KEYCUTTER from minKeySize
+       to min(maxKeySize, Cipher.getMaxAllowedKeyLength(algo)).
     */
-    private final int variousKeySize;
     private final int KEYCUTTER = 8;
-    private final int MINIMUM_KEY_SIZE = 32;
+    private final int minKeySize;
+    private final int maxKeySize;
 
     // Used to assert that Encryption/Decryption works with same buffer
     // TEXT_LEN is multiple of blocks in order to work against ciphers w/ NoPadding
@@ -68,23 +67,28 @@ public abstract class TestCipher {
     private final byte[] IV;
     private final byte[] INPUT_TEXT;
 
+    // for variable-key-length ciphers
     TestCipher(String algo, String[] modes, String[] paddings,
-            boolean keyStrength) throws NoSuchAlgorithmException {
+            int minKeySize, int maxKeySize) throws NoSuchAlgorithmException {
         ALGORITHM = algo;
         MODES = modes;
         PADDINGS = paddings;
-        this.variousKeySize
-                = keyStrength ? Cipher.getMaxAllowedKeyLength(ALGORITHM) : 0;
-
+        this.minKeySize = minKeySize;
+        int maxAllowedKeySize = Cipher.getMaxAllowedKeyLength(ALGORITHM);
+        if (maxKeySize > maxAllowedKeySize) {
+            maxKeySize = maxAllowedKeySize;
+        }
+        this.maxKeySize = maxKeySize;
         IV = generateBytes(8);
         INPUT_TEXT = generateBytes(TEXT_LEN + PAD_BYTES + ENC_OFFSET);
     }
 
+    // for fixed-key-length ciphers
     TestCipher(String algo, String[] modes, String[] paddings) {
         ALGORITHM = algo;
         MODES = modes;
         PADDINGS = paddings;
-        variousKeySize = 0;
+        this.minKeySize = this.maxKeySize = 0;
 
         IV = generateBytes(8);
         INPUT_TEXT = generateBytes(TEXT_LEN + PAD_BYTES + ENC_OFFSET);
@@ -98,8 +102,8 @@ public abstract class TestCipher {
         return bytes;
     }
 
-    private boolean isKeyStrenthSupported() {
-        return (variousKeySize != 0);
+    private boolean isMultipleKeyLengthSupported() {
+        return (maxKeySize != minKeySize);
     }
 
     public void runAll() throws InvalidKeyException,
@@ -110,11 +114,11 @@ public abstract class TestCipher {
 
         for (String mode : MODES) {
             for (String padding : PADDINGS) {
-                if (!isKeyStrenthSupported()) {
-                    runTest(mode, padding, 0);
+                if (!isMultipleKeyLengthSupported()) {
+                    runTest(mode, padding, minKeySize);
                 } else {
-                    int keySize = variousKeySize;
-                    while (keySize >= MINIMUM_KEY_SIZE) {
+                    int keySize = maxKeySize;
+                    while (keySize >= minKeySize) {
                         out.println("With Key Strength: " + keySize);
                         runTest(mode, padding, keySize);
                         keySize -= KEYCUTTER;
@@ -139,6 +143,7 @@ public abstract class TestCipher {
         if (keySize != 0) {
             kg.init(keySize);
         }
+
         SecretKey key = kg.generateKey();
         SecretKeySpec skeySpec = new SecretKeySpec(key.getEncoded(), ALGORITHM);
 
@@ -150,7 +155,6 @@ public abstract class TestCipher {
         }
 
         // Encryption
-
         byte[] plainText = INPUT_TEXT.clone();
 
         // Generate cipher and save to separate buffer

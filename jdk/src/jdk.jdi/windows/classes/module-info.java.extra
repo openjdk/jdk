@@ -23,5 +23,6 @@
  * questions.
  */
 
-provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.SharedMemoryAttachingConnector;
-provides com.sun.jdi.connect.Connector with com.sun.tools.jdi.SharedMemoryListeningConnector;
+provides com.sun.jdi.connect.Connector with
+    com.sun.tools.jdi.SharedMemoryAttachingConnector,
+    com.sun.tools.jdi.SharedMemoryListeningConnector;

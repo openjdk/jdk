@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,53 @@ public abstract class HttpURLConnection extends URLConnection {
      * @since 1.7
      */
     protected long fixedContentLengthLong = -1;
+
+    /**
+     * Supplies an {@link java.net.Authenticator Authenticator} to be used
+     * when authentication is requested through the HTTP protocol for
+     * this {@code HttpURLConnection}.
+     * If no authenticator is supplied, the
+     * {@linkplain Authenticator#setDefault(java.net.Authenticator) default
+     * authenticator} will be used.
+     *
+     * @implSpec The default behavior of this method is to unconditionally
+     *           throw {@link UnsupportedOperationException}. Concrete
+     *           implementations of {@code HttpURLConnection}
+     *           which support supplying an {@code Authenticator} for a
+     *           specific {@code HttpURLConnection} instance should
+     *           override this method to implement a different behavior.
+     *
+     * @implNote Depending on authentication schemes, an implementation
+     *           may or may not need to use the provided authenticator
+     *           to obtain a password. For instance, an implementation that
+     *           relies on third-party security libraries may still invoke the
+     *           default authenticator if these libraries are configured
+     *           to do so.
+     *           Likewise, an implementation that supports transparent
+     *           NTLM authentication may let the system attempt
+     *           to connect using the system user credentials first,
+     *           before invoking the provided authenticator.
+     *           <br>
+     *           However, if an authenticator is specifically provided,
+     *           then the underlying connection may only be reused for
+     *           {@code HttpURLConnection} instances which share the same
+     *           {@code Authenticator} instance, and authentication information,
+     *           if cached, may only be reused for an {@code HttpURLConnection}
+     *           sharing that same {@code Authenticator}.
+     *
+     * @param auth The {@code Authenticator} that should be used by this
+     *           {@code HttpURLConnection}.
+     *
+     * @throws  UnsupportedOperationException if setting an Authenticator is
+     *          not supported by the underlying implementation.
+     * @throws  IllegalStateException if URLConnection is already connected.
+     * @throws  NullPointerException if the supplied {@code auth} is {@code null}.
+     * @since 9
+     */
+    public void setAuthenticator(Authenticator auth) {
+        throw new UnsupportedOperationException("Supplying an authenticator"
+                    + " is not supported by " + this.getClass());
+    }
 
     /**
      * Returns the key for the {@code n}<sup>th</sup> header field.

@@ -22,10 +22,10 @@
  */
 
 /*
-   @test
-   @bug 4251519 4251520
-   @summary indexOf and lastIndex of used to let you look outside the
-            valid range in the backing array
+ * @test
+ * @bug 4251519 4251520
+ * @summary indexOf and lastIndex of used to let you look outside the
+ *          valid range in the backing array
  */
 
 import java.util.*;

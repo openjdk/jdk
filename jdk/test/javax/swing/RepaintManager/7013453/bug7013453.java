@@ -24,6 +24,7 @@
 /* @test
    @bug 7013453
    @summary BufferStrategyPaintManager.dispose will cause IllegalMonitorStateException in event thread
+   @modules java.desktop/javax.swing:open
    @author Pavel Porvatov
 */
 

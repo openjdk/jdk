@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.net.PasswordAuthentication;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Base64;
+import java.util.Objects;
 import sun.net.www.HeaderParser;
 
 /**
@@ -54,9 +55,11 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
-                               String realm, PasswordAuthentication pw) {
+                               String realm, PasswordAuthentication pw,
+                               String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm);
+              AuthScheme.BASIC, host, port, realm,
+              Objects.requireNonNull(authenticatorKey));
         String plain = pw.getUserName() + ":";
         byte[] nameBytes = null;
         try {
@@ -84,9 +87,11 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
-                               String realm, String auth) {
+                               String realm, String auth,
+                               String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm);
+              AuthScheme.BASIC, host, port, realm,
+              Objects.requireNonNull(authenticatorKey));
         this.auth = "Basic " + auth;
     }
 
@@ -94,9 +99,11 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                                   PasswordAuthentication pw) {
+                               PasswordAuthentication pw,
+                               String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm);
+              AuthScheme.BASIC, url, realm,
+              Objects.requireNonNull(authenticatorKey));
         String plain = pw.getUserName() + ":";
         byte[] nameBytes = null;
         try {
@@ -124,9 +131,10 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                                   String auth) {
+                               String auth, String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm);
+              AuthScheme.BASIC, url, realm,
+              Objects.requireNonNull(authenticatorKey));
         this.auth = "Basic " + auth;
     }
 
@@ -202,4 +210,3 @@ class BasicAuthentication extends AuthenticationInfo {
         return npath;
     }
 }
-

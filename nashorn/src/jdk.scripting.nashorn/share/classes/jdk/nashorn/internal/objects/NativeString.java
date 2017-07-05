@@ -539,17 +539,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     /**
-     * ECMA 15.5.4.5 String.prototype.charCodeAt (pos) - specialized version for long position
-     * @param self self reference
-     * @param pos  position in string
-     * @return number representing charcode at position
-     */
-    @SpecializedFunction(linkLogic=CharCodeAtLinkLogic.class)
-    public static int charCodeAt(final Object self, final long pos) {
-        return charCodeAt(self, (int)pos);
-    }
-
-    /**
      * ECMA 15.5.4.5 String.prototype.charCodeAt (pos) - specialized version for int position
      * @param self self reference
      * @param pos  position in string
@@ -1176,24 +1165,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     /**
-     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code int} arg
-     *
-     * Constructor
-     *
-     * @param newObj is this constructor invoked with the new operator
-     * @param self   self reference
-     * @param arg    the arg
-     *
-     * @return new NativeString containing the string representation of the arg
-     */
-    @SpecializedFunction(isConstructor=true)
-    public static Object constructor(final boolean newObj, final Object self, final long arg) {
-        final String str = Long.toString(arg);
-        return newObj ? newObj(str) : str;
-    }
-
-    /**
-     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code int} arg
+     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code double} arg
      *
      * Constructor
      *

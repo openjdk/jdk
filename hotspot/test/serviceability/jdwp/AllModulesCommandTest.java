@@ -32,7 +32,7 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @test
  * @summary Tests the modules-related JDWP commands
  * @library /test/lib
- * @ignore 8168478
+ * @ignore 8170541
  * @modules jdk.jdwp.agent
  * @modules java.base/jdk.internal.misc
  * @compile AllModulesCommandTestDebuggee.java
@@ -96,8 +96,7 @@ public class AllModulesCommandTest implements DebuggeeLauncher.Listener {
                 if (modName != null) { // JDWP reports unnamed modules, ignore them
                     jdwpModuleNames.add(modName);
                 }
-                // Assert the JDWP CANREAD and CLASSLOADER commands
-                assertCanRead(modId, modName);
+                // Assert the CLASSLOADER commands
                 assertClassLoader(modId, modName);
             }
 
@@ -132,13 +131,6 @@ public class AllModulesCommandTest implements DebuggeeLauncher.Listener {
         if (reply.getErrorCode() != 0) {
             throw new RuntimeException("Unexpected reply error code " + reply.getErrorCode() + " for reply " + reply);
         }
-    }
-
-    private void assertCanRead(long modId, String modName) throws IOException {
-        // Simple assert for the CANREAD command
-        JdwpCanReadReply reply = new JdwpCanReadCmd(modId, modId).send(channel);
-        assertReply(reply);
-        assertTrue(reply.canRead(), "canRead() reports false for reading from the same module '" + modName + "', moduleId=" + modId);
     }
 
     private void assertClassLoader(long modId, String modName) throws IOException {
