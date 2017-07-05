@@ -302,21 +302,24 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h))
   UnsafeWrapper("Unsafe_SetObjectVolatile");
-  oop x = JNIHandles::resolve(x_h);
-  oop p = JNIHandles::resolve(obj);
-  // Catch VolatileCallSite.target stores (via
-  // CallSite.setTargetVolatile) and check call site dependencies.
-  if ((offset == java_lang_invoke_CallSite::target_offset_in_bytes()) && p->is_a(SystemDictionary::CallSite_klass())) {
-    oop call_site     = p;
-    oop method_handle = x;
-    assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
-    assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
-    {
-      // Walk all nmethods depending on this call site.
-      MutexLocker mu(Compile_lock, thread);
-      Universe::flush_dependents_on(call_site, method_handle);
+  {
+    // Catch VolatileCallSite.target stores (via
+    // CallSite.setTargetVolatile) and check call site dependencies.
+    oop p = JNIHandles::resolve(obj);
+    if ((offset == java_lang_invoke_CallSite::target_offset_in_bytes()) && p->is_a(SystemDictionary::CallSite_klass())) {
+      Handle call_site    (THREAD, p);
+      Handle method_handle(THREAD, JNIHandles::resolve(x_h));
+      assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
+      assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+      {
+        // Walk all nmethods depending on this call site.
+        MutexLocker mu(Compile_lock, thread);
+        Universe::flush_dependents_on(call_site(), method_handle());
+      }
     }
   }
+  oop x = JNIHandles::resolve(x_h);
+  oop p = JNIHandles::resolve(obj);
   void* addr = index_oop_from_field_offset_long(p, offset);
   OrderAccess::release();
   if (UseCompressedOops) {

@@ -47,8 +47,18 @@ typedef FormatBuffer<HRS_ERR_MSG_BUFSZ> hrs_err_msg;
 
 class hrs_ext_msg;
 
+typedef enum {
+  HRSPhaseNone,
+  HRSPhaseEvacuation,
+  HRSPhaseCleanup,
+  HRSPhaseFullGC
+} HRSPhase;
+
+class HRSPhaseSetter;
+
 class HeapRegionSetBase VALUE_OBJ_CLASS_SPEC {
   friend class hrs_ext_msg;
+  friend class HRSPhaseSetter;
 
 protected:
   static size_t calculate_region_num(HeapRegion* hr);
@@ -79,6 +89,15 @@ protected:
   size_t      _calc_region_num;
   size_t      _calc_total_capacity_bytes;
   size_t      _calc_total_used_bytes;
+
+  // This is here so that it can be used in the subclasses to assert
+  // something different depending on which phase the GC is in. This
+  // can be particularly helpful in the check_mt_safety() methods.
+  static HRSPhase _phase;
+
+  // Only used by HRSPhaseSetter.
+  static void clear_phase();
+  static void set_phase(HRSPhase phase);
 
   // verify_region() is used to ensure that the contents of a region
   // added to / removed from a set are consistent. Different sets
@@ -174,6 +193,16 @@ class hrs_ext_msg : public hrs_err_msg {
 public:
   hrs_ext_msg(HeapRegionSetBase* set, const char* message) : hrs_err_msg("") {
     set->fill_in_ext_msg(this, message);
+  }
+};
+
+class HRSPhaseSetter {
+public:
+  HRSPhaseSetter(HRSPhase phase) {
+    HeapRegionSetBase::set_phase(phase);
+  }
+  ~HRSPhaseSetter() {
+    HeapRegionSetBase::clear_phase();
   }
 };
 

@@ -2947,7 +2947,7 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
     values.validate();
   } else {
     tty->print_cr("[Describe stack layout]");
-    values.print();
+    values.print(this);
   }
 }
 #endif
