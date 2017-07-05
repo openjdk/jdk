@@ -25,11 +25,11 @@
 package sun.jvm.hotspot.tools;
 
 import java.io.PrintStream;
-import java.util.Hashtable;
 
-import sun.jvm.hotspot.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.HotSpotAgent;
+import sun.jvm.hotspot.debugger.DebuggerException;
+import sun.jvm.hotspot.debugger.JVMDebugger;
+import sun.jvm.hotspot.runtime.VM;
 
 // generic command line or GUI tool.
 // override run & code main as shown below.
@@ -147,6 +147,7 @@ public abstract class Tool implements Runnable {
       }
 
       PrintStream err = System.err;
+      PrintStream out = System.out;
 
       int pid = 0;
       String coreFileName   = null;
@@ -180,18 +181,18 @@ public abstract class Tool implements Runnable {
       try {
         switch (debugeeType) {
           case DEBUGEE_PID:
-             err.println("Attaching to process ID " + pid + ", please wait...");
+             out.println("Attaching to process ID " + pid + ", please wait...");
              agent.attach(pid);
              break;
 
           case DEBUGEE_CORE:
-             err.println("Attaching to core " + coreFileName +
+             out.println("Attaching to core " + coreFileName +
                          " from executable " + executableName + ", please wait...");
              agent.attach(executableName, coreFileName);
              break;
 
           case DEBUGEE_REMOTE:
-             err.println("Attaching to remote server " + remoteServer + ", please wait...");
+             out.println("Attaching to remote server " + remoteServer + ", please wait...");
              agent.attach(remoteServer);
              break;
         }
@@ -218,7 +219,7 @@ public abstract class Tool implements Runnable {
         return 1;
       }
 
-      err.println("Debugger attached successfully.");
+      out.println("Debugger attached successfully.");
       startInternal();
       return 0;
    }
@@ -237,14 +238,14 @@ public abstract class Tool implements Runnable {
    // Remains of the start mechanism, common to both start methods.
    private void startInternal() {
 
-      PrintStream err = System.err;
+      PrintStream out = System.out;
       VM vm = VM.getVM();
       if (vm.isCore()) {
-        err.println("Core build detected.");
+        out.println("Core build detected.");
       } else if (vm.isClientCompiler()) {
-        err.println("Client compiler detected.");
+        out.println("Client compiler detected.");
       } else if (vm.isServerCompiler()) {
-        err.println("Server compiler detected.");
+        out.println("Server compiler detected.");
       } else {
         throw new RuntimeException("Fatal error: "
             + "should have been able to detect core/C1/C2 build");
@@ -252,8 +253,8 @@ public abstract class Tool implements Runnable {
 
       String version = vm.getVMRelease();
       if (version != null) {
-        err.print("JVM version is ");
-        err.println(version);
+        out.print("JVM version is ");
+        out.println(version);
       }
 
       run();
