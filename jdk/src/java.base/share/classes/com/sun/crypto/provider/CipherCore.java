@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ final class CipherCore {
     private static final int PCBC_MODE = 4;
     private static final int CTR_MODE = 5;
     private static final int CTS_MODE = 6;
-    private static final int GCM_MODE = 7;
+    static final int GCM_MODE = 7;
 
     /*
      * variables used for performing the GCM (key+iv) uniqueness check.
@@ -196,7 +196,7 @@ final class CipherCore {
             cipher = new CounterMode(rawImpl);
             unitBytes = 1;
             padding = null;
-        }  else if (modeUpperCase.startsWith("GCM")) {
+        }  else if (modeUpperCase.equals("GCM")) {
             // can only be used for block ciphers w/ 128-bit block size
             if (blockSize != 16) {
                 throw new NoSuchAlgorithmException
@@ -221,6 +221,15 @@ final class CipherCore {
             throw new NoSuchAlgorithmException("Cipher mode: " + mode
                                                + " not found");
         }
+    }
+
+    /**
+     * Returns the mode of this cipher.
+     *
+     * @return the parsed cipher mode
+     */
+    int getMode() {
+        return cipherMode;
     }
 
     private static int getNumOfUnit(String mode, int offset, int blockSize)

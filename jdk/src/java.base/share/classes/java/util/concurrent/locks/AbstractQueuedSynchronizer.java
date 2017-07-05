@@ -35,11 +35,12 @@
 
 package java.util.concurrent.locks;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
  * Provides a framework for implementing blocking locks and related
@@ -506,40 +507,41 @@ public abstract class AbstractQueuedSynchronizer
         /** Constructor used by addWaiter. */
         Node(Node nextWaiter) {
             this.nextWaiter = nextWaiter;
-            U.putObject(this, THREAD, Thread.currentThread());
+            THREAD.set(this, Thread.currentThread());
         }
 
         /** Constructor used by addConditionWaiter. */
         Node(int waitStatus) {
-            U.putInt(this, WAITSTATUS, waitStatus);
-            U.putObject(this, THREAD, Thread.currentThread());
+            WAITSTATUS.set(this, waitStatus);
+            THREAD.set(this, Thread.currentThread());
         }
 
         /** CASes waitStatus field. */
         final boolean compareAndSetWaitStatus(int expect, int update) {
-            return U.compareAndSwapInt(this, WAITSTATUS, expect, update);
+            return WAITSTATUS.compareAndSet(this, expect, update);
         }
 
         /** CASes next field. */
         final boolean compareAndSetNext(Node expect, Node update) {
-            return U.compareAndSwapObject(this, NEXT, expect, update);
+            return NEXT.compareAndSet(this, expect, update);
         }
 
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-        private static final long NEXT;
-        static final long PREV;
-        private static final long THREAD;
-        private static final long WAITSTATUS;
+        final void setPrevRelaxed(Node p) {
+            PREV.set(this, p);
+        }
+
+        // VarHandle mechanics
+        private static final VarHandle NEXT;
+        private static final VarHandle PREV;
+        private static final VarHandle THREAD;
+        private static final VarHandle WAITSTATUS;
         static {
             try {
-                NEXT = U.objectFieldOffset
-                    (Node.class.getDeclaredField("next"));
-                PREV = U.objectFieldOffset
-                    (Node.class.getDeclaredField("prev"));
-                THREAD = U.objectFieldOffset
-                    (Node.class.getDeclaredField("thread"));
-                WAITSTATUS = U.objectFieldOffset
-                    (Node.class.getDeclaredField("waitStatus"));
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                NEXT = l.findVarHandle(Node.class, "next", Node.class);
+                PREV = l.findVarHandle(Node.class, "prev", Node.class);
+                THREAD = l.findVarHandle(Node.class, "thread", Thread.class);
+                WAITSTATUS = l.findVarHandle(Node.class, "waitStatus", int.class);
             } catch (ReflectiveOperationException e) {
                 throw new Error(e);
             }
@@ -595,7 +597,7 @@ public abstract class AbstractQueuedSynchronizer
      *         value was not equal to the expected value.
      */
     protected final boolean compareAndSetState(int expect, int update) {
-        return U.compareAndSwapInt(this, STATE, expect, update);
+        return STATE.compareAndSet(this, expect, update);
     }
 
     // Queuing utilities
@@ -616,7 +618,7 @@ public abstract class AbstractQueuedSynchronizer
         for (;;) {
             Node oldTail = tail;
             if (oldTail != null) {
-                U.putObject(node, Node.PREV, oldTail);
+                node.setPrevRelaxed(oldTail);
                 if (compareAndSetTail(oldTail, node)) {
                     oldTail.next = node;
                     return oldTail;
@@ -639,7 +641,7 @@ public abstract class AbstractQueuedSynchronizer
         for (;;) {
             Node oldTail = tail;
             if (oldTail != null) {
-                U.putObject(node, Node.PREV, oldTail);
+                node.setPrevRelaxed(oldTail);
                 if (compareAndSetTail(oldTail, node)) {
                     oldTail.next = node;
                     return node;
@@ -887,7 +889,6 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
      */
-    @ReservedStackAccess
     final boolean acquireQueued(final Node node, int arg) {
         try {
             boolean interrupted = false;
@@ -1220,7 +1221,6 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
      */
-    @ReservedStackAccess
     public final void acquire(int arg) {
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
@@ -1284,7 +1284,6 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      * @return the value returned from {@link #tryRelease}
      */
-    @ReservedStackAccess
     public final boolean release(int arg) {
         if (tryRelease(arg)) {
             Node h = head;
@@ -1365,7 +1364,6 @@ public abstract class AbstractQueuedSynchronizer
      *        and can represent anything you like.
      * @return the value returned from {@link #tryReleaseShared}
      */
-    @ReservedStackAccess
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {
             doReleaseShared();
@@ -2279,28 +2277,17 @@ public abstract class AbstractQueuedSynchronizer
         }
     }
 
-    /**
-     * Setup to support compareAndSet. We need to natively implement
-     * this here: For the sake of permitting future enhancements, we
-     * cannot explicitly subclass AtomicInteger, which would be
-     * efficient and useful otherwise. So, as the lesser of evils, we
-     * natively implement using hotspot intrinsics API. And while we
-     * are at it, we do the same for other CASable fields (which could
-     * otherwise be done with atomic field updaters).
-     */
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long STATE;
-    private static final long HEAD;
-    private static final long TAIL;
+    // VarHandle mechanics
+    private static final VarHandle STATE;
+    private static final VarHandle HEAD;
+    private static final VarHandle TAIL;
 
     static {
         try {
-            STATE = U.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("state"));
-            HEAD = U.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("head"));
-            TAIL = U.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("tail"));
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            STATE = l.findVarHandle(AbstractQueuedSynchronizer.class, "state", int.class);
+            HEAD = l.findVarHandle(AbstractQueuedSynchronizer.class, "head", Node.class);
+            TAIL = l.findVarHandle(AbstractQueuedSynchronizer.class, "tail", Node.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
@@ -2315,7 +2302,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     private final void initializeSyncQueue() {
         Node h;
-        if (U.compareAndSwapObject(this, HEAD, null, (h = new Node())))
+        if (HEAD.compareAndSet(this, null, (h = new Node())))
             tail = h;
     }
 
@@ -2323,6 +2310,6 @@ public abstract class AbstractQueuedSynchronizer
      * CASes tail field.
      */
     private final boolean compareAndSetTail(Node expect, Node update) {
-        return U.compareAndSwapObject(this, TAIL, expect, update);
+        return TAIL.compareAndSet(this, expect, update);
     }
 }

@@ -196,7 +196,8 @@ void G1StringDedupEntryCache::delete_overflowed() {
   }
 
   double end = os::elapsedTime();
-  log_trace(gc, stringdedup)("Deleted " UINTX_FORMAT " entries, " G1_STRDEDUP_TIME_FORMAT, count, end - start);
+  log_trace(gc, stringdedup)("Deleted " UINTX_FORMAT " entries, " G1_STRDEDUP_TIME_FORMAT_MS,
+                             count, G1_STRDEDUP_TIME_PARAM_MS(end - start));
 }
 
 G1StringDedupTable*      G1StringDedupTable::_table = NULL;
@@ -610,14 +611,14 @@ void G1StringDedupTable::clean_entry_cache() {
 
 void G1StringDedupTable::print_statistics() {
   Log(gc, stringdedup) log;
-  log.debug("   [Table]");
-  log.debug("      [Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS "]",
+  log.debug("  Table");
+  log.debug("    Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS,
             G1_STRDEDUP_BYTES_PARAM(_table->_size * sizeof(G1StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(G1StringDedupEntry)));
-  log.debug("      [Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT "]", _table->_size, _min_size, _max_size);
-  log.debug("      [Entries: " UINTX_FORMAT ", Load: " G1_STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT "]",
+  log.debug("    Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT, _table->_size, _min_size, _max_size);
+  log.debug("    Entries: " UINTX_FORMAT ", Load: " G1_STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT,
             _table->_entries, (double)_table->_entries / (double)_table->_size * 100.0, _entry_cache->size(), _entries_added, _entries_removed);
-  log.debug("      [Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS ")]",
+  log.debug("    Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS ")",
             _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0);
-  log.debug("      [Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x]", _rehash_count, _rehash_threshold, _table->_hash_seed);
-  log.debug("      [Age Threshold: " UINTX_FORMAT "]", StringDeduplicationAgeThreshold);
+  log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x", _rehash_count, _rehash_threshold, _table->_hash_seed);
+  log.debug("    Age Threshold: " UINTX_FORMAT, StringDeduplicationAgeThreshold);
 }

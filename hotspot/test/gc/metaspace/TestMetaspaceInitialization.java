@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 import java.util.ArrayList;
 
 /* @test TestMetaspaceInitialization
- * @bug 8042933
+ * @bug 8024945
  * @summary Tests to initialize metaspace with a very low MetaspaceSize
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main/othervm -XX:MetaspaceSize=2m TestMetaspaceInitialization
+ * @run main/othervm -XX:MetaspaceSize=0 TestMetaspaceInitialization
  */
 public class TestMetaspaceInitialization {
     private class Internal {

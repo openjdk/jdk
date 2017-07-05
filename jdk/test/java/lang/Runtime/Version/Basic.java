@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Unit test for java.lang.Runtime.Version.
- * @bug 8072379 8144062
+ * @bug 8072379 8144062 8161236
  */
 
 import java.lang.reflect.InvocationTargetException;
@@ -55,7 +55,7 @@ public class Basic {
     public static void main(String ... args) {
 
         //// Tests for parse(), major(), minor(), security(), pre(),
-        //// build(), opt(), version(), toString()
+        //// build(), optional(), version(), toString()
         //   v                          M     m sec pre bld opt
 
         // $VNUM
@@ -119,7 +119,8 @@ public class Basic {
         //// Test for Runtime.version()
         testVersion();
 
-        //// Test for equals{IgnoreOpt}?(), hashCode(), compareTo{IgnoreOpt}?()
+        //// Test for equals{IgnoreOptional}?(), hashCode(),
+        //// compareTo{IgnoreOptional}?()
         // compare: after "<" == -1, equal == 0, before ">" == 1
         //      v0            v1                  eq     eqNO  cmp  cmpNO
         testEHC("9",          "9",                true,  true,   0,    0);
@@ -293,9 +294,9 @@ public class Basic {
     }
 
     private static void testEqualsNO(Version v0, Version v1, boolean eq) {
-        if ((eq && !v0.equalsIgnoreOpt(v1))
-            || (!eq && v0.equalsIgnoreOpt(v1))) {
-            fail("equalsIgnoreOpt() " + Boolean.toString(eq),
+        if ((eq && !v0.equalsIgnoreOptional(v1))
+            || (!eq && v0.equalsIgnoreOptional(v1))) {
+            fail("equalsIgnoreOptional() " + Boolean.toString(eq),
                  v0.toString(), v1.toString());
         } else {
             pass();
@@ -328,12 +329,12 @@ public class Basic {
     private static void testCompareNO(Version v0, Version v1, int compare)
     {
         try {
-            Method m = VERSION.getMethod("compareToIgnoreOpt", VERSION);
+            Method m = VERSION.getMethod("compareToIgnoreOptional", VERSION);
             int cmp = (int) m.invoke(v0, v1);
             checkCompare(v0, v1, compare, cmp);
         } catch (IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException ex) {
-            fail(String.format("compareToIgnoreOpt() invocation: %s",
+            fail(String.format("compareToIgnoreOptional() invocation: %s",
                                ex.getClass()),
                  null);
         }

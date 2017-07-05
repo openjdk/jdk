@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,9 @@ public final class XMLSecurityManager {
         MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit",
                 Constants.JDK_MAX_ELEMENT_DEPTH, Constants.SP_MAX_ELEMENT_DEPTH, 0, 0),
         MAX_NAME_LIMIT("MaxXMLNameLimit",
-                Constants.JDK_XML_NAME_LIMIT, Constants.SP_XML_NAME_LIMIT, 1000, 1000);
+                Constants.JDK_XML_NAME_LIMIT, Constants.SP_XML_NAME_LIMIT, 1000, 1000),
+        ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit",
+                Constants.JDK_ENTITY_REPLACEMENT_LIMIT, Constants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
 
         final String key;
         final String apiProperty;
@@ -450,6 +452,7 @@ public final class XMLSecurityManager {
         if (index == Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
                 index == Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
                 index == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal() ||
+                index == Limit.ENTITY_REPLACEMENT_LIMIT.ordinal() ||
                 index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal() ||
                 index == Limit.MAX_NAME_LIMIT.ordinal()
                 ) {

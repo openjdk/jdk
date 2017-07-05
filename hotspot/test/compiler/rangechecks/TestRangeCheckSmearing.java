@@ -28,6 +28,7 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @ignore 8157984
  * @build TestRangeCheckSmearing
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                jdk.test.lib.Platform

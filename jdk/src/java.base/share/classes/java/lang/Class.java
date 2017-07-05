@@ -238,15 +238,11 @@ public final class Class<T> implements java.io.Serializable,
 
             TypeVariable<?>[] typeparms = component.getTypeParameters();
             if (typeparms.length > 0) {
-                boolean first = true;
-                sb.append('<');
+                StringJoiner sj = new StringJoiner(",", "<", ">");
                 for(TypeVariable<?> typeparm: typeparms) {
-                    if (!first)
-                        sb.append(',');
-                    sb.append(typeparm.getTypeName());
-                    first = false;
+                    sj.add(typeparm.getTypeName());
                 }
-                sb.append('>');
+                sb.append(sj.toString());
             }
 
             for (int i = 0; i < arrayDepth; i++)
