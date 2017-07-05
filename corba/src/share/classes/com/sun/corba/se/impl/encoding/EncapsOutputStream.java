@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import com.sun.corba.se.impl.encoding.BufferManagerWrite;
 import com.sun.corba.se.impl.encoding.BufferManagerFactory;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import com.sun.corba.se.impl.orbutil.ORBConstants;
+
+import sun.corba.EncapsInputStreamFactory;
 
 /**
  * Encapsulations are supposed to explicitly define their
@@ -107,11 +109,11 @@ public class EncapsOutputStream extends CDROutputStream
     public org.omg.CORBA.portable.InputStream create_input_stream() {
         freeInternalCaches();
 
-        return new EncapsInputStream(orb(),
-                                     getByteBuffer(),
-                                     getSize(),
-                                     isLittleEndian(),
-                                     getGIOPVersion());
+        return  EncapsInputStreamFactory.newEncapsInputStream(orb(),
+                getByteBuffer(),
+                getSize(),
+                isLittleEndian(),
+                getGIOPVersion());
     }
 
     protected CodeSetConversion.CTBConverter createCharCTBConverter() {

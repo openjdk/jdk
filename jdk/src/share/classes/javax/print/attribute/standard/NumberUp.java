@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import javax.print.attribute.PrintJobAttribute;
  * SINGLE_DOCUMENT -- All the input docs will be combined together into one
  * output document. Each media impression will consist of <I>n</I>m
  *  print-stream pages from the output document.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be combined together
  * into one output document. Each media impression will consist of <I>n</I>
@@ -64,7 +64,7 @@ import javax.print.attribute.PrintJobAttribute;
  * each input doc will always start on a new media sheet; this means the last
  * impression of an input doc may have fewer than <I>n</I> print-stream pages
  *  on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The input docs will remain separate.
  * Each media impression will consist of <I>n</I> print-stream pages from the
@@ -72,7 +72,7 @@ import javax.print.attribute.PrintJobAttribute;
  * input doc will always start on a new media sheet; this means the last
  * impression of an input doc may have fewer than <I>n</I> print-stream pages on
  * it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The input docs will remain separate.
  * Each media impression will consist of <I>n</I> print-stream pages from the
@@ -91,7 +91,7 @@ import javax.print.attribute.PrintJobAttribute;
  * the first print-stream page of the next input doc goes at the start of the
  * next media impression, possibly leaving fewer than the full number of
  * print-stream pages on the previous media impression.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be combined together
  * into one output document. Each media impression will consist of <I>n</I>
@@ -99,7 +99,7 @@ import javax.print.attribute.PrintJobAttribute;
  * each input doc will always start on a new media sheet; this means the last
  * impression of an input doc may have fewer than <I>n</I> print-stream pages
  * on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The input docs will remain separate.
  * For input doc <I>i,</I> each media impression will consist of
@@ -107,7 +107,7 @@ import javax.print.attribute.PrintJobAttribute;
  * docs are separate, the first impression of each input doc will always start
  * on a new media sheet; this means the last impression of an input doc may have
  * fewer than <I>n<SUB>i</SUB></I> print-stream pages on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The input docs will remain separate.
  * For input doc <I>i,</I> each media impression will consist of
@@ -120,7 +120,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
  * The category name returned by <CODE>getName()</CODE> gives the IPP
  * attribute name.
- * <P>
  *
  * @author  Alan Kaminsky
  */

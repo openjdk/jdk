@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ import com.sun.corba.se.impl.util.JDKBridge;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import sun.corba.EncapsInputStreamFactory;
 
 /**
  * ClientDelegate is the RMI client-side subcontract or representation
@@ -847,8 +848,8 @@ public class CorbaClientRequestDispatcherImpl
         }
         byte[] data = ((UnknownServiceContext)sc).getData();
         EncapsInputStream in =
-            new EncapsInputStream((ORB)messageMediator.getBroker(),
-                                  data, data.length);
+                EncapsInputStreamFactory.newEncapsInputStream((ORB)messageMediator.getBroker(),
+                                      data, data.length);
         in.consumeEndian();
 
         String msg =

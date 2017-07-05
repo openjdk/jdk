@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,6 @@ import java.nio.charset.UnsupportedCharsetException;
  * Although all object graphs may be written using just these three
  * tags, the following definitions are included so that common
  * data structures can be expressed more concisely:
- * <p>
  * <ul>
  * <li>
  * The default method name is "new".

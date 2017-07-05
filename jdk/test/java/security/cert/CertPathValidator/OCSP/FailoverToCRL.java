@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,24 @@
  * questions.
  */
 
+//
+// Security properties, once set, cannot revert to unset.  To avoid
+// conflicts with tests running in the same VM isolate this test by
+// running it in otherVM mode.
+//
+
 /**
  * @test
  * @bug 6383095
  * @summary CRL revoked certificate failures masked by OCSP failures
- *
+ * @run main/othervm FailoverToCRL
+ * @author Xuelei Fan
+ */
+
+/*
  * Note that the certificate validity is from Mar 16 14:55:35 2009 GMT to
  * Dec 1 14:55:35 2028 GMT, please update it with newer certificate if
  * expires.
- *
- * @author Xuelei Fan
  */
 
 /*
@@ -229,6 +237,10 @@ public class FailoverToCRL {
     }
 
     public static void main(String args[]) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         CertPath path = generateCertificatePath();
         Set<TrustAnchor> anchors = generateTrustAnchors();
         CertStore crls = generateCertificateStore();

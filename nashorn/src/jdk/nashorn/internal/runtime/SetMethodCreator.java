@@ -151,10 +151,12 @@ final class SetMethodCreator {
         assert methodHandle != null;
         assert property     != null;
 
-        final ScriptObject prototype = find.getOwner();
         final MethodHandle boundHandle;
-        if (!property.hasSetterFunction(prototype) && find.isInherited()) {
-            boundHandle = ScriptObject.bindTo(methodHandle, prototype);
+        if (!property.hasSetterFunction(find.getOwner()) && find.isInherited()) {
+            // Bind or add prototype filter depending on whether this is a scope object.
+            boundHandle = sobj.isScope() ?
+                    ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength()):
+                    ScriptObject.bindTo(methodHandle, find.getOwner());
         } else {
             boundHandle = methodHandle;
         }

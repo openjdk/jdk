@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,35 +44,42 @@ public interface DropTargetContextPeer {
 
     /**
      * update the peer's notion of the Target's actions
+     * @param actions the actions
      */
 
     void setTargetActions(int actions);
 
     /**
      * get the current Target actions
+     * @return the current Target actions
      */
 
     int getTargetActions();
 
     /**
      * get the DropTarget associated with this peer
+     * @return the DropTarget associated with this peer
      */
 
     DropTarget getDropTarget();
 
     /**
      * get the (remote) DataFlavors from the peer
+     * @return the (remote) DataFlavors from the peer
      */
 
     DataFlavor[] getTransferDataFlavors();
 
     /**
      * get an input stream to the remote data
+     * @return an input stream to the remote data
      */
 
     Transferable getTransferable() throws InvalidDnDOperationException;
 
     /**
+     * Return whether or not the DragSource Transferable is in the
+     * same JVM as the Target.
      * @return if the DragSource Transferable is in the same JVM as the Target
      */
 
@@ -80,6 +87,7 @@ public interface DropTargetContextPeer {
 
     /**
      * accept the Drag
+     * @param dragAction the drag action
      */
 
     void acceptDrag(int dragAction);
@@ -92,6 +100,7 @@ public interface DropTargetContextPeer {
 
     /**
      * accept the Drop
+     * @param dropAction the drop action
      */
 
     void acceptDrop(int dropAction);
@@ -104,6 +113,7 @@ public interface DropTargetContextPeer {
 
     /**
      * signal complete
+     * @param success the signal
      */
 
     void dropComplete(boolean success);

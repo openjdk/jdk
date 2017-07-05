@@ -1724,6 +1724,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
     case Flag::ERGONOMIC:
       global->origin = JMM_VMGLOBAL_ORIGIN_ERGONOMIC;
       break;
+    case Flag::ATTACH_ON_DEMAND:
+      global->origin = JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND;
+      break;
     default:
       global->origin = JMM_VMGLOBAL_ORIGIN_OTHER;
   }
@@ -1821,7 +1824,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
               "This flag is not writeable.");
   }
 
-  bool succeed;
+  bool succeed = false;
   if (flag->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
     succeed = CommandLineFlags::boolAtPut(name, &bvalue, Flag::MANAGEMENT);
@@ -1841,6 +1844,9 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
     }
     ccstr svalue = java_lang_String::as_utf8_string(str);
     succeed = CommandLineFlags::ccstrAtPut(name, &svalue, Flag::MANAGEMENT);
+    if (succeed) {
+      FREE_C_HEAP_ARRAY(char, svalue, mtInternal);
+    }
   }
   assert(succeed, "Setting flag should succeed");
 JVM_END

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.print.attribute.PrintJobAttribute;
  * an instance of class PrinterResolution indicating the exact resolution the
  * client wants. Only printers supporting that exact resolution will match the
  * search.
- * <P>
+ *
  * <LI>
  * When a client needs to print a job using the client's desired resolution
  * exactly (no more, no less), the client specifies an instance of class
@@ -59,7 +59,6 @@ import javax.print.attribute.PrintJobAttribute;
  * the client's requirements.
  * In some cases this may be more simply achieved by specifying a
  * PrintQuality attribute which often controls resolution.
- * <P>
  * <P>
  * <B>IPP Compatibility:</B> The information needed to construct an IPP
  * <CODE>"printer-resolution"</CODE> attribute can be obtained by calling

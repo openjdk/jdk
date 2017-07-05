@@ -183,6 +183,7 @@ package.access=sun.,\
                com.sun.istack.internal.,\
                com.sun.jmx.,\
                com.sun.media.sound.,\
+               com.sun.naming.internal.,\
                com.sun.proxy.,\
                com.sun.corba.se.,\
                com.sun.org.apache.bcel.internal.,\
@@ -206,7 +207,7 @@ package.access=sun.,\
                com.sun.org.glassfish.,\
                com.oracle.xmlns.internal.,\
                com.oracle.webservices.internal.,\
-	       oracle.jrockit.jfr.,\
+               oracle.jrockit.jfr.,\
                org.jcp.xml.dsig.internal.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
@@ -229,6 +230,7 @@ package.definition=sun.,\
                    com.sun.istack.internal.,\
                    com.sun.jmx.,\
                    com.sun.media.sound.,\
+                   com.sun.naming.internal.,\
                    com.sun.proxy.,\
                    com.sun.corba.se.,\
                    com.sun.org.apache.bcel.internal.,\
@@ -252,7 +254,7 @@ package.definition=sun.,\
                    com.sun.org.glassfish.,\
                    com.oracle.xmlns.internal.,\
                    com.oracle.webservices.internal.,\
-		   oracle.jrockit.jfr.,\
+                   oracle.jrockit.jfr.,\
                    org.jcp.xml.dsig.internal.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
@@ -471,7 +473,7 @@ krb5.kdc.bad.policy = tryLast
 #   jdk.certpath.disabledAlgorithms=MD2, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024
+jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024
 
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
 # (SSL/TLS) processing
@@ -495,4 +497,3 @@ jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SHA1, DSA, RSA keySize < 2048
-

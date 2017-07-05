@@ -254,8 +254,8 @@ public:
         return fGlyphStorage.getAuxData(charIndex,success);
     }
 
-        void decomposeReorderMatras ( const IndicClassTable *classTable, le_int32 beginSyllable, le_int32 nextSyllable, le_int32 inv_count ) {
-                le_int32 i;
+    void decomposeReorderMatras ( const IndicClassTable *classTable, le_int32 beginSyllable, le_int32 nextSyllable, le_int32 inv_count ) {
+        le_int32 i;
         LEErrorCode success = LE_NO_ERROR;
 
                 for ( i = beginSyllable ; i < nextSyllable ; i++ ) {

@@ -63,7 +63,7 @@ final class Nodes {
     // IllegalArgumentException messages
     static final String BAD_SIZE = "Stream size exceeds max array size";
 
-    @SuppressWarnings("raw")
+    @SuppressWarnings("rawtypes")
     private static final Node EMPTY_NODE = new EmptyNode.OfRef();
     private static final Node.OfInt EMPTY_INT_NODE = new EmptyNode.OfInt();
     private static final Node.OfLong EMPTY_LONG_NODE = new EmptyNode.OfLong();
@@ -956,6 +956,7 @@ final class Nodes {
          * Initiate a stack containing, in left-to-right order, the child nodes
          * covered by this spliterator
          */
+        @SuppressWarnings("unchecked")
         protected final Deque<N> initStack() {
             // Bias size to the case where leaf nodes are close to this node
             // 8 is the minimum initial capacity for the ArrayDeque implementation
@@ -969,6 +970,7 @@ final class Nodes {
          * Depth first search, in left-to-right order, of the node tree, using
          * an explicit stack, to find the next non-empty leaf node.
          */
+        @SuppressWarnings("unchecked")
         protected final N findNextLeafNode(Deque<N> stack) {
             N n = null;
             while ((n = stack.pollFirst()) != null) {
@@ -984,6 +986,7 @@ final class Nodes {
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         protected final boolean initTryAdvance() {
             if (curNode == null)
                 return false;
@@ -1870,6 +1873,7 @@ final class Nodes {
             }
 
             assert task.offset + task.length < MAX_ARRAY_SIZE;
+            @SuppressWarnings("unchecked")
             T_SINK sink = (T_SINK) task;
             task.helper.wrapAndCopyInto(sink, rightSplit);
             task.propagateCompletion();
@@ -2173,6 +2177,7 @@ final class Nodes {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         protected T_NODE doLeaf() {
             T_BUILDER builder = builderFactory.apply(helper.exactOutputSizeIfKnown(spliterator));
             return (T_NODE) helper.wrapAndCopyInto(builder, spliterator).build();

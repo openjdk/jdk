@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,7 @@ class CommandLineFlagsEx : CommandLineFlags {
   static void uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin);
   static void uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin);
   static void doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin);
+  // Contract:  Flag will make private copy of the incoming value
   static void ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin);
 
   static bool is_default(CommandLineFlag flag);

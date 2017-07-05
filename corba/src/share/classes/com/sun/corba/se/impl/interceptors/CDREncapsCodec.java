@@ -33,6 +33,8 @@ import org.omg.CORBA.LocalObject;
 import com.sun.corba.se.spi.ior.iiop.GIOPVersion;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 
+import sun.corba.EncapsInputStreamFactory;
+
 import com.sun.corba.se.impl.corba.AnyImpl;
 import com.sun.corba.se.impl.encoding.EncapsInputStream;
 import com.sun.corba.se.impl.encoding.EncapsOutputStream;
@@ -193,8 +195,9 @@ public final class CDREncapsCodec
         // it is turned into a FormatMismatch exception.
 
         try {
-            EncapsInputStream cdrIn = new EncapsInputStream( orb, data,
-                data.length, giopVersion );
+            EncapsInputStream cdrIn = EncapsInputStreamFactory.newEncapsInputStream( orb, data,
+                    data.length, giopVersion );
+
 
             cdrIn.consumeEndian();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,19 @@
  * questions.
  */
 
+//
+// Security properties, once set, cannot revert to unset.  To avoid
+// conflicts with tests running in the same VM isolate this test by
+// running it in otherVM mode.
+//
+
 /**
  * @test
  * @bug 5072953
  * @summary Verify that the URL for an OCSP responder can be extracted from a
  *          certificate's AuthorityInfoAccess extension when OCSP certifiate
  *          validation has been enabled.
+ * @run main/othervm AIACheck
  */
 
 import java.io.*;
@@ -51,6 +58,10 @@ public class AIACheck {
     }
 
     public static void main(String args[]) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         X509Certificate aiaCert = loadCertificate("AIACert.pem");
         X509Certificate rootCert = loadCertificate("RootCert.pem");
 

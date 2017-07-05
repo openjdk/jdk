@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import javax.imageio.spi.ImageWriterSpi;
  * provider classes are registered with the <code>IIORegistry</code>,
  * which uses them for format recognition and presentation of
  * available format readers and writers.
- *
- * <p>
  *
  * @see ImageReader
  * @see ImageWriteParam

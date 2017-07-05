@@ -1250,7 +1250,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
          *                 is returned as the zero-th element of this array
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException
+         * @exception BadLocationException for a bad location within a document model
          * @exception IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(GlyphView v, int pos, Position.Bias b, Shape a,
