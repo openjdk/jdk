@@ -684,8 +684,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(CONF_NAME, $CONF_NAME)
   AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
 
-  # Most of the probed defines are put into config.h
-  AC_CONFIG_HEADERS([$OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config.h.in])
   # The spec.gmk file contains all variables for the make system.
   AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
   # The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
@@ -694,8 +692,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
   # The compare.sh is used to compare the build output to other builds.
   AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
-  # Spec.sh is currently used by compare-objects.sh
-  AC_CONFIG_FILES([$OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in])
   # The generated Makefile knows where the spec.gmk is and where the source is.
   # You can run make from the OUTPUT_ROOT, or from the top-level Makefile
   # which will look for generated configurations
