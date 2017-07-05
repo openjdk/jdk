@@ -407,10 +407,21 @@ public class Taskbar {
     }
 
     /**
-     * Displays progress for specified window.
+     * Displays a determinate progress bar in the task area for the specified
+     * window.
+     * <br>
+     * The visual behavior is platform and {@link State} dependent.
+     * <br>
+     * This call cancels the {@link State#INDETERMINATE INDETERMINATE} state
+     * of the window.
+     * <br>
+     * Note that when multiple windows is grouped in the task area
+     * the behavior is platform specific.
      *
      * @param w window to update
-     * @param value from 0 to 100, other to disable progress indication
+     * @param value from 0 to 100, other to switch to {@link State#OFF} state
+     *              and disable progress indication
+     * @see #setWindowProgressState(java.awt.Window, State)
      * @throws SecurityException if a security manager exists and it denies the
      * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
@@ -426,14 +437,21 @@ public class Taskbar {
 
     /**
      * Sets a progress state for a specified window.
+     * <br>
+     * Each state displays a progress in a platform-dependent way.
+     * <br>
+     * Note than switching from {@link State#INDETERMINATE INDETERMINATE} state
+     * to any of determinate states may reset value set by
+     * {@link #setWindowProgressValue(java.awt.Window, int) setWindowProgressValue}
      *
      * @param w window
      * @param state to change to
      * @see State#OFF
      * @see State#NORMAL
      * @see State#PAUSED
-     * @see State#INDETERMINATE
      * @see State#ERROR
+     * @see State#INDETERMINATE
+     * @see #setWindowProgressValue(java.awt.Window, int)
      * @throws SecurityException if a security manager exists and it denies the
      * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform

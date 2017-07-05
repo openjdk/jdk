@@ -264,7 +264,7 @@ define SetupJarArchiveBody
 	  $(CAT) $$($1_DELETES_FILE) > $$($1_DELETESS_FILE) $$(NEWLINE) \
 	  if [ -s $$($1_DELETESS_FILE) ]; then \
 	    $(ECHO) "  deleting" `$(WC) -l $$($1_DELETESS_FILE) | $(AWK) '{ print $$$$1 }'` files && \
-	    $(ZIP) -q -d $$@ `$(CAT) $$($1_DELETESS_FILE)` ; \
+	    $(ZIPEXE) -q -d $$@ `$(CAT) $$($1_DELETESS_FILE)` ; \
 	  fi $$(NEWLINE) \
 	  $$($1_UPDATE_CONTENTS) true $$(NEWLINE) \
 	  $$($1_JARINDEX) && true )

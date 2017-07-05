@@ -1429,6 +1429,7 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         /** The operation to perform when this action is triggered. */
+        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             JTextComponent target = getTextComponent(e);
             if (target != null) {
@@ -1542,6 +1543,7 @@ public class DefaultEditorKit extends EditorKit {
          * Returns adjustsed {@code y} position that indicates the location to scroll to
          * after selecting <code>index</code>.
          */
+        @SuppressWarnings("deprecation")
         private int getAdjustedY(JTextComponent text, Rectangle visible, int index) {
             int result = visible.y;
 
@@ -1589,6 +1591,7 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         /** The operation to perform when this action is triggered. */
+        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             JTextComponent target = getTextComponent(e);
             if (target != null) {
@@ -1672,6 +1675,7 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         /** The operation to perform when this action is triggered. */
+        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             JTextComponent target = getTextComponent(e);
             if (target != null) {

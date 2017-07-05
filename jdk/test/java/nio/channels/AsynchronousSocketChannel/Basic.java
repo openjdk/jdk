@@ -219,7 +219,8 @@ public class Basic {
                 throw new RuntimeException("ExecutionException expected");
             } catch (ExecutionException x) {
                 if (!(x.getCause() instanceof ClosedChannelException))
-                    throw new RuntimeException("Cause of ClosedChannelException expected");
+                    throw new RuntimeException("Cause of ClosedChannelException expected",
+                            x.getCause());
             }
             final AtomicReference<Throwable> connectException = new AtomicReference<>();
             ch.connect(server.address(), (Void)null, new CompletionHandler<Void,Void>() {
@@ -233,7 +234,8 @@ public class Basic {
                 Thread.sleep(100);
             }
             if (!(connectException.get() instanceof ClosedChannelException))
-                throw new RuntimeException("ClosedChannelException expected");
+                throw new RuntimeException("ClosedChannelException expected",
+                        connectException.get());
         }
 
         // test that failure to connect closes the channel
@@ -353,7 +355,8 @@ public class Basic {
                 Thread.sleep(100);
             }
             if (!(writeException.get() instanceof AsynchronousCloseException))
-                throw new RuntimeException("AsynchronousCloseException expected");
+                throw new RuntimeException("AsynchronousCloseException expected",
+                        writeException.get());
         }
     }
 
@@ -460,7 +463,8 @@ public class Basic {
                 throw new RuntimeException("ExecutionException expected");
             } catch (ExecutionException x) {
                 if (!(x.getCause() instanceof ClosedChannelException))
-                    throw new RuntimeException("Cause of ClosedChannelException expected");
+                    throw new RuntimeException("Cause of ClosedChannelException expected",
+                            x.getCause());
             }
         }
     }
@@ -630,7 +634,8 @@ public class Basic {
                 throw new RuntimeException("ExecutionException expected");
             } catch (ExecutionException x) {
                 if (!(x.getCause() instanceof ClosedChannelException))
-                    throw new RuntimeException("Cause of ClosedChannelException expected");
+                    throw new RuntimeException("Cause of ClosedChannelException expected",
+                            x.getCause());
             }
         }
     }
@@ -738,7 +743,8 @@ public class Basic {
                     throw new RuntimeException("ClosedChannelException expected");
                 } catch (ExecutionException x) {
                     if (!(x.getCause() instanceof ClosedChannelException))
-                        throw new RuntimeException("ClosedChannelException expected");
+                        throw new RuntimeException("ClosedChannelException expected",
+                                x.getCause());
                 }
             }
         }
@@ -776,7 +782,8 @@ public class Basic {
                     Thread.sleep(100);
                 }
                 if (!(readException.get() instanceof InterruptedByTimeoutException))
-                    throw new RuntimeException("InterruptedByTimeoutException expected");
+                    throw new RuntimeException("InterruptedByTimeoutException expected",
+                            readException.get());
 
                 // after a timeout then further reading should throw unspecified runtime exception
                 boolean exceptionThrown = false;
@@ -813,7 +820,8 @@ public class Basic {
                     Thread.sleep(100);
                 }
                 if (!(writeException.get() instanceof InterruptedByTimeoutException))
-                    throw new RuntimeException("InterruptedByTimeoutException expected");
+                    throw new RuntimeException("InterruptedByTimeoutException expected",
+                            writeException.get());
 
                 // after a timeout then further writing should throw unspecified runtime exception
                 boolean exceptionThrown = false;

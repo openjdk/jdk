@@ -63,7 +63,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * authentication proxy
  */
 
-public class ProxyAuthTest {
+public class ProxyAuthTest extends SSLSocketTemplate {
     /*
      * Where do we find the keystores?
      */
@@ -96,13 +96,13 @@ public class ProxyAuthTest {
         expectSuccess = args[0].equals("succeed");
 
         String keyFilename =
-            SSLTest.TEST_SRC + "/" + pathToStores + "/" + keyStoreFile;
+            TEST_SRC + "/" + pathToStores + "/" + keyStoreFile;
         String trustFilename =
-            SSLTest.TEST_SRC + "/" + pathToStores + "/" + trustStoreFile;
+            TEST_SRC + "/" + pathToStores + "/" + trustStoreFile;
 
-        SSLTest.setup(keyFilename, trustFilename, passwd);
+        setup(keyFilename, trustFilename, passwd);
 
-        new SSLTest()
+        new SSLSocketTemplate()
             .setServerApplication((socket, test) -> {
                 DataOutputStream out = new DataOutputStream(
                         socket.getOutputStream());
@@ -164,7 +164,7 @@ public class ProxyAuthTest {
             .runTest();
     }
 
-    static void doClientSide(SSLTest test) throws IOException {
+    static void doClientSide(SSLSocketTemplate test) throws IOException {
 
         // Wait for server to get started.
         //

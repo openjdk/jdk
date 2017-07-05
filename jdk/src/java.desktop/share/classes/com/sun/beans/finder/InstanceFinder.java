@@ -86,6 +86,7 @@ class InstanceFinder<T> {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     protected T instantiate(Class<?> type, String name) {
         if (type != null) {
             try {
