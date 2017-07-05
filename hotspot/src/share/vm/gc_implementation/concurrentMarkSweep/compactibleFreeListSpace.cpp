@@ -805,28 +805,30 @@ size_t CompactibleFreeListSpace::block_size(const HeapWord* p) const {
   // This must be volatile, or else there is a danger that the compiler
   // will compile the code below into a sometimes-infinite loop, by keeping
   // the value read the first time in a register.
-  oop o = (oop)p;
-  volatile oop* second_word_addr = o->klass_addr();
   while (true) {
-    klassOop k = (klassOop)(*second_word_addr);
     // We must do this until we get a consistent view of the object.
-    if (FreeChunk::secondWordIndicatesFreeChunk((intptr_t)k)) {
-      FreeChunk* fc = (FreeChunk*)p;
-      volatile size_t* sz_addr = (volatile size_t*)(fc->size_addr());
-      size_t res = (*sz_addr);
-      klassOop k2 = (klassOop)(*second_word_addr);  // Read to confirm.
-      if (k == k2) {
+    if (FreeChunk::indicatesFreeChunk(p)) {
+      volatile FreeChunk* fc = (volatile FreeChunk*)p;
+      size_t res = fc->size();
+      // If the object is still a free chunk, return the size, else it
+      // has been allocated so try again.
+      if (FreeChunk::indicatesFreeChunk(p)) {
         assert(res != 0, "Block size should not be 0");
         return res;
       }
-    } else if (k != NULL) {
-      assert(k->is_oop(true /* ignore mark word */), "Should really be klass oop.");
-      assert(o->is_parsable(), "Should be parsable");
-      assert(o->is_oop(true /* ignore mark word */), "Should be an oop.");
-      size_t res = o->size_given_klass(k->klass_part());
-      res = adjustObjectSize(res);
-      assert(res != 0, "Block size should not be 0");
-      return res;
+    } else {
+      // must read from what 'p' points to in each loop.
+      klassOop k = ((volatile oopDesc*)p)->klass_or_null();
+      if (k != NULL) {
+        assert(k->is_oop(true /* ignore mark word */), "Should really be klass oop.");
+        oop o = (oop)p;
+        assert(o->is_parsable(), "Should be parsable");
+        assert(o->is_oop(true /* ignore mark word */), "Should be an oop.");
+        size_t res = o->size_given_klass(k->klass_part());
+        res = adjustObjectSize(res);
+        assert(res != 0, "Block size should not be 0");
+        return res;
+      }
     }
   }
 }
@@ -845,31 +847,31 @@ const {
   // This must be volatile, or else there is a danger that the compiler
   // will compile the code below into a sometimes-infinite loop, by keeping
   // the value read the first time in a register.
-  oop o = (oop)p;
-  volatile oop* second_word_addr = o->klass_addr();
   DEBUG_ONLY(uint loops = 0;)
   while (true) {
-    klassOop k = (klassOop)(*second_word_addr);
     // We must do this until we get a consistent view of the object.
-    if (FreeChunk::secondWordIndicatesFreeChunk((intptr_t)k)) {
-      FreeChunk* fc = (FreeChunk*)p;
-      volatile size_t* sz_addr = (volatile size_t*)(fc->size_addr());
-      size_t res = (*sz_addr);
-      klassOop k2 = (klassOop)(*second_word_addr);  // Read to confirm.
-      if (k == k2) {
+    if (FreeChunk::indicatesFreeChunk(p)) {
+      volatile FreeChunk* fc = (volatile FreeChunk*)p;
+      size_t res = fc->size();
+      if (FreeChunk::indicatesFreeChunk(p)) {
         assert(res != 0, "Block size should not be 0");
         assert(loops == 0, "Should be 0");
         return res;
       }
-    } else if (k != NULL && o->is_parsable()) {
-      assert(k->is_oop(), "Should really be klass oop.");
-      assert(o->is_oop(), "Should be an oop");
-      size_t res = o->size_given_klass(k->klass_part());
-      res = adjustObjectSize(res);
-      assert(res != 0, "Block size should not be 0");
-      return res;
     } else {
-      return c->block_size_if_printezis_bits(p);
+      // must read from what 'p' points to in each loop.
+      klassOop k = ((volatile oopDesc*)p)->klass_or_null();
+      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
+        assert(k->is_oop(), "Should really be klass oop.");
+        oop o = (oop)p;
+        assert(o->is_oop(), "Should be an oop");
+        size_t res = o->size_given_klass(k->klass_part());
+        res = adjustObjectSize(res);
+        assert(res != 0, "Block size should not be 0");
+        return res;
+      } else {
+        return c->block_size_if_printezis_bits(p);
+      }
     }
     assert(loops == 0, "Can loop at most once");
     DEBUG_ONLY(loops++;)
@@ -907,9 +909,8 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
   // and those objects (if garbage) may have been modified to hold
   // live range information.
   // assert(ParallelGCThreads > 0 || _bt.block_start(p) == p, "Should be a block boundary");
-  klassOop k = oop(p)->klass();
-  intptr_t ki = (intptr_t)k;
-  if (FreeChunk::secondWordIndicatesFreeChunk(ki)) return false;
+  if (FreeChunk::indicatesFreeChunk(p)) return false;
+  klassOop k = oop(p)->klass_or_null();
   if (k != NULL) {
     // Ignore mark word because it may have been used to
     // chain together promoted objects (the last one
@@ -1027,7 +1028,7 @@ HeapWord* CompactibleFreeListSpace::allocate(size_t size) {
     FreeChunk* fc = (FreeChunk*)res;
     fc->markNotFree();
     assert(!fc->isFree(), "shouldn't be marked free");
-    assert(oop(fc)->klass() == NULL, "should look uninitialized");
+    assert(oop(fc)->klass_or_null() == NULL, "should look uninitialized");
     // Verify that the block offset table shows this to
     // be a single block, but not one which is unallocated.
     _bt.verify_single_block(res, size);
@@ -2593,7 +2594,7 @@ HeapWord* CFLS_LAB::alloc(size_t word_sz) {
   }
   res->markNotFree();
   assert(!res->isFree(), "shouldn't be marked free");
-  assert(oop(res)->klass() == NULL, "should look uninitialized");
+  assert(oop(res)->klass_or_null() == NULL, "should look uninitialized");
   // mangle a just allocated object with a distinct pattern.
   debug_only(res->mangleAllocated(word_sz));
   return (HeapWord*)res;

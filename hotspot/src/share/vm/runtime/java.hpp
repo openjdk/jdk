@@ -68,8 +68,24 @@ class JDK_Version : AllStatic {
   static bool is_jdk13x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 3; }
   static bool is_jdk14x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 4; }
   static bool is_jdk15x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 5; }
-  static bool is_jdk16x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 6; }
-  static bool is_jdk17x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 7; }
+
+  static bool is_jdk16x_version() {
+    if (is_jdk_version_initialized()) {
+      return _jdk_version == 6;
+    } else {
+      assert(is_pre_jdk16_version(), "must have been initialized");
+      return false;
+    }
+  }
+
+  static bool is_jdk17x_version() {
+    if (is_jdk_version_initialized()) {
+      return _jdk_version == 7;
+    } else {
+      assert(is_pre_jdk16_version(), "must have been initialized");
+      return false;
+    }
+  }
 
   static bool supports_thread_park_blocker() { return _version_info.thread_park_blocker; }
 
@@ -85,14 +101,22 @@ class JDK_Version : AllStatic {
   }
   static bool is_gte_jdk16x_version() {
     // Keep the semantics of this that the version number is >= 1.6
-    assert(is_jdk_version_initialized(), "Not initialized");
-    return _jdk_version >= 6;
+    if (is_jdk_version_initialized()) {
+      return _jdk_version >= 6;
+    } else {
+      assert(is_pre_jdk16_version(), "Not initialized");
+      return false;
+    }
   }
 
   static bool is_gte_jdk17x_version() {
     // Keep the semantics of this that the version number is >= 1.7
-    assert(is_jdk_version_initialized(), "Not initialized");
-    return _jdk_version >= 7;
+    if (is_jdk_version_initialized()) {
+      return _jdk_version >= 7;
+    } else {
+      assert(is_pre_jdk16_version(), "Not initialized");
+      return false;
+    }
   }
 
   static bool is_jdk_version_initialized() {

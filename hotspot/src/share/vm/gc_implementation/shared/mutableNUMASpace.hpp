@@ -192,7 +192,7 @@ class MutableNUMASpace : public MutableSpace {
   // Debugging
   virtual void print_on(outputStream* st) const;
   virtual void print_short_on(outputStream* st) const;
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify(bool allow_dirty);
 
   virtual void set_top(HeapWord* value);
 };

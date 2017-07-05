@@ -43,7 +43,7 @@ public class JFrameWrapper implements FrameWrapper {
   public void       setVisible(boolean visible) { frame.setVisible(visible);     }
   public void       setSize(int x, int y)       { frame.setSize(x, y);           }
   public void       pack()                      { frame.pack();                  }
-  public void       show()                      { frame.show();                  }
+  public void       show()                      { frame.setVisible(true);        }
   public void       dispose()                   { frame.dispose();               }
   public void       setBackground(Color color)  { frame.setBackground(color);    }
   public void       setResizable(boolean resizable) { frame.setResizable(resizable); }
