@@ -9356,7 +9356,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *     <td>{@code FORM FEED}</td></tr>
      * <tr><td>{@code '\r'}</td>            <td>{@code U+000D}</td>
      *     <td>{@code CARRIAGE RETURN}</td></tr>
-     * <tr><td>{@code '&nbsp;'}</td>  <td>{@code U+0020}</td>
+     * <tr><td>{@code ' '}</td>             <td>{@code U+0020}</td>
      *     <td>{@code SPACE}</td></tr>
      * </table>
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public final class CWarningWindow extends CPlatformWindow
 
     @Override
     public void notifyMouseEvent(int id, long when, int button, int x, int y,
-                                 int screenX, int screenY, int modifiers,
+                                 int absX, int absY, int modifiers,
                                  int clickCount, boolean popupTrigger,
                                  byte[] bdata) {
         LWWindowPeer peer = ownerPeer.get();
@@ -239,9 +239,10 @@ public final class CWarningWindow extends CPlatformWindow
     }
 
     @Override
-    public void notifyMouseWheelEvent(long when, int x, int y, int modifiers,
-                                      int scrollType, int scrollAmount,
-                                      int wheelRotation, double preciseWheelRotation,
+    public void notifyMouseWheelEvent(long when, int x, int y, int absX,
+                                      int absY, int modifiers, int scrollType,
+                                      int scrollAmount, int wheelRotation,
+                                      double preciseWheelRotation,
                                       byte[] bdata) {
     }
 

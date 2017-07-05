@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility.util.java.awt;
+package com.sun.java.accessibility.util.internal;
 
 import java.lang.*;
 import java.util.*;
@@ -49,14 +49,30 @@ import com.sun.java.accessibility.util.*;
  * </PRE>
  *
  * <P>This class extends the Translator class to provide specific support
- * for the TextComponent class.  Translator.getAccessible() will automatically
+ * for the List class.  Translator.getAccessible() will automatically
  * load this class when an assistive technology asks for an accessible
- * translator for TextComponent.
+ * translator for List.
  *
  */
-public class TextComponentTranslator extends Translator {
+public class ListTranslator extends Translator {
+
+    /**
+     * Get the state of this object.
+     * @return an instance of AccessibleState containing the current state of the object
+     * @see AccessibleState
+     */
+    public AccessibleStateSet getAccessibleStateSet() {
+        AccessibleStateSet states = super.getAccessibleStateSet();
+        if (((java.awt.List) source).isMultipleMode()) {
+            states.add(AccessibleState.MULTISELECTABLE);
+        }
+        if (((java.awt.List) source).getSelectedItems().length > 0) {
+            states.add(AccessibleState.SELECTED);
+        }
+        return states;
+    }
 
     public AccessibleRole getAccessibleRole() {
-        return AccessibleRole.TEXT;
+        return AccessibleRole.LIST;
     }
 }

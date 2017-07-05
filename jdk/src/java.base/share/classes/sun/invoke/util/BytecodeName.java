@@ -295,7 +295,7 @@ public class BytecodeName {
      * (The safe name might possibly be mangled to hide further dangerous characters.)
      * For example, the qualified class name {@code java/lang/String}
      * will be parsed into the array {@code {"java", '/', "lang", '/', "String"}}.
-     * The name {@code &lt;init&gt;} will be parsed into { '&lt;', "init", '&gt;'}}
+     * The name {@code <init>} will be parsed into {@code {'<', "init", '>'}}.
      * The name {@code foo/bar$:baz} will be parsed into
      * {@code {"foo", '/', "bar", '$', ':', "baz"}}.
      * The name {@code ::\=:foo:\=bar\!baz} will be parsed into
