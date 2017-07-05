@@ -1,0 +1,250 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Copy icu and _dict files used by the text break iterator
+
+COPY_PATTERNS = .icu _dict
+
+# Copy config files for com.sun.org.apache.xml.internal.security
+
+XMLSECURITY_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource
+COPY_FILES += \
+    $(XMLSECURITY_RESOURCEDIR)/config.dtd \
+    $(XMLSECURITY_RESOURCEDIR)/config.xml
+
+# Copy sun/tools related files into the classes directory.
+
+# Extra jstat files
+JSTAT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/sun/tools/jstat/resources
+COPY_FILES += \
+    $(JSTAT_RESOURCEDIR)/jstat_options \
+    $(JSTAT_RESOURCEDIR)/jstat_unsupported_options
+
+# Extra jhat files
+JHAT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/hat/resources
+COPY_FILES += \
+    $(JHAT_RESOURCEDIR)/hat.js \
+    $(JHAT_RESOURCEDIR)/oqlhelp.html \
+    $(JHAT_RESOURCEDIR)/platform_names.txt
+
+# Extra jrunscript files
+JRUNSCRIPT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/script/shell
+COPY_FILES += \
+    $(JRUNSCRIPT_RESOURCEDIR)/init.js \
+    $(JRUNSCRIPT_RESOURCEDIR)/messages.properties
+
+# Extra jvmstat files
+COPY_FILES += \
+    $(JDK_TOPDIR)/src/share/classes/sun/jvmstat/perfdata/resources/aliasmap
+
+# JConsole resources
+JCONSOLE_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources
+COPY_FILES += \
+    $(wildcard $(JCONSOLE_RESOURCES_DIR)/*.png) \
+    $(wildcard $(JCONSOLE_RESOURCES_DIR)/*.gif)
+
+# Print resources
+PRINT_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/sun/print/resources
+COPY_FILES += \
+    $(wildcard $(PRINT_RESOURCES_DIR)/*.png)
+
+# IDN resources
+COPY_FILES += \
+    $(JDK_TOPDIR)/src/share/classes/sun/net/idn/uidna.spp
+
+#
+# Swing plaf resources
+#
+SWING_PLAF_WINDOWS_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows
+COPY_FILES += \
+    $(wildcard $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/*.gif) \
+    $(wildcard $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/*.png)
+
+ifndef OPENJDK
+  SWING_PLAF_WINDOWS_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/com/sun/java/swing/plaf/windows
+  # Filter out JavaCup32.png from OpenJDK
+  COPY_FILES := $(filter-out $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/JavaCup32.png, $(COPY_FILES))
+  # Alter JavaCup32.png from ClosedJDK
+  COPY_FILES += \
+      $(SWING_PLAF_WINDOWS_RESOURCES_DIR_CLOSED)/icons/JavaCup32.png
+endif
+
+ifeq ($(ENABLE_JFR), true)
+  JFR_CONFIGURATION_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/oracle/jrockit/jfr/settings
+  COPY_FILES += \
+      $(JFR_CONFIGURATION_DIR_CLOSED)/jfc.xsd
+endif
+
+SWING_PLAF_BASIC_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/basic
+COPY_FILES += \
+    $(wildcard $(SWING_PLAF_BASIC_RESOURCES_DIR)/icons/*.png)
+
+ifndef OPENJDK
+  SWING_PLAF_BASIC_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/javax/swing/plaf/basic
+  # Filter out JavaCup16.png from OpenJDK
+  COPY_FILES := $(filter-out $(SWING_PLAF_BASIC_RESOURCES_DIR)/icons/JavaCup16.png, $(COPY_FILES))
+  # Alter JavaCup16.png from ClosedJDK
+  COPY_FILES += \
+      $(SWING_PLAF_BASIC_RESOURCES_DIR_CLOSED)/icons/JavaCup16.png
+endif
+
+ifdef OPENJDK
+  SWING_PLAF_MOTIF_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif
+  COPY_FILES += \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.gif) \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.png)
+else
+  SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/com/sun/java/swing/plaf/motif
+  COPY_FILES += \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED)/icons/*.gif) \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED)/icons/*.png)
+endif
+
+SWING_PLAF_METAL_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/metal
+COPY_FILES += \
+    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/*.gif) \
+    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/*.png) \
+    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/ocean/*.gif) \
+    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/ocean/*.png) \
+    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/sounds/*.wav)
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  # Only copy GTK resources on Solaris/Linux
+  SWING_PLAF_GTK_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk
+  COPY_FILES += \
+      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/icons/*.gif) \
+      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/icons/*.png) \
+      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/resources/metacity/SwingFallbackTheme/metacity-1/*.xml)
+endif
+# END: Swing plaf resources
+
+SWING_BEANINFO_RESOURCES_SRC_DIR = $(JDK_TOPDIR)/make/data/swingbeaninfo/images
+SWING_BEANINFO_RESOURCES_SRC = $(wildcard $(SWING_BEANINFO_RESOURCES_SRC_DIR)/*.gif)
+OUT_BEANINFO_RESOURCES = $(patsubst $(SWING_BEANINFO_RESOURCES_SRC_DIR)%, \
+    $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%, \
+    $(SWING_BEANINFO_RESOURCES_SRC))
+
+COPY_EXTRA += $(OUT_BEANINFO_RESOURCES)
+# END: Swing beaninfo resources
+
+# Swing text resources
+SWING_TEXT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/text
+COPY_FILES += \
+    $(SWING_TEXT_RESOURCEDIR)/html/default.css \
+    $(wildcard $(SWING_TEXT_RESOURCEDIR)/rtf/charsets/*.txt)
+
+##########################################################################################
+#
+# Copy the META-INF/services configuration files that are scattered around the source tree
+# into classes/META-INF/services. Be aware that META-INF directories that are located at a
+# source root (.../classes/META-INF) are automatically copied verbatim by the
+# SetupJavaCompilation macro.
+#
+# Any other META-INF/services configuration file is found here and platform specific comments
+# are uncommented and the configuration file is stored in the output META-INF directory.
+
+# Make sure the output directory is created.
+$(eval $(call MakeDir, $(JDK_OUTPUTDIR)/classes/META-INF/services))
+# Find all META-INF/services/* files
+ALL_META-INF_DIRS_share := $(shell $(FIND) $(JDK_TOPDIR)/src/share/classes -type d -a -name META-INF)
+ALL_META-INF_DIRS_targetapi := $(shell $(FIND) $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes -type d -a -name META-INF)
+# Platform specific overrides shared
+ifneq ($(ALL_META-INF_DIRS_targetapi), )
+  ALL_META-INF_DIRS := $(ALL_META-INF_DIRS_targetapi) \
+      $(filter-out %$(patsubst $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes%,%,$(ALL_META-INF_DIRS_targetapi)), \
+      $(ALL_META-INF_DIRS_share))
+else
+  ALL_META-INF_DIRS := $(ALL_META-INF_DIRS_share)
+endif
+
+ifndef OPENJDK
+  ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/java2d/cmm/kcms/META-INF
+endif
+
+SRC_SERVICES_FILES := $(wildcard $(addsuffix /services/*, $(ALL_META-INF_DIRS)))
+
+ifdef OPENJDK
+  SRC_SERVICES_FILES := $(filter-out %sun/dc/META-INF/services/sun.java2d.pipe.RenderingEngine, $(SRC_SERVICES_FILES))
+  SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/kcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
+else
+  SRC_SERVICES_FILES := $(filter-out %sun/java2d/pisces/META-INF/services/sun.java2d.pipe.RenderingEngine, $(SRC_SERVICES_FILES))
+  SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/lcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
+endif
+
+# The number of services files are relatively few. If the increase in numbers, then
+# we have to use ListPathsSafelyNow here.
+# Change $(JDK_TOPDIR)/src/.../META-INF/services/yyyy into $(JDK_OUTPUTDIR)/classes/META-INF/services/yyyy
+# The \n in the printf command is needed to make sed work on Solaris.
+OUT_SERVICES_FILES := $(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/, \
+    $(shell $(PRINTF) "$(SRC_SERVICES_FILES)\n" | $(SED) -e 's|/[^ ]*/META-INF/services/||g'))
+OUT_SERVICES_FILES_COLON := $(addsuffix :, $(OUT_SERVICES_FILES))
+# Exception handling for print services with no META-INF directory
+SRC_SERVICES_FILES_PRINT = $(wildcard $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/print/services/*)
+OUT_SERVICES_FILES_PRINT = $(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/, \
+    $(patsubst $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/print/services/%, %, \
+    $(SRC_SERVICES_FILES_PRINT)))
+OUT_SERVICES_FILES_PRINT_COLON = $(addsuffix :, $(OUT_SERVICES_FILES_PRINT))
+RULES_SERVICES_PRINT = $(join $(OUT_SERVICES_FILES_PRINT_COLON), $(SRC_SERVICES_FILES_PRINT))
+
+# Now setup the dependency rules to generate a META-INF/services/... from the correct source.
+META-INF_RULES_SERVICES := $(RULES_SERVICES_PRINT) $(join $(OUT_SERVICES_FILES_COLON), $(SRC_SERVICES_FILES))
+# Eval the newly created rules to incorporate them into the make tree.
+define addto_meta-inf_services
+  $1
+	echo $(LOG_INFO) Installing META-INF/services/$$(@F)
+	$(CAT) $$< | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $$@
+endef
+$(foreach i, $(META-INF_RULES_SERVICES), $(eval $(call addto_meta-inf_services, $i)))
+# Here is the generic rule, whose receipt the above rules will trigger.
+
+COPY_EXTRA += $(OUT_SERVICES_FILES)
+COPY_EXTRA += $(OUT_SERVICES_FILES_PRINT)
+
+###
+
+$(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat: $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs/ext/sjis0213.dat
+	$(call install-file)
+
+COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat
+
+###
+
+JAVAX_SOUND_SRC := $(JDK_TOPDIR)/src/share/classes/com/sun/media/sound/services
+
+JAVAX_SOUND_SRC_FILES := \
+    javax.sound.midi.spi.MidiDeviceProvider \
+    javax.sound.midi.spi.MidiFileReader \
+    javax.sound.midi.spi.MidiFileWriter \
+    javax.sound.midi.spi.SoundbankReader \
+    javax.sound.sampled.spi.AudioFileReader \
+    javax.sound.sampled.spi.AudioFileWriter \
+    javax.sound.sampled.spi.FormatConversionProvider \
+    javax.sound.sampled.spi.MixerProvider
+
+COPY_EXTRA += $(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/, $(JAVAX_SOUND_SRC_FILES))
+
+JAVAX_SOUND_RULES := $(foreach F, $(JAVAX_SOUND_SRC_FILES), $(JDK_OUTPUTDIR)/classes/META-INF/services/$(notdir $F):$(JAVAX_SOUND_SRC)/$F)
+
+$(foreach R, $(JAVAX_SOUND_RULES), $(eval $(call addto_meta-inf_services, $R)))

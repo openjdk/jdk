@@ -120,6 +120,7 @@ oop Universe::_null_ptr_exception_instance            = NULL;
 oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
+Method* Universe::_throw_illegal_access_error         = NULL;
 Array<int>* Universe::_the_empty_int_array            = NULL;
 Array<u2>* Universe::_the_empty_short_array           = NULL;
 Array<Klass*>* Universe::_the_empty_klass_array     = NULL;
@@ -1095,6 +1096,18 @@ bool universe_post_init() {
   }
   Universe::_finalizer_register_cache->init(
     SystemDictionary::Finalizer_klass(), m);
+
+  InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->link_class(CHECK_false);
+  m = InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->find_method(
+                                  vmSymbols::throwIllegalAccessError_name(),
+                                  vmSymbols::void_method_signature());
+  if (m != NULL && !m->is_static()) {
+    // Note null is okay; this method is used in itables, and if it is null,
+    // then AbstractMethodError is thrown instead.
+    tty->print_cr("Unable to link/verify Unsafe.throwIllegalAccessError method");
+    return false; // initialization failed (cannot throw exception yet)
+  }
+  Universe::_throw_illegal_access_error = m;
 
   // Setup method for registering loaded classes in class loader vector
   InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);

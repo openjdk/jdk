@@ -379,10 +379,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return windowPeer.getPlatformWindow();
     }
 
-    protected AppContext getAppContext() {
-        return SunToolkit.targetToAppContext(getTarget());
-    }
-
     // ---- PEER METHODS ---- //
 
     // Just a helper method
@@ -1162,8 +1158,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     /**
      * Post an event to the proper Java EDT.
      */
-    public void postEvent(AWTEvent event) {
-        SunToolkit.postEvent(getAppContext(), event);
+    public void postEvent(final AWTEvent event) {
+        LWToolkit.postEvent(event);
     }
 
     protected void postPaintEvent(int x, int y, int w, int h) {

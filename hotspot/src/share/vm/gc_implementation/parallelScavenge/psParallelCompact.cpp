@@ -2006,7 +2006,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   ParallelScavengeHeap* heap = gc_heap();
 
-  _gc_timer.register_gc_start(os::elapsed_counter());
+  _gc_timer.register_gc_start();
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
 
   TimeStamp marking_start;
@@ -2244,7 +2244,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   ParallelTaskTerminator::print_termination_counts();
 #endif
 
-  _gc_timer.register_gc_end(os::elapsed_counter());
+  _gc_timer.register_gc_end();
 
   _gc_tracer.report_dense_prefix(dense_prefix(old_space_id));
   _gc_tracer.report_gc_end(_gc_timer.gc_end(), _gc_timer.time_partitions());

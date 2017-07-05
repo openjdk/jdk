@@ -66,7 +66,7 @@ import java.util.HashMap;
  *   <LI>a description of the effect.
  * </UL>
  * <p>
- * <H4>Values</H4>
+ * <H3>Values</H3>
  * <UL>
  *   <LI>The values of attributes must always be immutable.
  *   <LI>Where value limitations are given, any value outside of that
@@ -96,7 +96,6 @@ import java.util.HashMap;
  *
  * <h4>Summary of attributes</h4>
  * <p>
- * <font size="-1">
  * <table style="float:center" border="0" cellspacing="0" cellpadding="2" width="%95"
  *     summary="Key, value type, principal constants, and default value
  *     behavior of all TextAttributes">
@@ -110,9 +109,9 @@ import java.util.HashMap;
  * <td valign="TOP">{@link #FAMILY}</td>
  * <td valign="TOP">String</td>
  * <td valign="TOP">See Font {@link java.awt.Font#DIALOG DIALOG},
-{@link java.awt.Font#DIALOG_INPUT DIALOG_INPUT},<br> {@link java.awt.Font#SERIF SERIF},
-{@link java.awt.Font#SANS_SERIF SANS_SERIF}, and {@link java.awt.Font#MONOSPACED MONOSPACED}.
-</td>
+ * {@link java.awt.Font#DIALOG_INPUT DIALOG_INPUT},<br> {@link java.awt.Font#SERIF SERIF},
+ * {@link java.awt.Font#SANS_SERIF SANS_SERIF}, and {@link java.awt.Font#MONOSPACED MONOSPACED}.
+ * </td>
  * <td valign="TOP">"Default" (use platform default)</td>
  * </tr>
  * <tr style="background-color:#eeeeff">
@@ -248,7 +247,6 @@ import java.util.HashMap;
  * <td valign="TOP">0 (do not add tracking)</td>
  * </tr>
  * </table>
- * </font>
  *
  * @see java.awt.Font
  * @see java.awt.font.TextLayout
