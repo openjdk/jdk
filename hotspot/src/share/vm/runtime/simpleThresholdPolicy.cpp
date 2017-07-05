@@ -177,13 +177,11 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
+                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
   if (comp_level == CompLevel_none &&
-      JvmtiExport::can_post_interpreter_events()) {
-    assert(THREAD->is_Java_thread(), "Should be java thread");
-    if (((JavaThread*)THREAD)->is_interp_only_mode()) {
-      return NULL;
-    }
+      JvmtiExport::can_post_interpreter_events() &&
+      thread->is_interp_only_mode()) {
+    return NULL;
   }
   nmethod *osr_nm = NULL;
 
@@ -197,9 +195,9 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
   }
 
   if (bci == InvocationEntryBci) {
-    method_invocation_event(method, inlinee, comp_level, nm, THREAD);
+    method_invocation_event(method, inlinee, comp_level, nm, thread);
   } else {
-    method_back_branch_event(method, inlinee, bci, comp_level, nm, THREAD);
+    method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
     // method == inlinee if the event originated in the main method
     int highest_level = inlinee->highest_osr_comp_level();
     if (highest_level > comp_level) {
@@ -210,7 +208,7 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
 }
 
 // Check if the method can be compiled, change level if necessary
-void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, TRAPS) {
+void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
   assert(level <= TieredStopAtLevel, "Invalid compilation level");
   if (level == CompLevel_none) {
     return;
@@ -221,7 +219,7 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, T
   // pure C1.
   if (!can_be_compiled(mh, level)) {
     if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-        compile(mh, bci, CompLevel_simple, THREAD);
+        compile(mh, bci, CompLevel_simple, thread);
     }
     return;
   }
@@ -232,14 +230,14 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, T
     if (PrintTieredEvents) {
       print_event(COMPILE, mh, mh, bci, level);
     }
-    submit_compile(mh, bci, level, THREAD);
+    submit_compile(mh, bci, level, thread);
   }
 }
 
 // Tell the broker to compile the method
-void SimpleThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS) {
+void SimpleThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
-  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", THREAD);
+  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
 }
 
 // Call and loop predicates determine whether a transition to a higher
@@ -366,11 +364,11 @@ CompLevel SimpleThresholdPolicy::loop_event(methodOop method, CompLevel cur_leve
 
 // Handle the invocation event.
 void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
-                                              CompLevel level, nmethod* nm, TRAPS) {
+                                              CompLevel level, nmethod* nm, JavaThread* thread) {
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
     CompLevel next_level = call_event(mh(), level);
     if (next_level != level) {
-      compile(mh, InvocationEntryBci, next_level, THREAD);
+      compile(mh, InvocationEntryBci, next_level, thread);
     }
   }
 }
@@ -378,7 +376,7 @@ void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandl
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void SimpleThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
-                                                     int bci, CompLevel level, nmethod* nm, TRAPS) {
+                                                     int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
   // If the method is already compiling, quickly bail out.
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, bci)) {
     // Use loop event as an opportinity to also check there's been
@@ -391,13 +389,13 @@ void SimpleThresholdPolicy::method_back_branch_event(methodHandle mh, methodHand
                       next_osr_level < CompLevel_full_optimization ? next_osr_level : cur_level);
     bool is_compiling = false;
     if (next_level != cur_level) {
-      compile(mh, InvocationEntryBci, next_level, THREAD);
+      compile(mh, InvocationEntryBci, next_level, thread);
       is_compiling = true;
     }
 
     // Do the OSR version
     if (!is_compiling && next_osr_level != level) {
-      compile(mh, bci, next_osr_level, THREAD);
+      compile(mh, bci, next_osr_level, thread);
     }
   }
 }

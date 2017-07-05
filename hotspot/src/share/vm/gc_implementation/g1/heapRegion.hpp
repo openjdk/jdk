@@ -374,7 +374,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ParVerifyClaimValue        = 4,
     RebuildRSClaimValue        = 5,
     CompleteMarkCSetClaimValue = 6,
-    ParEvacFailureClaimValue   = 7
+    ParEvacFailureClaimValue   = 7,
+    AggregateCountClaimValue   = 8,
+    VerifyCountClaimValue      = 9
   };
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {

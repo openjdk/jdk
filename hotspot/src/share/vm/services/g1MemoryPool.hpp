@@ -101,7 +101,7 @@ public:
     return _g1mm->old_space_used();
   }
   size_t max_size() const {
-    return _undefined_max;
+    return _g1mm->old_gen_max();
   }
   MemoryUsage get_memory_usage();
 };
