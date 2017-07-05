@@ -75,9 +75,13 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
           warning. VM will be launched with following options:
           -XX:+<tested option> -version
         */
+        String errorString = String.format("JVM should start with '-XX:+%s' "
+                + "flag, but output should contain warning.", optionName);
         CommandLineOptionTest.verifySameJVMStartup(
                 new String[] { warningMessage }, new String[] { errorMessage },
-                ExitCode.OK, CommandLineOptionTest.prepareBooleanFlag(
+                errorString, String.format("Option '%s' is unsupported.%n"
+                + "Warning expected to be shown.", optionName), ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(
                         optionName, true));
 
         /*
@@ -85,15 +89,21 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
           VM will be launched with following options:
           -XX:-<tested option> -version
         */
+        errorString = String.format("JVM should start with '-XX:-%s' flag "
+                        + "without any warnings", optionName);
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage, errorMessage }, ExitCode.OK,
+                new String[] { warningMessage, errorMessage },
+                errorString, errorString, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
         /*
-          Verify that on unsupported CPUs option is off by default.
-          VM will be launched with following options: -version
-        */
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false");
+         * Verify that on unsupported CPUs option is off by default. VM will be
+         * launched with following options: -version
+         */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' is expected to have default value "
+                        + "'false' since feature required is not supported "
+                        + "on CPU", optionName));
 
         /*
           Verify that on unsupported CPUs option will be off even if
@@ -101,6 +111,9 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
           following options: -XX:+<tested option> -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' is expected to have default value"
+                        + " 'false' since feature required is not supported on"
+                        + " CPU even if user set another value.", optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
     }
@@ -118,11 +131,17 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
           with following options: -XX:[+-]<tested option> -version
         */
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { errorMessage }, null, ExitCode.FAIL,
+                new String[] { errorMessage }, null,
+                String.format("JVM startup should fail with '-XX:+%s' flag."
+                        + "%nOption should be unknown (non-X86CPU).",
+                        optionName), "", ExitCode.FAIL,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { errorMessage }, null, ExitCode.FAIL,
+                new String[] { errorMessage }, null,
+                String.format("JVM startup should fail with '-XX:-%s' flag."
+                        + "%nOption should be unknown (non-X86CPU)",
+                        optionName), "", ExitCode.FAIL,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }

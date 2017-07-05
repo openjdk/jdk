@@ -58,7 +58,6 @@ enum SH_process_roots_tasks {
 SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   CollectedHeap(),
   _collector_policy(policy_),
-  _rem_set(NULL),
   _strong_roots_scope(NULL),
   _strong_roots_parity(0),
   _process_strong_tasks(new SubTasksDone(SH_PS_NumElements)),
@@ -152,7 +151,7 @@ SharedHeap::StrongRootsScope::~StrongRootsScope() {
   }
 }
 
-Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false);
+Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false, Monitor::_safepoint_check_never);
 
 void SharedHeap::StrongRootsScope::mark_worker_done_with_threads(uint n_workers) {
   // The Thread work barrier is only needed by G1 Class Unloading.

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify PrintPreciseRTMLockingStatistics on CPUs with
  *          rtm support and on VM with rtm locking support,
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -53,18 +53,28 @@ public class TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
         // verify default value
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE,
+                String.format("Option '%s' should have '%s' default value on"
+                        + " supported CPU", optionName,
+                TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE),
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
 
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE,
+                String.format("Option '%s' should have '%s' default value on"
+                        + " supported CPU when -XX:-UseRTMLocking flag set",
+                        optionName,
+                       TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE),
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:-UseRTMLocking", prepareOptionValue("true"));
 
         // verify that option could be turned on
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                String.format("Option '%s' should have 'true' value when set "
+                        + "on supported CPU and -XX:+UseRTMLocking flag set",
+                        optionName),
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", prepareOptionValue("true"));

@@ -49,7 +49,7 @@ public abstract class CommandLineOptionTest {
     private static final String PRINT_FLAGS_FINAL_FORMAT = "%s\\s*:?=\\s*%s";
 
     /**
-     * Verifies that JVM startup behaviour matches our expectations.
+     * Verifies that JVM startup behavior matches our expectations.
      *
      * @param option an option that should be passed to JVM
      * @param expectedMessages an array of patterns that should occur
@@ -58,18 +58,24 @@ public abstract class CommandLineOptionTest {
      * @param unexpectedMessages an array of patterns that should not
      *                           occur in JVM output. If {@code null} then
      *                           JVM output could be empty.
+     * @param exitErrorMessage message that will be shown if exit code is not
+     *                           as expected.
+     * @param wrongWarningMessage message that will be shown if warning
+     *                           messages are not as expected.
      * @param exitCode expected exit code.
      * @throws Throwable if verification fails or some other issues occur.
      */
     public static void verifyJVMStartup(String option,
             String expectedMessages[], String unexpectedMessages[],
+            String exitErrorMessage, String wrongWarningMessage,
             ExitCode exitCode) throws Throwable {
         CommandLineOptionTest.verifyJVMStartup(expectedMessages,
-                unexpectedMessages, exitCode, false, option);
+                unexpectedMessages, exitErrorMessage,
+                wrongWarningMessage, exitCode, false, option);
     }
 
     /**
-     * Verifies that JVM startup behaviour matches our expectations.
+     * Verifies that JVM startup behavior matches our expectations.
      *
      * @param expectedMessages an array of patterns that should occur
      *                         in JVM output. If {@code null} then
@@ -77,6 +83,10 @@ public abstract class CommandLineOptionTest {
      * @param unexpectedMessages an array of patterns that should not
      *                           occur in JVM output. If {@code null} then
      *                           JVM output could be empty.
+     * @param exitErrorMessage message that will be shown if exit code is not
+     *                           as expected.
+     * @param wrongWarningMessage message that will be shown if warning
+     *                           messages are not as expected.
      * @param exitCode expected exit code.
      * @param addTestVMOptions if {@code true} then test VM options will be
      *                         passed to VM.
@@ -85,8 +95,10 @@ public abstract class CommandLineOptionTest {
      * @throws Throwable if verification fails or some other issues occur.
      */
     public static void verifyJVMStartup(String expectedMessages[],
-            String unexpectedMessages[], ExitCode exitCode,
-            boolean addTestVMOptions, String... options) throws Throwable {
+            String unexpectedMessages[], String exitErrorMessage,
+            String wrongWarningMessage, ExitCode exitCode,
+            boolean addTestVMOptions, String... options)
+                    throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         if (addTestVMOptions) {
             Collections.addAll(finalOptions, Utils.getTestJavaOpts());
@@ -99,23 +111,46 @@ public abstract class CommandLineOptionTest {
                 new String[finalOptions.size()]));
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());
-        outputAnalyzer.shouldHaveExitValue(exitCode.value);
+
+        try {
+                outputAnalyzer.shouldHaveExitValue(exitCode.value);
+        } catch (RuntimeException e) {
+            String errorMessage = String.format(
+                    "JVM process should have exit value '%d'.%n%s",
+                    exitCode.value, exitErrorMessage);
+            throw new AssertionError(errorMessage, e);
+        }
+
 
         if (expectedMessages != null) {
             for (String expectedMessage : expectedMessages) {
-                outputAnalyzer.shouldMatch(expectedMessage);
+                try {
+                    outputAnalyzer.shouldMatch(expectedMessage);
+                } catch (RuntimeException e) {
+                    String errorMessage = String.format(
+                            "Expected message not found: '%s'.%n%s",
+                            expectedMessage, wrongWarningMessage);
+                    throw new AssertionError(errorMessage, e);
+                }
             }
         }
 
         if (unexpectedMessages != null) {
             for (String unexpectedMessage : unexpectedMessages) {
-                outputAnalyzer.shouldNotMatch(unexpectedMessage);
+                try {
+                    outputAnalyzer.shouldNotMatch(unexpectedMessage);
+                } catch (RuntimeException e) {
+                    String errorMessage = String.format(
+                            "Unexpected message found: '%s'.%n%s",
+                            unexpectedMessage, wrongWarningMessage);
+                    throw new AssertionError(errorMessage, e);
+                }
             }
         }
     }
 
     /**
-     * Verifies that JVM startup behaviour matches our expectations when type
+     * Verifies that JVM startup behavior matches our expectations when type
      * of newly started VM is the same as the type of current.
      *
      * @param expectedMessages an array of patterns that should occur
@@ -124,20 +159,26 @@ public abstract class CommandLineOptionTest {
      * @param unexpectedMessages an array of patterns that should not
      *                           occur in JVM output. If {@code null} then
      *                           JVM output could be empty.
+     * @param exitErrorMessage Message that will be shown if exit value is not
+     *                           as expected.
+     * @param wrongWarningMessage message that will be shown if warning
+     *                           messages are not as expected.
      * @param exitCode expected exit code.
      * @param options options that should be passed to VM in addition to mode
      *                flag.
      * @throws Throwable if verification fails or some other issues occur.
      */
     public static void verifySameJVMStartup(String expectedMessages[],
-            String unexpectedMessages[], ExitCode exitCode, String... options)
-            throws  Throwable {
+            String unexpectedMessages[], String exitErrorMessage,
+            String wrongWarningMessage, ExitCode exitCode, String... options)
+            throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
         Collections.addAll(finalOptions, options);
 
         CommandLineOptionTest.verifyJVMStartup(expectedMessages,
-                unexpectedMessages, exitCode, false,
+                unexpectedMessages, exitErrorMessage,
+                wrongWarningMessage, exitCode, false,
                 finalOptions.toArray(new String[finalOptions.size()]));
     }
 
@@ -149,13 +190,17 @@ public abstract class CommandLineOptionTest {
      *
      * @param optionName a name of tested option.
      * @param expectedValue expected value of tested option.
+     * @param optionErrorString message will be shown if option value is not as
+     *                         expected.
      * @param additionalVMOpts additional options that should be
      *                         passed to JVM.
      * @throws Throwable if verification fails or some other issues occur.
      */
     public static void verifyOptionValue(String optionName,
-            String expectedValue, String... additionalVMOpts) throws Throwable {
-        verifyOptionValue(optionName, expectedValue, true, additionalVMOpts);
+            String expectedValue, String optionErrorString,
+            String... additionalVMOpts) throws Throwable {
+        verifyOptionValue(optionName, expectedValue,  optionErrorString,
+                true, additionalVMOpts);
     }
 
     /**
@@ -168,14 +213,17 @@ public abstract class CommandLineOptionTest {
      * @param expectedValue expected value of tested option.
      * @param addTestVmOptions if {@code true}, then test VM options
      *                         will be used.
+     * @param optionErrorString message will be shown if option value is not as
+     *                         expected.
      * @param additionalVMOpts additional options that should be
      *                         passed to JVM.
      * @throws Throwable if verification fails or some other issues
      *                          occur.
      */
     public static void verifyOptionValue(String optionName,
-            String expectedValue, boolean addTestVmOptions,
-            String... additionalVMOpts) throws Throwable {
+            String expectedValue, String optionErrorString,
+            boolean addTestVmOptions, String... additionalVMOpts)
+                    throws Throwable {
         List<String> vmOpts = new ArrayList<>();
 
         if (addTestVmOptions) {
@@ -191,10 +239,25 @@ public abstract class CommandLineOptionTest {
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());
 
-        outputAnalyzer.shouldHaveExitValue(0);
+        try {
+            outputAnalyzer.shouldHaveExitValue(0);
+        } catch (RuntimeException e) {
+            String errorMessage = String.format(
+                    "JVM should start with option '%s' without errors.",
+                    optionName);
+            throw new AssertionError(errorMessage, e);
+        }
+        try {
         outputAnalyzer.shouldMatch(String.format(
                 CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
                 optionName, expectedValue));
+        } catch (RuntimeException e) {
+            String errorMessage =  String.format(
+                    "Option '%s' is expected to have '%s' value%n%s",
+                    optionName, expectedValue,
+                    optionErrorString);
+            throw new AssertionError(errorMessage, e);
+        }
     }
 
     /**
@@ -207,18 +270,21 @@ public abstract class CommandLineOptionTest {
      *
      * @param optionName name of tested option.
      * @param expectedValue expected value of tested option.
+     * @param optionErrorString message to show if option has another value
      * @param additionalVMOpts additional options that should be
      *                         passed to JVM.
      * @throws Throwable if verification fails or some other issues occur.
      */
     public static void verifyOptionValueForSameVM(String optionName,
-            String expectedValue, String... additionalVMOpts) throws Throwable {
+            String expectedValue, String optionErrorString,
+            String... additionalVMOpts) throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
         Collections.addAll(finalOptions, additionalVMOpts);
 
         CommandLineOptionTest.verifyOptionValue(optionName, expectedValue,
-                false, finalOptions.toArray(new String[finalOptions.size()]));
+                optionErrorString, false,
+                finalOptions.toArray(new String[finalOptions.size()]));
     }
 
     /**

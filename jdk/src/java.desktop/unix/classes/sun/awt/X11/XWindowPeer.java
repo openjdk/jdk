@@ -210,6 +210,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private static native String getLocalHostname();
     private static native int getJvmPID();
 
+    @SuppressWarnings("deprecation")
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
@@ -400,6 +401,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void recursivelySetIcon(java.util.List<IconInfo> icons) {
         dumpIcons(winAttr.icons);
         setIconHints(icons);

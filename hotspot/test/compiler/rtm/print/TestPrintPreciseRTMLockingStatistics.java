@@ -29,7 +29,7 @@
  *          on overall aborts and locks count and count of aborts of
  *          different types. Test also verify that VM output does not
  *          contain rtm locking statistics when it should not.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestPrintPreciseRTMLockingStatistics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

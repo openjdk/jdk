@@ -55,6 +55,7 @@ final class XRepaintArea extends RepaintArea {
     /**
      * Calls <code>Component.paint(Graphics)</code> with given Graphics.
      */
+    @SuppressWarnings("deprecation")
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {
             final XComponentPeer peer = (XComponentPeer) comp.getPeer();

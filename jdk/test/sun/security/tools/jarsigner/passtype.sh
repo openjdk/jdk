@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ case "$OS" in
     ;;
 esac
 
-KS=pt.jks
+KS=pt.ks
 JFILE=pt.jar
 
 KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keystore $KS -validity 300 -keyalg rsa"
@@ -62,11 +62,15 @@ $KT -alias c -dname CN=c -keyalg rsa -genkey \
 echo A > A
 $JAR cvf $JFILE A
 
+# Sign
 $JARSIGNER -keystore $KS -storepass test12 $JFILE a || exit 4
 PASSENV=test12 $JARSIGNER -keystore $KS -storepass:env PASSENV $JFILE b || exit 5
 $JARSIGNER -keystore $KS -storepass:file passfile $JFILE b || exit 6
 
-$JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 7
+# Verify
+$JARSIGNER -keystore $KS -storepass test12 -verify -debug -strict $JFILE || exit 7
+PASSENV=test12 $JARSIGNER -keystore $KS -storepass:env PASSENV -verify -debug -strict $JFILE || exit 8
+$JARSIGNER -keystore $KS -storepass:file passfile -verify -debug -strict $JFILE || exit 9
 
 exit 0
 

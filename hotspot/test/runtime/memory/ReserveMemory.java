@@ -26,7 +26,7 @@
  * @key regression
  * @bug 8012015
  * @summary Make sure reserved (but uncommitted) memory is not accessible
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build ReserveMemory
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

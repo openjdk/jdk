@@ -24,7 +24,7 @@
 /*
  * @test IntxTest
  * @bug 8028756
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build IntxTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
