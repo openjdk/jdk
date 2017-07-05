@@ -100,12 +100,12 @@ public class CMSManager {
         public long loadProfile(byte[] data) {
             System.err.print(cName + ".loadProfile");
             long profileID = tcmm.loadProfile(data);
-            System.err.println("(ID=" + profileID + ")");
+            System.err.printf("(ID=%x)\n", profileID);
             return profileID;
         }
 
         public void freeProfile(long profileID) {
-            System.err.println(cName + ".freeProfile(ID=" + profileID + ")");
+            System.err.printf(cName + ".freeProfile(ID=%x)\n", profileID);
             tcmm.freeProfile(profileID);
         }
 
@@ -123,8 +123,8 @@ public class CMSManager {
         }
 
         public int getTagSize(long profileID, int tagSignature) {
-            System.err.print(cName + ".getTagSize(ID=" + profileID +
-                               ", TagSig=" + tagSignature + ")");
+            System.err.printf(cName + ".getTagSize(ID=%x, TagSig=%s)",
+                              profileID, signatureToString(tagSignature));
             int size = tcmm.getTagSize(profileID, tagSignature);
             System.err.println("=" + size);
             return size;
@@ -132,8 +132,8 @@ public class CMSManager {
 
         public void getTagData(long profileID, int tagSignature,
                                byte[] data) {
-            System.err.print(cName + ".getTagData(ID=" + profileID +
-                             ", TagSig=" + tagSignature + ")");
+            System.err.printf(cName + ".getTagData(ID=%x, TagSig=%s)",
+                              profileID, signatureToString(tagSignature));
             System.err.println(" requested " + data.length + " byte(s)");
             tcmm.getTagData(profileID, tagSignature, data);
         }
@@ -157,6 +157,14 @@ public class CMSManager {
         public ColorTransform createTransform(ColorTransform[] transforms) {
             System.err.println(cName + ".createTransform(ColorTransform[])");
             return tcmm.createTransform(transforms);
+        }
+
+        private static String signatureToString(int sig) {
+            return String.format("%c%c%c%c",
+                                 (char)(0xff & (sig >> 24)),
+                                 (char)(0xff & (sig >> 16)),
+                                 (char)(0xff & (sig >>  8)),
+                                 (char)(0xff & (sig      )));
         }
     }
 }

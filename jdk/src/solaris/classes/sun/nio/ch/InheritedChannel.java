@@ -96,7 +96,7 @@ class InheritedChannel {
                                          FileDescriptor fd)
             throws IOException
         {
-            super(sp, fd);
+            super(sp, fd, true);
         }
 
         protected void implCloseSelectableChannel() throws IOException {

@@ -823,7 +823,7 @@ public abstract class ClassLoader {
      * </tt></blockquote>
      *
      * @param  name
-     *         The expected <a href="#name">binary name</a. of the class, or
+     *         The expected <a href="#name">binary name</a>. of the class, or
      *         <tt>null</tt> if not known
      *
      * @param  b

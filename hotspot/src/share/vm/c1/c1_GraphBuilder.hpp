@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,27 +342,17 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
 
   NOT_PRODUCT(void print_inline_result(ciMethod* callee, bool res);)
 
-  // methodDataOop profiling helpers
   void profile_call(Value recv, ciKlass* predicted_holder);
-  void profile_invocation(ciMethod* method);
-  void profile_bci(int bci);
+  void profile_invocation(ciMethod* inlinee, ValueStack* state, int bci);
 
-  // Helpers for generation of profile information
-  bool profile_branches() {
-    return _compilation->env()->comp_level() == CompLevel_fast_compile &&
-      Tier1UpdateMethodData && Tier1ProfileBranches;
-  }
-  bool profile_calls() {
-    return _compilation->env()->comp_level() == CompLevel_fast_compile &&
-      Tier1UpdateMethodData && Tier1ProfileCalls;
-  }
-  bool profile_inlined_calls() {
-    return profile_calls() && Tier1ProfileInlinedCalls;
-  }
-  bool profile_checkcasts() {
-    return _compilation->env()->comp_level() == CompLevel_fast_compile &&
-      Tier1UpdateMethodData && Tier1ProfileCheckcasts;
-  }
+  // Shortcuts to profiling control.
+  bool is_profiling()          { return _compilation->is_profiling();          }
+  bool count_invocations()     { return _compilation->count_invocations();     }
+  bool count_backedges()       { return _compilation->count_backedges();       }
+  bool profile_branches()      { return _compilation->profile_branches();      }
+  bool profile_calls()         { return _compilation->profile_calls();         }
+  bool profile_inlined_calls() { return _compilation->profile_inlined_calls(); }
+  bool profile_checkcasts()    { return _compilation->profile_checkcasts();    }
 
  public:
   NOT_PRODUCT(void print_stats();)

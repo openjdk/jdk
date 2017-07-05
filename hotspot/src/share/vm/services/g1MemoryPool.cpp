@@ -28,12 +28,11 @@
 G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      const char* name,
                                      size_t init_size,
-                                     size_t max_size,
                                      bool support_usage_threshold) :
   _g1h(g1h), CollectedMemoryPool(name,
                                  MemoryPool::Heap,
                                  init_size,
-                                 max_size,
+                                 undefined_max(),
                                  support_usage_threshold) {
   assert(UseG1GC, "sanity");
 }
@@ -53,13 +52,6 @@ size_t G1MemoryPoolSuper::eden_space_used(G1CollectedHeap* g1h) {
 }
 
 // See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::eden_space_max(G1CollectedHeap* g1h) {
-  // This should ensure that it returns a value no smaller than the
-  // region size. Currently, eden_space_committed() guarantees that.
-  return eden_space_committed(g1h);
-}
-
-// See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::survivor_space_committed(G1CollectedHeap* g1h) {
   return MAX2(survivor_space_used(g1h), (size_t) HeapRegion::GrainBytes);
 }
@@ -69,13 +61,6 @@ size_t G1MemoryPoolSuper::survivor_space_used(G1CollectedHeap* g1h) {
   size_t survivor_num = g1h->g1_policy()->recorded_survivor_regions();
   size_t survivor_used = survivor_num * HeapRegion::GrainBytes;
   return survivor_used;
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::survivor_space_max(G1CollectedHeap* g1h) {
-  // This should ensure that it returns a value no smaller than the
-  // region size. Currently, survivor_space_committed() guarantees that.
-  return survivor_space_committed(g1h);
 }
 
 // See the comment at the top of g1MemoryPool.hpp
@@ -99,24 +84,11 @@ size_t G1MemoryPoolSuper::old_space_used(G1CollectedHeap* g1h) {
   return used;
 }
 
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::old_space_max(G1CollectedHeap* g1h) {
-  size_t max = overall_max(g1h);
-  size_t eden_max = eden_space_max(g1h);
-  size_t survivor_max = survivor_space_max(g1h);
-  max = subtract_up_to_zero(max, eden_max);
-  max = subtract_up_to_zero(max, survivor_max);
-  max = MAX2(max, (size_t) HeapRegion::GrainBytes);
-  return max;
-}
-
 G1EdenPool::G1EdenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
                     "G1 Eden",
                     eden_space_committed(g1h), /* init_size */
-                    eden_space_max(g1h), /* max_size */
-                    false /* support_usage_threshold */) {
-}
+                    false /* support_usage_threshold */) { }
 
 MemoryUsage G1EdenPool::get_memory_usage() {
   size_t initial_sz = initial_size();
@@ -131,9 +103,7 @@ G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
                     "G1 Survivor",
                     survivor_space_committed(g1h), /* init_size */
-                    survivor_space_max(g1h), /* max_size */
-                    false /* support_usage_threshold */) {
-}
+                    false /* support_usage_threshold */) { }
 
 MemoryUsage G1SurvivorPool::get_memory_usage() {
   size_t initial_sz = initial_size();
@@ -148,9 +118,7 @@ G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
                     "G1 Old Gen",
                     old_space_committed(g1h), /* init_size */
-                    old_space_max(g1h), /* max_size */
-                    true /* support_usage_threshold */) {
-}
+                    true /* support_usage_threshold */) { }
 
 MemoryUsage G1OldGenPool::get_memory_usage() {
   size_t initial_sz = initial_size();

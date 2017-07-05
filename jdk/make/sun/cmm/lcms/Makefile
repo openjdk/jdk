@@ -80,8 +80,8 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)
 vpath %.c   $(SHARE_SRC)/native/sun/java2d
 
 ifeq ($(PLATFORM), windows)
-
-OTHER_LDLIBS = user32.lib version.lib $(OBJDIR)/../../../sun.awt/awt/$(OBJDIRNAME)/awt.lib
+OTHER_CFLAGS += -DCMS_IS_WINDOWS_ -Dsqrtf=sqrt
+OTHER_LDLIBS = $(OBJDIR)/../../../sun.awt/awt/$(OBJDIRNAME)/awt.lib
 OTHER_INCLUDES += -I$(SHARE_SRC)/native/sun/java2d \
                   -I$(SHARE_SRC)/native/sun/awt/debug
 

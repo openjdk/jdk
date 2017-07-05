@@ -140,7 +140,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.
     if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size() > InlineSmallCode/4)
+        callee_method->instructions_size(CompLevel_full_optimization) > InlineSmallCode/4)
       return "already compiled into a medium method";
   }
   if (size > max_size) {
@@ -180,7 +180,7 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
       }
     }
 
-    if (callee_method->has_compiled_code() && callee_method->instructions_size() > InlineSmallCode) {
+    if (callee_method->has_compiled_code() && callee_method->instructions_size(CompLevel_full_optimization) > InlineSmallCode) {
       wci_result->set_profit(wci_result->profit() * 0.1);
       // %%% adjust wci_result->size()?
     }
@@ -206,7 +206,7 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
 
   // Now perform checks which are heuristic
 
-  if( callee_method->has_compiled_code() && callee_method->instructions_size() > InlineSmallCode )
+  if( callee_method->has_compiled_code() && callee_method->instructions_size(CompLevel_full_optimization) > InlineSmallCode )
     return "already compiled into a big method";
 
   // don't inline exception code unless the top method belongs to an

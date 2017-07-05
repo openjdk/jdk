@@ -279,9 +279,12 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void updateTuning(SoftTuning newtuning) {
+        tuning = newtuning;
         tunedKey = tuning.getTuning(note) / 100.0;
         if (!portamento) {
             co_noteon_keynumber[0] = tunedKey * (1.0 / 128.0);
+            if(performer == null)
+                return;
             int[] c = performer.midi_connections[4];
             if (c == null)
                 return;
@@ -433,6 +436,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void setPolyPressure(int pressure) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[2];
         if (c == null)
             return;
@@ -441,6 +446,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void setChannelPressure(int pressure) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[1];
         if (c == null)
             return;
@@ -449,6 +456,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void controlChange(int controller, int value) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_ctrl_connections[controller];
         if (c == null)
             return;
@@ -457,6 +466,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void nrpnChange(int controller, int value) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_nrpn_connections.get(controller);
         if (c == null)
             return;
@@ -465,6 +476,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void rpnChange(int controller, int value) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_rpn_connections.get(controller);
         if (c == null)
             return;
@@ -473,6 +486,8 @@ public class SoftVoice extends VoiceStatus {
     }
 
     protected void setPitchBend(int bend) {
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[0];
         if (c == null)
             return;
@@ -499,6 +514,8 @@ public class SoftVoice extends VoiceStatus {
 
         co_noteon_on[0] = -1;
 
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[3];
         if (c == null)
             return;
@@ -527,6 +544,8 @@ public class SoftVoice extends VoiceStatus {
 
         co_noteon_on[0] = 0;
 
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[3];
         if (c == null)
             return;
@@ -543,6 +562,8 @@ public class SoftVoice extends VoiceStatus {
         sustain = true;
         co_noteon_on[0] = 1;
 
+        if(performer == null)
+            return;
         int[] c = performer.midi_connections[3];
         if (c == null)
             return;
@@ -555,6 +576,11 @@ public class SoftVoice extends VoiceStatus {
             active = false;
             stopping = false;
             audiostarted = false;
+            instrument = null;
+            performer = null;
+            connections = null;
+            extendedConnectionBlocks = null;
+            channelmixer = null;
             if (osc_stream != null)
                 try {
                     osc_stream.close();

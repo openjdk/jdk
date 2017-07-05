@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Note: this makefile is invoked both from build.bat and from the J2SE
@@ -72,11 +72,9 @@ BUILDARCH=ia64
 !endif
 !endif
 
-!if "$(BUILDARCH)" != "amd64"
 !if "$(BUILDARCH)" != "ia64"
 !ifndef CC_INTERP
 FORCE_TIERED=1
-!endif
 !endif
 !endif
 
@@ -135,7 +133,7 @@ VARIANT_TEXT=Kernel
 # We can have update versions like "01a", but Windows requires
 # we use only integers in the file version field.  So:
 # JDK_UPDATE_VER = JDK_UPDATE_VERSION * 10 + EXCEPTION_VERSION
-# 
+#
 JDK_UPDATE_VER=0
 JDK_BUILD_NUMBER=0
 
@@ -148,7 +146,7 @@ HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(ARCH_TEXT) $(VARIANT_TEXT) VM
 #       1.6.0_01a-b02 will be 6.0.11.2
 #
 # JDK_* variables are defined in make/hotspot_version or on command line
-# 
+#
 JDK_VER=$(JDK_MINOR_VER),$(JDK_MICRO_VER),$(JDK_UPDATE_VER),$(JDK_BUILD_NUMBER)
 JDK_DOTVER=$(JDK_MINOR_VER).$(JDK_MICRO_VER).$(JDK_UPDATE_VER).$(JDK_BUILD_NUMBER)
 !if "$(JRE_RELEASE_VERSION)" == ""
@@ -162,7 +160,7 @@ JDK_MKTG_VERSION=$(JDK_MINOR_VER).$(JDK_MICRO_VER)
 
 # Hotspot Express VM FileVersion:
 # 10.0-b<yz> will have DLL version 10.0.0.yz (need 4 numbers).
-# 
+#
 # HS_* variables are defined in make/hotspot_version
 #
 HS_VER=$(HS_MAJOR_VER),$(HS_MINOR_VER),0,$(HS_BUILD_NUMBER)
@@ -182,7 +180,7 @@ HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)
 
 
 # We don't support SA on ia64, and we can't
-# build it if we are using a version of Vis Studio 
+# build it if we are using a version of Vis Studio
 # older than .Net 2003.
 # SA_INCLUDE and SA_LIB are hold-overs from a previous
 # implementation in which we could build SA using

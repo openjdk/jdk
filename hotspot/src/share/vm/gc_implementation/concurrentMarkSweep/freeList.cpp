@@ -165,13 +165,8 @@ void FreeList::removeChunk(FreeChunk*fc) {
        "Next of tail should be NULL");
    }
    decrement_count();
-#define TRAP_CODE 1
-#if TRAP_CODE
-   if (head() == NULL) {
-     guarantee(tail() == NULL, "INVARIANT");
-     guarantee(count() == 0, "INVARIANT");
-   }
-#endif
+   assert(((head() == NULL) + (tail() == NULL) + (count() == 0)) % 3 == 0,
+          "H/T/C Inconsistency");
    // clear next and prev fields of fc, debug only
    NOT_PRODUCT(
      fc->linkPrev(NULL);

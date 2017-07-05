@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 package java.sql;
 
 /**
- * The subclass of {@link SQLException} thrown when the SQLState class value is '<i>42</i>'. This indicates that the
+ * The subclass of {@link SQLException} thrown when the SQLState class value
+ * is '<i>42</i>', or under vendor-specified conditions. This indicates that the
  * in-progress query has violated SQL syntax rules.
- *
+ * <p>
+ * Please consult your driver vendor documentation for the vendor-specified
+ * conditions for which this <code>Exception</code> may be thrown.
  * @since 1.6
  */
 public class SQLSyntaxErrorException extends SQLNonTransientException {

@@ -1588,6 +1588,229 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   //
+  //  Generate stub for disjoint short fill.  If "aligned" is true, the
+  //  "to" address is assumed to be heapword aligned.
+  //
+  // Arguments for generated stub:
+  //      to:    O0
+  //      value: O1
+  //      count: O2 treated as signed
+  //
+  address generate_fill(BasicType t, bool aligned, const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    const Register to        = O0;   // source array address
+    const Register value     = O1;   // fill value
+    const Register count     = O2;   // elements count
+    // O3 is used as a temp register
+
+    assert_clean_int(count, O3);     // Make sure 'count' is clean int.
+
+    Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
+    Label L_fill_2_bytes, L_fill_elements, L_fill_32_bytes;
+
+    int shift = -1;
+    switch (t) {
+       case T_BYTE:
+        shift = 2;
+        break;
+       case T_SHORT:
+        shift = 1;
+        break;
+      case T_INT:
+         shift = 0;
+        break;
+      default: ShouldNotReachHere();
+    }
+
+    BLOCK_COMMENT("Entry:");
+
+    if (t == T_BYTE) {
+      // Zero extend value
+      __ and3(value, 0xff, value);
+      __ sllx(value, 8, O3);
+      __ or3(value, O3, value);
+    }
+    if (t == T_SHORT) {
+      // Zero extend value
+      __ sllx(value, 48, value);
+      __ srlx(value, 48, value);
+    }
+    if (t == T_BYTE || t == T_SHORT) {
+      __ sllx(value, 16, O3);
+      __ or3(value, O3, value);
+    }
+
+    __ cmp(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+    __ brx(Assembler::lessUnsigned, false, Assembler::pn, L_fill_elements); // use unsigned cmp
+    __ delayed()->andcc(count, 1, G0);
+
+    if (!aligned && (t == T_BYTE || t == T_SHORT)) {
+      // align source address at 4 bytes address boundary
+      if (t == T_BYTE) {
+        // One byte misalignment happens only for byte arrays
+        __ andcc(to, 1, G0);
+        __ br(Assembler::zero, false, Assembler::pt, L_skip_align1);
+        __ delayed()->nop();
+        __ stb(value, to, 0);
+        __ inc(to, 1);
+        __ dec(count, 1);
+        __ BIND(L_skip_align1);
+      }
+      // Two bytes misalignment happens only for byte and short (char) arrays
+      __ andcc(to, 2, G0);
+      __ br(Assembler::zero, false, Assembler::pt, L_skip_align2);
+      __ delayed()->nop();
+      __ sth(value, to, 0);
+      __ inc(to, 2);
+      __ dec(count, 1 << (shift - 1));
+      __ BIND(L_skip_align2);
+    }
+#ifdef _LP64
+    if (!aligned) {
+#endif
+    // align to 8 bytes, we know we are 4 byte aligned to start
+    __ andcc(to, 7, G0);
+    __ br(Assembler::zero, false, Assembler::pt, L_fill_32_bytes);
+    __ delayed()->nop();
+    __ stw(value, to, 0);
+    __ inc(to, 4);
+    __ dec(count, 1 << shift);
+    __ BIND(L_fill_32_bytes);
+#ifdef _LP64
+    }
+#endif
+
+    if (t == T_INT) {
+      // Zero extend value
+      __ srl(value, 0, value);
+    }
+    if (t == T_BYTE || t == T_SHORT || t == T_INT) {
+      __ sllx(value, 32, O3);
+      __ or3(value, O3, value);
+    }
+
+    Label L_check_fill_8_bytes;
+    // Fill 32-byte chunks
+    __ subcc(count, 8 << shift, count);
+    __ brx(Assembler::less, false, Assembler::pt, L_check_fill_8_bytes);
+    __ delayed()->nop();
+
+    Label L_fill_32_bytes_loop, L_fill_4_bytes;
+    __ align(16);
+    __ BIND(L_fill_32_bytes_loop);
+
+    __ stx(value, to, 0);
+    __ stx(value, to, 8);
+    __ stx(value, to, 16);
+    __ stx(value, to, 24);
+
+    __ subcc(count, 8 << shift, count);
+    __ brx(Assembler::greaterEqual, false, Assembler::pt, L_fill_32_bytes_loop);
+    __ delayed()->add(to, 32, to);
+
+    __ BIND(L_check_fill_8_bytes);
+    __ addcc(count, 8 << shift, count);
+    __ brx(Assembler::zero, false, Assembler::pn, L_exit);
+    __ delayed()->subcc(count, 1 << (shift + 1), count);
+    __ brx(Assembler::less, false, Assembler::pn, L_fill_4_bytes);
+    __ delayed()->andcc(count, 1<<shift, G0);
+
+    //
+    // length is too short, just fill 8 bytes at a time
+    //
+    Label L_fill_8_bytes_loop;
+    __ BIND(L_fill_8_bytes_loop);
+    __ stx(value, to, 0);
+    __ subcc(count, 1 << (shift + 1), count);
+    __ brx(Assembler::greaterEqual, false, Assembler::pn, L_fill_8_bytes_loop);
+    __ delayed()->add(to, 8, to);
+
+    // fill trailing 4 bytes
+    __ andcc(count, 1<<shift, G0);  // in delay slot of branches
+    if (t == T_INT) {
+      __ BIND(L_fill_elements);
+    }
+    __ BIND(L_fill_4_bytes);
+    __ brx(Assembler::zero, false, Assembler::pt, L_fill_2_bytes);
+    if (t == T_BYTE || t == T_SHORT) {
+      __ delayed()->andcc(count, 1<<(shift-1), G0);
+    } else {
+      __ delayed()->nop();
+    }
+    __ stw(value, to, 0);
+    if (t == T_BYTE || t == T_SHORT) {
+      __ inc(to, 4);
+      // fill trailing 2 bytes
+      __ andcc(count, 1<<(shift-1), G0); // in delay slot of branches
+      __ BIND(L_fill_2_bytes);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_byte);
+      __ delayed()->andcc(count, 1, count);
+      __ sth(value, to, 0);
+      if (t == T_BYTE) {
+        __ inc(to, 2);
+        // fill trailing byte
+        __ andcc(count, 1, count);  // in delay slot of branches
+        __ BIND(L_fill_byte);
+        __ brx(Assembler::zero, false, Assembler::pt, L_exit);
+        __ delayed()->nop();
+        __ stb(value, to, 0);
+      } else {
+        __ BIND(L_fill_byte);
+      }
+    } else {
+      __ BIND(L_fill_2_bytes);
+    }
+    __ BIND(L_exit);
+    __ retl();
+    __ delayed()->nop();
+
+    // Handle copies less than 8 bytes.  Int is handled elsewhere.
+    if (t == T_BYTE) {
+      __ BIND(L_fill_elements);
+      Label L_fill_2, L_fill_4;
+      // in delay slot __ andcc(count, 1, G0);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_2);
+      __ delayed()->andcc(count, 2, G0);
+      __ stb(value, to, 0);
+      __ inc(to, 1);
+      __ BIND(L_fill_2);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_4);
+      __ delayed()->andcc(count, 4, G0);
+      __ stb(value, to, 0);
+      __ stb(value, to, 1);
+      __ inc(to, 2);
+      __ BIND(L_fill_4);
+      __ brx(Assembler::zero, false, Assembler::pt, L_exit);
+      __ delayed()->nop();
+      __ stb(value, to, 0);
+      __ stb(value, to, 1);
+      __ stb(value, to, 2);
+      __ retl();
+      __ delayed()->stb(value, to, 3);
+    }
+
+    if (t == T_SHORT) {
+      Label L_fill_2;
+      __ BIND(L_fill_elements);
+      // in delay slot __ andcc(count, 1, G0);
+      __ brx(Assembler::zero, false, Assembler::pt, L_fill_2);
+      __ delayed()->andcc(count, 2, G0);
+      __ sth(value, to, 0);
+      __ inc(to, 2);
+      __ BIND(L_fill_2);
+      __ brx(Assembler::zero, false, Assembler::pt, L_exit);
+      __ delayed()->nop();
+      __ sth(value, to, 0);
+      __ retl();
+      __ delayed()->sth(value, to, 2);
+    }
+    return start;
+  }
+
+  //
   //  Generate stub for conjoint short copy.  If "aligned" is true, the
   //  "from" and "to" addresses are assumed to be heapword aligned.
   //
@@ -2855,6 +3078,13 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy");
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy");
     StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy");
+
+    StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill");
+    StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill");
+    StubRoutines::_jint_fill = generate_fill(T_INT, false, "jint_fill");
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
+    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
+    StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
   void generate_initial() {

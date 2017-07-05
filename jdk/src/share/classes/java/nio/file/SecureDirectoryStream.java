@@ -47,15 +47,6 @@ import java.io.IOException;
  * newDirectoryStream} method will be a {@code SecureDirectoryStream} and must
  * be cast to that type in order to invoke the methods defined by this interface.
  *
- * <p> As specified by {@code DirectoryStream}, the iterator's {@link
- * java.util.Iterator#remove() remove} method removes the directory entry for
- * the last element returned by the iterator. In the case of a {@code
- * SecureDirectoryStream} the {@code remove} method behaves as if by invoking
- * the {@link #deleteFile deleteFile} or {@link #deleteDirectory deleteDirectory}
- * methods defined by this interface. The {@code remove} may require to examine
- * the file to determine if the file is a directory, and consequently, it may
- * not be atomic with respect to other file system operations.
- *
  * <p> In the case of the default {@link java.nio.file.spi.FileSystemProvider
  * provider}, and a security manager is set, then the permission checks are
  * performed using the path obtained by resolving the given relative path

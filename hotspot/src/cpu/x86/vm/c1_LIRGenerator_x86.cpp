@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,10 +182,22 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 }
 
 
-void LIRGenerator::increment_counter(address counter, int step) {
+LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+  LIR_Opr r;
+  if (type == T_LONG) {
+    r = LIR_OprFact::longConst(x);
+  } else if (type == T_INT) {
+    r = LIR_OprFact::intConst(x);
+  } else {
+    ShouldNotReachHere();
+  }
+  return r;
+}
+
+void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, type);
   increment_counter(addr, step);
 }
 
@@ -193,7 +205,6 @@ void LIRGenerator::increment_counter(address counter, int step) {
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   __ add((LIR_Opr)addr, LIR_OprFact::intConst(step), (LIR_Opr)addr);
 }
-
 
 void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info) {
   __ cmp_mem_int(condition, base, disp, c, info);
@@ -1145,10 +1156,10 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
     patching_info = state_for(x, x->state_before());
   }
   obj.load_item();
-  LIR_Opr tmp = new_register(objectType);
   __ instanceof(reg, obj.result(), x->klass(),
-                tmp, new_register(objectType), LIR_OprFact::illegalOpr,
-                x->direct_compare(), patching_info);
+                new_register(objectType), new_register(objectType),
+                !x->klass()->is_loaded() ? new_register(objectType) : LIR_OprFact::illegalOpr,
+                x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 
 
@@ -1188,8 +1199,7 @@ void LIRGenerator::do_If(If* x) {
   // add safepoint before generating condition code so it can be recomputed
   if (x->is_safepoint()) {
     // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, x->state_before()));
-
+    increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
     __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
   }
   set_no_result(x);
@@ -1197,6 +1207,7 @@ void LIRGenerator::do_If(If* x) {
   LIR_Opr left = xin->result();
   LIR_Opr right = yin->result();
   __ cmp(lir_cond(cond), left, right);
+  // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {

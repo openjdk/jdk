@@ -32,7 +32,11 @@ void CollectorPolicy::initialize_flags() {
     MaxPermSize = PermSize;
   }
   PermSize = MAX2(min_alignment(), align_size_down_(PermSize, min_alignment()));
-  MaxPermSize = align_size_up(MaxPermSize, max_alignment());
+  // Don't increase Perm size limit above specified.
+  MaxPermSize = align_size_down(MaxPermSize, max_alignment());
+  if (PermSize > MaxPermSize) {
+    PermSize = MaxPermSize;
+  }
 
   MinPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MinPermHeapExpansion, min_alignment()));
   MaxPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MaxPermHeapExpansion, min_alignment()));

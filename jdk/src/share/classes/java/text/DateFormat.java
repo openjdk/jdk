@@ -443,7 +443,7 @@ public abstract class DateFormat extends Format {
      */
     public final static DateFormat getTimeInstance()
     {
-        return get(DEFAULT, 0, 1, Locale.getDefault());
+        return get(DEFAULT, 0, 1, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -455,7 +455,7 @@ public abstract class DateFormat extends Format {
      */
     public final static DateFormat getTimeInstance(int style)
     {
-        return get(style, 0, 1, Locale.getDefault());
+        return get(style, 0, 1, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -479,7 +479,7 @@ public abstract class DateFormat extends Format {
      */
     public final static DateFormat getDateInstance()
     {
-        return get(0, DEFAULT, 2, Locale.getDefault());
+        return get(0, DEFAULT, 2, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -491,7 +491,7 @@ public abstract class DateFormat extends Format {
      */
     public final static DateFormat getDateInstance(int style)
     {
-        return get(0, style, 2, Locale.getDefault());
+        return get(0, style, 2, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -515,7 +515,7 @@ public abstract class DateFormat extends Format {
      */
     public final static DateFormat getDateTimeInstance()
     {
-        return get(DEFAULT, DEFAULT, 3, Locale.getDefault());
+        return get(DEFAULT, DEFAULT, 3, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -530,7 +530,7 @@ public abstract class DateFormat extends Format {
     public final static DateFormat getDateTimeInstance(int dateStyle,
                                                        int timeStyle)
     {
-        return get(timeStyle, dateStyle, 3, Locale.getDefault());
+        return get(timeStyle, dateStyle, 3, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**

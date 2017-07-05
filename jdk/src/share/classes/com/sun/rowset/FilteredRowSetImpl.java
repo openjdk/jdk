@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1746,5 +1746,23 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
       onInsertRow = false;
       super.insertRow();
    }
-  static final long serialVersionUID = 6178454588413509360L;
+
+   /**
+    * This method re populates the resBundle
+    * during the deserialization process
+    *
+    */
+   private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+       // Default state initialization happens here
+       ois.defaultReadObject();
+       // Initialization of transient Res Bundle happens here .
+       try {
+          resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+       } catch(IOException ioe) {
+           throw new RuntimeException(ioe);
+       }
+
+   }
+
+   static final long serialVersionUID = 6178454588413509360L;
 } // end FilteredRowSetImpl class

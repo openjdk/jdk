@@ -252,12 +252,13 @@ class ModUnionClosurePar: public ModUnionClosure {
 class ChunkArray: public CHeapObj {
   size_t _index;
   size_t _capacity;
+  size_t _overflows;
   HeapWord** _array;   // storage for array
 
  public:
-  ChunkArray() : _index(0), _capacity(0), _array(NULL) {}
+  ChunkArray() : _index(0), _capacity(0), _overflows(0), _array(NULL) {}
   ChunkArray(HeapWord** a, size_t c):
-    _index(0), _capacity(c), _array(a) {}
+    _index(0), _capacity(c), _overflows(0), _array(a) {}
 
   HeapWord** array() { return _array; }
   void set_array(HeapWord** a) { _array = a; }
@@ -266,7 +267,9 @@ class ChunkArray: public CHeapObj {
   void set_capacity(size_t c) { _capacity = c; }
 
   size_t end() {
-    assert(_index < capacity(), "_index out of bounds");
+    assert(_index <= capacity(),
+           err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT "): out of bounds",
+                   _index, _capacity));
     return _index;
   }  // exclusive
 
@@ -277,12 +280,23 @@ class ChunkArray: public CHeapObj {
 
   void reset() {
     _index = 0;
+    if (_overflows > 0 && PrintCMSStatistics > 1) {
+      warning("CMS: ChunkArray[" SIZE_FORMAT "] overflowed " SIZE_FORMAT " times",
+              _capacity, _overflows);
+    }
+    _overflows = 0;
   }
 
   void record_sample(HeapWord* p, size_t sz) {
     // For now we do not do anything with the size
     if (_index < _capacity) {
       _array[_index++] = p;
+    } else {
+      ++_overflows;
+      assert(_index == _capacity,
+             err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT
+                     "): out of bounds at overflow#" SIZE_FORMAT,
+                     _index, _capacity, _overflows));
     }
   }
 };

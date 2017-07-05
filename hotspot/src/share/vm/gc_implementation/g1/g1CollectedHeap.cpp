@@ -2753,7 +2753,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  const int n = MAX2(workers()->total_workers(), 1);
+  const int n = workers() != NULL ? workers()->total_workers() : 1;
   for (int i = 0; i < n; ++i) {
     st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
     totals += task_queue(i)->stats;
@@ -2764,7 +2764,7 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
 }
 
 void G1CollectedHeap::reset_taskqueue_stats() {
-  const int n = MAX2(workers()->total_workers(), 1);
+  const int n = workers() != NULL ? workers()->total_workers() : 1;
   for (int i = 0; i < n; ++i) {
     task_queue(i)->stats.reset();
   }

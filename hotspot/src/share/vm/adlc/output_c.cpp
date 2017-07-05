@@ -2482,7 +2482,7 @@ void ArchDesc::defineEmit(FILE *fp, InstructForm &inst) {
   }
 
   // Save current instruction's starting address (helps with relocation).
-  fprintf( fp, "    cbuf.set_inst_mark();\n");
+  fprintf(fp, "    cbuf.set_insts_mark();\n");
 
   // // // idx0 is only needed for syntactic purposes and only by "storeSSI"
   // fprintf( fp, "    unsigned idx0  = 0;\n");
