@@ -52,19 +52,19 @@ AC_DEFUN_ONCE([BDEPS_SCAN_FOR_BUILDDEPS],
         fi
         # Create build and target names that use _ instead of "-" and ".".
         # This is necessary to use them in variable names.
-        build_var=`echo ${OPENJDK_BUILD_SYSTEM} | tr '-' '_' | tr '.' '_'`
-        target_var=`echo ${OPENJDK_TARGET_SYSTEM} | tr '-' '_' | tr '.' '_'`
+        build_var=`echo ${OPENJDK_BUILD_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
+        target_var=`echo ${OPENJDK_TARGET_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
         # Extract rewrite information for build and target
         eval rewritten_build=\${REWRITE_${build_var}}
         if test "x$rewritten_build" = x; then
-            rewritten_build=${OPENJDK_BUILD_SYSTEM}
+            rewritten_build=${OPENJDK_BUILD_AUTOCONF_NAME}
             echo Build stays the same $rewritten_build
         else
             echo Rewriting build for builddeps into $rewritten_build
         fi
         eval rewritten_target=\${REWRITE_${target_var}}
         if test "x$rewritten_target" = x; then
-            rewritten_target=${OPENJDK_TARGET_SYSTEM}
+            rewritten_target=${OPENJDK_TARGET_AUTOCONF_NAME}
             echo Target stays the same $rewritten_target
         else
             echo Rewriting target for builddeps into $rewritten_target
