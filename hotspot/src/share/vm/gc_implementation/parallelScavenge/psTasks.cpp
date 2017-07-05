@@ -165,35 +165,13 @@ void StealTask::do_it(GCTaskManager* manager, uint which) {
 }
 
 //
-// SerialOldToYoungRootsTask
-//
-
-void SerialOldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
-  assert(_gen != NULL, "Sanity");
-  assert(_gen->object_space()->contains(_gen_top) || _gen_top == _gen->object_space()->top(), "Sanity");
-
-  {
-    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
-
-    assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-    CardTableExtension* card_table = (CardTableExtension *)Universe::heap()->barrier_set();
-    // FIX ME! Assert that card_table is the type we believe it to be.
-
-    card_table->scavenge_contents(_gen->start_array(),
-                                  _gen->object_space(),
-                                  _gen_top,
-                                  pm);
-
-    // Do the real work
-    pm->drain_stacks(false);
-  }
-}
-
-//
 // OldToYoungRootsTask
 //
 
 void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
+  // There are not old-to-young pointers if the old gen is empty.
+  assert(!_gen->object_space()->is_empty(),
+    "Should not be called is there is no work");
   assert(_gen != NULL, "Sanity");
   assert(_gen->object_space()->contains(_gen_top) || _gen_top == _gen->object_space()->top(), "Sanity");
   assert(_stripe_number < ParallelGCThreads, "Sanity");
