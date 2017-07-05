@@ -37,7 +37,7 @@ import java.util.Set;
  * web service requests to corresponding HttpContext objects.
  *
  * @author Jitendra Kotamraju
- * @since JAX-WS 2.2
+ * @since 1.7, JAX-WS 2.2
  */
 public abstract class HttpContext {
 

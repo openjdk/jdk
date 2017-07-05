@@ -32,7 +32,7 @@ import javax.xml.ws.LogicalMessage;
  *  provide access to a the contained message as a protocol neutral
  *  LogicalMessage
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface LogicalMessageContext
                     extends MessageContext {

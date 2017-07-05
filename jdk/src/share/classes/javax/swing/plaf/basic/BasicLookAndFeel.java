@@ -455,7 +455,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         initResourceBundle(table);
 
         // *** Shared Integers
-        Integer fiveHundred = new Integer(500);
+        Integer fiveHundred = 500;
 
         // *** Shared Longs
         Long oneThousand = 1000L;
@@ -673,7 +673,6 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         Object editorMargin = threeInsets;
 
         Object caretBlinkRate = fiveHundred;
-        Integer four = new Integer(4);
 
         Object[] allAuditoryCues = new Object[] {
                 "CheckBoxMenuItem.commandSound",
@@ -714,7 +713,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Button.highlight", controlLtHighlight,
             "Button.border", buttonBorder,
             "Button.margin", new InsetsUIResource(2, 14, 2, 14),
-            "Button.textIconGap", four,
+            "Button.textIconGap", 4,
             "Button.textShiftOffset", zero,
             "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
                          "SPACE", "pressed",
@@ -732,7 +731,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "ToggleButton.highlight", controlLtHighlight,
             "ToggleButton.border", buttonToggleBorder,
             "ToggleButton.margin", new InsetsUIResource(2, 14, 2, 14),
-            "ToggleButton.textIconGap", four,
+            "ToggleButton.textIconGap", 4,
             "ToggleButton.textShiftOffset", zero,
             "ToggleButton.focusInputMap",
               new UIDefaults.LazyInputMap(new Object[] {
@@ -749,7 +748,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "RadioButton.highlight", controlLtHighlight,
             "RadioButton.border", radioButtonBorder,
             "RadioButton.margin", twoInsets,
-            "RadioButton.textIconGap", four,
+            "RadioButton.textIconGap", 4,
             "RadioButton.textShiftOffset", zero,
             "RadioButton.icon", radioButtonIcon,
             "RadioButton.focusInputMap",
@@ -764,7 +763,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "CheckBox.foreground", controlText,
             "CheckBox.border", radioButtonBorder,
             "CheckBox.margin", twoInsets,
-            "CheckBox.textIconGap", four,
+            "CheckBox.textIconGap", 4,
             "CheckBox.textShiftOffset", zero,
             "CheckBox.icon", checkBoxIcon,
             "CheckBox.focusInputMap",
@@ -1087,10 +1086,10 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Menu.margin", twoInsets,
             "Menu.checkIcon", menuItemCheckIcon,
             "Menu.arrowIcon", menuArrowIcon,
-            "Menu.menuPopupOffsetX", new Integer(0),
-            "Menu.menuPopupOffsetY", new Integer(0),
-            "Menu.submenuPopupOffsetX", new Integer(0),
-            "Menu.submenuPopupOffsetY", new Integer(0),
+            "Menu.menuPopupOffsetX", 0,
+            "Menu.menuPopupOffsetY", 0,
+            "Menu.submenuPopupOffsetX", 0,
+            "Menu.submenuPopupOffsetY", 0,
             "Menu.shortcutKeys", new int[]{
                 SwingUtilities2.getSystemMnemonicKeyMask()
             },
@@ -1188,10 +1187,10 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "ProgressBar.selectionForeground", control,
             "ProgressBar.selectionBackground", textHighlight,
             "ProgressBar.border", progressBarBorder,
-            "ProgressBar.cellLength", new Integer(1),
+            "ProgressBar.cellLength", 1,
             "ProgressBar.cellSpacing", zero,
-            "ProgressBar.repaintInterval", new Integer(50),
-            "ProgressBar.cycleTime", new Integer(3000),
+            "ProgressBar.repaintInterval", 50,
+            "ProgressBar.cycleTime", 3000,
             "ProgressBar.horizontalSize", new DimensionUIResource(146, 12),
             "ProgressBar.verticalSize", new DimensionUIResource(12, 146),
 
@@ -1236,7 +1235,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         "LEFT", "positiveUnitIncrement",
                      "KP_LEFT", "positiveUnitIncrement",
                  }),
-            "ScrollBar.width", new Integer(16),
+            "ScrollBar.width", 16,
 
             "ScrollPane.font", dialogPlain12,
             "ScrollPane.background", control,
@@ -1332,7 +1331,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "SplitPane.shadow", controlShadow,
             "SplitPane.darkShadow", controlDkShadow,
             "SplitPane.border", splitPaneBorder,
-            "SplitPane.dividerSize", new Integer(7),
+            "SplitPane.dividerSize", 7,
             "SplitPaneDivider.border", splitPaneDividerBorder,
             "SplitPaneDivider.draggingColor", darkGray,
             "SplitPane.ancestorInputMap",
@@ -1363,7 +1362,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "TabbedPane.darkShadow", controlDkShadow,
             "TabbedPane.selected", null,
             "TabbedPane.focus", controlText,
-            "TabbedPane.textIconGap", four,
+            "TabbedPane.textIconGap", 4,
 
             // Causes tabs to be painted on top of the content area border.
             // The amount of overlap is then controlled by tabAreaInsets.bottom,
@@ -1377,7 +1376,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "TabbedPane.selectedTabPadInsets", tabbedPaneTabPadInsets,
             "TabbedPane.tabAreaInsets", tabbedPaneTabAreaInsets,
             "TabbedPane.contentBorderInsets", tabbedPaneContentBorderInsets,
-            "TabbedPane.tabRunOverlay", new Integer(2),
+            "TabbedPane.tabRunOverlay", 2,
             "TabbedPane.tabsOpaque", Boolean.TRUE,
             "TabbedPane.contentOpaque", Boolean.TRUE,
             "TabbedPane.focusInputMap",
@@ -1737,9 +1736,9 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Tree.selectionBorderColor", black,
             "Tree.dropLineColor", controlShadow,
             "Tree.editorBorder", blackLineBorder,
-            "Tree.leftChildIndent", new Integer(7),
-            "Tree.rightChildIndent", new Integer(13),
-            "Tree.rowHeight", new Integer(16),
+            "Tree.leftChildIndent", 7,
+            "Tree.rightChildIndent", 13,
+            "Tree.rowHeight", 16,
             "Tree.scrollsOnExpand", Boolean.TRUE,
             "Tree.openIcon", SwingUtilities2.makeIcon(getClass(),
                                                       BasicLookAndFeel.class,

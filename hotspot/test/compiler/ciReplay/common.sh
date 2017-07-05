@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -223,21 +223,29 @@ generate_replay() {
             -XX:CICrashAt=1 \
             -XX:+CreateMinidumpOnCrash \
             -XX:+DumpReplayDataOnError \
+            -XX:-TransmitErrorReport \
+            -XX:+PreferInterpreterNativeStubs \
+            -XX:+PrintCompilation \
             -XX:ReplayDataFile=${replay_data} \
             -version"
     echo GENERATION OF REPLAY.TXT:
     echo $cmd
 
     ${cmd} > crash.out 2>&1
-    
+
+    exit_code=$?
+    if [ ${exit_code} -eq 0 ]
+    then
+        cat crash.out
+        test_fail 3 "CHECK :: CRASH" "JVM exits gracefully"
+    fi
+
     core_locations=`grep -i core crash.out | grep "location:" | \
             sed -e 's/.*location: //'`
-    echo CRASH OUTPUT:
-    cat crash.out    
-    
-    if [ "${core_locations}" = "" ]
+   
+    if [ -z "${core_locations}" ]
     then
-        test_fail 2 "CHECK :: CORE_LOCATION" "output doesn't contain the location of core file, see crash.out"
+        test_fail 4 "CHECK :: CORE_LOCATION" "output doesn't contain the location of core file, see crash.out"
     fi
 
     rm crash.out 
@@ -245,16 +253,19 @@ generate_replay() {
     # processing core locations for *nix
     if [ $VM_OS != "windows" ]
     then
-        # remove 'or' between '/core.<pid>' and 'core'
+        # remove 'or' between '<core_path>/core.<pid>' and 'core'
+        # and the rest of line -- ' (max size ...) . To ensure a full core ...'
         core_locations=`echo $core_locations | \
-                sed -e 's/\([^ ]*\) or \([^ ]*\)/\1 \2/'`
-        # add <core_path>/core.<pid> core.<pid>
+                sed -e 's/\([^ ]*\) or \([^ ]*\).*/\1 \2/'`
         core_with_dir=`echo $core_locations | awk '{print $1}'`
-        dir=`dirname $core_with_dir`
         core_with_pid=`echo $core_locations | awk '{print $2}'`
-        if [ -n ${core_with_pid} ]
+        dir=`dirname $core_with_dir`
+        file=`basename $core_with_dir`
+        # add <core_path>/core.<pid> core
+        core_locations="'$core_with_dir' '$file'"
+        if [ -n "${core_with_pid}" ]
         then
-            core_locations="$core_locations $dir${FS}$core_with_pid $core_with_pid"
+            core_locations="$core_locations '$core_with_pid' '$dir${FS}$core_with_pid'"
         fi
     fi
 

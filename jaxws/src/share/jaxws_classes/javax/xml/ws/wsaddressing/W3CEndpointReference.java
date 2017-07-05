@@ -61,7 +61,7 @@ import java.util.Map;
  * WS-Addressing</a>
  * for more information on WS-Addressing EndpointReferences.
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 
 // XmlRootElement allows this class to be marshalled on its own

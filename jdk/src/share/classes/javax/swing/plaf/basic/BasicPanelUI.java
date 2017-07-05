@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ public class BasicPanelUI extends PanelUI {
     // Shared UI object
     private static PanelUI panelUI;
 
+    /**
+     * Returns an instance of {@code BasicPanelUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code BasicPanelUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         if(panelUI == null) {
             panelUI = new BasicPanelUI();
@@ -62,6 +68,11 @@ public class BasicPanelUI extends PanelUI {
         super.uninstallUI(c);
     }
 
+    /**
+     * Method for installing panel properties.
+     *
+     * @param p an instance of {@code JPanel}
+     */
     protected void installDefaults(JPanel p) {
         LookAndFeel.installColorsAndFont(p,
                                          "Panel.background",
@@ -71,6 +82,11 @@ public class BasicPanelUI extends PanelUI {
         LookAndFeel.installProperty(p, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Method for uninstalling panel properties.
+     *
+     * @param p an instance of {@code JPanel}
+     */
     protected void uninstallDefaults(JPanel p) {
         LookAndFeel.uninstallBorder(p);
     }

@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -220,4 +222,20 @@ public interface Serializer {
      * @return True if serializer has been reset and can be reused
      */
     public boolean reset();
+
+    /**
+     * Return an Object into this serializer to be cast to a DOM3Serializer.
+     * Through the returned object the document to be serialized,
+     * a DOM (Level 3), can be provided to the serializer.
+     * If the serializer does not support casting to a {@link DOM3Serializer}
+     * interface, it should return null.
+     * <p>
+     * In principle only one of asDOM3Serializer() or asContentHander()
+     * should be called.
+     *
+     * @return An Object to be cast to a DOM3Serializer interface into this serializer,
+     *  or null if the serializer is not DOM capable
+     * @throws IOException An I/O exception occured
+     */
+    public Object asDOM3Serializer() throws IOException;
 }

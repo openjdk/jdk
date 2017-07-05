@@ -55,7 +55,10 @@ public class Klass extends Metadata implements ClassConstants {
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
     accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
-    traceIDField  = type.getField("_trace_id");
+    try {
+      traceIDField  = type.getField("_trace_id");
+    } catch(Exception e) {
+    }
     subklass     = new MetadataField(type.getAddressField("_subklass"), 0);
     nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
 
@@ -108,7 +111,11 @@ public class Klass extends Metadata implements ClassConstants {
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
   public Klass    getSubklassKlass()    { return (Klass)    subklass.getValue(this);     }
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
-  public long     traceID() { return traceIDField.getJLong(addr);  }
+
+  public long traceID() {
+    if (traceIDField == null) return 0;
+    return traceIDField.getJLong(addr);
+  }
 
   // computed access flags - takes care of inner classes etc.
   // This is closer to actual source level than getAccessFlags() etc.

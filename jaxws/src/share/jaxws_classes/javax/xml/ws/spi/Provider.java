@@ -41,7 +41,7 @@ import org.w3c.dom.Element;
  * <code>Endpoint</code> objects.
  * <p>
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  */
 public abstract class Provider {
 
@@ -161,7 +161,7 @@ public abstract class Provider {
      *        it must throw a WebServiceException.
      * @return The newly created service delegate.
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public ServiceDelegate createServiceDelegate(
             java.net.URL wsdlDocumentLocation,
@@ -218,7 +218,7 @@ public abstract class Provider {
      * @throws NullPointerException If the <code>null</code>
      * <code>eprInfoset</code> value is given.
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public abstract EndpointReference readEndpointReference(javax.xml.transform.Source eprInfoset);
 
@@ -271,7 +271,7 @@ public abstract class Provider {
      *
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public abstract <T> T getPort(EndpointReference endpointReference,
             Class<T> serviceEndpointInterface,
@@ -333,7 +333,7 @@ public abstract class Provider {
      * @throws WebServiceException If an error occurs while creating the
      *                             <code>W3CEndpointReference</code>.
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      */
     public abstract W3CEndpointReference createW3CEndpointReference(String address, QName serviceName, QName portName,
             List<Element> metadata, String wsdlDocumentLocation, List<Element> referenceParameters);
@@ -407,7 +407,7 @@ public abstract class Provider {
      *     </ul>
      * @throws WebServiceException If an error occurs while creating the
      *                             <code>W3CEndpointReference</code>.
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public W3CEndpointReference createW3CEndpointReference(String address,
             QName interfaceName, QName serviceName, QName portName,
@@ -434,7 +434,7 @@ public abstract class Provider {
      *        endpoint.  Supported features not in the <code>features
      *        </code> parameter will have their default values.
      * @return The newly created endpoint.
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public Endpoint createAndPublishEndpoint(String address,
             Object implementor, WebServiceFeature ... features) {
@@ -455,7 +455,7 @@ public abstract class Provider {
      *        endpoint.  Supported features not in the <code>features
      *        </code> parameter will have their default values.
      * @return The newly created endpoint.
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public Endpoint createEndpoint(String bindingId, Object implementor,
             WebServiceFeature ... features) {
@@ -478,7 +478,7 @@ public abstract class Provider {
      *        endpoint.  Supported features not in the <code>features
      *        </code> parameter will have their default values.
      * @return The newly created endpoint.
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public Endpoint createEndpoint(String bindingId, Class<?> implementorClass,
             Invoker invoker, WebServiceFeature ... features) {

@@ -33,7 +33,7 @@ import javax.xml.ws.wsaddressing.W3CEndpointReference;
  * protocol binding and associated context objects for request and
  * response message processing.
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  *
  * @see javax.xml.ws.Binding
  **/
@@ -154,7 +154,7 @@ public interface BindingProvider {
      *
      * @see W3CEndpointReference
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      */
     public EndpointReference getEndpointReference();
 
@@ -176,7 +176,7 @@ public interface BindingProvider {
      * @throws java.lang.UnsupportedOperationException If this
      * <code>BindingProvider</code> uses the XML/HTTP binding.
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      */
     public <T extends EndpointReference> T getEndpointReference(Class<T> clazz);
 }

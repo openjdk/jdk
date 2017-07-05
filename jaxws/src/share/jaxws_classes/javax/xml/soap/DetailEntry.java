@@ -30,6 +30,8 @@ package javax.xml.soap;
  * a <code>SOAPFault</code> object.  A <code>DetailEntry</code> object,
  * which carries information about errors related to the <code>SOAPBody</code>
  * object that contains it, is application-specific.
+ *
+ * @since 1.6
  */
 public interface DetailEntry extends SOAPElement {
 

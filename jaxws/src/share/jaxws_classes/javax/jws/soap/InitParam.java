@@ -25,7 +25,8 @@
 
 package javax.jws.soap;
 
-/*
+/**
+ * @since 1.6
  * @Deprecated
  */
 @Deprecated public @interface InitParam {

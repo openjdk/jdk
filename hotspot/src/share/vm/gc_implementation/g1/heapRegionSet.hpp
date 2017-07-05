@@ -119,7 +119,7 @@ protected:
 public:
   const char* name() { return _name; }
 
-  uint length() { return _count.length(); }
+  uint length() const { return _count.length(); }
 
   bool is_empty() { return _count.length() == 0; }
 

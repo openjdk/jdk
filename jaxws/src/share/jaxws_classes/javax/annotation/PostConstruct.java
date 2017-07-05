@@ -70,9 +70,10 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <li>If the method throws an unchecked exception the class MUST NOT be put into
  * service except in the case of EJBs where the EJB can handle exceptions and
  * even recover from them.</li></ul>
- * @since Common Annotations 1.0
+ *
  * @see javax.annotation.PreDestroy
  * @see javax.annotation.Resource
+ * @since 1.6, Common Annotations 1.0
  */
 @Documented
 @Retention (RUNTIME)

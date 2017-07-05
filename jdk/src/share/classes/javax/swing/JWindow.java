@@ -272,6 +272,8 @@ public class JWindow extends Window implements Accessible,
     /**
      * Called by the constructor methods to create the default
      * <code>rootPane</code>.
+     *
+     * @return a new {@code JRootPane}
      */
     protected JRootPane createRootPane() {
         JRootPane rp = new JRootPane();

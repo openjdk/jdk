@@ -39,7 +39,7 @@ package javax.xml.ws.handler;
  *
  *  @see javax.xml.ws.Service#setHandlerResolver
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface HandlerResolver {
 

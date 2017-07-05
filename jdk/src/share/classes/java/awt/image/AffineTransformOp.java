@@ -324,7 +324,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * this part of the rectangle is not drawn.  If the coordinates
      * of the rectangle are positive then the filtered image is drawn at
      * that position in the destination <code>Raster</code>.
-     * <p>
+     *
      * @param src The <CODE>Raster</CODE> to transform.
      * @param dst The <CODE>Raster</CODE> in which to store the results of the
      * transformation.

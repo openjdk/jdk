@@ -1158,19 +1158,19 @@ public:
   }
 
   // The total number of regions in the heap.
-  uint n_regions() { return _hrs.length(); }
+  uint n_regions() const { return _hrs.length(); }
 
   // The max number of regions in the heap.
-  uint max_regions() { return _hrs.max_length(); }
+  uint max_regions() const { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  uint free_regions() { return _free_list.length(); }
+  uint free_regions() const { return _free_list.length(); }
 
   // The number of regions that are not completely free.
-  uint used_regions() { return n_regions() - free_regions(); }
+  uint used_regions() const { return n_regions() - free_regions(); }
 
   // The number of regions available for "regular" expansion.
-  uint expansion_regions() { return _expansion_regions; }
+  uint expansion_regions() const { return _expansion_regions; }
 
   // Factory method for HeapRegion instances. It will return NULL if
   // the allocation fails.
@@ -1392,8 +1392,7 @@ public:
   // As above but starting from region r
   void collection_set_iterate_from(HeapRegion* r, HeapRegionClosure *blk);
 
-  // Returns the first (lowest address) compactible space in the heap.
-  virtual CompactibleSpace* first_compactible_space();
+  HeapRegion* next_compaction_region(const HeapRegion* from) const;
 
   // A CollectedHeap will contain some number of spaces.  This finds the
   // space containing a given address, or else returns NULL.

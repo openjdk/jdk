@@ -56,6 +56,8 @@ import javax.xml.namespace.QName;
  *    d.addDetailEntry(name);
  *    Iterator it = d.getDetailEntries();
  * </PRE>
+ *
+ * @since 1.6
  */
 public interface Detail extends SOAPFaultElement {
 
@@ -85,7 +87,7 @@ public interface Detail extends SOAPFaultElement {
      * DetailEntry object to this Detail object.
      *
      * @see Detail#addDetailEntry(Name name)
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public DetailEntry addDetailEntry(QName qname) throws SOAPException;
 

@@ -62,7 +62,7 @@ import javax.xml.ws.spi.Provider;
  * <code>endpointName</code> (if specified) MUST match a service and port
  * in the WSDL document.
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 public final class W3CEndpointReferenceBuilder {
     /**
@@ -110,6 +110,7 @@ public final class W3CEndpointReferenceBuilder {
      * @return A <code>W3CEndpointReferenceBuilder</code> instance with
      *   the <code>interfaceName</code> as <code>wsam:InterfaceName</code>
      *   element added to the <code>wsa:Metadata</code> element
+     * @since 1.7
      */
     public W3CEndpointReferenceBuilder interfaceName(QName interfaceName) {
         this.interfaceName = interfaceName;
@@ -253,7 +254,7 @@ public final class W3CEndpointReferenceBuilder {
      * @throws java.lang.IllegalArgumentException if <code>element</code>
      * is <code>null</code>.
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public W3CEndpointReferenceBuilder element(Element element) {
         if (element == null) {
@@ -277,7 +278,7 @@ public final class W3CEndpointReferenceBuilder {
      * @throws java.lang.IllegalArgumentException if <code>name</code>
      *   or <code>value</code> is <code>null</code>.
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public W3CEndpointReferenceBuilder attribute(QName name, String value) {
         if (name == null || value == null) {

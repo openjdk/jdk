@@ -64,14 +64,14 @@ class ClassDefinition implements Constants {
     protected boolean nestError;
     protected UplevelReference references;
     protected boolean referencesFrozen;
-    private Hashtable fieldHash = new Hashtable(31);
+    private Hashtable<Identifier, MemberDefinition> fieldHash = new Hashtable<>(31);
     private int abstr;
 
     // Table of local and anonymous classes whose internal names are constructed
     // using the current class as a prefix.  This is part of a fix for
     // bugid 4054523 and 4030421.  See also 'Environment.getClassDefinition'
     // and 'BatchEnvironment.makeClassDefinition'.  Allocated on demand.
-    private Hashtable localClasses = null;
+    private Hashtable<String, ClassDefinition> localClasses = null;
     private final int LOCAL_CLASSES_SIZE = 31;
 
     // The immediately surrounding context in which the class appears.
@@ -378,7 +378,7 @@ class ClassDefinition implements Constants {
         return firstMember;
     }
     public final MemberDefinition getFirstMatch(Identifier name) {
-        return (MemberDefinition)fieldHash.get(name);
+        return fieldHash.get(name);
     }
 
     /**
@@ -519,9 +519,9 @@ class ClassDefinition implements Constants {
 
         // We check for any abstract methods inherited or declared
         // by this class.
-        Iterator methods = getMethods();
+        Iterator<MemberDefinition> methods = getMethods();
         while (methods.hasNext()) {
-            MemberDefinition method = (MemberDefinition) methods.next();
+            MemberDefinition method = methods.next();
 
             if (method.isAbstract()) {
                 return true;
@@ -623,12 +623,11 @@ class ClassDefinition implements Constants {
         // general can return methods which are not visible to the
         // current package.  We need to make sure that these do not
         // prevent this class from being implemented.
-        Iterator otherMethods = intDef.getMethods();
+        Iterator<MemberDefinition> otherMethods = intDef.getMethods();
 
         while (otherMethods.hasNext()) {
             // Get one of the methods from intDef...
-            MemberDefinition method =
-                (MemberDefinition) otherMethods.next();
+            MemberDefinition method = otherMethods.next();
 
             Identifier name = method.getName();
             Type type = method.getType();
@@ -996,14 +995,14 @@ class ClassDefinition implements Constants {
         MemberDefinition tentative = null;
 
         // A list of other methods which may be maximally specific too.
-        List candidateList = null;
+        List<MemberDefinition> candidateList = null;
 
         // Get all the methods inherited by this class which
         // have the name `methodName'.
-        Iterator methods = allMethods.lookupName(methodName);
+        Iterator<MemberDefinition> methods = allMethods.lookupName(methodName);
 
         while (methods.hasNext()) {
-            MemberDefinition method = (MemberDefinition)methods.next();
+            MemberDefinition method = methods.next();
 
             // See if this method is applicable.
             if (!env.isApplicable(method, argumentTypes)) {
@@ -1046,7 +1045,7 @@ class ClassDefinition implements Constants {
                     // list of other candidates.
                     if (!env.isMoreSpecific(tentative,method)) {
                         if (candidateList == null) {
-                            candidateList = new ArrayList();
+                            candidateList = new ArrayList<>();
                         }
                         candidateList.add(method);
                     }
@@ -1057,9 +1056,9 @@ class ClassDefinition implements Constants {
         if (tentative != null && candidateList != null) {
             // Find out if our `tentative' match is a uniquely
             // maximally specific.
-            Iterator candidates = candidateList.iterator();
+            Iterator<MemberDefinition> candidates = candidateList.iterator();
             while (candidates.hasNext()) {
-                MemberDefinition method = (MemberDefinition)candidates.next();
+                MemberDefinition method = candidates.next();
                 if (!env.isMoreSpecific(tentative, method)) {
                     throw new AmbiguousMember(tentative, method);
                 }
@@ -1186,13 +1185,13 @@ class ClassDefinition implements Constants {
     // methods so that we can correctly detect that this class is
     // indeed abstract and so that we can give somewhat comprehensible
     // error messages.
-    private List permanentlyAbstractMethods = new ArrayList();
+    private List<MemberDefinition> permanentlyAbstractMethods = new ArrayList<>();
 
     /**
      * This method returns an Iterator of all abstract methods
      * in our superclasses which we are unable to implement.
      */
-    protected Iterator getPermanentlyAbstractMethods() {
+    protected Iterator<MemberDefinition> getPermanentlyAbstractMethods() {
         // This method can only be called after collectInheritedMethods.
         if (allMethods == null) {
             throw new CompilerError("isPermanentlyAbstract() called early");
@@ -1239,10 +1238,10 @@ class ClassDefinition implements Constants {
 
         try {
             ClassDefinition pClass = parent.getClassDefinition(env);
-            Iterator methods = pClass.getMethods(env);
+            Iterator<MemberDefinition> methods = pClass.getMethods(env);
             while (methods.hasNext()) {
                 MemberDefinition method =
-                    (MemberDefinition) methods.next();
+                    methods.next();
 
                 // Private methods are not inherited.
                 //
@@ -1522,7 +1521,7 @@ class ClassDefinition implements Constants {
             // Make sure that we add all unimplementable methods from our
             // superclass to our list of unimplementable methods.
             ClassDefinition sc = scDecl.getClassDefinition();
-            Iterator supIter = sc.getPermanentlyAbstractMethods();
+            Iterator<MemberDefinition> supIter = sc.getPermanentlyAbstractMethods();
             while (supIter.hasNext()) {
                 permanentlyAbstractMethods.add(supIter.next());
             }
@@ -1587,7 +1586,7 @@ class ClassDefinition implements Constants {
      * Get an Iterator of all methods which could be accessed in an
      * instance of this class.
      */
-    public Iterator getMethods(Environment env) {
+    public Iterator<MemberDefinition> getMethods(Environment env) {
         if (allMethods == null) {
             collectInheritedMethods(env);
         }
@@ -1599,7 +1598,7 @@ class ClassDefinition implements Constants {
      * instance of this class.  Throw a compiler error if we haven't
      * generated this information yet.
      */
-    public Iterator getMethods() {
+    public Iterator<MemberDefinition> getMethods() {
         if (allMethods == null) {
             throw new CompilerError("getMethods: too early");
         }
@@ -1636,7 +1635,7 @@ class ClassDefinition implements Constants {
      * affect our compilation.
      */
     protected void addMirandaMethods(Environment env,
-                                     Iterator mirandas) {
+                                     Iterator<MemberDefinition> mirandas) {
         // do nothing.
     }
 
@@ -1921,11 +1920,11 @@ class ClassDefinition implements Constants {
             // insert this at the front, because of initialization order
             field.nextMember = firstMember;
             firstMember = field;
-            field.nextMatch = (MemberDefinition)fieldHash.get(field.name);
+            field.nextMatch = fieldHash.get(field.name);
         } else {
             lastMember.nextMember = field;
             lastMember = field;
-            field.nextMatch = (MemberDefinition)fieldHash.get(field.name);
+            field.nextMatch = fieldHash.get(field.name);
         }
         fieldHash.put(field.name, field);
     }
@@ -2013,13 +2012,13 @@ class ClassDefinition implements Constants {
         if (localClasses == null) {
             return null;
         } else {
-            return (ClassDefinition)localClasses.get(name);
+            return localClasses.get(name);
         }
     }
 
     public void addLocalClass(ClassDefinition c, String name) {
         if (localClasses == null) {
-            localClasses = new Hashtable(LOCAL_CLASSES_SIZE);
+            localClasses = new Hashtable<>(LOCAL_CLASSES_SIZE);
         }
         localClasses.put(name, c);
     }

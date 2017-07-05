@@ -1639,9 +1639,9 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
       if (fr.is_first_frame()) break;
       address pc = fr.pc();
       if (fr.is_interpreted_frame()) {
-        intptr_t bcx = fr.interpreter_frame_bcx();
+        address bcp = fr.interpreter_frame_bcp();
         method = fr.interpreter_frame_method();
-        bci =  fr.is_bci(bcx) ? bcx : method->bci_from((address)bcx);
+        bci =  method->bci_from(bcp);
         fr = fr.sender(&map);
       } else {
         CodeBlob* cb = fr.cb();

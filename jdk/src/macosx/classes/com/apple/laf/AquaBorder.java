@@ -75,7 +75,7 @@ public abstract class AquaBorder implements Border, UIResource {
     protected AquaBorder deriveBorderForSize(final Size size) {
         try {
             final Class<? extends AquaBorder> clazz = getClass();
-            final AquaBorder border = clazz.getConstructor(new Class[] { clazz }).newInstance(new Object[] { this });
+            final AquaBorder border = clazz.getConstructor(new Class<?>[] { clazz }).newInstance(new Object[] { this });
             border.setSize(size);
             return border;
         } catch (final Throwable e) {

@@ -32,7 +32,7 @@ import javax.xml.bind.JAXBContext;
  *  protocol agnostic XML message and contains methods that
  *  provide access to the payload of the message.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface LogicalMessage {
 

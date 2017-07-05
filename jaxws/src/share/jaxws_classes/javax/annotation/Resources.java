@@ -32,7 +32,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * This class is used to allow multiple resources declarations.
  *
  * @see javax.annotation.Resource
- * @since Common Annotations 1.0
+ * @since 1.6, Common Annotations 1.0
  */
 
 @Documented

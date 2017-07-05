@@ -137,7 +137,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         limit = (entries == null) ? 0 : entries.size(); // handle empty set
         posn = 0; // reset
 
-        // mimimize the number of calls to processReturnCode()
+        // minimize the number of calls to processReturnCode()
         // (expensive when batchSize is small and there are many results)
         if ((res.status != LdapClient.LDAP_SUCCESS) ||
             ((res.status == LdapClient.LDAP_SUCCESS) &&

@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -122,7 +124,106 @@ public class SerializerMessages_ca extends ListResourceBundle {
         "Userinfo may not be specified if host is not specified"},
 
       { MsgKey.ER_SCHEME_REQUIRED,
-        "Scheme is required!"}
+        "Scheme is required!"},
+
+      /*
+       * Note to translators:  The words 'Properties' and
+       * 'SerializerFactory' in this message are Java class names
+       * and should not be translated.
+       */
+      {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
+          "L''objecte de propietats passat a SerializerFactory no t\u00e9 cap propietat ''{0}''." },
+
+      {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
+          "Av\u00eds: el temps d''execuci\u00f3 de Java no d\u00f3na suport a la codificaci\u00f3 ''{0}''." },
+
+       {MsgKey.ER_FEATURE_NOT_FOUND,
+       "El par\u00e0metre ''{0}'' no es reconeix."},
+
+       {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+       "El par\u00e0metre ''{0}'' es reconeix per\u00f2 el valor sol\u00b7licitat no es pot establir."},
+
+       {MsgKey.ER_STRING_TOO_LONG,
+       "La cadena resultant \u00e9s massa llarga per cabre en una DOMString: ''{0}''."},
+
+       {MsgKey.ER_TYPE_MISMATCH_ERR,
+       "El tipus de valor per a aquest nom de par\u00e0metre \u00e9s incompatible amb el tipus de valor esperat."},
+
+       {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+       "La destinaci\u00f3 de sortida per a les dades que s'ha d'escriure era nul\u00b7la."},
+
+       {MsgKey.ER_UNSUPPORTED_ENCODING,
+       "S'ha trobat una codificaci\u00f3 no suportada."},
+
+       {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+       "El node no s'ha pogut serialitzat."},
+
+       {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+       "La secci\u00f3 CDATA cont\u00e9 un o m\u00e9s marcadors d'acabament ']]>'."},
+
+       {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+           "No s'ha pogut crear cap inst\u00e0ncia per comprovar si t\u00e9 un format correcte o no. El par\u00e0metre del tipus ben format es va establir en cert, per\u00f2 la comprovaci\u00f3 de format no s'ha pogut realitzar."
+       },
+
+       {MsgKey.ER_WF_INVALID_CHARACTER,
+           "El node ''{0}'' cont\u00e9 car\u00e0cters XML no v\u00e0lids."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+           "S''ha trobat un car\u00e0cter XML no v\u00e0lid (Unicode: 0x{0}) en el comentari."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+           "S''ha trobat un car\u00e0cter XML no v\u00e0lid (Unicode: 0x{0}) en les dades d''instrucci\u00f3 de proc\u00e9s."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+           "S''ha trobat un car\u00e0cter XML no v\u00e0lid (Unicode: 0x''{0})'' en els continguts de la CDATASection."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+           "S''ha trobat un car\u00e0cter XML no v\u00e0lid (Unicode: 0x''{0})'' en el contingut de dades de car\u00e0cter del node."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+           "S''han trobat car\u00e0cters XML no v\u00e0lids al node {0} anomenat ''{1}''."
+       },
+
+       { MsgKey.ER_WF_DASH_IN_COMMENT,
+           "La cadena \"--\" no est\u00e0 permesa dins dels comentaris."
+       },
+
+       {MsgKey.ER_WF_LT_IN_ATTVAL,
+           "El valor d''atribut \"{1}\" associat amb un tipus d''element \"{0}\" no pot contenir el car\u00e0cter ''<''."
+       },
+
+       {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+           "La refer\u00e8ncia de l''entitat no analitzada \"&{0};\" no est\u00e0 permesa."
+       },
+
+       {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+           "La refer\u00e8ncia externa de l''entitat \"&{0};\" no est\u00e0 permesa en un valor d''atribut."
+       },
+
+       {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+           "El prefix \"{0}\" no es pot vincular a l''espai de noms \"{1}\"."
+       },
+
+       {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+           "El nom local de l''element \"{0}\" \u00e9s nul."
+       },
+
+       {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+           "El nom local d''atr \"{0}\" \u00e9s nul."
+       },
+
+       { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+           "El text de recanvi del node de l''entitat \"{0}\" cont\u00e9 un node d''element \"{1}\" amb un prefix de no enlla\u00e7at \"{2}\"."
+       },
+
+       { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+           "El text de recanvi del node de l''entitat \"{0}\" cont\u00e9 un node d''atribut \"{1}\" amb un prefix de no enlla\u00e7at \"{2}\"."
+       },
 
     };
     return contents;

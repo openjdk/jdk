@@ -31,7 +31,7 @@ import java.util.ResourceBundle;
 /**
  * Formats error messages.
  *
- * @since JAXB1.0
+ * @since JAXB 1.0
  */
 public class Messages
 {

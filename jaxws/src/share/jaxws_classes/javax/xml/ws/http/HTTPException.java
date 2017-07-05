@@ -32,7 +32,7 @@ package javax.xml.ws.http;
  *  <p>Since there is no standard format for faults or exceptions
  *  in XML/HTTP messaging, only the HTTP status code is captured.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public class HTTPException extends javax.xml.ws.ProtocolException  {
 

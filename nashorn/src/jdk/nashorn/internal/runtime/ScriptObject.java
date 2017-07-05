@@ -3626,7 +3626,6 @@ public abstract class ScriptObject implements PropertyAccess {
         return MH.insertArguments(KNOWNFUNCPROPGUARDPROTO, 1, map, getter, depth, func);
     }
 
-    @SuppressWarnings("unused")
     private static ScriptObject getProto(final ScriptObject self, final int depth) {
         ScriptObject proto = self;
         for (int d = 0; d < depth; d++) {
