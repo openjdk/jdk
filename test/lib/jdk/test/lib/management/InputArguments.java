@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MemoryAccessProvider;
+package jdk.test.lib.management;
 
-/**
- * HotSpot specific extension of {@link MemoryAccessProvider}.
- */
-public interface HotSpotMemoryAccessProvider extends MemoryAccessProvider {
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.List;
 
+public class InputArguments {
     /**
-     * @throws IllegalArgumentException if the address computed from {@code base} and
-     *             {@code displacement} does not denote a location holding a narrow oop
+     * Gets the array of strings containing input arguments passed to the VM
+     *
+     * @return arguments
      */
-    JavaConstant readNarrowOopConstant(Constant base, long displacement);
-
-    Constant readKlassPointerConstant(Constant base, long displacement);
-
-    Constant readNarrowKlassPointerConstant(Constant base, long displacement);
-
-    Constant readMethodPointerConstant(Constant base, long displacement);
+    public static String[] getVmInputArgs() {
+        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+        List<String> args = runtime.getInputArguments();
+        return args.toArray(new String[args.size()]);
+    }
 }
