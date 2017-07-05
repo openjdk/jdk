@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 4973278 8015586
-   @run main PrintToDir
-   @summary Must throw exception when printing to an invalid filename - a dir.
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 4973278 8015586
+ * @run main PrintToDir
+ * @summary Must throw exception when printing to an invalid filename - a dir.
+ */
+
 import java.io.*;
 import java.net.*;
 import java.awt.*;

@@ -146,14 +146,18 @@ static const char* nbasename(const char* progname) {
 #define USAGE_OPTIONS \
     "\n" \
     "Unpacking Options\n" \
-    "  -H{h}, --deflate-hint={h}     override transmitted deflate hint: true, false, or keep (default)\n" \
+    "  -H{h}, --deflate-hint={h}     override transmitted deflate hint:\n" \
+    "                                true, false, or keep (default)\n" \
     "  -r, --remove-pack-file        remove input file after unpacking\n" \
     "  -v, --verbose                 increase program verbosity\n" \
     "  -q, --quiet                   set verbosity to lowest level\n" \
-    "  -l{F}, --log-file={F}         output to the given log file, or '-' for standard output (default)\n" \
+    "  -l{F}, --log-file={F}         output to the given log file,\n" \
+    "                                or '-' for standard output (default)\n" \
     "  -?, -h, --help                print this message\n" \
     "  -V, --version                 print program version\n" \
-    "  -J{X}                         Java VM argument (ignored)\n"
+    "\n" \
+    "Exit Status:\n" \
+    "  0 if successful, >0 if an error occurred\n"
 
 static void usage(unpacker* u, const char* progname, bool full = false) {
   // WinMain does not set argv[0] to the progrname

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.tools.keytool;
 
 /**
- * This class represents the <code>ResourceBundle</code>
+ * <p> This class represents the <code>ResourceBundle</code>
  * for the keytool.
  *
  */
@@ -48,14 +48,14 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                  "Ferramenta de Gerenciamento de Chave e Certificado"},
         {"Commands.", "Comandos:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Use \"keytool -command_name -help\" para uso de command_name"},
+                "Utilize \"keytool -command_name -help\" para uso de command_name.\nUtilize a op\u00E7\u00E3o -conf <url> para especificar um arquivo de op\u00E7\u00F5es pr\u00E9-configurado."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "Gera uma solicita\u00E7\u00E3o de certificado"}, //-certreq
         {"Changes.an.entry.s.alias",
                 "Altera um alias de entrada"}, //-changealias
         {"Deletes.an.entry",
-                "Deleta uma entrada"}, //-delete
+                "Exclui uma entrada"}, //-delete
         {"Exports.certificate",
                 "Exporta o certificado"}, //-exportcert
         {"Generates.a.key.pair",
@@ -306,7 +306,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"Entry.type.type.", "Tipo de entrada: {0}"},
         {"Certificate.chain.length.", "Comprimento da cadeia de certificados: "},
         {"Certificate.i.1.", "Certificado[{0,number,integer}]:"},
-        {"Certificate.fingerprint.SHA1.", "Fingerprint (SHA1) do certificado: "},
+        {"Certificate.fingerprint.SHA.256.", "Fingerprint (SHA-256) do certificado: "},
         {"Keystore.type.", "Tipo de \u00E1rea de armazenamento de chaves: "},
         {"Keystore.provider.", "Fornecedor da \u00E1rea de armazenamento de chaves: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -346,7 +346,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN se for igual ao de <{0}>)"},
         {".PATTERN.printX509Cert",
-                "Propriet\u00E1rio: {0}\nEmissor: {1}\nN\u00FAmero de s\u00E9rie: {2}\nV\u00E1lido de: {3} a: {4}\nFingerprints do certificado:\n\t MD5:  {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t Nome do algoritmo de assinatura: {8}\n\t Vers\u00E3o: {9}"},
+                "Propriet\u00E1rio: {0}\nEmissor: {1}\nN\u00FAmero de s\u00E9rie: {2}\nV\u00E1lido de {3} at\u00E9 {4}\nFingerprints do certificado:\n\t SHA1: {5}\n\t SHA256: {6}\nNome do algoritmo de assinatura: {7}\nAlgoritmo de Chave P\u00FAblica do Assunto: {8} ({9,number,#})\nVers\u00E3o: {10}"},
         {"What.is.your.first.and.last.name.",
                 "Qual \u00E9 o seu nome e o seu sobrenome?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -432,6 +432,8 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
+     *
+     * <p>
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */

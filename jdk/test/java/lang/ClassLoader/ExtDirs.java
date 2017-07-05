@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,24 @@
 /*
  * @test
  * @bug 8060206 8067366
+ * @library /lib/testlibrary
  * @summary Extension mechanism is removed
  */
 
-import java.io.*;
+import jdk.testlibrary.ProcessTools;
+
 import java.lang.Integer;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ExtDirs {
+    private static String TEST_CLASSES = System.getProperty("test.classes", ".");
+
     private static String[] VALUES = new String[] {
             null,
             "",
             "\"\""
     };
+
     public static void main(String... args) throws Exception {
         String value = System.getProperty("java.ext.dirs");
         System.out.format("java.ext.dirs = '%s'%n", value);
@@ -65,59 +68,20 @@ public class ExtDirs {
         start(2, "-Djava.ext.dirs=\"\"");
     }
 
-    static ProcessBuilder newProcessBuilder(int testParam, String... args) throws Exception {
-        List<String> commands = new ArrayList<>();
-        String java = System.getProperty("java.home") + "/bin/java";
-        commands.add(java);
-        for (String s : args) {
-            commands.add(s);
-        }
-        String cpath = System.getProperty("test.classes", ".");
-        commands.add("-cp");
-        commands.add(cpath);
-        commands.add("ExtDirs");
-        commands.add(String.valueOf(testParam));
-
-        System.out.println("Testing " + commands.stream().collect(Collectors.joining(" ")));
-        return new ProcessBuilder(commands);
+    static String[] launchOptions(int testParam, String... args) {
+        return Stream.concat(Stream.of(args),
+                             Stream.of("-cp", TEST_CLASSES, "ExtDirs",
+                                       String.valueOf(testParam)))
+                     .toArray(String[]::new);
     }
 
     static void start(int testParam, String... args) throws Exception {
-        start(newProcessBuilder(testParam, args), false);
+        ProcessTools.executeTestJava(launchOptions(testParam, args))
+                    .shouldHaveExitValue(0);
     }
 
     static void fatalError(int testParam, String... args) throws Exception {
-        start(newProcessBuilder(testParam, args), true);
-    }
-
-    static void start(ProcessBuilder pb, boolean fatalError) throws Exception {
-        final Process process = pb.start();
-        BufferedReader errorStream = new BufferedReader(
-                new InputStreamReader(process.getErrorStream()));
-        BufferedReader outStream = new BufferedReader(
-                new InputStreamReader(process.getInputStream()));
-        String errorLine;
-        StringBuilder errors = new StringBuilder();
-        String outLines;
-        while ((errorLine = errorStream.readLine()) != null) {
-            errors.append(errorLine).append("\n");
-        }
-        while ((outLines = outStream.readLine()) != null) {
-            System.out.println(outLines);
-        }
-        errorLine = errors.toString();
-        System.err.println(errorLine);
-        process.waitFor(1000, TimeUnit.MILLISECONDS);
-        int exitStatus = process.exitValue();
-        if (fatalError) {
-            if (exitStatus == 0) {
-                throw new RuntimeException("Expected fatal error");
-            }
-            if (!errorLine.contains("Could not create the Java Virtual Machine")) {
-                throw new RuntimeException(errorLine);
-            }
-        } else if (exitStatus != 0) {
-            throw new RuntimeException("Failed: " + errorLine);
-        }
+        ProcessTools.executeTestJava(launchOptions(testParam, args))
+                    .stderrShouldContain("Could not create the Java Virtual Machine");
     }
 }

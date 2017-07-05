@@ -73,7 +73,7 @@ public final class HTTPInputSource extends XMLInputSource {
      *                     base system identifier, if possible.
      */
     public HTTPInputSource(String publicId, String systemId, String baseSystemId) {
-        super(publicId, systemId, baseSystemId);
+        super(publicId, systemId, baseSystemId, false);
     } // <init>(String,String,String)
 
     /**

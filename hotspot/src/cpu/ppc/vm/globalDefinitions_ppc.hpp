@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,5 +51,7 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // Include Transactional Memory lock eliding optimization
 #define INCLUDE_RTM_OPT 1
 #endif
+
+#define SUPPORT_RESERVED_STACK_AREA
 
 #endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP

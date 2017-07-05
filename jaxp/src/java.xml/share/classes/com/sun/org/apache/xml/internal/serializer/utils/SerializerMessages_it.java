@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_it.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 07:02:00 gmolloy Exp $
+ * $Id: SerializerMessages_it.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 03:53:19 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -203,31 +203,31 @@ public class SerializerMessages_it extends ListResourceBundle {
                 "Avvertenza: la codifica ''{0}'' non \u00E8 supportata da Java Runtime." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "Il parametro ''{0}'' non \u00e8 riconosciuto."},
+             "Il parametro {0} non \u00E8 riconosciuto."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "Il parametro ''{0}'' \u00e8 riconosciuto ma non \u00e8 possibile impostare il valore richiesto."},
+             "Il parametro ''{0}'' \u00E8 stato riconosciuto, ma non \u00E8 possibile impostare il valore richiesto."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "La stringa risultante \u00e8 troppo lunga per essere inserita in DOMString: ''{0}''."},
+             "La stringa risultante \u00E8 troppo lunga per adattarsi in DOMString: ''{0}''."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "Il tipo di valore per questo nome di parametro non \u00e8 compatibile con il tipo di valore previsto."},
+             "Il tipo di valore per questo nome parametro non \u00E8 compatibile con il tipo di valore previsto. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "La destinazione di output in cui scrivere i dati era nulla."},
+             "La destinazione di output per i dati da scrivere \u00E8 nulla."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "\u00c8 stata rilevata una codifica non supportata."},
+             "\u00C8 stata rilevata una codifica non supportata."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
              "Impossibile serializzare il nodo."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "La Sezione CDATA contiene uno o pi\u00f9 markers di termine ']]>'."},
+             "La sezione CDATA contiene uno o pi\u00F9 indicatori di fine ']]>'."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "Impossibile creare un'istanza del controllore Well-Formedness.  Il parametro well-formed \u00e8 stato impostato su true ma non \u00e8 possibile eseguire i controlli well-formedness."
+                 "Impossibile creare un'istanza dello strumento di controllo della correttezza del formato. Il parametro con formato valido \u00E8 impostato su true, ma non \u00E8 possibile eseguire il controllo della correttezza del formato."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
@@ -235,59 +235,63 @@ public class SerializerMessages_it extends ListResourceBundle {
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "Trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nell''elaborazione di instructiondata."
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei dati dell''istruzione di elaborazione."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nel contenuto di CDATASection."
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei contenuti della sezione CDATA."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nel contenuto dati di caratteri del nodo. "
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel contenuto dei dati carattere del nodo."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "Carattere XML non valido rilevato nel nodo {0} denominato ''{1}''."
+                 "\u00C8 stato trovato un carattere o caratteri XML non validi nel nodo {0} denominato ''{1}''."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "La stringa \"--\" non \u00e8 consentita nei commenti."
+                 "La stringa \"--\" non \u00E8 consentita nei commenti."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "Il valore dell''''attributo \"{1}\" associato con un tipo di elemento \"{0}\" non deve contenere il carattere ''<''."
+                 "Il valore dell''attributo \"{1}\" associato a un tipo di elemento \"{0}\" non deve essere contenere il carattere ''<''."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "Il riferimento entit\u00e0 non analizzata \"&{0};\" non \u00e8 permesso."
+                 "Il riferimento di entit\u00E0 non analizzata \"&{0};\" non \u00E8 consentito."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "Il riferimento all''''entit\u00e0 esterna \"&{0};\" non \u00e8 permesso in un valore attributo."
+                 "Il riferimento di entit\u00E0 esterna \"&{0};\" non \u00E8 consentito in un valore di attributo."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "Il prefisso \"{0}\" non pu\u00f2 essere associato allo spazio nome \"{1}\"."
+                 "Impossibile associare il prefisso \"{0}\" allo spazio di nomi \"{1}\"."
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "Il nome locale dell''''elemento \"{0}\" \u00e8 null."
+                 "Il nome locale dell''elemento \"{0}\" \u00E8 nullo."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "Il nome locale dell''''attributo \"{0}\" \u00e8  null."
+                 "Il nome locale dell''attributo \"{0}\" \u00E8 nullo."
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "Il testo di sostituzione del nodo di entit\u00e0 \"{0}\" contiene un nodo di elemento \"{1}\" con un prefisso non associato \"{2}\"."
+                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo elemento \"{1}\" con un prefisso non associato \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "Il testo di sostituzione del nodo di entit\u00e0 \"{0}\" contiene un nodo di attributo \"{1}\" con un prefisso non associato \"{2}\"."
+                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo attributo \"{1}\" con un prefisso non associato \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Si \u00E8 verificato un errore durante la scrittura del subset interno."
              },
 
         };

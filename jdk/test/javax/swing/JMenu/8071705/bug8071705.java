@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8071705
  * @summary  Java application menu misbehaves when running multiple screen stacked vertically
  * @build bug8071705

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: ErrorMessages_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
+ * $Id: ErrorMessages_sv.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 01:57:20 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -372,7 +372,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "Ogiltigt underordnat element."},
+        "Otill\u00E5tet underordnat element."},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -599,6 +599,9 @@ public class ErrorMessages_sv extends ListResourceBundle {
          */
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
         "TransformerFactory k\u00E4nner inte igen attributet ''{0}''."},
+
+        {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
+        "Fel v\u00E4rde har angetts f\u00F6r attributet ''{0}''."},
 
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java

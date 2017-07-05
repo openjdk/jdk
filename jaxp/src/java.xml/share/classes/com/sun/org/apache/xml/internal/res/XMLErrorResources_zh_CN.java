@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_zh_CN.java /st_wptg_1.8.0.0.0jdk/3 2013/11/11 11:39:28 gmolloy Exp $
+ * $Id: XMLErrorResources_zh_CN.java /st_wptg_1.9.0.0.0jdk/2 2016/04/13 05:10:27 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -269,7 +269,7 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
        "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u65B9\u6848"},
 
     { ER_PATH_INVALID_CHAR,
-       "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u5B57\u7B26: {0}"},
+       "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
        "\u65E0\u6CD5\u4ECE\u7A7A\u5B57\u7B26\u4E32\u8BBE\u7F6E\u65B9\u6848"},

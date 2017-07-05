@@ -221,7 +221,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
                 String systemId = streamSource.getSystemId();
                 inputStream = streamSource.getInputStream();
                 reader = streamSource.getReader();
-                XMLInputSource xmlInputSource = new XMLInputSource(publicId, systemId, null);
+                XMLInputSource xmlInputSource = new XMLInputSource(publicId, systemId, null, false);
                 xmlInputSource.setByteStream(inputStream);
                 xmlInputSource.setCharacterStream(reader);
                 xmlInputSources[i] = xmlInputSource;

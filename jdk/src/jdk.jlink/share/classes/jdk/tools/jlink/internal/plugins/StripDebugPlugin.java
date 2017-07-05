@@ -25,8 +25,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,15 +41,15 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
  * Strip debug attributes plugin
  */
 public final class StripDebugPlugin implements TransformerPlugin {
-    private static final String[] PATTERNS = {"*.diz"};
     public static final String NAME = "strip-debug";
     private final Predicate<String> predicate;
+
     public StripDebugPlugin() {
-        try {
-            predicate = new ResourceFilter(PATTERNS);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        this((path) -> false);
+    }
+
+    StripDebugPlugin(Predicate<String> predicate) {
+        this.predicate = predicate;
     }
 
     @Override

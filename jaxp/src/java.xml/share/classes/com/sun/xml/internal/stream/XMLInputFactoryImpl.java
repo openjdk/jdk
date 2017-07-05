@@ -293,7 +293,7 @@ public class XMLInputFactoryImpl extends javax.xml.stream.XMLInputFactory {
              else if(reader != null){
                  return new XMLInputSource(publicId, systemId,null, reader, null);
              }else{
-                 return new XMLInputSource(publicId, systemId, null);
+                 return new XMLInputSource(publicId, systemId, null, false);
              }
          }
 

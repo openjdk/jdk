@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 package sun.java2d.loops;
 
 import java.awt.Font;
-import java.awt.geom.AffineTransform;
 
 import sun.font.Font2D;
 import sun.font.FontStrike;
-import sun.font.FontStrikeDesc;
 
 /*
  * A FontInfo object holds all calculated or derived data needed

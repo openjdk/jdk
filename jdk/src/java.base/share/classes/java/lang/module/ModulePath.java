@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jdk.internal.module.Checks;
 import jdk.internal.module.ConfigurableModuleFinder;
 import jdk.internal.perf.PerfCounter;
 
@@ -343,8 +342,7 @@ class ModulePath implements ConfigurableModuleFinder {
             String prefix = cf.substring(0, index);
             if (prefix.equals(SERVICES_PREFIX)) {
                 String sn = cf.substring(index);
-                if (Checks.isJavaIdentifier(sn))
-                    return Optional.of(sn);
+                return Optional.of(sn);
             }
         }
         return Optional.empty();
@@ -378,9 +376,6 @@ class ModulePath implements ConfigurableModuleFinder {
      *    to "provides" declarations
      * 5. The Main-Class attribute in the main attributes of the JAR manifest
      *    is mapped to the module descriptor mainClass
-     *
-     * @apiNote This needs to move to somewhere where it can be used by tools,
-     * maybe even a standard API if automatic modules are a Java SE feature.
      */
     private ModuleDescriptor deriveModuleDescriptor(JarFile jf)
         throws IOException
@@ -397,7 +392,7 @@ class ModulePath implements ConfigurableModuleFinder {
         String vs = null;
 
         // find first occurrence of -${NUMBER}. or -${NUMBER}$
-        Matcher matcher = Pattern.compile("-(\\d+(\\.|$))").matcher(mn);
+        Matcher matcher = Patterns.DASH_VERSION.matcher(mn);
         if (matcher.find()) {
             int start = matcher.start();
 
@@ -412,16 +407,13 @@ class ModulePath implements ConfigurableModuleFinder {
         }
 
         // finally clean up the module name
-        mn =  mn.replaceAll("[^A-Za-z0-9]", ".")  // replace non-alphanumeric
-                .replaceAll("(\\.)(\\1)+", ".")   // collapse repeating dots
-                .replaceAll("^\\.", "")           // drop leading dots
-                .replaceAll("\\.$", "");          // drop trailing dots
-
+        mn = cleanModuleName(mn);
 
         // Builder throws IAE if module name is empty or invalid
         ModuleDescriptor.Builder builder
-            = new ModuleDescriptor.Builder(mn, true)
-                .requires(Requires.Modifier.MANDATED, "java.base");
+            = new ModuleDescriptor.Builder(mn)
+                .automatic()
+                .requires(Set.of(Requires.Modifier.MANDATED), "java.base");
         if (vs != null)
             builder.version(vs);
 
@@ -457,7 +449,7 @@ class ModulePath implements ConfigurableModuleFinder {
                     = new BufferedReader(new InputStreamReader(in, "UTF-8"));
                 String cn;
                 while ((cn = nextLine(reader)) != null) {
-                    if (Checks.isJavaIdentifier(cn)) {
+                    if (cn.length() > 0) {
                         providerClasses.add(cn);
                     }
                 }
@@ -476,6 +468,39 @@ class ModulePath implements ConfigurableModuleFinder {
         }
 
         return builder.build();
+    }
+
+    /**
+     * Patterns used to derive the module name from a JAR file name.
+     */
+    private static class Patterns {
+        static final Pattern DASH_VERSION = Pattern.compile("-(\\d+(\\.|$))");
+        static final Pattern NON_ALPHANUM = Pattern.compile("[^A-Za-z0-9]");
+        static final Pattern REPEATING_DOTS = Pattern.compile("(\\.)(\\1)+");
+        static final Pattern LEADING_DOTS = Pattern.compile("^\\.");
+        static final Pattern TRAILING_DOTS = Pattern.compile("\\.$");
+    }
+
+    /**
+     * Clean up candidate module name derived from a JAR file name.
+     */
+    private static String cleanModuleName(String mn) {
+        // replace non-alphanumeric
+        mn = Patterns.NON_ALPHANUM.matcher(mn).replaceAll(".");
+
+        // collapse repeating dots
+        mn = Patterns.REPEATING_DOTS.matcher(mn).replaceAll(".");
+
+        // drop leading dots
+        if (mn.length() > 0 && mn.charAt(0) == '.')
+            mn = Patterns.LEADING_DOTS.matcher(mn).replaceAll("");
+
+        // drop trailing dots
+        int len = mn.length();
+        if (len > 0 && mn.charAt(len-1) == '.')
+            mn = Patterns.TRAILING_DOTS.matcher(mn).replaceAll("");
+
+        return mn;
     }
 
     private Set<String> jarPackages(JarFile jf) {
