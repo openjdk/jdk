@@ -152,6 +152,7 @@ public class ConstructorGenerator extends ClassGenerator {
         }
 
         if (constructor != null) {
+            initPrototype(mi);
             final int arity = constructor.getArity();
             if (arity != MemberInfo.DEFAULT_ARITY) {
                 mi.loadThis();
@@ -193,6 +194,7 @@ public class ConstructorGenerator extends ClassGenerator {
     }
 
     private void initFunctionFields(final MethodGenerator mi) {
+        assert memberCount > 0;
         for (final MemberInfo memInfo : scriptClassInfo.getMembers()) {
             if (!memInfo.isConstructorFunction()) {
                 continue;
@@ -204,37 +206,39 @@ public class ConstructorGenerator extends ClassGenerator {
     }
 
     private void initDataFields(final MethodGenerator mi) {
-         for (final MemberInfo memInfo : scriptClassInfo.getMembers()) {
-            if (!memInfo.isConstructorProperty() || memInfo.isFinal()) {
-                continue;
-            }
-            final Object value = memInfo.getValue();
-            if (value != null) {
-                mi.loadThis();
-                mi.loadLiteral(value);
-                mi.putField(className, memInfo.getJavaName(), memInfo.getJavaDesc());
-            } else if (!memInfo.getInitClass().isEmpty()) {
-                final String clazz = memInfo.getInitClass();
-                mi.loadThis();
-                mi.newObject(clazz);
-                mi.dup();
-                mi.invokeSpecial(clazz, INIT, DEFAULT_INIT_DESC);
-                mi.putField(className, memInfo.getJavaName(), memInfo.getJavaDesc());
-            }
+        assert memberCount > 0;
+        for (final MemberInfo memInfo : scriptClassInfo.getMembers()) {
+           if (!memInfo.isConstructorProperty() || memInfo.isFinal()) {
+               continue;
+           }
+           final Object value = memInfo.getValue();
+           if (value != null) {
+               mi.loadThis();
+               mi.loadLiteral(value);
+               mi.putField(className, memInfo.getJavaName(), memInfo.getJavaDesc());
+           } else if (!memInfo.getInitClass().isEmpty()) {
+               final String clazz = memInfo.getInitClass();
+               mi.loadThis();
+               mi.newObject(clazz);
+               mi.dup();
+               mi.invokeSpecial(clazz, INIT, DEFAULT_INIT_DESC);
+               mi.putField(className, memInfo.getJavaName(), memInfo.getJavaDesc());
+           }
         }
+    }
 
-        if (constructor != null) {
-            mi.loadThis();
-            final String protoName = scriptClassInfo.getPrototypeClassName();
-            mi.newObject(protoName);
-            mi.dup();
-            mi.invokeSpecial(protoName, INIT, DEFAULT_INIT_DESC);
-            mi.dup();
-            mi.loadThis();
-            mi.invokeStatic(PROTOTYPEOBJECT_TYPE, PROTOTYPEOBJECT_SETCONSTRUCTOR,
-                    PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC);
-            mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETPROTOTYPE, SCRIPTFUNCTION_SETPROTOTYPE_DESC);
-        }
+    private void initPrototype(final MethodGenerator mi) {
+        assert constructor != null;
+        mi.loadThis();
+        final String protoName = scriptClassInfo.getPrototypeClassName();
+        mi.newObject(protoName);
+        mi.dup();
+        mi.invokeSpecial(protoName, INIT, DEFAULT_INIT_DESC);
+        mi.dup();
+        mi.loadThis();
+        mi.invokeStatic(PROTOTYPEOBJECT_TYPE, PROTOTYPEOBJECT_SETCONSTRUCTOR,
+                PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC);
+        mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETPROTOTYPE, SCRIPTFUNCTION_SETPROTOTYPE_DESC);
     }
 
     /**

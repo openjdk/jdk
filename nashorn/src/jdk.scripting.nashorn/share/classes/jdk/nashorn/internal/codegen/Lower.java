@@ -584,7 +584,9 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public Node leaveVarNode(final VarNode varNode) {
         addStatement(varNode);
-        if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION) && lc.getCurrentFunction().isProgram()) {
+        if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION)
+                && lc.getCurrentFunction().isProgram()
+                && ((FunctionNode) varNode.getInit()).isAnonymous()) {
             new ExpressionStatement(varNode.getLineNumber(), varNode.getToken(), varNode.getFinish(), new IdentNode(varNode.getName())).accept(this);
         }
         return varNode;

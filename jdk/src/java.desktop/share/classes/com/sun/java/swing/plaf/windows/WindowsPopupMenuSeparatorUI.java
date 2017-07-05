@@ -36,7 +36,7 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 /**
- * Windows L&F implementation of PopupMenuSeparatorUI.
+ * Windows {@literal L&F} implementation of PopupMenuSeparatorUI.
  *
  * @author Leif Samuelsson
  * @author Igor Kushnirskiy
