@@ -200,6 +200,9 @@ java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
 # jdk_rmi
 
+# 7140992
+java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java  generic-all
+
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 

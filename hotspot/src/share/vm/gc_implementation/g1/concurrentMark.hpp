@@ -519,15 +519,6 @@ protected:
   double cleanup_sleep_factor()             { return _cleanup_sleep_factor; }
   double cleanup_task_overhead()            { return _cleanup_task_overhead;}
 
-  bool use_parallel_marking_threads() const {
-    assert(parallel_marking_threads() <=
-           max_parallel_marking_threads(), "sanity");
-    assert((_parallel_workers == NULL && parallel_marking_threads() == 0) ||
-           parallel_marking_threads() > 0,
-           "parallel workers not set up correctly");
-    return _parallel_workers != NULL;
-  }
-
   HeapWord*               finger()          { return _finger;   }
   bool                    concurrent()      { return _concurrent; }
   uint                    active_tasks()    { return _active_tasks; }

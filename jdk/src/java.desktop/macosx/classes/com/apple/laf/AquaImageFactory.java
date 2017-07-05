@@ -129,7 +129,7 @@ public class AquaImageFactory {
                 };
 
         final BufferedImage image = new BufferedImage(scaledAlertIconSize,
-                scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB);
+                scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
         final Graphics g = image.getGraphics();
         g.drawImage(background, 0, 0,
                 scaledAlertIconSize, scaledAlertIconSize, null);

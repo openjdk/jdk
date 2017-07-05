@@ -29,11 +29,11 @@ import java.net.URLPermission;
  * @bug 8010464
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext
- * @run main/othervm/policy=policy.1 URLTest one
+ * @run main/othervm/java.security.policy=policy.1 URLTest one
  * @run main/othervm URLTest one
- * @run main/othervm/policy=policy.2 URLTest two
+ * @run main/othervm/java.security.policy=policy.2 URLTest two
  * @run main/othervm URLTest two
- * @run main/othervm/policy=policy.3 URLTest three
+ * @run main/othervm/java.security.policy=policy.3 URLTest three
  * @run main/othervm URLTest three
  */
 

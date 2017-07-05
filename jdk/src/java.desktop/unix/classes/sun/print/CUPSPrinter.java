@@ -324,8 +324,8 @@ public class CUPSPrinter  {
                          * reported, exec lpstat -d which has all the Apple
                          * special behaviour for this built in.
                          */
-                         if (UnixPrintServiceLookup.isMac()) {
-                             printerInfo[0] = UnixPrintServiceLookup.
+                         if (PrintServiceLookupProvider.isMac()) {
+                             printerInfo[0] = PrintServiceLookupProvider.
                                                    getDefaultPrinterNameSysV();
                              printerInfo[1] = null;
                              return printerInfo.clone();

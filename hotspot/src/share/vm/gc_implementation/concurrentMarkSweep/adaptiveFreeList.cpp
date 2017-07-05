@@ -64,23 +64,6 @@ void AdaptiveFreeList<Chunk>::reset(size_t hint) {
   set_hint(hint);
 }
 
-#ifndef PRODUCT
-template <class Chunk>
-void AdaptiveFreeList<Chunk>::assert_proper_lock_protection_work() const {
-  assert(protecting_lock() != NULL, "Don't call this directly");
-  assert(ParallelGCThreads > 0, "Don't call this directly");
-  Thread* thr = Thread::current();
-  if (thr->is_VM_thread() || thr->is_ConcurrentGC_thread()) {
-    // assert that we are holding the freelist lock
-  } else if (thr->is_GC_task_thread()) {
-    assert(protecting_lock()->owned_by_self(), "FreeList RACE DETECTED");
-  } else if (thr->is_Java_thread()) {
-    assert(!SafepointSynchronize::is_at_safepoint(), "Should not be executing");
-  } else {
-    ShouldNotReachHere();  // unaccounted thread type?
-  }
-}
-#endif
 template <class Chunk>
 void AdaptiveFreeList<Chunk>::init_statistics(bool split_birth) {
   _allocation_stats.initialize(split_birth);

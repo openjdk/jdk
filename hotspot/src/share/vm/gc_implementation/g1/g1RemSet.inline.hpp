@@ -31,11 +31,7 @@
 #include "oops/oop.inline.hpp"
 
 inline uint G1RemSet::n_workers() {
-  if (_g1->workers() != NULL) {
-    return _g1->workers()->total_workers();
-  } else {
-    return 1;
-  }
+  return _g1->workers()->total_workers();
 }
 
 template <class T>

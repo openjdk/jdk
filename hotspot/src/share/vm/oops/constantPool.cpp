@@ -1779,11 +1779,22 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 void ConstantPool::set_on_stack(const bool value) {
   if (value) {
-    _flags |= _on_stack;
+    int old_flags = *const_cast<volatile int *>(&_flags);
+    while ((old_flags & _on_stack) == 0) {
+      int new_flags = old_flags | _on_stack;
+      int result = Atomic::cmpxchg(new_flags, &_flags, old_flags);
+
+      if (result == old_flags) {
+        // Succeeded.
+        MetadataOnStackMark::record(this, Thread::current());
+        return;
+      }
+      old_flags = result;
+    }
   } else {
+    // Clearing is done single-threadedly.
     _flags &= ~_on_stack;
   }
-  if (value) MetadataOnStackMark::record(this);
 }
 
 // JSR 292 support for patching constant pool oops after the class is linked and

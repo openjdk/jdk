@@ -27,16 +27,16 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-import static jdk.nashorn.internal.runtime.JSType.CONVERT_OBJECT_OPTIMISTIC;
-import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.concurrent.Callable;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Property with user defined getters/setters. Actual getter and setter
@@ -69,38 +69,29 @@ public final class UserAccessorProperty extends SpillProperty {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     /** Getter method handle */
-    private final static MethodHandle INVOKE_GETTER_ACCESSOR = findOwnMH_S("invokeGetterAccessor", Object.class, Accessors.class, Object.class);
+    private final static MethodHandle INVOKE_OBJECT_GETTER = findOwnMH_S("invokeObjectGetter", Object.class, Accessors.class, MethodHandle.class, Object.class);
+    private final static MethodHandle INVOKE_INT_GETTER  = findOwnMH_S("invokeIntGetter", int.class, Accessors.class, MethodHandle.class, int.class, Object.class);
+    private final static MethodHandle INVOKE_LONG_GETTER  = findOwnMH_S("invokeLongGetter", long.class, Accessors.class, MethodHandle.class, int.class, Object.class);
+    private final static MethodHandle INVOKE_NUMBER_GETTER  = findOwnMH_S("invokeNumberGetter", double.class, Accessors.class, MethodHandle.class, int.class, Object.class);
 
     /** Setter method handle */
-    private final static MethodHandle INVOKE_SETTER_ACCESSOR = findOwnMH_S("invokeSetterAccessor", void.class, Accessors.class, String.class, Object.class, Object.class);
+    private final static MethodHandle INVOKE_OBJECT_SETTER = findOwnMH_S("invokeObjectSetter", void.class, Accessors.class, MethodHandle.class, String.class, Object.class, Object.class);
+    private final static MethodHandle INVOKE_INT_SETTER = findOwnMH_S("invokeIntSetter", void.class, Accessors.class, MethodHandle.class, String.class, Object.class, int.class);
+    private final static MethodHandle INVOKE_LONG_SETTER = findOwnMH_S("invokeLongSetter", void.class, Accessors.class, MethodHandle.class, String.class, Object.class, long.class);
+    private final static MethodHandle INVOKE_NUMBER_SETTER = findOwnMH_S("invokeNumberSetter", void.class, Accessors.class, MethodHandle.class, String.class, Object.class, double.class);
 
-    /** Dynamic invoker for getter */
-    private static final Object GETTER_INVOKER_KEY = new Object();
 
-    private static MethodHandle getINVOKE_UA_GETTER() {
-
-        return Context.getGlobal().getDynamicInvoker(GETTER_INVOKER_KEY,
-                new Callable<MethodHandle>() {
-                    @Override
-                    public MethodHandle call() {
-                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-                            Object.class, Object.class);
-                    }
-                });
+    static MethodHandle getINVOKE_UA_GETTER(final Class<?> returnType, final int programPoint) {
+        if (UnwarrantedOptimismException.isValid(programPoint)) {
+            final int flags = NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC | programPoint << CALLSITE_PROGRAM_POINT_SHIFT;
+            return Bootstrap.createDynamicInvoker("dyn:call", flags, returnType, Object.class, Object.class);
+        } else {
+            return Bootstrap.createDynamicInvoker("dyn:call", Object.class, Object.class, Object.class);
+        }
     }
 
-    /** Dynamic invoker for setter */
-    private static Object SETTER_INVOKER_KEY = new Object();
-
-    private static MethodHandle getINVOKE_UA_SETTER() {
-        return Context.getGlobal().getDynamicInvoker(SETTER_INVOKER_KEY,
-                new Callable<MethodHandle>() {
-                    @Override
-                    public MethodHandle call() {
-                        return Bootstrap.createDynamicInvoker("dyn:call", void.class,
-                            Object.class, Object.class, Object.class);
-                    }
-                });
+    static MethodHandle getINVOKE_UA_SETTER(final Class<?> valueType) {
+        return Bootstrap.createDynamicInvoker("dyn:call", void.class, Object.class, Object.class, valueType);
     }
 
     /**
@@ -158,7 +149,7 @@ public final class UserAccessorProperty extends SpillProperty {
     }
 
     @Override
-    public Class<?> getCurrentType() {
+    protected Class<?> getLocalType() {
         return Object.class;
     }
 
@@ -189,7 +180,13 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
-        return invokeGetterAccessor(getAccessors((owner != null) ? owner : self), self);
+        try {
+            return invokeObjectGetter(getAccessors((owner != null) ? owner : self), getINVOKE_UA_GETTER(Object.class, INVALID_PROGRAM_POINT), self);
+        } catch (final Error | RuntimeException t) {
+            throw t;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
     @Override
@@ -209,41 +206,33 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
-        invokeSetterAccessor(getAccessors((owner != null) ? owner : self), strict ? getKey() : null, self, value);
+        try {
+            invokeObjectSetter(getAccessors((owner != null) ? owner : self), getINVOKE_UA_SETTER(Object.class), strict ? getKey() : null, self, value);
+        } catch (final Error | RuntimeException t) {
+            throw t;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
     @Override
     public MethodHandle getGetter(final Class<?> type) {
         //this returns a getter on the format (Accessors, Object receiver)
-        return Lookup.filterReturnType(INVOKE_GETTER_ACCESSOR, type);
+        return Lookup.filterReturnType(INVOKE_OBJECT_GETTER, type);
     }
 
     @Override
     public MethodHandle getOptimisticGetter(final Class<?> type, final int programPoint) {
-        //fortype is always object, but in the optimistic world we have to throw
-        //unwarranted optimism exception for narrower types. We can improve this
-        //by checking for boxed types and unboxing them, but it is doubtful that
-        //this gives us any performance, as UserAccessorProperties are typically not
-        //primitives. Are there? TODO: investigate later. For now we just throw an
-        //exception for narrower types than object
-
-        if (type.isPrimitive()) {
-            final MethodHandle getter = getGetter(Object.class);
-            final MethodHandle mh =
-                    MH.asType(
-                            MH.filterReturnValue(
-                                    getter,
-                                    MH.insertArguments(
-                                            CONVERT_OBJECT_OPTIMISTIC.get(getAccessorTypeIndex(type)),
-                                            1,
-                                            programPoint)),
-                                    getter.type().changeReturnType(type));
-
-            return mh;
+        if (type == int.class) {
+            return INVOKE_INT_GETTER;
+        } else if (type == long.class) {
+            return INVOKE_LONG_GETTER;
+        } else if (type == double.class) {
+            return INVOKE_NUMBER_GETTER;
+        } else {
+            assert type == Object.class;
+            return INVOKE_OBJECT_GETTER;
         }
-
-        assert type == Object.class;
-        return getGetter(type);
     }
 
     @Override
@@ -259,7 +248,16 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public MethodHandle getSetter(final Class<?> type, final PropertyMap currentMap) {
-        return INVOKE_SETTER_ACCESSOR;
+        if (type == int.class) {
+            return INVOKE_INT_SETTER;
+        } else if (type == long.class) {
+            return INVOKE_LONG_SETTER;
+        } else if (type == double.class) {
+            return INVOKE_NUMBER_SETTER;
+        } else {
+            assert type == Object.class;
+            return INVOKE_OBJECT_SETTER;
+        }
     }
 
     @Override
@@ -282,31 +280,81 @@ public final class UserAccessorProperty extends SpillProperty {
     // getter/setter may be inherited. If so, proto is bound during lookup. In either
     // inherited or self case, slot is also bound during lookup. Actual ScriptFunction
     // to be called is retrieved everytime and applied.
-    private static Object invokeGetterAccessor(final Accessors gs, final Object self) {
+    @SuppressWarnings("unused")
+    private static Object invokeObjectGetter(final Accessors gs, final MethodHandle invoker, final Object self) throws Throwable {
         final Object func = gs.getter;
         if (func instanceof ScriptFunction) {
-            try {
-                return getINVOKE_UA_GETTER().invokeExact(func, self);
-            } catch (final Error | RuntimeException t) {
-                throw t;
-            } catch (final Throwable t) {
-                throw new RuntimeException(t);
-            }
+            return invoker.invokeExact(func, self);
         }
 
         return UNDEFINED;
     }
 
-    private static void invokeSetterAccessor(final Accessors gs, final String name, final Object self, final Object value) {
+    @SuppressWarnings("unused")
+    private static int invokeIntGetter(final Accessors gs, final MethodHandle invoker, final int programPoint, final Object self) throws Throwable {
+        final Object func = gs.getter;
+        if (func instanceof ScriptFunction) {
+            return (int) invoker.invokeExact(func, self);
+        }
+
+        throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+    }
+
+    @SuppressWarnings("unused")
+    private static long invokeLongGetter(final Accessors gs, final MethodHandle invoker, final int programPoint, final Object self) throws Throwable {
+        final Object func = gs.getter;
+        if (func instanceof ScriptFunction) {
+            return (long) invoker.invokeExact(func, self);
+        }
+
+        throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+    }
+
+    @SuppressWarnings("unused")
+    private static double invokeNumberGetter(final Accessors gs, final MethodHandle invoker, final int programPoint, final Object self) throws Throwable {
+        final Object func = gs.getter;
+        if (func instanceof ScriptFunction) {
+            return (double) invoker.invokeExact(func, self);
+        }
+
+        throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+    }
+
+    @SuppressWarnings("unused")
+    private static void invokeObjectSetter(final Accessors gs, final MethodHandle invoker, final String name, final Object self, final Object value) throws Throwable {
         final Object func = gs.setter;
         if (func instanceof ScriptFunction) {
-            try {
-                getINVOKE_UA_SETTER().invokeExact(func, self, value);
-            } catch (final Error | RuntimeException t) {
-                throw t;
-            } catch (final Throwable t) {
-                throw new RuntimeException(t);
-            }
+            invoker.invokeExact(func, self, value);
+        } else if (name != null) {
+            throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static void invokeIntSetter(final Accessors gs, final MethodHandle invoker, final String name, final Object self, final int value) throws Throwable {
+        final Object func = gs.setter;
+        if (func instanceof ScriptFunction) {
+            invoker.invokeExact(func, self, value);
+        } else if (name != null) {
+            throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static void invokeLongSetter(final Accessors gs, final MethodHandle invoker, final String name, final Object self, final long value) throws Throwable {
+        final Object func = gs.setter;
+        if (func instanceof ScriptFunction) {
+            invoker.invokeExact(func, self, value);
+        } else if (name != null) {
+            throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static void invokeNumberSetter(final Accessors gs, final MethodHandle invoker, final String name, final Object self, final double value) throws Throwable {
+        final Object func = gs.setter;
+        if (func instanceof ScriptFunction) {
+            invoker.invokeExact(func, self, value);
         } else if (name != null) {
             throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
         }
