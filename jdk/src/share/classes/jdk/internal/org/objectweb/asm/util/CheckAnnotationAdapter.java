@@ -78,7 +78,7 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
     }
 
     CheckAnnotationAdapter(final AnnotationVisitor av, final boolean named) {
-        super(Opcodes.ASM4, av);
+        super(Opcodes.ASM5, av);
         this.named = named;
     }
 
@@ -94,8 +94,7 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
                 || value instanceof byte[] || value instanceof boolean[]
                 || value instanceof char[] || value instanceof short[]
                 || value instanceof int[] || value instanceof long[]
-                || value instanceof float[] || value instanceof double[]))
-        {
+                || value instanceof float[] || value instanceof double[])) {
             throw new IllegalArgumentException("Invalid annotation value");
         }
         if (value instanceof Type) {
@@ -110,11 +109,8 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
     }
 
     @Override
-    public void visitEnum(
-        final String name,
-        final String desc,
-        final String value)
-    {
+    public void visitEnum(final String name, final String desc,
+            final String value) {
         checkEnd();
         checkName(name);
         CheckMethodAdapter.checkDesc(desc, false);
@@ -127,15 +123,12 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
     }
 
     @Override
-    public AnnotationVisitor visitAnnotation(
-        final String name,
-        final String desc)
-    {
+    public AnnotationVisitor visitAnnotation(final String name,
+            final String desc) {
         checkEnd();
         checkName(name);
         CheckMethodAdapter.checkDesc(desc, false);
-        return new CheckAnnotationAdapter(av == null
-                ? null
+        return new CheckAnnotationAdapter(av == null ? null
                 : av.visitAnnotation(name, desc));
     }
 
@@ -143,8 +136,7 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
     public AnnotationVisitor visitArray(final String name) {
         checkEnd();
         checkName(name);
-        return new CheckAnnotationAdapter(av == null
-                ? null
+        return new CheckAnnotationAdapter(av == null ? null
                 : av.visitArray(name), false);
     }
 
@@ -159,13 +151,15 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
 
     private void checkEnd() {
         if (end) {
-            throw new IllegalStateException("Cannot call a visit method after visitEnd has been called");
+            throw new IllegalStateException(
+                    "Cannot call a visit method after visitEnd has been called");
         }
     }
 
     private void checkName(final String name) {
         if (named && name == null) {
-            throw new IllegalArgumentException("Annotation value name must not be null");
+            throw new IllegalArgumentException(
+                    "Annotation value name must not be null");
         }
     }
 }

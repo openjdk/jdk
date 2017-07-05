@@ -882,7 +882,7 @@ void PhaseIterGVN::optimize() {
       return;
     }
     Node *n  = _worklist.pop();
-    if (++loop_count >= K * C->unique()) {
+    if (++loop_count >= K * C->live_nodes()) {
       debug_only(n->dump(4);)
       assert(false, "infinite loop in PhaseIterGVN::optimize");
       C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");

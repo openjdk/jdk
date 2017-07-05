@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,11 +187,8 @@ void ParCompactionManager::follow_marking_stacks() {
 
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (_objarray_stack.pop_overflow(task)) {
-      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
-      k->oop_follow_contents(this, task.obj(), task.index());
-    } else if (_objarray_stack.pop_local(task)) {
-      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
+    if (_objarray_stack.pop_overflow(task) || _objarray_stack.pop_local(task)) {
+      ObjArrayKlass* k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(this, task.obj(), task.index());
     }
   } while (!marking_stacks_empty());

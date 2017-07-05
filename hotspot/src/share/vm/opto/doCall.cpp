@@ -176,9 +176,12 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
-          if (should_delay_inlining(callee, jvms)) {
+          if (should_delay_string_inlining(callee, jvms)) {
             assert(!delayed_forbidden, "strange");
             return CallGenerator::for_string_late_inline(callee, cg);
+          } else if (should_delay_boxing_inlining(callee, jvms)) {
+            assert(!delayed_forbidden, "strange");
+            return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if ((should_delay || AlwaysIncrementalInline) && !delayed_forbidden) {
             return CallGenerator::for_late_inline(callee, cg);
           }
@@ -276,7 +279,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
 // Return true for methods that shouldn't be inlined early so that
 // they are easier to analyze and optimize as intrinsics.
-bool Compile::should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
+bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms) {
   if (has_stringbuilder()) {
 
     if ((call_method->holder() == C->env()->StringBuilder_klass() ||
@@ -327,6 +330,13 @@ bool Compile::should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
   return false;
 }
 
+bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms) {
+  if (eliminate_boxing() && call_method->is_boxing_method()) {
+    set_has_boxed_value(true);
+    return true;
+  }
+  return false;
+}
 
 // uncommon-trap call-sites where callee is unloaded, uninitialized or will not link
 bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* klass) {

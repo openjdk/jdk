@@ -219,9 +219,10 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
-        if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+        if (UseCompressedOops && (Universe::narrow_oop_shift() == 0 ||
+                                  Universe::narrow_klass_shift() == 0)) {
           // 32-bits narrow oop can be the base of address expressions
-          tptr = base->bottom_type()->make_ptr();
+          tptr = base->get_ptr_type();
         } else {
           // only regular oops are expected here
           tptr = base->bottom_type()->is_ptr();

@@ -66,12 +66,15 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.Period;
 import java.time.Year;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
@@ -182,6 +185,16 @@ public class TCKJapaneseChronology {
             {JapaneseChronology.INSTANCE.dateYearDay(1868, 60), LocalDate.of(1868, 2, 29)},
             {JapaneseChronology.INSTANCE.dateYearDay(1928, 60), LocalDate.of(1928, 2, 29)},
             {JapaneseChronology.INSTANCE.dateYearDay(1912, 60), LocalDate.of(1912, 2, 29)},
+
+            {JapaneseDate.ofYearDay(1996, 60), LocalDate.of(1996, 2, 29)},
+            {JapaneseDate.ofYearDay(1868, 60), LocalDate.of(1868, 2, 29)},
+            {JapaneseDate.ofYearDay(1928, 60), LocalDate.of(1928, 2, 29)},
+            {JapaneseDate.ofYearDay(1912, 60), LocalDate.of(1912, 2, 29)},
+
+            {JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.HEISEI, 1996 - YDIFF_HEISEI, 60), LocalDate.of(1996, 2, 29)},
+            {JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.MEIJI, 1868 - YDIFF_MEIJI, 60), LocalDate.of(1868, 2, 29)},
+            {JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.SHOWA, 1928 - YDIFF_SHOWA, 60), LocalDate.of(1928, 2, 29)},
+//          {JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.TAISHO, 1916 - YDIFF_TAISHO, 60), LocalDate.of(1912, 2, 29)},
         };
     }
 
@@ -193,6 +206,26 @@ public class TCKJapaneseChronology {
     @Test(dataProvider="samples")
     public void test_fromCalendrical(JapaneseDate jdate, LocalDate iso) {
         assertEquals(JapaneseChronology.INSTANCE.date(iso), jdate);
+    }
+
+    @Test
+    public void test_dateNow(){
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseDate.now()) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseDate.now(ZoneId.systemDefault())) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseDate.now(Clock.systemDefaultZone())) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseDate.now(Clock.systemDefaultZone().getZone())) ;
+
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(), JapaneseChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+
+        ZoneId zoneId = ZoneId.of("Europe/Paris");
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(zoneId), JapaneseChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(zoneId), JapaneseChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(zoneId), JapaneseDate.now(Clock.system(zoneId))) ;
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(zoneId), JapaneseDate.now(Clock.system(zoneId).getZone())) ;
+
+        assertEquals(JapaneseChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), JapaneseChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
     }
 
     @DataProvider(name="badDates")
@@ -232,8 +265,6 @@ public class TCKJapaneseChronology {
         return new Object[][] {
                 {2, JapaneseEra.HEISEI, 1, 1 + YDIFF_HEISEI, false},
                 {2, JapaneseEra.HEISEI, 100, 100 + YDIFF_HEISEI, true},
-                {2, JapaneseEra.HEISEI, 0, YDIFF_HEISEI, true},
-                {2, JapaneseEra.HEISEI, -10, -10 + YDIFF_HEISEI, false},
 
                 {-1, JapaneseEra.MEIJI, 1, 1 + YDIFF_MEIJI, true},
                 {-1, JapaneseEra.MEIJI, 4, 4 + YDIFF_MEIJI, false},

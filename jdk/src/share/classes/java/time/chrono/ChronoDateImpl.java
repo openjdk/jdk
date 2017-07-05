@@ -130,7 +130,7 @@ import java.util.Objects;
  * The subclass must function according to the {@code Chronology} class description and must provide its
  * {@link java.time.chrono.Chronology#getId() chronlogy ID} and {@link Chronology#getCalendarType() calendar type}. </p>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This abstract class must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * Subclasses should be Serializable wherever possible.
@@ -325,11 +325,11 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
         Objects.requireNonNull(endDateTime, "endDateTime");
         Objects.requireNonNull(unit, "unit");
         if (endDateTime instanceof ChronoLocalDate == false) {
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         ChronoLocalDate<?> end = (ChronoLocalDate<?>) endDateTime;
         if (getChronology().equals(end.getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate period between two different chronologies");
+            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
         }
         if (unit instanceof ChronoUnit) {
             switch ((ChronoUnit) unit) {

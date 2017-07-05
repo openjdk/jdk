@@ -24,21 +24,25 @@
 /*
  * @test
  * @summary Unit test for java.net.CookieManager
- * @bug 6244040
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @bug 6244040 7150552
  * @run main/othervm -ea CookieManagerTest
  * @author Edward Wang
  */
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
-import sun.net.www.MessageHeader;
+import com.sun.net.httpserver.*;
+import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
 
 public class CookieManagerTest {
-    static CookieHttpTransaction httpTrans;
-    static TestHttpServer server;
+
+    static CookieTransactionHandler httpTrans;
+    static HttpServer server;
 
     public static void main(String[] args) throws Exception {
         startHttpServer();
@@ -49,47 +53,95 @@ public class CookieManagerTest {
         }
     }
 
-    public static void startHttpServer() {
-        try {
-            httpTrans = new CookieHttpTransaction();
-            server = new TestHttpServer(httpTrans, 1, 1, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void startHttpServer() throws IOException {
+        httpTrans = new CookieTransactionHandler();
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", httpTrans);
+        server.start();
     }
 
-    public static void makeHttpCall() {
+    public static void makeHttpCall() throws IOException {
         try {
-            System.out.println("http server listen on: " + server.getLocalPort());
+            System.out.println("http server listenining on: "
+                    + server.getAddress().getPort());
 
             // install CookieManager to use
             CookieHandler.setDefault(new CookieManager());
 
-            for (int i = 0; i < CookieHttpTransaction.testCount; i++) {
-                System.out.println("====== CookieManager test " + (i+1) + " ======");
-                ((CookieManager)CookieHandler.getDefault()).setCookiePolicy(CookieHttpTransaction.testPolicies[i]);
-                ((CookieManager)CookieHandler.getDefault()).getCookieStore().removeAll();
-                URL url = new URL("http" , InetAddress.getLocalHost().getHostAddress(),
-                                    server.getLocalPort(), CookieHttpTransaction.testCases[i][0].serverPath);
+            for (int i = 0; i < CookieTransactionHandler.testCount; i++) {
+                System.out.println("====== CookieManager test " + (i+1)
+                                    + " ======");
+                ((CookieManager)CookieHandler.getDefault())
+                    .setCookiePolicy(CookieTransactionHandler.testPolicies[i]);
+                ((CookieManager)CookieHandler.getDefault())
+                    .getCookieStore().removeAll();
+                URL url = new URL("http" ,
+                                  InetAddress.getLocalHost().getHostAddress(),
+                                  server.getAddress().getPort(),
+                                  CookieTransactionHandler.testCases[i][0]
+                                                          .serverPath);
                 HttpURLConnection uc = (HttpURLConnection)url.openConnection();
                 uc.getResponseCode();
                 uc.disconnect();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
-            server.terminate();
+            server.stop(0);
         }
     }
 }
 
-class CookieHttpTransaction implements HttpCallback {
+class CookieTransactionHandler implements HttpHandler {
+
+    private int testcaseDone = 0;
+    private int testDone = 0;
+
     public static boolean badRequest = false;
     // the main test control logic will also loop exactly this number
     // to send http request
     public static final int testCount = 6;
 
     private String localHostAddr = "127.0.0.1";
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        if (testDone < testCases[testcaseDone].length) {
+            // still have other tests to run,
+            // check the Cookie header and then redirect it
+            if (testDone > 0) checkRequest(exchange.getRequestHeaders());
+            exchange.getResponseHeaders().add("Location",
+                    testCases[testcaseDone][testDone].serverPath);
+            exchange.getResponseHeaders()
+                    .add(testCases[testcaseDone][testDone].headerToken,
+                         testCases[testcaseDone][testDone].cookieToSend);
+            exchange.sendResponseHeaders(302, -1);
+            testDone++;
+        } else {
+            // the last test of this test case
+            if (testDone > 0) checkRequest(exchange.getRequestHeaders());
+            testcaseDone++;
+            testDone = 0;
+            exchange.sendResponseHeaders(200, -1);
+        }
+        exchange.close();
+    }
+
+    private void checkRequest(Headers hdrs) {
+
+        assert testDone > 0;
+        String cookieHeader = hdrs.getFirst("Cookie");
+        if (cookieHeader != null &&
+            cookieHeader
+                .equalsIgnoreCase(testCases[testcaseDone][testDone-1]
+                                  .cookieToRecv))
+        {
+            System.out.printf("%15s %s\n", "PASSED:", cookieHeader);
+        } else {
+            System.out.printf("%15s %s\n", "FAILED:", cookieHeader);
+            System.out.printf("%15s %s\n\n", "should be:",
+                    testCases[testcaseDone][testDone-1].cookieToRecv);
+            badRequest = true;
+        }
+    }
 
     // test cases
     public static class CookieTestCase {
@@ -106,13 +158,17 @@ class CookieHttpTransaction implements HttpCallback {
         }
     };
 
-    //
-    // these two must match each other, i.e. testCases.length == testPolicies.length
-    //
-    public static CookieTestCase[][] testCases = null;  // the test cases to run; each test case may contain multiple roundtrips
-    public static CookiePolicy[] testPolicies = null;   // indicates what CookiePolicy to use with each test cases
+    /*
+     * these two must match each other,
+     * i.e. testCases.length == testPolicies.length
+     */
 
-    CookieHttpTransaction() {
+    // the test cases to run; each test case may contain multiple roundtrips
+    public static CookieTestCase[][] testCases = null;
+    // indicates what CookiePolicy to use with each test cases
+    public static CookiePolicy[] testPolicies = null;
+
+    CookieTransactionHandler() {
         testCases = new CookieTestCase[testCount][];
         testPolicies = new CookiePolicy[testCount];
 
@@ -126,7 +182,9 @@ class CookieHttpTransaction implements HttpCallback {
         testPolicies[count] = CookiePolicy.ACCEPT_ORIGINAL_SERVER;
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie",
-                "CUSTOMER=WILE:BOB; path=/; expires=Sat, 09-Nov-2030 23:12:40 GMT;" + "domain=." + localHostAddr,
+                "CUSTOMER=WILE:BOB; " +
+                "path=/; expires=Sat, 09-Nov-2030 23:12:40 GMT;" + "domain=." +
+                localHostAddr,
                 "CUSTOMER=WILE:BOB",
                 "/"
                 ),
@@ -172,12 +230,17 @@ class CookieHttpTransaction implements HttpCallback {
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\";Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr +  "\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." +
+                    localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";"
+                    + "$Domain=\"." + localHostAddr +  "\"",
                 "/acme/pickitem"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Shipping=\"FedEx\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Shipping=\"FedEx\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  +
+                    "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"."
+                    + localHostAddr  + "\"" + "; Shipping=\"FedEx\";$Path=\"/acme\";" +
+                    "$Domain=\"." + localHostAddr + "\"",
                 "/acme/shipping"
                 )
                 };
@@ -191,8 +254,11 @@ class CookieHttpTransaction implements HttpCallback {
                 "/acme/ammo"
                 ),
                 new CookieTestCase("Set-Cookie2",
-                "Part_Number=\"Riding_Rocket_0023\"; Version=\"1\"; Path=\"/acme/ammo\";" + "domain=." + localHostAddr,
-                "$Version=\"1\"; Part_Number=\"Riding_Rocket_0023\";$Path=\"/acme/ammo\";$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
+                "Part_Number=\"Riding_Rocket_0023\"; Version=\"1\"; Path=\"/acme/ammo\";" + "domain=."
+                    + localHostAddr,
+                "$Version=\"1\"; Part_Number=\"Riding_Rocket_0023\";$Path=\"/acme/ammo\";$Domain=\"."
+                    + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";"
+                    + "$Domain=\"." + localHostAddr + "\"",
                 "/acme/ammo"
                 ),
                 new CookieTestCase("",
@@ -228,60 +294,19 @@ class CookieHttpTransaction implements HttpCallback {
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\";Path=\"/acme\"",
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" +
+                    "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
                 "/acme/pickitem"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Shipping=\"FedEx\"; Version=\"1\"; Path=\"/acme\"",
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Shipping=\"FedEx\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" +
+                    "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" +
+                    "; Shipping=\"FedEx\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
                 "/acme/shipping"
                 )
                 };
 
         assert count == testCount;
-    }
-
-    private int testcaseDone = 0;
-    private int testDone = 0;
-    /*
-     * Our http server which is conducted by testCases array
-     */
-    public void request(HttpTransaction trans) {
-        try {
-            if (testDone < testCases[testcaseDone].length) {
-                // still have other tests to run,
-                // check the Cookie header and then redirect it
-                if (testDone > 0) checkResquest(trans);
-                trans.addResponseHeader("Location", testCases[testcaseDone][testDone].serverPath);
-                trans.addResponseHeader(testCases[testcaseDone][testDone].headerToken,
-                                        testCases[testcaseDone][testDone].cookieToSend);
-                testDone++;
-                trans.sendResponse(302, "Moved Temporarily");
-            } else {
-                // the last test of this test case
-                if (testDone > 0) checkResquest(trans);
-                testcaseDone++;
-                testDone = 0;
-                trans.sendResponse(200, "OK");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void checkResquest(HttpTransaction trans) {
-        String cookieHeader = null;
-
-        assert testDone > 0;
-        cookieHeader = trans.getRequestHeader("Cookie");
-        if (cookieHeader != null &&
-            cookieHeader.equalsIgnoreCase(testCases[testcaseDone][testDone-1].cookieToRecv))
-        {
-            System.out.printf("%15s %s\n", "PASSED:", cookieHeader);
-        } else {
-            System.out.printf("%15s %s\n", "FAILED:", cookieHeader);
-            System.out.printf("%15s %s\n\n", "should be:", testCases[testcaseDone][testDone-1].cookieToRecv);
-            badRequest = true;
-        }
     }
 }

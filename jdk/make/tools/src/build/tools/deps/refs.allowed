@@ -30,7 +30,5 @@ sun.security.krb5.Realm=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,comp
 
 # Residual references to java.beans.
 # The RemoveMethods tool does not yet purge the constant pool.
-# Rhino is due to be replaced so not worth addressing this dependency now.
 #
-java.beans.PropertyChangeListener=java.util.logging.LogManager,sun.org.mozilla.javascript.internal.Context,compact1,compact2,compact3
-java.beans.PropertyChangeEvent=sun.org.mozilla.javascript.internal.Context,compact3
+java.beans.PropertyChangeListener=java.util.logging.LogManager,compact1,compact2,compact3

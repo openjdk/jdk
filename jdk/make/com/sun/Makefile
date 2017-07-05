@@ -31,13 +31,6 @@ BUILDDIR = ../..
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-ifndef OPENJDK
-  ORG_EXISTS := $(call DirExists,$(CLOSED_SRC)/share/classes/sun/org,,)
-  ifneq ("$(ORG_EXISTS)", "") 
-    SCRIPT_SUBDIR = script
-  endif
-endif
-
 # jarsigner is part of JRE
 SUBDIRS = java security net/ssl jarsigner
 

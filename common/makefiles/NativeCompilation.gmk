@@ -321,11 +321,17 @@ define SetupNativeCompilation
 
     ifneq (,$$($1_DEBUG_SYMBOLS))	
         ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-            # Programs don't get the debug symbols added in the old build. It's not clear if
-            # this is intentional.
-            ifeq ($$($1_PROGRAM),)
+	    ifdef OPENJDK
+	        # Always add debug symbols
                 $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
                 $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
+	    else
+                # Programs don't get the debug symbols added in the old build. It's not clear if
+                # this is intentional.
+                ifeq ($$($1_PROGRAM),)
+                    $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
+                    $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
+                endif
             endif
         endif
     endif

@@ -71,6 +71,7 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -89,6 +90,7 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.IsoEra;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -526,6 +528,47 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // plus(long, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="plus_long_TemporalUnit")
+    Object[][] data_plus_long_TemporalUnit() {
+        return new Object[][] {
+            {Year.of(1), 1, ChronoUnit.YEARS, Year.of(2), null},
+            {Year.of(1), -12, ChronoUnit.YEARS, Year.of(-11), null},
+            {Year.of(1), 0, ChronoUnit.YEARS, Year.of(1), null},
+            {Year.of(999999999), 0, ChronoUnit.YEARS, Year.of(999999999), null},
+            {Year.of(-999999999), 0, ChronoUnit.YEARS, Year.of(-999999999), null},
+            {Year.of(0), -999999999, ChronoUnit.YEARS, Year.of(-999999999), null},
+            {Year.of(0), 999999999, ChronoUnit.YEARS, Year.of(999999999), null},
+
+            {Year.of(-1), 1, ChronoUnit.ERAS, Year.of(2), null},
+            {Year.of(5), 1, ChronoUnit.CENTURIES, Year.of(105), null},
+            {Year.of(5), 1, ChronoUnit.DECADES, Year.of(15), null},
+
+            {Year.of(999999999), 1, ChronoUnit.YEARS, null, DateTimeException.class},
+            {Year.of(-999999999), -1, ChronoUnit.YEARS, null, DateTimeException.class},
+
+            {Year.of(1), 0, ChronoUnit.DAYS, null, DateTimeException.class},
+            {Year.of(1), 0, ChronoUnit.WEEKS, null, DateTimeException.class},
+            {Year.of(1), 0, ChronoUnit.MONTHS, null, DateTimeException.class},
+        };
+    }
+
+    @Test(groups={"tck"}, dataProvider="plus_long_TemporalUnit")
+    public void test_plus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
+        if (expectedEx == null) {
+            assertEquals(base.plus(amount, unit), expectedYear);
+        } else {
+            try {
+                Year result = base.plus(amount, unit);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
     // minus(Period)
     //-----------------------------------------------------------------------
     @DataProvider(name="minusValid")
@@ -617,6 +660,47 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // minus(long, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="minus_long_TemporalUnit")
+    Object[][] data_minus_long_TemporalUnit() {
+        return new Object[][] {
+            {Year.of(1), 1, ChronoUnit.YEARS, Year.of(0), null},
+            {Year.of(1), -12, ChronoUnit.YEARS, Year.of(13), null},
+            {Year.of(1), 0, ChronoUnit.YEARS, Year.of(1), null},
+            {Year.of(999999999), 0, ChronoUnit.YEARS, Year.of(999999999), null},
+            {Year.of(-999999999), 0, ChronoUnit.YEARS, Year.of(-999999999), null},
+            {Year.of(0), -999999999, ChronoUnit.YEARS, Year.of(999999999), null},
+            {Year.of(0), 999999999, ChronoUnit.YEARS, Year.of(-999999999), null},
+
+            {Year.of(999999999), 1, ChronoUnit.ERAS, Year.of(-999999999 + 1), null},
+            {Year.of(105), 1, ChronoUnit.CENTURIES, Year.of(5), null},
+            {Year.of(15), 1, ChronoUnit.DECADES, Year.of(5), null},
+
+            {Year.of(-999999999), 1, ChronoUnit.YEARS, null, DateTimeException.class},
+            {Year.of(1), -999999999, ChronoUnit.YEARS, null, DateTimeException.class},
+
+            {Year.of(1), 0, ChronoUnit.DAYS, null, DateTimeException.class},
+            {Year.of(1), 0, ChronoUnit.WEEKS, null, DateTimeException.class},
+            {Year.of(1), 0, ChronoUnit.MONTHS, null, DateTimeException.class},
+        };
+    }
+
+    @Test(groups={"tck"}, dataProvider="minus_long_TemporalUnit")
+    public void test_minus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
+        if (expectedEx == null) {
+            assertEquals(base.minus(amount, unit), expectedYear);
+        } else {
+            try {
+                Year result = base.minus(amount, unit);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
     // adjustInto()
     //-----------------------------------------------------------------------
     @Test
@@ -638,6 +722,49 @@ public class TCKYear extends AbstractDateTimeTest {
     public void test_adjustDate_nullLocalDate() {
         Year test = Year.of(1);
         test.adjustInto((LocalDate) null);
+    }
+
+    //-----------------------------------------------------------------------
+    // with(TemporalAdjuster)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_with_TemporalAdjuster() {
+        Year base = Year.of(-10);
+        for (int i = -4; i <= 2104; i++) {
+            Temporal result = base.with(Year.of(i));
+            assertEquals(result, Year.of(i));
+        }
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_with_BadTemporalAdjuster() {
+        Year test = Year.of(1);
+        test.with(LocalTime.of(18, 1, 2));
+    }
+
+    //-----------------------------------------------------------------------
+    // with(TemporalField, long)
+    //-----------------------------------------------------------------------
+    @Test(groups={"tck"})
+    public void test_with() {
+        Year base = Year.of(5);
+        Year result = base.with(ChronoField.ERA, 0);
+        assertEquals(result, base.with(IsoEra.of(0)));
+
+        int prolepticYear = IsoChronology.INSTANCE.prolepticYear(IsoEra.of(0), 5);
+        assertEquals(result.get(ChronoField.ERA), 0);
+        assertEquals(result.get(ChronoField.YEAR), prolepticYear);
+        assertEquals(result.get(ChronoField.YEAR_OF_ERA), 5);
+
+        result = base.with(ChronoField.YEAR, 10);
+        assertEquals(result.get(ChronoField.ERA), base.get(ChronoField.ERA));
+        assertEquals(result.get(ChronoField.YEAR), 10);
+        assertEquals(result.get(ChronoField.YEAR_OF_ERA), 10);
+
+        result = base.with(ChronoField.YEAR_OF_ERA, 20);
+        assertEquals(result.get(ChronoField.ERA), base.get(ChronoField.ERA));
+        assertEquals(result.get(ChronoField.YEAR), 20);
+        assertEquals(result.get(ChronoField.YEAR_OF_ERA), 20);
     }
 
     //-----------------------------------------------------------------------

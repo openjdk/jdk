@@ -125,15 +125,6 @@ CLASSDESTDIR = $(TEMPDIR)/classes
 AUTO_FILES_JAVA_DIRS = $(PKGDIR)
 
 #
-# Exclude the sources that get built by ../other/Makefile
-#
-AUTO_JAVA_PRUNE = \
-    ECParameters.java \
-    ECPrivateKeyImpl.java \
-    ECPublicKeyImpl.java \
-    NamedCurve.java
-
-#
 # Some licensees do not get the native ECC sources, but we still need to
 # be able to build "all" for them.  Check here to see if the sources are
 # available.  If not, then skip them.

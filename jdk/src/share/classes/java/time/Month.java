@@ -97,7 +97,7 @@ import java.util.Locale;
  * As such, this enum may be used by any calendar system that has the month-of-year
  * concept defined exactly equivalent to the ISO-8601 calendar system.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is an immutable and thread-safe enum.
  *
  * @since 1.8

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,16 +37,15 @@
  * this sample code.
  */
 
-
 /*
- * Few user interface utilities. 
+ * Few user interface utilities.
  */
 
 if (this.window === undefined) {
     this.window = null;
 }
 
-/** 
+/**
  * Swing invokeLater - invokes given function in AWT event thread
  */
 Function.prototype.invokeLater = function() {
@@ -54,13 +53,13 @@ Function.prototype.invokeLater = function() {
     var func = this;
     var args = arguments;
     SwingUtilities.invokeLater(new java.lang.Runnable() {
-                       run: function() { 
+                       run: function() {
                            func.apply(func, args);
                        }
                   });
-}
+};
 
-/** 
+/**
  * Swing invokeAndWait - invokes given function in AWT event thread
  * and waits for it's completion
  */
@@ -69,11 +68,11 @@ Function.prototype.invokeAndWait = function() {
     var func = this;
     var args = arguments;
     SwingUtilities.invokeAndWait(new java.lang.Runnable() {
-                       run: function() { 
+                       run: function() {
                            func.apply(func, args);
                        }
                   });
-}
+};
 
 /**
  * Am I running in AWT event dispatcher thread?
@@ -85,22 +84,24 @@ function isEventThread() {
 isEventThread.docString = "returns whether the current thread is GUI thread";
 
 /**
- * Opens a file dialog box 
+ * Opens a file dialog box
  *
  * @param curDir current directory [optional]
  * @param save flag tells whether this is a save dialog or not
  * @return selected file or else null
  */
-function fileDialog(curDir, save) {   
+function fileDialog(curDir, save) {
     var result;
     function _fileDialog() {
         if (curDir == undefined) {
             curDir = new java.io.File(".");
         }
+
         var JFileChooser = javax.swing.JFileChooser;
-        var dialog = new JFileChooser(curDir);        
-        var res = save? dialog.showSaveDialog(window):
-                        dialog.showOpenDialog(window);
+        var dialog = new JFileChooser(curDir);
+        var res = save ? dialog.showSaveDialog(window):
+            dialog.showOpenDialog(window);
+
         if (res == JFileChooser.APPROVE_OPTION) {
            result = dialog.getSelectedFile();
         } else {
@@ -113,37 +114,41 @@ function fileDialog(curDir, save) {
     } else {
         _fileDialog.invokeAndWait();
     }
+
     return result;
 }
 fileDialog.docString = "show a file dialog box";
 
 /**
- * Opens a color chooser dialog box 
+ * Opens a color chooser dialog box
  *
  * @param title of the dialog box [optional]
  * @param color default color [optional]
  * @return choosen color or default color
  */
-
 function colorDialog(title, color) {
     var result;
+
     function _colorDialog() {
         if (title == undefined) {
             title = "Choose Color";
         }
+
         if (color == undefined) {
             color = java.awt.Color.BLACK;
         }
+
         var chooser = new javax.swing.JColorChooser();
         var res = chooser.showDialog(window, title, color);
-        result = res? res : color;
-    }     
+        result = res ? res : color;
+    }
 
     if (isEventThread()) {
         _colorDialog();
     } else {
         _colorDialog.invokeAndWait();
     }
+
     return result;
 }
 colorDialog.docString = "shows a color chooser dialog box";
@@ -156,15 +161,15 @@ colorDialog.docString = "shows a color chooser dialog box";
  * @param msgType type of message box [constants in JOptionPane]
  */
 function msgBox(msg, title, msgType) {
-   
-    function _msgBox() { 
+    function _msgBox() {
         var JOptionPane = javax.swing.JOptionPane;
         if (msg === undefined) msg = "undefined";
         if (msg === null) msg = "null";
         if (title == undefined) title = msg;
-        if (msgType == undefined) type = JOptionPane.INFORMATION_MESSAGE;
+        if (msgType == undefined) msgType = JOptionPane.INFORMATION_MESSAGE;
         JOptionPane.showMessageDialog(window, msg, title, msgType);
     }
+
     if (isEventThread()) {
         _msgBox();
     } else {
@@ -172,13 +177,13 @@ function msgBox(msg, title, msgType) {
     }
 }
 msgBox.docString = "shows MessageBox to the user";
- 
+
 /**
  * Shows an information alert box
  *
  * @param msg message to be shown
  * @param title title of message box [optional]
- */   
+ */
 function alert(msg, title) {
     var JOptionPane = javax.swing.JOptionPane;
     msgBox(msg, title, JOptionPane.INFORMATION_MESSAGE);
@@ -197,7 +202,6 @@ function error(msg, title) {
 }
 error.docString = "shows an error message box to the user";
 
-
 /**
  * Shows a warning alert box
  *
@@ -209,7 +213,6 @@ function warn(msg, title) {
     msgBox(msg, title, JOptionPane.WARNING_MESSAGE);
 }
 warn.docString = "shows a warning message box to the user";
-
 
 /**
  * Shows a prompt dialog box
@@ -225,11 +228,13 @@ function prompt(question, answer) {
         if (answer == undefined) answer = "";
         result = JOptionPane.showInputDialog(window, question, answer);
     }
+
     if (isEventThread()) {
         _prompt();
     } else {
         _prompt.invokeAndWait();
     }
+
     return result;
 }
 prompt.docString = "shows a prompt box to the user and returns the answer";
@@ -244,30 +249,33 @@ prompt.docString = "shows a prompt box to the user and returns the answer";
 function confirm(msg, title) {
     var result;
     var JOptionPane = javax.swing.JOptionPane;
+
     function _confirm() {
         if (title == undefined) title = msg;
         var optionType = JOptionPane.YES_NO_OPTION;
         result = JOptionPane.showConfirmDialog(window, msg, title, optionType);
     }
+
     if (isEventThread()) {
         _confirm();
     } else {
         _confirm.invokeAndWait();
-    }     
+    }
+
     return result == JOptionPane.YES_OPTION;
 }
 confirm.docString = "shows a confirmation message box to the user";
 
 /**
- * Exit the process after confirmation from user 
- * 
+ * Exit the process after confirmation from user
+ *
  * @param exitCode return code to OS [optional]
  */
 function exit(exitCode) {
     if (exitCode == undefined) exitCode = 0;
     if (confirm("Do you really want to exit?")) {
         java.lang.System.exit(exitCode);
-    } 
+    }
 }
 exit.docString = "exits jconsole";
 

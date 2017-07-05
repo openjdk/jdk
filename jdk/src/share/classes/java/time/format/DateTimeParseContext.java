@@ -61,6 +61,7 @@
  */
 package java.time.format;
 
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -79,7 +80,7 @@ import java.util.Objects;
  * Once parsing is complete, the {@link #toParsed()} is used to obtain the data.
  * It contains a method to resolve  the separate parsed fields into meaningful values.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is a mutable context intended for use from a single thread.
  * Usage of the class is thread-safe within standard parsing as a new instance of this class
  * is automatically created for each parse and parsing is single-threaded
@@ -118,9 +119,13 @@ final class DateTimeParseContext {
 
     /**
      * Creates a copy of this context.
+     * This retains the case sensitive and strict flags.
      */
     DateTimeParseContext copy() {
-        return new DateTimeParseContext(formatter);
+        DateTimeParseContext newContext = new DateTimeParseContext(formatter);
+        newContext.caseSensitive = caseSensitive;
+        newContext.strict = strict;
+        return newContext;
     }
 
     //-----------------------------------------------------------------------
@@ -128,7 +133,7 @@ final class DateTimeParseContext {
      * Gets the locale.
      * <p>
      * This locale is used to control localization in the parse except
-     * where localization is controlled by the symbols.
+     * where localization is controlled by the DecimalStyle.
      *
      * @return the locale, not null
      */
@@ -137,14 +142,14 @@ final class DateTimeParseContext {
     }
 
     /**
-     * Gets the formatting symbols.
+     * Gets the DecimalStyle.
      * <p>
-     * The symbols control the localization of numeric parsing.
+     * The DecimalStyle controls the numeric parsing.
      *
-     * @return the formatting symbols, not null
+     * @return the DecimalStyle, not null
      */
-    DateTimeFormatSymbols getSymbols() {
-        return formatter.getSymbols();
+    DecimalStyle getDecimalStyle() {
+        return formatter.getDecimalStyle();
     }
 
     /**
@@ -368,6 +373,13 @@ final class DateTimeParseContext {
     void setParsed(ZoneId zone) {
         Objects.requireNonNull(zone, "zone");
         currentParsed().zone = zone;
+    }
+
+    /**
+     * Stores the parsed leap second.
+     */
+    void setParsedLeapSecond() {
+        currentParsed().leapSecond = true;
     }
 
     //-----------------------------------------------------------------------

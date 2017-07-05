@@ -119,7 +119,7 @@ import java.util.regex.Pattern;
  * The months and years fields may be {@linkplain #normalized() normalized}.
  * The normalization assumes a 12 month year, so is not appropriate for all calendar systems.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
