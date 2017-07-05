@@ -32,7 +32,7 @@
  * 4872664 4803179 4892980 4900747 4945394 4938995 4979006 4994840 4997476
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
- * 6350801 6676425 6878475
+ * 6350801 6676425 6878475 6919132
  */
 
 import java.util.regex.*;
@@ -134,6 +134,7 @@ public class RegExTest {
         toMatchResultTest();
         surrogatesInClassTest();
         namedGroupCaptureTest();
+        nonBmpClassComplementTest();
 
         if (failure)
             throw new RuntimeException("Failure in the RE handling.");
@@ -365,7 +366,6 @@ public class RegExTest {
         m.find();
         if (!m.hitEnd())
             failCount++;
-
         report("hitEnd from a Slice");
     }
 
@@ -3514,4 +3514,29 @@ public class RegExTest {
                           null);
         report("NamedGroupCapture");
     }
+
+    // This is for bug 6969132
+    private static void nonBmpClassComplementTest() throws Exception {
+        Pattern p = Pattern.compile("\\P{Lu}");
+        Matcher m = p.matcher(new String(new int[] {0x1d400}, 0, 1));
+        if (m.find() && m.start() == 1)
+            failCount++;
+
+        // from a unicode category
+        p = Pattern.compile("\\P{Lu}");
+        m = p.matcher(new String(new int[] {0x1d400}, 0, 1));
+        if (m.find())
+            failCount++;
+        if (!m.hitEnd())
+            failCount++;
+
+        // block
+        p = Pattern.compile("\\P{InMathematicalAlphanumericSymbols}");
+        m = p.matcher(new String(new int[] {0x1d400}, 0, 1));
+        if (m.find() && m.start() == 1)
+            failCount++;
+
+        report("NonBmpClassComplement");
+    }
+
 }

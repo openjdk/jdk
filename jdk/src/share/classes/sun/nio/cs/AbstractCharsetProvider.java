@@ -48,23 +48,23 @@ public class AbstractCharsetProvider
 
     /* Maps canonical names to class names
      */
-    private Map classMap
-        = new TreeMap(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+    private Map<String,String> classMap
+        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
 
     /* Maps alias names to canonical names
      */
-    private Map aliasMap
-        = new TreeMap(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+    private Map<String,String> aliasMap
+        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
 
     /* Maps canonical names to alias-name arrays
      */
-    private Map aliasNameMap
-        = new TreeMap(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+    private Map<String,String[]> aliasNameMap
+        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
 
     /* Maps canonical names to soft references that hold cached instances
      */
-    private Map cache
-        = new TreeMap(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+    private Map<String,SoftReference<Charset>> cache
+        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
 
     private String packagePrefix;
 
@@ -79,13 +79,13 @@ public class AbstractCharsetProvider
     /* Add an entry to the given map, but only if no mapping yet exists
      * for the given name.
      */
-    private static void put(Map m, String name, Object value) {
+    private static <K,V> void put(Map<K,V> m, K name, V value) {
         if (!m.containsKey(name))
             m.put(name, value);
     }
 
-    private static void remove(Map m, String name) {
-        Object x  = m.remove(name);
+    private static <K,V> void remove(Map<K,V> m, K name) {
+        V x  = m.remove(name);
         assert (x != null);
     }
 
@@ -116,22 +116,22 @@ public class AbstractCharsetProvider
     protected void init() { }
 
     private String canonicalize(String charsetName) {
-        String acn = (String)aliasMap.get(charsetName);
+        String acn = aliasMap.get(charsetName);
         return (acn != null) ? acn : charsetName;
     }
 
     private Charset lookup(String csn) {
 
         // Check cache first
-        SoftReference sr = (SoftReference)cache.get(csn);
+        SoftReference<Charset> sr = cache.get(csn);
         if (sr != null) {
-            Charset cs = (Charset)sr.get();
+            Charset cs = sr.get();
             if (cs != null)
                 return cs;
         }
 
         // Do we even support this charset?
-        String cln = (String)classMap.get(csn);
+        String cln = classMap.get(csn);
 
         if (cln == null)
             return null;
@@ -139,12 +139,12 @@ public class AbstractCharsetProvider
         // Instantiate the charset and cache it
         try {
 
-            Class c = Class.forName(packagePrefix + "." + cln,
-                                    true,
-                                    this.getClass().getClassLoader());
+            Class<?> c = Class.forName(packagePrefix + "." + cln,
+                                       true,
+                                       this.getClass().getClassLoader());
 
             Charset cs = (Charset)c.newInstance();
-            cache.put(csn, new SoftReference(cs));
+            cache.put(csn, new SoftReference<Charset>(cs));
             return cs;
         } catch (ClassNotFoundException x) {
             return null;
@@ -164,21 +164,21 @@ public class AbstractCharsetProvider
 
     public final Iterator<Charset> charsets() {
 
-        final ArrayList ks;
+        final ArrayList<String> ks;
         synchronized (this) {
             init();
-            ks = new ArrayList(classMap.keySet());
+            ks = new ArrayList<>(classMap.keySet());
         }
 
         return new Iterator<Charset>() {
-                Iterator i = ks.iterator();
+                Iterator<String> i = ks.iterator();
 
                 public boolean hasNext() {
                     return i.hasNext();
                 }
 
                 public Charset next() {
-                    String csn = (String)i.next();
+                    String csn = i.next();
                     return lookup(csn);
                 }
 
@@ -191,7 +191,7 @@ public class AbstractCharsetProvider
     public final String[] aliases(String charsetName) {
         synchronized (this) {
             init();
-            return (String[])aliasNameMap.get(charsetName);
+            return aliasNameMap.get(charsetName);
         }
     }
 
