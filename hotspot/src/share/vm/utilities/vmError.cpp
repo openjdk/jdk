@@ -30,7 +30,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"

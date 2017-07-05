@@ -26,6 +26,7 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
+#include "runtime/thread.inline.hpp"
 
 volatile jint GC_locker::_jni_lock_count = 0;
 volatile bool GC_locker::_needs_gc       = false;

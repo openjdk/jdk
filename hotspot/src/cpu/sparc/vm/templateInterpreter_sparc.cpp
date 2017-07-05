@@ -1888,7 +1888,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
 #if INCLUDE_JVMTI
-  if (EnableInvokeDynamic) {
+  {
     Label L_done;
 
     __ ldub(Address(Lbcp, 0), G1_scratch);  // Load current bytecode

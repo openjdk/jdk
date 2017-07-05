@@ -339,12 +339,6 @@ void VMThread::wait_for_vm_thread_exit() {
   }
 }
 
-void VMThread::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
-}
-
 void VMThread::evaluate_operation(VM_Operation* op) {
   ResourceMark rm;
 

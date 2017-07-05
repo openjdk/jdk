@@ -26,39 +26,7 @@
 #define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 
 #include "utilities/globalDefinitions.hpp"
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "orderAccess_linux_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "orderAccess_linux_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "orderAccess_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "orderAccess_solaris_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "orderAccess_solaris_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "orderAccess_windows_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "orderAccess_linux_arm.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "orderAccess_linux_ppc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "orderAccess_aix_ppc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "orderAccess_bsd_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "orderAccess_bsd_zero.inline.hpp"
-#endif
+#include "runtime/orderAccess.inline.hpp"
 
 //
 // An object for encapsulating the machine/os dependent part of a JavaThread frame state

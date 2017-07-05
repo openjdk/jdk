@@ -49,6 +49,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"

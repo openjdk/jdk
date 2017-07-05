@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 
 G1CollectedHeap* G1AllocRegion::_g1h = NULL;
 HeapRegion* G1AllocRegion::_dummy_region = NULL;
