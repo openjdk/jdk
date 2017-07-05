@@ -165,15 +165,16 @@ size_t Generation::max_contiguous_available() const {
   return max;
 }
 
-bool Generation::promotion_attempt_is_safe(size_t promotion_in_bytes,
-                                           bool not_used) const {
+bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
+  size_t available = max_contiguous_available();
+  bool   res = (available >= max_promotion_in_bytes);
   if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("Generation::promotion_attempt_is_safe"
-                " contiguous_available: " SIZE_FORMAT
-                " promotion_in_bytes: " SIZE_FORMAT,
-                max_contiguous_available(), promotion_in_bytes);
+    gclog_or_tty->print_cr(
+      "Generation: promo attempt is%s safe: available("SIZE_FORMAT") %s max_promo("SIZE_FORMAT")",
+      res? "":" not", available, res? ">=":"<",
+      max_promotion_in_bytes);
   }
-  return max_contiguous_available() >= promotion_in_bytes;
+  return res;
 }
 
 // Ignores "ref" and calls allocate().

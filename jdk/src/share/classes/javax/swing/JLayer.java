@@ -384,7 +384,7 @@ public final class JLayer<V extends Component>
      * @return true
      * @see JComponent#isPaintingOrigin()
      */
-    boolean isPaintingOrigin() {
+    protected boolean isPaintingOrigin() {
         return true;
     }
 

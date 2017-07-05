@@ -438,6 +438,7 @@ public class RepaintManager
      * @param y Y coordinate of the region to repaint
      * @param w Width of the region to repaint
      * @param h Height of the region to repaint
+     * @see JComponent#isPaintingOrigin()
      * @see JComponent#repaint
      */
     public void addDirtyRegion(JComponent c, int x, int y, int w, int h)
@@ -446,6 +447,16 @@ public class RepaintManager
         if (delegate != null) {
             delegate.addDirtyRegion(c, x, y, w, h);
             return;
+        }
+        Container p = c;
+        while ((p = p.getParent()) instanceof JComponent) {
+            JComponent jp = (JComponent) p;
+            if (jp.isPaintingOrigin()) {
+                Rectangle rectangle = SwingUtilities.convertRectangle(
+                        c, new Rectangle(x, y, w, h), jp);
+                jp.repaint(0, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+                return;
+            }
         }
         addDirtyRegion0(c, x, y, w, h);
     }

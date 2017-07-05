@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,12 +65,14 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         }
         this.spec = (TlsKeyMaterialParameterSpec)params;
         if ("RAW".equals(spec.getMasterSecret().getFormat()) == false) {
-            throw new InvalidAlgorithmParameterException("Key format must be RAW");
+            throw new InvalidAlgorithmParameterException(
+                "Key format must be RAW");
         }
-        protocolVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
-        if ((protocolVersion < 0x0300) || (protocolVersion > 0x0302)) {
-            throw new InvalidAlgorithmParameterException
-                ("Only SSL 3.0, TLS 1.0, and TLS 1.1 supported");
+        protocolVersion = (spec.getMajorVersion() << 8)
+            | spec.getMinorVersion();
+        if ((protocolVersion < 0x0300) || (protocolVersion > 0x0303)) {
+            throw new InvalidAlgorithmParameterException(
+                "Only SSL 3.0, TLS 1.0/1.1/1.2 supported");
         }
     }
 
@@ -80,8 +82,8 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
     protected SecretKey engineGenerateKey() {
         if (spec == null) {
-            throw new IllegalStateException
-                ("TlsKeyMaterialGenerator must be initialized");
+            throw new IllegalStateException(
+                "TlsKeyMaterialGenerator must be initialized");
         }
         try {
             return engineGenerateKey0();
@@ -99,8 +101,8 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         SecretKey clientMacKey = null;
         SecretKey serverMacKey = null;
         SecretKey clientCipherKey = null;
-        IvParameterSpec clientIv = null;
         SecretKey serverCipherKey = null;
+        IvParameterSpec clientIv = null;
         IvParameterSpec serverIv = null;
 
         int macLength = spec.getMacKeyLength();
@@ -109,21 +111,33 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         int keyLength = spec.getCipherKeyLength();
         int ivLength = spec.getIvLength();
 
-        int keyBlockLen = macLength + keyLength + (isExportable ? 0 : ivLength);
+        int keyBlockLen = macLength + keyLength
+            + (isExportable ? 0 : ivLength);
         keyBlockLen <<= 1;
         byte[] keyBlock = new byte[keyBlockLen];
 
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        MessageDigest sha = MessageDigest.getInstance("SHA1");
+        // These may be used again later for exportable suite calculations.
+        MessageDigest md5 = null;
+        MessageDigest sha = null;
 
         // generate key block
-        if (protocolVersion >= 0x0301) {
-            // TLS
+        if (protocolVersion >= 0x0303) {
+            // TLS 1.2
             byte[] seed = concat(serverRandom, clientRandom);
-            keyBlock = doPRF(masterSecret, LABEL_KEY_EXPANSION, seed,
+            keyBlock = doTLS12PRF(masterSecret, LABEL_KEY_EXPANSION, seed,
+                        keyBlockLen, spec.getPRFHashAlg(),
+                        spec.getPRFHashLength(), spec.getPRFBlockSize());
+        } else if (protocolVersion >= 0x0301) {
+            // TLS 1.0/1.1
+            md5 = MessageDigest.getInstance("MD5");
+            sha = MessageDigest.getInstance("SHA1");
+            byte[] seed = concat(serverRandom, clientRandom);
+            keyBlock = doTLS10PRF(masterSecret, LABEL_KEY_EXPANSION, seed,
                         keyBlockLen, md5, sha);
         } else {
             // SSL
+            md5 = MessageDigest.getInstance("MD5");
+            sha = MessageDigest.getInstance("SHA1");
             keyBlock = new byte[keyBlockLen];
 
             byte[] tmp = new byte[20];
@@ -169,6 +183,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         String alg = spec.getCipherAlgorithm();
 
+        // cipher keys
         byte[] clientKeyBytes = new byte[keyLength];
         System.arraycopy(keyBlock, ofs, clientKeyBytes, 0, keyLength);
         ofs += keyLength;
@@ -182,6 +197,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             clientCipherKey = new SecretKeySpec(clientKeyBytes, alg);
             serverCipherKey = new SecretKeySpec(serverKeyBytes, alg);
 
+            // IV keys if needed.
             if (ivLength != 0) {
                 tmp = new byte[ivLength];
 
@@ -194,21 +210,28 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 serverIv = new IvParameterSpec(tmp);
             }
         } else {
+            // if exportable suites, calculate the alternate
             // cipher key expansion and IV generation
-            if (protocolVersion >= 0x0301) {
+            if (protocolVersion >= 0x0302) {
+                // TLS 1.1+
+                throw new RuntimeException(
+                    "Internal Error:  TLS 1.1+ should not be negotiating" +
+                    "exportable ciphersuites");
+            } else if (protocolVersion == 0x0301) {
+                // TLS 1.0
                 byte[] seed = concat(clientRandom, serverRandom);
 
-                tmp = doPRF(clientKeyBytes, LABEL_CLIENT_WRITE_KEY, seed,
+                tmp = doTLS10PRF(clientKeyBytes, LABEL_CLIENT_WRITE_KEY, seed,
                             expandedKeyLength, md5, sha);
                 clientCipherKey = new SecretKeySpec(tmp, alg);
 
-                tmp = doPRF(serverKeyBytes, LABEL_SERVER_WRITE_KEY, seed,
+                tmp = doTLS10PRF(serverKeyBytes, LABEL_SERVER_WRITE_KEY, seed,
                             expandedKeyLength, md5, sha);
                 serverCipherKey = new SecretKeySpec(tmp, alg);
 
                 if (ivLength != 0) {
                     tmp = new byte[ivLength];
-                    byte[] block = doPRF(null, LABEL_IV_BLOCK, seed,
+                    byte[] block = doTLS10PRF(null, LABEL_IV_BLOCK, seed,
                                 ivLength << 1, md5, sha);
                     System.arraycopy(block, 0, tmp, 0, ivLength);
                     clientIv = new IvParameterSpec(tmp);
@@ -216,6 +239,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                     serverIv = new IvParameterSpec(tmp);
                 }
             } else {
+                // SSLv3
                 tmp = new byte[expandedKeyLength];
 
                 md5.update(clientKeyBytes);

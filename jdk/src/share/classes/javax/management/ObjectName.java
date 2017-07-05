@@ -211,8 +211,8 @@ import java.util.Map;
  * reverse DNS name of the organization that specifies the MBeans,
  * followed by a period and a string whose interpretation is
  * determined by that organization.  For example, MBeans specified by
- * Sun Microsystems Inc., DNS name <code>sun.com</code>, would have
- * domains such as <code>com.sun.MyDomain</code>.  This is essentially
+ * <code>example.com</code>  would have
+ * domains such as <code>com.example.MyDomain</code>.  This is essentially
  * the same convention as for Java-language package names.</p>
  *
  * <p>The <b>serialVersionUID</b> of this class is <code>1081892073854801359L</code>.

@@ -25,7 +25,7 @@
     @summary test Resource Bundle for bug 4168625
     @build Bug4168625Class Bug4168625Getter Bug4168625Resource Bug4168625Resource3 Bug4168625Resource3_en Bug4168625Resource3_en_CA Bug4168625Resource3_en_IE Bug4168625Resource3_en_US Bug4168625Resource2_en_US Bug4168625Resource2
     @run main/timeout=600 Bug4168625Test
-    @bug 4168625
+    @bug 4168625 6993339
 */
 /*
  *
@@ -50,9 +50,8 @@ import java.util.*;
 import java.io.*;
 
 /**
- *  This test tries to correct three efficiency problems with the caching
- *  mechanism of ResourceBundle.  All tests assume that none of the bundles
- *  have been previously loaded and cached.  It also allows concurrent loads
+ *  This test tries to correct two efficiency problems with the caching
+ *  mechanism of ResourceBundle.  It also allows concurrent loads
  *  of resource bundles to be performed if the bundles are unrelated (ex. a
  *  load of a local system resource by one thread while another thread is
  *  doing a slow load over a network).
@@ -230,83 +229,6 @@ public class Bug4168625Test extends RBTestFmwk {
         }
     }
 
-    /**
-     *  Previous versions of ResourceBundle exhibited the following caching behavior.
-     *  Assume the class Bug4168625Resource_en exists. Bug4168625Resource_en_US does
-     *  not.  Two threads, ThreadA and ThreadB both try to get the same bundle.
-     *  <P>
-     *  <pre>
-     *  ThreadA.getBundle("Bug4168625Resource", new Locale("en", "US"));
-     *      A-->try to load Bug4168625Resource_en_US
-     *  ThreadB.getBundle("Bug4168625Resource", new Locale("en", "US"));
-     *      B-->try to load Bug4168625Resource_en_US
-     *      B-->load Bug4168625Resource_en (#1)
-     *      A-->load Bug4168625Resource_en (#2)
-     *      A-->cache Bug4168625Resource_en (#2) as Bug4168625Resource_en
-     *      A-->cache Bug4168625Resource_en (#2) as Bug4168625Resource_en_US
-     *      A-->return Bug4168625Resource_en (#2)
-     *      B-->cache Bug4168625Resource_en (#1) as Bug4168625Resource_en
-     *      B-->cache Bug4168625Resource_en (#1) as Bug4168625Resource_en_US
-     *      B-->return Bug4168625Resource_en (#1)
-     *  </pre>
-     *  <P>
-     *  Both threads try and fail to load Bug4168625Resource_en_US.  Both
-     *  threads load Bug4168625Resource_en.  Both threads get their own copy
-     *  of the Bug4168625Resource_en resource.
-     *
-     *  The desired behavior is as follows:
-     *  <P>
-     *  <pre>
-     *  ThreadA.getBundle("Bug4168625Resource", new Locale("en", "US"));
-     *      A-->try to load Bug4168625Resource_en_US
-     *  ThreadB.getBundle("Bug4168625Resource", new Locale("en", "US"));
-     *      B-->try to load Bug4168625Resource_en_US
-     *      B-->load Bug4168625Resource_en
-     *      A-->load Bug4168625Resource_en (block in ResourceBundle.getBundle)
-     *      B-->cache Bug4168625Resource_en as Bug4168625Resource_en
-     *      B-->cache Bug4168625Resource_en as Bug4168625Resource_en_US
-     *      A-->return Bug4168625Resource_en
-     *      B-->return Bug4168625Resource_en
-     *  </pre>
-     *  <P>
-     *  Note that both threads return the same bundle object.
-     */
-    public void testConcurrentLoading1() throws Exception {
-        final Loader loader = new Loader( new String[] { "Bug4168625Class" }, new String[] { "Bug4168625Resource3_en_US", "Bug4168625Resource3_en_CA" });
-        final Class c = loader.loadClass("Bug4168625Class");
-        final Bug4168625Getter test = (Bug4168625Getter)c.newInstance();
-
-            //both threads want the same resource
-        ConcurrentLoadingThread thread1 = new ConcurrentLoadingThread(loader, test, new Locale("en", "US"));
-        ConcurrentLoadingThread thread2 = new ConcurrentLoadingThread(loader, test, new Locale("en", "US"));
-
-        thread1.start();            //start thread 1
-        loader.waitForNotify(1);    //wait for thread1 to do getBundle & block in loader
-        thread2.start();            //start second thread
-        loader.waitForNotify(2, 1000);  //wait until thread2 blocks somewhere in getBundle
-        thread1.ping();             //continue both threads
-        thread2.ping();
-
-        thread1.join();             //wait unitl both threads complete
-        thread2.join();
-
-            //Now, examine the class loads that were done.
-        loader.logClasses("Classes loaded after completion of both threads:");
-
-        boolean dups = false;
-        for (int i = loader.loadedClasses.size() - 1; i >= 0 ; i--) {
-            final Object item = loader.loadedClasses.elementAt(i);
-            loader.loadedClasses.removeElementAt(i);
-            if (loader.loadedClasses.contains(item)) {
-                logln("Resource loaded more than once: "+item);
-                dups = true;
-            }
-        }
-        if (dups) {
-            errln("ResourceBundle loaded some classes multiple times");
-        }
-    }
-
     private class ConcurrentLoadingThread extends Thread {
         private Loader loader;
         public Object bundle;
@@ -355,7 +277,7 @@ public class Bug4168625Test extends RBTestFmwk {
      * This test ensures that multiple resources can be loading at the same
      * time as long as they don't depend on each other in some way.
      */
-    public void testConcurrentLoading2() throws Exception {
+    public void testConcurrentLoading() throws Exception {
         final Loader loader = new Loader( new String[] { "Bug4168625Class" }, new String[] { "Bug4168625Resource3_en_US", "Bug4168625Resource3_en_CA" });
         final Class c = loader.loadClass("Bug4168625Class");
         final Bug4168625Getter test = (Bug4168625Getter)c.newInstance();

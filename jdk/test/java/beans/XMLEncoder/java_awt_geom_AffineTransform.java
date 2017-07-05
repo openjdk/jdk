@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
- private:
+/*
+ * @test
+ * @bug 4358979
+ * @summary Tests AffineTransform encoding
+ * @author Sergey Malenkov
+ */
+
+import java.awt.geom.AffineTransform;
+
+public final class java_awt_geom_AffineTransform extends AbstractTest<AffineTransform> {
+    public static void main(String[] args) {
+        new java_awt_geom_AffineTransform().test(true);
+    }
+
+    protected AffineTransform getObject() {
+        return new AffineTransform(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f);
+    }
+
+    protected AffineTransform getAnotherObject() {
+        return new AffineTransform(0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f);
+    }
+}

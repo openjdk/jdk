@@ -199,7 +199,7 @@ public class TabSet implements Serializable
      */
     public String toString() {
         int            tabCount = getTabCount();
-        StringBuffer   buffer = new StringBuffer("[ ");
+        StringBuilder buffer = new StringBuilder("[ ");
 
         for(int counter = 0; counter < tabCount; counter++) {
             if(counter > 0)

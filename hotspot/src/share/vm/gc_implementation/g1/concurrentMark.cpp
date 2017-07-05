@@ -2418,6 +2418,8 @@ void ConcurrentMark::clear_marking_state() {
   for (int i = 0; i < (int)_max_task_num; ++i) {
     OopTaskQueue* queue = _task_queues->queue(i);
     queue->set_empty();
+    // Clear any partial regions from the CMTasks
+    _tasks[i]->clear_aborted_region();
   }
 }
 
@@ -2706,7 +2708,6 @@ void ConcurrentMark::abort() {
   clear_marking_state();
   for (int i = 0; i < (int)_max_task_num; ++i) {
     _tasks[i]->clear_region_fields();
-    _tasks[i]->clear_aborted_region();
   }
   _has_aborted = true;
 
@@ -2985,7 +2986,7 @@ void CMTask::reset(CMBitMap* nextMarkBitMap) {
 
   _nextMarkBitMap                = nextMarkBitMap;
   clear_region_fields();
-  clear_aborted_region();
+  assert(_aborted_region.is_empty(), "should have been cleared");
 
   _calls                         = 0;
   _elapsed_time_ms               = 0.0;

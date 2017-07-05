@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,10 @@ class OCSPChecker extends PKIXCertPathChecker {
                 "Cannot find the responder's certificate " +
                 "(set using the OCSP security properties).");
         }
+
+        // The algorithm constraints of the OCSP trusted responder certificate
+        // does not need to be checked in this code. The constraints will be
+        // checked when the responder's certificate is validated.
 
         CertId certId = null;
         OCSPResponse response = null;

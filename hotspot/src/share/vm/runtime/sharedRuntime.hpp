@@ -116,6 +116,9 @@ class SharedRuntime: AllStatic {
 
 #if defined(__SOFTFP__) || defined(E500V2)
   static double dabs(double f);
+#endif
+
+#if defined(__SOFTFP__) || defined(PPC)
   static double dsqrt(double f);
 #endif
 

@@ -1322,13 +1322,11 @@ public class DebugGraphics extends Graphics {
     }
 
     String toShortString() {
-        StringBuffer buffer = new StringBuffer("Graphics" + (isDrawingBuffer() ? "<B>" : "") + "(" + graphicsID + "-" + debugOptions + ")");
-        return buffer.toString();
+        return "Graphics" + (isDrawingBuffer() ? "<B>" : "") + "(" + graphicsID + "-" + debugOptions + ")";
     }
 
     String pointToString(int x, int y) {
-        StringBuffer buffer = new StringBuffer("(" + x + ", " + y + ")");
-        return buffer.toString();
+        return "(" + x + ", " + y + ")";
     }
 
     /** Enables/disables diagnostic information about every graphics

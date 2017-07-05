@@ -92,8 +92,6 @@ import javax.management.RuntimeOperationsException;
  * @since 1.5
  */
 
-// Sun Microsystems, Sept. 2002: Revisited for JMX 1.2 (DF)
-//
 @SuppressWarnings("serial")  // serialVersionUID is not constant
 public class ModelMBeanNotificationInfo
     extends MBeanNotificationInfo
