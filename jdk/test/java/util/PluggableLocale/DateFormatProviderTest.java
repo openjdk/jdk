@@ -34,6 +34,7 @@ public class DateFormatProviderTest extends ProviderTest {
     com.foo.DateFormatProviderImpl dfp = new com.foo.DateFormatProviderImpl();
     List<Locale> availloc = Arrays.asList(DateFormat.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(dfp.getAvailableLocales());
+    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
     List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getDateFormatProvider().getAvailableLocales());
 
     public static void main(String[] s) {
@@ -41,9 +42,21 @@ public class DateFormatProviderTest extends ProviderTest {
     }
 
     DateFormatProviderTest() {
+        availableLocalesTest();
         objectValidityTest();
         extendedVariantTest();
         messageFormatTest();
+    }
+
+    void availableLocalesTest() {
+        Set<Locale> localesFromAPI = new HashSet<>(availloc);
+        Set<Locale> localesExpected = new HashSet<>(jreloc);
+        localesExpected.addAll(providerloc);
+        if (localesFromAPI.equals(localesExpected)) {
+            System.out.println("availableLocalesTest passed.");
+        } else {
+            throw new RuntimeException("availableLocalesTest failed");
+        }
     }
 
     void objectValidityTest() {

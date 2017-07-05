@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,28 +27,15 @@
  * @library ..
  */
 
-import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 import java.util.*;
 
 
 public class AdaptDatagramSocket {
 
     static java.io.PrintStream out = System.out;
-
     static Random rand = new Random();
-
-    static final int ECHO_PORT = 7;
-    static final int DISCARD_PORT = 9;
-    static final String REMOTE_HOST = TestUtil.HOST;
-
-    static final InetSocketAddress echoAddress
-        = new InetSocketAddress(REMOTE_HOST, ECHO_PORT);
-    static final InetSocketAddress discardAddress
-        = new InetSocketAddress(REMOTE_HOST, DISCARD_PORT);
 
     static String toString(DatagramPacket dp) {
         return ("DatagramPacket[off=" + dp.getOffset()
@@ -88,10 +75,11 @@ public class AdaptDatagramSocket {
         out.println("rtt: " + (System.currentTimeMillis() - start));
         out.println("post op: " + toString(op) + "  ip: " + toString(ip));
 
-        for (int i = 0; i < ip.getLength(); i++)
+        for (int i = 0; i < ip.getLength(); i++) {
             if (ip.getData()[ip.getOffset() + i]
                 != op.getData()[op.getOffset() + i])
                 throw new Exception("Incorrect data received");
+        }
 
         if (!(ip.getSocketAddress().equals(dst))) {
             throw new Exception("Incorrect sender address, expected: " + dst
@@ -130,8 +118,9 @@ public class AdaptDatagramSocket {
             ds.setSoTimeout(timeout);
         out.println("timeout: " + ds.getSoTimeout());
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++) {
             test(ds, dst, shouldTimeout);
+        }
 
         // Leave the socket open so that we don't reuse the old src address
         //ds.close();
@@ -139,10 +128,23 @@ public class AdaptDatagramSocket {
     }
 
     public static void main(String[] args) throws Exception {
-        test(echoAddress, 0, false, false);
-        test(echoAddress, 0, false, true);
-        test(echoAddress, 5000, false, false);
-        test(discardAddress, 10, true, false);
+        // need an UDP echo server
+        try (TestServers.UdpEchoServer echoServer
+                = TestServers.UdpEchoServer.startNewServer(100)) {
+            final InetSocketAddress address
+                = new InetSocketAddress(echoServer.getAddress(),
+                                        echoServer.getPort());
+            test(address, 0, false, false);
+            test(address, 0, false, true);
+            test(address, 5000, false, false);
+        }
+        try (TestServers.UdpDiscardServer discardServer
+                = TestServers.UdpDiscardServer.startNewServer()) {
+            final InetSocketAddress address
+                = new InetSocketAddress(discardServer.getAddress(),
+                                        discardServer.getPort());
+            test(address, 10, true, false);
+        }
     }
 
 }

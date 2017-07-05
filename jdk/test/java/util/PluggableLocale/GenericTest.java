@@ -73,7 +73,6 @@ public class GenericTest {
         expected.addAll(Arrays.asList(localeNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(tzNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(calDataP.getAvailableLocales()));
-        expected.remove(Locale.ROOT);
         if (!result.equals(expected)) {
             throw new RuntimeException("Locale.getAvailableLocales() does not return the union of locales: diff="
                                        + getDiff(result, expected));

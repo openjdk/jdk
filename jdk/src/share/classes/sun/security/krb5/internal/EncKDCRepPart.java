@@ -160,9 +160,10 @@ public class EncKDCRepPart {
         if (der.getData().available() > 0) {
             caddr = HostAddresses.parse(der.getData(), (byte) 0x0B, true);
         }
-        if (der.getData().available() > 0) {
+        // We observe extra data from MSAD
+        /*if (der.getData().available() > 0) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
-        }
+        }*/
     }
 
     /**

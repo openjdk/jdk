@@ -542,14 +542,26 @@ public final class ResourceManager {
             try {
                 NamingEnumeration<InputStream> resources =
                     helper.getResources(cl, APP_RESOURCE_FILE_NAME);
-                while (resources.hasMore()) {
-                    Properties props = new Properties();
-                    props.load(resources.next());
+                try {
+                    while (resources.hasMore()) {
+                        Properties props = new Properties();
+                        InputStream istream = resources.next();
+                        try {
+                            props.load(istream);
+                        } finally {
+                            istream.close();
+                        }
 
-                    if (result == null) {
-                        result = props;
-                    } else {
-                        mergeTables(result, props);
+                        if (result == null) {
+                            result = props;
+                        } else {
+                            mergeTables(result, props);
+                        }
+                    }
+                } finally {
+                    while (resources.hasMore()) {
+                        InputStream istream = (InputStream)resources.next();
+                        istream.close();
                     }
                 }
 
@@ -557,13 +569,17 @@ public final class ResourceManager {
                 InputStream istream =
                     helper.getJavaHomeLibStream(JRELIB_PROPERTY_FILE_NAME);
                 if (istream != null) {
-                    Properties props = new Properties();
-                    props.load(istream);
+                    try {
+                        Properties props = new Properties();
+                        props.load(istream);
 
-                    if (result == null) {
-                        result = props;
-                    } else {
-                        mergeTables(result, props);
+                        if (result == null) {
+                            result = props;
+                        } else {
+                            mergeTables(result, props);
+                        }
+                    } finally {
+                        istream.close();
                     }
                 }
 

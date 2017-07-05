@@ -87,7 +87,7 @@ public class KrbTgsRep extends KrbKdcRep {
         check(false, req, rep);
 
         this.creds = new Credentials(rep.ticket,
-                                req.reqBody.cname,
+                                rep.cname,
                                 rep.ticket.sname,
                                 enc_part.key,
                                 enc_part.flags,
