@@ -76,6 +76,7 @@ class Atomic : AllStatic {
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
+  inline static jshort   add    (jshort   add_value, volatile jshort*   dest);
   inline static jint     add    (jint     add_value, volatile jint*     dest);
   inline static size_t   add    (size_t   add_value, volatile size_t*   dest);
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
@@ -208,10 +209,11 @@ inline jlong Atomic::add(jlong    add_value, volatile jlong*    dest) {
   return old;
 }
 
-inline void Atomic::inc(volatile short* dest) {
-  // Most platforms do not support atomic increment on a 2-byte value. However,
+inline jshort Atomic::add(jshort add_value, volatile jshort* dest) {
+  // Most platforms do not support atomic add on a 2-byte value. However,
   // if the value occupies the most significant 16 bits of an aligned 32-bit
-  // word, then we can do this with an atomic add of 0x10000 to the 32-bit word.
+  // word, then we can do this with an atomic add of (add_value << 16)
+  // to the 32-bit word.
   //
   // The least significant parts of this 32-bit word will never be affected, even
   // in case of overflow/underflow.
@@ -219,21 +221,20 @@ inline void Atomic::inc(volatile short* dest) {
   // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 #ifdef VM_LITTLE_ENDIAN
   assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-  (void)Atomic::add(0x10000, (volatile int*)(dest-1));
+  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
 #else
   assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-  (void)Atomic::add(0x10000, (volatile int*)(dest));
+  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
 #endif
+  return (jshort)(new_value >> 16); // preserves sign
 }
 
-inline void Atomic::dec(volatile short* dest) {
-#ifdef VM_LITTLE_ENDIAN
-  assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-  (void)Atomic::add(-0x10000, (volatile int*)(dest-1));
-#else
-  assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-  (void)Atomic::add(-0x10000, (volatile int*)(dest));
-#endif
+inline void Atomic::inc(volatile jshort* dest) {
+  (void)add(1, dest);
+}
+
+inline void Atomic::dec(volatile jshort* dest) {
+  (void)add(-1, dest);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP

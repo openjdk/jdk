@@ -112,6 +112,15 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
     int intrinsicId();
 
     /**
+     * Determines if this method denotes itself as a candidate for intrinsification. As of JDK 9,
+     * this is denoted by the {@code HotSpotIntrinsicCandidate} annotation. In earlier JDK versions,
+     * this method returns true.
+     *
+     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8076112">JDK-8076112</a>
+     */
+    boolean isIntrinsicCandidate();
+
+    /**
      * Allocates a compile id for this method by asking the VM for one.
      *
      * @param entryBCI entry bci

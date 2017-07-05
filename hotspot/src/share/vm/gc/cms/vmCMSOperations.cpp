@@ -37,14 +37,6 @@
 //////////////////////////////////////////////////////////
 // Methods in abstract class VM_CMS_Operation
 //////////////////////////////////////////////////////////
-void VM_CMS_Operation::acquire_pending_list_lock() {
-  _pending_list_locker.lock();
-}
-
-void VM_CMS_Operation::release_and_notify_pending_list_lock() {
-  _pending_list_locker.unlock();
-}
-
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
@@ -85,17 +77,10 @@ bool VM_CMS_Operation::doit_prologue() {
   assert(!ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
          "Possible deadlock");
 
-  if (needs_pending_list_lock()) {
-    acquire_pending_list_lock();
-  }
-  // Get the Heap_lock after the pending_list_lock.
   Heap_lock->lock();
   if (lost_race()) {
     assert(_prologue_succeeded == false, "Initialized in c'tor");
     Heap_lock->unlock();
-    if (needs_pending_list_lock()) {
-      release_and_notify_pending_list_lock();
-    }
   } else {
     _prologue_succeeded = true;
   }
@@ -108,11 +93,10 @@ void VM_CMS_Operation::doit_epilogue() {
   assert(!ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
          "Possible deadlock");
 
-  // Release the Heap_lock first.
-  Heap_lock->unlock();
-  if (needs_pending_list_lock()) {
-    release_and_notify_pending_list_lock();
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
   }
+  Heap_lock->unlock();
 }
 
 //////////////////////////////////////////////////////////
@@ -230,9 +214,11 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
   Thread* thr = Thread::current();
   assert(thr->is_Java_thread(), "just checking");
   JavaThread* jt = (JavaThread*)thr;
-  // Release the Heap_lock first.
+
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
+  }
   Heap_lock->unlock();
-  release_and_notify_pending_list_lock();
 
   // It is fine to test whether completed collections has
   // exceeded our request count without locking because
