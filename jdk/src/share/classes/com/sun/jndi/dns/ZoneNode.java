@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.util.Vector;
 
 class ZoneNode extends NameNode {
 
-    private SoftReference contentsRef = null;   // the zone's namespace
+    private SoftReference<NameNode> contentsRef = null;   // the zone's namespace
     private long serialNumber = -1;     // the zone data's serial number
     private Date expiration = null;     // time when the zone's data expires
 
@@ -88,7 +88,7 @@ class ZoneNode extends NameNode {
      */
     synchronized NameNode getContents() {
         return (contentsRef != null)
-                ? (NameNode) contentsRef.get()
+                ? contentsRef.get()
                 : null;
     }
 
@@ -130,7 +130,7 @@ class ZoneNode extends NameNode {
         NameNode newContents = new NameNode(null);
 
         for (int i = 0; i < rrs.answer.size(); i++) {
-            ResourceRecord rr = (ResourceRecord) rrs.answer.elementAt(i);
+            ResourceRecord rr = rrs.answer.elementAt(i);
             DnsName n = rr.getName();
 
             // Ignore resource records whose names aren't within the zone's
@@ -144,9 +144,9 @@ class ZoneNode extends NameNode {
             }
         }
         // The zone's SOA record is the first record in the answer section.
-        ResourceRecord soa = (ResourceRecord) rrs.answer.firstElement();
+        ResourceRecord soa = rrs.answer.firstElement();
         synchronized (this) {
-            contentsRef = new SoftReference(newContents);
+            contentsRef = new SoftReference<NameNode>(newContents);
             serialNumber = getSerialNumber(soa);
             setExpiration(getMinimumTtl(soa));
             return newContents;

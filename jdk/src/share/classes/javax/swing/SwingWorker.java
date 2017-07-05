@@ -50,8 +50,8 @@ import sun.swing.AccumulativeRunnable;
  * When writing a multi-threaded application using Swing, there are
  * two constraints to keep in mind:
  * (refer to
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">
- *   How to Use Threads
+ * <a href="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+ *   Concurrency in Swing
  * </a> for more details):
  * <ul>
  *   <li> Time-consuming tasks should not be run on the <i>Event

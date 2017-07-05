@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import javax.security.sasl.*;
 import java.io.*;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -63,7 +61,8 @@ public abstract class AbstractSaslImpl {
 
     protected String myClassName;
 
-    protected AbstractSaslImpl(Map props, String className) throws SaslException {
+    protected AbstractSaslImpl(Map<String, ?> props, String className)
+            throws SaslException {
         myClassName = className;
 
         // Parse properties  to set desired context options
@@ -156,23 +155,23 @@ public abstract class AbstractSaslImpl {
         if (!completed) {
             throw new IllegalStateException("SASL authentication not completed");
         }
-
-        if (propName.equals(Sasl.QOP)) {
-            if (privacy) {
-                return "auth-conf";
-            } else if (integrity) {
-                return "auth-int";
-            } else {
-                return "auth";
-            }
-        } else if (propName.equals(Sasl.MAX_BUFFER)) {
-            return Integer.toString(recvMaxBufSize);
-        } else if (propName.equals(Sasl.RAW_SEND_SIZE)) {
-            return Integer.toString(rawSendSize);
-        } else if (propName.equals(MAX_SEND_BUF)) {
-            return Integer.toString(sendMaxBufSize);
-        } else {
-            return null;
+        switch (propName) {
+            case Sasl.QOP:
+                if (privacy) {
+                    return "auth-conf";
+                } else if (integrity) {
+                    return "auth-int";
+                } else {
+                    return "auth";
+                }
+            case Sasl.MAX_BUFFER:
+                return Integer.toString(recvMaxBufSize);
+            case Sasl.RAW_SEND_SIZE:
+                return Integer.toString(rawSendSize);
+            case MAX_SEND_BUF:
+                return Integer.toString(sendMaxBufSize);
+            default:
+                return null;
         }
     }
 

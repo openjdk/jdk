@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             // just in case not, attempt conversion
             P11DHKeyFactory kf = new P11DHKeyFactory(token, "DH");
             try {
-                DHPublicKeySpec spec = (DHPublicKeySpec)kf.engineGetKeySpec
-                                                (key, DHPublicKeySpec.class);
+                DHPublicKeySpec spec = kf.engineGetKeySpec(
+                        key, DHPublicKeySpec.class);
                 y = spec.getY();
                 p = spec.getP();
                 g = spec.getG();

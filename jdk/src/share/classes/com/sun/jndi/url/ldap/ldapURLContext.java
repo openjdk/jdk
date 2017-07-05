@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.jndi.ldap.LdapURL;
 final public class ldapURLContext
         extends com.sun.jndi.toolkit.url.GenericURLDirContext {
 
-    ldapURLContext(Hashtable env) {
+    ldapURLContext(Hashtable<?,?> env) {
         super(env);
     }
 
@@ -56,7 +56,7 @@ final public class ldapURLContext
       * context on the server 'localhost' on port 389,
       * and returns as the remaining name "o=widget, c=us".
       */
-    protected ResolveResult getRootURLContext(String name, Hashtable env)
+    protected ResolveResult getRootURLContext(String name, Hashtable<?,?> env)
     throws NamingException {
         return ldapURLContextFactory.getUsingURLIgnoreRootDN(name, env);
     }
@@ -171,7 +171,8 @@ final public class ldapURLContext
         }
     }
 
-    public NamingEnumeration list(String name)  throws NamingException {
+    public NamingEnumeration<NameClassPair> list(String name)
+            throws NamingException {
         if (LdapURL.hasQueryComponents(name)) {
             throw new InvalidNameException(name);
         } else {
@@ -179,7 +180,8 @@ final public class ldapURLContext
         }
     }
 
-    public NamingEnumeration list(Name name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(Name name)
+            throws NamingException {
         if (LdapURL.hasQueryComponents(name.get(0))) {
             throw new InvalidNameException(name.toString());
         } else {
@@ -187,7 +189,8 @@ final public class ldapURLContext
         }
     }
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(String name)
+            throws NamingException {
         if (LdapURL.hasQueryComponents(name)) {
             throw new InvalidNameException(name);
         } else {
@@ -195,7 +198,8 @@ final public class ldapURLContext
         }
     }
 
-    public NamingEnumeration listBindings(Name name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(Name name)
+            throws NamingException {
         if (LdapURL.hasQueryComponents(name.get(0))) {
             throw new InvalidNameException(name.toString());
         } else {
@@ -447,7 +451,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when the LDAP URL has query components
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
         Attributes matchingAttributes)
         throws NamingException {
 
@@ -459,7 +463,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when name has a single component
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
         Attributes matchingAttributes)
         throws NamingException {
         if (name.size() == 1) {
@@ -472,7 +476,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when the LDAP URL has query components
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
         Attributes matchingAttributes,
         String[] attributesToReturn)
         throws NamingException {
@@ -485,7 +489,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when name has a single component
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
         Attributes matchingAttributes,
         String[] attributesToReturn)
         throws NamingException {
@@ -500,7 +504,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when the LDAP URL has query components
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
         String filter,
         SearchControls cons)
         throws NamingException {
@@ -513,7 +517,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when name has a single component
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
         String filter,
         SearchControls cons)
         throws NamingException {
@@ -528,7 +532,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when the LDAP URL has query components
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
         String filterExpr,
         Object[] filterArgs,
         SearchControls cons)
@@ -542,7 +546,7 @@ final public class ldapURLContext
     }
 
     // divert the search operation when name has a single component
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
         String filterExpr,
         Object[] filterArgs,
         SearchControls cons)
@@ -559,7 +563,7 @@ final public class ldapURLContext
 
     // Search using the LDAP URL in name.
     // LDAP URL query components override the search argments.
-    private NamingEnumeration searchUsingURL(String name)
+    private NamingEnumeration<SearchResult> searchUsingURL(String name)
         throws NamingException {
 
         LdapURL url = new LdapURL(name);

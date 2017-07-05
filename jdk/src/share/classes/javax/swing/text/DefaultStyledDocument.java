@@ -173,8 +173,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offset the starting offset >= 0
      * @param data the element data
@@ -426,8 +426,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param pos the offset from the start of the document >= 0
      * @param s  the logical style to assign to the paragraph, null if none
@@ -483,8 +483,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offset the offset in the document >= 0
      * @param length the length >= 0
@@ -536,8 +536,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph >= 0
      * @param length the number of characters affected >= 0

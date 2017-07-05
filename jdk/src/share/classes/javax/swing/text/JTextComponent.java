@@ -2213,8 +2213,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">
-     * How to Use Threads</A> for more information.
+     * HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * Concurrency in Swing</A> for more information.
      *
      * <p>
      * <b>Sample Usage</b>. This code snippet shows a cross-platform print
@@ -2471,8 +2471,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">
-     * How to Use Threads</A> for more information.
+     * HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * Concurrency in Swing</A> for more information.
      *
      * <p>
      * The returned {@code Printable} can be printed on any thread.

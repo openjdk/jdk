@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@ package com.sun.jndi.ldap;
 import java.util.Vector;
 import javax.naming.*;
 import javax.naming.directory.*;
+import javax.naming.ldap.Control;
 import javax.naming.spi.*;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
 
-final class LdapBindingEnumeration extends LdapNamingEnumeration {
+final class LdapBindingEnumeration
+        extends AbstractLdapNamingEnumeration<Binding> {
 
     LdapBindingEnumeration(LdapCtx homeCtx, LdapResult answer, Name remain,
         Continuation cont) throws NamingException
@@ -40,8 +42,9 @@ final class LdapBindingEnumeration extends LdapNamingEnumeration {
         super(homeCtx, answer, remain, cont);
     }
 
-    protected NameClassPair
-      createItem(String dn, Attributes attrs, Vector respCtls)
+    @Override
+    protected Binding
+      createItem(String dn, Attributes attrs, Vector<Control> respCtls)
         throws NamingException {
 
         Object obj = null;
@@ -85,9 +88,10 @@ final class LdapBindingEnumeration extends LdapNamingEnumeration {
         return binding;
     }
 
-    protected LdapNamingEnumeration
-    getReferredResults(LdapReferralContext refCtx) throws NamingException{
+    @Override
+    protected LdapBindingEnumeration getReferredResults(
+            LdapReferralContext refCtx) throws NamingException{
         // repeat the original operation at the new context
-        return (LdapNamingEnumeration) refCtx.listBindings(listArg);
+        return (LdapBindingEnumeration)refCtx.listBindings(listArg);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public final class IiopUrl {
     static final private int DEFAULT_IIOPNAME_PORT = 9999;
     static final private int DEFAULT_IIOP_PORT = 900;
     static final private String DEFAULT_HOST = "localhost";
-    private Vector addresses;
+    private Vector<Address> addresses;
     private String stringName;
 
     public static class Address {
@@ -149,7 +149,7 @@ public final class IiopUrl {
         }
     }
 
-    public Vector getAddresses() {
+    public Vector<Address> getAddresses() {
         return addresses;
     }
 
@@ -185,7 +185,7 @@ public final class IiopUrl {
         } else {
             stringName = UrlUtil.decode(url.substring(addrEnd+1));
         }
-        addresses = new Vector(3);
+        addresses = new Vector<>(3);
         if (oldFormat) {
             // Only one host:port part, not multiple
             addresses.addElement(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package com.sun.jndi.ldap;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.naming.*;
@@ -50,11 +48,12 @@ final class LdapAttribute extends BasicAttribute {
     // these two are used to reconstruct the baseCtx if this attribute has
     // been serialized (
     private String baseCtxURL;
-    private Hashtable baseCtxEnv;
+    private Hashtable<String, ? super String> baseCtxEnv;
 
+    @SuppressWarnings("unchecked") // clone()
     public Object clone() {
         LdapAttribute attr = new LdapAttribute(this.attrID, baseCtx, rdn);
-        attr.values = (Vector)values.clone();
+        attr.values = (Vector<Object>)values.clone();
         return attr;
     }
 
@@ -112,7 +111,7 @@ final class LdapAttribute extends BasicAttribute {
     private DirContext getBaseCtx() throws NamingException {
         if(baseCtx == null) {
             if (baseCtxEnv == null) {
-                baseCtxEnv = new Hashtable(3);
+                baseCtxEnv = new Hashtable<String, String>(3);
             }
             baseCtxEnv.put(Context.INITIAL_CONTEXT_FACTORY,
                              "com.sun.jndi.ldap.LdapCtxFactory");
@@ -144,9 +143,10 @@ final class LdapAttribute extends BasicAttribute {
      * we are serialized. This must be called _before_ the object is
      * serialized!!!
      */
+    @SuppressWarnings("unchecked") // clone()
     private void setBaseCtxInfo() {
-        Hashtable realEnv = null;
-        Hashtable secureEnv = null;
+        Hashtable<String, Object> realEnv = null;
+        Hashtable<String, Object> secureEnv = null;
 
         if (baseCtx != null) {
             realEnv = ((LdapCtx)baseCtx).envprops;
@@ -156,16 +156,14 @@ final class LdapAttribute extends BasicAttribute {
         if(realEnv != null && realEnv.size() > 0 ) {
             // remove any security credentials - otherwise the serialized form
             // would store them in the clear
-            Enumeration keys = realEnv.keys();
-            while(keys.hasMoreElements()) {
-                String key = (String)keys.nextElement();
+            for (String key : realEnv.keySet()){
                 if (key.indexOf("security") != -1 ) {
 
                     //if we need to remove props, we must do it to a clone
                     //of the environment. cloning is expensive, so we only do
                     //it if we have to.
                     if(secureEnv == null) {
-                        secureEnv = (Hashtable)realEnv.clone();
+                        secureEnv = (Hashtable<String, Object>)realEnv.clone();
                     }
                     secureEnv.remove(key);
                 }

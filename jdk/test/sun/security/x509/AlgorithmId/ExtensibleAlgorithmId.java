@@ -24,8 +24,11 @@
 /*
  * @test
  * @bug 4162868
+ * @run main/othervm ExtensibleAlgorithmId
  * @summary Algorithm Name-to-OID mapping needs to be made extensible.
  */
+
+// Run in othervm, coz AlgorithmId.oidTable is only initialized once
 
 import java.security.*;
 import sun.security.x509.AlgorithmId;

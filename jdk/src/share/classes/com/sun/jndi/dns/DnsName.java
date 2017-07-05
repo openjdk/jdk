@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ package com.sun.jndi.dns;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.Iterator;
 
 import javax.naming.*;
 
@@ -111,7 +110,7 @@ public final class DnsName implements Name {
     // The labels of this domain name, as a list of strings.  Index 0
     // corresponds to the leftmost (least significant) label:  note that
     // this is the reverse of the ordering used by the Name interface.
-    private ArrayList labels = new ArrayList();
+    private ArrayList<String> labels = new ArrayList<>();
 
     // The number of octets needed to carry this domain name in a DNS
     // packet.  Equal to the sum of the lengths of each label, plus the
@@ -152,9 +151,7 @@ public final class DnsName implements Name {
             domain = n.domain;
             octets = n.octets;
         } else {
-            Iterator iter = labels.iterator();
-            while (iter.hasNext()) {
-                String label = (String) iter.next();
+            for (String label: labels) {
                 if (label.length() > 0) {
                     octets += (short) (label.length() + 1);
                 }
@@ -165,10 +162,8 @@ public final class DnsName implements Name {
 
     public String toString() {
         if (domain == null) {
-            StringBuffer buf = new StringBuffer();
-            Iterator iter = labels.iterator();
-            while (iter.hasNext()) {
-                String label = (String) iter.next();
+            StringBuilder buf = new StringBuilder();
+            for (String label: labels) {
                 if (buf.length() > 0 || label.length() == 0) {
                     buf.append('.');
                 }
@@ -183,9 +178,8 @@ public final class DnsName implements Name {
      * Does this domain name follow <em>host name</em> syntax?
      */
     public boolean isHostName() {
-        Iterator iter = labels.iterator();
-        while (iter.hasNext()) {
-            if (!isHostNameLabel((String) iter.next())) {
+        for (String label: labels) {
+            if (!isHostNameLabel(label)) {
                 return false;
             }
         }
@@ -241,16 +235,16 @@ public final class DnsName implements Name {
             throw new ArrayIndexOutOfBoundsException();
         }
         int i = size() - pos - 1;       // index of "pos" component in "labels"
-        return (String) labels.get(i);
+        return labels.get(i);
     }
 
-    public Enumeration getAll() {
-        return new Enumeration() {
+    public Enumeration<String> getAll() {
+        return new Enumeration<String>() {
             int pos = 0;
             public boolean hasMoreElements() {
                 return (pos < size());
             }
-            public Object nextElement() {
+            public String nextElement() {
                 if (pos < size()) {
                     return get(pos++);
                 }
@@ -276,7 +270,7 @@ public final class DnsName implements Name {
             throw new ArrayIndexOutOfBoundsException();
         }
         int i = size() - pos - 1;     // index of element to remove in "labels"
-        String label = (String) labels.remove(i);
+        String label = labels.remove(i);
         int len = label.length();
         if (len > 0) {
             octets -= (short) (len + 1);
@@ -530,7 +524,7 @@ public final class DnsName implements Name {
     /*
      * Append a label to buf, escaping as needed.
      */
-    private static void escape(StringBuffer buf, String label) {
+    private static void escape(StringBuilder buf, String label) {
         for (int i = 0; i < label.length(); i++) {
             char c = label.charAt(i);
             if (c == '.' || c == '\\') {

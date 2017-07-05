@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ final class EncryptedPrivateKeyInfo {
         if (seq[1].data.available() != 0)
             throw new IOException("encryptedData field overrun");
 
-        this.encoded = (byte[])encoded.clone();
+        this.encoded = encoded.clone();
     }
 
     /**
@@ -86,7 +86,7 @@ final class EncryptedPrivateKeyInfo {
      */
     EncryptedPrivateKeyInfo(AlgorithmId algid, byte[] encryptedData) {
         this.algid = algid;
-        this.encryptedData = (byte[])encryptedData.clone();
+        this.encryptedData = encryptedData.clone();
         this.encoded = null; // lazy generation of encoding
     }
 
@@ -101,7 +101,7 @@ final class EncryptedPrivateKeyInfo {
      * Returns the encrypted data.
      */
     byte[] getEncryptedData() {
-        return (byte[])this.encryptedData.clone();
+        return this.encryptedData.clone();
     }
 
     /**
@@ -110,7 +110,7 @@ final class EncryptedPrivateKeyInfo {
     byte[] getEncoded()
         throws IOException
     {
-        if (this.encoded != null) return (byte[])this.encoded.clone();
+        if (this.encoded != null) return this.encoded.clone();
 
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
@@ -125,6 +125,6 @@ final class EncryptedPrivateKeyInfo {
         out.write(DerValue.tag_Sequence, tmp);
         this.encoded = out.toByteArray();
 
-        return (byte[])this.encoded.clone();
+        return this.encoded.clone();
     }
 }

@@ -65,7 +65,7 @@ import static sun.security.ssl.JsseJce.*;
  *    unavailable or disabled at compile time
  *
  */
-final class CipherSuite implements Comparable {
+final class CipherSuite implements Comparable<CipherSuite> {
 
     // minimum priority for supported CipherSuites
     final static int SUPPORTED_SUITES_PRIORITY = 1;
@@ -202,8 +202,8 @@ final class CipherSuite implements Comparable {
      * Note that for unsupported CipherSuites parsed from a handshake
      * message we violate the equals() contract.
      */
-    public int compareTo(Object o) {
-        return ((CipherSuite)o).priority - priority;
+    public int compareTo(CipherSuite o) {
+        return o.priority - priority;
     }
 
     /**

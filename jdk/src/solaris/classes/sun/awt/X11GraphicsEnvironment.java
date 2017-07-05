@@ -95,11 +95,11 @@ public class X11GraphicsEnvironment
                     }
 
                     // Now check for XRender system property
-                    boolean xRenderRequested = false;
+                    boolean xRenderRequested = true;
                     String xProp = System.getProperty("sun.java2d.xrender");
                         if (xProp != null) {
-                        if (xProp.equals("true") || xProp.equals("t")) {
-                            xRenderRequested = true;
+                        if (xProp.equals("false") || xProp.equals("f")) {
+                            xRenderRequested = false;
                         } else if (xProp.equals("True") || xProp.equals("T")) {
                             xRenderRequested = true;
                             xRenderVerbose = true;

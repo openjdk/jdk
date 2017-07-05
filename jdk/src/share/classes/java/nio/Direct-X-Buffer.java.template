@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,13 @@ class Direct$Type$Buffer$RW$$BO$
     // NOTE: moved up to Buffer.java for speed in JNI GetDirectBufferAddress
     //    protected long address;
 
-    // If this buffer is a view of another buffer then we keep a reference to
-    // that buffer so that its memory isn't freed before we're done with it
-    protected Object viewedBuffer = null;
+    // An object attached to this buffer. If this buffer is a view of another
+    // buffer then we use this field to keep a reference to that buffer to
+    // ensure that its memory isn't freed before we are done with it.
+    private final Object att;
 
-    public Object viewedBuffer() {
-        return viewedBuffer;
+    public Object attachment() {
+        return att;
     }
 
 #if[byte]
@@ -136,6 +137,7 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        att = null;
 #else[rw]
         super(cap);
 #end[rw]
@@ -143,12 +145,24 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw]
 
+    // Invoked to construct a direct ByteBuffer referring to the block of
+    // memory. A given arbitrary object may also be attached to the buffer.
+    //
+    Direct$Type$Buffer(long addr, int cap, Object ob) {
+        super(-1, 0, cap, cap);
+        address = addr;
+        cleaner = null;
+        att = ob;
+    }
+
+
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
     //
     private Direct$Type$Buffer(long addr, int cap) {
         super(-1, 0, cap, cap);
         address = addr;
         cleaner = null;
+        att = null;
     }
 
 #end[rw]
@@ -162,8 +176,8 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         super(-1, 0, cap, cap, fd);
         address = addr;
-        viewedBuffer = null;
         cleaner = Cleaner.create(this, unmapper);
+        att = null;
 #else[rw]
         super(cap, addr, fd, unmapper);
 #end[rw]
@@ -180,10 +194,10 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         super(mark, pos, lim, cap);
         address = db.address() + off;
-        viewedBuffer = db;
 #if[byte]
         cleaner = null;
 #end[byte]
+        att = db;
 #else[rw]
         super(db, mark, pos, lim, cap, off);
 #end[rw]
