@@ -30,7 +30,6 @@
  *
  * @author  Mandy Chung
  *
- * @modules java.management
  * @build Barrier
  * @build SynchronizerLockingThread
  * @build ThreadDump

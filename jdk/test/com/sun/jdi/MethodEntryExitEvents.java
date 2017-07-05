@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4409241 4432820
- *  @summary Test the bug fix for: MethodExitEvents disappear when Object-Methods are called from main
- *  @author Tim Bell
+ * @test
+ * @bug 4409241 4432820
+ * @summary Test the bug fix for: MethodExitEvents disappear when Object-Methods are called from main
+ * @author Tim Bell
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g MethodEntryExitEvents.java
- *  @run driver MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
- *  @run driver MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
- *  @run driver MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g MethodEntryExitEvents.java
+ * @run driver MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
+ * @run driver MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
+ * @run driver MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

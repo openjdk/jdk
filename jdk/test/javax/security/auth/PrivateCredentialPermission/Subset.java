@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
  * @test
  * @author  Ram Marti
  * @bug 4326852
+ * @modules jdk.security.auth
  * @summary Retrive a subset of private credentials can be accessed
  * @run main/othervm/policy=Subset.policy Subset
  */
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import com.sun.security.auth.SolarisPrincipal;
 import javax.security.auth.Subject;
 
