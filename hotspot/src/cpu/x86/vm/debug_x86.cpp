@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_debug_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/init.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/top.hpp"
 
 void pd_ps(frame f) {}

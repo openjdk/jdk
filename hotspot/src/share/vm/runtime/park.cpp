@@ -22,9 +22,9 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "runtime/thread.hpp"
 
-# include "incls/_precompiled.incl"
-# include "incls/_park.cpp.incl"
 
 
 // Lifecycle management for TSM ParkEvents.

@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_psGCAdaptivePolicyCounters.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
 
 
 

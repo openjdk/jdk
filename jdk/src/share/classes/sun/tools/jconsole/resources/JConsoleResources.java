@@ -434,8 +434,8 @@ public class JConsoleResources extends ListResourceBundle {
              "Usage: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ... ]\n\n" +
              "  -interval   Set the update interval to n seconds (default is 4 seconds)\n" +
              "  -notile     Do not tile windows initially (for two or more connections)\n" +
-             "  -pluginpath Specify the path that jconsole uses to look up the plugins\n\n" +
-             "  -version    Print program version\n" +
+             "  -pluginpath Specify the path that jconsole uses to look up the plugins\n" +
+             "  -version    Print program version\n\n" +
              "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)\n" +
              "  pid         The process id of a target process\n" +
              "  host        A remote host name or IP address\n" +

@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,13 @@
   <xsl:call-template name="includeHeader"/>
   <xsl:text>
     
+
+#ifndef GENERATED_JVMTIFILES_JVMTIENV_HPP
+#define GENERATED_JVMTIFILES_JVMTIENV_HPP
+
+#include "prims/jvmtiEnvBase.hpp"
+#include "prims/jvmtiImpl.hpp"
+
 enum {
     JVMTI_INTERNAL_CAPABILITY_COUNT = </xsl:text>
   <xsl:value-of select="count(//capabilityfield)"/>
@@ -59,6 +66,8 @@ public:
   <xsl:apply-templates select="functionsection"/>
   <xsl:text>
 };
+
+#endif // GENERATED_JVMTIFILES_JVMTIENV_HPP
 </xsl:text>
 </xsl:template>
 

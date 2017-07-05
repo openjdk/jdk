@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PAROOPCLOSURES_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PAROOPCLOSURES_HPP
+
+#include "memory/genOopClosures.hpp"
+
 // Closures for ParNewGeneration
 
 class ParScanThreadState;
@@ -141,3 +146,5 @@ class ParEvacuateFollowersClosure: public VoidClosure {
     ParallelTaskTerminator* terminator_);
   virtual void do_void();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_PAROOPCLOSURES_HPP

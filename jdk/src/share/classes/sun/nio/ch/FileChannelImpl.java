@@ -39,12 +39,11 @@ import sun.security.action.GetPropertyAction;
 public class FileChannelImpl
     extends FileChannel
 {
-
-    // Used to make native read and write calls
-    private static final FileDispatcher nd;
-
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity;
+
+    // Used to make native read and write calls
+    private final FileDispatcher nd;
 
     // File descriptor
     private final FileDescriptor fd;
@@ -63,22 +62,29 @@ public class FileChannelImpl
     private final Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, boolean readable,
-                            boolean writable, Object parent)
+                            boolean writable, boolean append, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
         this.parent = parent;
+        this.nd = new FileDispatcherImpl(append);
     }
 
-    // Invoked by getChannel() methods
-    // of java.io.File{Input,Output}Stream and RandomAccessFile
-    //
+    // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, parent);
+        return new FileChannelImpl(fd, readable, writable, false, parent);
+    }
+
+    // Used by FileOutputStream.getChannel
+    public static FileChannel open(FileDescriptor fd,
+                                   boolean readable, boolean writable,
+                                   boolean append, Object parent)
+    {
+        return new FileChannelImpl(fd, readable, writable, append, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -704,6 +710,9 @@ public class FileChannelImpl
     private static class Unmapper
         implements Runnable
     {
+        // may be required to close file
+        private static final NativeDispatcher nd = new FileDispatcherImpl();
+
         // keep track of mapped buffer usage
         static volatile int count;
         static volatile long totalSize;
@@ -1119,7 +1128,6 @@ public class FileChannelImpl
     static {
         Util.load();
         allocationGranularity = initIDs();
-        nd = new FileDispatcherImpl();
     }
 
 }

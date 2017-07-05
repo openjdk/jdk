@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_ATOMIC_HPP
+#define SHARE_VM_RUNTIME_ATOMIC_HPP
+
+#include "memory/allocation.hpp"
 
 class Atomic : AllStatic {
  public:
@@ -78,3 +83,5 @@ class Atomic : AllStatic {
   static intptr_t cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value);
   static void*    cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value);
 };
+
+#endif // SHARE_VM_RUNTIME_ATOMIC_HPP

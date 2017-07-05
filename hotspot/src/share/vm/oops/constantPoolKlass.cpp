@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_constantPoolKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/permGen.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS) {
   int size = constantPoolOopDesc::object_size(length);
@@ -372,6 +399,7 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
       case JVM_CONSTANT_MethodType :
         st->print("signature_index=%d", cp->method_type_index_at(index));
         break;
+      case JVM_CONSTANT_InvokeDynamicTrans :
       case JVM_CONSTANT_InvokeDynamic :
         {
           st->print("bootstrap_method_index=%d", cp->invoke_dynamic_bootstrap_method_ref_index_at(index));

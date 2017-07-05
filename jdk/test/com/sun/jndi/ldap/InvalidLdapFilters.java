@@ -48,6 +48,8 @@
  * @run main/othervm InvalidLdapFilters valid (sn;lang-en:dn:2.4.6.8.10:=Barney)
  * @run main/othervm InvalidLdapFilters valid
          (&(objectClass=Person)(|(sn=Jensen)(cn=Bab*)))
+ * @run main/othervm InvalidLdapFilters valid
+         (orcluserapplnprovstatus;EMAIL_email=PROVISIONING_FAILURE)
  * @run main/othervm InvalidLdapFilters invalid "(&(cn=Robert Dean)))"
  * @run main/othervm InvalidLdapFilters invalid (&|(cn=Bob))
  * @run main/othervm InvalidLdapFilters invalid (&&(cn=Bob))

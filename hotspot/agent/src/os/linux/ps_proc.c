@@ -121,15 +121,13 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
 #define ptrace_getregs(request, pid, addr, data) ptrace(request, pid, data, addr)
 #endif
 
-#ifdef _LP64
-#ifdef PTRACE_GETREGS64
+#if defined(_LP64) && defined(PTRACE_GETREGS64)
 #define PTRACE_GETREGS_REQ PTRACE_GETREGS64
-#endif
-#else
-#if defined(PTRACE_GETREGS) || defined(PT_GETREGS)
+#elif defined(PTRACE_GETREGS)
 #define PTRACE_GETREGS_REQ PTRACE_GETREGS
+#elif defined(PT_GETREGS)
+#define PTRACE_GETREGS_REQ PT_GETREGS
 #endif
-#endif /* _LP64 */
 
 #ifdef PTRACE_GETREGS_REQ
  if (ptrace_getregs(PTRACE_GETREGS_REQ, pid, user, NULL) < 0) {

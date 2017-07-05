@@ -22,8 +22,39 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_genMarkSweep.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genMarkSweep.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/modRefBarrierSet.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/space.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   bool clear_all_softrefs) {

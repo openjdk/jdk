@@ -89,7 +89,7 @@ JNICALL Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
     // Fill a new ECParams using the supplied OID
     if (EC_DecodeParams(&params_item, &ecparams, 0) != SECSuccess) {
         /* bad curve OID */
-        ThrowException(env, INVALID_ALGORITHM_PARAMETER_EXCEPTION);
+        ThrowException(env, (char *) INVALID_ALGORITHM_PARAMETER_EXCEPTION);
         goto cleanup;
     }
 
@@ -101,7 +101,7 @@ JNICALL Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
     // Generate the new keypair (using the supplied seed)
     if (EC_NewKey(ecparams, &privKey, (unsigned char *) pSeedBuffer,
         jSeedLength, 0) != SECSuccess) {
-        ThrowException(env, KEY_EXCEPTION);
+        ThrowException(env, (char *) KEY_EXCEPTION);
         goto cleanup;
     }
 

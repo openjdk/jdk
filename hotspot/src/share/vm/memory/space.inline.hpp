@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_SPACE_INLINE_HPP
+#define SHARE_VM_MEMORY_SPACE_INLINE_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/space.hpp"
+#include "memory/universe.hpp"
+#include "runtime/safepoint.hpp"
 
 inline HeapWord* Space::block_start(const void* p) {
   return block_start_const(p);
@@ -71,3 +79,5 @@ inline void ContiguousSpace::set_concurrent_iteration_safe_limit(HeapWord* new_l
   assert(new_limit <= top(), "uninitialized objects in the safe range");
   _concurrent_iteration_safe_limit = new_limit;
 }
+
+#endif // SHARE_VM_MEMORY_SPACE_INLINE_HPP

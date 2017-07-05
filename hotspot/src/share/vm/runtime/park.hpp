@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_PARK_HPP
+#define SHARE_VM_RUNTIME_PARK_HPP
+
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 /*
  * Per-thread blocking support for JSR166. See the Java-level
  * Documentation for rationale. Basically, park acts like wait, unpark
@@ -167,3 +173,5 @@ class ParkEvent : public os::PlatformEvent {
     static ParkEvent * Allocate (Thread * t) ;
     static void Release (ParkEvent * e) ;
 } ;
+
+#endif // SHARE_VM_RUNTIME_PARK_HPP

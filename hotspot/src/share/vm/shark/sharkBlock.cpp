@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkBlock.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/llvmValue.hpp"
+#include "shark/sharkBlock.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkConstant.hpp"
+#include "shark/sharkState.hpp"
+#include "shark/sharkValue.hpp"
+#include "shark/shark_globals.hpp"
+#include "utilities/debug.hpp"
 
 using namespace llvm;
 

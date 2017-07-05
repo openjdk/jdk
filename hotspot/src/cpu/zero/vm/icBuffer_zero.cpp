@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_icBuffer_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_zero.inline.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/resourceArea.hpp"
+#include "nativeInst_zero.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
 
 int InlineCacheBuffer::ic_stub_code_size() {
   // NB set this once the functions below are implemented

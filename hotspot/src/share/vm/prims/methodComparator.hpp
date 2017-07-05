@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_METHODCOMPARATOR_HPP
+#define SHARE_VM_PRIMS_METHODCOMPARATOR_HPP
+
+#include "interpreter/bytecodeStream.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/methodOop.hpp"
+
 class BciMap;
 
 // methodComparator provides an interface for determining if methods of
@@ -121,3 +128,5 @@ class BciMap {
     else return false;
   }
 };
+
+#endif // SHARE_VM_PRIMS_METHODCOMPARATOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,34 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_objectMonitor.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/markOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
+#include "services/threadService.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 #if defined(__GNUC__) && !defined(IA64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures

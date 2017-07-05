@@ -26,9 +26,6 @@
 # JPRT rule to build this workspace
 
 JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
-ifdef JPRT_BUILD_VERSION
-  MILESTONE=$(JPRT_BUILD_VERSION)
-endif
 
 jprt_build_product:  all images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \

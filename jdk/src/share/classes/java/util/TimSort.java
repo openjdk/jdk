@@ -239,7 +239,7 @@ class TimSort<T> {
      * @param lo the index of the first element in the range to be sorted
      * @param hi the index after the last element in the range to be sorted
      * @param start the index of the first element in the range that is
-     *        not already known to be sorted (@code lo <= start <= hi}
+     *        not already known to be sorted ({@code lo <= start <= hi})
      * @param c comparator to used for the sort
      */
     @SuppressWarnings("fallthrough")
@@ -278,7 +278,7 @@ class TimSort<T> {
              */
             int n = start - left;  // The number of elements to move
             // Switch is just an optimization for arraycopy in default case
-            switch(n) {
+            switch (n) {
                 case 2:  a[left + 2] = a[left + 1];
                 case 1:  a[left + 1] = a[left];
                          break;
@@ -308,7 +308,7 @@ class TimSort<T> {
      * @param a the array in which a run is to be counted and possibly reversed
      * @param lo index of the first element in the run
      * @param hi index after the last element that may be contained in the run.
-              It is required that @code{lo < hi}.
+              It is required that {@code lo < hi}.
      * @param c the comparator to used for the sort
      * @return  the length of the run beginning at the specified position in
      *          the specified array
@@ -322,7 +322,7 @@ class TimSort<T> {
 
         // Find end of run, and reverse range if descending
         if (c.compare(a[runHi++], a[lo]) < 0) { // Descending
-            while(runHi < hi && c.compare(a[runHi], a[runHi - 1]) < 0)
+            while (runHi < hi && c.compare(a[runHi], a[runHi - 1]) < 0)
                 runHi++;
             reverseRange(a, lo, runHi);
         } else {                              // Ascending

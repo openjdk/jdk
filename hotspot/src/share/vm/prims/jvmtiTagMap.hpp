@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,17 @@
 
 // JvmtiTagMap
 
-#ifndef _JAVA_JVMTI_TAG_MAP_H_
-#define _JAVA_JVMTI_TAG_MAP_H_
+#ifndef SHARE_VM_PRIMS_JVMTITAGMAP_HPP
+#define SHARE_VM_PRIMS_JVMTITAGMAP_HPP
+
+#ifndef JVMTI_KERNEL
+#include "gc_interface/collectedHeap.hpp"
+#include "jvmtifiles/jvmti.h"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/allocation.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/universe.hpp"
+#endif
 
 // forward references
 class JvmtiTagHashmap;
@@ -132,4 +141,4 @@ class JvmtiTagMap :  public CHeapObj {
   static void cms_ref_processing_epilogue();
 };
 
-#endif   /* _JAVA_JVMTI_TAG_MAP_H_ */
+#endif // SHARE_VM_PRIMS_JVMTITAGMAP_HPP

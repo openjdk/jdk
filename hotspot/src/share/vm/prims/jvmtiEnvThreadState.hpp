@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,17 @@
  * questions.
  *
  */
-#ifndef _JAVA_JVMTIENVTHREADSTATE_H_
-#define _JAVA_JVMTIENVTHREADSTATE_H_
+
+#ifndef SHARE_VM_PRIMS_JVMTIENVTHREADSTATE_HPP
+#define SHARE_VM_PRIMS_JVMTIENVTHREADSTATE_HPP
+
+#include "jvmtifiles/jvmti.h"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 class JvmtiEnv;
 
@@ -174,4 +183,4 @@ public:
 
 };
 
-#endif   /* _JAVA_JVMTIENVTHREADSTATE_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIENVTHREADSTATE_HPP

@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_CODEBLOB_HPP
+#define SHARE_VM_CODE_CODEBLOB_HPP
+
+#include "asm/codeBuffer.hpp"
+#include "compiler/oopMap.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.hpp"
+
 // CodeBlob - superclass for all entries in the CodeCache.
 //
 // Suptypes are:
@@ -499,3 +507,5 @@ class SafepointBlob: public SingletonBlob {
   // Typing
   bool is_safepoint_stub() const                 { return true; }
 };
+
+#endif // SHARE_VM_CODE_CODEBLOB_HPP

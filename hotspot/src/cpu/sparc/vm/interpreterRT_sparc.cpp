@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreterRT_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/signature.hpp"
 
 
 #define __ _masm->

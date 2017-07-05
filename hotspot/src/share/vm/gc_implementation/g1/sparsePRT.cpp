@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sparsePRT.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/sparsePRT.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/space.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 
 #define SPARSE_PRT_VERBOSE 0
 

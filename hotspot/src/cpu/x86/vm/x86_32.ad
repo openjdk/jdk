@@ -507,6 +507,25 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
 
 
 //=============================================================================
+const bool Matcher::constant_table_absolute_addressing = true;
+const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+
+void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+  // Empty encoding
+}
+
+uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
+  return 0;
+}
+
+#ifndef PRODUCT
+void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
+  st->print("# MachConstantBaseNode (empty encoding)");
+}
+#endif
+
+
+//=============================================================================
 #ifndef PRODUCT
 void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   Compile* C = ra_->C;
@@ -1320,29 +1339,6 @@ int emit_deopt_handler(CodeBuffer& cbuf) {
 }
 
 
-static void emit_double_constant(CodeBuffer& cbuf, double x) {
-  int mark = cbuf.insts()->mark_off();
-  MacroAssembler _masm(&cbuf);
-  address double_address = __ double_constant(x);
-  cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
-  emit_d32_reloc(cbuf,
-                 (int)double_address,
-                 internal_word_Relocation::spec(double_address),
-                 RELOC_DISP32);
-}
-
-static void emit_float_constant(CodeBuffer& cbuf, float x) {
-  int mark = cbuf.insts()->mark_off();
-  MacroAssembler _masm(&cbuf);
-  address float_address = __ float_constant(x);
-  cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
-  emit_d32_reloc(cbuf,
-                 (int)float_address,
-                 internal_word_Relocation::spec(float_address),
-                 RELOC_DISP32);
-}
-
-
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
@@ -1352,22 +1348,6 @@ const bool Matcher::match_rule_supported(int opcode) {
 
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
-}
-
-bool is_positive_zero_float(jfloat f) {
-  return jint_cast(f) == jint_cast(0.0F);
-}
-
-bool is_positive_one_float(jfloat f) {
-  return jint_cast(f) == jint_cast(1.0F);
-}
-
-bool is_positive_zero_double(jdouble d) {
-  return jlong_cast(d) == jlong_cast(0.0);
-}
-
-bool is_positive_one_double(jdouble d) {
-  return jlong_cast(d) == jlong_cast(1.0);
 }
 
 // This is UltraSparc specific, true just means we have fast l2f conversion
@@ -2033,67 +2013,6 @@ encode %{
       emit_opcode(cbuf, $primary + dst_enc);
       emit_d32(cbuf, src_con);
     }
-  %}
-
-
-  enc_class LdImmD (immD src) %{    // Load Immediate
-    if( is_positive_zero_double($src$$constant)) {
-      // FLDZ
-      emit_opcode(cbuf,0xD9);
-      emit_opcode(cbuf,0xEE);
-    } else if( is_positive_one_double($src$$constant)) {
-      // FLD1
-      emit_opcode(cbuf,0xD9);
-      emit_opcode(cbuf,0xE8);
-    } else {
-      emit_opcode(cbuf,0xDD);
-      emit_rm(cbuf, 0x0, 0x0, 0x5);
-      emit_double_constant(cbuf, $src$$constant);
-    }
-  %}
-
-
-  enc_class LdImmF (immF src) %{    // Load Immediate
-    if( is_positive_zero_float($src$$constant)) {
-      emit_opcode(cbuf,0xD9);
-      emit_opcode(cbuf,0xEE);
-    } else if( is_positive_one_float($src$$constant)) {
-      emit_opcode(cbuf,0xD9);
-      emit_opcode(cbuf,0xE8);
-    } else {
-      $$$emit8$primary;
-      // Load immediate does not have a zero or sign extended version
-      // for 8-bit immediates
-      // First load to TOS, then move to dst
-      emit_rm(cbuf, 0x0, 0x0, 0x5);
-      emit_float_constant(cbuf, $src$$constant);
-    }
-  %}
-
-  enc_class LdImmX (regX dst, immXF con) %{    // Load Immediate
-    emit_rm(cbuf, 0x0, $dst$$reg, 0x5);
-    emit_float_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class LdImmXD (regXD dst, immXD con) %{    // Load Immediate
-    emit_rm(cbuf, 0x0, $dst$$reg, 0x5);
-    emit_double_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class load_conXD (regXD dst, immXD con) %{ // Load double constant
-    // UseXmmLoadAndClearUpper ? movsd(dst, con) : movlpd(dst, con)
-    emit_opcode(cbuf, UseXmmLoadAndClearUpper ? 0xF2 : 0x66);
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, UseXmmLoadAndClearUpper ? 0x10 : 0x12);
-    emit_rm(cbuf, 0x0, $dst$$reg, 0x5);
-    emit_double_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class Opc_MemImm_F(immF src) %{
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    emit_rm(cbuf, 0x0, $secondary, 0x5);
-    emit_float_constant(cbuf, $src$$constant);
   %}
 
 
@@ -4801,7 +4720,7 @@ operand immD0() %{
   interface(CONST_INTER);
 %}
 
-// Double Immediate
+// Double Immediate one
 operand immD1() %{
   predicate( UseSSE<=1 && n->getd() == 1.0 );
   match(ConD);
@@ -4844,7 +4763,17 @@ operand immXD0() %{
 
 // Float Immediate zero
 operand immF0() %{
-  predicate( UseSSE == 0 && n->getf() == 0.0 );
+  predicate(UseSSE == 0 && n->getf() == 0.0F);
+  match(ConF);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Float Immediate one
+operand immF1() %{
+  predicate(UseSSE == 0 && n->getf() == 1.0F);
   match(ConF);
 
   op_cost(5);
@@ -7215,24 +7144,53 @@ instruct loadConL0(eRegL dst, immL0 src, eFlagsReg cr) %{
 %}
 
 // The instruction usage is guarded by predicate in operand immF().
-instruct loadConF(regF dst, immF src) %{
-  match(Set dst src);
+instruct loadConF(regF dst, immF con) %{
+  match(Set dst con);
   ins_cost(125);
-
-  format %{ "FLD_S  ST,$src\n\t"
+  format %{ "FLD_S  ST,[$constantaddress]\t# load from constant table: float=$con\n\t"
             "FSTP   $dst" %}
-  opcode(0xD9, 0x00);       /* D9 /0 */
-  ins_encode(LdImmF(src), Pop_Reg_F(dst) );
-  ins_pipe( fpu_reg_con );
+  ins_encode %{
+    __ fld_s($constantaddress($con));
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
+%}
+
+// The instruction usage is guarded by predicate in operand immF0().
+instruct loadConF0(regF dst, immF0 con) %{
+  match(Set dst con);
+  ins_cost(125);
+  format %{ "FLDZ   ST\n\t"
+            "FSTP   $dst" %}
+  ins_encode %{
+    __ fldz();
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
+%}
+
+// The instruction usage is guarded by predicate in operand immF1().
+instruct loadConF1(regF dst, immF1 con) %{
+  match(Set dst con);
+  ins_cost(125);
+  format %{ "FLD1   ST\n\t"
+            "FSTP   $dst" %}
+  ins_encode %{
+    __ fld1();
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
 %}
 
 // The instruction usage is guarded by predicate in operand immXF().
 instruct loadConX(regX dst, immXF con) %{
   match(Set dst con);
   ins_cost(125);
-  format %{ "MOVSS  $dst,[$con]" %}
-  ins_encode( Opcode(0xF3), Opcode(0x0F), Opcode(0x10), LdImmX(dst, con));
-  ins_pipe( pipe_slow );
+  format %{ "MOVSS  $dst,[$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // The instruction usage is guarded by predicate in operand immXF0().
@@ -7240,28 +7198,63 @@ instruct loadConX0(regX dst, immXF0 src) %{
   match(Set dst src);
   ins_cost(100);
   format %{ "XORPS  $dst,$dst\t# float 0.0" %}
-  ins_encode( Opcode(0x0F), Opcode(0x57), RegReg(dst,dst));
-  ins_pipe( pipe_slow );
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // The instruction usage is guarded by predicate in operand immD().
-instruct loadConD(regD dst, immD src) %{
-  match(Set dst src);
+instruct loadConD(regD dst, immD con) %{
+  match(Set dst con);
   ins_cost(125);
 
-  format %{ "FLD_D  ST,$src\n\t"
+  format %{ "FLD_D  ST,[$constantaddress]\t# load from constant table: double=$con\n\t"
             "FSTP   $dst" %}
-  ins_encode(LdImmD(src), Pop_Reg_D(dst) );
-  ins_pipe( fpu_reg_con );
+  ins_encode %{
+    __ fld_d($constantaddress($con));
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
+%}
+
+// The instruction usage is guarded by predicate in operand immD0().
+instruct loadConD0(regD dst, immD0 con) %{
+  match(Set dst con);
+  ins_cost(125);
+
+  format %{ "FLDZ   ST\n\t"
+            "FSTP   $dst" %}
+  ins_encode %{
+    __ fldz();
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
+%}
+
+// The instruction usage is guarded by predicate in operand immD1().
+instruct loadConD1(regD dst, immD1 con) %{
+  match(Set dst con);
+  ins_cost(125);
+
+  format %{ "FLD1   ST\n\t"
+            "FSTP   $dst" %}
+  ins_encode %{
+    __ fld1();
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_con);
 %}
 
 // The instruction usage is guarded by predicate in operand immXD().
 instruct loadConXD(regXD dst, immXD con) %{
   match(Set dst con);
   ins_cost(125);
-  format %{ "MOVSD  $dst,[$con]" %}
-  ins_encode(load_conXD(dst, con));
-  ins_pipe( pipe_slow );
+  format %{ "MOVSD  $dst,[$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // The instruction usage is guarded by predicate in operand immXD0().
@@ -10303,41 +10296,45 @@ instruct addD_mem_reg(memory dst, regD src) %{
   ins_pipe( fpu_reg_mem );
 %}
 
-instruct addD_reg_imm1(regD dst, immD1 src) %{
+instruct addD_reg_imm1(regD dst, immD1 con) %{
   predicate(UseSSE<=1);
-  match(Set dst (AddD dst src));
+  match(Set dst (AddD dst con));
   ins_cost(125);
   format %{ "FLD1\n\t"
             "DADDp  $dst,ST" %}
-  opcode(0xDE, 0x00);
-  ins_encode( LdImmD(src),
-              OpcP, RegOpc(dst) );
-  ins_pipe( fpu_reg );
+  ins_encode %{
+    __ fld1();
+    __ faddp($dst$$reg);
+  %}
+  ins_pipe(fpu_reg);
 %}
 
-instruct addD_reg_imm(regD dst, immD src) %{
+instruct addD_reg_imm(regD dst, immD con) %{
   predicate(UseSSE<=1 && _kids[1]->_leaf->getd() != 0.0 && _kids[1]->_leaf->getd() != 1.0 );
-  match(Set dst (AddD dst src));
+  match(Set dst (AddD dst con));
   ins_cost(200);
-  format %{ "FLD_D  [$src]\n\t"
+  format %{ "FLD_D  [$constantaddress]\t# load from constant table: double=$con\n\t"
             "DADDp  $dst,ST" %}
-  opcode(0xDE, 0x00);       /* DE /0 */
-  ins_encode( LdImmD(src),
-              OpcP, RegOpc(dst));
-  ins_pipe( fpu_reg_mem );
+  ins_encode %{
+    __ fld_d($constantaddress($con));
+    __ faddp($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_mem);
 %}
 
 instruct addD_reg_imm_round(stackSlotD dst, regD src, immD con) %{
   predicate(UseSSE<=1 && _kids[0]->_kids[1]->_leaf->getd() != 0.0 && _kids[0]->_kids[1]->_leaf->getd() != 1.0 );
   match(Set dst (RoundDouble (AddD src con)));
   ins_cost(200);
-  format %{ "FLD_D  [$con]\n\t"
+  format %{ "FLD_D  [$constantaddress]\t# load from constant table: double=$con\n\t"
             "DADD   ST,$src\n\t"
             "FSTP_D $dst\t# D-round" %}
-  opcode(0xD8, 0x00);       /* D8 /0 */
-  ins_encode( LdImmD(con),
-              OpcP, RegOpc(src), Pop_Mem_D(dst));
-  ins_pipe( fpu_mem_reg_con );
+  ins_encode %{
+    __ fld_d($constantaddress($con));
+    __ fadd($src$$reg);
+    __ fstp_d(Address(rsp, $dst$$disp));
+  %}
+  ins_pipe(fpu_mem_reg_con);
 %}
 
 // Add two double precision floating point values in xmm
@@ -10352,9 +10349,11 @@ instruct addXD_reg(regXD dst, regXD src) %{
 instruct addXD_imm(regXD dst, immXD con) %{
   predicate(UseSSE>=2);
   match(Set dst (AddD dst con));
-  format %{ "ADDSD  $dst,[$con]" %}
-  ins_encode( Opcode(0xF2), Opcode(0x0F), Opcode(0x58), LdImmXD(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "ADDSD  $dst,[$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ addsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct addXD_mem(regXD dst, memory mem) %{
@@ -10377,9 +10376,11 @@ instruct subXD_reg(regXD dst, regXD src) %{
 instruct subXD_imm(regXD dst, immXD con) %{
   predicate(UseSSE>=2);
   match(Set dst (SubD dst con));
-  format %{ "SUBSD  $dst,[$con]" %}
-  ins_encode( Opcode(0xF2), Opcode(0x0F), Opcode(0x5C), LdImmXD(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "SUBSD  $dst,[$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ subsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct subXD_mem(regXD dst, memory mem) %{
@@ -10402,9 +10403,11 @@ instruct mulXD_reg(regXD dst, regXD src) %{
 instruct mulXD_imm(regXD dst, immXD con) %{
   predicate(UseSSE>=2);
   match(Set dst (MulD dst con));
-  format %{ "MULSD  $dst,[$con]" %}
-  ins_encode( Opcode(0xF2), Opcode(0x0F), Opcode(0x59), LdImmXD(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "MULSD  $dst,[$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ mulsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct mulXD_mem(regXD dst, memory mem) %{
@@ -10428,9 +10431,11 @@ instruct divXD_reg(regXD dst, regXD src) %{
 instruct divXD_imm(regXD dst, immXD con) %{
   predicate(UseSSE>=2);
   match(Set dst (DivD dst con));
-  format %{ "DIVSD  $dst,[$con]" %}
-  ins_encode( Opcode(0xF2), Opcode(0x0F), Opcode(0x5E), LdImmXD(dst, con));
-  ins_pipe( pipe_slow );
+  format %{ "DIVSD  $dst,[$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ divsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct divXD_mem(regXD dst, memory mem) %{
@@ -10481,16 +10486,17 @@ instruct strictfp_mulD_reg(regDPR1 dst, regnotDPR1 src) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct mulD_reg_imm(regD dst, immD src) %{
+instruct mulD_reg_imm(regD dst, immD con) %{
   predicate( UseSSE<=1 && _kids[1]->_leaf->getd() != 0.0 && _kids[1]->_leaf->getd() != 1.0 );
-  match(Set dst (MulD dst src));
+  match(Set dst (MulD dst con));
   ins_cost(200);
-  format %{ "FLD_D  [$src]\n\t"
+  format %{ "FLD_D  [$constantaddress]\t# load from constant table: double=$con\n\t"
             "DMULp  $dst,ST" %}
-  opcode(0xDE, 0x1); /* DE /1 */
-  ins_encode( LdImmD(src),
-              OpcP, RegOpc(dst) );
-  ins_pipe( fpu_reg_mem );
+  ins_encode %{
+    __ fld_d($constantaddress($con));
+    __ fmulp($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_mem);
 %}
 
 
@@ -11224,9 +11230,11 @@ instruct addX_reg(regX dst, regX src) %{
 instruct addX_imm(regX dst, immXF con) %{
   predicate(UseSSE>=1);
   match(Set dst (AddF dst con));
-  format %{ "ADDSS  $dst,[$con]" %}
-  ins_encode( Opcode(0xF3), Opcode(0x0F), Opcode(0x58), LdImmX(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "ADDSS  $dst,[$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ addss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct addX_mem(regX dst, memory mem) %{
@@ -11249,9 +11257,11 @@ instruct subX_reg(regX dst, regX src) %{
 instruct subX_imm(regX dst, immXF con) %{
   predicate(UseSSE>=1);
   match(Set dst (SubF dst con));
-  format %{ "SUBSS  $dst,[$con]" %}
-  ins_encode( Opcode(0xF3), Opcode(0x0F), Opcode(0x5C), LdImmX(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "SUBSS  $dst,[$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ subss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct subX_mem(regX dst, memory mem) %{
@@ -11274,9 +11284,11 @@ instruct mulX_reg(regX dst, regX src) %{
 instruct mulX_imm(regX dst, immXF con) %{
   predicate(UseSSE>=1);
   match(Set dst (MulF dst con));
-  format %{ "MULSS  $dst,[$con]" %}
-  ins_encode( Opcode(0xF3), Opcode(0x0F), Opcode(0x59), LdImmX(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "MULSS  $dst,[$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ mulss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct mulX_mem(regX dst, memory mem) %{
@@ -11299,9 +11311,11 @@ instruct divX_reg(regX dst, regX src) %{
 instruct divX_imm(regX dst, immXF con) %{
   predicate(UseSSE>=1);
   match(Set dst (DivF dst con));
-  format %{ "DIVSS  $dst,[$con]" %}
-  ins_encode( Opcode(0xF3), Opcode(0x0F), Opcode(0x5E), LdImmX(dst, con) );
-  ins_pipe( pipe_slow );
+  format %{ "DIVSS  $dst,[$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ divss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct divX_mem(regX dst, memory mem) %{
@@ -11456,31 +11470,33 @@ instruct addF24_mem_mem(stackSlotF dst, memory src1, memory src2) %{
 
 
 // Spill to obtain 24-bit precision
-instruct addF24_reg_imm(stackSlotF dst, regF src1, immF src2) %{
+instruct addF24_reg_imm(stackSlotF dst, regF src, immF con) %{
   predicate(UseSSE==0 && Compile::current()->select_24_bit_instr());
-  match(Set dst (AddF src1 src2));
-  format %{ "FLD    $src1\n\t"
-            "FADD   $src2\n\t"
+  match(Set dst (AddF src con));
+  format %{ "FLD    $src\n\t"
+            "FADD_S [$constantaddress]\t# load from constant table: float=$con\n\t"
             "FSTP_S $dst"  %}
-  opcode(0xD8, 0x00);       /* D8 /0 */
-  ins_encode( Push_Reg_F(src1),
-              Opc_MemImm_F(src2),
-              Pop_Mem_F(dst));
-  ins_pipe( fpu_mem_reg_con );
+  ins_encode %{
+    __ fld_s($src$$reg - 1);  // FLD ST(i-1)
+    __ fadd_s($constantaddress($con));
+    __ fstp_s(Address(rsp, $dst$$disp));
+  %}
+  ins_pipe(fpu_mem_reg_con);
 %}
 //
 // This instruction does not round to 24-bits
-instruct addF_reg_imm(regF dst, regF src1, immF src2) %{
+instruct addF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseSSE==0 && !Compile::current()->select_24_bit_instr());
-  match(Set dst (AddF src1 src2));
-  format %{ "FLD    $src1\n\t"
-            "FADD   $src2\n\t"
-            "FSTP_S $dst"  %}
-  opcode(0xD8, 0x00);       /* D8 /0 */
-  ins_encode( Push_Reg_F(src1),
-              Opc_MemImm_F(src2),
-              Pop_Reg_F(dst));
-  ins_pipe( fpu_reg_reg_con );
+  match(Set dst (AddF src con));
+  format %{ "FLD    $src\n\t"
+            "FADD_S [$constantaddress]\t# load from constant table: float=$con\n\t"
+            "FSTP   $dst"  %}
+  ins_encode %{
+    __ fld_s($src$$reg - 1);  // FLD ST(i-1)
+    __ fadd_s($constantaddress($con));
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_reg_con);
 %}
 
 // Spill to obtain 24-bit precision
@@ -11559,29 +11575,35 @@ instruct mulF24_mem_mem(stackSlotF dst, memory src1, memory src2) %{
 %}
 
 // Spill to obtain 24-bit precision
-instruct mulF24_reg_imm(stackSlotF dst, regF src1, immF src2) %{
+instruct mulF24_reg_imm(stackSlotF dst, regF src, immF con) %{
   predicate(UseSSE==0 && Compile::current()->select_24_bit_instr());
-  match(Set dst (MulF src1 src2));
+  match(Set dst (MulF src con));
 
-  format %{ "FMULc $dst,$src1,$src2" %}
-  opcode(0xD8, 0x1);  /* D8 /1*/
-  ins_encode( Push_Reg_F(src1),
-              Opc_MemImm_F(src2),
-              Pop_Mem_F(dst));
-  ins_pipe( fpu_mem_reg_con );
+  format %{ "FLD    $src\n\t"
+            "FMUL_S [$constantaddress]\t# load from constant table: float=$con\n\t"
+            "FSTP_S $dst"  %}
+  ins_encode %{
+    __ fld_s($src$$reg - 1);  // FLD ST(i-1)
+    __ fmul_s($constantaddress($con));
+    __ fstp_s(Address(rsp, $dst$$disp));
+  %}
+  ins_pipe(fpu_mem_reg_con);
 %}
 //
 // This instruction does not round to 24-bits
-instruct mulF_reg_imm(regF dst, regF src1, immF src2) %{
+instruct mulF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseSSE==0 && !Compile::current()->select_24_bit_instr());
-  match(Set dst (MulF src1 src2));
+  match(Set dst (MulF src con));
 
-  format %{ "FMULc $dst. $src1, $src2" %}
-  opcode(0xD8, 0x1);  /* D8 /1*/
-  ins_encode( Push_Reg_F(src1),
-              Opc_MemImm_F(src2),
-              Pop_Reg_F(dst));
-  ins_pipe( fpu_reg_reg_con );
+  format %{ "FLD    $src\n\t"
+            "FMUL_S [$constantaddress]\t# load from constant table: float=$con\n\t"
+            "FSTP   $dst"  %}
+  ins_encode %{
+    __ fld_s($src$$reg - 1);  // FLD ST(i-1)
+    __ fmul_s($constantaddress($con));
+    __ fstp_d($dst$$reg);
+  %}
+  ins_pipe(fpu_reg_reg_con);
 %}
 
 
@@ -12939,16 +12961,11 @@ instruct maxI_eReg(eRegI dst, eRegI src, eFlagsReg flags) %{
 instruct jumpXtnd(eRegI switch_val) %{
   match(Jump switch_val);
   ins_cost(350);
-
-  format %{  "JMP    [table_base](,$switch_val,1)\n\t" %}
-
+  format %{  "JMP    [$constantaddress](,$switch_val,1)\n\t" %}
   ins_encode %{
-    address table_base  = __ address_table_constant(_index2label);
-
     // Jump to Address(table_base + switch_reg)
-    InternalAddress table(table_base);
     Address index(noreg, $switch_val$$Register, Address::times_1);
-    __ jump(ArrayAddress(table, index));
+    __ jump(ArrayAddress($constantaddress, index));
   %}
   ins_pc_relative(1);
   ins_pipe(pipe_jmp);

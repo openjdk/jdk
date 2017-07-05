@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,28 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_klassKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/permGen.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/klassKlass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/symbolKlass.hpp"
+#include "oops/symbolOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "runtime/handles.inline.hpp"
+#ifndef SERIALGC
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 int klassKlass::oop_size(oop obj) const {
   assert (obj->is_klass(), "must be a klassOop");

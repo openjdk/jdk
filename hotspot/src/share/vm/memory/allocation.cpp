@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_allocation.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/os.hpp"
+#include "runtime/task.hpp"
+#include "runtime/threadCritical.hpp"
+#include "utilities/ostream.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 void* CHeapObj::operator new(size_t size){
   return (void *) AllocateHeap(size, "CHeapObj-new");
@@ -58,7 +73,7 @@ void* ResourceObj::operator new(size_t size, allocation_type type) {
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
-  DEBUG_ONLY(((ResourceObj *)p)->_allocation = (uintptr_t)badHeapOopVal;)
+  DEBUG_ONLY(((ResourceObj *)p)->_allocation_t[0] = (uintptr_t)badHeapOopVal;)
   FreeHeap(p);
 }
 
@@ -68,43 +83,73 @@ void ResourceObj::set_allocation_type(address res, allocation_type type) {
     uintptr_t allocation = (uintptr_t)res;
     assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least");
     assert(type <= allocation_mask, "incorrect allocation type");
-    ((ResourceObj *)res)->_allocation = ~(allocation + type);
+    ResourceObj* resobj = (ResourceObj *)res;
+    resobj->_allocation_t[0] = ~(allocation + type);
+    if (type != STACK_OR_EMBEDDED) {
+      // Called from operator new() and CollectionSetChooser(),
+      // set verification value.
+      resobj->_allocation_t[1] = (uintptr_t)&(resobj->_allocation_t[1]) + type;
+    }
 }
 
 ResourceObj::allocation_type ResourceObj::get_allocation_type() const {
-    assert(~(_allocation | allocation_mask) == (uintptr_t)this, "lost resource object");
-    return (allocation_type)((~_allocation) & allocation_mask);
+    assert(~(_allocation_t[0] | allocation_mask) == (uintptr_t)this, "lost resource object");
+    return (allocation_type)((~_allocation_t[0]) & allocation_mask);
+}
+
+bool ResourceObj::is_type_set() const {
+    allocation_type type = (allocation_type)(_allocation_t[1] & allocation_mask);
+    return get_allocation_type()  == type &&
+           (_allocation_t[1] - type) == (uintptr_t)(&_allocation_t[1]);
 }
 
 ResourceObj::ResourceObj() { // default constructor
-    if (~(_allocation | allocation_mask) != (uintptr_t)this) {
+    if (~(_allocation_t[0] | allocation_mask) != (uintptr_t)this) {
+      // Operator new() is not called for allocations
+      // on stack and for embedded objects.
       set_allocation_type((address)this, STACK_OR_EMBEDDED);
-    } else if (allocated_on_stack()) {
-      // For some reason we got a value which looks like an allocation on stack.
-      // Pass if it is really allocated on stack.
-      assert(Thread::current()->on_local_stack((address)this),"should be on stack");
+    } else if (allocated_on_stack()) { // STACK_OR_EMBEDDED
+      // For some reason we got a value which resembles
+      // an embedded or stack object (operator new() does not
+      // set such type). Keep it since it is valid value
+      // (even if it was garbage).
+      // Ignore garbage in other fields.
+    } else if (is_type_set()) {
+      // Operator new() was called and type was set.
+      assert(!allocated_on_stack(),
+             err_msg("not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+                     this, get_allocation_type(), _allocation_t[0], _allocation_t[1]));
     } else {
-      assert(allocated_on_res_area() || allocated_on_C_heap() || allocated_on_arena(),
-             "allocation_type should be set by operator new()");
+      // Operator new() was not called.
+      // Assume that it is embedded or stack object.
+      set_allocation_type((address)this, STACK_OR_EMBEDDED);
     }
+    _allocation_t[1] = 0; // Zap verification value
 }
 
 ResourceObj::ResourceObj(const ResourceObj& r) { // default copy constructor
     // Used in ClassFileParser::parse_constant_pool_entries() for ClassFileStream.
+    // Note: garbage may resembles valid value.
+    assert(~(_allocation_t[0] | allocation_mask) != (uintptr_t)this || !is_type_set(),
+           err_msg("embedded or stack only, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+                   this, get_allocation_type(), _allocation_t[0], _allocation_t[1]));
     set_allocation_type((address)this, STACK_OR_EMBEDDED);
+    _allocation_t[1] = 0; // Zap verification value
 }
 
 ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assignment
     // Used in InlineTree::ok_to_inline() for WarmCallInfo.
-    assert(allocated_on_stack(), "copy only into local");
-    // Keep current _allocation value;
+    assert(allocated_on_stack(),
+           err_msg("copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+                   this, get_allocation_type(), _allocation_t[0], _allocation_t[1]));
+    // Keep current _allocation_t value;
     return *this;
 }
 
 ResourceObj::~ResourceObj() {
     // allocated_on_C_heap() also checks that encoded (in _allocation) address == this.
-    if (!allocated_on_C_heap()) {  // ResourceObj::delete() zaps _allocation for C_heap.
-      _allocation = (uintptr_t)badHeapOopVal; // zap type
+    if (!allocated_on_C_heap()) { // ResourceObj::delete() will zap _allocation for C_heap.
+      _allocation_t[0] = (uintptr_t)badHeapOopVal; // zap type
     }
 }
 #endif // ASSERT

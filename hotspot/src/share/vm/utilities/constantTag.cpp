@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_constantTag.cpp.incl"
+#include "precompiled.hpp"
+#include "utilities/constantTag.hpp"
 
 #ifndef PRODUCT
 
@@ -93,6 +93,8 @@ const char* constantTag::internal_name() const {
       return "MethodType";
     case JVM_CONSTANT_InvokeDynamic :
       return "InvokeDynamic";
+    case JVM_CONSTANT_InvokeDynamicTrans :
+      return "InvokeDynamic/transitional";
     case JVM_CONSTANT_Object :
       return "Object";
     case JVM_CONSTANT_Utf8 :

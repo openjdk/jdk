@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIRAssembler.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciInstance.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+# include "vmreg_zero.inline.hpp"
+#endif
 
 
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
@@ -471,7 +489,9 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
         volatile_move_op(op->in_opr(), op->result_opr(), op->type(), op->info());
       } else {
         move_op(op->in_opr(), op->result_opr(), op->type(),
-                op->patch_code(), op->info(), op->pop_fpu_stack(), op->move_kind() == lir_move_unaligned);
+                op->patch_code(), op->info(), op->pop_fpu_stack(),
+                op->move_kind() == lir_move_unaligned,
+                op->move_kind() == lir_move_wide);
       }
       break;
 
@@ -740,7 +760,7 @@ void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_
 }
 
 
-void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned) {
+void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned, bool wide) {
   if (src->is_register()) {
     if (dest->is_register()) {
       assert(patch_code == lir_patch_none && info == NULL, "no patching and info allowed here");
@@ -749,7 +769,7 @@ void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       assert(patch_code == lir_patch_none && info == NULL, "no patching and info allowed here");
       reg2stack(src, dest, type, pop_fpu_stack);
     } else if (dest->is_address()) {
-      reg2mem(src, dest, type, patch_code, info, pop_fpu_stack, unaligned);
+      reg2mem(src, dest, type, patch_code, info, pop_fpu_stack, wide, unaligned);
     } else {
       ShouldNotReachHere();
     }
@@ -772,13 +792,13 @@ void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       const2stack(src, dest);
     } else if (dest->is_address()) {
       assert(patch_code == lir_patch_none, "no patching allowed here");
-      const2mem(src, dest, type, info);
+      const2mem(src, dest, type, info, wide);
     } else {
       ShouldNotReachHere();
     }
 
   } else if (src->is_address()) {
-    mem2reg(src, dest, type, patch_code, info, unaligned);
+    mem2reg(src, dest, type, patch_code, info, wide, unaligned);
 
   } else {
     ShouldNotReachHere();

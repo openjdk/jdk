@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stubRoutines.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/copy.hpp"
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 
 // Implementation of StubRoutines - for a description

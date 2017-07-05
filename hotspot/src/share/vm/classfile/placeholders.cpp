@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_placeholders.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/placeholders.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/fieldType.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 // Placeholder methods
 

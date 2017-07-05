@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_HANDLES_HPP
+#define SHARE_VM_RUNTIME_HANDLES_HPP
+
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "utilities/top.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be
@@ -354,3 +361,5 @@ class ResetNoHandleMark: public StackObj {
   ~ResetNoHandleMark() {}
 #endif
 };
+
+#endif // SHARE_VM_RUNTIME_HANDLES_HPP

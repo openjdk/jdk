@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_gSpaceCounters.cpp.incl"
+#include "precompiled.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/shared/gSpaceCounters.hpp"
+#include "memory/generation.hpp"
+#include "memory/resourceArea.hpp"
+#endif
 
 GSpaceCounters::GSpaceCounters(const char* name, int ordinal, size_t max_size,
                                Generation* g, GenerationCounters* gc,

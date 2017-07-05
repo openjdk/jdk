@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_adjoiningGenerations.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/adjoiningGenerations.hpp"
+#include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
 
 // If boundary moving is being used, create the young gen and old
 // gen with ASPSYoungGen and ASPSOldGen, respectively.  Revert to

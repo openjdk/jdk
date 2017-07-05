@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-#ifndef _VECTOR_SET_
-#define _VECTOR_SET_
+#ifndef SHARE_VM_LIBADT_VECTSET_HPP
+#define SHARE_VM_LIBADT_VECTSET_HPP
+
+#include "libadt/set.hpp"
+
 // Vector Sets - An Abstract Data Type
 //INTERFACE
 
@@ -173,4 +176,4 @@ public:
   int test(void) { return ((VSetI_*)impl)->test(); }
 };
 
-#endif // _VECTOR_SET_
+#endif // SHARE_VM_LIBADT_VECTSET_HPP

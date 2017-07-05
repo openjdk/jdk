@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compilerOracle.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/klass.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 
 class MethodMatcher : public CHeapObj {
  public:

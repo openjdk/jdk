@@ -154,8 +154,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a modeless dialog without a title with the
-     * specified {@code Frame} as its owner.  If {@code owner}
+     * Creates a modeless dialog with the specified {@code Frame}
+     * as its owner and an empty title. If {@code owner}
      * is {@code null}, a shared, hidden frame will be set as the
      * owner of the dialog.
      * <p>
@@ -179,8 +179,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a dialog with the specified owner {@code Frame}, modality
-     * and an empty title. If {@code owner} is {@code null},
+     * Creates a dialog with an empty title and the specified modality and
+     * {@code Frame} as its owner. If {@code owner} is {@code null},
      * a shared, hidden frame will be set as the owner of the dialog.
      * <p>
      * This constructor sets the component's locale property to the value
@@ -202,7 +202,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see JComponent#getDefaultLocale
      */
     public JDialog(Frame owner, boolean modal) {
-        this(owner, null, modal);
+        this(owner, "", modal);
     }
 
     /**
@@ -330,8 +330,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a modeless dialog without a title with the
-     * specified {@code Dialog} as its owner.
+     * Creates a modeless dialog with the specified {@code Dialog}
+     * as its owner and an empty title.
      * <p>
      * This constructor sets the component's locale property to the value
      * returned by {@code JComponent.getDefaultLocale}.
@@ -348,7 +348,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a dialog with the specified owner {@code Dialog} and modality.
+     * Creates a dialog with an empty title and the specified modality and
+     * {@code Dialog} as its owner.
      * <p>
      * This constructor sets the component's locale property to the value
      * returned by {@code JComponent.getDefaultLocale}.
@@ -369,7 +370,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see JComponent#getDefaultLocale
      */
     public JDialog(Dialog owner, boolean modal) {
-        this(owner, null, modal);
+        this(owner, "", modal);
     }
 
     /**
@@ -461,8 +462,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a modeless dialog with the specified owner {@code Window} and
-     * an empty title.
+     * Creates a modeless dialog with the specified {@code Window}
+     * as its owner and an empty title.
      * <p>
      * This constructor sets the component's locale property to the value
      * returned by {@code JComponent.getDefaultLocale}.
@@ -488,8 +489,8 @@ public class JDialog extends Dialog implements WindowConstants,
     }
 
     /**
-     * Creates a dialog with the specified owner {@code Window}, modality
-     * and an empty title.
+     * Creates a dialog with an empty title and the specified modality and
+     * {@code Window} as its owner.
      * <p>
      * This constructor sets the component's locale property to the value
      * returned by {@code JComponent.getDefaultLocale}.
@@ -520,7 +521,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @since 1.6
      */
     public JDialog(Window owner, ModalityType modalityType) {
-        this(owner, null, modalityType);
+        this(owner, "", modalityType);
     }
 
     /**

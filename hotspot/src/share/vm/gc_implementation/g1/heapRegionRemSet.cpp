@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_heapRegionRemSet.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "memory/allocation.hpp"
+#include "memory/space.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #define HRRS_VERBOSE 0
 

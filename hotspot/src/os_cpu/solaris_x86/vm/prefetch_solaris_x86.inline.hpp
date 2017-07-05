@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef OS_CPU_SOLARIS_X86_VM_PREFETCH_SOLARIS_X86_INLINE_HPP
+#define OS_CPU_SOLARIS_X86_VM_PREFETCH_SOLARIS_X86_INLINE_HPP
+
+#include "runtime/prefetch.hpp"
+
 extern "C" {
   void _Prefetch_read (void *loc, intx interval);
   void _Prefetch_write(void *loc, intx interval);
@@ -39,3 +44,5 @@ inline void Prefetch::write(void *loc, intx interval) {
   _Prefetch_write(loc, interval);
 #endif // AMD64
 }
+
+#endif // OS_CPU_SOLARIS_X86_VM_PREFETCH_SOLARIS_X86_INLINE_HPP

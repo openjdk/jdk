@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,12 @@ AOUT=$(HS_FNAME)
 SAWINDBG=sawindbg.dll
 GENERATED=../generated
 
-default:: _build_pch_file.obj $(AOUT) checkAndBuildSA
+# Allow the user to turn off precompiled headers from the command line.
+!if "$(USE_PRECOMPILED_HEADER)" != "0"
+BUILD_PCH_FILE=_build_pch_file.obj
+!endif
+
+default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 
 !include ../local.make
 !include compile.make
@@ -38,15 +43,15 @@ CPP_FLAGS=$(CPP_FLAGS) $(DEBUG_OPT_OPTION)
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
 
-!include $(GENERATED)/Dependencies
-
 HS_BUILD_ID=$(HS_BUILD_VER)-debug
 
 # Force resources to be rebuilt every time
 $(Res_Files): FORCE
 
-$(AOUT): $(Res_Files) $(Obj_Files)
+vm.def: $(Obj_Files)
 	sh $(WorkSpace)/make/windows/build_vm_def.sh
+
+$(AOUT): $(Res_Files) $(Obj_Files) vm.def
 	$(LINK) @<<
   $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<
@@ -59,3 +64,4 @@ $(AOUT): $(Res_Files) $(Obj_Files)
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make
+!include $(WorkSpace)/make/windows/makefiles/launcher.make

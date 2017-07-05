@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONLAB_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONLAB_HPP
+
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "memory/allocation.hpp"
 
 //
 // PSPromotionLAB is a parallel scavenge promotion lab. This class acts very
@@ -140,3 +146,5 @@ class PSOldPromotionLAB : public PSPromotionLAB {
 
   debug_only(virtual bool lab_is_valid(MemRegion lab));
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONLAB_HPP

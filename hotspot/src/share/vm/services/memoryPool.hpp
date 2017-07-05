@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_MEMORYPOOL_HPP
+#define SHARE_VM_SERVICES_MEMORYPOOL_HPP
+
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/heap.hpp"
+#include "memory/space.hpp"
+#include "services/memoryUsage.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#endif
 
 // A memory pool represents the memory area that the VM manages.
 // The Java virtual machine has at least one memory pool
@@ -210,3 +222,5 @@ public:
   MemoryUsage get_memory_usage();
   size_t used_in_bytes()            { return _codeHeap->allocated_capacity(); }
 };
+
+#endif // SHARE_VM_SERVICES_MEMORYPOOL_HPP

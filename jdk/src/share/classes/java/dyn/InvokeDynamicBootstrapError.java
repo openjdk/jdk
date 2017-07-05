@@ -67,4 +67,16 @@ public class InvokeDynamicBootstrapError extends LinkageError {
     public InvokeDynamicBootstrapError(String s, Throwable cause) {
         super(s, cause);
     }
+
+    /**
+     * Constructs a {@code InvokeDynamicBootstrapError} with the specified
+     * cause.
+     *
+     * @param cause the cause, may be {@code null}.
+     */
+    public InvokeDynamicBootstrapError(Throwable cause) {
+        // cf. Throwable(Throwable cause) constructor.
+        super(cause == null ? null : cause.toString());
+        initCause(cause);
+    }
 }

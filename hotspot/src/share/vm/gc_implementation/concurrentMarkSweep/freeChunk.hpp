@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREECHUNK_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREECHUNK_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
+
 //
 // Free block maintenance for Concurrent Mark Sweep Generation
 //
@@ -141,3 +152,5 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
 
 extern size_t MinChunkSize;
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREECHUNK_HPP

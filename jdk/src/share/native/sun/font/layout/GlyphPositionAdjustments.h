@@ -97,6 +97,8 @@ private:
         LEPoint *getEntryPoint(LEPoint &entryPoint) const;
         LEPoint *getExitPoint(LEPoint &exitPoint) const;
 
+        inline void clearEntryPoint();
+        inline void clearExitPoint();
         inline void setEntryPoint(LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd);
         inline void setExitPoint(LEPoint &newExitPoint, le_bool baselineIsLogicalEnd);
         inline void setCursiveGlyph(le_bool baselineIsLogicalEnd);
@@ -151,6 +153,8 @@ public:
     inline void adjustXAdvance(le_int32 index, float xAdjustment);
     inline void adjustYAdvance(le_int32 index, float yAdjustment);
 
+    void clearEntryPoint(le_int32 index);
+    void clearExitPoint(le_int32 index);
     void setEntryPoint(le_int32 index, LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd);
     void setExitPoint(le_int32 index, LEPoint &newExitPoint, le_bool baselineIsLogicalEnd);
     void setCursiveGlyph(le_int32 index, le_bool baselineIsLogicalEnd);
@@ -264,6 +268,16 @@ inline le_bool GlyphPositionAdjustments::EntryExitPoint::isCursiveGlyph() const
 inline le_bool GlyphPositionAdjustments::EntryExitPoint::baselineIsLogicalEnd() const
 {
     return (fFlags & EEF_BASELINE_IS_LOGICAL_END) != 0;
+}
+
+inline void GlyphPositionAdjustments::EntryExitPoint::clearEntryPoint()
+{
+    fFlags &= ~EEF_HAS_ENTRY_POINT;
+}
+
+inline void GlyphPositionAdjustments::EntryExitPoint::clearExitPoint()
+{
+    fFlags &= ~EEF_HAS_EXIT_POINT;
 }
 
 inline void GlyphPositionAdjustments::EntryExitPoint::setEntryPoint(LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd)

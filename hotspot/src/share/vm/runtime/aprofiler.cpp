@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_aprofiler.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/permGen.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/space.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/aprofiler.hpp"
 
 
 bool AllocationProfiler::_active = false;

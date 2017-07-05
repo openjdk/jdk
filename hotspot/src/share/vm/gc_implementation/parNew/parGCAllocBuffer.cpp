@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_parGCAllocBuffer.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "memory/sharedHeap.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/oop.inline.hpp"
 
 ParGCAllocBuffer::ParGCAllocBuffer(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),

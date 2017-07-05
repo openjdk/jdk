@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_KLASS_INLINE_HPP
+#define SHARE_VM_OOPS_KLASS_INLINE_HPP
+
+#include "oops/klass.hpp"
+#include "oops/markOop.hpp"
+
 inline void Klass::set_prototype_header(markOop header) {
   assert(!header->has_bias_pattern() || oop_is_instance(), "biased locking currently only supported for Java instances");
   _prototype_header = header;
 }
+
+#endif // SHARE_VM_OOPS_KLASS_INLINE_HPP
