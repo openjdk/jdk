@@ -450,6 +450,10 @@ class MethodFamily : public ResourceObj {
     streamIndentor si(str, indent * 2);
     str->indent().print("Selected method: ");
     print_method(str, _selected_target);
+    Klass* method_holder = _selected_target->method_holder();
+    if (!method_holder->is_interface()) {
+      tty->print(" : in superclass");
+    }
     str->print_cr("");
   }
 
@@ -1141,19 +1145,23 @@ static void create_overpasses(
 #endif // ndef PRODUCT
       if (method->has_target()) {
         Method* selected = method->get_selected_target();
-        max_stack = assemble_redirect(
+        if (selected->method_holder()->is_interface()) {
+          max_stack = assemble_redirect(
             &bpool, &buffer, slot->signature(), selected, CHECK);
+        }
       } else if (method->throws_exception()) {
         max_stack = assemble_abstract_method_error(
             &bpool, &buffer, method->get_exception_message(), CHECK);
       }
-      AccessFlags flags = accessFlags_from(
+      if (max_stack != 0) {
+        AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
-      Method* m = new_method(&bpool, &buffer, slot->name(), slot->signature(),
+        Method* m = new_method(&bpool, &buffer, slot->name(), slot->signature(),
           flags, max_stack, slot->size_of_parameters(),
           ConstMethod::OVERPASS, CHECK);
-      if (m != NULL) {
-        overpasses.push(m);
+        if (m != NULL) {
+          overpasses.push(m);
+        }
       }
     }
   }

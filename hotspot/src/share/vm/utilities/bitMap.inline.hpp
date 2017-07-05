@@ -52,16 +52,16 @@ inline void BitMap::clear_bit(idx_t bit) {
 
 inline bool BitMap::par_set_bit(idx_t bit) {
   verify_index(bit);
-  volatile idx_t* const addr = word_addr(bit);
-  const idx_t mask = bit_mask(bit);
-  idx_t old_val = *addr;
+  volatile bm_word_t* const addr = word_addr(bit);
+  const bm_word_t mask = bit_mask(bit);
+  bm_word_t old_val = *addr;
 
   do {
-    const idx_t new_val = old_val | mask;
+    const bm_word_t new_val = old_val | mask;
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const idx_t cur_val = (idx_t) Atomic::cmpxchg_ptr((void*) new_val,
+    const bm_word_t cur_val = (bm_word_t) Atomic::cmpxchg_ptr((void*) new_val,
                                                       (volatile void*) addr,
                                                       (void*) old_val);
     if (cur_val == old_val) {
@@ -73,16 +73,16 @@ inline bool BitMap::par_set_bit(idx_t bit) {
 
 inline bool BitMap::par_clear_bit(idx_t bit) {
   verify_index(bit);
-  volatile idx_t* const addr = word_addr(bit);
-  const idx_t mask = ~bit_mask(bit);
-  idx_t old_val = *addr;
+  volatile bm_word_t* const addr = word_addr(bit);
+  const bm_word_t mask = ~bit_mask(bit);
+  bm_word_t old_val = *addr;
 
   do {
-    const idx_t new_val = old_val & mask;
+    const bm_word_t new_val = old_val & mask;
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const idx_t cur_val = (idx_t) Atomic::cmpxchg_ptr((void*) new_val,
+    const bm_word_t cur_val = (bm_word_t) Atomic::cmpxchg_ptr((void*) new_val,
                                                       (volatile void*) addr,
                                                       (void*) old_val);
     if (cur_val == old_val) {
