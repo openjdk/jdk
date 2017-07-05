@@ -86,5 +86,6 @@ module java.xml {
     uses javax.xml.transform.TransformerFactory;
     uses javax.xml.validation.SchemaFactory;
     uses javax.xml.xpath.XPathFactory;
+    uses org.xml.sax.XMLReader;
 }
 

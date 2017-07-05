@@ -31,6 +31,8 @@ import java.lang.System;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
+import org.xml.sax.helpers.XMLReaderFactory;
+
 public class XMLFactoryHelper {
     /*
      * instantiate a xml factory by reflection e.g.
@@ -41,7 +43,9 @@ public class XMLFactoryHelper {
         try {
             // set thread context class loader to module class loader
             Thread.currentThread().setContextClassLoader(XMLFactoryHelper.class.getClassLoader());
-            if (serviceName.equals("javax.xml.validation.SchemaFactory"))
+            if (serviceName.equals("org.xml.sax.XMLReader"))
+                return XMLReaderFactory.createXMLReader();
+            else if (serviceName.equals("javax.xml.validation.SchemaFactory"))
                 return Class.forName(serviceName).getMethod("newInstance", String.class)
                         .invoke(null, W3C_XML_SCHEMA_NS_URI);
             else

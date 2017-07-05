@@ -68,7 +68,7 @@ public class Namespace {
     }
 
     /**
-     * Create a uniqueName name in the namespace in the form base$n where n varies.
+     * Create a uniqueName name in the namespace in the form base-n where n varies.
      * Also truncates very long names that would otherwise break ASM.
      *
      * @param base Base of name.  Base will be returned if uniqueName.
@@ -83,7 +83,7 @@ public class Namespace {
             if (counter != null) {
                 final int count = counter + 1;
                 namespaceDirectory.put(truncatedBase, count);
-                return truncatedBase + '-' + count;
+                return truncatedBase + CompilerConstants.ID_FUNCTION_SEPARATOR.symbolName() + count;
             }
         }
 

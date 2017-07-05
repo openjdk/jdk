@@ -68,6 +68,8 @@ import java.util.function.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.InvocationTargetException;
+import java.net.BindException;
 
 /**
  * Security checks test
@@ -142,8 +144,12 @@ public class Security {
         }
     }
 
-    static Object getProxy(int port, boolean b) throws Exception {
-        return proxyConstructor.newInstance(port, b);
+    static Object getProxy(int port, boolean b) throws Throwable {
+        try {
+            return proxyConstructor.newInstance(port, b);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        }
     }
 
     static Class<?> proxyClass;
@@ -319,10 +325,10 @@ public class Security {
         Object proxy = null;
         try {
             proxy = getProxy(proxyPort, true);
-        } catch (IOException e) {
-            System.out.println("Cannot bind. Not running test");
-            throw new SecurityException("test not run");
-        } catch (Exception ee) {
+        } catch (BindException e) {
+            System.out.println("Bind failed");
+            throw e;
+        } catch (Throwable ee) {
             throw new RuntimeException(ee);
         }
         System.out.println("Proxy port = " + proxyPort);

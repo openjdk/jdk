@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @library /javax/xml/jaxp/libs
  * @build jdk.testlibrary.*
  * @run testng BasicModularXMLParserTest
- * @bug 8078820
+ * @bug 8078820 8156119
  * @summary Tests JAXP lib can instantiate the following interfaces
  *          with customized provider module on boot layer
  *
@@ -51,6 +51,7 @@ import org.testng.annotations.Test;
  *          javax.xml.transform.TransformerFactory
  *          javax.xml.validation.SchemaFactory
  *          javax.xml.xpath.XPathFactory
+ *          org.xml.sax.XMLReader
  */
 
 @Test
