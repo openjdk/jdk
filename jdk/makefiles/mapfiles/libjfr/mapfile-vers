@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
 #
 
@@ -17,7 +17,7 @@ SUNWprivate_1.1 {
       Java_oracle_jrockit_jfr_VMJFR_addConstPool;
       Java_oracle_jrockit_jfr_VMJFR_removeConstPool;
       Java_oracle_jrockit_jfr_VMJFR_storeConstPool;
-      Java_oracle_jrockit_jfr_VMJFR_classID;
+      Java_oracle_jrockit_jfr_VMJFR_classID0;
       Java_oracle_jrockit_jfr_VMJFR_stackTraceID;
       Java_oracle_jrockit_jfr_VMJFR_threadID;
       Java_oracle_jrockit_jfr_VMJFR_rotate;
@@ -33,7 +33,8 @@ SUNWprivate_1.1 {
       Java_oracle_jrockit_jfr_VMJFR_setPeriod;
       Java_oracle_jrockit_jfr_VMJFR_getPeriod;
       Java_oracle_jrockit_jfr_VMJFR_descriptors;
-            JNI_OnLoad;
+      Java_oracle_jrockit_jfr_VMJFR_redefineClass0;
+      JNI_OnLoad;
   local:
       *;
 };
