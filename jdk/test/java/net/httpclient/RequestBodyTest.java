@@ -104,6 +104,7 @@ public class RequestBodyTest {
         SSLContext ctx = LightWeightHttpServer.ctx;
         client = HttpClient.newBuilder()
                            .sslContext(ctx)
+                           .version(HttpClient.Version.HTTP_1_1)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
                            .executor(exec)
                            .build();

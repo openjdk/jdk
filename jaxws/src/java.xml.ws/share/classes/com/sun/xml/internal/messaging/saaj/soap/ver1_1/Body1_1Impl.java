@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,15 @@ import com.sun.xml.internal.messaging.saaj.soap.SOAPDocument;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.BodyImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
+import org.w3c.dom.Element;
 
 public class Body1_1Impl extends BodyImpl {
     public Body1_1Impl(SOAPDocumentImpl ownerDocument, String prefix) {
             super(ownerDocument, NameImpl.createBody1_1Name(prefix));
+    }
+
+    public Body1_1Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     public SOAPFault addSOAP12Fault(QName faultCode, String faultReason, Locale locale) {

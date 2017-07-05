@@ -28,6 +28,9 @@
  * <P>
  * The JMX API consists of interfaces for monitoring and management of the
  * JVM and other components in the Java runtime.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.management {
 

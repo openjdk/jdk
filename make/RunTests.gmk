@@ -1,0 +1,491 @@
+#
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include FindTests.gmk
+
+# We will always run multiple tests serially
+.NOTPARALLEL:
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , RunTests.gmk))
+
+TEST_RESULTS_DIR := $(BUILD_OUTPUT)/test-results
+TEST_SUPPORT_DIR := $(BUILD_OUTPUT)/test-support
+
+
+################################################################################
+# Parse control variables
+################################################################################
+
+$(eval $(call ParseKeywordVariable, JTREG, \
+    KEYWORDS := JOBS TIMEOUT TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM, \
+    STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS, \
+))
+
+ifneq ($(JTREG), )
+  # Inform the user
+  $(info Running tests using JTREG control variable '$(JTREG)')
+endif
+
+$(eval $(call ParseKeywordVariable, GTEST, \
+    KEYWORDS := REPEAT, \
+    STRING_KEYWORDS := OPTIONS, \
+))
+
+ifneq ($(GTEST), )
+  # Inform the user
+  $(info Running tests using GTEST control variable '$(GTEST)')
+endif
+
+
+################################################################################
+# Component-specific Jtreg settings
+################################################################################
+
+ifeq ($(TEST_JOBS), 0)
+  # If TEST_JOBS is not specified, hotspot fallback default is
+  # min(num_cores / 2, 12).
+  hotspot_JTREG_JOBS := $(shell $(EXPR) $(NUM_CORES) / 2)
+  ifeq ($(hotspot_JTREG_JOBS), 0)
+    hotspot_JTREG_JOBS := 1
+  else ifeq ($(shell $(EXPR) $(hotspot_JTREG_JOBS) \> 12), 1)
+    hotspot_JTREG_JOBS := 12
+  endif
+endif
+
+hotspot_JTREG_MAX_MEM := 0
+hotspot_JTREG_ASSERT := false
+hotspot_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/hotspot/jtreg/native
+jdk_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/jdk/jtreg/native
+
+
+################################################################################
+# Parse test selection
+#
+# The user has given a test selection in the TEST variable. We must parse it
+# and determine what that means in terms of actual calls to the test framework.
+#
+# The parse functions take as argument a test specification as given by the
+# user, and returns a fully qualified test descriptor if it was a match, or
+# nothing if not. A single test specification can result in multiple test
+# descriptors being returned. A valid test descriptor must always be accepted
+# and returned identically.
+################################################################################
+
+# Helper function to determine if a test specification is a Gtest test
+#
+# It is a Gtest test if it is either "gtest", or "gtest:" followed by an optional
+# test filter string.
+define ParseGtestTestSelection
+  $(if $(filter gtest%, $1), \
+    $(if $(filter gtest, $1), \
+      gtest:all \
+    , \
+      $(if $(filter gtest:, $1), \
+        gtest:all \
+      , \
+        $1 \
+      ) \
+    ) \
+  )
+endef
+
+# Helper function to determine if a test specification is a Jtreg test
+#
+# It is a Jtreg test if it optionally begins with jtreg:, and then is either
+# an unspecified group name (possibly prefixed by :), or a group in a
+# specified <component>/test directory, or a path to a test or test directory,
+# either absolute or relative to TOPDIR.
+define ParseJtregTestSelection
+  $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
+  $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
+    $(eval TEST_NAME := :$(TEST_NAME)) \
+  ) \
+  $(if $(findstring :, $(TEST_NAME)), \
+    $(if $(filter :%, $(TEST_NAME)), \
+      $(foreach component, $(JTREG_COMPONENTS), \
+        $(if $(filter $(patsubst :%, %, $(TEST_NAME)), \
+            $($(component)_JTREG_TEST_GROUPS)), \
+          jtreg:$(component)/test:$(patsubst :%,%,$(TEST_NAME)) \
+        ) \
+      ) \
+    , \
+      $(eval COMPONENT := $(word 1, $(subst /, $(SPACE), $(TEST_NAME)))) \
+      $(eval GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(if $(filter $(COMPONENT), $(JTREG_COMPONENTS)), \
+        $(if $(filter $(GROUP), $($(COMPONENT)_JTREG_TEST_GROUPS)), \
+          jtreg:$(TEST_NAME) \
+        ) \
+      ) \
+    ) \
+  , \
+    $(if $(filter /%, $(TEST_NAME)), \
+      $(if $(wildcard $(TEST_NAME)), \
+        jtreg:$(TEST_NAME) \
+      ) \
+    , \
+      $(if $(wildcard $(TOPDIR)/$(TEST_NAME)), \
+        jtreg:$(TEST_NAME) \
+      ) \
+    ) \
+  )
+endef
+
+ifeq ($(TEST), )
+  $(info No test selection given in TEST!)
+  $(info Please use e.g. 'run-test TEST=tier1' or 'run-test-tier1')
+  $(info See common/doc/testing.[md|html] for help)
+  $(error Cannot continue)
+endif
+
+# Now intelligently convert the test selection given by the user in TEST
+# into a list of fully qualified test descriptors of the tests to run.
+TESTS_TO_RUN :=
+$(foreach test, $(TEST), \
+  $(eval PARSED_TESTS := $(call ParseCustomTestSelection, $(test))) \
+  $(if $(strip $(PARSED_TESTS)), , \
+    $(eval PARSED_TESTS += $(call ParseGtestTestSelection, $(test))) \
+  ) \
+  $(if $(strip $(PARSED_TESTS)), , \
+    $(eval PARSED_TESTS += $(call ParseJtregTestSelection, $(test))) \
+  ) \
+  $(if $(strip $(PARSED_TESTS)), , \
+    $(eval UNKNOWN_TEST := $(test)) \
+  ) \
+  $(eval TESTS_TO_RUN += $(PARSED_TESTS)) \
+)
+
+ifneq ($(UNKNOWN_TEST), )
+  $(info Unknown test selection: '$(UNKNOWN_TEST)')
+  $(info See common/doc/testing.[md|html] for help)
+  $(error Cannot continue)
+endif
+
+TESTS_TO_RUN := $(strip $(TESTS_TO_RUN))
+
+
+# Present the result of our parsing to the user
+$(info Test selection '$(TEST)', will run:)
+$(foreach test, $(TESTS_TO_RUN), $(info * $(test)))
+
+
+################################################################################
+# Functions for setting up rules for running the selected tests
+#
+# The SetupRun*Test functions all have the same interface:
+#
+# Parameter 1 is the name of the rule. This is the test id, based on the test
+# descriptor, and this is also used as variable prefix, and the targets
+# generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. Currently this is only:
+#   TEST -- The properly formatted fully qualified test descriptor
+#
+# After the rule named by the test id has been executed, the following
+# variables will be available:
+# testid_TOTAL - the total number of tests run
+# testid_PASSED - the number of successful tests
+# testid_FAILED - the number of failed tests
+# testid_ERROR - the number of tests was neither successful or failed
+#
+################################################################################
+
+### Rules for Gtest
+
+SetupRunGtestTest = $(NamedParamsMacroTemplate)
+define SetupRunGtestTestBody
+  $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
+  $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+
+  $1_TEST_NAME := $$(strip $$(patsubst gtest:%, %, $$($1_TEST)))
+  ifneq ($$($1_TEST_NAME), all)
+    $1_GTEST_FILTER := --gtest_filter=$$($1_TEST_NAME)*
+  endif
+
+  ifneq ($$(GTEST_REPEAT), )
+    $1_GTEST_REPEAT :=--gtest_repeat=$$(GTEST_REPEAT)
+  endif
+
+  run-test-$1:
+	$$(call LogWarn)
+	$$(call LogWarn, Running test '$$($1_TEST)')
+	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
+	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/server/gtestLauncher \
+	    -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
+	    --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
+	    $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) \
+	    > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) || true )
+
+  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
+
+  parse-test-$1: run-test-$1
+	$$(call LogWarn, Finished running test '$$($1_TEST)')
+	$$(call LogWarn, Test report is stored in $$(strip \
+	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+	$$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
+	    test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE)))
+	$$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
+	    { print $$$$4 }' $$($1_RESULT_FILE)))
+	$$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
+	    listed below/ { print $$$$4 }' $$($1_RESULT_FILE)))
+	$$(if $$($1_FAILED), , $$(eval $1_FAILED := 0))
+	$$(eval $1_ERROR := $$(shell \
+	    $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED)))
+
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1
+endef
+
+################################################################################
+
+### Rules for Jtreg
+
+# Helper function for SetupRunJtregTest. Set a JTREG_* variable from, in order:
+# 1) Specified by user on command line
+# 2) Component-specific default
+# 3) Generic default
+#
+# Note: No spaces are allowed around the arguments.
+# Arg $1 The test ID (i.e. $1 in SetupRunJtregTest)
+# Arg $2 Base variable, e.g. JTREG_JOBS
+# Arg $3 The default value (optional)
+define SetJtregValue
+  ifneq ($$($2), )
+    $1_$2 := $$($2)
+  else
+    ifneq ($$($$($1_COMPONENT)_$2), )
+      $1_$2 := $$($$($1_COMPONENT)_$2)
+    else
+      ifneq ($3, )
+        $1_$2 := $3
+      endif
+    endif
+  endif
+endef
+
+SetupRunJtregTest = $(NamedParamsMacroTemplate)
+define SetupRunJtregTestBody
+  $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
+  $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+
+  $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
+  $1_COMPONENT := $$(firstword $$(subst /, $$(SPACE), $$($1_TEST_NAME)))
+
+  ifeq ($$(JT_HOME), )
+    $$(info Error: jtreg framework is not found.)
+    $$(info Please run configure using --with-jtreg.)
+    $$(error Cannot continue)
+  endif
+
+  # Unfortunately, we need different defaults for some JTREG values,
+  # depending on what component we're running.
+
+  # Convert JTREG_foo into $1_JTREG_foo with a suitable value.
+  $$(eval $$(call SetJtregValue,$1,JTREG_TEST_MODE,agentvm))
+  $$(eval $$(call SetJtregValue,$1,JTREG_ASSERT,true))
+  $$(eval $$(call SetJtregValue,$1,JTREG_MAX_MEM,512m))
+  $$(eval $$(call SetJtregValue,$1,JTREG_NATIVEPATH))
+  $$(eval $$(call SetJtregValue,$1,JTREG_BASIC_OPTIONS))
+
+  ifneq ($(TEST_JOBS), 0)
+    # User has specified TEST_JOBS, use that as fallback default
+    $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(TEST_JOBS)))
+  else
+    # Use JOBS as default (except for hotspot)
+    $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(JOBS)))
+  endif
+
+  ifeq ($$(shell $$(EXPR) $$($1_JTREG_JOBS) \> 50), 1)
+    # Until CODETOOLS-7901892 is fixed, JTreg cannot handle more than 50 jobs
+    $1_JTREG_JOBS := 50
+  endif
+
+  # Make sure MaxRAMFraction is high enough to not cause OOM or swapping since
+  # we may end up with a lot of JVM's
+  $1_JTREG_MAX_RAM_FRACTION := $$(shell $$(EXPR) $$($1_JTREG_JOBS) \* 4)
+
+  JTREG_TIMEOUT ?= 4
+  JTREG_VERBOSE ?= fail,error,summary
+  JTREG_RETAIN ?= fail,error
+
+  ifneq ($$($1_JTREG_MAX_MEM), 0)
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-Xmx$$($1_JTREG_MAX_MEM)
+    $1_JTREG_LAUNCHER_OPTIONS += -Xmx$$($1_JTREG_MAX_MEM)
+  endif
+
+  $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
+      -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
+      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT) \
+      -vmoption:-XX:MaxRAMFraction=$$($1_JTREG_MAX_RAM_FRACTION)
+
+  $1_JTREG_BASIC_OPTIONS += -automatic -keywords:\!ignore -ignore:quiet
+
+  # Some tests needs to find a boot JDK using the JDK8_HOME variable.
+  $1_JTREG_BASIC_OPTIONS += -e:JDK8_HOME=$$(BOOT_JDK)
+
+  $1_JTREG_BASIC_OPTIONS += \
+      $$(addprefix -javaoption:, $$(JTREG_JAVA_OPTIONS)) \
+      $$(addprefix -vmoption:, $$(JTREG_VM_OPTIONS)) \
+      #
+
+  ifeq ($$($1_JTREG_ASSERT), true)
+    $1_JTREG_BASIC_OPTIONS += -ea -esa
+  endif
+
+  ifneq ($$($1_JTREG_NATIVEPATH), )
+    $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
+  endif
+
+  run-test-$1:
+	$$(call LogWarn)
+	$$(call LogWarn, Running test '$$($1_TEST)')
+	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
+	    $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
+	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
+	        $$($1_JTREG_BASIC_OPTIONS) \
+	        -testjdk:$$(JDK_IMAGE_DIR) \
+	        -dir:$$(TOPDIR) \
+	        -reportDir:$$($1_TEST_RESULTS_DIR) \
+	        -workDir:$$($1_TEST_SUPPORT_DIR) \
+	        $$(JTREG_OPTIONS) \
+	        $$($1_TEST_NAME) || true )
+
+  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
+
+  parse-test-$1: run-test-$1
+	$$(call LogWarn, Finished running test '$$($1_TEST)')
+	$$(call LogWarn, Test report is stored in $$(strip \
+	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+	$$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	    for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
+	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
+	$$(if $$($1_PASSED), , $$(eval $1_PASSED := 0))
+	$$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	    for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
+	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
+	$$(if $$($1_FAILED), , $$(eval $1_FAILED := 0))
+	$$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	    for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
+	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
+	$$(if $$($1_ERROR), , $$(eval $1_ERROR := 0))
+	$$(eval $1_TOTAL := $$(shell \
+	    $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR)))
+
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1
+endef
+
+
+################################################################################
+# Setup and execute make rules for all selected tests
+################################################################################
+
+# Helper function to determine which handler to use for the given test
+UseGtestTestHandler = \
+  $(if $(filter gtest:%, $1), true)
+
+UseJtregTestHandler = \
+  $(if $(filter jtreg:%, $1), true)
+
+# Now process each test to run and setup a proper make rule
+$(foreach test, $(TESTS_TO_RUN), \
+  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
+  $(eval ALL_TEST_IDS += $(TEST_ID)) \
+  $(if $(call UseCustomTestHandler, $(test)), \
+    $(eval $(call SetupRunCustomTest, $(TEST_ID), \
+        TEST := $(test), \
+    )) \
+  ) \
+  $(if $(call UseGtestTestHandler, $(test)), \
+    $(eval $(call SetupRunGtestTest, $(TEST_ID), \
+        TEST := $(test), \
+    )) \
+  ) \
+  $(if $(call UseJtregTestHandler, $(test)), \
+    $(eval $(call SetupRunJtregTest, $(TEST_ID), \
+        TEST := $(test), \
+    )) \
+  ) \
+)
+
+# Sort also removes duplicates, so if there is any we'll get fewer words.
+ifneq ($(words $(ALL_TEST_IDS)), $(words $(sort $(ALL_TEST_IDS))))
+  $(error Duplicate test specification)
+endif
+
+
+################################################################################
+# The main target for RunTests.gmk
+################################################################################
+
+# The SetupRun*Test functions have populated TARGETS.
+
+TEST_FAILURE := false
+
+run-test: $(TARGETS)
+        # Print a table of the result of all tests run and their result
+	$(ECHO)
+	$(ECHO) ==============================
+	$(ECHO) Test summary
+	$(ECHO) ==============================
+	$(PRINTF) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " TEST \
+	    TOTAL PASS FAIL ERROR " "
+	$(foreach test, $(TESTS_TO_RUN), \
+	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
+	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
+	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" "  " "$(test)" \
+	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
+	        $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
+	  , \
+	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" ">>" "$(test)" \
+	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
+	        $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	    $(eval TEST_FAILURE := true) \
+	  ) \
+	)
+	$(ECHO) ==============================
+	$(if $(filter true, $(TEST_FAILURE)), \
+	  $(ECHO) TEST FAILURE $(NEWLINE) \
+	  $(TOUCH) $(MAKESUPPORT_OUTPUTDIR)/exit-with-error \
+	, \
+	  $(ECHO) TEST SUCCESS \
+	)
+	$(ECHO)
+
+################################################################################
+
+all: run-test
+
+.PHONY: default all run-test $(TARGETS)

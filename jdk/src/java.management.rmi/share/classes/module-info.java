@@ -46,6 +46,8 @@
  *           and load the appropriate {@code JMXConnectorServerProvider} service
  *           implementation for the given protocol.
  *
+ * @moduleGraph
+ * @since 9
  */
 module java.management.rmi {
 

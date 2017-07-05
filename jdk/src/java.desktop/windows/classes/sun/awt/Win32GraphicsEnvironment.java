@@ -203,9 +203,6 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
                 }
             }
         }
-        // Reset the static GC for the (possibly new) default screen
-        WToolkit.resetGC();
-
         // notify SunDisplayChanger list (e.g. VolatileSurfaceManagers and
         // CachingSurfaceManagers) about the display change event
         displayChanger.notifyListeners();

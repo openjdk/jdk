@@ -36,7 +36,6 @@ import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
-import java.lang.reflect.Module;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;

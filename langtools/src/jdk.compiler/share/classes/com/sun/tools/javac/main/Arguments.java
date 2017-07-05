@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -283,6 +284,72 @@ public class Arguments {
     }
 
     /**
+     * Handles the {@code --release} option.
+     *
+     * @param additionalOptions a predicate to handle additional options implied by the
+     * {@code --release} option. The predicate should return true if all the additional
+     * options were processed successfully.
+     * @return true if successful, false otherwise
+     */
+    public boolean handleReleaseOptions(Predicate<Iterable<String>> additionalOptions) {
+        String platformString = options.get(Option.RELEASE);
+
+        checkOptionAllowed(platformString == null,
+                option -> error("err.release.bootclasspath.conflict", option.getPrimaryName()),
+                Option.BOOT_CLASS_PATH, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
+                Option.XBOOTCLASSPATH_PREPEND,
+                Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
+                Option.EXTDIRS, Option.DJAVA_EXT_DIRS,
+                Option.SOURCE, Option.TARGET,
+                Option.SYSTEM, Option.UPGRADE_MODULE_PATH);
+
+        if (platformString != null) {
+            PlatformDescription platformDescription = PlatformUtils.lookupPlatformDescription(platformString);
+
+            if (platformDescription == null) {
+                error("err.unsupported.release.version", platformString);
+                return false;
+            }
+
+            options.put(Option.SOURCE, platformDescription.getSourceVersion());
+            options.put(Option.TARGET, platformDescription.getTargetVersion());
+
+            context.put(PlatformDescription.class, platformDescription);
+
+            if (!additionalOptions.test(platformDescription.getAdditionalOptions()))
+                return false;
+
+            Collection<Path> platformCP = platformDescription.getPlatformPath();
+
+            if (platformCP != null) {
+                JavaFileManager fm = getFileManager();
+
+                if (!(fm instanceof StandardJavaFileManager)) {
+                    error("err.release.not.standard.file.manager");
+                    return false;
+                }
+
+                try {
+                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
+
+                    if (Source.instance(context).allowModules()) {
+                        sfm.handleOption("--system", Arrays.asList("none").iterator());
+                        sfm.setLocationFromPaths(StandardLocation.UPGRADE_MODULE_PATH, platformCP);
+                    } else {
+                        sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
+                    }
+                } catch (IOException ex) {
+                    log.printLines(PrefixKind.JAVAC, "msg.io");
+                    ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Processes strings containing options and operands.
      * @param args the strings to be processed
      * @param allowableOpts the set of option declarations that are applicable
@@ -300,53 +367,8 @@ public class Arguments {
         if (!doProcessArgs(args, allowableOpts, helper, allowOperands, checkFileManager))
             return false;
 
-        String platformString = options.get(Option.RELEASE);
-
-        checkOptionAllowed(platformString == null,
-                option -> error("err.release.bootclasspath.conflict", option.getPrimaryName()),
-                Option.BOOT_CLASS_PATH, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
-                Option.XBOOTCLASSPATH_PREPEND,
-                Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
-                Option.EXTDIRS, Option.DJAVA_EXT_DIRS,
-                Option.SOURCE, Option.TARGET);
-
-        if (platformString != null) {
-            PlatformDescription platformDescription = PlatformUtils.lookupPlatformDescription(platformString);
-
-            if (platformDescription == null) {
-                error("err.unsupported.release.version", platformString);
-                return false;
-            }
-
-            options.put(Option.SOURCE, platformDescription.getSourceVersion());
-            options.put(Option.TARGET, platformDescription.getTargetVersion());
-
-            context.put(PlatformDescription.class, platformDescription);
-
-            if (!doProcessArgs(platformDescription.getAdditionalOptions(), allowableOpts, helper, allowOperands, checkFileManager))
-                return false;
-
-            Collection<Path> platformCP = platformDescription.getPlatformPath();
-
-            if (platformCP != null) {
-                JavaFileManager fm = getFileManager();
-
-                if (!(fm instanceof StandardJavaFileManager)) {
-                    error("err.release.not.standard.file.manager");
-                    return false;
-                }
-
-                try {
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
-
-                    sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
-                } catch (IOException ex) {
-                    log.printLines(PrefixKind.JAVAC, "msg.io");
-                    ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
-                    return false;
-                }
-            }
-        }
+        if (!handleReleaseOptions(extra -> doProcessArgs(extra, allowableOpts, helper, allowOperands, checkFileManager)))
+            return false;
 
         options.notifyListeners();
 
@@ -598,9 +620,6 @@ public class Arguments {
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.NoOutputDir);
             }
-            if (options.isSet(Option.XMODULE)) {
-                log.error(Errors.XmoduleNoModuleSourcepath);
-            }
         }
 
         if (fm.hasLocation(StandardLocation.ANNOTATION_PROCESSOR_MODULE_PATH) &&
@@ -617,6 +636,7 @@ public class Arguments {
         validateAddModules(sv);
         validateAddReads(sv);
         validateLimitModules(sv);
+        validateDefaultModuleForCreatedFiles(sv);
 
         if (lintOptions && options.isSet(Option.ADD_OPENS)) {
             log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
@@ -750,6 +770,17 @@ public class Arguments {
                         }
                         break;
                 }
+            }
+        }
+    }
+
+    private void validateDefaultModuleForCreatedFiles(SourceVersion sv) {
+        String moduleName = options.get(Option.DEFAULT_MODULE_FOR_CREATED_FILES);
+        if (moduleName != null) {
+            if (!SourceVersion.isName(moduleName, sv)) {
+                // syntactically invalid module name:  e.g. --default-module-for-created-files m!
+                log.error(Errors.BadNameForOption(Option.DEFAULT_MODULE_FOR_CREATED_FILES,
+                                                  moduleName));
             }
         }
     }

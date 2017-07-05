@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines the tool for starting a daemon for the jstat tool to monitor
+ * JVM statistics remotely.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jstatd {
     requires java.rmi;
     requires jdk.internal.jvmstat;
@@ -32,4 +39,3 @@ module jdk.jstatd {
 
     provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.rmi.MonitoredHostRmiService;
 }
-

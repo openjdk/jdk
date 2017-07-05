@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,20 +55,20 @@ package java.awt;
  * If the container's {@code ComponentOrientation} property is horizontal
  * and right-to-left, the example produces the output shown in Figure 2.
  *
- * <table style="float:center" WIDTH=600 summary="layout">
- * <tr ALIGN=CENTER>
+ * <table style="float:center;width:600" summary="layout">
+ * <tr style="text-align:center">
  * <td><img SRC="doc-files/GridLayout-1.gif"
  *      alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 1 then 2.
  * Row 2 shows buttons 3 then 4. Row 3 shows buttons 5 then 6.">
  * </td>
  *
- * <td ALIGN=CENTER><img SRC="doc-files/GridLayout-2.gif"
- *                   alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 2 then 1.
+ * <td style="text-align:center"><img SRC="doc-files/GridLayout-2.gif"
+ *              alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 2 then 1.
  * Row 2 shows buttons 4 then 3. Row 3 shows buttons 6 then 5.">
  * </td>
  * </tr>
  *
- * <tr ALIGN=CENTER>
+ * <tr style="text-align:center">
  * <td>Figure 1: Horizontal, Left-to-Right</td>
  *
  * <td>Figure 2: Horizontal, Right-to-Left</td>

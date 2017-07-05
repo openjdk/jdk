@@ -43,6 +43,7 @@ import sun.security.jca.JCAUtil;
  * <p> Implementations are free to implement the Cloneable interface.
  *
  * @author Benjamin Renaud
+ * @since 1.2
  *
  *
  * @see MessageDigest

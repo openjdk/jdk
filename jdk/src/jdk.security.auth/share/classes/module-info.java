@@ -26,6 +26,9 @@
 /**
  * Contains the implementation of the javax.security.auth.* interfaces and
  * various authentication modules.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.security.auth {
     requires transitive java.naming;
