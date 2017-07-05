@@ -108,7 +108,7 @@ public class Basic1 {
              * Verify that its protection domain is the bootstrap domain.
              */
             ProtectionDomain pd = proxyClass.getProtectionDomain();
-            System.err.println("+ proxy class's protextion domain: " + pd);
+            System.err.println("+ proxy class's protection domain: " + pd);
             if (!pd.implies(new AllPermission())) {
                 throw new RuntimeException(
                     "proxy class does not have AllPermission");
@@ -143,7 +143,7 @@ public class Basic1 {
             /*
              * Invoke a method on a proxy instance.
              */
-            Method m = Runnable.class.getMethod("run", null);
+            Method m = Runnable.class.getMethod("run");
             ((Runnable) proxy).run();
             if (!handler.lastMethod.equals(m)) {
                 throw new RuntimeException(

@@ -23,20 +23,23 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.jimage
- * @run testng JImageReadTest
  * @summary Unit test for libjimage JIMAGE_Open/Read/Close
+ * @modules java.base/jdk.internal.jimage
  */
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import jdk.internal.jimage.BasicImageReader;
-import jdk.internal.jimage.ImageNativeSubstrate;
+import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.ImageLocation;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Optional;
@@ -49,9 +52,7 @@ import org.testng.TestNG;
 public class JImageReadTest {
 
     static String javaHome = System.getProperty("java.home");
-    static String imageFile = javaHome + File.separator + "lib"
-            + File.separator + "modules" + File.separator
-            + "bootmodules.jimage";
+    static Path imageFile = Paths.get(javaHome, "lib", "modules");
 
     @DataProvider(name="classes")
     static Object[][] loadClasses() {
@@ -66,16 +67,6 @@ public class JImageReadTest {
         };
     }
 
-
-    @DataProvider(name="packages")
-    static Object[][] loadPackages() {
-        return new Object[][] {
-                {"java.base", "java/lang"},
-                {"java.base", "java/io"},
-                {"java.logging", "java/util/logging"},
-        };
-    }
-
     /**
      * Test a class is correctly accessible from the image in a module.
      *
@@ -86,60 +77,46 @@ public class JImageReadTest {
     @Test(dataProvider="classes")
     public static void test1_ReadClasses(String moduleName, String className) throws Exception {
         final int classMagic = 0xCAFEBABE;
-        final long NOT_FOUND = 0L;
 
-        if (!(new File(imageFile)).exists()) {
+        if (!Files.exists(imageFile)) {
             System.out.printf("Test skipped; no jimage file");
             return;
         }
 
-        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
-        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
+        BasicImageReader reader = BasicImageReader.open(imageFile);
+        Assert.assertTrue(reader != null, "JIMAGE_Open failed: " + imageFile);
 
-        long[] sizeArray = new long[1];
-        long locationHandle =
-                ImageNativeSubstrate.JIMAGE_FindResource(jimageHandle,
-                moduleName, "9.0", className, sizeArray);
-        long size = sizeArray[0];
-        System.out.printf("reading: module: %s, path: %s, handle: %16x, " +
-                        "location: %d, size: %d%n",
-                moduleName, className, jimageHandle, locationHandle, size);
+        ImageLocation location = reader.findLocation(moduleName, className);
+
+        if (location != null && !location.verify("/" + moduleName + "/" + className)) {
+            location = null;
+        }
+
+        long size = location != null ? location.getUncompressedSize() : 0;
+
+        System.out.printf("reading: module: %s, path: %s, size: %d%n",
+                moduleName, className, size);
         if (moduleName.contains("NOSUCH") || className.contains("NOSUCH")) {
-            Assert.assertEquals(locationHandle, NOT_FOUND,
+            Assert.assertTrue(location == null,
                     "location found for non-existing module: "
                     + moduleName
                     + ", or class: " + className);
             return;         // no more to test for non-existing class
         } else {
-            Assert.assertTrue(locationHandle != NOT_FOUND, "location not found: " + className);
+            Assert.assertTrue(location != null, "location not found: " + className);
             Assert.assertTrue(size > 0, "size of should be > 0: " + className);
         }
 
         // positive: read whole class
-        ByteBuffer buffer = ByteBuffer.allocate((int)size);
-        long actual = ImageNativeSubstrate.JIMAGE_GetResource(jimageHandle,
-                locationHandle, buffer.array(), size);
-        Assert.assertEquals(actual, size, "bytes read not equal bytes requested");
+        ByteBuffer buffer = reader.getResourceBuffer(location);
+        Assert.assertTrue(buffer != null, "bytes read not equal bytes requested");
 
         if (className.endsWith(".class")) {
             int m = buffer.getInt();
             Assert.assertEquals(m, classMagic, "Classfile has bad magic number");
         }
 
-        // Read less than the size of the artifact
-        buffer.rewind();
-        Arrays.fill(buffer.array(), (byte)0xc0);
-        long sizeExpected = size - 10;
-        actual = ImageNativeSubstrate.JIMAGE_GetResource(jimageHandle,
-                locationHandle, buffer.array(), sizeExpected);
-        Assert.assertEquals(actual, sizeExpected, "bytes read not equal bytes requested");
-
-        if (className.endsWith(".class")) {
-            int m1 = buffer.getInt();
-            Assert.assertEquals(m1, classMagic, "Read operation succeeded but has bad magic number");
-        }
-
-        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
+        reader.close();
     }
 
     /**
@@ -149,63 +126,37 @@ public class JImageReadTest {
      */
     @Test
     static void test2_ImageResources() throws IOException {
-        if (!(new File(imageFile)).exists()) {
+        if (!Files.exists(imageFile)) {
             System.out.printf("Test skipped; no jimage file");
             return;
         }
 
-        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
-        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
+        BasicImageReader reader = BasicImageReader.open(imageFile);
+        Assert.assertTrue(reader != null, "JIMAGE_Open failed: " + imageFile);
 
-        String[] names = new String[4096];
-        int max = ImageNativeSubstrate.JIMAGE_Resources(jimageHandle,
-                names);
+        String[] names = reader.getEntryNames();
 
         // Repeat with count available
-        names = new String[max + 1];
-        int count = ImageNativeSubstrate.JIMAGE_Resources(jimageHandle,
-                names);
+        int count = names.length;
+
         System.out.printf(" count: %d, a class: %s\n", count, names[0]);
+
         int minEntryCount = 16000;
-        Assert.assertTrue(max > minEntryCount,
-                "missing entries, should be more than " + minEntryCount +
-                ", reported: " + count);
-        Assert.assertTrue(count == max,
+        Assert.assertTrue(minEntryCount < count,
                 "unexpected count of entries, count: " + count
-                        + ", max: " + max);
+                        + ", min: " + minEntryCount);
         for (int i = 0; i < count; i++) {
             checkFullName(names[i]);
         }
 
-        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
+        reader.close();
     }
 
-    /**
-     * Tests that a package exists and correctly mapped to the module.
-     *
-     * @param moduleName the module name
-     * @param packageName the package name
-     * @throws IOException thrown if an error occurs
-     */
-    @Test(dataProvider="packages")
-    static void test3_PackageToModule(String moduleName, String packageName) throws IOException {
-        if (!(new File(imageFile)).exists()) {
-            System.out.printf("Test skipped; no jimage file");
+    static void checkFullName(String path) {
+        if (path.startsWith("/packages") || path.startsWith("/modules")) {
             return;
         }
 
-        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
-        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
-
-        String result = ImageNativeSubstrate.JIMAGE_PackageToModule(jimageHandle, packageName);
-        System.out.printf(" package: %s, module: %s%n", packageName, result);
-        Assert.assertEquals(result, moduleName, "wrong module for package: " + packageName);
-
-        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
-    }
-
-
-    static void checkFullName(String path) {
         int next = 0;
         String m = null;
         String p = null;
@@ -241,8 +192,8 @@ public class JImageReadTest {
      * from the BasicImageReader they are ignored.
      */
     @Test
-    static void test4_verifyNames() {
-        if (!(new File(imageFile)).exists()) {
+    static void test3_verifyNames() {
+        if (!Files.exists(imageFile)) {
             System.out.printf("Test skipped; no jimage file");
             return;
         }
@@ -270,9 +221,6 @@ public class JImageReadTest {
             }
             System.out.printf("native name count: %d, modCount: %d, pkgCount: %d, otherCount: %d%n",
                     names.length, modCount, pkgCount, otherCount);
-
-            Assert.assertEquals(modCount, 0, "JIMAGE_ResourceIterator should not return any '/modules' paths");
-            Assert.assertEquals(pkgCount, 0, "JIMAGE_ResourceIterator should not return any '/packages' paths");
 
             // Sort and merge the two arrays.  Every name should appear exactly twice.
             Arrays.sort(names);
@@ -336,21 +284,13 @@ public class JImageReadTest {
      */
     static String[] JIMAGE_Names() throws IOException {
 
-        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
-        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
+        BasicImageReader reader = BasicImageReader.open(imageFile);
+        Assert.assertNotNull(reader, "JIMAGE_Open failed: " + imageFile);
 
-        String[] names = new String[50000];
-        int max = ImageNativeSubstrate.JIMAGE_Resources(jimageHandle, names);
+        String[] names = reader.getEntryNames();
 
-        if (max > names.length) {
-            // Not all names fit, repeat with correct size
-            names = new String[max];
-            max = ImageNativeSubstrate.JIMAGE_Resources(jimageHandle, names);
-        } else {
-            names = Arrays.copyOf(names, max);
-        }
+        reader.close();
 
-        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
         return names;
     }
 
@@ -366,24 +306,55 @@ public class JImageReadTest {
         System.out.printf(" %s: %d names%n", fname, names.length);
     }
 
-    @Test
-    static void test5_nameTooLong() throws IOException {
+    //@Test
+    static void test4_nameTooLong() throws IOException {
         long[] size = new long[1];
         String moduleName = "FictiousModuleName";
         String className = String.format("A%09999d", 1);
 
-        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
-        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
+        BasicImageReader reader = BasicImageReader.open(imageFile);
+        Assert.assertNotNull(reader, "JIMAGE_Open failed: " + imageFile);
 
-        long locationHandle =
-                ImageNativeSubstrate.JIMAGE_FindResource(jimageHandle,
-                        moduleName, "9.0", className, size);
+        String name = "/" + moduleName + "/" + className;
+        ImageLocation location = reader.findLocation(name);
 
-        Assert.assertEquals(0, locationHandle, "Too long name should have failed");
+        if (location != null && !location.verify(name)) {
+            location = null;
+        }
+        Assert.assertTrue(location == null, "Too long name should have failed");
 
-        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
+        reader.close();
     }
 
+    /**
+     * Verify that the ImageReader returned by ImageReader.open has the
+     * the requested endianness or fails with an IOException if not.
+     */
+    @Test
+    static void test5_imageReaderEndianness() throws IOException {
+        ImageReader nativeReader = ImageReader.open(imageFile);
+        Assert.assertEquals(nativeReader.getByteOrder(), ByteOrder.nativeOrder());
+
+        try {
+            ImageReader leReader = ImageReader.open(imageFile, ByteOrder.LITTLE_ENDIAN);
+            Assert.assertEquals(leReader.getByteOrder(), ByteOrder.LITTLE_ENDIAN);
+            leReader.close();
+        } catch (IOException io) {
+            // IOException expected if LITTLE_ENDIAN not the nativeOrder()
+            Assert.assertNotEquals(ByteOrder.nativeOrder(), ByteOrder.LITTLE_ENDIAN);
+        }
+
+        try {
+            ImageReader beReader = ImageReader.open(imageFile, ByteOrder.BIG_ENDIAN);
+            Assert.assertEquals(beReader.getByteOrder(), ByteOrder.BIG_ENDIAN);
+            beReader.close();
+        } catch (IOException io) {
+            // IOException expected if LITTLE_ENDIAN not the nativeOrder()
+            Assert.assertNotEquals(ByteOrder.nativeOrder(), ByteOrder.BIG_ENDIAN);
+        }
+
+        nativeReader.close();
+    }
     // main method to run standalone from jtreg
 
     @Test(enabled=false)

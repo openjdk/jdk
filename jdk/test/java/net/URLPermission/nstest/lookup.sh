@@ -24,6 +24,7 @@
 
 # @test
 # @library /lib/testlibrary
+# @modules java.base/sun.net.spi.nameservice
 # @build jdk.testlibrary.*
 # @compile -XDignore.symbol.file=true SimpleNameService.java
 #            LookupTest.java SimpleNameServiceDescriptor.java
@@ -57,6 +58,7 @@ grant {
 POLICY
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} \
+    -XaddExports:java.base/sun.net.spi.nameservice=ALL-UNNAMED \
     -Djava.security.policy=file:./policy \
     -Dsun.net.spi.nameservice.provider.1=simple,sun \
     -cp ${TESTCLASSPATH}${PS}${TESTSRC} LookupTest -runtest ${port}

@@ -1,0 +1,95 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include Modules.gmk
+
+ifeq ($(MODULE), )
+  $(error MODULE must be set when calling CreateJmods.gmk)
+endif
+
+################################################################################
+
+LIBS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+    $(SUPPORT_OUTPUTDIR)/modules_libs-stripped $(IMPORT_MODULES_LIBS))))
+CMDS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+    $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped $(IMPORT_MODULES_CMDS))))
+CONF_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+    $(SUPPORT_OUTPUTDIR)/modules_conf $(IMPORT_MODULES_CONF))))
+CLASSES_DIR := $(wildcard $(JDK_OUTPUTDIR)/modules/$(MODULE))
+
+$(eval $(call FillCacheFind, \
+    $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR) $(CLASSES_DIR) \
+))
+
+ifneq ($(LIBS_DIR), )
+  JMOD_FLAGS += --libs $(LIBS_DIR)
+  DEPS += $(call CacheFind, $(LIBS_DIR))
+endif
+ifneq ($(CMDS_DIR), )
+  JMOD_FLAGS += --cmds $(CMDS_DIR)
+  DEPS += $(call CacheFind, $(CMDS_DIR))
+endif
+ifneq ($(CONF_DIR), )
+  JMOD_FLAGS += --config $(CONF_DIR)
+  DEPS += $(call CacheFind, $(CONF_DIR))
+endif
+ifneq ($(CLASSES_DIR), )
+  JMOD_FLAGS += --class-path $(CLASSES_DIR)
+  DEPS += $(call CacheFind, $(CLASSES_DIR))
+endif
+
+# Add dependencies on other jmod files
+DEPS += $(patsubst %, $(IMAGES_OUTPUTDIR)/jmods/%.jmod, \
+    $(call FindDepsForModule, $(MODULE)))
+
+# TODO: What about headers?
+# Create jmods in a temp dir and then move them into place to keep the
+# module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
+$(IMAGES_OUTPUTDIR)/jmods/$(MODULE).jmod: $(DEPS)
+	$(call LogWarn, Creating $(notdir $@))
+	$(call MakeDir, $(@D) $(SUPPORT_OUTPUTDIR)/jmods)
+	$(RM) $@ $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
+	$(JMOD) create \
+            --module-version $(VERSION_SHORT) \
+            --os-name $(REQUIRED_OS_NAME) \
+            --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
+            --os-version $(REQUIRED_OS_VERSION) \
+	    --modulepath $(IMAGES_OUTPUTDIR)/jmods\
+            --hash-dependencies '.*' \
+            --exclude '**_the.*' \
+	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
+	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@
+
+TARGETS += $(IMAGES_OUTPUTDIR)/jmods/$(MODULE).jmod
+
+################################################################################
+
+all: $(TARGETS)
+
+################################################################################

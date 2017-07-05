@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ static const jlong  NEED_THREAD_LIFE_EVENTS = THREAD_FILTERED_EVENT_BITS | THREA
 static const jlong  EARLY_EVENT_BITS = CLASS_FILE_LOAD_HOOK_BIT |
                                VM_START_BIT | VM_INIT_BIT | VM_DEATH_BIT | NATIVE_METHOD_BIND_BIT |
                                THREAD_START_BIT | THREAD_END_BIT |
+                               COMPILED_METHOD_LOAD_BIT | COMPILED_METHOD_UNLOAD_BIT |
                                DYNAMIC_CODE_GENERATED_BIT;
 static const jlong  GLOBAL_EVENT_BITS = ~THREAD_FILTERED_EVENT_BITS;
 static const jlong  SHOULD_POST_ON_EXCEPTIONS_BITS = EXCEPTION_BITS | METHOD_EXIT_BIT | FRAME_POP_BIT;
@@ -409,7 +410,7 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     env->env_event_enable()->_event_callback_enabled.get_bits() &
     env->env_event_enable()->_event_user_enabled.get_bits();
 
-  switch (JvmtiEnv::get_phase()) {
+  switch (env->phase()) {
   case JVMTI_PHASE_PRIMORDIAL:
   case JVMTI_PHASE_ONLOAD:
     // only these events allowed in primordial or onload phase
@@ -576,8 +577,6 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   // filtered events and there weren't last time
   if (    (any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) != 0 &&
       (was_any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) == 0) {
-    assert(JvmtiEnv::is_vm_live() || (JvmtiEnv::get_phase()==JVMTI_PHASE_START),
-      "thread filtered events should not be enabled when VM not in start or live phase");
     {
       MutexLocker mu(Threads_lock);   //hold the Threads_lock for the iteration
       for (JavaThread *tp = Threads::first(); tp != NULL; tp = tp->next()) {

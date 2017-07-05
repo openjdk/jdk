@@ -405,3 +405,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 
   AC_SUBST(STATIC_BUILD)
 ])
+
+################################################################################
+#
+# jlink options. 
+# We always keep packaged modules in JDK image.
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
+[
+  AC_ARG_ENABLE([keep-packaged-modules], [AS_HELP_STRING([--disable-keep-packaged-modules],
+    [Do not keep packaged modules in jdk image @<:@enable@:>@])])
+
+  if test "x$enable_keep_packaged_modules" = "xyes"; then
+    AC_MSG_CHECKING([if packaged modules are kept])
+    AC_MSG_RESULT([yes])
+    JLINK_KEEP_PACKAGED_MODULES=true
+  elif test "x$enable_keep_packaged_modules" = "xno"; then
+    AC_MSG_CHECKING([if packaged modules are kept])
+    AC_MSG_RESULT([no])
+    JLINK_KEEP_PACKAGED_MODULES=false
+  elif test "x$enable_keep_packaged_modules" = "x"; then
+    AC_MSG_RESULT([yes (default)])
+    JLINK_KEEP_PACKAGED_MODULES=true
+  else
+    AC_MSG_ERROR([--enable-keep-packaged-modules accepts no argument])
+  fi
+
+  AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+])

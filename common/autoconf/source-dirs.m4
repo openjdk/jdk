@@ -84,3 +84,56 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_OUTPUT_DIRS],
 
   JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 ])
+
+################################################################################
+# Define a mechanism for importing extra prebuilt modules
+#
+
+AC_DEFUN_ONCE([SRCDIRS_SETUP_IMPORT_MODULES],
+[
+  AC_ARG_WITH(import-modules, [AS_HELP_STRING([--with-import-modules],
+      [import a set of prebuilt modules either as a zip file or an exploded directory])])
+
+  if test "x$with_import_modules" != x \
+      && test "x$with_import_modules" != "xno"; then
+    if test -d "$with_import_modules"; then
+      IMPORT_MODULES_TOPDIR="$with_import_modules"
+      BASIC_FIXUP_PATH([IMPORT_MODULES_TOPDIR])
+    elif test -e "$with_import_modules"; then
+      IMPORT_MODULES_TOPDIR="$CONFIGURESUPPORT_OUTPUTDIR/import-modules"
+      $RM -rf "$IMPORT_MODULES_TOPDIR"
+      $MKDIR -p "$IMPORT_MODULES_TOPDIR"
+      if ! $UNZIP -q "$with_import_modules" -d "$IMPORT_MODULES_TOPDIR"; then
+        AC_MSG_ERROR([--with-import-modules="$with_import_modules" must point to a dir or a zip file])
+      fi
+    else
+      AC_MSG_ERROR([--with-import-modules="$with_import_modules" must point to a dir or a zip file])
+    fi
+  fi
+
+  if test -d "$IMPORT_MODULES_TOPDIR/modules"; then
+    IMPORT_MODULES_CLASSES="$IMPORT_MODULES_TOPDIR/modules"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_cmds"; then
+    IMPORT_MODULES_CMDS="$IMPORT_MODULES_TOPDIR/modules_cmds"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_libs"; then
+    IMPORT_MODULES_LIBS="$IMPORT_MODULES_TOPDIR/modules_libs"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_conf"; then
+    IMPORT_MODULES_CONF="$IMPORT_MODULES_TOPDIR/modules_conf"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
+    IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/make"; then
+    IMPORT_MODULES_MAKE="$IMPORT_MODULES_TOPDIR/make"
+  fi
+
+  AC_SUBST(IMPORT_MODULES_CLASSES)
+  AC_SUBST(IMPORT_MODULES_CMDS)
+  AC_SUBST(IMPORT_MODULES_LIBS)
+  AC_SUBST(IMPORT_MODULES_CONF)
+  AC_SUBST(IMPORT_MODULES_SRC)
+  AC_SUBST(IMPORT_MODULES_MAKE)
+])

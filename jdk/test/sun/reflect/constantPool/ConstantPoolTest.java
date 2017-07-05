@@ -25,7 +25,8 @@
  * @test
  * @bug 8141615
  * @summary Tests new public methods at sun.reflect.ConstantPool
- * @modules java.base/sun.reflect
+ * @modules java.base/jdk.internal.misc
+ *          java.base/sun.reflect
  * @library /lib/testlibrary
  * @compile ConstantPoolTestDummy.jasm
  * @run main sun.reflect.constantPool.ConstantPoolTest

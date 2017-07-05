@@ -24,20 +24,22 @@
 # @test
 # @bug 8003267
 # @summary Unit test for generic time zone names support
-# @compile -XDignore.symbol.file GenericTimeZoneNamesTest.java
+# @modules java.base/sun.util.locale.provider
+# @compile GenericTimeZoneNamesTest.java
 # @run shell GenericTimeZoneNamesTest.sh
 
 # This test is locale data-dependent and assumes that both JRE and CLDR
 # have the same geneic time zone names in English.
 
+EXTRAOPTS="-XaddExports:java.base/sun.util.locale.provider=ALL-UNNAMED"
 STATUS=0
 echo "Locale providers: default"
-if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" GenericTimeZoneNamesTest en-US; then
+if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} ${EXTRAOPTS} -cp "${TESTCLASSES}" GenericTimeZoneNamesTest en-US; then
     STATUS=1
 fi
 
 echo "Locale providers: CLDR"
-if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers=CLDR GenericTimeZoneNamesTest en-US; then
+if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} ${EXTRAOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers=CLDR GenericTimeZoneNamesTest en-US; then
    STATUS=1
 fi
 exit ${STATUS}

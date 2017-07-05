@@ -157,7 +157,8 @@ public class JndiLoginModule implements LoginModule {
             new PrivilegedAction<ResourceBundle>() {
                 public ResourceBundle run() {
                     return ResourceBundle.getBundle(
-                            "sun.security.util.AuthResources");
+                            "sun.security.util.AuthResources",
+                            sun.security.util.ResourcesMgr.class.getModule());
                 }
             }
     );

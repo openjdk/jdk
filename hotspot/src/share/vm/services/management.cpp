@@ -121,7 +121,6 @@ void Management::init() {
     _optional_support.isOtherThreadCpuTimeSupported = 0;
   }
 
-  _optional_support.isBootClassPathSupported = 1;
   _optional_support.isObjectMonitorUsageSupported = 1;
 #if INCLUDE_SERVICES
   // This depends on the heap inspector

@@ -170,15 +170,8 @@ public final class StackWalker {
          * Gets a {@code StackTraceElement} for this stack frame.
          *
          * @return {@code StackTraceElement} for this stack frame.
-         *
-         * */
-        public default StackTraceElement toStackTraceElement() {
-            int lineNumber = isNativeMethod() ? -2
-                                              : getLineNumber().orElse(-1);
-            return new StackTraceElement(getClassName(), getMethodName(),
-                                         getFileName().orElse(null),
-                                         lineNumber);
-        }
+         */
+        public StackTraceElement toStackTraceElement();
     }
 
     /**

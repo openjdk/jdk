@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ jdwpError outStream_writeInt(PacketOutputStream *stream, jint val);
 jdwpError outStream_writeLong(PacketOutputStream *stream, jlong val);
 jdwpError outStream_writeFloat(PacketOutputStream *stream, jfloat val);
 jdwpError outStream_writeDouble(PacketOutputStream *stream, jdouble val);
+jdwpError outStream_writeModuleRef(JNIEnv *env, PacketOutputStream *stream, jobject val);
 jdwpError outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val);
 jdwpError outStream_writeObjectTag(JNIEnv *env, PacketOutputStream *stream, jobject val);
 jdwpError outStream_writeFrameID(PacketOutputStream *stream, FrameID val);

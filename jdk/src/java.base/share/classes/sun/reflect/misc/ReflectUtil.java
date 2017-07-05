@@ -30,7 +30,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -43,12 +42,6 @@ public final class ReflectUtil {
         throws ClassNotFoundException {
         checkPackageAccess(name);
         return Class.forName(name);
-    }
-
-    public static Object newInstance(Class<?> cls)
-        throws InstantiationException, IllegalAccessException {
-        checkPackageAccess(cls);
-        return cls.newInstance();
     }
 
     /*
@@ -286,7 +279,7 @@ public final class ReflectUtil {
         String name = cls.getName();
         int i = name.lastIndexOf('.');
         String pkg = (i != -1) ? name.substring(0, i) : "";
-        return Proxy.isProxyClass(cls) && !pkg.equals(PROXY_PACKAGE);
+        return Proxy.isProxyClass(cls) && !pkg.startsWith(PROXY_PACKAGE);
     }
 
     /**

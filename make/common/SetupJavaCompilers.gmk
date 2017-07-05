@@ -38,7 +38,8 @@ JAVAC_WARNINGS := -Xlint:all -Werror
 # and the interim javac, to be run by the boot jdk.
 $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
     JAVAC := $(JAVAC), \
-    FLAGS := -XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror, \
+    FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true -g \
+        -Xlint:all$(COMMA)-deprecation$(COMMA)-options -Werror, \
     DISABLE_SJAVAC := true, \
 ))
 
@@ -80,9 +81,6 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-JDK_BOOTCLASSPATH := $(call PathList, \
-    $(filter-out $(JDK_OUTPUTDIR)/modules/_%, $(wildcard $(JDK_OUTPUTDIR)/modules/*)))
-
 # After the jdk is built, we want to build demos using only the recently
 # generated jdk classes and nothing else, no jdk source, etc etc.
 # I.e. the rt.jar, but since rt.jar has not yet been generated
@@ -90,7 +88,7 @@ JDK_BOOTCLASSPATH := $(call PathList, \
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -bootclasspath $(JDK_BOOTCLASSPATH) $(DISABLE_WARNINGS), \
+    FLAGS := -upgrademodulepath $(JDK_OUTPUTDIR)/modules -system none $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 

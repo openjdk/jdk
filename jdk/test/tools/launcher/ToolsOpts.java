@@ -38,8 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ToolsOpts extends TestHelper {
-    static final String JBCP_PREPEND = "-J-Xbootclasspath/p:";
-    private static File testJar = null;
     static String[][] optionPatterns = {
         {"-J-Xmx128m"},
         {"-J-version"},
@@ -75,14 +73,10 @@ public class ToolsOpts extends TestHelper {
         {"option1", "-J-version", "-J-XshowSettings:vm", "option2"},};
 
     static void init() throws IOException {
-        if (testJar != null) {
-            return;
-        }
 
         // A tool which simulates com.sun.tools.javac.Main argument processing,
         // intercepts options passed via the javac launcher.
         final String mainJava = "Main" + JAVA_FILE_EXT;
-        testJar = new File("test" + JAR_FILE_EXT);
         List<String> contents = new ArrayList<>();
         contents.add("package com.sun.tools.javac;");
         contents.add("public class Main {");
@@ -95,10 +89,10 @@ public class ToolsOpts extends TestHelper {
         contents.add("}\n");
         createFile(new File(mainJava), contents);
 
-        // compile and jar Main.java into test.jar
-        compile("-d", ".", mainJava);
-            createJar("cvf", testJar.getAbsolutePath(), "com");
-        }
+        // compile Main.java into directory to override classes in jdk.compiler
+        new File("jdk.compiler").mkdir();
+        compile("-Xmodule:jdk.compiler", "-d", "jdk.compiler", mainJava);
+    }
 
     static void pass(String msg) {
         System.out.println("pass: " + msg);
@@ -156,30 +150,29 @@ public class ToolsOpts extends TestHelper {
     static void runTestOptions() throws IOException {
         init();
         TestResult tr = null;
-        String sTestJar = testJar.getAbsolutePath();
         int jpos = -1;
         for (String arg[] : optionPatterns) {
             jpos = indexOfJoption(arg);
             //Build a cmd string for output in results reporting.
-            String cmdString = javacCmd + " " + JBCP_PREPEND + sTestJar;
+            String cmdString = javacCmd + " -J-Xpatch:.";
             for (String opt : arg) {
                 cmdString = cmdString.concat(" " + opt);
             }
             switch (arg.length) {
                 case 1:
-                    tr = doExec(javacCmd, JBCP_PREPEND + sTestJar,
+                    tr = doExec(javacCmd, "-J-Xpatch:.",
                             arg[0]);
                     break;
                 case 2:
-                    tr = doExec(javacCmd, JBCP_PREPEND + sTestJar,
+                    tr = doExec(javacCmd, "-J-Xpatch:.",
                             arg[0], arg[1]);
                     break;
                 case 3:
-                    tr = doExec(javacCmd, JBCP_PREPEND + sTestJar,
+                    tr = doExec(javacCmd, "-J-Xpatch:.",
                             arg[0], arg[1], arg[2]);
                     break;
                 case 4:
-                    tr = doExec(javacCmd, JBCP_PREPEND + sTestJar,
+                    tr = doExec(javacCmd, "-J-Xpatch:.",
                             arg[0], arg[1], arg[2], arg[3]);
                     break;
                 default:

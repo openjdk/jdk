@@ -38,26 +38,6 @@ import static org.testng.Assert.*;
 
 public class Basic {
 
-    @DataProvider(name = "resources")
-    public Object[][] resources() {
-        Object[][] data = {
-            { "java/lang/Object.class",   "jrt:/java.base/java/lang/Object.class" },
-            { "java/awt/Component.class", "jrt:/java.desktop/java/awt/Component.class" },
-            { "jdk/internal/DoesNotExist", null },
-        };
-        return data;
-    }
-
-    @Test(dataProvider = "resources")
-    public void testResources(String name, String expectedUrlString) throws Exception {
-        URL url = ClassLoader.getSystemResource(name);
-        if (url == null) {
-            assertTrue(expectedUrlString == null);
-        } else {
-            assertEquals(url.toString(), expectedUrlString);
-        }
-    }
-
     @DataProvider(name = "urls")
     public Object[][] urls() {
         Object[][] data = {
