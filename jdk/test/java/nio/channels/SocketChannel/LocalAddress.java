@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,20 @@
  */
 
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
 
 public class LocalAddress {
     public static void main(String[] args) throws Exception {
-        test1();
+        try (TestServers.EchoServer echoServer
+                = TestServers.EchoServer.startNewServer()) {
+            test1(echoServer);
+        }
     }
 
-    static void test1() throws Exception {
+    static void test1(TestServers.AbstractServer server) throws Exception {
         InetAddress bogus = InetAddress.getByName("0.0.0.0");
         InetSocketAddress saddr = new InetSocketAddress(
-            InetAddress.getByName(TestUtil.HOST), 23);
+            server.getAddress(), server.getPort());
 
         //Test1: connect only
         SocketChannel sc = SocketChannel.open();

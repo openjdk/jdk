@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.sql.*;
 import java.io.*;
 import java.util.Map;
 import java.net.URL;
-
+import java.util.Arrays;
 
 /**
  * A serialized version of an <code>Array</code>
@@ -522,6 +522,97 @@ public class SerialArray implements Array, Serializable, Cloneable {
         throws SerialException
     {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Compares this SerialArray to the specified object.  The result is {@code
+     * true} if and only if the argument is not {@code null} and is a {@code
+     * SerialArray} object whose elements are identical to this object's elements
+     *
+     * @param  obj The object to compare this {@code SerialArray} against
+     *
+     * @return  {@code true} if the given object represents a {@code SerialArray}
+     *          equivalent to this SerialArray, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj instanceof SerialArray) {
+            SerialArray sa = (SerialArray)obj;
+            return baseType == sa.baseType &&
+                    baseTypeName.equals(sa.baseTypeName) &&
+                    Arrays.equals(elements, sa.elements);
+        }
+        return false;
+    }
+
+    /**
+     * Returns a hash code for this SerialArray. The hash code for a
+     * {@code SerialArray} object is computed using the hash codes
+     * of the elements of the  {@code SerialArray} object
+     *
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+        return (((31 + Arrays.hashCode(elements)) * 31 + len)  * 31 +
+                baseType) * 31 + baseTypeName.hashCode();
+    }
+
+    /**
+     * Returns a clone of this {@code SerialArray}. The copy will contain a
+     * reference to a clone of the underlying objects array, not a reference
+     * to the original underlying object array of this {@code SerialArray} object.
+     *
+     * @return  a clone of this SerialArray
+     */
+    public Object clone() {
+        try {
+            SerialArray sa = (SerialArray) super.clone();
+            sa.elements = Arrays.copyOf(elements, len);
+            return sa;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+
+    }
+
+    /**
+     * readObject is called to restore the state of the {@code SerialArray} from
+     * a stream.
+     */
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+
+       ObjectInputStream.GetField fields = s.readFields();
+       Object[] tmp = (Object[])fields.get("elements", null);
+       if (tmp == null)
+           throw new InvalidObjectException("elements is null and should not be!");
+       elements = tmp.clone();
+       len = fields.get("len", 0);
+       if(elements.length != len)
+           throw new InvalidObjectException("elements is not the expected size");
+
+       baseType = fields.get("baseType", 0);
+       baseTypeName = (String)fields.get("baseTypeName", null);
+    }
+
+    /**
+     * writeObject is called to save the state of the {@code SerialArray}
+     * to a stream.
+     */
+    private void writeObject(ObjectOutputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("elements", elements);
+        fields.put("len", len);
+        fields.put("baseType", baseType);
+        fields.put("baseTypeName", baseTypeName);
+        s.writeFields();
     }
 
     /**

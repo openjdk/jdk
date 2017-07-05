@@ -91,7 +91,7 @@ public class OkAsDelegate {
 
         Context c, s;
         c = Context.fromJAAS("client");
-        s = Context.fromJAAS("server");
+        s = Context.fromJAAS("com.sun.security.jgss.krb5.accept");
 
         Oid mech = GSSUtil.GSS_KRB5_MECH_OID;
         if (System.getProperty("test.spnego") != null) {

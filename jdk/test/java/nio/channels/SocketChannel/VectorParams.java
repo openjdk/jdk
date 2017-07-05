@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,31 +27,31 @@
  * @library ..
  */
 
-import java.net.*;
 import java.io.*;
+import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 
 public class VectorParams {
 
     static java.io.PrintStream out = System.out;
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
     static final int testSize = 10;
     static ByteBuffer[] bufs = null;
     static InetSocketAddress isa = null;
 
     public static void main(String[] args) throws Exception {
-        initBufs();
-        testSocketChannelVectorParams();
-        testDatagramChannelVectorParams();
-        testPipeVectorParams();
-        testFileVectorParams();
+        try (TestServers.DayTimeServer daytimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            initBufs(daytimeServer);
+            testSocketChannelVectorParams();
+            testDatagramChannelVectorParams();
+            testPipeVectorParams();
+            testFileVectorParams();
+        }
     }
 
-    static void initBufs() throws Exception {
+    static void initBufs(TestServers.DayTimeServer daytimeServer) throws Exception {
         bufs = new ByteBuffer[testSize];
         for(int i=0; i<testSize; i++) {
             String source = "buffer" + i;
@@ -59,8 +59,8 @@ public class VectorParams {
             bufs[i].put(source.getBytes("8859_1"));
             bufs[i].flip();
         }
-        isa =  new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+        isa = new InetSocketAddress(daytimeServer.getAddress(),
+                                    daytimeServer.getPort());
     }
 
     static void testSocketChannelVectorParams() throws Exception {

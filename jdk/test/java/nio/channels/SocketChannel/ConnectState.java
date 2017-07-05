@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,39 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 
 public class ConnectState {
 
     static PrintStream log = System.err;
 
-    static String REMOTE_HOST = TestUtil.HOST;
-    static int REMOTE_PORT = 7;                         // echo
     static InetSocketAddress remote;
 
     final static int ST_UNCONNECTED = 0;
     final static int ST_PENDING = 1;
     final static int ST_CONNECTED = 2;
     final static int ST_CLOSED = 3;
+    final static int ST_PENDING_OR_CONNECTED = 4;
+    // NO exceptions expected
+    final static Collection<Class<?>> NONE = Collections.emptySet();
+
+    // make a set of expected exception.
+    static Collection<Class<?>> expectedExceptions(Class<?>... expected) {
+        final Collection<Class<?>> exceptions;
+        if (expected.length == 0) {
+            exceptions = NONE;
+        } else if (expected.length == 1) {
+            assert expected[0] != null;
+            exceptions = Collections.<Class<?>>singleton(expected[0]);
+        } else {
+            exceptions = new HashSet<>(Arrays.asList(expected));
+        }
+        return exceptions;
+    }
 
     static abstract class Test {
 
@@ -76,37 +95,65 @@ public class ConnectState {
                 check(!sc.isConnectionPending(), "!isConnectionPending");
                 check(sc.isOpen(), "isOpen");
                 break;
+            case ST_PENDING_OR_CONNECTED:
+                check(sc.isConnected() || sc.isConnectionPending(),
+                        "isConnected || isConnectionPending");
+                check(sc.isOpen(), "isOpen");
+                break;
             }
         }
 
-        Test(String name, Class exception, int state) throws Exception {
+        Test(String name, Class<?> exception, int state) throws Exception {
+            this(name, expectedExceptions(exception), state);
+        }
+
+        // On some architecture we may need to accept several exceptions.
+        // For instance on Solaris, when using a server colocated on the
+        // machine we cannot guarantee that we will get a
+        // ConnectionPendingException when connecting twice on the same
+        // non-blocking socket. We may instead get a an
+        // AlreadyConnectedException, which is also valid: it simply means
+        // that the first connection has been immediately accepted.
+        Test(String name, Collection<Class<?>> exceptions, int state)
+                throws Exception {
             SocketChannel sc = SocketChannel.open();
-            String note = null;
+            String note;
             try {
                 try {
                     note = go(sc);
                 } catch (Exception x) {
-                    if (exception != null) {
+                    Class<?> expectedExceptionClass = null;
+                    for (Class<?> exception : exceptions) {
                         if (exception.isInstance(x)) {
                             log.println(name + ": As expected: "
                                         + x);
+                            expectedExceptionClass = exception;
                             check(sc, state);
-                            return;
-                        } else {
-                            throw new Exception(name
+                            break;
+                        }
+                    }
+                    if (expectedExceptionClass == null
+                            && !exceptions.isEmpty()) {
+                        // we had an exception, but it's not of the set of
+                        // exceptions we expected.
+                        throw new Exception(name
                                                 + ": Incorrect exception",
                                                 x);
-                        }
-                    } else {
+                    } else if (exceptions.isEmpty()) {
+                        // we didn't expect any exception
                         throw new Exception(name
                                             + ": Unexpected exception",
                                             x);
                     }
+                    // if we reach here, we have our expected exception
+                    assert expectedExceptionClass != null;
+                    return;
                 }
-                if (exception != null)
+                if (!exceptions.isEmpty()) {
                     throw new Exception(name
                                         + ": Expected exception not thrown: "
-                                        + exception);
+                                        + exceptions.iterator().next());
+                }
                 check(sc, state);
                 log.println(name + ": Returned normally"
                             + ((note != null) ? ": " + note : ""));
@@ -123,6 +170,7 @@ public class ConnectState {
 
         new Test("Read unconnected", NotYetConnectedException.class,
                  ST_UNCONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     ByteBuffer b = ByteBuffer.allocateDirect(1024);
                     sc.read(b);
@@ -131,19 +179,22 @@ public class ConnectState {
 
         new Test("Write unconnected", NotYetConnectedException.class,
                  ST_UNCONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     ByteBuffer b = ByteBuffer.allocateDirect(1024);
                     sc.write(b);
                     return null;
                 }};
 
-        new Test("Simple connect", null, ST_CONNECTED) {
+        new Test("Simple connect", NONE, ST_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.connect(remote);
                     return null;
                 }};
 
-        new Test("Simple connect & finish", null, ST_CONNECTED) {
+        new Test("Simple connect & finish", NONE, ST_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.connect(remote);
                     if (!sc.finishConnect())
@@ -153,6 +204,7 @@ public class ConnectState {
 
         new Test("Double connect",
                  AlreadyConnectedException.class, ST_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.connect(remote);
                     sc.connect(remote);
@@ -161,12 +213,16 @@ public class ConnectState {
 
         new Test("Finish w/o start",
                  NoConnectionPendingException.class, ST_UNCONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.finishConnect();
                     return null;
                 }};
 
-        new Test("NB simple connect", null, ST_CONNECTED) {
+        // Note: using our local EchoServer rather than echo on a distant
+        //       host - we see that Tries to finish = 0 (instead of ~ 18).
+        new Test("NB simple connect", NONE, ST_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.configureBlocking(false);
                     sc.connect(remote);
@@ -179,8 +235,15 @@ public class ConnectState {
                     return ("Tries to finish = " + n);
                 }};
 
+        // Note: using our local EchoServer rather than echo on a distant
+        //       host - we cannot guarantee that this test will get a
+        //       a ConnectionPendingException: it may get an
+        //       AlreadyConnectedException, so we should allow for both.
         new Test("NB double connect",
-                 ConnectionPendingException.class, ST_PENDING) {
+                 expectedExceptions(ConnectionPendingException.class,
+                                    AlreadyConnectedException.class),
+                 ST_PENDING_OR_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.configureBlocking(false);
                     sc.connect(remote);
@@ -190,13 +253,15 @@ public class ConnectState {
 
         new Test("NB finish w/o start",
                  NoConnectionPendingException.class, ST_UNCONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.configureBlocking(false);
                     sc.finishConnect();
                     return null;
                 }};
 
-        new Test("NB connect, B finish", null, ST_CONNECTED) {
+        new Test("NB connect, B finish", NONE, ST_CONNECTED) {
+                @Override
                 String go(SocketChannel sc) throws Exception {
                     sc.configureBlocking(false);
                     sc.connect(remote);
@@ -208,9 +273,12 @@ public class ConnectState {
     }
 
     public static void main(String[] args) throws Exception {
-        remote = new InetSocketAddress(InetAddress.getByName(REMOTE_HOST),
-                                       REMOTE_PORT);
-        tests();
+        try (TestServers.EchoServer echoServer
+                = TestServers.EchoServer.startNewServer(500)) {
+            remote = new InetSocketAddress(echoServer.getAddress(),
+                                           echoServer.getPort());
+            tests();
+        }
     }
 
 }

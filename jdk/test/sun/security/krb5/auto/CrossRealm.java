@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6706974
+ * @compile -XDignore.symbol.file CrossRealm.java
  * @run main/othervm CrossRealm
  * @summary Add krb5 test infrastructure
  */

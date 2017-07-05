@@ -279,6 +279,9 @@ public class KeyTab implements KeyTabConstants {
         EncryptionKey key;
         int size = entries.size();
         ArrayList<EncryptionKey> keys = new ArrayList<>(size);
+        if (DEBUG) {
+            System.out.println("Looking for keys for: " + service);
+        }
         for (int i = size-1; i >= 0; i--) {
             entry = entries.elementAt(i);
             if (entry.service.match(service)) {

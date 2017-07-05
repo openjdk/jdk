@@ -35,6 +35,7 @@ public class HttpCaller extends GSSCaller {
     final private HttpCallerInfo hci;
 
     public HttpCaller(HttpCallerInfo hci) {
+        super("HTTP_CLIENT");
         this.hci = hci;
     }
 

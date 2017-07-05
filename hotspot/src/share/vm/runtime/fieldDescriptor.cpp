@@ -36,7 +36,7 @@
 
 
 oop fieldDescriptor::loader() const {
-  return InstanceKlass::cast(_cp->pool_holder())->class_loader();
+  return _cp->pool_holder()->class_loader();
 }
 
 Symbol* fieldDescriptor::generic_signature() const {
@@ -45,7 +45,7 @@ Symbol* fieldDescriptor::generic_signature() const {
   }
 
   int idx = 0;
-  InstanceKlass* ik = InstanceKlass::cast(field_holder());
+  InstanceKlass* ik = field_holder();
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     if (idx == _index) {
       return fs.generic_signature();
@@ -58,7 +58,7 @@ Symbol* fieldDescriptor::generic_signature() const {
 }
 
 AnnotationArray* fieldDescriptor::annotations() const {
-  InstanceKlass* ik = InstanceKlass::cast(field_holder());
+  InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* md = ik->fields_annotations();
   if (md == NULL)
     return NULL;

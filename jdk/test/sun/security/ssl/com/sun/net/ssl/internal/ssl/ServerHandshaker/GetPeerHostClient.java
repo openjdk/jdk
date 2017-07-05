@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ class GetPeerHostClient extends Thread
     SSLSocket s;
     String server;
 
-    public GetPeerHostClient ()
+    public GetPeerHostClient (int serverPort)
     {
         try {
             SSLSocketFactory factory = (SSLSocketFactory)SSLSocketFactory
                                         .getDefault();
             server = InetAddress.getLocalHost().getHostName();
-            s = (SSLSocket) factory.createSocket(server, 9999);
+            s = (SSLSocket) factory.createSocket(server, serverPort);
             System.out.println("CLIENT: connected to the server- " + server);
         } catch (Exception e) {
                 System.err.println("Unexpected exceptions: " + e);
