@@ -1418,6 +1418,12 @@ void GraphBuilder::method_return(Value x) {
     call_register_finalizer();
   }
 
+  bool need_mem_bar = false;
+  if (method()->name() == ciSymbol::object_initializer_name() &&
+      scope()->wrote_final()) {
+    need_mem_bar = true;
+  }
+
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
@@ -1435,6 +1441,10 @@ void GraphBuilder::method_return(Value x) {
     if (method()->is_synchronized()) {
       assert(state()->locks_size() == 1, "receiver must be locked here");
       monitorexit(state()->lock_at(0), SynchronizationEntryBCI);
+    }
+
+    if (need_mem_bar) {
+      append(new MemBar(lir_membar_storestore));
     }
 
     // State at end of inlined method is the state of the caller
@@ -1456,7 +1466,6 @@ void GraphBuilder::method_return(Value x) {
     // the continuation point.
     append_with_bci(goto_callee, scope_data()->continuation()->bci());
     incr_num_returns();
-
     return;
   }
 
@@ -1470,6 +1479,10 @@ void GraphBuilder::method_return(Value x) {
       receiver = append(new Constant(new ClassConstant(method()->holder())));
     }
     append_split(new MonitorExit(receiver, state()->unlock()));
+  }
+
+  if (need_mem_bar) {
+      append(new MemBar(lir_membar_storestore));
   }
 
   append(new Return(x));
@@ -1504,6 +1517,9 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
+  if (field->is_final() && (code == Bytecodes::_putfield)) {
+    scope()->set_wrote_final();
+  }
 
   const int offset = !needs_patching ? field->offset() : -1;
   switch (code) {

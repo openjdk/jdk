@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,17 @@
  private:
 
 #ifdef _ALLBSD_SOURCE
-  // _thread_id and _pthread_id are the same on BSD
-  // keep both to minimize code divergence in os_bsd.cpp
+
+#ifdef __APPLE__
+  thread_t  _thread_id;
+#else
   pthread_t _thread_id;
+#endif
+
+  // _pthread_id is the pthread id, which is used by library calls
+  // (e.g. pthread_kill).
   pthread_t _pthread_id;
+
 #else
   // _thread_id is kernel thread id (similar to LWP id on Solaris). Each
   // thread has a unique thread_id (BsdThreads or NPTL). It can be used
@@ -64,9 +71,15 @@
   void    set_caller_sigmask(sigset_t sigmask)  { _caller_sigmask = sigmask; }
 
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  thread_t thread_id() const {
+    return _thread_id;
+  }
+#else
   pthread_t thread_id() const {
     return _thread_id;
   }
+#endif
 #else
   pid_t thread_id() const {
     return _thread_id;
@@ -84,9 +97,15 @@
   }
 #endif // ASSERT
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  void set_thread_id(thread_t id) {
+    _thread_id = id;
+  }
+#else
   void set_thread_id(pthread_t id) {
     _thread_id = id;
   }
+#endif
 #else
   void set_thread_id(pid_t id) {
     _thread_id = id;
