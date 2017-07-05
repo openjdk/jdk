@@ -2027,7 +2027,6 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   u2 method_parameters_length = 0;
   u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
-  bool method_parameters_four_byte_flags;
   bool parsed_code_attribute = false;
   bool parsed_checked_exceptions_attribute = false;
   bool parsed_stackmap_attribute = false;
@@ -2241,26 +2240,14 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
       }
       method_parameters_seen = true;
       method_parameters_length = cfs->get_u1_fast();
-      // Track the actual size (note: this is written for clarity; a
-      // decent compiler will CSE and constant-fold this into a single
-      // expression)
-      // Use the attribute length to figure out the size of flags
-      if (method_attribute_length == (method_parameters_length * 6u) + 1u) {
-        method_parameters_four_byte_flags = true;
-      } else if (method_attribute_length == (method_parameters_length * 4u) + 1u) {
-        method_parameters_four_byte_flags = false;
-      } else {
+      if (method_attribute_length != (method_parameters_length * 4u) + 1u) {
         classfile_parse_error(
           "Invalid MethodParameters method attribute length %u in class file",
           method_attribute_length, CHECK_(nullHandle));
       }
       method_parameters_data = cfs->get_u1_buffer();
       cfs->skip_u2_fast(method_parameters_length);
-      if (method_parameters_four_byte_flags) {
-        cfs->skip_u4_fast(method_parameters_length);
-      } else {
-        cfs->skip_u2_fast(method_parameters_length);
-      }
+      cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
       if (!SystemDictionary::Parameter_klass_loaded())
         method_parameters_length = 0;
@@ -2423,13 +2410,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
     for (int i = 0; i < method_parameters_length; i++) {
       elem[i].name_cp_index = Bytes::get_Java_u2(method_parameters_data);
       method_parameters_data += 2;
-      if (method_parameters_four_byte_flags) {
-        elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
-        method_parameters_data += 4;
-      } else {
-        elem[i].flags = Bytes::get_Java_u2(method_parameters_data);
-        method_parameters_data += 2;
-      }
+      elem[i].flags = Bytes::get_Java_u2(method_parameters_data);
+      method_parameters_data += 2;
     }
   }
 

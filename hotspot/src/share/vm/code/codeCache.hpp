@@ -57,7 +57,7 @@ class CodeCache : AllStatic {
   static int _number_of_nmethods_with_dependencies;
   static bool _needs_cache_clean;
   static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
-  static nmethod* _saved_nmethods;          // linked via nm->saved_nmethod_look()
+  static nmethod* _saved_nmethods;          // Linked list of speculatively disconnected nmethods.
 
   static void verify_if_often() PRODUCT_RETURN;
 
@@ -168,7 +168,7 @@ class CodeCache : AllStatic {
   static void set_needs_cache_clean(bool v)      { _needs_cache_clean = v;    }
   static void clear_inline_caches();             // clear all inline caches
 
-  static nmethod* find_and_remove_saved_code(Method* m);
+  static nmethod* reanimate_saved_code(Method* m);
   static void remove_saved_code(nmethod* nm);
   static void speculatively_disconnect(nmethod* nm);
 

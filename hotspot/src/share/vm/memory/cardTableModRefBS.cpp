@@ -116,7 +116,7 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
   _guard_region = MemRegion((HeapWord*)guard_page, _page_size);
   if (!os::commit_memory((char*)guard_page, _page_size, _page_size)) {
     // Do better than this for Merlin
-    vm_exit_out_of_memory(_page_size, "card table last card");
+    vm_exit_out_of_memory(_page_size, OOM_MMAP_ERROR, "card table last card");
   }
 
   *guard_card = last_card;
@@ -292,7 +292,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
       if (!os::commit_memory((char*)new_committed.start(),
                              new_committed.byte_size(), _page_size)) {
         // Do better than this for Merlin
-        vm_exit_out_of_memory(new_committed.byte_size(),
+        vm_exit_out_of_memory(new_committed.byte_size(), OOM_MMAP_ERROR,
                 "card table expansion");
       }
     // Use new_end_aligned (as opposed to new_end_for_commit) because

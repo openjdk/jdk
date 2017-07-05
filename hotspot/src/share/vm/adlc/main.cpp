@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
   AD.addInclude(AD._CPP_file, "asm/macroAssembler.inline.hpp");
+  AD.addInclude(AD._CPP_file, "code/compiledIC.hpp");
   AD.addInclude(AD._CPP_file, "code/vmreg.hpp");
   AD.addInclude(AD._CPP_file, "gc_interface/collectedHeap.inline.hpp");
   AD.addInclude(AD._CPP_file, "oops/compiledICHolder.hpp");
