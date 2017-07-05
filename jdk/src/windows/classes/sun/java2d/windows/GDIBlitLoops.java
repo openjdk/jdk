@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,23 +60,23 @@ public class GDIBlitLoops extends Blit {
     {
         GraphicsPrimitive[] primitives = {
             new GDIBlitLoops(SurfaceType.IntRgb,
-                             Win32SurfaceData.AnyGdi),
+                             GDIWindowSurfaceData.AnyGdi),
             new GDIBlitLoops(SurfaceType.Ushort555Rgb,
-                             Win32SurfaceData.AnyGdi,
+                             GDIWindowSurfaceData.AnyGdi,
                              0x7C00, 0x03E0, 0x001F),
             new GDIBlitLoops(SurfaceType.Ushort565Rgb,
-                             Win32SurfaceData.AnyGdi,
+                             GDIWindowSurfaceData.AnyGdi,
                              0xF800, 0x07E0, 0x001F),
             new GDIBlitLoops(SurfaceType.ThreeByteBgr,
-                             Win32SurfaceData.AnyGdi),
+                             GDIWindowSurfaceData.AnyGdi),
             new GDIBlitLoops(SurfaceType.ByteIndexedOpaque,
-                             Win32SurfaceData.AnyGdi,
+                             GDIWindowSurfaceData.AnyGdi,
                              true),
             new GDIBlitLoops(SurfaceType.Index8Gray,
-                             Win32SurfaceData.AnyGdi,
+                             GDIWindowSurfaceData.AnyGdi,
                              true),
             new GDIBlitLoops(SurfaceType.ByteGray,
-                             Win32SurfaceData.AnyGdi),
+                             GDIWindowSurfaceData.AnyGdi),
         };
         GraphicsPrimitiveMgr.register(primitives);
     }

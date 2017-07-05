@@ -201,7 +201,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     }
     if (hp != NULL) {
         struct in_addr **addrp = (struct in_addr **) hp->h_addr_list;
-        int len = sizeof(struct in_addr);
         int i = 0;
 
         while (*addrp != (struct in_addr *) 0) {

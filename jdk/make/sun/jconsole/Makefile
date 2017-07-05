@@ -82,7 +82,7 @@ $(JARFILE): $(LIBDIR) $(FILES_class) $(FILES_png) $(FILES_gif) $(TEMPDIR)/manife
 	$(BOOT_JAR_CMD) -cfm $(JARFILE) $(TEMPDIR)/manifest \
                -C $(CLASSBINDIR) sun/tools/jconsole \
                -C $(CLASSBINDIR) com/sun/tools/jconsole \
-		    $(JAR_JFLAGS)
+		    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 clean clobber::

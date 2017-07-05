@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@
 /*
  * Class:     sun_java2d_loops_BlitBg
  * Method:    BlitBg
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/SurfaceData;Ljava/awt/Composite;Ljava/awt/Color;IIIIII)V
+ * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/SurfaceData;Ljava/awt/Composite;IIIIIII)V
  */
 JNIEXPORT void JNICALL Java_sun_java2d_loops_BlitBg_BlitBg
     (JNIEnv *env, jobject self,
      jobject srcData, jobject dstData,
-     jobject comp, jobject clip, jobject bgColor,
+     jobject comp, jobject clip, jint bgColor,
      jint srcx, jint srcy, jint dstx, jint dsty, jint width, jint height)
 {
     SurfaceDataOps *srcOps;
@@ -93,7 +93,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_loops_BlitBg_BlitBg
     Region_IntersectBounds(&clipInfo, &dstInfo.bounds);
 
     if (!Region_IsEmpty(&clipInfo)) {
-        jint bgpixel = GrPrim_ColorGetRGB(env, bgColor);
+        jint bgpixel = bgColor;
         srcOps->GetRasInfo(env, srcOps, &srcInfo);
         dstOps->GetRasInfo(env, dstOps, &dstInfo);
         if (pPrim->pDstType->pixelFor) {

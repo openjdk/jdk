@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.CompositeType;
 import sun.java2d.pipe.BufferedBufImgOps;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
 
 class OGLBufImgOps extends BufferedBufImgOps {
 
@@ -94,7 +95,7 @@ class OGLBufImgOps extends BufferedBufImgOps {
         OGLSurfaceData oglSrc = (OGLSurfaceData)srcData;
         OGLGraphicsConfig gc = oglSrc.getOGLGraphicsConfig();
         if (oglSrc.getType() != OGLSurfaceData.TEXTURE ||
-            !gc.isCapPresent(OGLContext.CAPS_EXT_BIOP_SHADER))
+            !gc.isCapPresent(CAPS_EXT_BIOP_SHADER))
         {
             return false;
         }

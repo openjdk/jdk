@@ -230,7 +230,7 @@ build-jar: $(UNSIGNED_DIR)/jce.jar
 $(UNSIGNED_DIR)/jce.jar: prebuild build $(JCE_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ $(JAR_DIRS) \
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	$(CP) -r $(CLASSDESTDIR)/* $(CLASSBINDIR)
 	@$(java-vm-cleanup)
 
@@ -268,7 +268,7 @@ $(UNSIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar:		\
 	$(prep-target)
 	$(BOOT_JAR_CMD) cmf policy/unlimited/UNLIMITED $@		\
 	    -C policy/unlimited default_US_export.policy		\
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 $(UNSIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar:			\
@@ -277,7 +277,7 @@ $(UNSIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar:			\
 	$(prep-target)
 	$(BOOT_JAR_CMD) cmf policy/unlimited/UNLIMITED $@		\
 	    -C policy/unlimited default_local.policy			\
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 #
@@ -302,7 +302,7 @@ $(UNSIGNED_POLICY_BUILDDIR)/limited/local_policy.jar:			\
 	$(BOOT_JAR_CMD) cmf policy/limited/LIMITED $@			\
 	    -C policy/limited default_local.policy			\
 	    -C policy/limited exempt_local.policy			\
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 UNSIGNED_POLICY_FILES = \
@@ -402,7 +402,7 @@ endif
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@	\
 	    -C $(OBFUS_DIR)/build javax			\
 	    -C $(OBFUS_DIR)/build sun			\
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	$(sign-target)
 	@$(java-vm-cleanup)
 

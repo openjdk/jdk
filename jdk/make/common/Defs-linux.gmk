@@ -86,17 +86,21 @@ HPIS = native
 #
 # Default optimization
 #
-CC_HIGHEST_OPT = -O3
-CC_HIGHER_OPT  = -O3
-CC_LOWER_OPT   = -O2
-CC_NO_OPT      =
 
-ifeq ($(PRODUCT), java)
-    _OPT = $(CC_HIGHER_OPT)
-else
-    _OPT = $(CC_LOWER_OPT)
-    CPPFLAGS_DBG    += -DLOGGING 
+ifndef OPTIMIZATION_LEVEL
+  ifeq ($(PRODUCT), java)
+    OPTIMIZATION_LEVEL = HIGHER
+  else
+    OPTIMIZATION_LEVEL = LOWER
+  endif
 endif
+
+CC_OPT/NONE     = 
+CC_OPT/LOWER    = -O2
+CC_OPT/HIGHER   = -O3
+CC_OPT/HIGHEST  = -O3
+
+CC_OPT          = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 
 # For all platforms, do not omit the frame pointer register usage. 
 #    We need this frame pointer to make it easy to walk the stacks.
@@ -111,18 +115,6 @@ CFLAGS_REQUIRED_sparc   += -m32 -mcpu=v9
 LDFLAGS_COMMON_sparc    += -m32 -mcpu=v9
 CFLAGS_REQUIRED         =  $(CFLAGS_REQUIRED_$(ARCH))
 LDFLAGS_COMMON          += $(LDFLAGS_COMMON_$(ARCH))
-
-# Add in platform specific optimizations for all opt levels
-CC_HIGHEST_OPT += $(_OPT_$(ARCH))
-CC_HIGHER_OPT  += $(_OPT_$(ARCH))
-CC_LOWER_OPT   += $(_OPT_$(ARCH))
-
-# If NO_OPTIMIZATIONS is defined in the environment, turn all optimzations off
-ifdef NO_OPTIMIZATIONS
-  CC_HIGHEST_OPT = $(CC_NO_OPT)
-  CC_HIGHER_OPT  = $(CC_NO_OPT)
-  CC_LOWER_OPT   = $(CC_NO_OPT)
-endif
 
 #
 # Selection of warning messages
@@ -162,19 +154,19 @@ ifeq ($(FASTDEBUG), true)
   endif
 endif
 
-CFLAGS_OPT      = $(POPT)
+CFLAGS_OPT      = $(CC_OPT)
 CFLAGS_DBG      = $(DEBUG_FLAG)
 CFLAGS_COMMON += $(CFLAGS_REQUIRED)
 
 CXXFLAGS_COMMON = $(GLOBAL_KPIC) -DCC_NOEX $(GCC_WARNINGS)
-CXXFLAGS_OPT	= $(POPT)
+CXXFLAGS_OPT	= $(CC_OPT)
 CXXFLAGS_DBG	= $(DEBUG_FLAG)
 CXXFLAGS_COMMON += $(CFLAGS_REQUIRED)
 
 # FASTDEBUG: Optimize the code in the -g versions, gives us a faster debug java
 ifeq ($(FASTDEBUG), true)
-  CFLAGS_DBG    += $(CC_LOWER_OPT)
-  CXXFLAGS_DBG	+= $(CC_LOWER_OPT)
+  CFLAGS_DBG    += $(CC_OPT/LOWER)
+  CXXFLAGS_DBG	+= $(CC_OPT/LOWER)
 endif
 
 CPPFLAGS_COMMON = -D$(ARCH) -DARCH='"$(ARCH)"' -DLINUX $(VERSION_DEFINES) \
@@ -186,6 +178,9 @@ endif
 
 CPPFLAGS_OPT    = 
 CPPFLAGS_DBG    = -DDEBUG
+ifneq ($(PRODUCT), java)
+  CPPFLAGS_DBG    += -DLOGGING 
+endif
 
 ifdef LIBRARY
   # Libraries need to locate other libraries at runtime, and you can tell
