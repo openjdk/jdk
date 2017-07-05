@@ -58,9 +58,22 @@ public class VectorTest extends JSR166TestCase {
             }
         }
         return newTestSuite(
-                // VectorTest.class,
+                VectorTest.class,
                 CollectionTest.testSuite(new Implementation()),
                 CollectionTest.testSuite(new SubListImplementation()));
+    }
+
+    /**
+     * tests for setSize()
+     */
+    public void testSetSize() {
+        Vector v = new Vector();
+        for (int n : new int[] { 100, 5, 50 }) {
+            v.setSize(n);
+            assertEquals(n, v.size());
+            assertNull(v.get(0));
+            assertNull(v.get(n - 1));
+        }
     }
 
 }

@@ -487,10 +487,43 @@ public class CLDRConverter {
             metaInfo.get("AvailableLocales").add(toLanguageTag(bundle.getID()));
             addLikelySubtags(metaInfo, "AvailableLocales", bundle.getID());
         }
-
+        addCldrImplicitLocales(metaInfo);
         bundleGenerator.generateMetaInfo(metaInfo);
     }
 
+    /**
+     * These are the Locales that are implicitly supported by CLDR.
+     * Adding them explicitly as likelySubtags here, will ensure that
+     * COMPAT locales do not precede them during ResourceBundle search path.
+     */
+    private static void addCldrImplicitLocales(Map<String, SortedSet<String>> metaInfo) {
+        metaInfo.get("LocaleNames").add("zh-Hans-CN");
+        metaInfo.get("LocaleNames").add("zh-Hans-SG");
+        metaInfo.get("LocaleNames").add("zh-Hant-HK");
+        metaInfo.get("LocaleNames").add("zh-Hant-MO");
+        metaInfo.get("LocaleNames").add("zh-Hant-TW");
+        metaInfo.get("CurrencyNames").add("zh-Hans-CN");
+        metaInfo.get("CurrencyNames").add("zh-Hans-SG");
+        metaInfo.get("CurrencyNames").add("zh-Hant-HK");
+        metaInfo.get("CurrencyNames").add("zh-Hant-MO");
+        metaInfo.get("CurrencyNames").add("zh-Hant-TW");
+        metaInfo.get("TimeZoneNames").add("zh-Hans-CN");
+        metaInfo.get("TimeZoneNames").add("zh-Hans-SG");
+        metaInfo.get("TimeZoneNames").add("zh-Hant-HK");
+        metaInfo.get("TimeZoneNames").add("zh-Hant-MO");
+        metaInfo.get("TimeZoneNames").add("zh-Hant-TW");
+        metaInfo.get("TimeZoneNames").add("zh-HK");
+        metaInfo.get("CalendarData").add("zh-Hans-CN");
+        metaInfo.get("CalendarData").add("zh-Hans-SG");
+        metaInfo.get("CalendarData").add("zh-Hant-HK");
+        metaInfo.get("CalendarData").add("zh-Hant-MO");
+        metaInfo.get("CalendarData").add("zh-Hant-TW");
+        metaInfo.get("FormatData").add("zh-Hans-CN");
+        metaInfo.get("FormatData").add("zh-Hans-SG");
+        metaInfo.get("FormatData").add("zh-Hant-HK");
+        metaInfo.get("FormatData").add("zh-Hant-MO");
+        metaInfo.get("FormatData").add("zh-Hant-TW");
+    }
     static final Map<String, String> aliases = new HashMap<>();
 
     /**

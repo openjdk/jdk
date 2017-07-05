@@ -37,7 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  */
 class SparseArrayData extends ArrayData {
     /** Maximum size for dense arrays */
-    static final int MAX_DENSE_LENGTH = 1024 * 1024;
+    static final int MAX_DENSE_LENGTH = 128 * 1024;
 
     /** Underlying array. */
     private ArrayData underlying;
@@ -56,7 +56,7 @@ class SparseArrayData extends ArrayData {
         super(length);
         assert underlying.length() <= length;
         this.underlying = underlying;
-        this.maxDenseLength = Math.max(MAX_DENSE_LENGTH, underlying.length());
+        this.maxDenseLength = underlying.length();
         this.sparseMap = sparseMap;
     }
 

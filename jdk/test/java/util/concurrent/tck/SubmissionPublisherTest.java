@@ -402,6 +402,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
 
     /**
      * Closing a publisher exceptionally causes onError to subscribers
+     * after they are subscribed
      */
     public void testCloseExceptionallyError() {
         SubmissionPublisher<Integer> p = basicPublisher();
@@ -412,9 +413,11 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         p.submit(1);
         p.closeExceptionally(new SPException());
         assertTrue(p.isClosed());
+        s1.awaitSubscribe();
         s1.awaitError();
         assertTrue(s1.nexts <= 1);
         assertEquals(1, s1.errors);
+        s2.awaitSubscribe();
         s2.awaitError();
         assertTrue(s2.nexts <= 1);
         assertEquals(1, s2.errors);

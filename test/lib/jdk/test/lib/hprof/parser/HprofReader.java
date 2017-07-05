@@ -151,6 +151,10 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
 
     private Snapshot snapshot;
 
+    public static boolean verifyMagicNumber(int numberRead) {
+        return (numberRead == MAGIC_NUMBER);
+    }
+
     public HprofReader(String fileName, PositionDataInputStream in,
                        int dumpNumber, boolean callStack, int debugLevel)
                        throws IOException {
@@ -737,6 +741,12 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         long id = readID();
         StackTrace stackTrace = getStackTraceFromSerial(in.readInt());
         long classID = readID();
+        JavaClass searchedClass = snapshot.findClass(
+                                  "0x" + Long.toHexString(classID));
+        if (searchedClass == null) {
+            throw new IOException(
+                "Class Record for 0x" + Long.toHexString(classID) + " not found");
+        }
         int bytesFollowing = in.readInt();
         int bytesRead = (2 * identifierSize) + 8 + bytesFollowing;
         JavaObject jobj = new JavaObject(classID, start);

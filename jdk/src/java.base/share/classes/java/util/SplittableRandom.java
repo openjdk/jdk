@@ -375,7 +375,7 @@ public final class SplittableRandom {
      * may, and typically does, vary across program invocations.
      */
     public SplittableRandom() { // emulate defaultGen.split()
-        long s = defaultGen.getAndAdd(2 * GOLDEN_GAMMA);
+        long s = defaultGen.getAndAdd(GOLDEN_GAMMA << 1);
         this.seed = mix64(s);
         this.gamma = mixGamma(s + GOLDEN_GAMMA);
     }

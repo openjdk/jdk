@@ -43,7 +43,11 @@ protected:
   static void print_load_average(outputStream* st);
 
   // Minimum stack size a thread can be created with (allowing
-  // the VM to completely create the thread and enter user code)
+  // the VM to completely create the thread and enter user code).
+  // The initial values exclude any guard pages (by HotSpot or libc).
+  // set_minimum_stack_sizes() will add the size required for
+  // HotSpot guard pages depending on page size and flag settings.
+  // Libc guard pages are never considered by these values.
   static size_t _compiler_thread_min_stack_allowed;
   static size_t _java_thread_min_stack_allowed;
   static size_t _vm_internal_thread_min_stack_allowed;

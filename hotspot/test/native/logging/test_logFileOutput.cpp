@@ -103,7 +103,7 @@ TEST_VM(LogFileOutput, filesize_overflow) {
   EXPECT_FALSE(fo.initialize(buf, &ss)) << "Accepted filesize that overflows";
 }
 
-TEST(LogFileOutput, startup_rotation) {
+TEST_VM(LogFileOutput, startup_rotation) {
   const size_t rotations = 5;
   const char* filename = "start-rotate-test";
   char* rotated_file[rotations];
@@ -140,7 +140,7 @@ TEST(LogFileOutput, startup_rotation) {
   }
 }
 
-TEST(LogFileOutput, startup_truncation) {
+TEST_VM(LogFileOutput, startup_truncation) {
   const char* filename = "start-truncate-test";
   const char* archived_filename = "start-truncate-test.0";
 
@@ -168,7 +168,7 @@ TEST(LogFileOutput, startup_truncation) {
   delete_file(archived_filename);
 }
 
-TEST(LogFileOutput, invalid_file) {
+TEST_VM(LogFileOutput, invalid_file) {
   ResourceMark rm;
   stringStream ss;
 
@@ -179,5 +179,5 @@ TEST(LogFileOutput, invalid_file) {
     << "file was initialized when there was an existing directory with the same name";
   EXPECT_TRUE(string_contains_substring(ss.as_string(), "tmplogdir is not a regular file"))
     << "missing expected error message, received msg: %s" << ss.as_string();
-  remove("tmplogdir");
+  delete_empty_directory("tmplogdir");
 }

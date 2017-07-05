@@ -288,7 +288,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _prototype_header,                             markOop)                               \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
-  nonstatic_field(Klass,                       _vtable_len,                                   int)                                \
+  nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
+  nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
@@ -712,6 +713,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(ClassLoaderData,             _class_loader,                                 oop)                                   \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
+  volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
+  nonstatic_field(ClassLoaderData,             _is_anonymous,                                 bool)                                  \
                                                                                                                                      \
      static_field(ClassLoaderDataGraph,        _head,                                         ClassLoaderData*)                      \
                                                                                                                                      \

@@ -1407,8 +1407,8 @@ public final class LocalDateTime
      * </ol>
      * <p>
      * For example, 2008-02-29 (leap year) minus one year would result in the
-     * invalid date 2009-02-29 (standard year). Instead of returning an invalid
-     * result, the last valid day of the month, 2009-02-28, is selected instead.
+     * invalid date 2007-02-29 (standard year). Instead of returning an invalid
+     * result, the last valid day of the month, 2007-02-28, is selected instead.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1431,8 +1431,8 @@ public final class LocalDateTime
      * </ol>
      * <p>
      * For example, 2007-03-31 minus one month would result in the invalid date
-     * 2007-04-31. Instead of returning an invalid result, the last valid day
-     * of the month, 2007-04-30, is selected instead.
+     * 2007-02-31. Instead of returning an invalid result, the last valid day
+     * of the month, 2007-02-28, is selected instead.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *

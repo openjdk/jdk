@@ -29,11 +29,17 @@
 #include "memory/allocation.inline.hpp"
 
 static bool initialized;
-static char stdoutmem[sizeof(LogStdoutOutput)];
-static char stderrmem[sizeof(LogStderrOutput)];
+static union {
+  char stdoutmem[sizeof(LogStdoutOutput)];
+  jlong dummy;
+} aligned_stdoutmem;
+static union {
+  char stderrmem[sizeof(LogStderrOutput)];
+  jlong dummy;
+} aligned_stderrmem;
 
-LogStdoutOutput &StdoutLog = reinterpret_cast<LogStdoutOutput&>(stdoutmem);
-LogStderrOutput &StderrLog = reinterpret_cast<LogStderrOutput&>(stderrmem);
+LogStdoutOutput &StdoutLog = reinterpret_cast<LogStdoutOutput&>(aligned_stdoutmem.stdoutmem);
+LogStderrOutput &StderrLog = reinterpret_cast<LogStderrOutput&>(aligned_stderrmem.stderrmem);
 
 LogFileStreamInitializer::LogFileStreamInitializer() {
   if (!initialized) {
