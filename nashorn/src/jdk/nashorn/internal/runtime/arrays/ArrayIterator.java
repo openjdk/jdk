@@ -30,7 +30,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 /**
  * Iterator over a NativeArray
  */
-public class ArrayIterator extends ArrayLikeIterator<Object> {
+class ArrayIterator extends ArrayLikeIterator<Object> {
 
     /** Array {@link ScriptObject} to iterate over */
     protected final ScriptObject array;

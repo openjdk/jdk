@@ -30,12 +30,15 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getPaddedFieldCount;
 import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 import java.util.Iterator;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
@@ -129,12 +132,12 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
             final T      value  = valueIter.next();
 
             if (symbol != null && value != null) {
-                final int index = ArrayIndex.getArrayIndex(key);
+                final int index = getArrayIndex(key);
 
-                if (index < 0) {
+                if (!isValidArrayIndex(index)) {
                     putField(method, key, symbol.getFieldIndex(), value);
                 } else {
-                    putSlot(method, index, value);
+                    putSlot(method, ArrayIndex.toLongIndex(index), value);
                 }
             }
         }
@@ -177,9 +180,13 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param index  Slot index.
      * @param value  Value to store.
      */
-    private void putSlot(final MethodEmitter method, final int index, final T value) {
+    private void putSlot(final MethodEmitter method, final long index, final T value) {
         method.dup();
-        method.load(index);
+        if (JSType.isRepresentableAsInt(index)) {
+            method.load((int) index);
+        } else {
+            method.load(index);
+        }
         loadValue(value);
         method.dynamicSetIndex(callSiteFlags);
     }

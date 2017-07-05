@@ -171,7 +171,7 @@ public class ByteLookupTable extends LookupTable {
      * @exception ArrayIndexOutOfBoundsException if <code>src</code> is
      *            longer than <code>dst</code> or if for any element
      *            <code>i</code> of <code>src</code>,
-     *            <code>(src[i]&0xff)-offset</code> is either less than
+     *            {@code (src[i]&0xff)-offset} is either less than
      *            zero or greater than or equal to the length of the
      *            lookup table for any band.
      */

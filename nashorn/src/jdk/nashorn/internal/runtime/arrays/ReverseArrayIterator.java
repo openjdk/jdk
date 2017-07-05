@@ -30,7 +30,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 /**
  * Reverse iterator over a NativeArray
  */
-public final class ReverseArrayIterator extends ArrayIterator {
+final class ReverseArrayIterator extends ArrayIterator {
 
     /**
      * Constructor

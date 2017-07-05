@@ -40,7 +40,7 @@ import javax.print.attribute.PrintServiceAttribute;
  * details on color support). The information is intended to be germane to
  * this kind of printer without regard to site specific modifications or
  * services.
- * <P
+ * <P>
  * In contrast, the {@link PrinterMoreInfo PrinterMoreInfo} attribute is used
  * to find out more information about this specific printer rather than this
  * general kind of printer.

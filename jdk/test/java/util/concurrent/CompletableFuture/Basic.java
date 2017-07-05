@@ -34,6 +34,8 @@
 /*
  * @test
  * @bug 8005696
+ * @run main Basic
+ * @run main/othervm -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 Basic
  * @summary Basic tests for CompletableFuture
  * @author Chris Hegarty
  */

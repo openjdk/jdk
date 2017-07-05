@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,10 +211,11 @@ public class Track {
     /**
      * Obtains the event at the specified index.
      * @param index the location of the desired event in the event vector
-     * @throws <code>ArrayIndexOutOfBoundsException</code>  if the
+     * @throws ArrayIndexOutOfBoundsException  if the
      * specified index is negative or not less than the current size of
      * this track.
      * @see #size
+     * @return the event at the specified index
      */
     public MidiEvent get(int index) throws ArrayIndexOutOfBoundsException {
         try {

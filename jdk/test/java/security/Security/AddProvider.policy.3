@@ -1,0 +1,7 @@
+grant codeBase "file:${{java.ext.dirs}}/*" {
+	permission java.security.AllPermission;
+};
+
+grant {
+    permission java.security.SecurityPermission "insertProvider.*";
+};

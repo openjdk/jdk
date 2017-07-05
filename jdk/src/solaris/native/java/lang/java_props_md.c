@@ -361,6 +361,25 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
             *std_encoding = "Big5-HKSCS-2001";
         }
 #endif
+#ifdef MACOSX
+        /*
+         * For the case on MacOS X where encoding is set to US-ASCII, but we
+         * don't have any encoding hints from LANG/LC_ALL/LC_CTYPE, use UTF-8
+         * instead.
+         *
+         * The contents of ASCII files will still be read and displayed
+         * correctly, but so will files containing UTF-8 characters beyond the
+         * standard ASCII range.
+         *
+         * Specifically, this allows apps launched by double-clicking a .jar
+         * file to correctly read UTF-8 files using the default encoding (see
+         * 8011194).
+         */
+        if (strcmp(p,"US-ASCII") == 0 && getenv("LANG") == NULL &&
+            getenv("LC_ALL") == NULL && getenv("LC_CTYPE") == NULL) {
+            *std_encoding = "UTF-8";
+        }
+#endif
     }
 
     free(temp);

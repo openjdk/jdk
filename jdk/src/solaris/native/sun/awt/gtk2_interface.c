@@ -794,6 +794,7 @@ gboolean gtk2_load()
             }
             putenv (new_env);
             free (new_env);
+            free (tmp_env);
         }
     }
 

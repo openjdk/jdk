@@ -43,7 +43,7 @@ public class DefaultMethodModeling {
                               SuperIwithDefault.class, SuperIwithDefaultChild.class,
                               Base.class, Combo1.class, Combo2.class,
                               SonSuperIwithDefault.class, DaughterSuperIwithDefault.class, GrandchildSuperIwithDefault.class, D.class,
-                              B.class, C.class
+                              B.class, C.class, B1.class, D1.class
         };
 
         for(Class<?> clazz : classes) {
@@ -202,6 +202,17 @@ class D implements GrandchildSuperIwithDefault {
     public void quux(){}
 }
 
+class D1 implements SonSuperIwithDefault, DaughterSuperIwithDefault {
+    @ExpectedModel(declaringClass=D1.class)
+    public void foo(){}
+
+    @ExpectedModel(declaringClass=D1.class)
+    public void  baz(){}
+
+    @ExpectedModel(declaringClass=D1.class)
+    public void quux(){}
+}
+
 // -=-=-=-
 
 // What does re-abstraction look like?
@@ -221,4 +232,22 @@ abstract class B extends A {
 class C extends B implements SuperIwithDefault {
     @ExpectedModel(declaringClass=C.class)
     public void bar(){}
+}
+
+abstract class A1 implements SonSuperIwithDefault {
+    @ExpectedModel(modifiers=PUBLIC|ABSTRACT, declaringClass=A1.class)
+    public abstract void baz();
+
+    @ExpectedModel(modifiers=PUBLIC|ABSTRACT, declaringClass=A1.class)
+    public abstract void foo();
+}
+
+class B1 extends A1 {
+    @ExpectedModel(declaringClass=B1.class)
+    @Override
+    public void foo(){;}
+
+    @ExpectedModel(declaringClass=B1.class)
+    @Override
+    public void baz(){}
 }

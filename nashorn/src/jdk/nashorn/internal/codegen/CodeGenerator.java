@@ -45,6 +45,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticField;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
@@ -131,6 +132,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Undefined;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -1262,7 +1264,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             classEmitter.needGetConstantMethod(cls);
         } else {
             method.loadConstants().load(index).arrayload();
-            if (cls != Object.class) {
+            if (object instanceof ArrayData) {
+                // avoid cast to non-public ArrayData subclass
+                method.checkcast(ArrayData.class);
+                method.invoke(virtualCallNoLookup(ArrayData.class, "copy", ArrayData.class));
+            } else if (cls != Object.class) {
                 method.checkcast(cls);
             }
         }

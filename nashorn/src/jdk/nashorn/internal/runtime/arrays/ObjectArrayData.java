@@ -47,10 +47,13 @@ final class ObjectArrayData extends ArrayData {
      */
     ObjectArrayData(final Object array[], final int length) {
         super(length);
+        assert array.length >= length;
         this.array  = array;
-        if (array.length > length) {
-            Arrays.fill(array, length, array.length, ScriptRuntime.UNDEFINED);
-        }
+    }
+
+    @Override
+    public ArrayData copy() {
+        return new ObjectArrayData(array.clone(), (int) length());
     }
 
     @Override
@@ -109,9 +112,6 @@ final class ObjectArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
-        if (value == ScriptRuntime.UNDEFINED) {
-            return new UndefinedArrayFilter(this).set(index, value, strict);
-        }
         array[index] = value;
         setLength(Math.max(index + 1, length()));
         return this;

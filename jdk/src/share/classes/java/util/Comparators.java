@@ -87,12 +87,12 @@ class Comparators {
         @Override
         public Comparator<T> thenComparing(Comparator<? super T> other) {
             Objects.requireNonNull(other);
-            return new NullComparator(nullFirst, real == null ? other : real.thenComparing(other));
+            return new NullComparator<>(nullFirst, real == null ? other : real.thenComparing(other));
         }
 
         @Override
         public Comparator<T> reversed() {
-            return new NullComparator(!nullFirst, real == null ? null : real.reversed());
+            return new NullComparator<>(!nullFirst, real == null ? null : real.reversed());
         }
     }
 }

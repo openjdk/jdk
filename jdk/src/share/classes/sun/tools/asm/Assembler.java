@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,9 +91,9 @@ class Assembler implements Constants {
         add(new Instruction(where, opc, flagNoCovered));
     }
 
-    static Vector SourceClassList = new Vector();
+    static Vector<String> SourceClassList = new Vector<>();
 
-    static Vector TmpCovTable = new Vector();
+    static Vector<String> TmpCovTable = new Vector<>();
 
     static int[]  JcovClassCountArray = new int[CT_LAST_KIND + 1];
 
@@ -177,8 +177,8 @@ class Assembler implements Constants {
               case opc_lookupswitch: {
                 SwitchData sw = (SwitchData)inst.value;
                 optimize(env, sw.defaultLabel);
-                for (Enumeration e = sw.tab.elements() ; e.hasMoreElements();) {
-                    optimize(env, (Label)e.nextElement());
+                for (Enumeration<Label> e = sw.tab.elements() ; e.hasMoreElements();) {
+                    optimize(env, e.nextElement());
                 }
                 return;
               }
@@ -186,8 +186,8 @@ class Assembler implements Constants {
               case opc_try: {
                 TryData td = (TryData)inst.value;
                 td.getEndLabel().pc = NEEDED;
-                for (Enumeration e = td.catches.elements() ; e.hasMoreElements();) {
-                    CatchData cd = (CatchData)e.nextElement();
+                for (Enumeration<CatchData> e = td.catches.elements() ; e.hasMoreElements();) {
+                    CatchData cd = e.nextElement();
                     optimize(env, cd.getLabel());
                 }
                 break;
@@ -237,9 +237,11 @@ class Assembler implements Constants {
         // Collect constants for arguments only
         // if a local variable table is generated
         if ((field != null) && env.debug_vars()) {
-            if (field.getArguments() != null) {
-                for (Enumeration e = field.getArguments().elements() ; e.hasMoreElements() ;) {
-                    MemberDefinition f = (MemberDefinition)e.nextElement();
+            @SuppressWarnings("unchecked")
+            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            if (v != null) {
+                for (Enumeration<MemberDefinition> e = v.elements() ; e.hasMoreElements() ;) {
+                    MemberDefinition f = e.nextElement();
                     tab.put(f.getName().toString());
                     tab.put(f.getType().getTypeSignature());
                 }
@@ -355,16 +357,16 @@ class Assembler implements Constants {
               case opc_lookupswitch: {
                 SwitchData sw = (SwitchData)inst.value;
                 balance(sw.defaultLabel, depth);
-                for (Enumeration e = sw.tab.elements() ; e.hasMoreElements();) {
-                    balance((Label)e.nextElement(), depth);
+                for (Enumeration<Label> e = sw.tab.elements() ; e.hasMoreElements();) {
+                    balance(e.nextElement(), depth);
                 }
                 return;
               }
 
               case opc_try: {
                 TryData td = (TryData)inst.value;
-                for (Enumeration e = td.catches.elements() ; e.hasMoreElements();) {
-                    CatchData cd = (CatchData)e.nextElement();
+                for (Enumeration<CatchData> e = td.catches.elements() ; e.hasMoreElements();) {
+                    CatchData cd = e.nextElement();
                     balance(cd.getLabel(), depth + 1);
                 }
                 break;
@@ -383,9 +385,10 @@ class Assembler implements Constants {
 
         if ((field != null) && field.getArguments() != null) {
               int sum = 0;
-              Vector v = field.getArguments();
-              for (Enumeration e = v.elements(); e.hasMoreElements(); ) {
-                  MemberDefinition f = ((MemberDefinition)e.nextElement());
+              @SuppressWarnings("unchecked")
+              Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+              for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
+                  MemberDefinition f = e.nextElement();
                   sum += f.getType().stackSize();
               }
               maxvar = sum;
@@ -441,8 +444,8 @@ class Assembler implements Constants {
             if (inst.opc == opc_try) {
                 TryData td = (TryData)inst.value;
                 writeExceptions(env, out, tab, inst.next, td.getEndLabel());
-                for (Enumeration e = td.catches.elements() ; e.hasMoreElements();) {
-                    CatchData cd = (CatchData)e.nextElement();
+                for (Enumeration<CatchData> e = td.catches.elements() ; e.hasMoreElements();) {
+                    CatchData cd = e.nextElement();
                     //System.out.println("EXCEPTION: " + env.getSource() + ", pc=" + inst.pc + ", end=" + td.getEndLabel().pc + ", hdl=" + cd.getLabel().pc + ", tp=" + cd.getType());
                     out.writeShort(inst.pc);
                     out.writeShort(td.getEndLabel().pc);
@@ -463,11 +466,12 @@ class Assembler implements Constants {
      * Write the coverage table
      */
     public void writeCoverageTable(Environment env, ClassDefinition c, DataOutputStream out, ConstantPool tab, long whereField) throws IOException {
-        Vector TableLot = new Vector();         /* Coverage table */
+        Vector<Cover> TableLot = new Vector<>();         /* Coverage table */
         boolean begseg = false;
         boolean begmeth = false;
+        @SuppressWarnings("deprecation")
         long whereClass = ((SourceClass)c).getWhere();
-        Vector whereTry = new Vector();
+        Vector<Long> whereTry = new Vector<>();
         int numberTry = 0;
         int count = 0;
 
@@ -484,8 +488,8 @@ class Assembler implements Constants {
                 }
                 if (!begseg && !inst.flagNoCovered ) {
                   boolean findTry = false;
-                  for (Enumeration e = whereTry.elements(); e.hasMoreElements();) {
-                       if ( ((Long)(e.nextElement())).longValue() == inst.where) {
+                  for (Enumeration<Long> e = whereTry.elements(); e.hasMoreElements();) {
+                       if (e.nextElement().longValue() == inst.where) {
                               findTry = true;
                               break;
                        }
@@ -546,7 +550,7 @@ class Assembler implements Constants {
               }
 
               case opc_try: {
-                whereTry.addElement(new Long(inst.where));
+                whereTry.addElement(Long.valueOf(inst.where));
                 begseg = false;
                 break;
               }
@@ -569,8 +573,8 @@ class Assembler implements Constants {
               }
               case opc_lookupswitch: {
                 SwitchData sw = (SwitchData)inst.value;
-                for (Enumeration e = sw.sortedKeys(); e.hasMoreElements() ; ) {
-                     Integer v = (Integer)e.nextElement();
+                for (Enumeration<Integer> e = sw.sortedKeys(); e.hasMoreElements() ; ) {
+                     Integer v = e.nextElement();
                      TableLot.addElement(new Cover(CT_CASE, sw.whereCase(v), inst.pc));
                      count++;
                 }
@@ -591,7 +595,7 @@ class Assembler implements Constants {
 
         out.writeShort(count);
         for (int i = 0; i < count; i++) {
-           Lot = (Cover)TableLot.elementAt(i);
+           Lot = TableLot.elementAt(i);
            ln = (Lot.Addr >> WHEREOFFSETBITS);
            pos = (Lot.Addr << (64 - WHEREOFFSETBITS)) >> (64 - WHEREOFFSETBITS);
            out.writeShort(Lot.NumCommand);
@@ -646,6 +650,7 @@ private String createClassJcovElement(Environment env, ClassDefinition c) {
  */
 
 public void GenVecJCov(Environment env, ClassDefinition c, long Time) {
+        @SuppressWarnings("deprecation")
         String SourceFile = ((SourceClass)c).getAbsoluteName();
 
         TmpCovTable.addElement(createClassJcovElement(env, c));
@@ -667,6 +672,7 @@ public void GenVecJCov(Environment env, ClassDefinition c, long Time) {
  * generate file of coverage data
  */
 
+@SuppressWarnings("deprecation") // for JCovd.readLine() calls
 public void GenJCov(Environment env) {
 
      try {
@@ -686,14 +692,14 @@ public void GenJCov(Environment env) {
                    while((CurrLine = JCovd.readLine()) != null ) {
                       if ( CurrLine.startsWith(JcovClassLine) ) {
                              first = true;
-                             for(Enumeration e = SourceClassList.elements(); e.hasMoreElements();) {
+                             for(Enumeration<String> e = SourceClassList.elements(); e.hasMoreElements();) {
                                  String clsName = CurrLine.substring(JcovClassLine.length());
                                  int idx = clsName.indexOf(' ');
 
                                  if (idx != -1) {
                                      clsName = clsName.substring(0, idx);
                                  }
-                                 Class = (String)e.nextElement();
+                                 Class = e.nextElement();
                                  if ( Class.compareTo(clsName) == 0) {
                                      first = false;
                                      break;
@@ -708,7 +714,7 @@ public void GenJCov(Environment env) {
         }
         PrintStream CovFile = new PrintStream(new DataOutputStream(new FileOutputStream(outFile)));
         CovFile.println(JcovMagicLine);
-        for(Enumeration e = TmpCovTable.elements(); e.hasMoreElements();) {
+        for(Enumeration<String> e = TmpCovTable.elements(); e.hasMoreElements();) {
               CovFile.println(e.nextElement());
         }
         CovFile.close();
@@ -821,16 +827,16 @@ public void GenJCov(Environment env) {
               case opc_lookupswitch: {
                 SwitchData sw = (SwitchData)inst.value;
                 flowFields(env, sw.defaultLabel, locals);
-                for (Enumeration e = sw.tab.elements() ; e.hasMoreElements();) {
-                    flowFields(env, (Label)e.nextElement(), locals);
+                for (Enumeration<Label> e = sw.tab.elements() ; e.hasMoreElements();) {
+                    flowFields(env, e.nextElement(), locals);
                 }
                 return;
               }
 
               case opc_try: {
-                Vector catches = ((TryData)inst.value).catches;
-                for (Enumeration e = catches.elements(); e.hasMoreElements();) {
-                    CatchData cd = (CatchData)e.nextElement();
+                Vector<CatchData> catches = ((TryData)inst.value).catches;
+                for (Enumeration<CatchData> e = catches.elements(); e.hasMoreElements();) {
+                    CatchData cd = e.nextElement();
                     flowFields(env, cd.getLabel(), locals);
                 }
                 break;
@@ -851,9 +857,10 @@ public void GenJCov(Environment env) {
         // Initialize arguments
         if ((field != null) && (field.getArguments() != null)) {
             int reg = 0;
-            Vector v = field.getArguments();
-            for (Enumeration e = v.elements(); e.hasMoreElements(); ) {
-                MemberDefinition f = ((MemberDefinition)e.nextElement());
+            @SuppressWarnings("unchecked")
+            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
+                MemberDefinition f = e.nextElement();
                 locals[reg] = f;
                 reg += f.getType().stackSize();
             }
@@ -867,9 +874,10 @@ public void GenJCov(Environment env) {
             locals[i] = null;
         if ((field != null) && (field.getArguments() != null)) {
             int reg = 0;
-            Vector v = field.getArguments();
-            for (Enumeration e = v.elements(); e.hasMoreElements(); ) {
-                MemberDefinition f = ((MemberDefinition)e.nextElement());
+            @SuppressWarnings("unchecked")
+            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
+                MemberDefinition f = e.nextElement();
                 locals[reg] = f;
                 lvtab.define(f, reg, 0, maxpc);
                 reg += f.getType().stackSize();

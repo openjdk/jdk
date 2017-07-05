@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.cert.Certificate;
 import java.lang.reflect.Constructor;
 
 import javax.security.auth.Subject;
+import sun.security.provider.PolicyParser.PrincipalEntry;
 
 /**
  * <p> This <code>SubjectCodeSource</code> class contains
@@ -57,7 +58,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
         });
 
     private Subject subject;
-    private LinkedList<PolicyParser.PrincipalEntry> principals;
+    private LinkedList<PrincipalEntry> principals;
     private static final Class[] PARAMS = { String.class };
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("auth", "\t[Auth Access]");
@@ -87,14 +88,14 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *                  <code>SubjectCodeSource</code> <p>
      */
     SubjectCodeSource(Subject subject,
-        LinkedList<PolicyParser.PrincipalEntry> principals,
+        LinkedList<PrincipalEntry> principals,
         URL url, Certificate[] certs) {
 
         super(url, certs);
         this.subject = subject;
         this.principals = (principals == null ?
-                new LinkedList<PolicyParser.PrincipalEntry>() :
-                new LinkedList<PolicyParser.PrincipalEntry>(principals));
+                new LinkedList<PrincipalEntry>() :
+                new LinkedList<PrincipalEntry>(principals));
         sysClassLoader = java.security.AccessController.doPrivileged
         (new java.security.PrivilegedAction<ClassLoader>() {
             public ClassLoader run() {
@@ -114,7 +115,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *          <code>SubjectCodeSource</code> as a <code>LinkedList</code>
      *          of <code>PolicyParser.PrincipalEntry</code> objects.
      */
-    LinkedList<PolicyParser.PrincipalEntry> getPrincipals() {
+    LinkedList<PrincipalEntry> getPrincipals() {
         return principals;
     }
 
@@ -167,7 +168,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      */
     public boolean implies(CodeSource codesource) {
 
-        LinkedList<PolicyParser.PrincipalEntry> subjectList = null;
+        LinkedList<PrincipalEntry> subjectList = null;
 
         if (codesource == null ||
             !(codesource instanceof SubjectCodeSource) ||
@@ -197,20 +198,19 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             return false;
         }
 
-        ListIterator<PolicyParser.PrincipalEntry> li =
-                this.principals.listIterator(0);
+        ListIterator<PrincipalEntry> li = this.principals.listIterator(0);
         while (li.hasNext()) {
-            PolicyParser.PrincipalEntry pppe = li.next();
+            PrincipalEntry pppe = li.next();
             try {
 
                 // handle PrincipalComparators
 
                 Class<?> principalComparator = Class.forName(
-                        pppe.principalClass, true, sysClassLoader);
+                        pppe.getPrincipalClass(), true, sysClassLoader);
                 Constructor<?> c = principalComparator.getConstructor(PARAMS);
                 PrincipalComparator pc =
                         (PrincipalComparator)c.newInstance
-                        (new Object[] { pppe.principalName });
+                        (new Object[] { pppe.getPrincipalName() });
 
                 if (!pc.implies(that.getSubject())) {
                     if (debug != null)
@@ -236,11 +236,10 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
                     Iterator<Principal> i =
                                 that.getSubject().getPrincipals().iterator();
 
-                    subjectList = new LinkedList<PolicyParser.PrincipalEntry>();
+                    subjectList = new LinkedList<PrincipalEntry>();
                     while (i.hasNext()) {
                         Principal p = i.next();
-                        PolicyParser.PrincipalEntry spppe =
-                                new PolicyParser.PrincipalEntry
+                        PrincipalEntry spppe = new PrincipalEntry
                                 (p.getClass().getName(), p.getName());
                         subjectList.add(spppe);
                     }
@@ -281,23 +280,19 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *          <i>pppe</i> argument.
      */
     private boolean subjectListImpliesPrincipalEntry(
-                LinkedList<PolicyParser.PrincipalEntry> subjectList,
-                PolicyParser.PrincipalEntry pppe) {
+                LinkedList<PrincipalEntry> subjectList, PrincipalEntry pppe) {
 
-        ListIterator<PolicyParser.PrincipalEntry> li =
-                                        subjectList.listIterator(0);
+        ListIterator<PrincipalEntry> li = subjectList.listIterator(0);
         while (li.hasNext()) {
-            PolicyParser.PrincipalEntry listPppe = li.next();
+            PrincipalEntry listPppe = li.next();
 
-            if (pppe.principalClass.equals
-                        (PolicyParser.PrincipalEntry.WILDCARD_CLASS) ||
-                pppe.principalClass.equals
-                        (listPppe.principalClass)) {
-
-                if (pppe.principalName.equals
-                        (PolicyParser.PrincipalEntry.WILDCARD_NAME) ||
-                    pppe.principalName.equals
-                        (listPppe.principalName))
+            if (pppe.getPrincipalClass().equals
+                        (PrincipalEntry.WILDCARD_CLASS) ||
+                pppe.getPrincipalClass().equals(listPppe.getPrincipalClass()))
+            {
+                if (pppe.getPrincipalName().equals
+                        (PrincipalEntry.WILDCARD_NAME) ||
+                    pppe.getPrincipalName().equals(listPppe.getPrincipalName()))
                     return true;
             }
         }
@@ -390,13 +385,12 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             }
         }
         if (principals != null) {
-            ListIterator<PolicyParser.PrincipalEntry> li =
-                                        principals.listIterator();
+            ListIterator<PrincipalEntry> li = principals.listIterator();
             while (li.hasNext()) {
-                PolicyParser.PrincipalEntry pppe = li.next();
+                PrincipalEntry pppe = li.next();
                 returnMe = returnMe + rb.getString("NEWLINE") +
-                        pppe.principalClass + " " +
-                        pppe.principalName;
+                        pppe.getPrincipalClass() + " " +
+                        pppe.getPrincipalName();
             }
         }
         return returnMe;

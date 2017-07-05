@@ -149,7 +149,7 @@ public class MetaMessage extends MidiMessage {
      * @param data              the data bytes in the MIDI message
      * @param length    the number of bytes in the <code>data</code>
      * byte array
-     * @throws                  <code>InvalidMidiDataException</code>  if the
+     * @throws                  InvalidMidiDataException  if the
      * parameter values do not specify a valid MIDI meta message
      */
     public void setMessage(int type, byte[] data, int length) throws InvalidMidiDataException {
