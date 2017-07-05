@@ -151,7 +151,7 @@ class BoundMethodHandle extends MethodHandle {
 
     final static RuntimeException badBoundArgumentException(Object argument, MethodHandle mh, int argnum) {
         String atype = (argument == null) ? "null" : argument.getClass().toString();
-        return new WrongMethodTypeException("cannot bind "+atype+" argument to parameter #"+argnum+" of "+mh.type());
+        return new ClassCastException("cannot bind "+atype+" argument to parameter #"+argnum+" of "+mh.type());
     }
 
     @Override

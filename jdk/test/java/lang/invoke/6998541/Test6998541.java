@@ -164,6 +164,7 @@ public class Test6998541 {
     private static boolean canDoAsType(Class<?> src, Class<?> dst) {
         if (src == dst)  return true;
         if (dst == void.class)  return true;
+        if (src == void.class)  return true;  // allow void->zero
         if (!src.isPrimitive() || !dst.isPrimitive())  return true;
         // primitive conversion works for asType only when it's widening
         if (src == boolean.class || dst == boolean.class)  return false;
@@ -451,7 +452,6 @@ public class Test6998541 {
     private final static MethodHandle mh_dv = mh(double.class );
 
     private static void void2prim(int i) throws Throwable {
-        if (!DO_CASTS)  return;
         assertEquals(        false, (boolean) mh_zv.invokeExact());  // void -> boolean
         assertEquals((byte)  0,     (byte)    mh_bv.invokeExact());  // void -> byte
         assertEquals((char)  0,     (char)    mh_cv.invokeExact());  // void -> char
@@ -463,15 +463,7 @@ public class Test6998541 {
     }
 
     private static void void2prim_invalid(double x) throws Throwable {
-        if (DO_CASTS)  return;
-        try { assertEquals(        false, (boolean) mh_zv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> boolean
-        try { assertEquals((byte)  0,     (byte)    mh_bv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> byte
-        try { assertEquals((char)  0,     (char)    mh_cv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> char
-        try { assertEquals((short) 0,     (short)   mh_sv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> short
-        try { assertEquals(        0,     (int)     mh_iv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> int
-        try { assertEquals(        0L,    (long)    mh_jv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> long
-        try { assertEquals(        0.0f,  (float)   mh_fv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> float
-        try { assertEquals(        0.0d,  (double)  mh_dv.invokeExact()); fail(); } catch (NullPointerException _) {}  // void -> double
+        // no cases
     }
 
     private static MethodHandle mh_v(Class arg) { return mh(void.class, arg); }
