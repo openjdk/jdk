@@ -33,7 +33,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
  * AST representing class types.
  */
 public class ClassTypeSignature implements FieldTypeSignature {
-    private List<SimpleClassTypeSignature> path;
+    private final List<SimpleClassTypeSignature> path;
 
 
     private ClassTypeSignature(List<SimpleClassTypeSignature> p) {

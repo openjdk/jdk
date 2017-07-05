@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,21 @@
  * @test
  * @bug 8022595
  * @summary JSR292: deadlock during class loading of MethodHandles, MethodHandleImpl & MethodHandleNatives
- *
+ * @library /testlibrary
  * @run main/othervm ConcurrentClassLoadingTest
  */
-import java.util.*;
+import com.oracle.java.testlibrary.Utils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 public class ConcurrentClassLoadingTest {
     int numThreads = 0;
-    long seed = 0;
     CyclicBarrier l;
-    Random rand;
+    private static final Random rand = Utils.getRandomInstance();
 
     public static void main(String[] args) throws Throwable {
         ConcurrentClassLoadingTest test = new ConcurrentClassLoadingTest();
@@ -49,9 +52,6 @@ public class ConcurrentClassLoadingTest {
         while (i < args.length) {
             String flag = args[i];
             switch(flag) {
-                case "-seed":
-                    seed = Long.parseLong(args[++i]);
-                    break;
                 case "-numThreads":
                     numThreads = Integer.parseInt(args[++i]);
                     break;
@@ -67,15 +67,9 @@ public class ConcurrentClassLoadingTest {
             numThreads = Runtime.getRuntime().availableProcessors();
         }
 
-        if (seed == 0) {
-            seed = (new Random()).nextLong();
-        }
-        rand = new Random(seed);
-
         l = new CyclicBarrier(numThreads + 1);
 
         System.out.printf("Threads: %d\n", numThreads);
-        System.out.printf("Seed: %d\n", seed);
     }
 
     final List<Loader> loaders = new ArrayList<>();
@@ -90,7 +84,9 @@ public class ConcurrentClassLoadingTest {
 
             System.out.printf("Thread #%d:\n", t);
             for (int i = 0; i < count; i++) {
-                if (c.size() == 0) break;
+                if (c.isEmpty()) {
+                    break;
+                }
 
                 int k = rand.nextInt(c.size());
                 String elem = c.remove(k);

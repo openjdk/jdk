@@ -243,7 +243,7 @@ class Fingerprinter: public SignatureIterator {
     }
 
     if (mh->size_of_parameters() > max_size_of_parameters ) {
-      _fingerprint = UCONST64(-1);
+      _fingerprint = (uint64_t)CONST64(-1);
       mh->constMethod()->set_fingerprint(_fingerprint);
       return _fingerprint;
     }

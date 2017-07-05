@@ -151,11 +151,11 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 // Constant for jlong (specifying an long long constant is C++ compiler specific)
 
 // Build a 64bit integer constant on with Visual C++
-#define CONST64(x)  (x ## i64)
-#define UCONST64(x) ((uint64_t)CONST64(x))
+#define  CONST64(x) (x ##  i64)
+#define UCONST64(x) (x ## ui64)
 
-const jlong min_jlong = CONST64(0x8000000000000000);
-const jlong max_jlong = CONST64(0x7fffffffffffffff);
+const jlong min_jlong = (jlong)UCONST64(0x8000000000000000);
+const jlong max_jlong =         CONST64(0x7fffffffffffffff);
 
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous

@@ -27,7 +27,7 @@
 
 /* This file contains dummy provider probes needed when compiling a hotspot
  * that does not support dtrace probes. This could be because we're building
- * on a system that doesn't suuport dtrace or because we're bulding a variant
+ * on a system that doesn't support dtrace or because we're bulding a variant
  * of hotspot (like core) where we do not support dtrace
  */
 #if !defined(DTRACE_ENABLED)

@@ -40,7 +40,7 @@ import sun.reflect.generics.visitor.Reifier;
  *
 */
 public abstract class LazyReflectiveObjectGenerator {
-    private GenericsFactory factory; // cached factory
+    private final GenericsFactory factory; // cached factory
 
     protected LazyReflectiveObjectGenerator(GenericsFactory f) {
         factory = f;
