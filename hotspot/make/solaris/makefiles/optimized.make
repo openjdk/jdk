@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-# CA 95054 USA or visit www.sun.com if you need additional information or
-# have any questions.
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
 #  
 #
 
@@ -32,13 +32,10 @@ OPT_CFLAGS/BYFILE = $(OPT_CFLAGS/$@)$(OPT_CFLAGS/DEFAULT$(OPT_CFLAGS/$@))
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
 ifeq ("${Platform_compiler}", "sparcWorks")
 
-# Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
-ifeq ($(COMPILER_REV_NUMERIC),509)
-  # Not clear this workaround could be skipped in some cases.
-  OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER) -g
-  OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER) -g
-  OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER) -g
-endif
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+# dtrace cannot handle tail call optimization (6672627, 6693876)
+OPT_CFLAGS/jni.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)
+endif # COMPILER_NUMERIC_REV >= 509
 
 # Workaround SS11 bug 6345274 (all platforms) (Fixed in SS11 patch and SS12)
 ifeq ($(COMPILER_REV_NUMERIC),508)

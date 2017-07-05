@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -33,6 +33,8 @@ int       NMethodSweeper::_invocations = 0;  // No. of invocations left until we
 jint      NMethodSweeper::_locked_seen = 0;
 jint      NMethodSweeper::_not_entrant_seen_on_stack = 0;
 bool      NMethodSweeper::_rescan = false;
+bool      NMethodSweeper::_do_sweep = false;
+jint      NMethodSweeper::_sweep_started = 0;
 bool      NMethodSweeper::_was_full = false;
 jint      NMethodSweeper::_advise_to_sweep = 0;
 jlong     NMethodSweeper::_last_was_full = 0;
@@ -50,14 +52,20 @@ public:
 };
 static MarkActivationClosure mark_activation_closure;
 
-void NMethodSweeper::sweep() {
+void NMethodSweeper::scan_stacks() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be executed at a safepoint");
   if (!MethodFlushing) return;
+  _do_sweep = true;
 
   // No need to synchronize access, since this is always executed at a
   // safepoint.  If we aren't in the middle of scan and a rescan
-  // hasn't been requested then just return.
-  if (_current == NULL && !_rescan) return;
+  // hasn't been requested then just return. If UseCodeCacheFlushing is on and
+  // code cache flushing is in progress, don't skip sweeping to help make progress
+  // clearing space in the code cache.
+  if ((_current == NULL && !_rescan) && !(UseCodeCacheFlushing && !CompileBroker::should_compile_new_jobs())) {
+    _do_sweep = false;
+    return;
+  }
 
   // Make sure CompiledIC_lock in unlocked, since we might update some
   // inline caches. If it is, we just bail-out and try later.
@@ -68,7 +76,7 @@ void NMethodSweeper::sweep() {
   if (_current == NULL) {
     _seen        = 0;
     _invocations = NmethodSweepFraction;
-    _current     = CodeCache::first();
+    _current     = CodeCache::first_nmethod();
     _traversals  += 1;
     if (PrintMethodFlushing) {
       tty->print_cr("### Sweep: stack traversal %d", _traversals);
@@ -81,48 +89,9 @@ void NMethodSweeper::sweep() {
     _not_entrant_seen_on_stack = 0;
   }
 
-  if (PrintMethodFlushing && Verbose) {
-    tty->print_cr("### Sweep at %d out of %d. Invocations left: %d", _seen, CodeCache::nof_blobs(), _invocations);
-  }
-
-  // We want to visit all nmethods after NmethodSweepFraction invocations.
-  // If invocation is 1 we do the rest
-  int todo = CodeCache::nof_blobs();
-  if (_invocations != 1) {
-    todo = (CodeCache::nof_blobs() - _seen) / _invocations;
-    _invocations--;
-  }
-
-  for(int i = 0; i < todo && _current != NULL; i++) {
-    CodeBlob* next = CodeCache::next(_current); // Read next before we potentially delete current
-    if (_current->is_nmethod()) {
-      process_nmethod((nmethod *)_current);
-    }
-    _seen++;
-    _current = next;
-  }
-  // Because we could stop on a codeBlob other than an nmethod we skip forward
-  // to the next nmethod (if any). codeBlobs other than nmethods can be freed
-  // async to us and make _current invalid while we sleep.
-  while (_current != NULL && !_current->is_nmethod()) {
-    _current = CodeCache::next(_current);
-  }
-
-  if (_current == NULL && !_rescan && (_locked_seen || _not_entrant_seen_on_stack)) {
-    // we've completed a scan without making progress but there were
-    // nmethods we were unable to process either because they were
-    // locked or were still on stack.  We don't have to aggresively
-    // clean them up so just stop scanning.  We could scan once more
-    // but that complicates the control logic and it's unlikely to
-    // matter much.
-    if (PrintMethodFlushing) {
-      tty->print_cr("### Couldn't make progress on some nmethods so stopping sweep");
-    }
-  }
-
   if (UseCodeCacheFlushing) {
     if (!CodeCache::needs_flushing()) {
-      // In a safepoint, no race with setters
+      // scan_stacks() runs during a safepoint, no race with setters
       _advise_to_sweep = 0;
     }
 
@@ -155,13 +124,99 @@ void NMethodSweeper::sweep() {
   }
 }
 
+void NMethodSweeper::possibly_sweep() {
+  if ((!MethodFlushing) || (!_do_sweep)) return;
+
+  if (_invocations > 0) {
+    // Only one thread at a time will sweep
+    jint old = Atomic::cmpxchg( 1, &_sweep_started, 0 );
+    if (old != 0) {
+      return;
+    }
+    sweep_code_cache();
+  }
+  _sweep_started = 0;
+}
+
+void NMethodSweeper::sweep_code_cache() {
+#ifdef ASSERT
+  jlong sweep_start;
+  if(PrintMethodFlushing) {
+    sweep_start = os::javaTimeMillis();
+  }
+#endif
+  if (PrintMethodFlushing && Verbose) {
+    tty->print_cr("### Sweep at %d out of %d. Invocations left: %d", _seen, CodeCache::nof_blobs(), _invocations);
+  }
+
+  // We want to visit all nmethods after NmethodSweepFraction invocations.
+  // If invocation is 1 we do the rest
+  int todo = CodeCache::nof_blobs();
+  if (_invocations > 1) {
+    todo = (CodeCache::nof_blobs() - _seen) / _invocations;
+  }
+
+  // Compilers may check to sweep more often than stack scans happen,
+  // don't keep trying once it is all scanned
+  _invocations--;
+
+  assert(!SafepointSynchronize::is_at_safepoint(), "should not be in safepoint when we get here");
+  assert(!CodeCache_lock->owned_by_self(), "just checking");
+
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+    for(int i = 0; i < todo && _current != NULL; i++) {
+
+      // Since we will give up the CodeCache_lock, always skip ahead to an nmethod.
+      // Other blobs can be deleted by other threads
+      // Read next before we potentially delete current
+      CodeBlob* next = CodeCache::next_nmethod(_current);
+
+      // Now ready to process nmethod and give up CodeCache_lock
+      {
+        MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        process_nmethod((nmethod *)_current);
+      }
+      _seen++;
+      _current = next;
+    }
+
+    // Skip forward to the next nmethod (if any). Code blobs other than nmethods
+    // can be freed async to us and make _current invalid while we sleep.
+    _current = CodeCache::next_nmethod(_current);
+  }
+
+  if (_current == NULL && !_rescan && (_locked_seen || _not_entrant_seen_on_stack)) {
+    // we've completed a scan without making progress but there were
+    // nmethods we were unable to process either because they were
+    // locked or were still on stack.  We don't have to aggresively
+    // clean them up so just stop scanning.  We could scan once more
+    // but that complicates the control logic and it's unlikely to
+    // matter much.
+    if (PrintMethodFlushing) {
+      tty->print_cr("### Couldn't make progress on some nmethods so stopping sweep");
+    }
+  }
+
+#ifdef ASSERT
+  if(PrintMethodFlushing) {
+    jlong sweep_end             = os::javaTimeMillis();
+    tty->print_cr("### sweeper:      sweep time(%d): " INT64_FORMAT, _invocations, sweep_end - sweep_start);
+  }
+#endif
+}
+
 
 void NMethodSweeper::process_nmethod(nmethod *nm) {
+  assert(!CodeCache_lock->owned_by_self(), "just checking");
+
   // Skip methods that are currently referenced by the VM
   if (nm->is_locked_by_vm()) {
     // But still remember to clean-up inline caches for alive nmethods
     if (nm->is_alive()) {
       // Clean-up all inline caches that points to zombie/non-reentrant methods
+      MutexLocker cl(CompiledIC_lock);
       nm->cleanup_inline_caches();
     } else {
       _locked_seen++;
@@ -178,6 +233,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (marked for reclamation) being flushed", nm->compile_id(), nm);
       }
+      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       nm->flush();
     } else {
       if (PrintMethodFlushing && Verbose) {
@@ -197,10 +253,11 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       _rescan = true;
     } else {
       // Still alive, clean up its inline caches
+      MutexLocker cl(CompiledIC_lock);
       nm->cleanup_inline_caches();
       // we coudn't transition this nmethod so don't immediately
       // request a rescan.  If this method stays on the stack for a
-      // long time we don't want to keep rescanning at every safepoint.
+      // long time we don't want to keep rescanning the code cache.
       _not_entrant_seen_on_stack++;
     }
   } else if (nm->is_unloaded()) {
@@ -209,6 +266,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (unloaded) being made zombie", nm->compile_id(), nm);
     if (nm->is_osr_method()) {
       // No inline caches will ever point to osr methods, so we can just remove it
+      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       nm->flush();
     } else {
       nm->make_zombie();
@@ -227,6 +285,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
     }
 
     // Clean-up all inline caches that points to zombie/non-reentrant methods
+    MutexLocker cl(CompiledIC_lock);
     nm->cleanup_inline_caches();
   }
 }
@@ -235,8 +294,8 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
 // they will call a vm op that comes here. This code attempts to speculatively
 // unload the oldest half of the nmethods (based on the compile job id) by
 // saving the old code in a list in the CodeCache. Then
-// execution resumes. If a method so marked is not called by the second
-// safepoint from the current one, the nmethod will be marked non-entrant and
+// execution resumes. If a method so marked is not called by the second sweeper
+// stack traversal after the current one, the nmethod will be marked non-entrant and
 // got rid of by normal sweeping. If the method is called, the methodOop's
 // _code field is restored and the methodOop/nmethod
 // go back to their normal state.
@@ -364,8 +423,8 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
     xtty->end_elem();
   }
 
-  // Shut off compiler. Sweeper will run exiting from this safepoint
-  // and turn it back on if it clears enough space
+  // Shut off compiler. Sweeper will start over with a new stack scan and
+  // traversal cycle and turn it back on if it clears enough space.
   if (was_full()) {
     _last_was_full = os::javaTimeMillis();
     CompileBroker::set_should_compile_new_jobs(CompileBroker::stop_compilation);

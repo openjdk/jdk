@@ -1,12 +1,12 @@
 #
-# Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Sun designates this
+# published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
-# by Sun in the LICENSE file that accompanied this code.
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-# CA 95054 USA or visit www.sun.com if you need additional information or
-# have any questions.
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
 #
 
 #
@@ -53,7 +53,6 @@ PLATFORM_SHARED=done
 #     VARIANT                     OPT or DBG, OPT is the default
 #     OS_NAME                     solaris, linux, or nt
 #     OS_VERSION                  specific version of os, 5.10, 2.4.9-e.3, etc.
-#     OS_VENDOR                   company name
 #     TEMP_DISK                   /tmp or C:/temp
 #     ARCH_DATA_MODEL             32 or 64
 #     ARCH                        sparc, sparcv9, i586, amd64, or ia64
@@ -153,7 +152,6 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  OS_VENDOR = Sun Microsystems
   # Required Solaris version
   REQUIRED_OS_VERSION = 5.10
   # Minimum disk space needed as determined by running 'du -sk' on 
@@ -236,7 +234,6 @@ ifeq ($(SYSTEM_UNAME), Linux)
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=1460000
   LINUX_VERSION_INFO = /etc/redhat-release
-  OS_VENDOR = Red Hat
   ifeq ($(ARCH_DATA_MODEL), 32)
     REQUIRED_LINUX_VER = Advanced Server
     REQUIRED_LINUX_FULLVER = Advanced Server release 2.1AS
@@ -244,7 +241,6 @@ ifeq ($(SYSTEM_UNAME), Linux)
   else
     ifeq ($(ARCH), amd64)
       LINUX_VERSION_INFO = /etc/SuSE-release
-      OS_VENDOR = SuSE Enterprise
       REQUIRED_LINUX_VER = 8.1
       REQUIRED_LINUX_FULLVER = $(REQUIRED_LINUX_VER) SLSE AMD64
       REQUIRED_OS_VERSION = 2.4.19-SMP
@@ -370,7 +366,6 @@ ifeq ($(PLATFORM), windows)
   # Minimum disk space needed as determined by running 'du -sk' on 
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=500000
-  OS_VENDOR = Microsoft
   # How much RAM does this machine have:
   ifndef MB_OF_MEMORY
     MB_OF_MEMORY := $(shell \
