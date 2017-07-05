@@ -532,7 +532,7 @@ void constantPoolKlass::preload_and_initialize_all_classes(oop obj, TRAPS) {
     if (cp->tag_at(i).is_unresolved_klass()) {
       // This will force loading of the class
       klassOop klass = cp->klass_at(i, CHECK);
-      if (klass->is_instance()) {
+      if (klass->klass_part()->oop_is_instance()) {
         // Force initialization of class
         instanceKlass::cast(klass)->initialize(CHECK);
       }

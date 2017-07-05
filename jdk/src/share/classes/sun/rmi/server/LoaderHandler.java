@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,7 +1031,7 @@ public final class LoaderHandler {
      * loader.  A given permission is only added to the collection if
      * it is not already implied by the collection.
      */
-    public static void addPermissionsForURLs(URL[] urls,
+    private static void addPermissionsForURLs(URL[] urls,
                                              PermissionCollection perms,
                                              boolean forLoader)
     {

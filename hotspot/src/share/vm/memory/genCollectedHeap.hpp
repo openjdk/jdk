@@ -360,8 +360,7 @@ public:
   void verify(bool allow_dirty, bool silent, VerifyOption option);
 
   // Override.
-  void print() const;
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;

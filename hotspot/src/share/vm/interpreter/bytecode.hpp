@@ -234,6 +234,13 @@ class Bytecode_invoke: public Bytecode_member_ref {
                                                           is_invokespecial()   ||
                                                           is_invokedynamic(); }
 
+  bool is_method_handle_invoke() const {
+    return (is_invokedynamic() ||
+            (is_invokevirtual() &&
+             method()->constants()->klass_ref_at_noresolve(index()) == vmSymbols::java_lang_invoke_MethodHandle() &&
+             methodOopDesc::is_method_handle_invoke_name(name())));
+  }
+
   // Helper to skip verification.   Used is_valid() to check if the result is really an invoke
   inline friend Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci);
 };

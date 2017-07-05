@@ -26,6 +26,7 @@
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
 size_t HeapRegionSetBase::_unrealistically_long_length = 0;
+HRSPhase HeapRegionSetBase::_phase = HRSPhaseNone;
 
 //////////////////// HeapRegionSetBase ////////////////////
 
@@ -190,6 +191,17 @@ void HeapRegionSetBase::verify_end() {
                         name(), total_used_bytes(), _calc_total_used_bytes));
 
   _verify_in_progress = false;
+}
+
+void HeapRegionSetBase::clear_phase() {
+  assert(_phase != HRSPhaseNone, "pre-condition");
+  _phase = HRSPhaseNone;
+}
+
+void HeapRegionSetBase::set_phase(HRSPhase phase) {
+  assert(_phase == HRSPhaseNone, "pre-condition");
+  assert(phase != HRSPhaseNone, "pre-condition");
+  _phase = phase;
 }
 
 void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {

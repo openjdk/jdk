@@ -207,7 +207,7 @@ public class Klist {
                 }
                 if (options[2] == 't') {
                     System.out.println("\t Time stamp: " +
-                            reformat(entries[i].getTimeStamp().toDate().toString()));
+                            format(entries[i].getTimeStamp()));
                 }
             }
         }
@@ -234,30 +234,39 @@ public class Klist {
             System.out.println("\nDefault principal: " +
                                defaultPrincipal + ", " +
                                creds.length + " entries found.\n");
-        String starttime = null;
-        String endtime = null;
-        String servicePrincipal = null;
-        String etype = null;
         if (creds != null) {
             for (int i = 0; i < creds.length; i++) {
                 try {
-                    starttime =
-                        reformat(creds[i].getAuthTime().toDate().toString());
-                    endtime =
-                        reformat(creds[i].getEndTime().toDate().toString());
+                    String starttime;
+                    String endtime;
+                    String renewTill;
+                    String servicePrincipal;
+                    if (creds[i].getStartTime() != null) {
+                        starttime = format(creds[i].getStartTime());
+                    } else {
+                        starttime = format(creds[i].getAuthTime());
+                    }
+                    endtime = format(creds[i].getEndTime());
                     servicePrincipal =
                         creds[i].getServicePrincipal().toString();
                     System.out.println("[" + (i + 1) + "] " +
                                        " Service Principal:  " +
                                        servicePrincipal);
-                    System.out.println("     Valid starting:  " + starttime);
-                    System.out.println("     Expires:         " + endtime);
+                    System.out.println("     Valid starting:     " + starttime);
+                    System.out.println("     Expires:            " + endtime);
+                    if (creds[i].getRenewTill() != null) {
+                        renewTill = format(creds[i].getRenewTill());
+                        System.out.println(
+                                "     Renew until:        " + renewTill);
+                    }
                     if (options[0] == 'e') {
-                        etype = EType.toString(creds[i].getEType());
-                        System.out.println("     Encryption type: " + etype);
+                        String eskey = EType.toString(creds[i].getEType());
+                        String etkt = EType.toString(creds[i].getTktEType());
+                        System.out.println("     EType (skey, tkt):  "
+                                + eskey + ", " + etkt);
                     }
                     if (options[1] == 'f') {
-                        System.out.println("     Flags:           " +
+                        System.out.println("     Flags:              " +
                                            creds[i].getTicketFlags().toString());
                     }
                     if (options[2] == 'a') {
@@ -312,13 +321,14 @@ public class Klist {
      * and yyyy is the year.
      * @param date the string form of Date object.
      */
-    String reformat(String date) {
+    private String format(KerberosTime kt) {
+        String date = kt.toDate().toString();
         return (date.substring(4, 7) + " " + date.substring(8, 10) +
                 ", " + date.substring(24)
-                + " " + date.substring(11, 16));
+                + " " + date.substring(11, 19));
     }
     /**
-     * Printes out the help information.
+     * Prints out the help information.
      */
     void printHelp() {
         System.out.println("\nUsage: klist " +

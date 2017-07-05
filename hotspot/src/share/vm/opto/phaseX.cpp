@@ -322,11 +322,12 @@ void NodeHash::remove_useless_nodes(VectorSet &useful) {
 void NodeHash::dump() {
   _total_inserts       += _inserts;
   _total_insert_probes += _insert_probes;
-  if( PrintCompilation && PrintOptoStatistics && Verbose && (_inserts > 0) ) { // PrintOptoGVN
-    if( PrintCompilation2 ) {
-      for( uint i=0; i<_max; i++ )
-      if( _table[i] )
-        tty->print("%d/%d/%d ",i,_table[i]->hash()&(_max-1),_table[i]->_idx);
+  if (PrintCompilation && PrintOptoStatistics && Verbose && (_inserts > 0)) {
+    if (WizardMode) {
+      for (uint i=0; i<_max; i++) {
+        if (_table[i])
+          tty->print("%d/%d/%d ",i,_table[i]->hash()&(_max-1),_table[i]->_idx);
+      }
     }
     tty->print("\nGVN Hash stats:  %d grows to %d max_size\n", _grows, _max);
     tty->print("  %d/%d (%8.1f%% full)\n", _inserts, _max, (double)_inserts/_max*100.0);
