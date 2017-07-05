@@ -860,7 +860,7 @@ public class JFormattedTextField extends JTextField {
      * doesn't have focus.
      * @since 1.4
      */
-    public static abstract class AbstractFormatterFactory {
+    public abstract static class AbstractFormatterFactory {
         /**
          * Returns an <code>AbstractFormatter</code> that can handle formatting
          * of the passed in <code>JFormattedTextField</code>.
@@ -903,7 +903,7 @@ public class JFormattedTextField extends JTextField {
      * at the appropriate times.
      * @since 1.4
      */
-    public static abstract class AbstractFormatter implements Serializable {
+    public abstract static class AbstractFormatter implements Serializable {
         private JFormattedTextField ftf;
 
         /**

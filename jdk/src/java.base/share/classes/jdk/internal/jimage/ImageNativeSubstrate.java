@@ -27,8 +27,6 @@ package jdk.internal.jimage;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import sun.misc.JavaNioAccess;
-import sun.misc.SharedSecrets;
 
 public final class ImageNativeSubstrate implements ImageSubstrate {
     static {
@@ -42,8 +40,10 @@ public final class ImageNativeSubstrate implements ImageSubstrate {
             });
      }
 
-    private static final JavaNioAccess NIOACCESS =
-            SharedSecrets.getJavaNioAccess();
+    // TODO: Reinstate when the class below, NIOACCESS, is removed.
+    //private static final JavaNioAccess NIOACCESS =
+    //        SharedSecrets.getJavaNioAccess();
+
 
     private final long id;
     private final long indexAddress;
@@ -160,5 +160,60 @@ public final class ImageNativeSubstrate implements ImageSubstrate {
     @Override
     public int[] attributeOffsets() {
         return attributeOffsets(id);
+    }
+
+    // TODO: Remove when JRT-FS no longer indirectly depends on ImageNativeSubstrate
+    /**
+     * Reflective wrapper around ShareSecrets JavaNioAccess.
+     *
+     * SharedSecrets and friend interfaces moved from 'sun.misc' to 'jdk.internal.misc'
+     * in 1.9. This class provides the runtime with access to the appropriate
+     * JavaNioAccess methods whether running on 1.9, or lower.
+     */
+    static class NIOACCESS {
+
+        private static final String PKG_PREFIX = "jdk.internal.misc";
+        private static final String LEGACY_PKG_PREFIX = "sun.misc";
+
+        private static final Object javaNioAccess;
+        private static final java.lang.reflect.Method newDirectByteBufferMethod;
+
+        static {
+            try {
+                Class<?> c = getJDKClass("JavaNioAccess");
+
+                java.lang.reflect.Method m =
+                        getJDKClass("SharedSecrets").getDeclaredMethod("getJavaNioAccess");
+                javaNioAccess = m.invoke(null);
+
+                newDirectByteBufferMethod = c.getDeclaredMethod("newDirectByteBuffer",
+                                                                long.class,
+                                                                int.class,
+                                                                Object.class);
+            } catch (ReflectiveOperationException x) {
+                throw new InternalError(x);
+            }
+        }
+
+        private static Class<?> getJDKClass(String name) throws ClassNotFoundException {
+            try {
+                return Class.forName(PKG_PREFIX + "." + name);
+            } catch (ClassNotFoundException x) {
+                try {
+                    return Class.forName(LEGACY_PKG_PREFIX + "." + name);
+                } catch (ClassNotFoundException ex) {
+                    x.addSuppressed(ex);
+                    throw x;
+                }
+            }
+        }
+
+        static ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob) {
+            try {
+                return (ByteBuffer) newDirectByteBufferMethod.invoke(javaNioAccess, addr, cap, ob);
+            } catch (ReflectiveOperationException x) {
+                throw new InternalError(x);
+            }
+        }
     }
 }

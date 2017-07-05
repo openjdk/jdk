@@ -34,14 +34,14 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.LongUnaryOperator;
-import java.util.function.LongBinaryOperator;
-import sun.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongUnaryOperator;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
@@ -366,7 +366,7 @@ public abstract class AtomicLongFieldUpdater<T> {
     }
 
     private static class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<?> cclass;
@@ -389,7 +389,7 @@ public abstract class AtomicLongFieldUpdater<T> {
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
                     ((cl == null) || !isAncestor(cl, ccl))) {
-                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
                 }
             } catch (PrivilegedActionException pae) {
                 throw new RuntimeException(pae.getException());
@@ -407,7 +407,7 @@ public abstract class AtomicLongFieldUpdater<T> {
             this.cclass = (Modifier.isProtected(modifiers) &&
                            caller != tclass) ? caller : null;
             this.tclass = tclass;
-            offset = unsafe.objectFieldOffset(field);
+            offset = U.objectFieldOffset(field);
         }
 
         private void fullCheck(T obj) {
@@ -419,32 +419,32 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         public boolean compareAndSet(T obj, long expect, long update) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.compareAndSwapLong(obj, offset, expect, update);
+            return U.compareAndSwapLong(obj, offset, expect, update);
         }
 
         public boolean weakCompareAndSet(T obj, long expect, long update) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.compareAndSwapLong(obj, offset, expect, update);
+            return U.compareAndSwapLong(obj, offset, expect, update);
         }
 
         public void set(T obj, long newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            unsafe.putLongVolatile(obj, offset, newValue);
+            U.putLongVolatile(obj, offset, newValue);
         }
 
         public void lazySet(T obj, long newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            unsafe.putOrderedLong(obj, offset, newValue);
+            U.putOrderedLong(obj, offset, newValue);
         }
 
         public long get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getLongVolatile(obj, offset);
+            return U.getLongVolatile(obj, offset);
         }
 
         public long getAndSet(T obj, long newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getAndSetLong(obj, offset, newValue);
+            return U.getAndSetLong(obj, offset, newValue);
         }
 
         public long getAndIncrement(T obj) {
@@ -457,7 +457,7 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         public long getAndAdd(T obj, long delta) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getAndAddLong(obj, offset, delta);
+            return U.getAndAddLong(obj, offset, delta);
         }
 
         public long incrementAndGet(T obj) {
@@ -465,7 +465,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         }
 
         public long decrementAndGet(T obj) {
-             return getAndAdd(obj, -1) - 1;
+            return getAndAdd(obj, -1) - 1;
         }
 
         public long addAndGet(T obj, long delta) {
@@ -490,7 +490,7 @@ public abstract class AtomicLongFieldUpdater<T> {
 
 
     private static class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<?> cclass;
@@ -513,7 +513,7 @@ public abstract class AtomicLongFieldUpdater<T> {
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
                     ((cl == null) || !isAncestor(cl, ccl))) {
-                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
                 }
             } catch (PrivilegedActionException pae) {
                 throw new RuntimeException(pae.getException());
@@ -531,7 +531,7 @@ public abstract class AtomicLongFieldUpdater<T> {
             this.cclass = (Modifier.isProtected(modifiers) &&
                            caller != tclass) ? caller : null;
             this.tclass = tclass;
-            offset = unsafe.objectFieldOffset(field);
+            offset = U.objectFieldOffset(field);
         }
 
         private void fullCheck(T obj) {
@@ -544,10 +544,10 @@ public abstract class AtomicLongFieldUpdater<T> {
         public boolean compareAndSet(T obj, long expect, long update) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
             synchronized (this) {
-                long v = unsafe.getLong(obj, offset);
+                long v = U.getLong(obj, offset);
                 if (v != expect)
                     return false;
-                unsafe.putLong(obj, offset, update);
+                U.putLong(obj, offset, update);
                 return true;
             }
         }
@@ -559,7 +559,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         public void set(T obj, long newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
             synchronized (this) {
-                unsafe.putLong(obj, offset, newValue);
+                U.putLong(obj, offset, newValue);
             }
         }
 
@@ -570,7 +570,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         public long get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
             synchronized (this) {
-                return unsafe.getLong(obj, offset);
+                return U.getLong(obj, offset);
             }
         }
 
@@ -595,7 +595,7 @@ public abstract class AtomicLongFieldUpdater<T> {
      * classloader's delegation chain.
      * Equivalent to the inaccessible: first.isAncestor(second).
      */
-    private static boolean isAncestor(ClassLoader first, ClassLoader second) {
+    static boolean isAncestor(ClassLoader first, ClassLoader second) {
         ClassLoader acl = first;
         do {
             acl = acl.getParent();

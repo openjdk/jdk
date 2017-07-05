@@ -28,6 +28,7 @@
  * @build java.util.stream.OpTestCase
  * @run testng/othervm NetworkInterfaceStreamTest
  * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
+ * @key intermittent
  */
 
 import org.testng.annotations.Test;

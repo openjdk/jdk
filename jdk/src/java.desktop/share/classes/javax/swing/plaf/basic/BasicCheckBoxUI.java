@@ -54,7 +54,7 @@ public class BasicCheckBoxUI extends BasicRadioButtonUI {
 
     private static final Object BASIC_CHECK_BOX_UI_KEY = new Object();
 
-    private final static String propertyPrefix = "CheckBox" + ".";
+    private static final String propertyPrefix = "CheckBox" + ".";
 
     // ********************************
     //            Create PLAF

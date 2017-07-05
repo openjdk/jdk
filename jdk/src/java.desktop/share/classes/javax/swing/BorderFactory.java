@@ -536,7 +536,7 @@ public class BorderFactory
                         titlePosition, titleFont, titleColor);
     }
 //// EmptyBorder ///////////////////////////////////////////////////////////
-    final static Border emptyBorder = new EmptyBorder(0, 0, 0, 0);
+    static final Border emptyBorder = new EmptyBorder(0, 0, 0, 0);
 
     /**
      * Creates an empty border that takes up no space. (The width

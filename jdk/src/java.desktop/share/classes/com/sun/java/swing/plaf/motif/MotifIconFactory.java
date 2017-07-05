@@ -93,7 +93,7 @@ public class MotifIconFactory implements Serializable
 
     @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, UIResource, Serializable  {
-        final static int csize = 13;
+        static final int csize = 13;
 
         private Color control = UIManager.getColor("control");
         private Color foreground = UIManager.getColor("CheckBox.foreground");

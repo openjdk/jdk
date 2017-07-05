@@ -74,8 +74,8 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * images symbolically rather than including the image data
      * in the archive.
      */
-    transient private String filename;
-    transient private URL location;
+    private transient String filename;
+    private transient URL location;
 
     transient Image image;
     transient int loadStatus = 0;
@@ -88,7 +88,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @deprecated since 1.8
      */
     @Deprecated
-    protected final static Component component;
+    protected static final Component component;
 
     /**
      * Do not use this shared media tracker, which is used to load images.
@@ -96,7 +96,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @deprecated since 1.8
      */
     @Deprecated
-    protected final static MediaTracker tracker;
+    protected static final MediaTracker tracker;
 
     static {
         component = AccessController.doPrivileged(new PrivilegedAction<Component>() {
@@ -144,7 +144,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     private static int mediaTrackerID;
 
-    private final static Object TRACKER_KEY = new StringBuilder("TRACKER_KEY");
+    private static final Object TRACKER_KEY = new StringBuilder("TRACKER_KEY");
 
     int width = -1;
     int height = -1;

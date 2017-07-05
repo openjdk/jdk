@@ -3196,7 +3196,7 @@ public class StyleSheet extends StyleContext {
 
     // ---- Variables ---------------------------------------------
 
-    final static int DEFAULT_FONT_SIZE = 3;
+    static final int DEFAULT_FONT_SIZE = 3;
 
     private CSS css;
 

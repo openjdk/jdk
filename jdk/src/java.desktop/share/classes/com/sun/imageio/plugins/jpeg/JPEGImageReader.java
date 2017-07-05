@@ -1773,7 +1773,7 @@ class ImageTypeProducer {
     private static final ImageTypeProducer [] defaultTypes =
             new ImageTypeProducer [JPEG.NUM_JCS_CODES];
 
-    public synchronized static ImageTypeProducer getTypeProducer(int csCode) {
+    public static synchronized ImageTypeProducer getTypeProducer(int csCode) {
         if (csCode < 0 || csCode >= JPEG.NUM_JCS_CODES) {
             return null;
         }

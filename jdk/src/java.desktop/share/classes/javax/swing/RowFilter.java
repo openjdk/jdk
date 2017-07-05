@@ -340,7 +340,7 @@ public abstract class RowFilter<M,I> {
      * @see javax.swing.DefaultRowSorter#setRowFilter(javax.swing.RowFilter)
      * @since 1.6
      */
-    public static abstract class Entry<M, I> {
+    public abstract static class Entry<M, I> {
         /**
          * Creates an <code>Entry</code>.
          */
@@ -409,7 +409,7 @@ public abstract class RowFilter<M,I> {
     }
 
 
-    private static abstract class GeneralFilter<M, I> extends RowFilter<M, I> {
+    private abstract static class GeneralFilter<M, I> extends RowFilter<M, I> {
         private int[] columns;
 
         GeneralFilter(int[] columns) {

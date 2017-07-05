@@ -53,20 +53,20 @@ public final class SoftMainMixer {
         SoftAudioBuffer[] buffers;
     }
 
-    public final static int CHANNEL_LEFT = 0;
-    public final static int CHANNEL_RIGHT = 1;
-    public final static int CHANNEL_MONO = 2;
-    public final static int CHANNEL_DELAY_LEFT = 3;
-    public final static int CHANNEL_DELAY_RIGHT = 4;
-    public final static int CHANNEL_DELAY_MONO = 5;
-    public final static int CHANNEL_EFFECT1 = 6;
-    public final static int CHANNEL_EFFECT2 = 7;
-    public final static int CHANNEL_DELAY_EFFECT1 = 8;
-    public final static int CHANNEL_DELAY_EFFECT2 = 9;
-    public final static int CHANNEL_LEFT_DRY = 10;
-    public final static int CHANNEL_RIGHT_DRY = 11;
-    public final static int CHANNEL_SCRATCH1 = 12;
-    public final static int CHANNEL_SCRATCH2 = 13;
+    public static final int CHANNEL_LEFT = 0;
+    public static final int CHANNEL_RIGHT = 1;
+    public static final int CHANNEL_MONO = 2;
+    public static final int CHANNEL_DELAY_LEFT = 3;
+    public static final int CHANNEL_DELAY_RIGHT = 4;
+    public static final int CHANNEL_DELAY_MONO = 5;
+    public static final int CHANNEL_EFFECT1 = 6;
+    public static final int CHANNEL_EFFECT2 = 7;
+    public static final int CHANNEL_DELAY_EFFECT1 = 8;
+    public static final int CHANNEL_DELAY_EFFECT2 = 9;
+    public static final int CHANNEL_LEFT_DRY = 10;
+    public static final int CHANNEL_RIGHT_DRY = 11;
+    public static final int CHANNEL_SCRATCH1 = 12;
+    public static final int CHANNEL_SCRATCH2 = 13;
     boolean active_sensing_on = false;
     private long msec_last_activity = -1;
     private boolean pusher_silent = false;

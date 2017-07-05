@@ -216,7 +216,7 @@ public abstract class KeyboardFocusManager
         return getCurrentKeyboardFocusManager(AppContext.getAppContext());
     }
 
-    synchronized static KeyboardFocusManager
+    static synchronized KeyboardFocusManager
         getCurrentKeyboardFocusManager(AppContext appcontext)
     {
         KeyboardFocusManager manager = (KeyboardFocusManager)
@@ -2599,7 +2599,7 @@ public abstract class KeyboardFocusManager
      * @param comp the component to dispatch the event to
      * @param event the event to dispatch to the component
      */
-    static private Throwable dispatchAndCatchException(Throwable ex, Component comp, FocusEvent event) {
+    private static Throwable dispatchAndCatchException(Throwable ex, Component comp, FocusEvent event) {
         Throwable retEx = null;
         try {
             comp.dispatchEvent(event);
@@ -2617,7 +2617,7 @@ public abstract class KeyboardFocusManager
         return ex;
     }
 
-    static private void handleException(Throwable ex) {
+    private static void handleException(Throwable ex) {
         ex.printStackTrace();
     }
 

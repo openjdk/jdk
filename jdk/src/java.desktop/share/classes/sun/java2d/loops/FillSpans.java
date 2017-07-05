@@ -45,9 +45,9 @@ import sun.java2d.SurfaceData;
  */
 public class FillSpans extends GraphicsPrimitive
 {
-    public final static String methodSignature = "FillSpans(...)".toString();
+    public static final String methodSignature = "FillSpans(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static FillSpans locate(SurfaceType srctype,
                                    CompositeType comptype,

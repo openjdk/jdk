@@ -76,14 +76,14 @@ class RTFGenerator extends Object
 
     /** The default color, used for text without an explicit color
      *  attribute. */
-    static public final Color defaultRTFColor = Color.black;
+    public static final Color defaultRTFColor = Color.black;
 
-    static public final float defaultFontSize = 12f;
+    public static final float defaultFontSize = 12f;
 
-    static public final String defaultFontFamily = "Helvetica";
+    public static final String defaultFontFamily = "Helvetica";
 
     /* constants so we can avoid allocating objects in inner loops */
-    final static private Object MagicToken;
+    private static final Object MagicToken;
 
     /* An array of character-keyword pairs. This could be done
        as a dictionary (and lookup would be quicker), but that
@@ -91,7 +91,7 @@ class RTFGenerator extends Object
        written (slow!). */
     static class CharacterKeywordPair
       { public char character; public String keyword; }
-    static protected CharacterKeywordPair[] textKeywords;
+    protected static CharacterKeywordPair[] textKeywords;
 
     static {
         MagicToken = new Object();
@@ -112,7 +112,7 @@ class RTFGenerator extends Object
     static final char[] hexdigits = { '0', '1', '2', '3', '4', '5', '6', '7',
                                       '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
-static public void writeDocument(Document d, OutputStream to)
+public static void writeDocument(Document d, OutputStream to)
     throws IOException
 {
     RTFGenerator gen = new RTFGenerator(to);
@@ -238,7 +238,7 @@ private Integer findStyleNumber(AttributeSet a, String domain)
     return null;
 }
 
-static private Object attrDiff(MutableAttributeSet oldAttrs,
+private static Object attrDiff(MutableAttributeSet oldAttrs,
                                AttributeSet newAttrs,
                                Object key,
                                Object dfl)
@@ -265,7 +265,7 @@ static private Object attrDiff(MutableAttributeSet oldAttrs,
     return null;
 }
 
-static private boolean equalArraysOK(Object a, Object b)
+private static boolean equalArraysOK(Object a, Object b)
 {
     Object[] aa, bb;
     if (a == b)
@@ -987,7 +987,7 @@ static int[] outputConversionForName(String name)
  * corresponding byte value (as an int, since bytes are signed).
  */
     /* Not very efficient. TODO. */
-static protected int convertCharacter(int[] conversion, char ch)
+protected static int convertCharacter(int[] conversion, char ch)
 {
    int index;
 

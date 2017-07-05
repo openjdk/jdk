@@ -23,32 +23,39 @@
 
 /**
  * @test
- * @bug 8137121
+ * @bug 8137121 8137230
  * @summary (fc) Infinite loop FileChannel.truncate
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.Utils
  * @run main/othervm LoopingTruncate
  */
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.*;
+import static jdk.testlibrary.Utils.adjustTimeout;
 
 public class LoopingTruncate {
 
     // (int)FATEFUL_SIZE == -3 == IOStatus.INTERRUPTED
     static long FATEFUL_SIZE = 0x1FFFFFFFDL;
 
-    static long TIMEOUT = 10_000; // 10 seconds
+    // At least 20 seconds
+    static long TIMEOUT = adjustTimeout(20_000);
 
     public static void main(String[] args) throws Throwable {
         Path path = Files.createTempFile("LoopingTruncate.tmp", null);
-        try {
+        try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
+            fc.position(FATEFUL_SIZE + 1L);
+            fc.write(ByteBuffer.wrap(new byte[] {0}));
+
             Thread th = new Thread(() -> {
-                try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
-                    fc.position(FATEFUL_SIZE + 1L);
-                    fc.write(ByteBuffer.wrap(new byte[] {0}));
+                try {
                     fc.truncate(FATEFUL_SIZE);
+                } catch (ClosedByInterruptException ignore) {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }});
@@ -56,7 +63,14 @@ public class LoopingTruncate {
             th.join(TIMEOUT);
 
             if (th.isAlive()) {
+                System.err.println("=== Stack trace of the guilty thread:");
+                for (StackTraceElement el : th.getStackTrace()) {
+                    System.err.println("\t" + el);
+                }
+                System.err.println("===");
+
                 th.interrupt();
+                th.join();
                 throw new RuntimeException("Failed to complete on time");
             }
         } finally {

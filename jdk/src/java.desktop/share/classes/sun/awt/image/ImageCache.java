@@ -40,7 +40,7 @@ import sun.awt.AppContext;
  * The ImageCache must be used from the thread with an AppContext only.
  *
  */
-final public class ImageCache {
+public final class ImageCache {
 
     // Ordered Map keyed by args hash, ordered by most recent accessed entry.
     private final LinkedHashMap<PixelsKey, ImageSoftReference> map

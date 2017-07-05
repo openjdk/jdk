@@ -29,9 +29,8 @@
 import java.io.File;
 import java.io.FileInputStream;
 
-import javax.sound.sampled.*;
-
-import com.sun.media.sound.*;
+import com.sun.media.sound.RIFFReader;
+import com.sun.media.sound.RIFFWriter;
 
 public class Skip {
 
@@ -42,6 +41,11 @@ public class Skip {
     }
 
     public static void main(String[] args) throws Exception {
+        test(false);
+        test(true);
+    }
+
+    private static void test(boolean customStream) throws Exception {
         RIFFWriter writer = null;
         RIFFReader reader = null;
         File tempfile = File.createTempFile("test",".riff");
@@ -53,7 +57,17 @@ public class Skip {
             chunk.write((byte)44);
             writer.close();
             writer = null;
-            FileInputStream fis = new FileInputStream(tempfile);
+            final FileInputStream fis;
+            if (customStream) {
+                fis = new FileInputStream(tempfile);
+            } else {
+                fis = new FileInputStream(tempfile) {
+                    @Override
+                    public long skip(long n) {
+                        return 0;
+                    }
+                };
+            }
             reader = new RIFFReader(fis);
             RIFFReader readchunk = reader.nextChunk();
             reader.skip(1);

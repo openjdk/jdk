@@ -38,10 +38,10 @@ import java.awt.geom.Path2D;
  */
 public class FillPath extends GraphicsPrimitive {
 
-    public final static String methodSignature =
+    public static final String methodSignature =
         "FillPath(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static FillPath locate(SurfaceType srctype,
                                   CompositeType comptype,

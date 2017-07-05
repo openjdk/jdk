@@ -93,8 +93,7 @@ define SetupCompileProperties
   $$($1_TARGET): $$($1_SRCS) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $$(@D) $$($1_DIRS)
 	$(ECHO) Compiling $$(words $$($1_SRCS)) properties into resource bundles for $(MODULE)
-	$(RM) $$($1_CMDLINE_FILE)
-	$$(call ListPathsSafely,$1_CMDLINE,\n, >> $$($1_CMDLINE_FILE))
+	$$(eval $$(call ListPathsSafely, $1_CMDLINE, $$($1_CMDLINE_FILE)))
 	$(TOOL_COMPILEPROPERTIES) -quiet @$$($1_CMDLINE_FILE)
 	$(TOUCH) $$@
 

@@ -42,6 +42,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -51,8 +53,8 @@ import java.util.regex.Pattern;
  */
 
 final class ProcessImpl extends Process {
-    private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
-        = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+    private static final JavaIOFileDescriptorAccess fdAccess
+        = SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Windows platforms support a forcible kill signal.
     static final boolean SUPPORTS_NORMAL_TERMINATION = false;

@@ -45,8 +45,8 @@ public final class CWarningWindow extends CPlatformWindow
     private static class Lock {}
     private final Lock lock = new Lock();
 
-    private final static int SHOWING_DELAY = 300;
-    private final static int HIDING_DELAY = 2000;
+    private static final int SHOWING_DELAY = 300;
+    private static final int HIDING_DELAY = 2000;
 
     private Rectangle bounds = new Rectangle();
     private final WeakReference<LWWindowPeer> ownerPeer;
@@ -406,7 +406,7 @@ public final class CWarningWindow extends CPlatformWindow
     private final Lock taskLock = new Lock();
     private CancelableRunnable showHideTask;
 
-    private static abstract class CancelableRunnable implements Runnable {
+    private abstract static class CancelableRunnable implements Runnable {
         private volatile boolean perform = true;
 
         public final void cancel() {
