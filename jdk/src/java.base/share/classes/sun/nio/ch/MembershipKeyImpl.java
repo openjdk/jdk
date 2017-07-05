@@ -43,8 +43,7 @@ class MembershipKeyImpl
     private final NetworkInterface interf;
     private final InetAddress source;
 
-    // true when key is valid
-    private volatile boolean valid = true;
+    private volatile boolean invalid;
 
     // lock used when creating or accessing blockedSet
     private Object stateLock = new Object();
@@ -134,12 +133,12 @@ class MembershipKeyImpl
     }
 
     public boolean isValid() {
-        return valid;
+        return !invalid;
     }
 
     // package-private
     void invalidate() {
-        valid = false;
+        invalid = true;
     }
 
     public void drop() {

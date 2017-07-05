@@ -100,7 +100,11 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             }
             ZipFileSystem zipfs = null;
             try {
-                zipfs = new ZipFileSystem(this, path, env);
+                if (env.containsKey("multi-release")) {
+                    zipfs = new JarFileSystem(this, path, env);
+                } else {
+                    zipfs = new ZipFileSystem(this, path, env);
+                }
             } catch (ZipException ze) {
                 String pname = path.toString();
                 if (pname.endsWith(".zip") || pname.endsWith(".jar"))
@@ -124,8 +128,14 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             throw new UnsupportedOperationException();
         }
         ensureFile(path);
-        try {
-            return new ZipFileSystem(this, path, env);
+         try {
+             ZipFileSystem zipfs;
+             if (env.containsKey("multi-release")) {
+                 zipfs = new JarFileSystem(this, path, env);
+             } else {
+                 zipfs = new ZipFileSystem(this, path, env);
+             }
+            return zipfs;
         } catch (ZipException ze) {
             String pname = path.toString();
             if (pname.endsWith(".zip") || pname.endsWith(".jar"))

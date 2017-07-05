@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,22 @@
 
 package com.sun.media.sound;
 
-import java.io.DataOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.SequenceInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.SequenceInputStream;
+import java.util.Objects;
 
 import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
@@ -115,24 +116,16 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         return typesArray;
     }
 
-    public boolean isFileTypeSupported(int type) {
-        for(int i=0; i<types.length; i++) {
-            if( type == types[i] ) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public int write(Sequence in, int type, OutputStream out) throws IOException {
+        Objects.requireNonNull(out);
+        if (!isFileTypeSupported(type, in)) {
+            throw new IllegalArgumentException("Could not write MIDI file");
+        }
         byte [] buffer = null;
 
         int bytesRead = 0;
         long bytesWritten = 0;
 
-        if( !isFileTypeSupported(type,in) ) {
-            throw new IllegalArgumentException("Could not write MIDI file");
-        }
         // First get the fileStream from this sequence
         InputStream fileStream = getFileStream(type,in);
         if (fileStream == null) {
@@ -149,6 +142,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     }
 
     public int write(Sequence in, int type, File out) throws IOException {
+        Objects.requireNonNull(in);
         FileOutputStream fos = new FileOutputStream(out); // throws IOException
         int bytesWritten = write( in, type, fos );
         fos.close();

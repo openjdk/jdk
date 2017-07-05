@@ -44,9 +44,9 @@ class MethodAccessorGenerator extends AccessorGenerator {
     // Only used if forSerialization is true
     private static final short NUM_SERIALIZATION_CPOOL_ENTRIES = (short) 2;
 
-    private static volatile int methodSymnum = 0;
-    private static volatile int constructorSymnum = 0;
-    private static volatile int serializationConstructorSymnum = 0;
+    private static volatile int methodSymnum;
+    private static volatile int constructorSymnum;
+    private static volatile int serializationConstructorSymnum;
 
     private Class<?>   declaringClass;
     private Class<?>[] parameterTypes;

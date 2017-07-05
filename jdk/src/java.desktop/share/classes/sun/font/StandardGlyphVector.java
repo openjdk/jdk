@@ -445,13 +445,19 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public void setGlyphPosition(int ix, Point2D pos) {
+        if (ix < 0 || ix > glyphs.length) {
+            throw new IndexOutOfBoundsException("ix = " + ix);
+        }
+
         initPositions();
 
         int ix2 = ix << 1;
         positions[ix2] = (float)pos.getX();
         positions[ix2 + 1] = (float)pos.getY();
 
-        clearCaches(ix);
+        if (ix < glyphs.length) {
+            clearCaches(ix);
+        }
         addFlags(FLAG_HAS_POSITION_ADJUSTMENTS);
     }
 

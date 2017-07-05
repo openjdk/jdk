@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
-import sun.misc.*;
 
 /**
  * An implementation of Selector for Linux 2.6+ kernels that uses
@@ -50,7 +49,7 @@ class EPollSelectorImpl
     private Map<Integer,SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
-    private volatile boolean closed = false;
+    private volatile boolean closed;
 
     // Lock for interrupt triggering and clearing
     private final Object interruptLock = new Object();

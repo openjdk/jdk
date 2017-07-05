@@ -618,6 +618,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the {@code ComponentUI} object that renders this component
      * @since 1.9
      */
+    @Transient
     public ComponentUI getUI() {
         return ui;
     }
