@@ -288,7 +288,7 @@ class nmethod : public CodeBlob {
           int comp_level);
 
   // helper methods
-  void* operator new(size_t size, int nmethod_size) throw();
+  void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
   // Returns true if this thread changed the state of the nmethod or

@@ -38,11 +38,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
     _g1_rem(g1h->g1_rem_set()),
     _hash_seed(17), _queue_num(queue_num),
     _term_attempts(0),
-    _surviving_alloc_buffer(g1h->desired_plab_sz(GCAllocForSurvived)),
-    _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
     _age_table(false), _scanner(g1h, rp),
-    _strong_roots_time(0), _term_time(0),
-    _alloc_buffer_waste(0), _undo_waste(0) {
+    _strong_roots_time(0), _term_time(0) {
   _scanner.set_par_scan_thread_state(this);
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
@@ -60,14 +57,14 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
 
-  _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
-  _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
+  _g1_par_allocator = G1ParGCAllocator::create_allocator(_g1h);
 
   _start = os::elapsedTime();
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
-  retire_alloc_buffers();
+  _g1_par_allocator->retire_alloc_buffers();
+  delete _g1_par_allocator;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
 }
 
@@ -90,14 +87,16 @@ G1ParScanThreadState::print_termination_stats(int i,
   const double elapsed_ms = elapsed_time() * 1000.0;
   const double s_roots_ms = strong_roots_time() * 1000.0;
   const double term_ms    = term_time() * 1000.0;
+  const size_t alloc_buffer_waste = _g1_par_allocator->alloc_buffer_waste();
+  const size_t undo_waste         = _g1_par_allocator->undo_waste();
   st->print_cr("%3d %9.2f %9.2f %6.2f "
                "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
                SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),
                i, elapsed_ms, s_roots_ms, s_roots_ms * 100 / elapsed_ms,
                term_ms, term_ms * 100 / elapsed_ms, term_attempts(),
-               (alloc_buffer_waste() + undo_waste()) * HeapWordSize / K,
-               alloc_buffer_waste() * HeapWordSize / K,
-               undo_waste() * HeapWordSize / K);
+               (alloc_buffer_waste + undo_waste) * HeapWordSize / K,
+               alloc_buffer_waste * HeapWordSize / K,
+               undo_waste * HeapWordSize / K);
 }
 
 #ifdef ASSERT
@@ -164,12 +163,13 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
                                            : m->age();
   GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, age,
                                                              word_sz);
-  HeapWord* obj_ptr = allocate(alloc_purpose, word_sz);
+  AllocationContext_t context = from_region->allocation_context();
+  HeapWord* obj_ptr = _g1_par_allocator->allocate(alloc_purpose, word_sz, context);
 #ifndef PRODUCT
   // Should this evacuation fail?
   if (_g1h->evacuation_should_fail()) {
     if (obj_ptr != NULL) {
-      undo_allocation(alloc_purpose, obj_ptr, word_sz);
+      _g1_par_allocator->undo_allocation(alloc_purpose, obj_ptr, word_sz, context);
       obj_ptr = NULL;
     }
   }
@@ -246,66 +246,8 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
       obj->oop_iterate_backwards(&_scanner);
     }
   } else {
-    undo_allocation(alloc_purpose, obj_ptr, word_sz);
+    _g1_par_allocator->undo_allocation(alloc_purpose, obj_ptr, word_sz, context);
     obj = forward_ptr;
   }
   return obj;
-}
-
-HeapWord* G1ParScanThreadState::allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
-  HeapWord* obj = NULL;
-  size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
-  if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
-    G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
-    add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-    alloc_buf->retire(false /* end_of_gc */, false /* retain */);
-
-    HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
-    if (buf == NULL) {
-      return NULL; // Let caller handle allocation failure.
-    }
-    // Otherwise.
-    alloc_buf->set_word_size(gclab_word_size);
-    alloc_buf->set_buf(buf);
-
-    obj = alloc_buf->allocate(word_sz);
-    assert(obj != NULL, "buffer was definitely big enough...");
-  } else {
-    obj = _g1h->par_allocate_during_gc(purpose, word_sz);
-  }
-  return obj;
-}
-
-void G1ParScanThreadState::undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz) {
-  if (alloc_buffer(purpose)->contains(obj)) {
-    assert(alloc_buffer(purpose)->contains(obj + word_sz - 1),
-           "should contain whole object");
-    alloc_buffer(purpose)->undo_allocation(obj, word_sz);
-  } else {
-    CollectedHeap::fill_with_object(obj, word_sz);
-    add_to_undo_waste(word_sz);
-  }
-}
-
-HeapWord* G1ParScanThreadState::allocate(GCAllocPurpose purpose, size_t word_sz) {
-  HeapWord* obj = NULL;
-  if (purpose == GCAllocForSurvived) {
-    obj = alloc_buffer(GCAllocForSurvived)->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
-  } else {
-    obj = alloc_buffer(GCAllocForTenured)->allocate(word_sz);
-  }
-  if (obj != NULL) {
-    return obj;
-  }
-  return allocate_slow(purpose, word_sz);
-}
-
-void G1ParScanThreadState::retire_alloc_buffers() {
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    size_t waste = _alloc_buffers[ap]->words_remaining();
-    add_to_alloc_buffer_waste(waste);
-    _alloc_buffers[ap]->flush_stats_and_retire(_g1h->stats_for_purpose((GCAllocPurpose)ap),
-                                               true /* end_of_gc */,
-                                               false /* retain */);
-  }
 }

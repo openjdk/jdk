@@ -44,7 +44,7 @@ inline void G1RemSet::write_ref(HeapRegion* from, T* p) {
 }
 
 template <class T>
-inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, int tid) {
+inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, uint tid) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (obj == NULL) {
     return;

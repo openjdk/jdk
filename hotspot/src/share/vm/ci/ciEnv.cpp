@@ -34,6 +34,7 @@
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -1085,7 +1086,7 @@ void ciEnv::register_method(ciMethod* target,
   } else {
     // The CodeCache is full. Print out warning and disable compilation.
     record_failure("code cache is full");
-    CompileBroker::handle_full_code_cache();
+    CompileBroker::handle_full_code_cache(CodeCache::get_code_blob_type(comp_level));
   }
 }
 

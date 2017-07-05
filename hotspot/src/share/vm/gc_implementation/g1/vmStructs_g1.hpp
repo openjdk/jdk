@@ -45,11 +45,13 @@
   nonstatic_field(HeapRegionManager, _regions,          G1HeapRegionTable)    \
   nonstatic_field(HeapRegionManager, _num_committed,    uint)                 \
                                                                               \
+  nonstatic_field(G1Allocator,     _summary_bytes_used, size_t)               \
+                                                                              \
   nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
-  nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)               \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _humongous_set,      HeapRegionSetBase)    \
+  nonstatic_field(G1CollectedHeap, _allocator,          G1Allocator*)         \
                                                                               \
   nonstatic_field(G1MonitoringSupport, _eden_committed,     size_t)           \
   nonstatic_field(G1MonitoringSupport, _eden_used,          size_t)           \
@@ -72,14 +74,16 @@
                                                                               \
   declare_type(G1OffsetTableContigSpace, CompactibleSpace)                    \
   declare_type(HeapRegion, G1OffsetTableContigSpace)                          \
-  declare_toplevel_type(HeapRegionManager)                                        \
+  declare_toplevel_type(HeapRegionManager)                                    \
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(HeapRegionSetCount)                                   \
   declare_toplevel_type(G1MonitoringSupport)                                  \
+  declare_toplevel_type(G1Allocator)                                          \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(HeapRegion*)                                          \
   declare_toplevel_type(G1MonitoringSupport*)                                 \
+  declare_toplevel_type(G1Allocator*)                                         \
 
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_VMSTRUCTS_G1_HPP

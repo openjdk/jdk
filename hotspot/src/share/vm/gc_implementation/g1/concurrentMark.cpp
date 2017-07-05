@@ -910,7 +910,7 @@ bool ConcurrentMark::nextMarkBitmapIsClear() {
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->note_start_of_marking();
     }
     return false;
@@ -1288,6 +1288,22 @@ void ConcurrentMark::markFromRoots() {
   print_stats();
 }
 
+// Helper class to get rid of some boilerplate code.
+class G1CMTraceTime : public GCTraceTime {
+  static bool doit_and_prepend(bool doit) {
+    if (doit) {
+      gclog_or_tty->put(' ');
+    }
+    return doit;
+  }
+
+ public:
+  G1CMTraceTime(const char* title, bool doit)
+    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
+        G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
+  }
+};
+
 void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
@@ -1341,9 +1357,13 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     // marking due to overflowing the global mark stack.
     reset_marking_state();
   } else {
-    // Aggregate the per-task counting data that we have accumulated
-    // while marking.
-    aggregate_count_data();
+    {
+      G1CMTraceTime trace("GC aggregate-data", G1Log::finer());
+
+      // Aggregate the per-task counting data that we have accumulated
+      // while marking.
+      aggregate_count_data();
+    }
 
     SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     // We're done with marking.
@@ -1398,10 +1418,10 @@ protected:
   // to 1 the bits on the region bitmap that correspond to its
   // associated "continues humongous" regions.
   void set_bit_for_region(HeapRegion* hr) {
-    assert(!hr->continuesHumongous(), "should have filtered those out");
+    assert(!hr->is_continues_humongous(), "should have filtered those out");
 
     BitMap::idx_t index = (BitMap::idx_t) hr->hrm_index();
-    if (!hr->startsHumongous()) {
+    if (!hr->is_starts_humongous()) {
       // Normal (non-humongous) case: just set the bit.
       _region_bm->par_at_put(index, true);
     } else {
@@ -1434,7 +1454,7 @@ public:
 
   bool doHeapRegion(HeapRegion* hr) {
 
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1556,7 +1576,7 @@ public:
   int failures() const { return _failures; }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1731,7 +1751,7 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
 
   bool doHeapRegion(HeapRegion* hr) {
 
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1861,7 +1881,7 @@ public:
   const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       return false;
     }
     // We use a claim value of zero here because all regions
@@ -1875,8 +1895,8 @@ public:
     if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
-      if (hr->isHumongous()) {
-        assert(hr->startsHumongous(), "we should only see starts humongous");
+      if (hr->is_humongous()) {
+        assert(hr->is_starts_humongous(), "we should only see starts humongous");
         _humongous_regions_removed.increment(1u, hr->capacity());
         _g1->free_humongous_region(hr, _local_cleanup_list, true);
       } else {
@@ -2466,22 +2486,6 @@ void ConcurrentMark::weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool 
   G1CollectedHeap::heap()->parallel_cleaning(is_alive, true, true, purged_classes);
 }
 
-// Helper class to get rid of some boilerplate code.
-class G1RemarkGCTraceTime : public GCTraceTime {
-  static bool doit_and_prepend(bool doit) {
-    if (doit) {
-      gclog_or_tty->put(' ');
-    }
-    return doit;
-  }
-
- public:
-  G1RemarkGCTraceTime(const char* title, bool doit)
-    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
-        G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
-  }
-};
-
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Skip processing the discovered references if we have
@@ -2504,10 +2508,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    if (G1Log::finer()) {
-      gclog_or_tty->put(' ');
-    }
-    GCTraceTime t("GC ref-proc", G1Log::finer(), false, g1h->gc_timer_cm(), concurrent_gc_id());
+    G1CMTraceTime t("GC ref-proc", G1Log::finer());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2598,24 +2599,24 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   {
-    G1RemarkGCTraceTime trace("Unloading", G1Log::finer());
+    G1CMTraceTime trace("Unloading", G1Log::finer());
 
     if (ClassUnloadingWithConcurrentMark) {
       bool purged_classes;
 
       {
-        G1RemarkGCTraceTime trace("System Dictionary Unloading", G1Log::finest());
+        G1CMTraceTime trace("System Dictionary Unloading", G1Log::finest());
         purged_classes = SystemDictionary::do_unloading(&g1_is_alive);
       }
 
       {
-        G1RemarkGCTraceTime trace("Parallel Unloading", G1Log::finest());
+        G1CMTraceTime trace("Parallel Unloading", G1Log::finest());
         weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
       }
     }
 
     if (G1StringDedup::is_enabled()) {
-      G1RemarkGCTraceTime trace("String Deduplication Unlink", G1Log::finest());
+      G1CMTraceTime trace("String Deduplication Unlink", G1Log::finest());
       G1StringDedup::unlink(&g1_is_alive);
     }
   }
@@ -2719,7 +2720,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   HandleMark   hm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1RemarkGCTraceTime trace("Finalize Marking", G1Log::finer());
+  G1CMTraceTime trace("Finalize Marking", G1Log::finer());
 
   g1h->ensure_parsability(false);
 
@@ -3191,7 +3192,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     _cm_card_bm(cm_card_bm), _max_worker_id(max_worker_id) { }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed.
       // Note that we cannot rely on their associated
@@ -3334,6 +3335,7 @@ void ConcurrentMark::aggregate_count_data() {
   } else {
     g1_par_agg_task.work(0);
   }
+  _g1h->allocation_context_stats().update_at_remark();
 }
 
 // Clear the per-worker arrays used to store the per-region counting data
@@ -3562,7 +3564,7 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
 void CMTask::setup_for_region(HeapRegion* hr) {
   assert(hr != NULL,
         "claim_region() should have filtered out NULL regions");
-  assert(!hr->continuesHumongous(),
+  assert(!hr->is_continues_humongous(),
         "claim_region() should have filtered out continues humongous regions");
 
   if (_cm->verbose_low()) {
@@ -4287,7 +4289,7 @@ void CMTask::do_marking_step(double time_target_ms,
                                HR_FORMAT_PARAMS(_curr_region));
       }
 
-      assert(!_curr_region->isHumongous() || mr.start() == _curr_region->bottom(),
+      assert(!_curr_region->is_humongous() || mr.start() == _curr_region->bottom(),
              "humongous regions should go around loop once only");
 
       // Some special cases:
@@ -4301,7 +4303,7 @@ void CMTask::do_marking_step(double time_target_ms,
       if (mr.is_empty()) {
         giveup_current_region();
         regular_clock_call();
-      } else if (_curr_region->isHumongous() && mr.start() == _curr_region->bottom()) {
+      } else if (_curr_region->is_humongous() && mr.start() == _curr_region->bottom()) {
         if (_nextMarkBitMap->isMarked(mr.start())) {
           // The object is marked - apply the closure
           BitMap::idx_t offset = _nextMarkBitMap->heapWordToOffset(mr.start());
@@ -4748,7 +4750,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
 
-  if (r->startsHumongous()) {
+  if (r->is_starts_humongous()) {
     assert(_hum_used_bytes == 0 && _hum_capacity_bytes == 0 &&
            _hum_prev_live_bytes == 0 && _hum_next_live_bytes == 0,
            "they should have been zeroed after the last time we used them");
@@ -4760,7 +4762,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
     get_hum_bytes(&used_bytes, &capacity_bytes,
                   &prev_live_bytes, &next_live_bytes);
     end = bottom + HeapRegion::GrainWords;
-  } else if (r->continuesHumongous()) {
+  } else if (r->is_continues_humongous()) {
     get_hum_bytes(&used_bytes, &capacity_bytes,
                   &prev_live_bytes, &next_live_bytes);
     assert(end == bottom + HeapRegion::GrainWords, "invariant");
