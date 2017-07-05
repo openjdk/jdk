@@ -78,5 +78,5 @@ function parseDiagnostic (code, args) {
     var tree = parser.create(args).parse("test.js",  code, function (message) {
         messages.push(convert(message))
     })
-    print(JSON.stringify(messages, null, 2))
+    print(JSON.stringify(messages, null, 2).replace(/\\r/g, ''))
 }

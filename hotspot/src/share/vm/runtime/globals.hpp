@@ -921,6 +921,9 @@ class CommandLineFlags {
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see test_error_handler() in debug.cpp.")                 \
                                                                             \
+  notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
+          "If true, tests SafeFetch inside error handler.")                 \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \

@@ -417,18 +417,7 @@ public class Shell {
                 Context.setGlobal(global);
             }
 
-            // initialize with "shell.js" script
-            try {
-                final Source source = sourceFor("<shell.js>", Shell.class.getResource("resources/shell.js"));
-                context.eval(global, source.getString(), global, "<shell.js>", false);
-            } catch (final Exception e) {
-                err.println(e);
-                if (env._dump_on_error) {
-                    e.printStackTrace(err);
-                }
-
-                return INTERNAL_ERROR;
-            }
+            global.addShellBuiltins();
 
             while (true) {
                 err.print(prompt);

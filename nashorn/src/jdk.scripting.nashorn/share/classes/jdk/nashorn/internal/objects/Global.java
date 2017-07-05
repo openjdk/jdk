@@ -54,8 +54,10 @@ import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
+import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.GlobalConstants;
@@ -77,6 +79,7 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.scripts.JO;
+import jdk.nashorn.tools.ShellFunctions;
 
 /**
  * Representation of global scope.
@@ -87,6 +90,9 @@ public final class Global extends ScriptObject implements Scope {
     private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
+
+    // placeholder value for lazily initialized global objects
+    private static final Object LAZY_SENTINEL = new Object();
 
     /**
      * Optimistic builtin names that require switchpoint invalidation
@@ -213,20 +219,76 @@ public final class Global extends ScriptObject implements Scope {
     public volatile Object number;
 
     /** ECMA 15.1.4.7 Date constructor */
-    @Property(name = "Date", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object date;
+    @Getter(name = "Date", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getDate(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.date == LAZY_SENTINEL) {
+            global.date = global.getBuiltinDate();
+        }
+        return global.date;
+    }
+
+    @Setter(name = "Date", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setDate(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.date = value;
+    }
+
+    private volatile Object date = LAZY_SENTINEL;
 
     /** ECMA 15.1.4.8 RegExp constructor */
-    @Property(name = "RegExp", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object regexp;
+    @Getter(name = "RegExp", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getRegExp(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.regexp == LAZY_SENTINEL) {
+            global.regexp = global.getBuiltinRegExp();
+        }
+        return global.regexp;
+    }
+
+    @Setter(name = "RegExp", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setRegExp(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.regexp = value;
+    }
+
+    private volatile Object regexp = LAZY_SENTINEL;
 
     /** ECMA 15.12 - The JSON object */
-    @Property(name = "JSON", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object json;
+    @Getter(name = "JSON", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getJSON(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.json == LAZY_SENTINEL) {
+            global.json = global.getBuiltinJSON();
+        }
+        return global.json;
+    }
+
+    @Setter(name = "JSON", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setJSON(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.json = value;
+    }
+
+    private volatile Object json = LAZY_SENTINEL;
 
     /** Nashorn extension: global.JSAdapter */
-    @Property(name = "JSAdapter", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object jsadapter;
+    @Getter(name = "JSAdapter", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getJSAdapter(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.jsadapter == LAZY_SENTINEL) {
+            global.jsadapter = global.getBuiltinJSAdapter();
+        }
+        return global.jsadapter;
+    }
+
+    @Setter(name = "JSAdapter", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setJSAdapter(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.jsadapter = value;
+    }
+
+    private volatile Object jsadapter = LAZY_SENTINEL;
 
     /** ECMA 15.8 - The Math object */
     @Property(name = "Math", attributes = Attribute.NOT_ENUMERABLE)
@@ -237,12 +299,40 @@ public final class Global extends ScriptObject implements Scope {
     public volatile Object error;
 
     /** EvalError object */
-    @Property(name = "EvalError", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object evalError;
+    @Getter(name = "EvalError", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getEvalError(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.evalError == LAZY_SENTINEL) {
+            global.evalError = global.getBuiltinEvalError();
+        }
+        return global.evalError;
+    }
+
+    @Setter(name = "EvalError", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setEvalError(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.evalError = value;
+    }
+
+    private volatile Object evalError = LAZY_SENTINEL;
 
     /** RangeError object */
-    @Property(name = "RangeError", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object rangeError;
+    @Getter(name = "RangeError", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getRangeError(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.rangeError == LAZY_SENTINEL) {
+            global.rangeError = global.getBuiltinRangeError();
+        }
+        return global.rangeError;
+    }
+
+    @Setter(name = "RangeError", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setRangeError(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.rangeError = value;
+    }
+
+    private volatile Object rangeError = LAZY_SENTINEL;
 
     /** ReferenceError object */
     @Property(name = "ReferenceError", attributes = Attribute.NOT_ENUMERABLE)
@@ -257,52 +347,220 @@ public final class Global extends ScriptObject implements Scope {
     public volatile Object typeError;
 
     /** URIError object */
-    @Property(name = "URIError", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object uriError;
+    @Getter(name = "URIError", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getURIError(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.uriError == LAZY_SENTINEL) {
+            global.uriError = global.getBuiltinURIError();
+        }
+        return global.uriError;
+    }
+
+    @Setter(name = "URIError", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setURIError(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.uriError = value;
+    }
+
+    private volatile Object uriError = LAZY_SENTINEL;
 
     /** ArrayBuffer object */
-    @Property(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object arrayBuffer;
+    @Getter(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getArrayBuffer(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.arrayBuffer == LAZY_SENTINEL) {
+            global.arrayBuffer = global.getBuiltinArrayBuffer();
+        }
+        return global.arrayBuffer;
+    }
+
+    @Setter(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setArrayBuffer(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.arrayBuffer = value;
+    }
+
+    private volatile Object arrayBuffer;
 
     /** DataView object */
-    @Property(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object dataView;
+    @Getter(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getDataView(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.dataView == LAZY_SENTINEL) {
+            global.dataView = global.getBuiltinDataView();
+        }
+        return global.dataView;
+    }
+
+    @Setter(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setDataView(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.dataView = value;
+    }
+
+    private volatile Object dataView;
 
     /** TypedArray (int8) */
-    @Property(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object int8Array;
+    @Getter(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getInt8Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.int8Array == LAZY_SENTINEL) {
+            global.int8Array = global.getBuiltinInt8Array();
+        }
+        return global.int8Array;
+    }
+
+    @Setter(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setInt8Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.int8Array = value;
+    }
+
+    private volatile Object int8Array;
 
     /** TypedArray (uint8) */
-    @Property(name = "Uint8Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object uint8Array;
+    @Getter(name = "Uint8Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getUint8Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.uint8Array == LAZY_SENTINEL) {
+            global.uint8Array = global.getBuiltinUint8Array();
+        }
+        return global.uint8Array;
+    }
+
+    @Setter(name = "Uint8Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setUint8Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.uint8Array = value;
+    }
+
+    private volatile Object uint8Array;
 
     /** TypedArray (uint8) - Clamped */
-    @Property(name = "Uint8ClampedArray", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object uint8ClampedArray;
+    @Getter(name = "Uint8ClampedArray", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getUint8ClampedArray(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.uint8ClampedArray == LAZY_SENTINEL) {
+            global.uint8ClampedArray = global.getBuiltinUint8ClampedArray();
+        }
+        return global.uint8ClampedArray;
+    }
+
+    @Setter(name = "Uint8ClampedArray", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setUint8ClampedArray(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.uint8ClampedArray = value;
+    }
+
+    private volatile Object uint8ClampedArray;
 
     /** TypedArray (int16) */
-    @Property(name = "Int16Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object int16Array;
+    @Getter(name = "Int16Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getInt16Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.int16Array == LAZY_SENTINEL) {
+            global.int16Array = global.getBuiltinInt16Array();
+        }
+        return global.int16Array;
+    }
+
+    @Setter(name = "Int16Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setInt16Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.int16Array = value;
+    }
+
+    private volatile Object int16Array;
 
     /** TypedArray (uint16) */
-    @Property(name = "Uint16Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object uint16Array;
+    @Getter(name = "Uint16Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getUint16Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.uint16Array == LAZY_SENTINEL) {
+            global.uint16Array = global.getBuiltinUint16Array();
+        }
+        return global.uint16Array;
+    }
+
+    @Setter(name = "Uint16Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setUint16Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.uint16Array = value;
+    }
+
+    private volatile Object uint16Array;
 
     /** TypedArray (int32) */
-    @Property(name = "Int32Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object int32Array;
+    @Getter(name = "Int32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getInt32Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.int32Array == LAZY_SENTINEL) {
+            global.int32Array = global.getBuiltinInt32Array();
+        }
+        return global.int32Array;
+    }
+
+    @Setter(name = "Int32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setInt32Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.int32Array = value;
+    }
+
+    private volatile Object int32Array;
 
     /** TypedArray (uint32) */
-    @Property(name = "Uint32Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object uint32Array;
+    @Getter(name = "Uint32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getUint32Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.uint32Array == LAZY_SENTINEL) {
+            global.uint32Array = global.getBuiltinUint32Array();
+        }
+        return global.uint32Array;
+    }
+
+    @Setter(name = "Uint32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setUint32Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.uint32Array = value;
+    }
+
+    private volatile Object uint32Array;
 
     /** TypedArray (float32) */
-    @Property(name = "Float32Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object float32Array;
+    @Getter(name = "Float32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getFloat32Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.float32Array == LAZY_SENTINEL) {
+            global.float32Array = global.getBuiltinFloat32Array();
+        }
+        return global.float32Array;
+    }
+
+    @Setter(name = "Float32Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setFloat32Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.float32Array = value;
+    }
+
+    private volatile Object float32Array;
 
     /** TypedArray (float64) */
-    @Property(name = "Float64Array", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object float64Array;
+    @Getter(name = "Float64Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getFloat64Array(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.float64Array == LAZY_SENTINEL) {
+            global.float64Array = global.getBuiltinFloat64Array();
+        }
+        return global.float64Array;
+    }
+
+    @Setter(name = "Float64Array", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setFloat64Array(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.float64Array = value;
+    }
+
+    private volatile Object float64Array;
 
     /** Nashorn extension: Java access - global.Packages */
     @Property(name = "Packages", attributes = Attribute.NOT_ENUMERABLE)
@@ -333,12 +591,40 @@ public final class Global extends ScriptObject implements Scope {
     public volatile Object org;
 
     /** Nashorn extension: Java access - global.javaImporter */
-    @Property(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object javaImporter;
+    @Getter(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getJavaImporter(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.javaImporter == LAZY_SENTINEL) {
+            global.javaImporter = global.getBuiltinJavaImporter();
+        }
+        return global.javaImporter;
+    }
+
+    @Setter(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setJavaImporter(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.javaImporter = value;
+    }
+
+    private volatile Object javaImporter;
 
     /** Nashorn extension: global.Java Object constructor. */
-    @Property(name = "Java", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object javaApi;
+    @Getter(name = "Java", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getJavaApi(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.javaApi == LAZY_SENTINEL) {
+            global.javaApi = global.getBuiltinJavaApi();
+        }
+        return global.javaApi;
+    }
+
+    @Setter(name = "Java", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setJavaApi(final Object self, final Object value) {
+        final Global global = Global.instanceFrom(self);
+        global.javaApi = value;
+    }
+
+    private volatile Object javaApi;
 
     /** Nashorn extension: current script's file name */
     @Property(name = "__FILE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
@@ -352,11 +638,19 @@ public final class Global extends ScriptObject implements Scope {
     @Property(name = "__LINE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public final Object __LINE__ = LOCATION_PROPERTY_PLACEHOLDER;
 
+    private volatile NativeDate DEFAULT_DATE;
+
     /** Used as Date.prototype's default value */
-    public NativeDate   DEFAULT_DATE;
+    NativeDate getDefaultDate() {
+        return DEFAULT_DATE;
+    }
+
+    private volatile NativeRegExp DEFAULT_REGEXP;
 
     /** Used as RegExp.prototype's default value */
-    public NativeRegExp DEFAULT_REGEXP;
+    NativeRegExp getDefaultRegExp() {
+        return DEFAULT_REGEXP;
+    }
 
     /*
      * Built-in constructor objects: Even if user changes dynamic values of
@@ -1033,7 +1327,7 @@ public final class Global extends ScriptObject implements Scope {
 
     /**
      * Get the builtin Object prototype.
-      * @return the object prototype.
+     * @return the object prototype.
      */
     public ScriptObject getObjectPrototype() {
         return ScriptFunction.getPrototype(builtinObject);
@@ -1056,11 +1350,11 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     ScriptObject getDatePrototype() {
-        return ScriptFunction.getPrototype(builtinDate);
+        return ScriptFunction.getPrototype(getBuiltinDate());
     }
 
     ScriptObject getRegExpPrototype() {
-        return ScriptFunction.getPrototype(builtinRegExp);
+        return ScriptFunction.getPrototype(getBuiltinRegExp());
     }
 
     ScriptObject getStringPrototype() {
@@ -1072,11 +1366,11 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     ScriptObject getEvalErrorPrototype() {
-        return ScriptFunction.getPrototype(builtinEvalError);
+        return ScriptFunction.getPrototype(getBuiltinEvalError());
     }
 
     ScriptObject getRangeErrorPrototype() {
-        return ScriptFunction.getPrototype(builtinRangeError);
+        return ScriptFunction.getPrototype(getBuiltinRangeError());
     }
 
     ScriptObject getReferenceErrorPrototype() {
@@ -1092,59 +1386,136 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     ScriptObject getURIErrorPrototype() {
-        return ScriptFunction.getPrototype(builtinURIError);
+        return ScriptFunction.getPrototype(getBuiltinURIError());
     }
 
     ScriptObject getJavaImporterPrototype() {
-        return ScriptFunction.getPrototype(builtinJavaImporter);
+        return ScriptFunction.getPrototype(getBuiltinJavaImporter());
     }
 
     ScriptObject getJSAdapterPrototype() {
-        return ScriptFunction.getPrototype(builtinJSAdapter);
+        return ScriptFunction.getPrototype(getBuiltinJSAdapter());
+    }
+
+    private synchronized ScriptFunction getBuiltinArrayBuffer() {
+        if (this.builtinArrayBuffer == null) {
+            this.builtinArrayBuffer = initConstructorAndSwitchPoint("ArrayBuffer", ScriptFunction.class);
+        }
+        return this.builtinArrayBuffer;
     }
 
     ScriptObject getArrayBufferPrototype() {
-        return ScriptFunction.getPrototype(builtinArrayBuffer);
+        return ScriptFunction.getPrototype(getBuiltinArrayBuffer());
+    }
+
+    private synchronized ScriptFunction getBuiltinDataView() {
+        if (this.builtinDataView == null) {
+            this.builtinDataView = initConstructorAndSwitchPoint("DataView", ScriptFunction.class);
+        }
+        return this.builtinDataView;
     }
 
     ScriptObject getDataViewPrototype() {
-        return ScriptFunction.getPrototype(builtinDataView);
+        return ScriptFunction.getPrototype(getBuiltinDataView());
+    }
+
+    private synchronized ScriptFunction getBuiltinInt8Array() {
+        if (this.builtinInt8Array == null) {
+            this.builtinInt8Array = initConstructorAndSwitchPoint("Int8Array", ScriptFunction.class);
+        }
+        return this.builtinInt8Array;
     }
 
     ScriptObject getInt8ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinInt8Array);
+        return ScriptFunction.getPrototype(getBuiltinInt8Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinUint8Array() {
+        if (this.builtinUint8Array == null) {
+            this.builtinUint8Array = initConstructorAndSwitchPoint("Uint8Array", ScriptFunction.class);
+        }
+        return this.builtinUint8Array;
     }
 
     ScriptObject getUint8ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinUint8Array);
+        return ScriptFunction.getPrototype(getBuiltinUint8Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinUint8ClampedArray() {
+        if (this.builtinUint8ClampedArray == null) {
+            this.builtinUint8ClampedArray = initConstructorAndSwitchPoint("Uint8ClampedArray", ScriptFunction.class);
+        }
+        return this.builtinUint8ClampedArray;
     }
 
     ScriptObject getUint8ClampedArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinUint8ClampedArray);
+        return ScriptFunction.getPrototype(getBuiltinUint8ClampedArray());
+    }
+
+    private synchronized ScriptFunction getBuiltinInt16Array() {
+        if (this.builtinInt16Array == null) {
+            this.builtinInt16Array = initConstructorAndSwitchPoint("Int16Array", ScriptFunction.class);
+        }
+        return this.builtinInt16Array;
     }
 
     ScriptObject getInt16ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinInt16Array);
+        return ScriptFunction.getPrototype(getBuiltinInt16Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinUint16Array() {
+        if (this.builtinUint16Array == null) {
+            this.builtinUint16Array = initConstructorAndSwitchPoint("Uint16Array", ScriptFunction.class);
+        }
+        return this.builtinUint16Array;
     }
 
     ScriptObject getUint16ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinUint16Array);
+        return ScriptFunction.getPrototype(getBuiltinUint16Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinInt32Array() {
+        if (this.builtinInt32Array == null) {
+            this.builtinInt32Array = initConstructorAndSwitchPoint("Int32Array", ScriptFunction.class);
+        }
+        return this.builtinInt32Array;
     }
 
     ScriptObject getInt32ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinInt32Array);
+        return ScriptFunction.getPrototype(getBuiltinInt32Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinUint32Array() {
+        if (this.builtinUint32Array == null) {
+            this.builtinUint32Array = initConstructorAndSwitchPoint("Uint32Array", ScriptFunction.class);
+        }
+        return this.builtinUint32Array;
     }
 
     ScriptObject getUint32ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinUint32Array);
+        return ScriptFunction.getPrototype(getBuiltinUint32Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinFloat32Array() {
+        if (this.builtinFloat32Array == null) {
+            this.builtinFloat32Array = initConstructorAndSwitchPoint("Float32Array", ScriptFunction.class);
+        }
+        return this.builtinFloat32Array;
     }
 
     ScriptObject getFloat32ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinFloat32Array);
+        return ScriptFunction.getPrototype(getBuiltinFloat32Array());
+    }
+
+    private synchronized ScriptFunction getBuiltinFloat64Array() {
+        if (this.builtinFloat64Array == null) {
+            this.builtinFloat64Array = initConstructorAndSwitchPoint("Float64Array", ScriptFunction.class);
+        }
+        return this.builtinFloat64Array;
     }
 
     ScriptObject getFloat64ArrayPrototype() {
-        return ScriptFunction.getPrototype(builtinFloat64Array);
+        return ScriptFunction.getPrototype(getBuiltinFloat64Array());
     }
 
     private ScriptFunction getBuiltinArray() {
@@ -1179,8 +1550,14 @@ public final class Global extends ScriptObject implements Scope {
         return instance._boolean == instance.getBuiltinBoolean();
     }
 
-    private ScriptFunction getBuiltinDate() {
-        return builtinDate;
+    private synchronized ScriptFunction getBuiltinDate() {
+        if (this.builtinDate == null) {
+            this.builtinDate = initConstructorAndSwitchPoint("Date", ScriptFunction.class);
+            final ScriptObject dateProto = ScriptFunction.getPrototype(builtinDate);
+            // initialize default date
+            this.DEFAULT_DATE = new NativeDate(NaN, dateProto);
+        }
+        return this.builtinDate;
     }
 
     /**
@@ -1190,7 +1567,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinDate() {
         final Global instance = Global.instance();
-        return instance.date == instance.getBuiltinDate();
+        return instance.date == LAZY_SENTINEL || instance.date == instance.getBuiltinDate();
     }
 
     private ScriptFunction getBuiltinError() {
@@ -1207,8 +1584,11 @@ public final class Global extends ScriptObject implements Scope {
         return instance.error == instance.getBuiltinError();
     }
 
-    private ScriptFunction getBuiltinEvalError() {
-        return builtinEvalError;
+    private synchronized ScriptFunction getBuiltinEvalError() {
+        if (this.builtinEvalError == null) {
+            this.builtinEvalError = initErrorSubtype("EvalError", getErrorPrototype());
+        }
+        return this.builtinEvalError;
     }
 
     /**
@@ -1218,7 +1598,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinEvalError() {
         final Global instance = Global.instance();
-        return instance.evalError == instance.getBuiltinEvalError();
+        return instance.evalError == LAZY_SENTINEL || instance.evalError == instance.getBuiltinEvalError();
     }
 
     private ScriptFunction getBuiltinFunction() {
@@ -1269,7 +1649,10 @@ public final class Global extends ScriptObject implements Scope {
         return isBuiltinFunctionProperty("call");
     }
 
-    private ScriptFunction getBuiltinJSAdapter() {
+    private synchronized ScriptFunction getBuiltinJSAdapter() {
+        if (this.builtinJSAdapter == null) {
+            this.builtinJSAdapter = initConstructorAndSwitchPoint("JSAdapter", ScriptFunction.class);
+        }
         return builtinJSAdapter;
     }
 
@@ -1280,11 +1663,14 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinJSAdapter() {
         final Global instance = Global.instance();
-        return instance.jsadapter == instance.getBuiltinJSAdapter();
+        return instance.jsadapter == LAZY_SENTINEL || instance.jsadapter == instance.getBuiltinJSAdapter();
     }
 
-    private ScriptObject getBuiltinJSON() {
-        return builtinJSON;
+    private synchronized ScriptObject getBuiltinJSON() {
+        if (this.builtinJSON == null) {
+            this.builtinJSON = initConstructorAndSwitchPoint("JSON", ScriptObject.class);
+        }
+        return this.builtinJSON;
     }
 
     /**
@@ -1294,7 +1680,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinJSON() {
         final Global instance = Global.instance();
-        return instance.json == instance.getBuiltinJSON();
+        return instance.json == LAZY_SENTINEL || instance.json == instance.getBuiltinJSON();
     }
 
     private ScriptObject getBuiltinJava() {
@@ -1325,8 +1711,18 @@ public final class Global extends ScriptObject implements Scope {
         return instance.javax == instance.getBuiltinJavax();
     }
 
-    private ScriptObject getBuiltinJavaImporter() {
-        return builtinJavaImporter;
+    private synchronized ScriptFunction getBuiltinJavaImporter() {
+        if (this.builtinJavaImporter == null) {
+            this.builtinJavaImporter = initConstructor("JavaImporter", ScriptFunction.class);
+        }
+        return this.builtinJavaImporter;
+    }
+
+    private synchronized ScriptObject getBuiltinJavaApi() {
+        if (this.builtinJavaApi == null) {
+            this.builtinJavaApi = initConstructor("Java", ScriptObject.class);
+        }
+        return this.builtinJavaApi;
     }
 
     /**
@@ -1336,11 +1732,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinJavaImporter() {
         final Global instance = Global.instance();
-        return instance.javaImporter == instance.getBuiltinJavaImporter();
-    }
-
-    private ScriptObject getBuiltinMath() {
-        return builtinMath;
+        return instance.javaImporter == LAZY_SENTINEL || instance.javaImporter == instance.getBuiltinJavaImporter();
     }
 
     /**
@@ -1350,7 +1742,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinMath() {
         final Global instance = Global.instance();
-        return instance.math == instance.getBuiltinMath();
+        return instance.math == instance.builtinMath;
     }
 
     private ScriptFunction getBuiltinNumber() {
@@ -1395,7 +1787,10 @@ public final class Global extends ScriptObject implements Scope {
         return instance.packages == instance.getBuiltinPackages();
     }
 
-    private ScriptFunction getBuiltinRangeError() {
+    private synchronized ScriptFunction getBuiltinRangeError() {
+        if (this.builtinRangeError == null) {
+            this.builtinRangeError = initErrorSubtype("RangeError", getErrorPrototype());
+        }
         return builtinRangeError;
     }
 
@@ -1406,10 +1801,10 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinRangeError() {
         final Global instance = Global.instance();
-        return instance.rangeError == instance.getBuiltinRangeError();
+        return instance.rangeError == LAZY_SENTINEL || instance.rangeError == instance.getBuiltinRangeError();
     }
 
-    private ScriptFunction getBuiltinReferenceError() {
+    private synchronized ScriptFunction getBuiltinReferenceError() {
         return builtinReferenceError;
     }
 
@@ -1423,7 +1818,16 @@ public final class Global extends ScriptObject implements Scope {
         return instance.referenceError == instance.getBuiltinReferenceError();
     }
 
-    private ScriptFunction getBuiltinRegExp() {
+    private synchronized ScriptFunction getBuiltinRegExp() {
+        if (this.builtinRegExp == null) {
+            this.builtinRegExp = initConstructorAndSwitchPoint("RegExp", ScriptFunction.class);
+            final ScriptObject regExpProto = ScriptFunction.getPrototype(builtinRegExp);
+            // initialize default regexp object
+            this.DEFAULT_REGEXP = new NativeRegExp("(?:)", "", this, regExpProto);
+            // RegExp.prototype should behave like a RegExp object. So copy the
+            // properties.
+            regExpProto.addBoundProperties(DEFAULT_REGEXP);
+        }
         return builtinRegExp;
     }
 
@@ -1434,7 +1838,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinRegExp() {
         final Global instance = Global.instance();
-        return instance.regexp == instance.getBuiltinRegExp();
+        return instance.regexp == LAZY_SENTINEL || instance.regexp == instance.getBuiltinRegExp();
     }
 
     private ScriptFunction getBuiltinString() {
@@ -1479,8 +1883,11 @@ public final class Global extends ScriptObject implements Scope {
         return instance.typeError == instance.getBuiltinTypeError();
     }
 
-    private ScriptFunction getBuiltinURIError() {
-        return builtinURIError;
+    private synchronized ScriptFunction getBuiltinURIError() {
+        if (this.builtinURIError == null) {
+            this.builtinURIError = initErrorSubtype("URIError", getErrorPrototype());
+        }
+        return this.builtinURIError;
     }
 
     /**
@@ -1490,7 +1897,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static boolean isBuiltinURIError() {
         final Global instance = Global.instance();
-        return instance.uriError == instance.getBuiltinURIError();
+        return instance.uriError == LAZY_SENTINEL || instance.uriError == instance.getBuiltinURIError();
     }
 
     @Override
@@ -1816,6 +2223,17 @@ public final class Global extends ScriptObject implements Scope {
         return invocation;
     }
 
+    /**
+     * Adds jjs shell interactive mode builtin functions to global scope.
+     */
+    public void addShellBuiltins() {
+        Object value = ScriptFunctionImpl.makeFunction("input", ShellFunctions.INPUT);
+        addOwnProperty("input", Attribute.NOT_ENUMERABLE, value);
+
+        value = ScriptFunctionImpl.makeFunction("evalinput", ShellFunctions.EVALINPUT);
+        addOwnProperty("evalinput", Attribute.NOT_ENUMERABLE, value);
+    }
+
     private synchronized SwitchPoint getLexicalScopeSwitchPoint() {
         SwitchPoint switchPoint = lexicalScopeSwitchPoint;
         if (switchPoint == null || switchPoint.hasBeenInvalidated()) {
@@ -1891,13 +2309,9 @@ public final class Global extends ScriptObject implements Scope {
         // built-in constructors
         this.builtinArray     = initConstructorAndSwitchPoint("Array", ScriptFunction.class);
         this.builtinBoolean   = initConstructorAndSwitchPoint("Boolean", ScriptFunction.class);
-        this.builtinDate      = initConstructorAndSwitchPoint("Date", ScriptFunction.class);
-        this.builtinJSON      = initConstructorAndSwitchPoint("JSON", ScriptObject.class);
-        this.builtinJSAdapter = initConstructorAndSwitchPoint("JSAdapter", ScriptFunction.class);
-        this.builtinMath      = initConstructorAndSwitchPoint("Math", ScriptObject.class);
         this.builtinNumber    = initConstructorAndSwitchPoint("Number", ScriptFunction.class);
-        this.builtinRegExp    = initConstructorAndSwitchPoint("RegExp", ScriptFunction.class);
         this.builtinString    = initConstructorAndSwitchPoint("String", ScriptFunction.class);
+        this.builtinMath      = initConstructorAndSwitchPoint("Math", ScriptObject.class);
 
         // initialize String.prototype.length to 0
         // add String.prototype.length
@@ -1908,26 +2322,28 @@ public final class Global extends ScriptObject implements Scope {
         final ScriptObject arrayPrototype = getArrayPrototype();
         arrayPrototype.setIsArray();
 
-        this.DEFAULT_DATE = new NativeDate(Double.NaN, this);
-
-        // initialize default regexp object
-        this.DEFAULT_REGEXP = new NativeRegExp("(?:)", this);
-
-        // RegExp.prototype should behave like a RegExp object. So copy the
-        // properties.
-        final ScriptObject regExpProto = getRegExpPrototype();
-        regExpProto.addBoundProperties(DEFAULT_REGEXP);
-
         // Error stuff
         initErrorObjects();
 
         // java access
         if (! env._no_java) {
+            this.javaApi = LAZY_SENTINEL;
+            this.javaImporter = LAZY_SENTINEL;
             initJavaAccess();
         }
 
         if (! env._no_typed_arrays) {
-            initTypedArray();
+            this.arrayBuffer       = LAZY_SENTINEL;
+            this.dataView          = LAZY_SENTINEL;
+            this.int8Array         = LAZY_SENTINEL;
+            this.uint8Array        = LAZY_SENTINEL;
+            this.uint8ClampedArray = LAZY_SENTINEL;
+            this.int16Array        = LAZY_SENTINEL;
+            this.uint16Array       = LAZY_SENTINEL;
+            this.int32Array        = LAZY_SENTINEL;
+            this.uint32Array       = LAZY_SENTINEL;
+            this.float32Array      = LAZY_SENTINEL;
+            this.float64Array      = LAZY_SENTINEL;
         }
 
         if (env._scripting) {
@@ -2001,12 +2417,9 @@ public final class Global extends ScriptObject implements Scope {
 
         tagBuiltinProperties("Error", builtinError);
 
-        this.builtinEvalError = initErrorSubtype("EvalError", errorProto);
-        this.builtinRangeError = initErrorSubtype("RangeError", errorProto);
         this.builtinReferenceError = initErrorSubtype("ReferenceError", errorProto);
         this.builtinSyntaxError = initErrorSubtype("SyntaxError", errorProto);
         this.builtinTypeError = initErrorSubtype("TypeError", errorProto);
-        this.builtinURIError = initErrorSubtype("URIError", errorProto);
     }
 
     private ScriptFunction initErrorSubtype(final String name, final ScriptObject errorProto) {
@@ -2028,8 +2441,6 @@ public final class Global extends ScriptObject implements Scope {
         this.builtinJavafx = new NativeJavaPackage("javafx", objectProto);
         this.builtinJavax = new NativeJavaPackage("javax", objectProto);
         this.builtinOrg = new NativeJavaPackage("org", objectProto);
-        this.builtinJavaImporter = initConstructor("JavaImporter", ScriptFunction.class);
-        this.builtinJavaApi = initConstructor("Java", ScriptObject.class);
     }
 
     private void initScripting(final ScriptEnvironment scriptEnv) {
@@ -2081,60 +2492,25 @@ public final class Global extends ScriptObject implements Scope {
         }
     }
 
-    private void initTypedArray() {
-        this.builtinArrayBuffer       = initConstructorAndSwitchPoint("ArrayBuffer", ScriptFunction.class);
-        this.builtinDataView          = initConstructorAndSwitchPoint("DataView", ScriptFunction.class);
-        this.builtinInt8Array         = initConstructorAndSwitchPoint("Int8Array", ScriptFunction.class);
-        this.builtinUint8Array        = initConstructorAndSwitchPoint("Uint8Array", ScriptFunction.class);
-        this.builtinUint8ClampedArray = initConstructorAndSwitchPoint("Uint8ClampedArray", ScriptFunction.class);
-        this.builtinInt16Array        = initConstructorAndSwitchPoint("Int16Array", ScriptFunction.class);
-        this.builtinUint16Array       = initConstructorAndSwitchPoint("Uint16Array", ScriptFunction.class);
-        this.builtinInt32Array        = initConstructorAndSwitchPoint("Int32Array", ScriptFunction.class);
-        this.builtinUint32Array       = initConstructorAndSwitchPoint("Uint32Array", ScriptFunction.class);
-        this.builtinFloat32Array      = initConstructorAndSwitchPoint("Float32Array", ScriptFunction.class);
-        this.builtinFloat64Array      = initConstructorAndSwitchPoint("Float64Array", ScriptFunction.class);
-
-    }
-
     private void copyBuiltins() {
         this.array             = this.builtinArray;
         this._boolean          = this.builtinBoolean;
-        this.date              = this.builtinDate;
         this.error             = this.builtinError;
-        this.evalError         = this.builtinEvalError;
         this.function          = this.builtinFunction;
-        this.jsadapter         = this.builtinJSAdapter;
-        this.json              = this.builtinJSON;
         this.com               = this.builtinCom;
         this.edu               = this.builtinEdu;
         this.java              = this.builtinJava;
         this.javafx            = this.builtinJavafx;
         this.javax             = this.builtinJavax;
         this.org               = this.builtinOrg;
-        this.javaImporter      = this.builtinJavaImporter;
-        this.javaApi           = this.builtinJavaApi;
         this.math              = this.builtinMath;
         this.number            = this.builtinNumber;
         this.object            = this.builtinObject;
         this.packages          = this.builtinPackages;
-        this.rangeError        = this.builtinRangeError;
         this.referenceError    = this.builtinReferenceError;
-        this.regexp            = this.builtinRegExp;
         this.string            = this.builtinString;
         this.syntaxError       = this.builtinSyntaxError;
         this.typeError         = this.builtinTypeError;
-        this.uriError          = this.builtinURIError;
-        this.arrayBuffer       = this.builtinArrayBuffer;
-        this.dataView          = this.builtinDataView;
-        this.int8Array         = this.builtinInt8Array;
-        this.uint8Array        = this.builtinUint8Array;
-        this.uint8ClampedArray = this.builtinUint8ClampedArray;
-        this.int16Array        = this.builtinInt16Array;
-        this.uint16Array       = this.builtinUint16Array;
-        this.int32Array        = this.builtinInt32Array;
-        this.uint32Array       = this.builtinUint32Array;
-        this.float32Array      = this.builtinFloat32Array;
-        this.float64Array      = this.builtinFloat64Array;
     }
 
     private void initDebug() {

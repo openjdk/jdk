@@ -933,11 +933,15 @@ public enum JSType {
         if (start + 1 < end && f == '0' && Character.toLowerCase(str.charAt(start + 1)) == 'x') {
             //decode hex string
             value = parseRadix(str.toCharArray(), start + 2, end, 16);
+        } else if (f == 'I' && end - start == 8 && str.regionMatches(start, "Infinity", 0, 8)) {
+            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         } else {
-            // Fast (no NumberFormatException) path to NaN for non-numeric strings. We allow those starting with "I" or
-            // "N" to allow for parsing "NaN" and "Infinity" correctly.
-            if ((f < '0' || f > '9') && f != '.' && f != 'I' && f != 'N') {
-                return Double.NaN;
+            // Fast (no NumberFormatException) path to NaN for non-numeric strings.
+            for (int i = start; i < end; i++) {
+                f = str.charAt(i);
+                if ((f < '0' || f > '9') && f != '.' && f != 'e' && f != 'E' && f != '+' && f != '-') {
+                    return Double.NaN;
+                }
             }
             try {
                 value = Double.parseDouble(str.substring(start, end));
