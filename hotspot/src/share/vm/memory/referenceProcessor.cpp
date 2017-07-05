@@ -71,7 +71,7 @@ void ReferenceProcessor::init_statics() {
   assert(_sentinelRef == NULL, "should be initialized precisely once");
   EXCEPTION_MARK;
   _sentinelRef = instanceKlass::cast(
-                    SystemDictionary::reference_klass())->
+                    SystemDictionary::Reference_klass())->
                       allocate_permanent_instance(THREAD);
 
   // Initialize the master soft ref clock.

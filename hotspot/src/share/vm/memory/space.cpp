@@ -876,7 +876,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     instanceOop obj = (instanceOop) allocate(size);
     obj->set_mark(markOopDesc::prototype());
     obj->set_klass_gap(0);
-    obj->set_klass(SystemDictionary::object_klass());
+    obj->set_klass(SystemDictionary::Object_klass());
   }
 }
 

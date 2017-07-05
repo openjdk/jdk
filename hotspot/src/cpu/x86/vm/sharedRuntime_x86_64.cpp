@@ -638,6 +638,10 @@ static void gen_i2c_adapter(MacroAssembler *masm,
 
   __ movptr(rax, Address(rsp, 0));
 
+  // Must preserve original SP for loading incoming arguments because
+  // we need to align the outgoing SP for compiled code.
+  __ movptr(r11, rsp);
+
   // Cut-out for having no stack args.  Since up to 2 int/oop args are passed
   // in registers, we will occasionally have no stack args.
   int comp_words_on_stack = 0;
@@ -661,6 +665,10 @@ static void gen_i2c_adapter(MacroAssembler *masm,
   // as far as the placement of the call instruction
   __ push(rax);
 
+  // Put saved SP in another register
+  const Register saved_sp = rax;
+  __ movptr(saved_sp, r11);
+
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
   __ movptr(r11, Address(rbx, in_bytes(methodOopDesc::from_compiled_offset())));
@@ -680,11 +688,7 @@ static void gen_i2c_adapter(MacroAssembler *masm,
     assert(!regs[i].second()->is_valid() || regs[i].first()->next() == regs[i].second(),
             "scrambled load targets?");
     // Load in argument order going down.
-    // int ld_off = (total_args_passed + comp_words_on_stack -i)*wordSize;
-    // base ld_off on r13 (sender_sp) as the stack alignment makes offsets from rsp
-    // unpredictable
-    int ld_off = ((total_args_passed - 1) - i)*Interpreter::stackElementSize();
-
+    int ld_off = (total_args_passed - i)*Interpreter::stackElementSize() + Interpreter::value_offset_in_bytes();
     // Point to interpreter value (vs. tag)
     int next_off = ld_off - Interpreter::stackElementSize();
     //
@@ -699,10 +703,14 @@ static void gen_i2c_adapter(MacroAssembler *masm,
     if (r_1->is_stack()) {
       // Convert stack slot to an SP offset (+ wordSize to account for return address )
       int st_off = regs[i].first()->reg2stack()*VMRegImpl::stack_slot_size + wordSize;
+
+      // We can use r13 as a temp here because compiled code doesn't need r13 as an input
+      // and if we end up going thru a c2i because of a miss a reasonable value of r13
+      // will be generated.
       if (!r_2->is_valid()) {
         // sign extend???
-        __ movl(rax, Address(r13, ld_off));
-        __ movptr(Address(rsp, st_off), rax);
+        __ movl(r13, Address(saved_sp, ld_off));
+        __ movptr(Address(rsp, st_off), r13);
       } else {
         //
         // We are using two optoregs. This can be either T_OBJECT, T_ADDRESS, T_LONG, or T_DOUBLE
@@ -715,9 +723,9 @@ static void gen_i2c_adapter(MacroAssembler *masm,
         // ld_off is MSW so get LSW
         const int offset = (sig_bt[i]==T_LONG||sig_bt[i]==T_DOUBLE)?
                            next_off : ld_off;
-        __ movq(rax, Address(r13, offset));
+        __ movq(r13, Address(saved_sp, offset));
         // st_off is LSW (i.e. reg.first())
-        __ movq(Address(rsp, st_off), rax);
+        __ movq(Address(rsp, st_off), r13);
       }
     } else if (r_1->is_Register()) {  // Register argument
       Register r = r_1->as_Register();
@@ -732,16 +740,16 @@ static void gen_i2c_adapter(MacroAssembler *masm,
                            next_off : ld_off;
 
         // this can be a misaligned move
-        __ movq(r, Address(r13, offset));
+        __ movq(r, Address(saved_sp, offset));
       } else {
         // sign extend and use a full word?
-        __ movl(r, Address(r13, ld_off));
+        __ movl(r, Address(saved_sp, ld_off));
       }
     } else {
       if (!r_2->is_valid()) {
-        __ movflt(r_1->as_XMMRegister(), Address(r13, ld_off));
+        __ movflt(r_1->as_XMMRegister(), Address(saved_sp, ld_off));
       } else {
-        __ movdbl(r_1->as_XMMRegister(), Address(r13, next_off));
+        __ movdbl(r_1->as_XMMRegister(), Address(saved_sp, next_off));
       }
     }
   }
@@ -3318,6 +3326,10 @@ void OptoRuntime::generate_exception_blob() {
   __ pop(rdx);                  // No need for exception pc anymore
 
   // rax: exception handler
+
+  // Restore SP from BP if the exception PC is a MethodHandle call.
+  __ cmpl(Address(r15_thread, JavaThread::is_method_handle_exception_offset()), 0);
+  __ cmovptr(Assembler::notEqual, rsp, rbp);
 
   // We have a handler in rax (could be deopt blob).
   __ mov(r8, rax);

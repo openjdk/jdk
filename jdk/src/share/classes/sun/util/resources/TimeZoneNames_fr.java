@@ -83,8 +83,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                      "Heure avanc\u00e9e du Centre", "CDT"} ;
         String CTT[] = new String[] {"Heure normale de Chine", "CST",
                                      "Heure avanc\u00e9e de Chine", "CDT"} ;
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"Heure standard de Cuba", "CST",
+                                      "Heure d'\u00e9t\u00e9 de Cuba", "CDT"};
         String DARWIN[] = new String[] {"Heure standard d'Australie centrale (Territoire du Nord)", "CST",
                                         "Heure d'\u00e9t\u00e9 d'Australie centrale (Territoire du Nord)", "CST"};
         String DUBLIN[] = new String[] {"Heure du m\u00e9ridien de Greenwich", "GMT",
@@ -173,8 +173,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                       "Heure d'\u00e9t\u00e9 de Truk", "TRUST"};
         String ULAT[]= new String[] {"Heure de l'Ulaanbaatar", "ULAT",
                                      "Heure d'\u00e9t\u00e9 de l'Ulaanbaatar", "ULAST"} ;
-        String WART[] = new String[] {"Heure D'Argentine", "WART",
-                                      "Heure d'\u00e9t\u00e9 D'Argentine", "WARST"} ;
+        String WART[] = new String[] {"Heure D'Argentine de l'Ouest", "WART",
+                                      "Heure d'\u00e9t\u00e9 D'Argentine de l'Ouest", "WARST"} ;
         String WAT[] = new String[] {"Heure d'Afrique de l'Ouest", "WAT",
                                      "Heure d'\u00e9t\u00e9 d'Afrique de l'Ouest", "WAST"} ;
         String WET[] = new String[] {"Heure d'Europe de l'Ouest", "WET",
@@ -594,8 +594,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"Heure standard de l'Australie occidentale (centre)", "CWST",
+                                              "Heure d'\u00e9t\u00e9 de l'Australie occidentale (centre)", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},

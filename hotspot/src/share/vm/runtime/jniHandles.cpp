@@ -144,7 +144,7 @@ void JNIHandles::initialize() {
   EXCEPTION_MARK;
   // We will never reach the CATCH below since Exceptions::_throw will cause
   // the VM to exit if an exception is thrown during initialization
-  klassOop k      = SystemDictionary::object_klass();
+  klassOop k      = SystemDictionary::Object_klass();
   _deleted_handle = instanceKlass::cast(k)->allocate_permanent_instance(CATCH);
 }
 
