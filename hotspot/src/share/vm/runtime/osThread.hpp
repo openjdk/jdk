@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class OSThread: public CHeapObj {
   OSThreadStartFunc _start_proc;  // Thread start routine
   void* _start_parm;              // Thread start routine parameter
   volatile ThreadState _state;    // Thread state *hint*
-  jint _interrupted;              // Thread.isInterrupted state
+  volatile jint _interrupted;     // Thread.isInterrupted state
 
   // Note:  _interrupted must be jint, so that Java intrinsics can access it.
   // The value stored there must be either 0 or 1.  It must be possible
@@ -89,7 +89,7 @@ class OSThread: public CHeapObj {
   void* start_parm() const                          { return _start_parm; }
   void set_start_parm(void* start_parm)             { _start_parm = start_parm; }
 
-  bool interrupted() const                          { return _interrupted != 0; }
+  volatile bool interrupted() const                 { return _interrupted != 0; }
   void set_interrupted(bool z)                      { _interrupted = z ? 1 : 0; }
 
   // Printing

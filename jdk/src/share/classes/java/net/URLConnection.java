@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1422,7 +1422,7 @@ public abstract class URLConnection {
         if (!is.markSupported())
             return null;
 
-        is.mark(12);
+        is.mark(16);
         int c1 = is.read();
         int c2 = is.read();
         int c3 = is.read();
@@ -1434,6 +1434,11 @@ public abstract class URLConnection {
         int c9 = is.read();
         int c10 = is.read();
         int c11 = is.read();
+        int c12 = is.read();
+        int c13 = is.read();
+        int c14 = is.read();
+        int c15 = is.read();
+        int c16 = is.read();
         is.reset();
 
         if (c1 == 0xCA && c2 == 0xFE && c3 == 0xBA && c4 == 0xBE) {
@@ -1461,6 +1466,13 @@ public abstract class URLConnection {
             }
         }
 
+        // big and little (identical) endian UTF-8 encodings, with BOM
+        if (c1 == 0xef &&  c2 == 0xbb &&  c3 == 0xbf) {
+            if (c4 == '<' &&  c5 == '?' &&  c6 == 'x') {
+                return "application/xml";
+            }
+        }
+
         // big and little endian UTF-16 encodings, with byte order mark
         if (c1 == 0xfe && c2 == 0xff) {
             if (c3 == 0 && c4 == '<' && c5 == 0 && c6 == '?' &&
@@ -1472,6 +1484,23 @@ public abstract class URLConnection {
         if (c1 == 0xff && c2 == 0xfe) {
             if (c3 == '<' && c4 == 0 && c5 == '?' && c6 == 0 &&
                 c7 == 'x' && c8 == 0) {
+                return "application/xml";
+            }
+        }
+
+        // big and little endian UTF-32 encodings, with BOM
+        if (c1 == 0x00 &&  c2 == 0x00 &&  c3 == 0xfe &&  c4 == 0xff) {
+            if (c5  == 0 && c6  == 0 && c7  == 0 && c8  == '<' &&
+                c9  == 0 && c10 == 0 && c11 == 0 && c12 == '?' &&
+                c13 == 0 && c14 == 0 && c15 == 0 && c16 == 'x') {
+                return "application/xml";
+            }
+        }
+
+        if (c1 == 0xff &&  c2 == 0xfe &&  c3 == 0x00 &&  c4 == 0x00) {
+            if (c5  == '<' && c6  == 0 && c7  == 0 && c8  == 0 &&
+                c9  == '?' && c10 == 0 && c11 == 0 && c12 == 0 &&
+                c13 == 'x' && c14 == 0 && c15 == 0 && c16 == 0) {
                 return "application/xml";
             }
         }

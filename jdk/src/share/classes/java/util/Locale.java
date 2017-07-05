@@ -1168,7 +1168,7 @@ public final class Locale implements Cloneable, Serializable {
         boolean e = (_extensions.getID().length() != 0);
 
         StringBuilder result = new StringBuilder(_baseLocale.getLanguage());
-        if (r || (l && v)) {
+        if (r || (l && (v || s || e))) {
             result.append('_')
                 .append(_baseLocale.getRegion()); // This may just append '_'
         }

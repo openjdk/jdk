@@ -637,6 +637,25 @@ void Parse::do_all_blocks() {
         // (Note that dead locals do not get phis built, ever.)
         ensure_phis_everywhere();
 
+        if (block->is_SEL_head() &&
+            UseLoopPredicate) {
+          // Add predicate to single entry (not irreducible) loop head.
+          assert(!block->has_merged_backedge(), "only entry paths should be merged for now");
+          // Need correct bci for predicate.
+          // It is fine to set it here since do_one_block() will set it anyway.
+          set_parse_bci(block->start());
+          add_predicate();
+          // Add new region for back branches.
+          int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
+          RegionNode *r = new (C, edges+1) RegionNode(edges+1);
+          _gvn.set_type(r, Type::CONTROL);
+          record_for_igvn(r);
+          r->init_req(edges, control());
+          set_control(r);
+          // Add new phis.
+          ensure_phis_everywhere();
+        }
+
         // Leave behind an undisturbed copy of the map, for future merges.
         set_map(clone_map());
       }
@@ -1113,7 +1132,7 @@ void Parse::Block::init_node(Parse* outer, int rpo) {
   _preds_parsed = 0;
   _count = 0;
   assert(pred_count() == 0 && preds_parsed() == 0, "sanity");
-  assert(!(is_merged() || is_parsed() || is_handler()), "sanity");
+  assert(!(is_merged() || is_parsed() || is_handler() || has_merged_backedge()), "sanity");
   assert(_live_locals.size() == 0, "sanity");
 
   // entry point has additional predecessor
@@ -1350,10 +1369,6 @@ void Parse::do_one_block() {
     set_parse_bci(iter().cur_bci());
 
     if (bci() == block()->limit()) {
-      // insert a predicate if it falls through to a loop head block
-      if (should_add_predicate(bci())){
-        add_predicate();
-      }
       // Do not walk into the next block until directed by do_all_blocks.
       merge(bci());
       break;
@@ -1498,17 +1513,29 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         || target->is_handler()       // These have unpredictable inputs.
         || target->is_loop_head()     // Known multiple inputs
         || control()->is_Region()) {  // We must hide this guy.
+
+      int current_bci = bci();
+      set_parse_bci(target->start()); // Set target bci
+      if (target->is_SEL_head()) {
+        DEBUG_ONLY( target->mark_merged_backedge(block()); )
+        if (target->start() == 0) {
+          // Add loop predicate for the special case when
+          // there are backbranches to the method entry.
+          add_predicate();
+        }
+      }
       // Add a Region to start the new basic block.  Phis will be added
       // later lazily.
       int edges = target->pred_count();
       if (edges < pnum)  edges = pnum;  // might be a new path!
-      Node *r = new (C, edges+1) RegionNode(edges+1);
+      RegionNode *r = new (C, edges+1) RegionNode(edges+1);
       gvn().set_type(r, Type::CONTROL);
       record_for_igvn(r);
       // zap all inputs to NULL for debugging (done in Node(uint) constructor)
       // for (int j = 1; j < edges+1; j++) { r->init_req(j, NULL); }
       r->init_req(pnum, control());
       set_control(r);
+      set_parse_bci(current_bci); // Restore bci
     }
 
     // Convert the existing Parser mapping into a mapping at this bci.
@@ -1517,7 +1544,11 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
   } else {                      // Prior mapping at this bci
     if (TraceOptoParse) {  tty->print(" with previous state"); }
-
+#ifdef ASSERT
+    if (target->is_SEL_head()) {
+      target->mark_merged_backedge(block());
+    }
+#endif
     // We must not manufacture more phis if the target is already parsed.
     bool nophi = target->is_parsed();
 
@@ -2052,37 +2083,6 @@ void Parse::add_safepoint() {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }
-}
-
-//------------------------------should_add_predicate--------------------------
-bool Parse::should_add_predicate(int target_bci) {
-  if (!UseLoopPredicate) return false;
-  Block* target = successor_for_bci(target_bci);
-  if (target != NULL          &&
-      target->is_loop_head()  &&
-      block()->rpo() < target->rpo()) {
-    return true;
-  }
-  return false;
-}
-
-//------------------------------add_predicate---------------------------------
-void Parse::add_predicate() {
-  assert(UseLoopPredicate,"use only for loop predicate");
-  Node *cont    = _gvn.intcon(1);
-  Node* opq     = _gvn.transform(new (C, 2) Opaque1Node(C, cont));
-  Node *bol     = _gvn.transform(new (C, 2) Conv2BNode(opq));
-  IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
-  Node* iffalse = _gvn.transform(new (C, 1) IfFalseNode(iff));
-  C->add_predicate_opaq(opq);
-  {
-    PreserveJVMState pjvms(this);
-    set_control(iffalse);
-    uncommon_trap(Deoptimization::Reason_predicate,
-                  Deoptimization::Action_maybe_recompile);
-  }
-  Node* iftrue = _gvn.transform(new (C, 1) IfTrueNode(iff));
-  set_control(iftrue);
 }
 
 #ifndef PRODUCT
