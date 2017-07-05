@@ -70,6 +70,7 @@ Monitor* FullGCCount_lock             = NULL;
 Monitor* CMark_lock                   = NULL;
 Monitor* ZF_mon                       = NULL;
 Monitor* Cleanup_mon                  = NULL;
+Mutex*   CMRegionStack_lock           = NULL;
 Mutex*   SATB_Q_FL_lock               = NULL;
 Monitor* SATB_Q_CBL_mon               = NULL;
 Mutex*   Shared_SATB_Q_lock           = NULL;
@@ -167,6 +168,7 @@ void mutex_init() {
     def(CMark_lock                 , Monitor, nonleaf,     true ); // coordinate concurrent mark thread
     def(ZF_mon                     , Monitor, leaf,        true );
     def(Cleanup_mon                , Monitor, nonleaf,     true );
+    def(CMRegionStack_lock         , Mutex,   leaf,        true );
     def(SATB_Q_FL_lock             , Mutex  , special,     true );
     def(SATB_Q_CBL_mon             , Monitor, nonleaf,     true );
     def(Shared_SATB_Q_lock         , Mutex,   nonleaf,     true );

@@ -40,9 +40,6 @@
   develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
                                                                             \
-  develop(intx, G1GCPercent, 10,                                            \
-          "The desired percent time spent on GC")                           \
-                                                                            \
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
                                                                             \
@@ -270,11 +267,11 @@
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \
-  experimental(bool, G1UseParallelRSetUpdating, false,                      \
+  experimental(bool, G1UseParallelRSetUpdating, true,                       \
           "Enables the parallelization of remembered set updating "         \
           "during evacuation pauses")                                       \
                                                                             \
-  experimental(bool, G1UseParallelRSetScanning, false,                      \
+  experimental(bool, G1UseParallelRSetScanning, true,                       \
           "Enables the parallelization of remembered set scanning "         \
           "during evacuation pauses")                                       \
                                                                             \

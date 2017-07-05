@@ -215,6 +215,8 @@ protected:
   SurvRateGroup*        _survivor_surv_rate_group;
   // add here any more surv rate groups
 
+  double                _gc_overhead_perc;
+
   bool during_marking() {
     return _during_marking;
   }
@@ -722,11 +724,31 @@ protected:
 
   size_t _n_marks_since_last_pause;
 
-  // True iff CM has been initiated.
-  bool _conc_mark_initiated;
+  // At the end of a pause we check the heap occupancy and we decide
+  // whether we will start a marking cycle during the next pause. If
+  // we decide that we want to do that, we will set this parameter to
+  // true. So, this parameter will stay true between the end of a
+  // pause and the beginning of a subsequent pause (not necessarily
+  // the next one, see the comments on the next field) when we decide
+  // that we will indeed start a marking cycle and do the initial-mark
+  // work.
+  volatile bool _initiate_conc_mark_if_possible;
 
-  // True iff CM should be initiated
-  bool _should_initiate_conc_mark;
+  // If initiate_conc_mark_if_possible() is set at the beginning of a
+  // pause, it is a suggestion that the pause should start a marking
+  // cycle by doing the initial-mark work. However, it is possible
+  // that the concurrent marking thread is still finishing up the
+  // previous marking cycle (e.g., clearing the next marking
+  // bitmap). If that is the case we cannot start a new cycle and
+  // we'll have to wait for the concurrent marking thread to finish
+  // what it is doing. In this case we will postpone the marking cycle
+  // initiation decision for the next pause. When we eventually decide
+  // to start a cycle, we will set _during_initial_mark_pause which
+  // will stay true until the end of the initial-mark pause and it's
+  // the condition that indicates that a pause is doing the
+  // initial-mark work.
+  volatile bool _during_initial_mark_pause;
+
   bool _should_revert_to_full_young_gcs;
   bool _last_full_young_gc;
 
@@ -979,9 +1001,21 @@ public:
   // Add "hr" to the CS.
   void add_to_collection_set(HeapRegion* hr);
 
-  bool should_initiate_conc_mark()      { return _should_initiate_conc_mark; }
-  void set_should_initiate_conc_mark()  { _should_initiate_conc_mark = true; }
-  void unset_should_initiate_conc_mark(){ _should_initiate_conc_mark = false; }
+  bool initiate_conc_mark_if_possible()       { return _initiate_conc_mark_if_possible;  }
+  void set_initiate_conc_mark_if_possible()   { _initiate_conc_mark_if_possible = true;  }
+  void clear_initiate_conc_mark_if_possible() { _initiate_conc_mark_if_possible = false; }
+
+  bool during_initial_mark_pause()      { return _during_initial_mark_pause;  }
+  void set_during_initial_mark_pause()  { _during_initial_mark_pause = true;  }
+  void clear_during_initial_mark_pause(){ _during_initial_mark_pause = false; }
+
+  // This is called at the very beginning of an evacuation pause (it
+  // has to be the first thing that the pause does). If
+  // initiate_conc_mark_if_possible() is true, and the concurrent
+  // marking thread has completed its work during the previous cycle,
+  // it will set during_initial_mark_pause() to so that the pause does
+  // the initial-mark work and start a marking cycle.
+  void decide_on_conc_mark_initiation();
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.

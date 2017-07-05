@@ -147,11 +147,11 @@ static char* get_user_tmp_dir(const char* user) {
 
   const char* tmpdir = os::get_temp_directory();
   const char* perfdir = PERFDATA_NAME;
-  size_t nbytes = strlen(tmpdir) + strlen(perfdir) + strlen(user) + 2;
+  size_t nbytes = strlen(tmpdir) + strlen(perfdir) + strlen(user) + 3;
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes);
 
   // construct the path name to user specific tmp directory
-  snprintf(dirname, nbytes, "%s%s_%s", tmpdir, perfdir, user);
+  snprintf(dirname, nbytes, "%s/%s_%s", tmpdir, perfdir, user);
 
   return dirname;
 }
@@ -322,8 +322,9 @@ static char* get_user_name_slow(int vmid, TRAPS) {
     }
 
     char* usrdir_name = NEW_C_HEAP_ARRAY(char,
-                              strlen(tmpdirname) + strlen(dentry->d_name) + 1);
+                              strlen(tmpdirname) + strlen(dentry->d_name) + 2);
     strcpy(usrdir_name, tmpdirname);
+    strcat(usrdir_name, "/");
     strcat(usrdir_name, dentry->d_name);
 
     DIR* subdirp = os::opendir(usrdir_name);
