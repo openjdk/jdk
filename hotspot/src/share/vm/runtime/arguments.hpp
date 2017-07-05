@@ -328,9 +328,6 @@ class Arguments : AllStatic {
   static bool _ClipInlining;
   static bool _CIDynamicCompilePriority;
 
-  // Scale compile thresholds
-  static intx get_scaled_compile_threshold(intx threshold);
-  static intx get_scaled_freq_log(intx freq_log);
   // Tiered
   static void set_tiered_flags();
   static int  get_min_number_of_compiler_threads();
@@ -452,6 +449,18 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
 
  public:
+  // Scale compile thresholds
+  // Returns threshold scaled with CompileThresholdScaling
+  static intx scaled_compile_threshold(intx threshold, double scale);
+  static intx scaled_compile_threshold(intx threshold) {
+    return scaled_compile_threshold(threshold, CompileThresholdScaling);
+  }
+  // Returns freq_log scaled with CompileThresholdScaling
+  static intx scaled_freq_log(intx freq_log, double scale);
+  static intx scaled_freq_log(intx freq_log) {
+    return scaled_freq_log(freq_log, CompileThresholdScaling);
+  }
+
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Apply ergonomics

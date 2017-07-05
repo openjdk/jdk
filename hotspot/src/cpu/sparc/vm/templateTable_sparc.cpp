@@ -1599,13 +1599,12 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Bump bytecode pointer by displacement (take the branch)
     __ delayed()->add( O1_disp, Lbcp, Lbcp );     // add to bc addr
 
-    const Register Rcounters = G3_scratch;
-    __ get_method_counters(Lmethod, Rcounters, Lforward);
+    const Register G3_method_counters = G3_scratch;
+    __ get_method_counters(Lmethod, G3_method_counters, Lforward);
 
     if (TieredCompilation) {
       Label Lno_mdo, Loverflow;
       int increment = InvocationCounter::count_increment;
-      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
       if (ProfileInterpreter) {
         // If no method data exists, go to profile_continue.
         __ ld_ptr(Lmethod, Method::method_data_offset(), G4_scratch);
@@ -1614,6 +1613,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
         // Increment backedge counter in the MDO
         Address mdo_backedge_counter(G4_scratch, in_bytes(MethodData::backedge_counter_offset()) +
                                                  in_bytes(InvocationCounter::counter_offset()));
+        Address mask(G4_scratch, in_bytes(MethodData::backedge_mask_offset()));
         __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, G3_scratch, O0,
                                    Assembler::notZero, &Lforward);
         __ ba_short(Loverflow);
@@ -1621,9 +1621,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
       // If there's no MDO, increment counter in MethodCounters*
       __ bind(Lno_mdo);
-      Address backedge_counter(Rcounters,
+      Address backedge_counter(G3_method_counters,
               in_bytes(MethodCounters::backedge_counter_offset()) +
               in_bytes(InvocationCounter::counter_offset()));
+      Address mask(G3_method_counters, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(backedge_counter, increment, mask, G4_scratch, O0,
                                  Assembler::notZero, &Lforward);
       __ bind(Loverflow);
@@ -1663,18 +1664,19 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ jmp(O2, G0);
       __ delayed()->nop();
 
-    } else {
+    } else { // not TieredCompilation
       // Update Backedge branch separately from invocations
       const Register G4_invoke_ctr = G4;
-      __ increment_backedge_counter(Rcounters, G4_invoke_ctr, G1_scratch);
+      __ increment_backedge_counter(G3_method_counters, G4_invoke_ctr, G1_scratch);
       if (ProfileInterpreter) {
-        __ test_invocation_counter_for_mdp(G4_invoke_ctr, G3_scratch, Lforward);
+        __ test_invocation_counter_for_mdp(G4_invoke_ctr, G3_method_counters, G1_scratch, Lforward);
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(O2_bumped_count, l_cur_bcp, G3_scratch);
+
+          __ test_backedge_count_for_osr(O2_bumped_count, G3_method_counters, l_cur_bcp, G1_scratch);
         }
       } else {
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(G4_invoke_ctr, l_cur_bcp, G3_scratch);
+          __ test_backedge_count_for_osr(G4_invoke_ctr, G3_method_counters, l_cur_bcp, G1_scratch);
         }
       }
     }
