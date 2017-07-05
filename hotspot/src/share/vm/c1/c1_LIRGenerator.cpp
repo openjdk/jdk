@@ -856,7 +856,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     __ cmove(lir_cond(cond),
              LIR_OprFact::intptrConst(taken_count_offset),
              LIR_OprFact::intptrConst(not_taken_count_offset),
-             data_offset_reg);
+             data_offset_reg, as_BasicType(if_instr->x()->type()));
 
     // MDO cells are intptr_t, so the data_reg width is arch-dependent.
     LIR_Opr data_reg = new_pointer_register();
@@ -2591,7 +2591,7 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   LIR_Opr reg = rlock_result(x);
 
   __ cmp(lir_cond(x->cond()), left.result(), right.result());
-  __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg);
+  __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
 

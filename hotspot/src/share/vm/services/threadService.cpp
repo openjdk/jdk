@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 // Default is disabled.
 bool ThreadService::_thread_monitoring_contention_enabled = false;
 bool ThreadService::_thread_cpu_time_enabled = false;
+bool ThreadService::_thread_allocated_memory_enabled = false;
 
 PerfCounter*  ThreadService::_total_threads_count = NULL;
 PerfVariable* ThreadService::_live_threads_count = NULL;
@@ -84,6 +85,8 @@ void ThreadService::init() {
   if (os::is_thread_cpu_time_supported()) {
     _thread_cpu_time_enabled = true;
   }
+
+  _thread_allocated_memory_enabled = true; // Always on, so enable it
 }
 
 void ThreadService::reset_peak_thread_count() {
@@ -177,6 +180,15 @@ bool ThreadService::set_thread_cpu_time_enabled(bool flag) {
 
   bool prev = _thread_cpu_time_enabled;
   _thread_cpu_time_enabled = flag;
+
+  return prev;
+}
+
+bool ThreadService::set_thread_allocated_memory_enabled(bool flag) {
+  MutexLocker m(Management_lock);
+
+  bool prev = _thread_allocated_memory_enabled;
+  _thread_allocated_memory_enabled = flag;
 
   return prev;
 }

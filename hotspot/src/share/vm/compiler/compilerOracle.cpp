@@ -332,7 +332,7 @@ static OracleCommand parse_command_name(const char * line, int* bytes_read) {
          "command_names size mismatch");
 
   *bytes_read = 0;
-  char command[32];
+  char command[33];
   int result = sscanf(line, "%32[a-z]%n", command, bytes_read);
   for (uint i = 0; i < ARRAY_SIZE(command_names); i++) {
     if (strcmp(command, command_names[i]) == 0) {
@@ -470,6 +470,12 @@ void CompilerOracle::parse_from_line(char* line) {
   OracleCommand command = parse_command_name(line, &bytes_read);
   line += bytes_read;
 
+  if (command == UnknownCommand) {
+    tty->print_cr("CompilerOracle: unrecognized line");
+    tty->print_cr("  \"%s\"", original_line);
+    return;
+  }
+
   if (command == QuietCommand) {
     _quiet = true;
     return;
@@ -498,7 +504,7 @@ void CompilerOracle::parse_from_line(char* line) {
     line += bytes_read;
     // there might be a signature following the method.
     // signatures always begin with ( so match that by hand
-    if (1 == sscanf(line, "%*[ \t](%254[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
+    if (1 == sscanf(line, "%*[ \t](%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
       sig[0] = '(';
       line += bytes_read;
       signature = oopFactory::new_symbol_handle(sig, CHECK);
