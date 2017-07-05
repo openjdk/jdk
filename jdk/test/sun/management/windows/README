@@ -26,5 +26,3 @@ This will generate revokeall.exe.
 Note that a 32-bit version of revokeall.exe is checked into SCCS
 - this 32-bit application is also used when running on 64-bit
 versions of Windows (AMD64 and IA64).
-
-

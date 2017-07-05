@@ -93,7 +93,7 @@ class NodeCloneInfo {
  public:
 
   void set_idx(node_idx_t idx) {
-    _idx_clone_orig = _idx_clone_orig & 0xFFFFFFFF00000000 | idx;
+    _idx_clone_orig = _idx_clone_orig & CONST64(0xFFFFFFFF00000000) | idx;
   }
   node_idx_t idx() const { return (node_idx_t)(_idx_clone_orig & 0xFFFFFFFF); }
 

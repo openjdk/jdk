@@ -45,6 +45,7 @@ class MetaspaceChunkFreeListSummary;
 class MetaspaceSummary;
 class PSHeapSummary;
 class G1HeapSummary;
+class G1EvacSummary;
 class ReferenceProcessorStats;
 class TimePartitions;
 class BoolObjectClosure;
@@ -257,10 +258,14 @@ class G1NewTracer : public YoungGCTracer {
   void report_evacuation_info(EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);
 
+  void report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const;
  private:
   void send_g1_young_gc_event();
   void send_evacuation_info_event(EvacuationInfo* info);
   void send_evacuation_failed_event(const EvacuationFailedInfo& ef_info) const;
+
+  void send_young_evacuation_statistics(const G1EvacSummary& summary) const;
+  void send_old_evacuation_statistics(const G1EvacSummary& summary) const;
 };
 #endif
 

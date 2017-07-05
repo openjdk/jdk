@@ -3331,7 +3331,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
   bool constraint_result = CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterErgo);
-  Arguments::post_after_ergo_constraint_check(constraint_result);
   if (!constraint_result) {
     return JNI_EINVAL;
   }

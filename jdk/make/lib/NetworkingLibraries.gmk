@@ -35,6 +35,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
     DISABLED_WARNINGS_gcc := format-nonliteral, \
     DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand, \
     DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
+    DISABLED_WARNINGS_solstudio := E_ARG_INCOMPATIBLE_WITH_ARG_L, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnet/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

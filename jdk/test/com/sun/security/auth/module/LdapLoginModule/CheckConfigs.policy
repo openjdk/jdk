@@ -7,5 +7,3 @@ grant {
     //permission java.net.SocketPermission "*:636", "connect";
     //permission javax.security.auth.AuthPermission "modifyPrincipals";
 };
-
-
