@@ -29,7 +29,7 @@
 SUNWprivate_1.1 {
         global:
                 # Dtrace support
-                __1cJCodeCacheF_heap_;
+                __1cJCodeCacheG_heaps_;
                 __1cIUniverseO_collectedHeap_;
                 __1cGMethodG__vtbl_;
                 __1cHnmethodG__vtbl_;

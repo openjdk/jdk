@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"New.prompt.", "Nytt {0}: "},
         {"Passwords.must.differ", "L\u00F6senorden m\u00E5ste vara olika"},
         {"Re.enter.new.prompt.", "Ange nytt {0} igen: "},
-        {"Re.enter.passpword.", "Ange l\u00F6senord igen: "},
+        {"Re.enter.password.", "Ange l\u00F6senord igen: "},
         {"Re.enter.new.password.", "Ange det nya l\u00F6senordet igen: "},
         {"They.don.t.match.Try.again", "De matchar inte. F\u00F6rs\u00F6k igen"},
         {"Enter.prompt.alias.name.", "Ange aliasnamn f\u00F6r {0}:  "},

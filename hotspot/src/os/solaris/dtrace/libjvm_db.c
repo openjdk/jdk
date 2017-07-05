@@ -150,16 +150,18 @@ struct jvm_agent {
   uint64_t Use_Compressed_Oops_address;
   uint64_t Universe_narrow_oop_base_address;
   uint64_t Universe_narrow_oop_shift_address;
-  uint64_t CodeCache_heap_address;
+  uint64_t CodeCache_heaps_address;
 
   /* Volatiles */
   uint8_t  Use_Compressed_Oops;
   uint64_t Universe_narrow_oop_base;
   uint32_t Universe_narrow_oop_shift;
-  uint64_t CodeCache_low;
-  uint64_t CodeCache_high;
-  uint64_t CodeCache_segmap_low;
-  uint64_t CodeCache_segmap_high;
+  // Code cache heaps
+  int32_t  Number_of_heaps;
+  uint64_t* Heap_low;
+  uint64_t* Heap_high;
+  uint64_t* Heap_segmap_low;
+  uint64_t* Heap_segmap_high;
 
   int32_t  SIZE_CodeCache_log2_segment;
 
@@ -278,8 +280,9 @@ static int parse_vmstructs(jvm_agent_t* J) {
     }
 
     if (vmp->typeName[0] == 'C' && strcmp("CodeCache", vmp->typeName) == 0) {
-      if (strcmp("_heap", vmp->fieldName) == 0) {
-        err = read_pointer(J, vmp->address, &J->CodeCache_heap_address);
+      /* Read _heaps field of type GrowableArray<CodeHeaps*>*      */
+      if (strcmp("_heaps", vmp->fieldName) == 0) {
+        err = read_pointer(J, vmp->address, &J->CodeCache_heaps_address);
       }
     } else if (vmp->typeName[0] == 'U' && strcmp("Universe", vmp->typeName) == 0) {
       if (strcmp("_narrow_oop._base", vmp->fieldName) == 0) {
@@ -318,7 +321,9 @@ static int find_symbol(jvm_agent_t* J, const char *name, uint64_t* valuep) {
 }
 
 static int read_volatiles(jvm_agent_t* J) {
-  uint64_t ptr;
+  int i;
+  uint64_t array_data;
+  uint64_t code_heap_address;
   int err;
 
   err = find_symbol(J, "UseCompressedOops", &J->Use_Compressed_Oops_address);
@@ -334,20 +339,43 @@ static int read_volatiles(jvm_agent_t* J) {
   err = ps_pread(J->P,  J->Universe_narrow_oop_shift_address, &J->Universe_narrow_oop_shift, sizeof(uint32_t));
   CHECK_FAIL(err);
 
-  err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_memory +
-                     OFFSET_VirtualSpace_low, &J->CodeCache_low);
-  CHECK_FAIL(err);
-  err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_memory +
-                     OFFSET_VirtualSpace_high, &J->CodeCache_high);
-  CHECK_FAIL(err);
-  err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_segmap +
-                     OFFSET_VirtualSpace_low, &J->CodeCache_segmap_low);
-  CHECK_FAIL(err);
-  err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_segmap +
-                     OFFSET_VirtualSpace_high, &J->CodeCache_segmap_high);
-  CHECK_FAIL(err);
+  /* CodeCache_heaps_address points to GrowableArray<CodeHeaps*>, read _data field
+     pointing to the first entry of type CodeCache* in the array */
+  err = read_pointer(J, J->CodeCache_heaps_address + OFFSET_GrowableArray_CodeHeap_data, &array_data);
+  /* Read _len field containing the number of code heaps */
+  err = ps_pread(J->P, J->CodeCache_heaps_address + OFFSET_GrowableArray_CodeHeap_len,
+                 &J->Number_of_heaps, sizeof(J->Number_of_heaps));
 
-  err = ps_pread(J->P, J->CodeCache_heap_address + OFFSET_CodeHeap_log2_segment_size,
+  /* Allocate memory for heap configurations */
+  J->Heap_low = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_high = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_segmap_low = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_segmap_high = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+
+  /* Read code heap configurations */
+  for (i = 0; i < J->Number_of_heaps; ++i) {
+    /* Read address of heap */
+    err = read_pointer(J, array_data, &code_heap_address);
+    CHECK_FAIL(err);
+
+    err = read_pointer(J, code_heap_address + OFFSET_CodeHeap_memory +
+                       OFFSET_VirtualSpace_low, &J->Heap_low[i]);
+    CHECK_FAIL(err);
+    err = read_pointer(J, code_heap_address + OFFSET_CodeHeap_memory +
+                       OFFSET_VirtualSpace_high, &J->Heap_high[i]);
+    CHECK_FAIL(err);
+    err = read_pointer(J, code_heap_address + OFFSET_CodeHeap_segmap +
+                       OFFSET_VirtualSpace_low, &J->Heap_segmap_low[i]);
+    CHECK_FAIL(err);
+    err = read_pointer(J, code_heap_address + OFFSET_CodeHeap_segmap +
+                       OFFSET_VirtualSpace_high, &J->Heap_segmap_high[i]);
+    CHECK_FAIL(err);
+
+    /* Increment pointer to next entry */
+    array_data = array_data + POINTER_SIZE;
+  }
+
+  err = ps_pread(J->P, code_heap_address + OFFSET_CodeHeap_log2_segment_size,
                  &J->SIZE_CodeCache_log2_segment, sizeof(J->SIZE_CodeCache_log2_segment));
   CHECK_FAIL(err);
 
@@ -357,46 +385,57 @@ static int read_volatiles(jvm_agent_t* J) {
   return err;
 }
 
+static int codeheap_contains(int heap_num, jvm_agent_t* J, uint64_t ptr) {
+  return (J->Heap_low[heap_num] <= ptr && ptr < J->Heap_high[heap_num]);
+}
 
 static int codecache_contains(jvm_agent_t* J, uint64_t ptr) {
-  /* make sure the code cache is up to date */
-  return (J->CodeCache_low <= ptr && ptr < J->CodeCache_high);
+  int i;
+  for (i = 0; i < J->Number_of_heaps; ++i) {
+    if (codeheap_contains(i, J, ptr)) {
+      return 1;
+    }
+  }
+  return 0;
 }
 
-static uint64_t segment_for(jvm_agent_t* J, uint64_t p) {
-  return (p - J->CodeCache_low) >> J->SIZE_CodeCache_log2_segment;
+static uint64_t segment_for(int heap_num, jvm_agent_t* J, uint64_t p) {
+  return (p - J->Heap_low[heap_num]) >> J->SIZE_CodeCache_log2_segment;
 }
 
-static uint64_t block_at(jvm_agent_t* J, int i) {
-  return J->CodeCache_low + (i << J->SIZE_CodeCache_log2_segment);
+static uint64_t block_at(int heap_num, jvm_agent_t* J, int i) {
+  return J->Heap_low[heap_num] + (i << J->SIZE_CodeCache_log2_segment);
 }
 
 static int find_start(jvm_agent_t* J, uint64_t ptr, uint64_t *startp) {
   int err;
+  int i;
 
-  *startp = 0;
-  if (J->CodeCache_low <= ptr && ptr < J->CodeCache_high) {
-    int32_t used;
-    uint64_t segment = segment_for(J, ptr);
-    uint64_t block = J->CodeCache_segmap_low;
-    uint8_t tag;
-    err = ps_pread(J->P, block + segment, &tag, sizeof(tag));
-    CHECK_FAIL(err);
-    if (tag == 0xff)
-      return PS_OK;
-    while (tag > 0) {
+  for (i = 0; i < J->Number_of_heaps; ++i) {
+    *startp = 0;
+    if (codeheap_contains(i, J, ptr)) {
+      int32_t used;
+      uint64_t segment = segment_for(i, J, ptr);
+      uint64_t block = J->Heap_segmap_low[i];
+      uint8_t tag;
       err = ps_pread(J->P, block + segment, &tag, sizeof(tag));
       CHECK_FAIL(err);
-      segment -= tag;
+      if (tag == 0xff)
+        return PS_OK;
+      while (tag > 0) {
+        err = ps_pread(J->P, block + segment, &tag, sizeof(tag));
+        CHECK_FAIL(err);
+        segment -= tag;
+      }
+      block = block_at(i, J, segment);
+      err = ps_pread(J->P, block + OFFSET_HeapBlockHeader_used, &used, sizeof(used));
+      CHECK_FAIL(err);
+      if (used) {
+        *startp = block + SIZE_HeapBlockHeader;
+      }
     }
-    block = block_at(J, segment);
-    err = ps_pread(J->P, block + OFFSET_HeapBlockHeader_used, &used, sizeof(used));
-    CHECK_FAIL(err);
-    if (used) {
-      *startp = block + SIZE_HeapBlockHeader;
-    }
+    return PS_OK;
   }
-  return PS_OK;
 
  fail:
   return -1;
