@@ -2446,22 +2446,18 @@ oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
 
 // Support for java_dyn_CallSite
 
-int java_dyn_CallSite::_type_offset;
 int java_dyn_CallSite::_target_offset;
-int java_dyn_CallSite::_vmmethod_offset;
+int java_dyn_CallSite::_caller_method_offset;
+int java_dyn_CallSite::_caller_bci_offset;
 
 void java_dyn_CallSite::compute_offsets() {
   if (!EnableInvokeDynamic)  return;
   klassOop k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
-    compute_offset(_type_offset,   k, vmSymbols::type_name(),   vmSymbols::java_dyn_MethodType_signature(), true);
-    compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_dyn_MethodHandle_signature(), true);
-    compute_offset(_vmmethod_offset, k, vmSymbols::vmmethod_name(), vmSymbols::object_signature(), true);
+    compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_dyn_MethodHandle_signature());
+    compute_offset(_caller_method_offset, k, vmSymbols::vmmethod_name(), vmSymbols::sun_dyn_MemberName_signature());
+    compute_offset(_caller_bci_offset, k, vmSymbols::vmindex_name(), vmSymbols::int_signature());
   }
-}
-
-oop java_dyn_CallSite::type(oop site) {
-  return site->obj_field(_type_offset);
 }
 
 oop java_dyn_CallSite::target(oop site) {
@@ -2472,12 +2468,20 @@ void java_dyn_CallSite::set_target(oop site, oop target) {
   site->obj_field_put(_target_offset, target);
 }
 
-oop java_dyn_CallSite::vmmethod(oop site) {
-  return site->obj_field(_vmmethod_offset);
+oop java_dyn_CallSite::caller_method(oop site) {
+  return site->obj_field(_caller_method_offset);
 }
 
-void java_dyn_CallSite::set_vmmethod(oop site, oop ref) {
-  site->obj_field_put(_vmmethod_offset, ref);
+void java_dyn_CallSite::set_caller_method(oop site, oop ref) {
+  site->obj_field_put(_caller_method_offset, ref);
+}
+
+jint java_dyn_CallSite::caller_bci(oop site) {
+  return site->int_field(_caller_bci_offset);
+}
+
+void java_dyn_CallSite::set_caller_bci(oop site, jint bci) {
+  site->int_field_put(_caller_bci_offset, bci);
 }
 
 

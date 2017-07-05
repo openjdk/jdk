@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1511,7 +1511,7 @@ class MacroAssembler: public Assembler {
   void extend_sign(Register hi, Register lo);
 
   // Loading values by size and signed-ness
-  void load_sized_value(Register dst, Address src, int size_in_bytes, bool is_signed);
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
 
   // Support for inc/dec with optimal instruction selection depending on value
 

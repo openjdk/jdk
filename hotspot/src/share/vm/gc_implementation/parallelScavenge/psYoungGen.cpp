@@ -521,7 +521,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     }
 
     eden_end = eden_start + eden_size;
-    assert(eden_end >= eden_start, "addition overflowed")
+    assert(eden_end >= eden_start, "addition overflowed");
 
     // To may resize into from space as long as it is clear of live data.
     // From space must remain page aligned, though, so we need to do some
@@ -605,7 +605,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
                        pointer_delta(to_start, eden_start, sizeof(char)));
     }
     eden_end = eden_start + eden_size;
-    assert(eden_end >= eden_start, "addition overflowed")
+    assert(eden_end >= eden_start, "addition overflowed");
 
     // Could choose to not let eden shrink
     // to_start = MAX2(to_start, eden_end);

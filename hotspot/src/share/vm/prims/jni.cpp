@@ -3311,6 +3311,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     OrderAccess::release_store(&vm_created, 0);
   }
 
+  NOT_PRODUCT(test_error_handler(ErrorHandlerTest));
   return result;
 }
 

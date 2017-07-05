@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,18 +293,10 @@ class SlowSignatureHandler
   intptr_t* _fp_identifiers;
   unsigned int _num_args;
 
-#ifdef ASSERT
-  void verify_tag(frame::Tag t) {
-    assert(!TaggedStackInterpreter ||
-           *(intptr_t*)(_from+Interpreter::local_tag_offset_in_bytes(0)) == t, "wrong tag");
-  }
-#endif // ASSERT
-
   virtual void pass_int()
   {
     jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_int_register_parameters_c-1) {
       *_reg_args++ = from_obj;
@@ -317,8 +309,7 @@ class SlowSignatureHandler
   virtual void pass_long()
   {
     intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_int_register_parameters_c-1) {
       *_reg_args++ = from_obj;
@@ -331,8 +322,7 @@ class SlowSignatureHandler
   virtual void pass_object()
   {
     intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagReference));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
     if (_num_args < Argument::n_int_register_parameters_c-1) {
       *_reg_args++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
       _num_args++;
@@ -344,8 +334,7 @@ class SlowSignatureHandler
   virtual void pass_float()
   {
     jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
       *_reg_args++ = from_obj;
@@ -359,8 +348,7 @@ class SlowSignatureHandler
   virtual void pass_double()
   {
     intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
       *_reg_args++ = from_obj;
@@ -397,18 +385,10 @@ class SlowSignatureHandler
   unsigned int _num_int_args;
   unsigned int _num_fp_args;
 
-#ifdef ASSERT
-  void verify_tag(frame::Tag t) {
-    assert(!TaggedStackInterpreter ||
-           *(intptr_t*)(_from+Interpreter::local_tag_offset_in_bytes(0)) == t, "wrong tag");
-  }
-#endif // ASSERT
-
   virtual void pass_int()
   {
     jint from_obj = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
@@ -421,8 +401,7 @@ class SlowSignatureHandler
   virtual void pass_long()
   {
     intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = from_obj;
@@ -435,8 +414,7 @@ class SlowSignatureHandler
   virtual void pass_object()
   {
     intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagReference));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
       *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
@@ -449,8 +427,7 @@ class SlowSignatureHandler
   virtual void pass_float()
   {
     jint from_obj = *(jint*)(_from+Interpreter::local_offset_in_bytes(0));
-    debug_only(verify_tag(frame::TagValue));
-    _from -= Interpreter::stackElementSize();
+    _from -= Interpreter::stackElementSize;
 
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
@@ -463,7 +440,7 @@ class SlowSignatureHandler
   virtual void pass_double()
   {
     intptr_t from_obj = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    _from -= 2*Interpreter::stackElementSize();
+    _from -= 2*Interpreter::stackElementSize;
 
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;

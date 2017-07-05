@@ -102,7 +102,7 @@ void ResolutionErrorTable::always_strong_classes_do(OopClosure* blk) {
 
 // Remove unloaded entries from the table
 void ResolutionErrorTable::purge_resolution_errors(BoolObjectClosure* is_alive) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint")
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   for (int i = 0; i < table_size(); i++) {
     for (ResolutionErrorEntry** p = bucket_addr(i); *p != NULL; ) {
       ResolutionErrorEntry* entry = *p;

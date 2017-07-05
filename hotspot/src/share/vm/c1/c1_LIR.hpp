@@ -1062,7 +1062,7 @@ class LIR_OpJavaCall: public LIR_OpCall {
       is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
       ||
       (method()->holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
-       method()->name()           == ciSymbol::invoke_name());
+       methodOopDesc::is_method_handle_invoke_name(method()->name()->sid()));
   }
 
   intptr_t vtable_offset() const {

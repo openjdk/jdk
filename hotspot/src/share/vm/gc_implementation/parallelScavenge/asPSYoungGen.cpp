@@ -326,7 +326,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     }
 
     eden_end = eden_start + eden_size;
-    assert(eden_end >= eden_start, "addition overflowed")
+    assert(eden_end >= eden_start, "addition overflowed");
 
     // To may resize into from space as long as it is clear of live data.
     // From space must remain page aligned, though, so we need to do some
@@ -413,7 +413,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
                        pointer_delta(to_start, eden_start, sizeof(char)));
     }
     eden_end = eden_start + eden_size;
-    assert(eden_end >= eden_start, "addition overflowed")
+    assert(eden_end >= eden_start, "addition overflowed");
 
     // Don't let eden shrink down to 0 or less.
     eden_end = MAX2(eden_end, eden_start + alignment);

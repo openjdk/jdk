@@ -224,8 +224,8 @@ void InterpreterOopMap::verify() {
   // If we are doing mark sweep _method may not have a valid header
   // $$$ This used to happen only for m/s collections; we might want to
   // think of an appropriate generalization of this distinction.
-  guarantee(Universe::heap()->is_gc_active() ||
-            _method->is_oop_or_null(), "invalid oop in oopMapCache")
+  guarantee(Universe::heap()->is_gc_active() || _method->is_oop_or_null(),
+            "invalid oop in oopMapCache");
 }
 
 #ifdef ENABLE_ZAP_DEAD_LOCALS
