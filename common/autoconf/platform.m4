@@ -304,6 +304,37 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
   fi
   AC_SUBST(OPENJDK_TARGET_CPU_LIBDIR)
 
+  # Now do the same for OPENJDK_BUILD_CPU...
+  # Also store the legacy naming of the cpu.
+  # Ie i586 and amd64 instead of x86 and x86_64
+  OPENJDK_BUILD_CPU_LEGACY="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    OPENJDK_BUILD_CPU_LEGACY="i586"
+  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    # On all platforms except MacOSX replace x86_64 with amd64.
+    OPENJDK_BUILD_CPU_LEGACY="amd64"
+  fi
+  AC_SUBST(OPENJDK_BUILD_CPU_LEGACY)
+
+  # And the second legacy naming of the cpu.
+  # Ie i386 and amd64 instead of x86 and x86_64.
+  OPENJDK_BUILD_CPU_LEGACY_LIB="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    OPENJDK_BUILD_CPU_LEGACY_LIB="i386"
+  elif test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    OPENJDK_BUILD_CPU_LEGACY_LIB="amd64"
+  fi
+  AC_SUBST(OPENJDK_BUILD_CPU_LEGACY_LIB)
+
+  # This is the name of the cpu (but using i386 and amd64 instead of
+  # x86 and x86_64, respectively), preceeded by a /, to be used when
+  # locating libraries. On macosx, it's empty, though.
+  OPENJDK_BUILD_CPU_LIBDIR="/$OPENJDK_BUILD_CPU_LEGACY_LIB"
+  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+    OPENJDK_BUILD_CPU_LIBDIR=""
+  fi
+  AC_SUBST(OPENJDK_BUILD_CPU_LIBDIR)
+
   # OPENJDK_TARGET_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
   # /amd64 or /sparcv9. This string is appended to some library paths, like this:
   # /usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libexample.so
@@ -346,6 +377,24 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
   fi
   AC_SUBST(OPENJDK_TARGET_CPU_JLI_CFLAGS)
 
+  OPENJDK_BUILD_CPU_JLI="$OPENJDK_BUILD_CPU"
+  if test "x$OPENJDK_BUILD_CPU" = xx86; then
+    OPENJDK_BUILD_CPU_JLI="i386"
+  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
+    # On all platforms except macosx, we replace x86_64 with amd64.
+    OPENJDK_BUILD_CPU_JLI="amd64"
+  fi
+  # Now setup the -D flags for building libjli.
+  OPENJDK_BUILD_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_BUILD_CPU_JLI\"'"
+  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+    if test "x$OPENJDK_BUILD_CPU_ARCH" = xsparc; then
+      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
+    elif test "x$OPENJDK_BUILD_CPU_ARCH" = xx86; then
+      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
+    fi
+  fi
+  AC_SUBST(OPENJDK_BUILD_CPU_JLI_CFLAGS)
+
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       OPENJDK_TARGET_OS_EXPORT_DIR=macosx
   else
@@ -362,6 +411,11 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
     fi
   fi
   AC_SUBST(LP64,$A_LP64)
+  if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
+    if test "x$OPENJDK_BUILD_OS" = xlinux || test "x$OPENJDK_BUILD_OS" = xmacosx; then
+      OPENJDK_BUILD_ADD_LP64="-D_LP64=1"
+    fi
+  fi
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?

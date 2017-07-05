@@ -1,3 +1,0 @@
-# last mixer is default mixer
-com.sun.media.sound.PortMixerProvider
-com.sun.media.sound.DirectAudioDeviceProvider

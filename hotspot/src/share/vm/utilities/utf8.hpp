@@ -73,6 +73,9 @@ class UTF8 : AllStatic {
   static bool   equal(const jbyte* base1, int length1, const jbyte* base2,int length2);
   static bool   is_supplementary_character(const unsigned char* str);
   static jint   get_supplementary_character(const unsigned char* str);
+
+  static bool   is_legal_utf8(const unsigned char* buffer, int length,
+                              bool version_leq_47);
 };
 
 

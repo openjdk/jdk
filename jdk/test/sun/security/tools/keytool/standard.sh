@@ -57,9 +57,11 @@ case "$OS" in
     ;;
 esac
 
-${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
+EXTRAOPTS="-XaddExports:java.base/sun.security.tools.keytool=ALL-UNNAMED,java.base/sun.security.util=ALL-UNNAMED,java.base/sun.security.x509=ALL-UNNAMED"
 
-echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dfile KeyToolTest
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
+
+echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} -Dfile KeyToolTest
 status=$?
 
 exit $status

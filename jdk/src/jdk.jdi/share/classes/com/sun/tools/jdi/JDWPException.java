@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ class JDWPException extends Exception {
         switch (errorCode) {
             case JDWP.Error.INVALID_OBJECT:
                 return new ObjectCollectedException();
+            case JDWP.Error.INVALID_MODULE:
+                return new InvalidModuleException();
             case JDWP.Error.VM_DEAD:
                 return new VMDisconnectedException();
             case JDWP.Error.OUT_OF_MEMORY:

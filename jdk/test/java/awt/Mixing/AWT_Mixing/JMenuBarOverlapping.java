@@ -47,9 +47,10 @@ import test.java.awt.regtesthelpers.Util;
 @test
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
+@library /java/awt/patchlib  ../../regtesthelpers
 @modules java.desktop/sun.awt
          java.desktop/java.awt.peer
+@build java.desktop/java.awt.Helper
 @build Util
 @run main JMenuBarOverlapping
  */

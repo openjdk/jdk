@@ -25,6 +25,7 @@
  * @test
  * @bug 8087190
  * @summary Exercise the sun.net.util.IPAddressUtil class
+ * @modules java.base/sun.net.util
  */
 
 import sun.net.util.*;

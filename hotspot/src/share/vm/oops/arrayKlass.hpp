@@ -113,7 +113,7 @@ class ArrayKlass: public Klass {
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   // Return a handle.
-  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, TRAPS);
+  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, ModuleEntry* module, TRAPS);
 
 
   // jvm support

@@ -51,8 +51,6 @@ import sun.lwawt.*;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.security.action.GetBooleanAction;
 
-import sun.util.CoreResourceBundleControl;
-
 @SuppressWarnings("serial") // JDK implementation class
 final class NamedCursor extends Cursor {
     NamedCursor(String name) {
@@ -84,9 +82,7 @@ public final class LWCToolkit extends LWToolkit {
             public ResourceBundle run() {
                 ResourceBundle platformResources = null;
                 try {
-                    platformResources =
-                            ResourceBundle.getBundle("sun.awt.resources.awtosx",
-                                    CoreResourceBundleControl.getRBControlInstance());
+                    platformResources = ResourceBundle.getBundle("sun.awt.resources.awtosx");
                 } catch (MissingResourceException e) {
                     // No resource file; defaults will be used.
                 }

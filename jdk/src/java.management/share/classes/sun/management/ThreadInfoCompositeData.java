@@ -32,7 +32,6 @@ import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
 
 /**
  * A CompositeData for ThreadInfo for the local management support.
@@ -210,54 +209,16 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             threadInfoCompositeType = (CompositeType)
                 MappedMXBeanType.toOpenType(ThreadInfo.class);
             // Form a CompositeType for JDK 5.0 ThreadInfo version
-            String[] itemNames =
-                threadInfoCompositeType.keySet().toArray(new String[0]);
-            int numV5Attributes = threadInfoItemNames.length -
-                threadInfoV6Attributes.length - threadInfoV9Attributes.length;
-            String[] v5ItemNames = new String[numV5Attributes];
-            String[] v5ItemDescs = new String[numV5Attributes];
-            OpenType<?>[] v5ItemTypes = new OpenType<?>[numV5Attributes];
-            int i = 0;
-            for (String n : itemNames) {
-                if (isV5Attribute(n)) {
-                    v5ItemNames[i] = n;
-                    v5ItemDescs[i] = threadInfoCompositeType.getDescription(n);
-                    v5ItemTypes[i] = threadInfoCompositeType.getType(n);
-                    i++;
-                }
-            }
 
             threadInfoV5CompositeType =
-                new CompositeType("java.lang.management.ThreadInfo",
-                                  "J2SE 5.0 java.lang.management.ThreadInfo",
-                                  v5ItemNames,
-                                  v5ItemDescs,
-                                  v5ItemTypes);
-
-
-            // Form a CompositeType for JDK 6.0 ThreadInfo version
-            int numV6Attributes = threadInfoItemNames.length -
-                                      threadInfoV9Attributes.length;
-            String[] v6ItemNames = new String[numV6Attributes];
-            String[] v6ItemDescs = new String[numV6Attributes];
-            OpenType<?>[] v6ItemTypes = new OpenType<?>[numV6Attributes];
-            i = 0;
-            for (String n : itemNames) {
-                if (isV5Attribute(n) || isV6Attribute(n)) {
-                    v6ItemNames[i] = n;
-                    v6ItemDescs[i] = threadInfoCompositeType.getDescription(n);
-                    v6ItemTypes[i] = threadInfoCompositeType.getType(n);
-                    i++;
-                }
-            }
+                TypeVersionMapper.getInstance().getVersionedCompositeType(
+                    threadInfoCompositeType, TypeVersionMapper.V5
+                );
 
             threadInfoV6CompositeType =
-                new CompositeType("java.lang.management.ThreadInfo",
-                                  "Java SE 6 java.lang.management.ThreadInfo",
-                                  v6ItemNames,
-                                  v6ItemDescs,
-                                  v6ItemTypes);
-
+                TypeVersionMapper.getInstance().getVersionedCompositeType(
+                    threadInfoCompositeType, TypeVersionMapper.V6
+                );
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
@@ -275,7 +236,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         lockInfoCompositeType = cd.getCompositeType();
     }
 
-    private static boolean isV5Attribute(String itemName) {
+    static boolean isV5Attribute(String itemName) {
         for (String n : threadInfoV6Attributes) {
             if (itemName.equals(n)) {
                 return false;
@@ -289,7 +250,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         return true;
     }
 
-    private static boolean isV6Attribute(String itemName) {
+    static boolean isV6Attribute(String itemName) {
         for (String n : threadInfoV9Attributes) {
             if (itemName.equals(n)) {
                 return false;
@@ -446,8 +407,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             // check if cd is an older version
             if (!isTypeMatched(threadInfoV5CompositeType, type) &&
                 !isTypeMatched(threadInfoV6CompositeType, type)) {
-              throw new IllegalArgumentException(
-                  "Unexpected composite type for ThreadInfo");
+                throw new IllegalArgumentException(
+                    "Unexpected composite type for ThreadInfo");
             }
         }
 

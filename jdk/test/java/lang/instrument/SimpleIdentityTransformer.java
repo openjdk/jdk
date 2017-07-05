@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassFileTransformer;
 
+import java.lang.reflect.Module;
 import java.security.*;
 
 /*
@@ -59,4 +60,16 @@ SimpleIdentityTransformer implements ClassFileTransformer {
         return newBuffer;
     }
 
+    public byte[]
+    transform(
+        Module module,
+        String className,
+        Class<?> classBeingRedefined,
+        ProtectionDomain    protectionDomain,
+        byte[] classfileBuffer) {
+        byte[] newBuffer = new byte[classfileBuffer.length];
+        System.arraycopy(classfileBuffer, 0, newBuffer, 0, classfileBuffer.length);
+
+        return newBuffer;
+    }
 }

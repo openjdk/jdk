@@ -51,7 +51,6 @@ class VMManagementImpl implements VMManagement {
     private static boolean threadContentionMonitoringSupport;
     private static boolean currentThreadCpuTimeSupport;
     private static boolean otherThreadCpuTimeSupport;
-    private static boolean bootClassPathSupport;
     private static boolean objectMonitorUsageSupport;
     private static boolean synchronizerUsageSupport;
     private static boolean threadAllocatedMemorySupport;
@@ -87,7 +86,7 @@ class VMManagementImpl implements VMManagement {
     }
 
     public boolean isBootClassPathSupported() {
-        return bootClassPathSupport;
+        return false;
     }
 
     public boolean isObjectMonitorUsageSupported() {
@@ -172,8 +171,8 @@ class VMManagementImpl implements VMManagement {
     }
 
     public String   getBootClassPath( ) {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.boot.class.path"));
+        throw new UnsupportedOperationException(
+            "Boot class path mechanism is not supported");
     }
 
     public long getUptime() {

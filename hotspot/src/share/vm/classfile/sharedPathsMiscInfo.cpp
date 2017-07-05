@@ -77,7 +77,7 @@ void SharedPathsMiscInfo::print_path(int type, const char* path) {
   outputStream* out = LogHandle(classpath)::info_stream();
   switch (type) {
   case BOOT:
-    out->print("Expecting -Dsun.boot.class.path=%s", path);
+    out->print("Expecting BOOT path=%s", path);
     break;
   case NON_EXIST:
     out->print("Expecting that %s does not exist", path);
@@ -126,7 +126,7 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
   switch (type) {
   case BOOT:
     if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
-      return fail("[BOOT classpath mismatch, actual: -Dsun.boot.class.path=", Arguments::get_sysclasspath());
+      return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
     }
     break;
   case NON_EXIST: // fall-through

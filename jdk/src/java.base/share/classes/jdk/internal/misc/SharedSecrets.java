@@ -25,6 +25,7 @@
 
 package jdk.internal.misc;
 
+import java.lang.module.ModuleDescriptor;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
@@ -45,6 +46,8 @@ public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaLangAccess javaLangAccess;
+    private static JavaLangModuleAccess javaLangModuleAccess;
+    private static JavaLangReflectModuleAccess javaLangReflectModuleAccess;
     private static JavaLangInvokeAccess javaLangInvokeAccess;
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaIOAccess javaIOAccess;
@@ -56,6 +59,7 @@ public class SharedSecrets {
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
+    private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
@@ -93,6 +97,27 @@ public class SharedSecrets {
             } catch (ClassNotFoundException e) {};
         }
         return javaLangInvokeAccess;
+    }
+
+    public static void setJavaLangModuleAccess(JavaLangModuleAccess jlrma) {
+        javaLangModuleAccess = jlrma;
+    }
+
+    public static JavaLangModuleAccess getJavaLangModuleAccess() {
+        if (javaLangModuleAccess == null) {
+            unsafe.ensureClassInitialized(ModuleDescriptor.class);
+        }
+        return javaLangModuleAccess;
+    }
+
+    public static void setJavaLangReflectModuleAccess(JavaLangReflectModuleAccess jlrma) {
+        javaLangReflectModuleAccess = jlrma;
+    }
+
+    public static JavaLangReflectModuleAccess getJavaLangReflectModuleAccess() {
+        if (javaLangReflectModuleAccess == null)
+            unsafe.ensureClassInitialized(java.lang.reflect.Module.class);
+        return javaLangReflectModuleAccess;
     }
 
     public static void setJavaLangRefAccess(JavaLangRefAccess jlra) {
@@ -228,5 +253,13 @@ public class SharedSecrets {
 
     public static void setJavaBeansAccess(JavaBeansAccess access) {
         javaBeansAccess = access;
+    }
+
+    public static JavaUtilResourceBundleAccess getJavaUtilResourceBundleAccess() {
+        return javaUtilResourceBundleAccess;
+    }
+
+    public static void setJavaUtilResourceBundleAccess(JavaUtilResourceBundleAccess access) {
+        javaUtilResourceBundleAccess = access;
     }
 }

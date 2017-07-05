@@ -431,25 +431,21 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
         // Use ServiceLoader to dynamically acquire installed locales' tags.
         try {
-            String nonBaseTags = AccessController.doPrivileged(new PrivilegedExceptionAction<String>() {
-                @Override
-                public String run() {
-                    String tags = null;
-                    for (LocaleDataMetaInfo ldmi :
-                         ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
-                        if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
-                            String t = ldmi.availableLanguageTags(category);
-                            if (t != null) {
-                                if (tags == null) {
-                                    tags = t;
-                                } else {
-                                    tags += " " + t;
-                                }
+            String nonBaseTags = AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
+                StringBuilder tags = new StringBuilder();
+                for (LocaleDataMetaInfo ldmi :
+                        ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+                    if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
+                        String t = ldmi.availableLanguageTags(category);
+                        if (t != null) {
+                            if (tags.length() > 0) {
+                                tags.append(' ');
                             }
+                            tags.append(t);
                         }
                     }
-                    return tags;
                 }
+                return tags.toString();
             });
 
             if (nonBaseTags != null) {

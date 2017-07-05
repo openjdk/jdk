@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ enum {
     JVMTI_VERSION_1_0 = 0x30010000,
     JVMTI_VERSION_1_1 = 0x30010100,
     JVMTI_VERSION_1_2 = 0x30010200,
+    JVMTI_VERSION_9   = 0x30090000,
 
     JVMTI_VERSION = 0x30000000 + (</xsl:text>
   <xsl:value-of select="//specification/@majorversion"/>
@@ -137,21 +138,21 @@ enum {
   <xsl:text> */
 };
 
-JNIEXPORT jint JNICALL 
+JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved);
 
 JNIEXPORT jint JNICALL
 Agent_OnAttach(JavaVM* vm, char* options, void* reserved);
 
-JNIEXPORT void JNICALL 
+JNIEXPORT void JNICALL
 Agent_OnUnload(JavaVM *vm);
 
     /* Forward declaration of the environment */
-        
+
 struct _jvmtiEnv;
 
 struct jvmtiInterface_1_;
-  
+
 #ifdef __cplusplus
 typedef _jvmtiEnv jvmtiEnv;
 #else
@@ -169,7 +170,6 @@ typedef const struct jvmtiInterface_1_ *jvmtiEnv;
 #endif /* __cplusplus */
 
 #endif /* !_JAVA_JVMTI_H_ */
-
 </xsl:text>
 </xsl:template>
 
@@ -238,7 +238,7 @@ typedef void (JNICALL *jvmtiEvent</xsl:text>
     (jvmtiEnv *jvmti_env</xsl:text>
   <xsl:apply-templates select="parameters" mode="signature">
     <xsl:with-param name="comma">
-      <xsl:text>, 
+      <xsl:text>,
      </xsl:text>
     </xsl:with-param>
    </xsl:apply-templates>
@@ -250,7 +250,7 @@ typedef void (JNICALL *jvmtiEvent</xsl:text>
    <xsl:text>
 
     /* Function Interface */
-    
+
 typedef struct jvmtiInterface_1_ {
 
 </xsl:text>
@@ -290,7 +290,7 @@ struct _jvmtiEnv {
       <xsl:text>) (jvmtiEnv* env</xsl:text>
       <xsl:apply-templates select="$thisFunction/parameters" mode="signature">
         <xsl:with-param name="comma">
-          <xsl:text>, 
+          <xsl:text>,
     </xsl:text>
         </xsl:with-param>
       </xsl:apply-templates>
@@ -365,7 +365,7 @@ struct _jvmtiEnv {
 
     /* </xsl:text>
     <xsl:value-of select="@label"/>
-    <xsl:text> */ 
+    <xsl:text> */
 </xsl:text>
     <xsl:choose>
       <xsl:when test="@kind='enum'">

@@ -41,7 +41,7 @@ public class HtmlReporter implements Reporter {
     static final int PRECISION = 3;
     static final String[] PROPNAMES = { "os.name", "os.arch", "os.version",
         "java.home", "java.vm.version", "java.vm.vendor", "java.vm.name",
-        "java.compiler", "java.class.path", "sun.boot.class.path" };
+        "java.compiler", "java.class.path" };
 
     OutputStream out;
     String title;
