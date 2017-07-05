@@ -231,6 +231,9 @@ public class CallSite {
         // identical call sites with the same method name/bci are
         // possible so we have to try them all until we find the late
         // inline call site that has a matching inline id.
+        if (calls == null) {
+            return null;
+        }
         CallSite site = sites.pop();
         for (CallSite c : calls) {
             if (c.matches(site)) {
@@ -247,6 +250,27 @@ public class CallSite {
             }
         }
         sites.push(site);
+        return null;
+    }
+
+    public ArrayDeque<CallSite> findCallSite2(CallSite site) {
+        if (calls == null) {
+            return null;
+        }
+
+        for (CallSite c : calls) {
+            if (c.matches(site)) {
+                ArrayDeque<CallSite> stack = new ArrayDeque<CallSite>();
+                stack.push(c);
+                return stack;
+            } else {
+                ArrayDeque<CallSite> stack = c.findCallSite2(site);
+                if (stack != null) {
+                    stack.push(c);
+                    return stack;
+                }
+            }
+        }
         return null;
     }
 

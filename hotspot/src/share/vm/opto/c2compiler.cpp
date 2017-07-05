@@ -155,6 +155,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
       }
     }
 
+    // print inlining for last compilation only
+    C.dump_print_inlining();
+
     // No retry; just break the loop.
     break;
   }

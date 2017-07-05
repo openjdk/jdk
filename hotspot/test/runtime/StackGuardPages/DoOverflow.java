@@ -21,52 +21,25 @@
  * questions.
  */
 
-#include <assert.h>
-#include <jni.h>
+public class DoOverflow {
 
-#include <pthread.h>
+    static int count;
 
-JavaVM* jvm;
+    public void overflow() {
+        count+=1;
+        overflow();
+    }
 
-void *
-floobydust (void *p) {
-  JNIEnv *env;
-  jclass class_id;
-  jmethodID method_id;
+    public static void printAlive() {
+      System.out.println("Java thread is alive.");
+    }
 
-  (*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL);
-
-  class_id = (*env)->FindClass (env, "DoOverflow");
-  assert (class_id);
-
-  method_id = (*env)->GetStaticMethodID(env, class_id, "printIt", "()V");
-  assert (method_id);
-
-  (*env)->CallStaticVoidMethod(env, class_id, method_id, NULL);
-
-  (*jvm)->DetachCurrentThread(jvm);
-}
-
-int
-main (int argc, const char** argv) {
-  JavaVMOption options[1];
-  options[0].optionString = (char*) "-Xss320k";
-
-  JavaVMInitArgs vm_args;
-  vm_args.version = JNI_VERSION_1_2;
-  vm_args.ignoreUnrecognized = JNI_TRUE;
-  vm_args.options = options;
-  vm_args.nOptions = 1;
-
-  JNIEnv* env;
-  jint result = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
-  assert(result >= 0);
-
-  pthread_t thr;
-  pthread_create(&thr, NULL, floobydust, NULL);
-  pthread_join(thr, NULL);
-
-  floobydust(NULL);
-
-  return 0;
+    public static void printIt() {
+        System.out.println("Going to overflow stack");
+        try {
+            new DoOverflow().overflow();
+        } catch(java.lang.StackOverflowError e) {
+            System.out.println("Test PASSED. Got StackOverflowError at " + count + " iteration");
+        }
+    }
 }
