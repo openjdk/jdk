@@ -78,4 +78,5 @@ FILES_c = \
 	awt_Plugin.c \
 	gtk2_interface.c \
         swing_GTKEngine.c \
-        swing_GTKStyle.c
+        swing_GTKStyle.c \
+        rect.c

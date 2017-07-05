@@ -28,6 +28,7 @@
 #include "jvm.h"
 #include "jlong.h"
 #include "sun_nio_ch_DevPollArrayWrapper.h"
+#include "java_lang_Integer.h"
 #include <sys/poll.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -192,7 +193,11 @@ Java_sun_nio_ch_DevPollArrayWrapper_fdLimit(JNIEnv *env, jclass this)
         JNU_ThrowIOExceptionWithLastError(env,
                                           "getrlimit failed");
     }
-    return (jint)rlp.rlim_max;
+    if (rlp.rlim_max < 0 || rlp.rlim_max > java_lang_Integer_MAX_VALUE) {
+        return java_lang_Integer_MAX_VALUE;
+    } else {
+        return (jint)rlp.rlim_max;
+    }
 }
 
 JNIEXPORT void JNICALL

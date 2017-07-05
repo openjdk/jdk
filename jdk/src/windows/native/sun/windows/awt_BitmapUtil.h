@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,32 @@ public:
      */
     static HBITMAP CreateV4BitmapFromARGB(int width, int height, int* imageData);
 
+    /**
+     * Creates 32-bit premultiplied ARGB V4 Bitmap (Win95-compatible) from
+     * specified ARGB Pre input data.
+     */
+    static HBITMAP CreateBitmapFromARGBPre(int width, int height,
+                                           int srcStride,
+                                           int* imageData);
+
+    /**
+     * Transforms the given bitmap into an HRGN representing the transparency
+     * of the bitmap.
+     */
+    static HRGN BitmapToRgn(HBITMAP hBitmap);
+
+    /**
+     * Makes a copy of the given bitmap. Blends every pixel of the source
+     * with the given blendColor and alpha. If alpha == 0, the function
+     * simply makes a plain copy of the source without any blending.
+     */
+    static HBITMAP BlendCopy(HBITMAP hSrcBitmap, COLORREF blendColor, BYTE alpha);
+
+    /**
+     * Creates a 32 bit ARGB bitmap. Returns the bitmap handle.
+     * The pointer to the bitmap data is stored into bitmapBitsPtr.
+     */
+    static HBITMAP CreateARGBBitmap(int width, int height, void ** bitmapBitsPtr);
 };
 
 #endif

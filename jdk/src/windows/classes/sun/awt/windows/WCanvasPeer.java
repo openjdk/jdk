@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import sun.awt.AWTAccessor;
 import sun.awt.ComponentAccessor;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
@@ -37,42 +38,10 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
 
     private boolean eraseBackground;
 
-    Method resetGCMethod;
-
     // Toolkit & peer internals
 
     WCanvasPeer(Component target) {
         super(target);
-    }
-
-    /*
-     * From the DisplayChangedListener interface.
-     *
-     * Overrides WComponentPeer version because Canvases can be created with
-     * a non-defulat GraphicsConfiguration, which is no longer valid.
-     * Up-called for other windows peer instances (WPanelPeer, WWindowPeer).
-     */
-    public void displayChanged() {
-        clearLocalGC();
-        resetTargetGC();
-        super.displayChanged();
-    }
-
-    /*
-     * Reset the graphicsConfiguration member of our target Component.
-     * Component.resetGC() is a package-private method, so we have to call it
-     * through reflection.
-     */
-    public void resetTargetGC() {
-        ComponentAccessor.resetGC((Component)target);
-    }
-
-    /*
-     * Clears the peer's winGraphicsConfig member.
-     * Overridden by WWindowPeer, which shouldn't have a null winGraphicsConfig.
-     */
-    void clearLocalGC() {
-        winGraphicsConfig = null;
     }
 
     native void create(WComponentPeer parent);
@@ -110,16 +79,20 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
     }
 
     public void print(Graphics g) {
-        Dimension d = ((Component)target).getSize();
-        if (g instanceof Graphics2D ||
-            g instanceof sun.awt.Graphics2Delegate) {
-            // background color is setup correctly, so just use clearRect
-            g.clearRect(0, 0, d.width, d.height);
-        } else {
-            // emulate clearRect
-            g.setColor(((Component)target).getBackground());
-            g.fillRect(0, 0, d.width, d.height);
-            g.setColor(((Component)target).getForeground());
+        if (!(target instanceof Window) ||
+            AWTAccessor.getWindowAccessor().isOpaque((Window)target))
+        {
+            Dimension d = ((Component)target).getSize();
+            if (g instanceof Graphics2D ||
+                g instanceof sun.awt.Graphics2Delegate) {
+                // background color is setup correctly, so just use clearRect
+                g.clearRect(0, 0, d.width, d.height);
+            } else {
+                // emulate clearRect
+                g.setColor(((Component)target).getBackground());
+                g.fillRect(0, 0, d.width, d.height);
+                g.setColor(((Component)target).getForeground());
+            }
         }
         super.print(g);
     }
@@ -147,4 +120,10 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
      */
     private native void setNativeBackgroundErase(boolean doErase,
                                                  boolean doEraseOnResize);
+
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+            GraphicsConfiguration gc)
+    {
+        return gc;
+    }
 }

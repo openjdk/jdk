@@ -41,7 +41,6 @@ struct ComponentIDs {
     jfieldID appContext;
     jmethodID getParent;
     jmethodID getLocationOnScreen;
-    jmethodID resetGCMID;
 };
 
 /* field and method IDs for Container */
@@ -65,7 +64,3 @@ struct MComponentPeerIDs {
 extern void processTree(Widget from, Widget to, Boolean action);
 #endif // HEADLESS
 
-/* fieldIDs for Canvas fields that may be accessed from C */
-struct CanvasIDs {
-    jmethodID setGCFromPeerMID;
-};

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,10 +503,10 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * @see #setDisplayedMnemonic(int)
      */
     public void setDisplayedMnemonic(char aChar) {
-        int vk = (int) aChar;
-        if(vk >= 'a' && vk <='z')
-            vk -= ('a' - 'A');
-        setDisplayedMnemonic(vk);
+        int vk = java.awt.event.KeyEvent.getExtendedKeyCodeForChar(aChar);
+        if (vk != java.awt.event.KeyEvent.VK_UNDEFINED) {
+            setDisplayedMnemonic(vk);
+        }
     }
 
 

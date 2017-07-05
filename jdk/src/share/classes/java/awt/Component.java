@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see GraphicsConfiguration
      * @see #getGraphicsConfiguration
      */
-    transient GraphicsConfiguration graphicsConfig = null;
+    private transient GraphicsConfiguration graphicsConfig = null;
 
     /**
      * A reference to a <code>BufferStrategy</code> object
@@ -799,8 +799,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
             }
     }
 
+    // Whether this Component has had the background erase flag
+    // specified via SunToolkit.disableBackgroundErase(). This is
+    // needed in order to make this function work on X11 platforms,
+    // where currently there is no chance to interpose on the creation
+    // of the peer and therefore the call to XSetBackground.
+    transient boolean backgroundEraseDisabled;
+
     static {
         AWTAccessor.setComponentAccessor(new AWTAccessor.ComponentAccessor() {
+            public void setBackgroundEraseDisabled(Component comp, boolean disabled) {
+                comp.backgroundEraseDisabled = disabled;
+            }
+            public boolean getBackgroundEraseDisabled(Component comp) {
+                return comp.backgroundEraseDisabled;
+            }
+            public Rectangle getBounds(Component comp) {
+                return new Rectangle(comp.x, comp.y, comp.width, comp.height);
+            }
             public void setMixingCutoutShape(Component comp, Shape shape) {
                 Region region = shape == null ?  null :
                     Region.getInstance(shape, null);
@@ -828,6 +844,22 @@ public abstract class Component implements ImageObserver, MenuContainer,
                         }
                     }
                 }
+            }
+
+            public void setGraphicsConfiguration(Component comp,
+                    GraphicsConfiguration gc)
+            {
+                comp.setGraphicsConfiguration(gc);
+            }
+            public boolean requestFocus(Component comp, CausedFocusEvent.Cause cause) {
+                return comp.requestFocus(cause);
+            }
+            public boolean canBeFocusOwner(Component comp) {
+                return comp.canBeFocusOwner();
+            }
+
+            public boolean isVisible_NoClientCode(Component comp) {
+                return comp.isVisible_NoClientCode();
             }
         });
     }
@@ -996,50 +1028,21 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public GraphicsConfiguration getGraphicsConfiguration() {
         synchronized(getTreeLock()) {
-            if (graphicsConfig != null) {
-                return graphicsConfig;
-            } else if (getParent() != null) {
-                return getParent().getGraphicsConfiguration();
-            } else {
-                return null;
-            }
+            return getGraphicsConfiguration_NoClientCode();
         }
     }
 
     final GraphicsConfiguration getGraphicsConfiguration_NoClientCode() {
-        GraphicsConfiguration graphicsConfig = this.graphicsConfig;
-        Container parent = this.parent;
-        if (graphicsConfig != null) {
-            return graphicsConfig;
-        } else if (parent != null) {
-            return parent.getGraphicsConfiguration_NoClientCode();
-        } else {
-            return null;
-        }
+        return graphicsConfig;
     }
 
-    /**
-     * Resets this <code>Component</code>'s
-     * <code>GraphicsConfiguration</code> back to a default
-     * value.  For most componenets, this is <code>null</code>.
-     * Called from the Toolkit thread, so NO CLIENT CODE.
-     */
-    void resetGC() {
+    void setGraphicsConfiguration(GraphicsConfiguration gc) {
         synchronized(getTreeLock()) {
-            graphicsConfig = null;
-        }
-    }
+            graphicsConfig = gc;
 
-    /*
-     * Not called on Component, but needed for Canvas and Window
-     */
-    void setGCFromPeer() {
-        synchronized(getTreeLock()) {
-            if (peer != null) { // can't imagine how this will be false,
-                                // but just in case
-                graphicsConfig = peer.getGraphicsConfiguration();
-            } else {
-                graphicsConfig = null;
+            ComponentPeer peer = getPeer();
+            if (peer != null) {
+                peer.updateGraphicsData(gc);
             }
         }
     }
@@ -6663,23 +6666,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
 
             // Update stacking order
-            if (parent != null && parent.peer != null) {
-                ContainerPeer parentContPeer = (ContainerPeer) parent.peer;
-                // if our parent is lightweight and we are not
-                // we should call restack on nearest heavyweight
-                // container.
-                if (parentContPeer instanceof LightweightPeer
-                    && ! (peer instanceof LightweightPeer))
-                {
-                    Container hwParent = getNativeContainer();
-                    if (hwParent != null && hwParent.peer != null) {
-                        parentContPeer = (ContainerPeer) hwParent.peer;
-                    }
-                }
-                if (parentContPeer.isRestackSupported()) {
-                    parentContPeer.restack();
-                }
-            }
+            peer.setZOrder(getHWPeerAboveMe());
 
             if (!isAddNotifyComplete) {
                 mixOnShowing();
@@ -7170,8 +7157,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
         requestFocusHelper(false, true);
     }
 
-    void requestFocus(CausedFocusEvent.Cause cause) {
-        requestFocusHelper(false, true, cause);
+    boolean requestFocus(CausedFocusEvent.Cause cause) {
+        return requestFocusHelper(false, true, cause);
     }
 
     /**
@@ -7456,7 +7443,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // sometimes most recent focus owner may be null, but focus owner is not
             // e.g. we reset most recent focus owner if user removes focus owner
             focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-            if (focusOwner != null && getContainingWindow(focusOwner) != window) {
+            if (focusOwner != null && focusOwner.getContainingWindow() != window) {
                 focusOwner = null;
             }
         }
@@ -8689,30 +8676,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *         null, if component is not a part of window hierarchy
      */
     Window getContainingWindow() {
-        return getContainingWindow(this);
+        return SunToolkit.getContainingWindow(this);
     }
-    /**
-     * Returns the <code>Window</code> ancestor of the component <code>comp</code>.
-     * @return Window ancestor of the component or component by itself if it is Window;
-     *         null, if component is not a part of window hierarchy
-     */
-    static Window getContainingWindow(Component comp) {
-        while (comp != null && !(comp instanceof Window)) {
-            comp = comp.getParent();
-        }
-
-        return (Window)comp;
-    }
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Initialize JNI field and method IDs
@@ -9575,6 +9540,27 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return nextAbove < 0 ? -1 : nextAbove;
     }
 
+    final ComponentPeer getHWPeerAboveMe() {
+        checkTreeLock();
+
+        Container cont = getContainer();
+        int indexAbove = getSiblingIndexAbove();
+
+        while (cont != null) {
+            for (int i = indexAbove; i > -1; i--) {
+                Component comp = cont.getComponent(i);
+                if (comp != null && comp.isDisplayable() && !comp.isLightweight()) {
+                    return comp.getPeer();
+                }
+            }
+
+            indexAbove = cont.getSiblingIndexAbove();
+            cont = cont.getContainer();
+        }
+
+        return null;
+    }
+
     final int getSiblingIndexBelow() {
         checkTreeLock();
         Container parent = getContainer();
@@ -9827,4 +9813,29 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     // ****************** END OF MIXING CODE ********************************
+
+    private static boolean doesClassImplement(Class cls, String interfaceName) {
+        if (cls == null) return false;
+
+        for (Class c : cls.getInterfaces()) {
+            if (c.getName().equals(interfaceName)) {
+                return true;
+            }
+        }
+        return doesClassImplement(cls.getSuperclass(), interfaceName);
+    }
+
+    /**
+     * Checks that the given object implements the given interface.
+     * @param obj Object to be checked
+     * @param interfaceName The name of the interface. Must be fully-qualified interface name.
+     * @return true, if this object implements the given interface,
+     *         false, otherwise, or if obj or interfaceName is null
+     */
+    static boolean doesImplement(Object obj, String interfaceName) {
+        if (obj == null) return false;
+        if (interfaceName == null) return false;
+
+        return doesClassImplement(obj.getClass(), interfaceName);
+    }
 }

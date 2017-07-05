@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.HashSet;
+import static java.util.zip.ZipConstants64.*;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -343,26 +344,52 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private void writeLOC(XEntry xentry) throws IOException {
         ZipEntry e = xentry.entry;
         int flag = xentry.flag;
+        int elen = (e.extra != null) ? e.extra.length : 0;
+        boolean hasZip64 = false;
+
         writeInt(LOCSIG);           // LOC header signature
-        writeShort(version(e));     // version needed to extract
-        writeShort(flag);           // general purpose bit flag
-        writeShort(e.method);       // compression method
-        writeInt(e.time);           // last modification time
+
         if ((flag & 8) == 8) {
+            writeShort(version(e));     // version needed to extract
+            writeShort(flag);           // general purpose bit flag
+            writeShort(e.method);       // compression method
+            writeInt(e.time);           // last modification time
+
             // store size, uncompressed size, and crc-32 in data descriptor
             // immediately following compressed entry data
             writeInt(0);
             writeInt(0);
             writeInt(0);
         } else {
-            writeInt(e.crc);        // crc-32
-            writeInt(e.csize);      // compressed size
-            writeInt(e.size);       // uncompressed size
+            if (e.csize >= ZIP64_MAGICVAL || e.size >= ZIP64_MAGICVAL) {
+                hasZip64 = true;
+                writeShort(45);         // ver 4.5 for zip64
+            } else {
+                writeShort(version(e)); // version needed to extract
+            }
+            writeShort(flag);           // general purpose bit flag
+            writeShort(e.method);       // compression method
+            writeInt(e.time);           // last modification time
+            writeInt(e.crc);            // crc-32
+            if (hasZip64) {
+                writeInt(ZIP64_MAGICVAL);
+                writeInt(ZIP64_MAGICVAL);
+                elen += 20;        //headid(2) + size(2) + size(8) + csize(8)
+            } else {
+                writeInt(e.csize);  // compressed size
+                writeInt(e.size);   // uncompressed size
+            }
         }
         byte[] nameBytes = getUTF8Bytes(e.name);
         writeShort(nameBytes.length);
-        writeShort(e.extra != null ? e.extra.length : 0);
+        writeShort(elen);
         writeBytes(nameBytes, 0, nameBytes.length);
+        if (hasZip64) {
+            writeShort(ZIP64_EXTID);
+            writeShort(16);
+            writeLong(e.size);
+            writeLong(e.csize);
+        }
         if (e.extra != null) {
             writeBytes(e.extra, 0, e.extra.length);
         }
@@ -375,8 +402,13 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private void writeEXT(ZipEntry e) throws IOException {
         writeInt(EXTSIG);           // EXT header signature
         writeInt(e.crc);            // crc-32
-        writeInt(e.csize);          // compressed size
-        writeInt(e.size);           // uncompressed size
+        if (e.csize >= ZIP64_MAGICVAL || e.size >= ZIP64_MAGICVAL) {
+            writeLong(e.csize);
+            writeLong(e.size);
+        } else {
+            writeInt(e.csize);          // compressed size
+            writeInt(e.size);           // uncompressed size
+        }
     }
 
     /*
@@ -387,18 +419,49 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         ZipEntry e  = xentry.entry;
         int flag = xentry.flag;
         int version = version(e);
+
+        long csize = e.csize;
+        long size = e.size;
+        long offset = xentry.offset;
+        int e64len = 0;
+        boolean hasZip64 = false;
+        if (e.csize >= ZIP64_MAGICVAL) {
+            csize = ZIP64_MAGICVAL;
+            e64len += 8;              // csize(8)
+            hasZip64 = true;
+        }
+        if (e.size >= ZIP64_MAGICVAL) {
+            size = ZIP64_MAGICVAL;    // size(8)
+            e64len += 8;
+            hasZip64 = true;
+        }
+        if (xentry.offset >= ZIP64_MAGICVAL) {
+            offset = ZIP64_MAGICVAL;
+            e64len += 8;              // offset(8)
+            hasZip64 = true;
+        }
         writeInt(CENSIG);           // CEN header signature
-        writeShort(version);        // version made by
-        writeShort(version);        // version needed to extract
+        if (hasZip64) {
+            writeShort(45);         // ver 4.5 for zip64
+            writeShort(45);
+        } else {
+            writeShort(version);    // version made by
+            writeShort(version);    // version needed to extract
+        }
         writeShort(flag);           // general purpose bit flag
         writeShort(e.method);       // compression method
         writeInt(e.time);           // last modification time
         writeInt(e.crc);            // crc-32
-        writeInt(e.csize);          // compressed size
-        writeInt(e.size);           // uncompressed size
+        writeInt(csize);            // compressed size
+        writeInt(size);             // uncompressed size
         byte[] nameBytes = getUTF8Bytes(e.name);
         writeShort(nameBytes.length);
-        writeShort(e.extra != null ? e.extra.length : 0);
+        if (hasZip64) {
+            // + headid(2) + datasize(2)
+            writeShort(e64len + 4 + (e.extra != null ? e.extra.length : 0));
+        } else {
+            writeShort(e.extra != null ? e.extra.length : 0);
+        }
         byte[] commentBytes;
         if (e.comment != null) {
             commentBytes = getUTF8Bytes(e.comment);
@@ -410,8 +473,18 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
         writeInt(0);                // external file attributes (unused)
-        writeInt(xentry.offset);    // relative offset of local header
+        writeInt(offset);           // relative offset of local header
         writeBytes(nameBytes, 0, nameBytes.length);
+        if (hasZip64) {
+            writeShort(ZIP64_EXTID);// Zip64 extra
+            writeShort(e64len);
+            if (size == ZIP64_MAGICVAL)
+                writeLong(e.size);
+            if (csize == ZIP64_MAGICVAL)
+                writeLong(e.csize);
+            if (offset == ZIP64_MAGICVAL)
+                writeLong(xentry.offset);
+        }
         if (e.extra != null) {
             writeBytes(e.extra, 0, e.extra.length);
         }
@@ -424,15 +497,50 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * Writes end of central directory (END) header.
      */
     private void writeEND(long off, long len) throws IOException {
+        boolean hasZip64 = false;
+        long xlen = len;
+        long xoff = off;
+        if (xlen >= ZIP64_MAGICVAL) {
+            xlen = ZIP64_MAGICVAL;
+            hasZip64 = true;
+        }
+        if (xoff >= ZIP64_MAGICVAL) {
+            xoff = ZIP64_MAGICVAL;
+            hasZip64 = true;
+        }
         int count = xentries.size();
-        writeInt(ENDSIG);           // END record signature
-        writeShort(0);              // number of this disk
-        writeShort(0);              // central directory start disk
-        writeShort(count);          // number of directory entries on disk
-        writeShort(count);          // total number of directory entries
-        writeInt(len);              // length of central directory
-        writeInt(off);              // offset of central directory
-        if (comment != null) {      // zip file comment
+        if (count >= ZIP64_MAGICCOUNT) {
+            count = ZIP64_MAGICCOUNT;
+            hasZip64 = true;
+        }
+        if (hasZip64) {
+            long off64 = written;
+            //zip64 end of central directory record
+            writeInt(ZIP64_ENDSIG);        // zip64 END record signature
+            writeLong(ZIP64_ENDHDR - 12);  // size of zip64 end
+            writeShort(45);                // version made by
+            writeShort(45);                // version needed to extract
+            writeInt(0);                   // number of this disk
+            writeInt(0);                   // central directory start disk
+            writeLong(xentries.size());    // number of directory entires on disk
+            writeLong(xentries.size());    // number of directory entires
+            writeLong(len);                // length of central directory
+            writeLong(off);                // offset of central directory
+
+            //zip64 end of central directory locator
+            writeInt(ZIP64_LOCSIG);        // zip64 END locator signature
+            writeInt(0);                   // zip64 END start disk
+            writeLong(off64);              // offset of zip64 END
+            writeInt(1);                   // total number of disks (?)
+        }
+        writeInt(ENDSIG);                 // END record signature
+        writeShort(0);                    // number of this disk
+        writeShort(0);                    // central directory start disk
+        writeShort(count);                // number of directory entries on disk
+        writeShort(count);                // total number of directory entries
+        writeInt(xlen);                   // length of central directory
+        writeInt(xoff);                   // offset of central directory
+        if (comment != null) {            // zip file comment
             byte[] b = getUTF8Bytes(comment);
             writeShort(b.length);
             writeBytes(b, 0, b.length);
@@ -461,6 +569,22 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         out.write((int)((v >>> 16) & 0xff));
         out.write((int)((v >>> 24) & 0xff));
         written += 4;
+    }
+
+    /*
+     * Writes a 64-bit int to the output stream in little-endian byte order.
+     */
+    private void writeLong(long v) throws IOException {
+        OutputStream out = this.out;
+        out.write((int)((v >>>  0) & 0xff));
+        out.write((int)((v >>>  8) & 0xff));
+        out.write((int)((v >>> 16) & 0xff));
+        out.write((int)((v >>> 24) & 0xff));
+        out.write((int)((v >>> 32) & 0xff));
+        out.write((int)((v >>> 40) & 0xff));
+        out.write((int)((v >>> 48) & 0xff));
+        out.write((int)((v >>> 56) & 0xff));
+        written += 8;
     }
 
     /*

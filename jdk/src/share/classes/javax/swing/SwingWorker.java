@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,35 +778,33 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                                        threadFactory);
             appContext.put(SwingWorker.class, executorService);
 
-            //register shutdown hook for this executor service
+            // Don't use ShutdownHook here as it's not enough. We should track
+            // AppContext disposal instead of JVM shutdown, see 6799345 for details
             final ExecutorService es = executorService;
-            final Runnable shutdownHook =
-                new Runnable() {
-                    final WeakReference<ExecutorService> executorServiceRef =
-                        new WeakReference<ExecutorService>(es);
-                    public void run() {
-                        final ExecutorService executorService =
-                            executorServiceRef.get();
-                        if (executorService != null) {
-                            AccessController.doPrivileged(
-                                new PrivilegedAction<Void>() {
-                                    public Void run() {
-                                        executorService.shutdown();
-                                        return null;
+            appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
+                new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent pce) {
+                        boolean disposed = (Boolean)pce.getNewValue();
+                        if (disposed) {
+                            final WeakReference<ExecutorService> executorServiceRef =
+                                new WeakReference<ExecutorService>(es);
+                            final ExecutorService executorService =
+                                executorServiceRef.get();
+                            if (executorService != null) {
+                                AccessController.doPrivileged(
+                                    new PrivilegedAction<Void>() {
+                                        public Void run() {
+                                            executorService.shutdown();
+                                            return null;
+                                        }
                                     }
-                                });
+                                );
+                            }
                         }
                     }
-                };
-
-            AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        Runtime.getRuntime().addShutdownHook(
-                            new Thread(shutdownHook));
-                        return null;
-                    }
-            });
+                }
+            );
         }
         return executorService;
     }

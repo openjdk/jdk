@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 #include "awt.h"
 
+#include <jlong.h>
+
 #include "awt_Component.h"
 #include "awt_Container.h"
 #include "awt_Frame.h"
+#include "awt_Dialog.h"
 #include "awt_Insets.h"
 #include "awt_Panel.h"
 #include "awt_Toolkit.h"
@@ -35,6 +38,7 @@
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_BitmapUtil.h"
 #include "awt_IconCursor.h"
+#include "ComCtl32Util.h"
 
 #include "java_awt_Insets.h"
 #include <java_awt_Container.h>
@@ -88,7 +92,6 @@ struct ReshapeFrameStruct {
     jint x, y;
     jint w, h;
 };
-
 // struct for _SetIconImagesData
 struct SetIconImagesDataStruct {
     jobject window;
@@ -97,7 +100,6 @@ struct SetIconImagesDataStruct {
     jintArray smallIconRaster;
     jint smw, smh;
 };
-
 // struct for _SetMinSize() method
 // and other methods setting sizes
 struct SizeStruct {
@@ -114,6 +116,34 @@ struct ModalDisableStruct {
     jobject window;
     jlong blockerHWnd;
 };
+// struct for _SetOpacity() method
+struct OpacityStruct {
+    jobject window;
+    jint iOpacity;
+};
+// struct for _SetOpaque() method
+struct OpaqueStruct {
+    jobject window;
+    jboolean isOpaque;
+};
+// struct for _UpdateWindow() method
+struct UpdateWindowStruct {
+    jobject window;
+    jintArray data;
+    HBITMAP hBitmap;
+    jint width, height;
+};
+// Struct for _RequestWindowFocus() method
+struct RequestWindowFocusStruct {
+    jobject component;
+    jboolean isMouseEventCause;
+};
+// struct for _RepositionSecurityWarning() method
+struct RepositionSecurityWarningStruct {
+    jobject window;
+};
+
+
 /************************************************************************
  * AwtWindow fields
  */
@@ -121,17 +151,23 @@ struct ModalDisableStruct {
 jfieldID AwtWindow::warningStringID;
 jfieldID AwtWindow::locationByPlatformID;
 jfieldID AwtWindow::autoRequestFocusID;
+jfieldID AwtWindow::securityWarningWidthID;
+jfieldID AwtWindow::securityWarningHeightID;
 
 jfieldID AwtWindow::sysXID;
 jfieldID AwtWindow::sysYID;
 jfieldID AwtWindow::sysWID;
 jfieldID AwtWindow::sysHID;
 
+jmethodID AwtWindow::getWarningStringMID;
+jmethodID AwtWindow::calculateSecurityWarningPositionMID;
+
 int AwtWindow::ms_instanceCounter = 0;
 HHOOK AwtWindow::ms_hCBTFilter;
 AwtWindow * AwtWindow::m_grabbedWindow = NULL;
 HWND AwtWindow::sm_retainingHierarchyZOrderInShow = NULL;
 BOOL AwtWindow::sm_resizing = FALSE;
+UINT AwtWindow::untrustedWindowsCounter = 0;
 
 /************************************************************************
  * AwtWindow class methods
@@ -162,10 +198,34 @@ AwtWindow::AwtWindow() {
             ::SetWindowsHookEx(WH_CBT, (HOOKPROC)AwtWindow::CBTFilter,
                                0, AwtToolkit::MainThread());
     }
+
+    m_opaque = TRUE;
+    m_opacity = 0xff;
+
+
+    warningString = NULL;
+    warningWindow = NULL;
+    securityTooltipWindow = NULL;
+    securityWarningAnimationStage = 0;
+    currentWmSizeState = SIZE_RESTORED;
+
+    hContentBitmap = NULL;
+
+    ::InitializeCriticalSection(&contentBitmapCS);
 }
 
 AwtWindow::~AwtWindow()
 {
+    if (warningString != NULL) {
+        delete [] warningString;
+    }
+    ::EnterCriticalSection(&contentBitmapCS);
+    if (hContentBitmap != NULL) {
+        ::DeleteObject(hContentBitmap);
+        hContentBitmap = NULL;
+    }
+    ::LeaveCriticalSection(&contentBitmapCS);
+    ::DeleteCriticalSection(&contentBitmapCS);
 }
 
 void AwtWindow::Dispose()
@@ -204,10 +264,10 @@ AwtWindow::Grab() {
     }
     m_grabbed = TRUE;
     m_grabbedWindow = this;
-    if (sm_focusedWindow == NULL && IsFocusableWindow()) {
+    if (AwtComponent::GetFocusedWindow() == NULL && IsFocusableWindow()) {
         // we shouldn't perform grab in this case (see 4841881 & 6539458)
         Ungrab();
-    } else if (GetHWnd() != sm_focusedWindow) {
+    } else if (GetHWnd() != AwtComponent::GetFocusedWindow()) {
         _ToFront(env->NewGlobalRef(GetPeer(env)));
         // Global ref was deleted in _ToFront
     }
@@ -301,12 +361,40 @@ MsgRouting AwtWindow::WmWindowPosChanging(LPARAM windowPos) {
     return mrDoDefault;
 }
 
+void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
+{
+    RECT rect;
+    CalculateWarningWindowBounds(env, &rect);
+
+    ::SetWindowPos(warningWindow, HWND_NOTOPMOST,
+            rect.left, rect.top,
+            rect.right - rect.left, rect.bottom - rect.top,
+            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOZORDER
+            );
+}
+
 MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
-    if (IsRetainingHierarchyZOrder() && ((WINDOWPOS *)windowPos)->flags & SWP_SHOWWINDOW) {
+    WINDOWPOS * wp = (WINDOWPOS *)windowPos;
+
+    if (IsRetainingHierarchyZOrder() && wp->flags & SWP_SHOWWINDOW) {
         // By this time all the windows from the hierarchy are already notified about z-order change.
         // Thus we may and we should reset the trigger in order not to affect other changes.
         sm_retainingHierarchyZOrderInShow = NULL;
     }
+
+    // Reposition the warning window
+    if (IsUntrusted() && warningWindow != NULL) {
+        if (wp->flags & SWP_HIDEWINDOW) {
+            UpdateSecurityWarningVisibility();
+        }
+
+        RepositionSecurityWarning((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
+
+        if (wp->flags & SWP_SHOWWINDOW) {
+            UpdateSecurityWarningVisibility();
+        }
+    }
+
     return mrDoDefault;
 }
 
@@ -326,19 +414,595 @@ void AwtWindow::FillClassInfo(WNDCLASSEX *lpwc)
     lpwc->cbWndExtra = DLGWINDOWEXTRA;
 }
 
+bool AwtWindow::IsWarningWindow(HWND hWnd)
+{
+    const UINT len = 128;
+    TCHAR windowClassName[len];
+
+    ::RealGetWindowClass(hWnd, windowClassName, len);
+    return 0 == _tcsncmp(windowClassName,
+            AwtWindow::GetWarningWindowClassName(), len);
+}
+
 LRESULT CALLBACK AwtWindow::CBTFilter(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HCBT_ACTIVATE || nCode == HCBT_SETFOCUS) {
-        AwtComponent *comp = AwtComponent::GetComponent((HWND)wParam);
+        HWND hWnd = (HWND)wParam;
+        AwtComponent *comp = AwtComponent::GetComponent(hWnd);
 
-        if (comp != NULL && comp->IsTopLevel()) {
-            AwtWindow* win = (AwtWindow*)comp;
-            if (!win->IsFocusableWindow() || win->m_filterFocusAndActivation) {
-                return 1; // Don't change focus/activation.
+        if (comp == NULL) {
+            // Check if it's a security warning icon
+            // See: 5091224, 6181725, 6732583
+            if (AwtWindow::IsWarningWindow(hWnd)) {
+                return 1;
+            }
+        } else {
+            if (comp->IsTopLevel()) {
+                AwtWindow* win = (AwtWindow*)comp;
+
+                if (!win->IsFocusableWindow() ||
+                        win->m_filterFocusAndActivation)
+                {
+                    return 1; // Don't change focus/activation.
+                }
             }
         }
     }
     return ::CallNextHookEx(AwtWindow::ms_hCBTFilter, nCode, wParam, lParam);
+}
+
+void AwtWindow::InitSecurityWarningSize(JNIEnv *env)
+{
+    warningWindowWidth = ::GetSystemMetrics(SM_CXSMICON);
+    warningWindowHeight = ::GetSystemMetrics(SM_CYSMICON);
+
+    jobject target = GetTarget(env);
+
+    env->SetIntField(target, AwtWindow::securityWarningWidthID,
+            warningWindowWidth);
+    env->SetIntField(target, AwtWindow::securityWarningHeightID,
+            warningWindowHeight);
+
+    env->DeleteLocalRef(target);
+}
+
+void AwtWindow::CreateHWnd(JNIEnv *env, LPCWSTR title,
+        DWORD windowStyle,
+        DWORD windowExStyle,
+        int x, int y, int w, int h,
+        HWND hWndParent, HMENU hMenu,
+        COLORREF colorForeground,
+        COLORREF colorBackground,
+        jobject peer)
+{
+    // Retrieve the warning string
+    // Note: we need to get it before CreateHWnd() happens because
+    // the isUntrusted() method may be invoked while the HWND
+    // is being created in response to some window messages.
+    jobject target = env->GetObjectField(peer, AwtObject::targetID);
+    jstring javaWarningString =
+        (jstring)env->CallObjectMethod(target, AwtWindow::getWarningStringMID);
+
+    if (javaWarningString != NULL) {
+        size_t length = env->GetStringLength(javaWarningString) + 1;
+        warningString = new WCHAR[length];
+        env->GetStringRegion(javaWarningString, 0,
+                static_cast<jsize>(length - 1), warningString);
+        warningString[length-1] = L'\0';
+
+        env->DeleteLocalRef(javaWarningString);
+    }
+    env->DeleteLocalRef(target);
+
+    AwtCanvas::CreateHWnd(env, title,
+            windowStyle,
+            windowExStyle,
+            x, y, w, h,
+            hWndParent, hMenu,
+            colorForeground,
+            colorBackground,
+            peer);
+
+    // Now we need to create the warning window.
+    CreateWarningWindow(env);
+}
+
+void AwtWindow::CreateWarningWindow(JNIEnv *env)
+{
+    if (!IsUntrusted()) {
+        return;
+    }
+
+    if (++AwtWindow::untrustedWindowsCounter == 1) {
+        AwtToolkit::GetInstance().InstallMouseLowLevelHook();
+    }
+
+    InitSecurityWarningSize(env);
+
+    RECT rect;
+    CalculateWarningWindowBounds(env, &rect);
+
+    RegisterWarningWindowClass();
+    warningWindow = ::CreateWindowEx(
+            WS_EX_NOACTIVATE | WS_EX_LAYERED,
+            GetWarningWindowClassName(),
+            warningString,
+            WS_POPUP,
+            rect.left, rect.top,
+            rect.right - rect.left, rect.bottom - rect.top,
+            GetHWnd(), // owner
+            NULL, // menu
+            AwtToolkit::GetInstance().GetModuleHandle(),
+            NULL // lParam
+            );
+    if (warningWindow == NULL) {
+        //XXX: actually this is bad... We didn't manage to create the widow.
+        return;
+    }
+
+    HICON hIcon = GetSecurityWarningIcon();
+
+    ICONINFO ii;
+    ::GetIconInfo(hIcon, &ii);
+
+    //Note: we assume that every security icon has exactly the same shape.
+    HRGN rgn = BitmapUtil::BitmapToRgn(ii.hbmColor);
+    if (rgn) {
+        ::SetWindowRgn(warningWindow, rgn, TRUE);
+    }
+
+    // Now we need to create the tooltip control for this window.
+    if (!ComCtl32Util::GetInstance().IsToolTipControlInitialized()) {
+        return;
+    }
+
+    securityTooltipWindow = ::CreateWindowEx(
+            WS_EX_TOPMOST,
+            TOOLTIPS_CLASS,
+            NULL,
+            WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            warningWindow,
+            NULL,
+            AwtToolkit::GetInstance().GetModuleHandle(),
+            NULL
+            );
+
+    ::SetWindowPos(securityTooltipWindow,
+            HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+
+    // We currently don't expect changing the size of the window,
+    // hence we may not care of updating the TOOL position/size.
+    ::GetClientRect(warningWindow, &rect);
+
+    TOOLINFO ti;
+
+    ti.cbSize = sizeof(ti);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = warningWindow;
+    ti.hinst = AwtToolkit::GetInstance().GetModuleHandle();
+    ti.uId = 0;
+    ti.lpszText = warningString;
+    ti.rect.left = rect.left;
+    ti.rect.top = rect.top;
+    ti.rect.right = rect.right;
+    ti.rect.bottom = rect.bottom;
+
+    ::SendMessage(securityTooltipWindow, TTM_ADDTOOL,
+            0, (LPARAM) (LPTOOLINFO) &ti);
+}
+
+void AwtWindow::DestroyWarningWindow()
+{
+    if (!IsUntrusted()) {
+        return;
+    }
+    if (--AwtWindow::untrustedWindowsCounter == 0) {
+        AwtToolkit::GetInstance().UninstallMouseLowLevelHook();
+    }
+    if (warningWindow != NULL) {
+        // Note that the warningWindow is an owned window, and hence
+        // it would be destroyed automatically. However, the window
+        // class may only be unregistered if there's no any single
+        // window left using this class. Thus, we're destroying the
+        // warning window manually. Note that the tooltip window
+        // will be destroyed automatically because it's an owned
+        // window as well.
+        ::DestroyWindow(warningWindow);
+        warningWindow = NULL;
+        securityTooltipWindow = NULL;
+        UnregisterWarningWindowClass();
+    }
+}
+
+void AwtWindow::DestroyHWnd()
+{
+    DestroyWarningWindow();
+    AwtCanvas::DestroyHWnd();
+}
+
+LPCTSTR AwtWindow::GetWarningWindowClassName()
+{
+    return TEXT("SunAwtWarningWindow");
+}
+
+void AwtWindow::FillWarningWindowClassInfo(WNDCLASS *lpwc)
+{
+    lpwc->style         = 0L;
+    lpwc->lpfnWndProc   = (WNDPROC)WarningWindowProc;
+    lpwc->cbClsExtra    = 0;
+    lpwc->cbWndExtra    = 0;
+    lpwc->hInstance     = AwtToolkit::GetInstance().GetModuleHandle(),
+    lpwc->hIcon         = AwtToolkit::GetInstance().GetAwtIcon();
+    lpwc->hCursor       = ::LoadCursor(NULL, IDC_ARROW);
+    lpwc->hbrBackground = NULL;
+    lpwc->lpszMenuName  = NULL;
+    lpwc->lpszClassName = AwtWindow::GetWarningWindowClassName();
+}
+
+void AwtWindow::RegisterWarningWindowClass()
+{
+    WNDCLASS  wc;
+
+    ::ZeroMemory(&wc, sizeof(wc));
+
+    if (!::GetClassInfo(AwtToolkit::GetInstance().GetModuleHandle(),
+                        AwtWindow::GetWarningWindowClassName(), &wc))
+    {
+        AwtWindow::FillWarningWindowClassInfo(&wc);
+        ATOM atom = ::RegisterClass(&wc);
+        DASSERT(atom != 0);
+    }
+}
+
+void AwtWindow::UnregisterWarningWindowClass()
+{
+    ::UnregisterClass(AwtWindow::GetWarningWindowClassName(), AwtToolkit::GetInstance().GetModuleHandle());
+}
+
+HICON AwtWindow::GetSecurityWarningIcon()
+{
+    HICON ico = AwtToolkit::GetInstance().GetSecurityWarningIcon(securityWarningAnimationStage,
+            warningWindowWidth, warningWindowHeight);
+    return ico;
+}
+
+// This function calculates the bounds of the warning window and stores them
+// into the RECT structure pointed by the argument rect.
+void AwtWindow::CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect)
+{
+    RECT windowBounds;
+    AwtToolkit::GetWindowRect(GetHWnd(), &windowBounds);
+
+    jobject target = GetTarget(env);
+    jobject point2D = env->CallObjectMethod(target,
+            calculateSecurityWarningPositionMID,
+            (jdouble)windowBounds.left, (jdouble)windowBounds.top,
+            (jdouble)(windowBounds.right - windowBounds.left),
+            (jdouble)(windowBounds.bottom - windowBounds.top));
+    env->DeleteLocalRef(target);
+
+    static jclass point2DClassID = NULL;
+    static jmethodID point2DGetXMID = NULL;
+    static jmethodID point2DGetYMID = NULL;
+
+    if (point2DClassID == NULL) {
+        jclass point2DClassIDLocal = env->FindClass("java/awt/geom/Point2D");
+        point2DClassID = (jclass)env->NewGlobalRef(point2DClassIDLocal);
+        env->DeleteLocalRef(point2DClassIDLocal);
+    }
+
+    if (point2DGetXMID == NULL) {
+        point2DGetXMID = env->GetMethodID(point2DClassID, "getX", "()D");
+    }
+    if (point2DGetYMID == NULL) {
+        point2DGetYMID = env->GetMethodID(point2DClassID, "getY", "()D");
+    }
+
+
+    int x = (int)env->CallDoubleMethod(point2D, point2DGetXMID);
+    int y = (int)env->CallDoubleMethod(point2D, point2DGetYMID);
+
+    env->DeleteLocalRef(point2D);
+
+    //Make sure the warning is not far from the window bounds
+    x = max(x, windowBounds.left - (int)warningWindowWidth - 2);
+    x = min(x, windowBounds.right + (int)warningWindowWidth + 2);
+
+    y = max(y, windowBounds.top - (int)warningWindowHeight - 2);
+    y = min(y, windowBounds.bottom + (int)warningWindowHeight + 2);
+
+    // Now make sure the warning window is visible on the screen
+    HMONITOR hmon = MonitorFromWindow(GetHWnd(), MONITOR_DEFAULTTOPRIMARY);
+    DASSERT(hmon != NULL);
+
+    RECT monitorBounds;
+    RECT monitorInsets;
+
+    MonitorBounds(hmon, &monitorBounds);
+    if (!AwtToolkit::GetScreenInsets(m_screenNum, &monitorInsets)) {
+        ::ZeroMemory(&monitorInsets, sizeof(monitorInsets));
+    }
+
+    x = max(x, monitorBounds.left + monitorInsets.left);
+    x = min(x, monitorBounds.right - monitorInsets.right - (int)warningWindowWidth);
+
+    y = max(y, monitorBounds.top + monitorInsets.top);
+    y = min(y, monitorBounds.bottom - monitorInsets.bottom - (int)warningWindowHeight);
+
+    rect->left = x;
+    rect->top = y;
+    rect->right = rect->left + warningWindowWidth;
+    rect->bottom = rect->top + warningWindowHeight;
+}
+
+LRESULT CALLBACK AwtWindow::WarningWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg) {
+        case WM_PAINT:
+            PaintWarningWindow(hwnd);
+            return 0;
+
+        case WM_MOUSEACTIVATE:
+            {
+                // Retrive the owner of the warning window.
+                HWND javaWindow = ::GetParent(hwnd);
+                if (javaWindow) {
+                    // If the window is blocked by a modal dialog, substitute
+                    // its handle with the topmost blocker.
+                    HWND topmostBlocker = GetTopmostModalBlocker(javaWindow);
+                    if (::IsWindow(topmostBlocker)) {
+                        javaWindow = topmostBlocker;
+                    }
+
+                    ::BringWindowToTop(javaWindow);
+
+                    AwtWindow * window =
+                        (AwtWindow*)AwtComponent::GetComponent(javaWindow);
+                    if (window == NULL) {
+                        // Quite unlikely to go into here, but it's way better
+                        // than getting a crash.
+                        ::SetForegroundWindow(javaWindow);
+                    } else {
+                        // Activate the window if it is focusable and inactive
+                        if (window->IsFocusableWindow() &&
+                                javaWindow != ::GetActiveWindow()) {
+                            ::SetForegroundWindow(javaWindow);
+                        } else {
+                            // ...otherwise just start the animation.
+                            window->StartSecurityAnimation(akShow);
+                        }
+                    }
+
+                    // In every case if there's a top-most blocker, we need to
+                    // enable modal animation.
+                    if (::IsWindow(topmostBlocker)) {
+                        AwtDialog::AnimateModalBlocker(topmostBlocker);
+                    }
+                }
+                return MA_NOACTIVATEANDEAT;
+            }
+    }
+    return ::DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void AwtWindow::PaintWarningWindow(HWND warningWindow)
+{
+    RECT updateRect;
+
+    if (!::GetUpdateRect(warningWindow, &updateRect, FALSE)) {
+        // got nothing to update
+        return;
+    }
+
+    PAINTSTRUCT ps;
+    HDC hdc = ::BeginPaint(warningWindow, &ps);
+    if (hdc == NULL) {
+        // indicates an error
+        return;
+    }
+
+    PaintWarningWindow(warningWindow, hdc);
+
+    ::EndPaint(warningWindow, &ps);
+}
+
+void AwtWindow::PaintWarningWindow(HWND warningWindow, HDC hdc)
+{
+    HWND javaWindow = ::GetParent(warningWindow);
+
+    AwtWindow * window = (AwtWindow*)AwtComponent::GetComponent(javaWindow);
+    if (window == NULL) {
+        return;
+    }
+
+    ::DrawIconEx(hdc, 0, 0, window->GetSecurityWarningIcon(),
+            window->warningWindowWidth, window->warningWindowHeight,
+            0, NULL, DI_NORMAL);
+}
+
+static const UINT_PTR IDT_AWT_SECURITYANIMATION = 0x102;
+
+// Approximately 6 times a second. 0.75 seconds total.
+static const UINT securityAnimationTimerElapse = 150;
+static const UINT securityAnimationMaxIterations = 5;
+
+void AwtWindow::RepaintWarningWindow()
+{
+    HDC hdc = ::GetDC(warningWindow);
+    PaintWarningWindow(warningWindow, hdc);
+    ::ReleaseDC(warningWindow, hdc);
+}
+
+void AwtWindow::StartSecurityAnimation(AnimationKind kind)
+{
+    if (!IsUntrusted()) {
+        return;
+    }
+    if (warningWindow == NULL) {
+        return;
+    }
+
+    securityAnimationKind = kind;
+
+    securityWarningAnimationStage = 1;
+    ::SetTimer(GetHWnd(), IDT_AWT_SECURITYANIMATION,
+            securityAnimationTimerElapse, NULL);
+
+    if (securityAnimationKind == akShow) {
+        ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
+                SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
+                SWP_SHOWWINDOW);
+
+        ::SetLayeredWindowAttributes(warningWindow, RGB(0, 0, 0),
+                0xFF, LWA_ALPHA);
+        ::RedrawWindow(warningWindow, NULL, NULL,
+                RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    }
+}
+
+void AwtWindow::StopSecurityAnimation()
+{
+    if (!IsUntrusted()) {
+        return;
+    }
+    if (warningWindow == NULL) {
+        return;
+    }
+
+    securityWarningAnimationStage = 0;
+    ::KillTimer(GetHWnd(), IDT_AWT_SECURITYANIMATION);
+
+    switch (securityAnimationKind) {
+        case akHide:
+        case akPreHide:
+            ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
+                    SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
+                    SWP_HIDEWINDOW);
+            break;
+        case akShow:
+            RepaintWarningWindow();
+            break;
+    }
+
+    securityAnimationKind = akNone;
+}
+
+MsgRouting AwtWindow::WmTimer(UINT_PTR timerID)
+{
+    if (timerID != IDT_AWT_SECURITYANIMATION) {
+        return mrPassAlong;
+    }
+
+    if (securityWarningAnimationStage == 0) {
+        return mrConsume;
+    }
+
+    securityWarningAnimationStage++;
+    if (securityWarningAnimationStage >= securityAnimationMaxIterations) {
+        if (securityAnimationKind == akPreHide) {
+            // chain real hiding
+            StartSecurityAnimation(akHide);
+        } else {
+            StopSecurityAnimation();
+        }
+    } else {
+        switch (securityAnimationKind) {
+            case akHide:
+                {
+                    BYTE opacity = ((int)0xFF *
+                            (securityAnimationMaxIterations -
+                             securityWarningAnimationStage)) /
+                        securityAnimationMaxIterations;
+                    ::SetLayeredWindowAttributes(warningWindow,
+                            RGB(0, 0, 0), opacity, LWA_ALPHA);
+                }
+                break;
+            case akShow:
+            case akNone: // quite unlikely, but quite safe
+                RepaintWarningWindow();
+                break;
+        }
+    }
+
+    return mrConsume;
+}
+
+// The security warning is visible if:
+//    1. The window has the keyboard window focus, OR
+//    2. The mouse pointer is located within the window bounds,
+//       or within the security warning icon.
+void AwtWindow::UpdateSecurityWarningVisibility()
+{
+    if (!IsUntrusted()) {
+        return;
+    }
+    if (warningWindow == NULL) {
+        return;
+    }
+
+    bool show = false;
+
+    if (IsVisible() && currentWmSizeState != SIZE_MINIMIZED) {
+        if (AwtComponent::GetFocusedWindow() == GetHWnd()) {
+            show = true;
+        }
+
+        HWND hwnd = AwtToolkit::GetInstance().GetWindowUnderMouse();
+        if (hwnd == GetHWnd()) {
+            show = true;
+        }
+        if (hwnd == warningWindow) {
+            show = true;
+        }
+    }
+
+    if (show && (!::IsWindowVisible(warningWindow) ||
+                securityAnimationKind == akHide ||
+                securityAnimationKind == akPreHide)) {
+        StartSecurityAnimation(akShow);
+    }
+    if (!show && ::IsWindowVisible(warningWindow)) {
+        StartSecurityAnimation(akPreHide);
+    }
+}
+
+void AwtWindow::FocusedWindowChanged(HWND from, HWND to)
+{
+    AwtWindow * fw = (AwtWindow *)AwtComponent::GetComponent(from);
+    AwtWindow * tw = (AwtWindow *)AwtComponent::GetComponent(to);
+
+    if (fw != NULL) {
+        fw->UpdateSecurityWarningVisibility();
+    }
+    if (tw != NULL) {
+        tw->UpdateSecurityWarningVisibility();
+
+        // Flash on receiving the keyboard focus even if the warning
+        // has already been shown (e.g. by hovering with the mouse)
+        tw->StartSecurityAnimation(akShow);
+    }
+}
+
+void AwtWindow::_RepositionSecurityWarning(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    RepositionSecurityWarningStruct *rsws =
+        (RepositionSecurityWarningStruct *)param;
+    jobject self = rsws->window;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->RepositionSecurityWarning(env);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    delete rsws;
 }
 
 /* Create a new AwtWindow object and window.   */
@@ -372,7 +1036,7 @@ AwtWindow* AwtWindow::Create(jobject self, jobject parent)
                 window->m_isRetainingHierarchyZOrder = TRUE;
             }
             DWORD style = WS_CLIPCHILDREN | WS_POPUP;
-            DWORD exStyle = 0;
+            DWORD exStyle = WS_EX_NOACTIVATE;
             if (GetRTL()) {
                 exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
                 if (GetRTLReadingOrder())
@@ -620,23 +1284,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     ::GetClientRect(GetHWnd(), &inside);
     ::GetWindowRect(GetHWnd(), &outside);
 
-    jobject target = GetTarget(env);
-    jstring warningString =
-      (jstring)(env)->GetObjectField(target, AwtWindow::warningStringID);
-    if (warningString != NULL) {
-        ::CopyRect(&inside, &outside);
-        DefWindowProc(WM_NCCALCSIZE, FALSE, (LPARAM)&inside);
-        /*
-         * Fix for BugTraq ID 4304024.
-         * Calculate client rectangle in client coordinates.
-         */
-        VERIFY(::OffsetRect(&inside, -inside.left, -inside.top));
-        extraBottomInsets = ::GetSystemMetrics(SM_CYCAPTION) +
-            ((GetStyle() & WS_THICKFRAME) ? 2 : -2);
-    }
-    env->DeleteLocalRef(target);
-    env->DeleteLocalRef(warningString);
-
     /* Update our inset member */
     if (outside.right - outside.left > 0 && outside.bottom - outside.top > 0) {
         ::MapWindowPoints(GetHWnd(), 0, (LPPOINT)&inside, 2);
@@ -863,43 +1510,91 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
     env->DeleteLocalRef(event);
 }
 
+BOOL AwtWindow::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
+{
+    // Fix for 6458497.
+    // Retreat if current foreground window is out of both our and embedder process.
+    // The exception is when activation is requested due to a mouse event.
+    if (!isMouseEventCause) {
+        HWND fgWindow = ::GetForegroundWindow();
+        if (NULL != fgWindow) {
+            DWORD fgProcessID;
+            ::GetWindowThreadProcessId(fgWindow, &fgProcessID);
+            if (fgProcessID != ::GetCurrentProcessId()
+                && !AwtToolkit::GetInstance().IsEmbedderProcessId(fgProcessID))
+            {
+                return FALSE;
+            }
+        }
+    }
+
+    HWND proxyContainerHWnd = GetProxyToplevelContainer();
+    HWND proxyHWnd = GetProxyFocusOwner();
+
+    if (proxyContainerHWnd == NULL || proxyHWnd == NULL) {
+        return FALSE;
+    }
+
+    // Activate the proxy toplevel container
+    if (::GetActiveWindow() != proxyContainerHWnd) {
+        sm_suppressFocusAndActivation = TRUE;
+        ::BringWindowToTop(proxyContainerHWnd);
+        ::SetForegroundWindow(proxyContainerHWnd);
+        sm_suppressFocusAndActivation = FALSE;
+
+        if (::GetActiveWindow() != proxyContainerHWnd) {
+            return FALSE; // activation has been rejected
+        }
+    }
+
+    // Focus the proxy itself
+    if (::GetFocus() != proxyHWnd) {
+        sm_suppressFocusAndActivation = TRUE;
+        ::SetFocus(proxyHWnd);
+        sm_suppressFocusAndActivation = FALSE;
+
+        if (::GetFocus() != proxyHWnd) {
+            return FALSE; // focus has been rejected (that is unlikely)
+        }
+    }
+
+    const HWND focusedWindow = AwtComponent::GetFocusedWindow();
+    if (focusedWindow != GetHWnd()) {
+        if (focusedWindow != NULL) {
+            // Deactivate the old focused window
+            AwtWindow::SynthesizeWmActivate(FALSE, focusedWindow, GetHWnd());
+        }
+        // Activate the new focused window.
+        AwtWindow::SynthesizeWmActivate(TRUE, GetHWnd(), focusedWindow);
+    }
+    return TRUE;
+}
+
 MsgRouting AwtWindow::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
 {
     jint type;
 
     if (nState != WA_INACTIVE) {
-        ::SetFocus((sm_focusOwner == NULL ||
-                    AwtComponent::GetTopLevelParentForWindow(sm_focusOwner) !=
-                    GetHWnd()) ? NULL : sm_focusOwner);
         type = java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS;
-        AwtToolkit::GetInstance().
-            InvokeFunctionLater(BounceActivation, this);
-        sm_focusedWindow = GetHWnd();
+        AwtComponent::SetFocusedWindow(GetHWnd());
     } else {
+        // The owner is not necassarily getting WM_ACTIVATE(WA_INACTIVE).
+        // So, initiate retaining the actualFocusedWindow.
+        AwtFrame *owner = GetOwningFrameOrDialog();
+        if (owner) {
+            owner->CheckRetainActualFocusedWindow(opposite);
+        }
+
         if (m_grabbedWindow != NULL && !m_grabbedWindow->IsOneOfOwnersOf(this)) {
             m_grabbedWindow->Ungrab();
         }
         type = java_awt_event_WindowEvent_WINDOW_LOST_FOCUS;
-        sm_focusedWindow = NULL;
+        AwtComponent::SetFocusedWindow(NULL);
+        sm_focusOwner = NULL;
     }
 
     SendWindowEvent(type, opposite);
     return mrConsume;
-}
-
-void AwtWindow::BounceActivation(void *self) {
-    AwtWindow *wSelf = (AwtWindow *)self;
-
-    if (::GetActiveWindow() == wSelf->GetHWnd()) {
-        AwtFrame *owner = wSelf->GetOwningFrameOrDialog();
-
-        if (owner != NULL) {
-            sm_suppressFocusAndActivation = TRUE;
-            ::SetActiveWindow(owner->GetHWnd());
-            ::SetFocus(owner->GetProxyFocusOwner());
-            sm_suppressFocusAndActivation = FALSE;
-        }
-    }
 }
 
 MsgRouting AwtWindow::WmCreate()
@@ -925,17 +1620,20 @@ MsgRouting AwtWindow::WmShowWindow(BOOL show, UINT status)
 {
     /*
      * Original fix for 4810575. Modified for 6386592.
-     * If an owned window (not frame/dialog) gets disposed we should synthesize
+     * If a simple window gets disposed we should synthesize
      * WM_ACTIVATE for its nearest owner. This is not performed by default because
      * the owner frame/dialog is natively active.
      */
     HWND hwndSelf = GetHWnd();
-    HWND hwndParent = ::GetParent(hwndSelf);
+    HWND hwndOwner = ::GetParent(hwndSelf);
 
-    if (!show && IsSimpleWindow() && hwndSelf == sm_focusedWindow &&
-        hwndParent != NULL && ::IsWindowVisible(hwndParent))
+    if (!show && IsSimpleWindow() && hwndSelf == AwtComponent::GetFocusedWindow() &&
+        hwndOwner != NULL && ::IsWindowVisible(hwndOwner))
     {
-        ::PostMessage(hwndParent, WM_ACTIVATE, (WPARAM)WA_ACTIVE, (LPARAM)hwndSelf);
+        AwtFrame *owner = (AwtFrame*)AwtComponent::GetComponent(hwndOwner);
+        if (owner != NULL) {
+            owner->AwtSetActiveWindow();
+        }
     }
 
     //Fixed 4842599: REGRESSION: JPopupMenu not Hidden Properly After Iconified and Deiconified
@@ -1034,7 +1732,10 @@ MsgRouting AwtWindow::WmSizing()
  */
 MsgRouting AwtWindow::WmSize(UINT type, int w, int h)
 {
+    currentWmSizeState = type;
+
     if (type == SIZE_MINIMIZED) {
+        UpdateSecurityWarningVisibility();
         return mrDoDefault;
     }
 
@@ -1098,101 +1799,16 @@ MsgRouting AwtWindow::WmNcCalcSize(BOOL fCalcValidRects,
     if (env->EnsureLocalCapacity(2) < 0) {
         return mrConsume;
     }
-    jobject target = GetTarget(env);
-    jstring warningString =
-      (jstring)(env)->GetObjectField(target, AwtWindow::warningStringID);
-    if (warningString != NULL) {
-        RECT r;
-        ::CopyRect(&r, &lpncsp->rgrc[0]);
-        retVal = static_cast<UINT>(DefWindowProc(WM_NCCALCSIZE, fCalcValidRects,
-        reinterpret_cast<LPARAM>(lpncsp)));
-
-        /* Adjust non-client area for warning banner space. */
-        m_warningRect.left = lpncsp->rgrc[0].left;
-        m_warningRect.right = lpncsp->rgrc[0].right;
-        m_warningRect.bottom = lpncsp->rgrc[0].bottom;
-        m_warningRect.top =
-            m_warningRect.bottom - ::GetSystemMetrics(SM_CYCAPTION);
-        if (GetStyle() & WS_THICKFRAME) {
-            m_warningRect.top -= 2;
-        } else {
-            m_warningRect.top += 2;
-        }
-
-        lpncsp->rgrc[0].bottom = (m_warningRect.top >= lpncsp->rgrc[0].top)
-            ? m_warningRect.top
-            : lpncsp->rgrc[0].top;
-
-        /* Convert to window-relative coordinates. */
-        ::OffsetRect(&m_warningRect, -r.left, -r.top);
-
-        /* Notify target of Insets change. */
-        if (HasValidRect()) {
-            UpdateInsets(NULL);
-        }
-
-        mrRetVal = mrConsume;
-    } else {
-        // WM_NCCALCSIZE is usually in response to a resize, but
-        // also can be triggered by SetWindowPos(SWP_FRAMECHANGED),
-        // which means the insets will have changed - rnk 4/7/1998
-        retVal = static_cast<UINT>(DefWindowProc(
-        WM_NCCALCSIZE, fCalcValidRects, reinterpret_cast<LPARAM>(lpncsp)));
-        if (HasValidRect()) {
-            UpdateInsets(NULL);
-        }
-        mrRetVal = mrConsume;
+    // WM_NCCALCSIZE is usually in response to a resize, but
+    // also can be triggered by SetWindowPos(SWP_FRAMECHANGED),
+    // which means the insets will have changed - rnk 4/7/1998
+    retVal = static_cast<UINT>(DefWindowProc(
+                WM_NCCALCSIZE, fCalcValidRects, reinterpret_cast<LPARAM>(lpncsp)));
+    if (HasValidRect()) {
+        UpdateInsets(NULL);
     }
-    env->DeleteLocalRef(target);
-    env->DeleteLocalRef(warningString);
+    mrRetVal = mrConsume;
     return mrRetVal;
-}
-
-MsgRouting AwtWindow::WmNcPaint(HRGN hrgn)
-{
-    DefWindowProc(WM_NCPAINT, (WPARAM)hrgn, 0);
-
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    if (env->EnsureLocalCapacity(2) < 0) {
-        return mrConsume;
-    }
-    jobject target = GetTarget(env);
-    jstring warningString =
-      (jstring)(env)->GetObjectField(target, AwtWindow::warningStringID);
-    if (warningString != NULL) {
-        RECT r;
-        ::CopyRect(&r, &m_warningRect);
-        HDC hDC = ::GetWindowDC(GetHWnd());
-        DASSERT(hDC);
-        int iSaveDC = ::SaveDC(hDC);
-        VERIFY(::SelectClipRgn(hDC, NULL) != NULL);
-        VERIFY(::FillRect(hDC, &m_warningRect, (HBRUSH)::GetStockObject(BLACK_BRUSH)));
-
-        if (GetStyle() & WS_THICKFRAME) {
-            /* draw edge */
-            VERIFY(::DrawEdge(hDC, &r, EDGE_RAISED, BF_TOP));
-            r.top += 2;
-            VERIFY(::DrawEdge(hDC, &r, EDGE_SUNKEN, BF_RECT));
-            ::InflateRect(&r, -2, -2);
-        }
-
-        /* draw warning text */
-        LPCWSTR text = JNU_GetStringPlatformChars(env, warningString, NULL);
-        VERIFY(::SetBkColor(hDC, ::GetSysColor(COLOR_BTNFACE)) != CLR_INVALID);
-        VERIFY(::SetTextColor(hDC, ::GetSysColor(COLOR_BTNTEXT)) != CLR_INVALID);
-        VERIFY(::SelectObject(hDC, ::GetStockObject(DEFAULT_GUI_FONT)) != NULL);
-        VERIFY(::SetTextAlign(hDC, TA_LEFT | TA_BOTTOM) != GDI_ERROR);
-        VERIFY(::ExtTextOut(hDC, r.left+2, r.bottom-1,
-                             ETO_CLIPPED | ETO_OPAQUE,
-                             &r, text, static_cast<UINT>(wcslen(text)), NULL));
-        VERIFY(::RestoreDC(hDC, iSaveDC));
-        ::ReleaseDC(GetHWnd(), hDC);
-        JNU_ReleaseStringPlatformChars(env, warningString, text);
-    }
-
-    env->DeleteLocalRef(target);
-    env->DeleteLocalRef(warningString);
-    return mrConsume;
 }
 
 MsgRouting AwtWindow::WmNcHitTest(UINT x, UINT y, LRESULT& retVal)
@@ -1420,6 +2036,19 @@ void AwtWindow::SetAndActivateModalBlocker(HWND window, HWND blocker) {
     }
 }
 
+HWND AwtWindow::GetTopmostModalBlocker(HWND window)
+{
+    HWND ret, blocker = NULL;
+
+    do {
+        ret = blocker;
+        blocker = AwtWindow::GetModalBlocker(window);
+        window = blocker;
+    } while (::IsWindow(blocker));
+
+    return ret;
+}
+
 void AwtWindow::FlashWindowEx(HWND hWnd, UINT count, DWORD timeout, DWORD flags) {
     FLASHWINFO fi;
     fi.cbSize = sizeof(fi);
@@ -1428,6 +2057,38 @@ void AwtWindow::FlashWindowEx(HWND hWnd, UINT count, DWORD timeout, DWORD flags)
     fi.uCount = count;
     fi.dwTimeout = timeout;
     ::FlashWindowEx(&fi);
+}
+
+jboolean
+AwtWindow::_RequestWindowFocus(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    RequestWindowFocusStruct *rfs = (RequestWindowFocusStruct *)param;
+    jobject self = rfs->component;
+    jboolean isMouseEventCause = rfs->isMouseEventCause;
+
+    jboolean result = JNI_FALSE;
+    AwtWindow *window = NULL;
+
+    PDATA pData;
+    JNI_CHECK_NULL_GOTO(self, "peer", ret);
+    pData = JNI_GET_PDATA(self);
+    if (pData == NULL) {
+        // do nothing just return false
+        goto ret;
+    }
+
+    window = (AwtWindow *)pData;
+    if (::IsWindow(window->GetHWnd())) {
+        result = (jboolean)window->SendMessage(WM_AWT_WINDOW_SETACTIVE, (WPARAM)isMouseEventCause, 0);
+    }
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete rfs;
+
+    return result;
 }
 
 void AwtWindow::_ToFront(void *param)
@@ -1839,6 +2500,216 @@ void AwtWindow::DoUpdateIcon()
     //Does nothing for windows, is overriden for frames and dialogs
 }
 
+void AwtWindow::RedrawWindow()
+{
+    if (isOpaque()) {
+        ::RedrawWindow(GetHWnd(), NULL, NULL,
+                RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    } else {
+        ::EnterCriticalSection(&contentBitmapCS);
+        if (hContentBitmap != NULL) {
+            UpdateWindowImpl(contentWidth, contentHeight, hContentBitmap);
+        }
+        ::LeaveCriticalSection(&contentBitmapCS);
+    }
+}
+
+void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque)
+{
+    BYTE old_opacity = getOpacity();
+    BOOL old_opaque = isOpaque();
+
+    if (opacity == old_opacity && opaque == old_opaque) {
+        return;
+    }
+
+    setOpacity(opacity);
+    setOpaque(opaque);
+
+    HWND hwnd = GetHWnd();
+
+    LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
+
+    if (opaque != old_opaque) {
+        ::EnterCriticalSection(&contentBitmapCS);
+        if (hContentBitmap != NULL) {
+            ::DeleteObject(hContentBitmap);
+            hContentBitmap = NULL;
+        }
+        ::LeaveCriticalSection(&contentBitmapCS);
+    }
+
+    if (opaque && opacity == 0xff) {
+        // Turn off all the effects
+        ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
+        // Ask the window to repaint itself and all the children
+        RedrawWindow();
+    } else {
+        // We're going to enable some effects
+        if (!(ex_style & WS_EX_LAYERED)) {
+            ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+        } else {
+            if ((opaque && opacity < 0xff) ^ (old_opaque && old_opacity < 0xff)) {
+                // _One_ of the modes uses the SetLayeredWindowAttributes.
+                // Need to reset the style in this case.
+                // If both modes are simple (i.e. just changing the opacity level),
+                // no need to reset the style.
+                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
+                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+            }
+        }
+
+        if (opaque) {
+            // Simple opacity mode
+            ::SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), opacity, LWA_ALPHA);
+        }
+    }
+}
+
+static HBITMAP CreateBitmapFromRaster(JNIEnv* env, jintArray raster, jint w, jint h)
+{
+    HBITMAP image = NULL;
+    if (raster != NULL) {
+        int* rasterBuffer = NULL;
+        try {
+            rasterBuffer = (int *)env->GetPrimitiveArrayCritical(raster, 0);
+            JNI_CHECK_NULL_GOTO(rasterBuffer, "raster data", done);
+            image = BitmapUtil::CreateBitmapFromARGBPre(w, h, w*4, rasterBuffer);
+        } catch (...) {
+            if (rasterBuffer != NULL) {
+                env->ReleasePrimitiveArrayCritical(raster, rasterBuffer, 0);
+            }
+            throw;
+        }
+        if (rasterBuffer != NULL) {
+            env->ReleasePrimitiveArrayCritical(raster, rasterBuffer, 0);
+        }
+    }
+done:
+    return image;
+}
+
+void AwtWindow::UpdateWindowImpl(int width, int height, HBITMAP hBitmap)
+{
+    if (isOpaque()) {
+        return;
+    }
+
+    HWND hWnd = GetHWnd();
+    HDC hdcDst = ::GetDC(NULL);
+    HDC hdcSrc = ::CreateCompatibleDC(NULL);
+    HBITMAP hOldBitmap = (HBITMAP)::SelectObject(hdcSrc, hBitmap);
+
+    //XXX: this code doesn't paint the children (say, the java.awt.Button)!
+    //So, if we ever want to support HWs here, we need to repaint them
+    //in some other way...
+    //::SendMessage(hWnd, WM_PRINT, (WPARAM)hdcSrc, /*PRF_CHECKVISIBLE |*/
+    //      PRF_CHILDREN /*| PRF_CLIENT | PRF_NONCLIENT*/);
+
+    POINT ptSrc;
+    ptSrc.x = ptSrc.y = 0;
+
+    RECT rect;
+    POINT ptDst;
+    SIZE size;
+
+    ::GetWindowRect(hWnd, &rect);
+    ptDst.x = rect.left;
+    ptDst.y = rect.top;
+    size.cx = width;
+    size.cy = height;
+
+    BLENDFUNCTION bf;
+
+    bf.SourceConstantAlpha = getOpacity();
+    bf.AlphaFormat = AC_SRC_ALPHA;
+    bf.BlendOp = AC_SRC_OVER;
+    bf.BlendFlags = 0;
+
+    ::UpdateLayeredWindow(hWnd, hdcDst, &ptDst, &size, hdcSrc, &ptSrc,
+            RGB(0, 0, 0), &bf, ULW_ALPHA);
+
+    ::ReleaseDC(NULL, hdcDst);
+    ::SelectObject(hdcSrc, hOldBitmap);
+    ::DeleteDC(hdcSrc);
+}
+
+void AwtWindow::UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
+                             HBITMAP hNewBitmap)
+{
+    if (isOpaque()) {
+        return;
+    }
+
+    HBITMAP hBitmap;
+    if (hNewBitmap == NULL) {
+        if (data == NULL) {
+            return;
+        }
+        hBitmap = CreateBitmapFromRaster(env, data, width, height);
+        if (hBitmap == NULL) {
+            return;
+        }
+    } else {
+        hBitmap = hNewBitmap;
+    }
+
+    ::EnterCriticalSection(&contentBitmapCS);
+    if (hContentBitmap != NULL) {
+        ::DeleteObject(hContentBitmap);
+    }
+    hContentBitmap = hBitmap;
+    contentWidth = width;
+    contentHeight = height;
+    UpdateWindowImpl(width, height, hBitmap);
+    ::LeaveCriticalSection(&contentBitmapCS);
+}
+
+void AwtWindow::FillBackground(HDC hMemoryDC, SIZE &size)
+{
+    if (isOpaque()) {
+        AwtCanvas::FillBackground(hMemoryDC, size);
+    }
+}
+
+void AwtWindow::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
+{
+    if (isOpaque()) {
+        AwtCanvas::FillAlpha(bitmapBits, size, alpha);
+    }
+}
+
+/*
+ * Fixed 6353381: it's improved fix for 4792958
+ * which was backed-out to avoid 5059656
+ */
+BOOL AwtWindow::HasValidRect()
+{
+    RECT inside;
+    RECT outside;
+
+    if (::IsIconic(GetHWnd())) {
+        return FALSE;
+    }
+
+    ::GetClientRect(GetHWnd(), &inside);
+    ::GetWindowRect(GetHWnd(), &outside);
+
+    BOOL isZeroClientArea = (inside.right == 0 && inside.bottom == 0);
+    BOOL isInvalidLocation = ((outside.left == -32000 && outside.top == -32000) || // Win2k && WinXP
+                              (outside.left == 32000 && outside.top == 32000) || // Win95 && Win98
+                              (outside.left == 3000 && outside.top == 3000)); // Win95 && Win98
+
+    // the bounds correspond to iconic state
+    if (isZeroClientArea && isInvalidLocation)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
 void AwtWindow::_SetIconImagesData(void * param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -1940,11 +2811,14 @@ void AwtWindow::_SetFocusableWindow(void *param)
 
     window->m_isFocusableWindow = isFocusableWindow;
 
-    if (!window->m_isFocusableWindow) {
-        LONG isPopup = window->GetStyle() & WS_POPUP;
-        window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | AWT_WS_EX_NOACTIVATE);
-    } else {
-        window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~AWT_WS_EX_NOACTIVATE);
+    // A simple window is permanently set to WS_EX_NOACTIVATE
+    if (!window->IsSimpleWindow()) {
+        if (!window->m_isFocusableWindow) {
+            LONG isPopup = window->GetStyle() & WS_POPUP;
+            window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | WS_EX_NOACTIVATE);
+        } else {
+            window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~WS_EX_NOACTIVATE);
+        }
     }
 
   ret:
@@ -2009,35 +2883,67 @@ void AwtWindow::_ModalEnable(void *param)
     env->DeleteGlobalRef(self);
 }
 
-/*
- * Fixed 6353381: it's improved fix for 4792958
- * which was backed-out to avoid 5059656
- */
-BOOL AwtWindow::HasValidRect()
+void AwtWindow::_SetOpacity(void* param)
 {
-    RECT inside;
-    RECT outside;
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    if (::IsIconic(GetHWnd())) {
-        return FALSE;
-    }
+    OpacityStruct *os = (OpacityStruct *)param;
+    jobject self = os->window;
+    BYTE iOpacity = (BYTE)os->iOpacity;
 
-    ::GetClientRect(GetHWnd(), &inside);
-    ::GetWindowRect(GetHWnd(), &outside);
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
 
-    BOOL isZeroClientArea = (inside.right == 0 && inside.bottom == 0);
-    BOOL isInvalidLocation = ((outside.left == -32000 && outside.top == -32000) || // Win2k && WinXP
-                              (outside.left == 32000 && outside.top == 32000) || // Win95 && Win98
-                              (outside.left == 3000 && outside.top == 3000)); // Win95 && Win98
+    window->SetTranslucency(iOpacity, window->isOpaque());
 
-    // the bounds correspond to iconic state
-    if (isZeroClientArea && isInvalidLocation)
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+  ret:
+    env->DeleteGlobalRef(self);
+    delete os;
 }
+
+void AwtWindow::_SetOpaque(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    OpaqueStruct *os = (OpaqueStruct *)param;
+    jobject self = os->window;
+    BOOL isOpaque = (BOOL)os->isOpaque;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->SetTranslucency(window->getOpacity(), isOpaque);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    delete os;
+}
+
+void AwtWindow::_UpdateWindow(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    UpdateWindowStruct *uws = (UpdateWindowStruct *)param;
+    jobject self = uws->window;
+    jintArray data = uws->data;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
+                         uws->hBitmap);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    if (data != NULL) {
+        env->DeleteGlobalRef(data);
+    }
+    delete uws;
+}
+
 
 extern "C" {
 
@@ -2055,8 +2961,16 @@ Java_java_awt_Window_initIDs(JNIEnv *env, jclass cls)
         env->GetFieldID(cls, "warningString", "Ljava/lang/String;");
     AwtWindow::locationByPlatformID =
         env->GetFieldID(cls, "locationByPlatform", "Z");
+    AwtWindow::securityWarningWidthID =
+        env->GetFieldID(cls, "securityWarningWidth", "I");
+    AwtWindow::securityWarningHeightID =
+        env->GetFieldID(cls, "securityWarningHeight", "I");
+    AwtWindow::getWarningStringMID =
+        env->GetMethodID(cls, "getWarningString", "()Ljava/lang/String;");
     AwtWindow::autoRequestFocusID =
         env->GetFieldID(cls, "autoRequestFocus", "Z");
+    AwtWindow::calculateSecurityWarningPositionMID =
+        env->GetMethodID(cls, "calculateSecurityWarningPosition", "(DDDD)Ljava/awt/geom/Point2D;");
 
     CATCH_BAD_ALLOC;
 }
@@ -2485,6 +3399,140 @@ Java_sun_awt_windows_WWindowPeer_nativeUngrab(JNIEnv *env, jobject self)
 
     AwtToolkit::GetInstance().SyncCall(AwtWindow::_Ungrab, env->NewGlobalRef(self));
     // global ref is deleted in _Ungrab()
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    setOpacity
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_setOpacity(JNIEnv *env, jobject self,
+                                              jint iOpacity)
+{
+    TRY;
+
+    OpacityStruct *os = new OpacityStruct;
+    os->window = env->NewGlobalRef(self);
+    os->iOpacity = iOpacity;
+
+    AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpacity, os);
+    // global refs and mds are deleted in _SetMinSize
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    setOpaqueImpl
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_setOpaqueImpl(JNIEnv *env, jobject self,
+                                              jboolean isOpaque)
+{
+    TRY;
+
+    OpaqueStruct *os = new OpaqueStruct;
+    os->window = env->NewGlobalRef(self);
+    os->isOpaque = isOpaque;
+
+    AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpaque, os);
+    // global refs and mds are deleted in _SetMinSize
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    updateWindowImpl
+ * Signature: ([III)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_updateWindowImpl(JNIEnv *env, jobject self,
+                                                  jintArray data,
+                                                  jint width, jint height)
+{
+    TRY;
+
+    UpdateWindowStruct *uws = new UpdateWindowStruct;
+    uws->window = env->NewGlobalRef(self);
+    uws->data = (jintArray)env->NewGlobalRef(data);
+    uws->hBitmap = NULL;
+    uws->width = width;
+    uws->height = height;
+
+    AwtToolkit::GetInstance().InvokeFunction(AwtWindow::_UpdateWindow, uws);
+    // global refs and mds are deleted in _UpdateWindow
+
+    CATCH_BAD_ALLOC;
+}
+
+/**
+ * This method is called from the WGL pipeline when it needs to update
+ * the layered window WindowPeer's C++ level object.
+ */
+void AwtWindow_UpdateWindow(JNIEnv *env, jobject peer,
+                            jint width, jint height, HBITMAP hBitmap)
+{
+    TRY;
+
+    UpdateWindowStruct *uws = new UpdateWindowStruct;
+    uws->window = env->NewGlobalRef(peer);
+    uws->data = NULL;
+    uws->hBitmap = hBitmap;
+    uws->width = width;
+    uws->height = height;
+
+    AwtToolkit::GetInstance().InvokeFunction(AwtWindow::_UpdateWindow, uws);
+    // global refs and mds are deleted in _UpdateWindow
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WComponentPeer
+ * Method:    requestFocus
+ * Signature: (Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WWindowPeer_requestWindowFocus
+    (JNIEnv *env, jobject self, jboolean isMouseEventCause)
+{
+    TRY;
+
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+
+    RequestWindowFocusStruct *rfs = new RequestWindowFocusStruct;
+    rfs->component = selfGlobalRef;
+    rfs->isMouseEventCause = isMouseEventCause;
+
+    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+        (void*(*)(void*))AwtWindow::_RequestWindowFocus, rfs);
+    // global refs and rfs are deleted in _RequestWindowFocus
+
+    CATCH_BAD_ALLOC_RET(JNI_FALSE);
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    repositionSecurityWarning
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_repositionSecurityWarning(JNIEnv *env,
+        jobject self)
+{
+    TRY;
+
+    RepositionSecurityWarningStruct *rsws =
+        new RepositionSecurityWarningStruct;
+    rsws->window = env->NewGlobalRef(self);
+
+    AwtToolkit::GetInstance().InvokeFunction(
+            AwtWindow::_RepositionSecurityWarning, rsws);
+    // global refs and mds are deleted in _RepositionSecurityWarning
 
     CATCH_BAD_ALLOC;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #include "awt_Toolkit.h"
 #include "awt_TextArea.h"
 #include "awt_TextComponent.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 #include "awt_Window.h"
+#include "awt_Frame.h"
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -362,13 +362,6 @@ AwtTextArea::EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     DASSERT(::IsWindow(::GetParent(hWnd)));
 
     switch (message) {
-    case WM_SETFOCUS:
-        ::SendMessage(::GetParent(hWnd), EM_HIDESELECTION, FALSE, 0);
-        break;
-    case WM_KILLFOCUS:
-        ::SendMessage(::GetParent(hWnd), EM_HIDESELECTION, TRUE, 0);
-        break;
-
     case WM_UNDO:
     case WM_CUT:
     case WM_COPY:
@@ -400,7 +393,6 @@ AwtTextArea::EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 MsgRouting
 AwtTextArea::WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos) {
-
     /* Use the system provided edit control class to generate context menu. */
     if (m_hEditCtrl == NULL) {
         DWORD dwStyle = WS_CHILD;
@@ -494,22 +486,11 @@ AwtTextArea::WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos) {
         VERIFY(::ClientToScreen(GetHWnd(), &p));
     }
 
-    ::SendMessage(m_hEditCtrl, WM_CONTEXTMENU, (WPARAM)m_hEditCtrl,
-                  MAKELPARAM(p.x, p.y));
-    /*
-     * After the context menu is dismissed focus is owned by the edit contol.
-     * Return focus to parent.
-     */
-    if (IsFocusable() && AwtComponent::sm_focusOwner != GetHWnd()) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject target = GetTarget(env);
-        env->CallStaticVoidMethod
-            (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-             AwtKeyboardFocusManager::heavyweightButtonDownMID,
-             target, TimeHelper::getMessageTimeUTC());
-        env->DeleteLocalRef(target);
-        AwtSetFocus();
-    }
+    // The context menu steals focus from the proxy.
+    // So, set the focus-restore flag up.
+    SetRestoreFocus(TRUE);
+    ::SendMessage(m_hEditCtrl, WM_CONTEXTMENU, (WPARAM)m_hEditCtrl, MAKELPARAM(p.x, p.y));
+    SetRestoreFocus(FALSE);
 
     return mrConsume;
 }
@@ -558,20 +539,11 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
      * By consuming WM_MOUSEMOVE messages we also don't give
      * the RichEdit control a chance to recognize a drag gesture
      * and initiate its own drag-n-drop operation.
+     *
+     * The workaround also allows us to implement synthetic focus mechanism.
+     *
      */
-    if (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) {
-
-        if (IsFocusable() && AwtComponent::sm_focusOwner != GetHWnd()) {
-            JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-            jobject target = GetTarget(env);
-            env->CallStaticVoidMethod
-                (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-                 AwtKeyboardFocusManager::heavyweightButtonDownMID,
-                 target, ((jlong)msg->time) & 0xFFFFFFFF);
-            env->DeleteLocalRef(target);
-            AwtSetFocus();
-        }
-
+    if (IsFocusingMouseMessage(msg)) {
         CHARRANGE cr;
 
         LONG lCurPos = EditGetCharFromPos(msg->pt);
@@ -717,6 +689,7 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
             p.x = -1;
             p.y = -1;
         }
+
         if (!::PostMessage(GetHWnd(), WM_CONTEXTMENU, (WPARAM)GetHWnd(),
                            MAKELPARAM(p.x, p.y))) {
             JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -724,6 +697,8 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
             env->ExceptionDescribe();
             env->ExceptionClear();
         }
+        delete msg;
+        return mrConsume;
     } else if (msg->message == WM_MOUSEWHEEL) {
         // 4417236: If there is an old version of RichEd32.dll which
         // does not provide the mouse wheel scrolling we have to

@@ -2545,7 +2545,19 @@ public final class KeyTool {
      * Returns true if the certificate is self-signed, false otherwise.
      */
     private boolean isSelfSigned(X509Certificate cert) {
-        return cert.getSubjectDN().equals(cert.getIssuerDN());
+        return signedBy(cert, cert);
+    }
+
+    private boolean signedBy(X509Certificate end, X509Certificate ca) {
+        if (!ca.getSubjectDN().equals(end.getIssuerDN())) {
+            return false;
+        }
+        try {
+            end.verify(ca.getPublicKey());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -2869,38 +2881,24 @@ public final class KeyTool {
         Certificate tmpCert = replyCerts[0];
         replyCerts[0] = replyCerts[i];
         replyCerts[i] = tmpCert;
-        Principal issuer = ((X509Certificate)replyCerts[0]).getIssuerDN();
+
+        X509Certificate thisCert = (X509Certificate)replyCerts[0];
 
         for (i=1; i < replyCerts.length-1; i++) {
-            // find a cert in the reply whose "subject" is the same as the
-            // given "issuer"
+            // find a cert in the reply who signs thisCert
             int j;
             for (j=i; j<replyCerts.length; j++) {
-                Principal subject;
-                subject = ((X509Certificate)replyCerts[j]).getSubjectDN();
-                if (subject.equals(issuer)) {
+                if (signedBy(thisCert, (X509Certificate)replyCerts[j])) {
                     tmpCert = replyCerts[i];
                     replyCerts[i] = replyCerts[j];
                     replyCerts[j] = tmpCert;
-                    issuer = ((X509Certificate)replyCerts[i]).getIssuerDN();
+                    thisCert = (X509Certificate)replyCerts[i];
                     break;
                 }
             }
             if (j == replyCerts.length) {
                 throw new Exception
                     (rb.getString("Incomplete certificate chain in reply"));
-            }
-        }
-
-        // now verify each cert in the ordered chain
-        for (i=0; i<replyCerts.length-1; i++) {
-            PublicKey pubKey = replyCerts[i+1].getPublicKey();
-            try {
-                replyCerts[i].verify(pubKey);
-            } catch (Exception e) {
-                throw new Exception(rb.getString
-                        ("Certificate chain in reply does not verify: ") +
-                        e.getMessage());
             }
         }
 
@@ -3035,9 +3033,8 @@ public final class KeyTool {
     private boolean buildChain(X509Certificate certToVerify,
                         Vector<Certificate> chain,
                         Hashtable<Principal, Vector<Certificate>> certs) {
-        Principal subject = certToVerify.getSubjectDN();
         Principal issuer = certToVerify.getIssuerDN();
-        if (subject.equals(issuer)) {
+        if (isSelfSigned(certToVerify)) {
             // reached self-signed root cert;
             // no verification needed because it's trusted.
             chain.addElement(certToVerify);
@@ -3108,7 +3105,7 @@ public final class KeyTool {
     /**
      * Returns the keystore with the configured CA certificates.
      */
-    private KeyStore getCacertsKeyStore()
+    public static KeyStore getCacertsKeyStore()
         throws Exception
     {
         String sep = File.separator;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.InvalidPipeException;
@@ -284,14 +285,12 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @param peer for which target's the repaint should be issued
      */
     private void repaintPeerTarget(WComponentPeer peer) {
-        // we don't want to call user code on our priveleged
-        // thread, delegate to EDT
-        final Component target = (Component)peer.getTarget();
-        SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
-            public void run() {
-                target.repaint();
-            }
-        });
+        Component target = (Component)peer.getTarget();
+        Rectangle bounds = AWTAccessor.getComponentAccessor().getBounds(target);
+        // the system-level painting operations should call the handlePaint()
+        // method of the WComponentPeer class to repaint the component;
+        // calling repaint() forces AWT to make call to update()
+        peer.handlePaint(0, 0, bounds.width, bounds.height);
     }
 
     /**

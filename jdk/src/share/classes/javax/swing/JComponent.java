@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2888,7 +2888,10 @@ public abstract class JComponent extends Container implements Serializable,
           return false;
       }
       // Get the KeyStroke
+      // There may be two keystrokes associated with a low-level key event;
+      // in this case a keystroke made of an extended key code has a priority.
       KeyStroke ks;
+      KeyStroke ksE = null;
 
       if (e.getID() == KeyEvent.KEY_TYPED) {
           ks = KeyStroke.getKeyStroke(e.getKeyChar());
@@ -2896,9 +2899,18 @@ public abstract class JComponent extends Container implements Serializable,
       else {
           ks = KeyStroke.getKeyStroke(e.getKeyCode(),e.getModifiers(),
                                     (pressed ? false:true));
+          if (e.getKeyCode() != e.getExtendedKeyCode()) {
+              ksE = KeyStroke.getKeyStroke(e.getExtendedKeyCode(),e.getModifiers(),
+                                    (pressed ? false:true));
+          }
       }
 
-      /* Do we have a key binding for e? */
+      // Do we have a key binding for e?
+      // If we have a binding by an extended code, use it.
+      // If not, check for regular code binding.
+      if(ksE != null && processKeyBinding(ksE, e, WHEN_FOCUSED, pressed)) {
+          return true;
+      }
       if(processKeyBinding(ks, e, WHEN_FOCUSED, pressed))
           return true;
 
@@ -2910,6 +2922,9 @@ public abstract class JComponent extends Container implements Serializable,
       while (parent != null && !(parent instanceof Window) &&
              !(parent instanceof Applet)) {
           if(parent instanceof JComponent) {
+              if(ksE != null && ((JComponent)parent).processKeyBinding(ksE, e,
+                               WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, pressed))
+                  return true;
               if(((JComponent)parent).processKeyBinding(ks, e,
                                WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, pressed))
                   return true;
