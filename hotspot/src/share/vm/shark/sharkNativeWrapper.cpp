@@ -101,7 +101,7 @@ void SharkNativeWrapper::initialize(const char *name) {
     builder()->CreateStore(
       builder()->CreateInlineOop(
         JNIHandles::make_local(
-          target()->method_holder()->klass_part()->java_mirror())),
+          target()->method_holder()->java_mirror())),
       oop_tmp_slot());
 
     param_types.push_back(box_type);

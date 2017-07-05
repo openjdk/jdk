@@ -118,19 +118,25 @@
         jint Y1 = (fY1) >> MDP_PREC;                                        \
         jint res;                                                           \
                                                                             \
-        /* Checking bounds and clipping if necessary */                     \
+        /* Checking bounds and clipping if necessary.                       \
+         * REMIND: It's temporary solution to avoid OOB in rendering code.  \
+         * Current approach uses float equations which are unreliable for   \
+         * clipping and makes assumptions about the line biases of the      \
+         * rendering algorithm. Also, clipping code should be moved down    \
+         * into only those output renderers that need it.                   \
+         */                                                                 \
         if (checkBounds) {                                                  \
-            TESTANDCLIP(hnd->dhnd->yMin, hnd->dhnd->yMax, Y0, X0, Y1, X1,   \
-                        jint, res);                                         \
+            jfloat xMinf = hnd->dhnd->xMinf + 0.5f;                         \
+            jfloat yMinf = hnd->dhnd->yMinf + 0.5f;                         \
+            jfloat xMaxf = hnd->dhnd->xMaxf + 0.5f;                         \
+            jfloat yMaxf = hnd->dhnd->yMaxf + 0.5f;                         \
+            TESTANDCLIP(yMinf, yMaxf, Y0, X0, Y1, X1, jint, res);           \
             if (res == CRES_INVISIBLE) break;                               \
-            TESTANDCLIP(hnd->dhnd->yMin, hnd->dhnd->yMax, Y1, X1, Y0, X0,   \
-                        jint, res);                                         \
+            TESTANDCLIP(yMinf, yMaxf, Y1, X1, Y0, X0, jint, res);           \
             if (res == CRES_INVISIBLE) break;                               \
-            TESTANDCLIP(hnd->dhnd->xMin, hnd->dhnd->xMax, X0, Y0, X1, Y1,   \
-                        jint, res);                                         \
+            TESTANDCLIP(xMinf, xMaxf, X0, Y0, X1, Y1, jint, res);           \
             if (res == CRES_INVISIBLE) break;                               \
-            TESTANDCLIP(hnd->dhnd->xMin, hnd->dhnd->xMax, X1, Y1, X0, Y0,   \
-                        jint, res);                                         \
+            TESTANDCLIP(xMinf, xMaxf, X1, Y1, X0, Y0, jint, res);           \
             if (res == CRES_INVISIBLE) break;                               \
         }                                                                   \
                                                                             \

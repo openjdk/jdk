@@ -71,8 +71,24 @@ import java.beans.ConstructorProperties;
  * </pre>
  *
  * <p>
- * The user may also select what action the {@code RadialGradientPaint}
- * should take when filling color outside the bounds of the circle's radius.
+ * The user may also select what action the {@code RadialGradientPaint} object
+ * takes when it is filling the space outside the circle's radius by
+ * setting {@code CycleMethod} to either {@code REFLECTION} or {@code REPEAT}.
+ * The gradient color proportions are equal for any particular line drawn
+ * from the focus point. The following figure shows that the distance AB
+ * is equal to the distance BC, and the distance AD is equal to the distance DE.
+ * <center>
+ * <img src = "doc-files/RadialGradientPaint-3.png">
+ * </center>
+ * If the gradient and graphics rendering transforms are uniformly scaled and
+ * the user sets the focus so that it coincides with the center of the circle,
+ * the gradient color proportions are equal for any line drawn from the center.
+ * The following figure shows the distances AB, BC, AD, and DE. They are all equal.
+ * <center>
+ * <img src = "doc-files/RadialGradientPaint-4.png">
+ * </center>
+ * Note that some minor variations in distances may occur due to sampling at
+ * the granularity of a pixel.
  * If no cycle method is specified, {@code NO_CYCLE} will be chosen by
  * default, which means the the last keyframe color will be used to fill the
  * remaining area.
@@ -604,7 +620,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * Returns a copy of the end point of the gradient axis.
+     * Returns a copy of the focus point of the radial gradient.
      *
      * @return a {@code Point2D} object that is a copy of the focus point
      */

@@ -1763,6 +1763,12 @@
                     Where each of these directories contain the import JDK image
                     for that platform.
                 </dd>
+                <dt><a name="ALT_OPENWIN_HOME"><tt>ALT_OPENWIN_HOME</tt></a></dt>
+                <dd>
+		    The top-level directory of the libraries and include files for the platform's 
+		    graphical programming environment. The default location is platform specific. 
+		    For example, on Linux it defaults to <tt>/usr/X11R6/</tt>.
+		</dd>
                 <dt><strong>Windows specific:</strong></dt>
                 <dd>
                     <dl>
@@ -1788,6 +1794,81 @@
                         <dd>
                             The location of the 
                             <a href="#msvcrNN"><tt>MSVCR100.DLL</tt></a>. 
+                        </dd>
+                    </dl>
+                </dd>
+                <dt><strong>Cross-Compilation Support:</strong></dt>
+                <dd>
+                    <dl>
+                        <dt><a name="CROSS_COMPILE_ARCH"><tt>CROSS_COMPILE_ARCH</tt></a> </dt>
+                        <dd>
+                            Set to the target architecture of a cross-compilation build. If set, this
+                            variable is used to signify that we are cross-compiling. The expectation
+                            is that <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> is set
+                            to point to the cross-compiler and that any cross-compilation specific flags
+                            are passed using <a href="#EXTRA_CFLAGS"><tt>EXTRA_CFLAGS</tt></a>.
+			    The <a href="#ALT_OPENWIN_HOME"><tt>ALT_OPENWIN_HOME</tt></a> variable should 
+			    also be set to point to the graphical header files (e.g. X11) provided with 
+			    the cross-compiler.
+                            When cross-compiling we skip execution of any demos etc that may be built, and
+                            also skip binary-file verification.
+                        </dd>
+                        <dt><tt><a name="EXTRA_CFLAGS">EXTRA_CFLAGS</a></tt> </dt>
+                        <dd>
+			   Used to pass cross-compilation options to the cross-compiler.
+                           These are added to the <tt>CFLAGS</tt> and <tt>CXXFLAGS</tt> variables. 
+			</dd>
+                        <dt><tt><a name="USE_ONLY_BOOTDIR_TOOLS">USE_ONLY_BOOTDIR_TOOLS</a></tt> </dt>
+                        <dd>
+                            Used primarily for cross-compilation builds (and always set in that case)
+                            this variable indicates that tools from the boot JDK should be used during
+                            the build process, not the tools (<tt>javac</tt>, <tt>javah</tt>, <tt>jar</tt>)
+                            just built (which can't execute on the build host).
+                        </dd>
+                        <dt><tt><a name="HOST_CC">HOST_CC</a></tt> </dt>
+                        <dd>
+                            The location of the C compiler to generate programs to run on the build host.
+                            Some parts of the build generate programs that are then compiled and executed
+                            to produce other parts of the build. Normally the primary C compiler is used
+                            to do this, but when cross-compiling that would be the cross-compiler and the
+                            resulting program could not be executed. 
+                            On Linux this defaults to <tt>/usr/bin/gcc</tt>; on other platforms it must be
+                            set explicitly.
+                        </dd>
+                    </dl>
+                <dt><strong>Specialized Build Options:</strong></dt>
+                <dd>
+                  Some build variables exist to support specialized build environments and/or specialized
+                  build products. Their use is only supported in those contexts:
+                    <dl>
+                        <dt><tt><a name="BUILD_CLIENT_ONLY">BUILD_CLIENT_ONLY</a></tt> </dt>
+                        <dd>
+                            Indicates this build will only contain the Hotspot client VM. In addition to
+                            controlling the Hotspot build target, it ensures that we don't try to copy
+                            any server VM files/directories, and defines a default <tt>jvm.cfg</tt> file
+                            suitable for a client-only environment. Using this in a 64-bit build will
+                            generate a sanity warning as 64-bit client builds are not directly supported.
+                        </dd>
+                        <dt><tt><a name="BUILD_HEADLESS_ONLY"></a>BUILD_HEADLESS_ONLY</tt> </dt>
+                        <dd>
+                            Used when the build environment has no graphical capabilities at all. This
+			    excludes building anything that requires graphical libraries to be available.
+                        </dd>
+                        <dt><tt><a name="JAVASE_EMBEDDED"></a>JAVASE_EMBEDDED</tt> </dt>
+                        <dd>
+			    Used to indicate this is a build of the Oracle Java SE Embedded product. 
+			    This will enable the directives included in the SE-Embedded specific build 
+			    files.
+                        </dd>
+                        <dt><tt><a name="LIBZIP_CAN_USE_MMAP">LIBZIP_CAN_USE_MMAP</a></tt> </dt>
+                        <dd>
+			    If set to false, disables the use of mmap by the zip utility. Otherwise,
+	                    mmap will be used.
+                        </dd>
+                        <dt><tt><a name="COMPRESS_JARS"></a>COMPRESS_JARS</tt> </dt>
+                        <dd>
+			  If set to true, causes certain jar files that would otherwise be built without
+			  compression, to use compression.
                         </dd>
                     </dl>
                 </dd>

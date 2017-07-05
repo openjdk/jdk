@@ -32,22 +32,13 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
-import java.lang.ref.WeakReference;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.BufferUnderflowException;
-import java.nio.channels.ClosedChannelException;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.awt.Font;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 public abstract class FileFont extends PhysicalFont {
 
@@ -285,5 +276,50 @@ public abstract class FileFont extends PhysicalFont {
                       }
             });
         }
+    }
+
+    protected String getPublicFileName() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            return platName;
+        }
+        boolean canReadProperty = true;
+
+        try {
+            sm.checkPropertyAccess("java.io.tmpdir");
+        } catch (SecurityException e) {
+            canReadProperty = false;
+        }
+
+        if (canReadProperty) {
+            return platName;
+        }
+
+        final File f = new File(platName);
+
+        Boolean isTmpFile = Boolean.FALSE;
+        try {
+            isTmpFile = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Boolean>() {
+                    public Boolean run() {
+                        File tmp = new File(System.getProperty("java.io.tmpdir"));
+                        try {
+                            String tpath = tmp.getCanonicalPath();
+                            String fpath = f.getCanonicalPath();
+
+                            return (fpath == null) || fpath.startsWith(tpath);
+                        } catch (IOException e) {
+                            return Boolean.TRUE;
+                        }
+                    }
+                }
+            );
+        } catch (PrivilegedActionException e) {
+            // unable to verify whether value of java.io.tempdir will be
+            // exposed, so return only a name of the font file.
+            isTmpFile = Boolean.TRUE;
+        }
+
+        return  isTmpFile ? "temp file" : platName;
     }
 }

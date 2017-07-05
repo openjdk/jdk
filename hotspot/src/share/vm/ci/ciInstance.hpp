@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ public:
 
   // Constant value of a field at the specified offset.
   ciConstant field_value_by_offset(int field_offset);
+
+  ciKlass* java_lang_Class_klass();
 };
 
 #endif // SHARE_VM_CI_CIINSTANCE_HPP

@@ -133,7 +133,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile) {
-  set_f1(field_holder());
+  set_f1(field_holder()->java_mirror());
   set_f2(field_offset);
   // The field index is used by jvm/ti and is the index into fields() array
   // in holder instanceKlass.  This is scaled by instanceKlass::next_offset.

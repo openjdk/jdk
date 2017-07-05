@@ -448,15 +448,74 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 # were nearby inhabitants in some cases and for our purposes perhaps
 # it's best to simply use the official transition.
 #
+
+# From Steve Ferguson (2011-01-31):
+# The author lives in Alaska and many of the references listed are only
+# available to Alaskan residents.
+#
+# <a href="http://www.alaskahistoricalsociety.org/index.cfm?section=discover%20alaska&page=Glimpses%20of%20the%20Past&viewpost=2&ContentId=98">
+# http://www.alaskahistoricalsociety.org/index.cfm?section=discover%20alaska&page=Glimpses%20of%20the%20Past&viewpost=2&ContentId=98
+# </a>
+
+# From Arthur David Olson (2011-02-01):
+# Here's database-relevant material from the 2001 "Alaska History" article:
+#
+# On September 20 [1979]...DOT...officials decreed that on April 27,
+# 1980, Juneau and other nearby communities would move to Yukon Time.
+# Sitka, Petersburg, Wrangell, and Ketchikan, however, would remain on
+# Pacific Time.
+#
+# ...on September 22, 1980, DOT Secretary Neil E. Goldschmidt rescinded the
+# Department's September 1979 decision. Juneau and other communities in
+# northern Southeast reverted to Pacific Time on October 26.
+#
+# On October 28 [1983]...the Metlakatla Indian Community Council voted
+# unanimously to keep the reservation on Pacific Time.
+#
+# According to DOT official Joanne Petrie, Indian reservations are not
+# bound to follow time zones imposed by neighboring jurisdictions.
+#
+# (The last is consistent with how the database now handles the Navajo
+# Nation.)
+
+# From Arthur David Olson (2011-02-09):
+# I just spoke by phone with a staff member at the Metlakatla Indian
+# Community office (using contact information available at
+# <a href="http://www.commerce.state.ak.us/dca/commdb/CIS.cfm?Comm_Boro_name=Metlakatla">
+# http://www.commerce.state.ak.us/dca/commdb/CIS.cfm?Comm_Boro_name=Metlakatla
+# </a>).
+# It's shortly after 1:00 here on the east coast of the United States;
+# the staffer said it was shortly after 10:00 there. When I asked whether
+# that meant they were on Pacific time, they said no--they were on their
+# own time. I asked about daylight saving; they said it wasn't used. I
+# did not inquire about practices in the past.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 18
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
 			 -8:00	US	P%sT	1946
 			 -8:00	-	PST	1969
+			 -8:00	US	P%sT	1980 Apr 27 2:00
+			 -9:00	US	Y%sT	1980 Oct 26 2:00	
 			 -8:00	US	P%sT	1983 Oct 30 2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
+Zone America/Sitka	 -14:58:47 -	LMT	1867 Oct 18
+			 -9:01:13 -	LMT	1900 Aug 20 12:00
+			 -8:00	-	PST	1942
+			 -8:00	US	P%sT	1946
+			 -8:00	-	PST	1969
+			 -8:00	US	P%sT	1983 Oct 30 2:00
+			 -9:00	US	Y%sT	1983 Nov 30
+			 -9:00	US	AK%sT
+Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 18
+			 -8:46:18 -	LMT	1900 Aug 20 12:00
+			 -8:00	-	PST	1942
+			 -8:00	US	P%sT	1946
+			 -8:00	-	PST	1969
+			 -8:00	US	P%sT	1983 Oct 30 2:00
+			 -8:00	US	MeST
 Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 18
 			 -9:18:55 -	LMT	1900 Aug 20 12:00
 			 -9:00	-	YST	1942
@@ -2569,6 +2628,21 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # the time was announced as "diez cinco"--the same time as here, indicating
 # that has indeed switched to DST. Assume second Sunday from 2009 forward.
 
+# From Steffen Thorsen (2011-03-08):
+# Granma announced that Cuba is going to start DST on 2011-03-20 00:00:00
+# this year. Nothing about the end date known so far (if that has
+# changed at all).
+#
+# Source:
+# <a href="http://granma.co.cu/2011/03/08/nacional/artic01.html">
+# http://granma.co.cu/2011/03/08/nacional/artic01.html
+# </a>
+#
+# Our info:
+# <a href="http://www.timeanddate.com/news/time/cuba-starts-dst-2011.html">
+# http://www.timeanddate.com/news/time/cuba-starts-dst-2011.html
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
 Rule	Cuba	1928	only	-	Oct	10	0:00	0	S
@@ -2602,7 +2676,9 @@ Rule	Cuba	2000	2004	-	Apr	Sun>=1	0:00s	1:00	D
 Rule	Cuba	2006	max	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2008	only	-	Mar	Sun>=15	0:00s	1:00	D
-Rule	Cuba	2009	max	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2009	2010	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2011	only	-	Mar	Sun>=15	0:00s	1:00	D
+Rule	Cuba	2012	max	-	Mar	Sun>=8	0:00s	1:00	D
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890
