@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,6 +453,48 @@ inline void Assembler::creqv( int d, int s1, int s2) { emit_int32(CREQV_OPCODE  
 inline void Assembler::crandc(int d, int s1, int s2) { emit_int32(CRANDC_OPCODE | bt(d) | ba(s1) | bb(s2)); }
 inline void Assembler::crorc( int d, int s1, int s2) { emit_int32(CRORC_OPCODE  | bt(d) | ba(s1) | bb(s2)); }
 
+// More convenient version.
+inline void Assembler::crand( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crand(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::crnand(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crnand(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::cror(  ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  cror(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::crxor( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crxor(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::crnor( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crnor(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::creqv( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  creqv(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::crandc(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crandc(dst_bit, src_bit, dst_bit);
+}
+inline void Assembler::crorc( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc) {
+  int dst_bit = condition_register_bit(crdst, cdst),
+      src_bit = condition_register_bit(crsrc, csrc);
+  crorc(dst_bit, src_bit, dst_bit);
+}
+
 // Conditional move (>= Power7)
 inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
   if (b == noreg) {
@@ -516,6 +558,10 @@ inline void Assembler::smt_prio_medium_low()  { Assembler::or_unchecked(R6,  R6,
 inline void Assembler::smt_prio_medium()      { Assembler::or_unchecked(R2,  R2,  R2); }
 inline void Assembler::smt_prio_medium_high() { Assembler::or_unchecked(R5,  R5,  R5); }
 inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }
+// >= Power7
+inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); }
+inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); }
+inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); }
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
 
@@ -778,7 +824,8 @@ inline void Assembler::tbegin_()                                { emit_int32( TB
 inline void Assembler::tbeginrot_()                             { emit_int32( TBEGIN_OPCODE | /*R=1*/ 1u << (31-10) | rc(1)); }
 inline void Assembler::tend_()                                  { emit_int32( TEND_OPCODE | rc(1)); }
 inline void Assembler::tendall_()                               { emit_int32( TEND_OPCODE | /*A=1*/ 1u << (31-6) | rc(1)); }
-inline void Assembler::tabort_(Register a)                      { emit_int32( TABORT_OPCODE | ra(a) | rc(1)); }
+inline void Assembler::tabort_()                                { emit_int32( TABORT_OPCODE | rc(1)); }
+inline void Assembler::tabort_(Register a)                      { assert(a != R0, "r0 not allowed"); emit_int32( TABORT_OPCODE | ra(a) | rc(1)); }
 inline void Assembler::tabortwc_(int t, Register a, Register b) { emit_int32( TABORTWC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }
 inline void Assembler::tabortwci_(int t, Register a, int si)    { emit_int32( TABORTWCI_OPCODE | to(t) | ra(a) | sh1620(si) | rc(1)); }
 inline void Assembler::tabortdc_(int t, Register a, Register b) { emit_int32( TABORTDC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }

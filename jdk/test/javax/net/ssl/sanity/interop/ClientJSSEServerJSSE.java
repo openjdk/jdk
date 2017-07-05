@@ -33,6 +33,10 @@ import java.security.Security;
 public class ClientJSSEServerJSSE {
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         // MD5 is used in this test case, don't disable MD5 algorithm.
         Security.setProperty(
                 "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
