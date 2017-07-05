@@ -332,6 +332,29 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
       DEFINE_CROSS_COMPILE_ARCH=""
     fi
     AC_SUBST(DEFINE_CROSS_COMPILE_ARCH)
+
+    # Some Zero and Shark settings.
+    # ZERO_ARCHFLAG tells the compiler which mode to build for
+    case "${OPENJDK_TARGET_CPU}" in
+      s390)
+        ZERO_ARCHFLAG="-m31"
+        ;;
+      *)
+        ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+    esac
+    AC_SUBST(ZERO_ARCHFLAG)
+
+    # ZERO_ARCHDEF is used to enable architecture-specific code
+    case "${OPENJDK_TARGET_CPU}" in
+      ppc*)    ZERO_ARCHDEF=PPC   ;;
+      s390*)   ZERO_ARCHDEF=S390  ;;
+      sparc*)  ZERO_ARCHDEF=SPARC ;;
+      x86_64*) ZERO_ARCHDEF=AMD64 ;;
+      x86)     ZERO_ARCHDEF=IA32  ;;
+      *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
+    esac
+    AC_SUBST(ZERO_ARCHDEF)
+
 ])
 
 AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
