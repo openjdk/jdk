@@ -152,7 +152,7 @@ typedef struct {
 #define OGLC_VENDOR_OTHER  0
 #define OGLC_VENDOR_ATI    1
 #define OGLC_VENDOR_NVIDIA 2
-#define OGLC_VENDOR_SUN    3
+#define OGLC_VENDOR_INTEL  3
 
 #define OGLC_VCAP_MASK     0x3
 #define OGLC_VCAP_OFFSET   24

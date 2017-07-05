@@ -125,13 +125,14 @@ class Deoptimization : AllStatic {
   static bool realloc_objects(JavaThread* thread, frame* fr, GrowableArray<ScopeValue*>* objects, TRAPS);
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects);
-  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread);
-  NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects);)
+  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures);
+  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
+  static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
+  NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2
 
   public:
-  static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk);
+  static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures);
 
   // Interface used for unpacking deoptimized frames
 

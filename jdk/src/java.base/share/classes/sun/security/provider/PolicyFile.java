@@ -1040,7 +1040,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     /**
-     * Evaluates the the global policy for the permissions granted to
+     * Evaluates the global policy for the permissions granted to
      * the ProtectionDomain and tests whether the permission is
      * granted.
      *

@@ -29,14 +29,13 @@
  * @library ../../regtesthelpers
  * @build Util
  * @author Alexey Ivanov
+ * @run main bug8032878
  */
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
-
-import sun.awt.SunToolkit;
 
 public class bug8032878 implements Runnable {
     private static final String ONE = "one";
@@ -99,15 +98,15 @@ public class bug8032878 implements Runnable {
     }
 
     private void runTest() throws Exception {
-        realSync();
+        robot.waitForIdle();
         // Select 'one'
         Util.hitKeys(robot, KeyEvent.VK_TAB);
-        realSync();
+        robot.waitForIdle();
         Util.hitKeys(robot, KeyEvent.VK_1);
         Util.hitKeys(robot, KeyEvent.VK_2);
         Util.hitKeys(robot, KeyEvent.VK_3);
         Util.hitKeys(robot, KeyEvent.VK_ENTER);
-        realSync();
+        robot.waitForIdle();
     }
 
     private void checkResult() throws Exception {
@@ -125,9 +124,6 @@ public class bug8032878 implements Runnable {
         }
     }
 
-    private static void realSync() {
-        ((SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
-    }
 
     @Override
     public void run() {

@@ -65,7 +65,6 @@ public class TranslucentJAppletTest {
     public static void main(String[] args)
         throws Exception
     {
-        sun.awt.SunToolkit tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
 
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         for (GraphicsDevice gd : ge.getScreenDevices()) {
@@ -96,7 +95,7 @@ public class TranslucentJAppletTest {
                 initAndShowGUI();
             }
         });
-        tk.realSync();
+        r.waitForIdle();
 
         if (!paintComponentCalled) {
             throw new RuntimeException("Test FAILED: panel's paintComponent() method is not called");

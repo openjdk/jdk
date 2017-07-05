@@ -95,7 +95,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *   <code>Locale</code> always canonicalizes to lower case.</dd>
  *
  *   <dd>Well-formed language values have the form
- *   <code>[a-zA-Z]{2,8}</code>.  Note that this is not the the full
+ *   <code>[a-zA-Z]{2,8}</code>.  Note that this is not the full
  *   BCP47 language production, since it excludes extlang.  They are
  *   not needed since modern three-letter language codes replace
  *   them.</dd>
@@ -1691,7 +1691,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the the locale's script that is appropriate for display to
+     * Returns a name for the locale's script that is appropriate for display to
      * the user. If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  Returns
      * the empty string if this locale doesn't specify a script code.

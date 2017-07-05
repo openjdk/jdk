@@ -989,7 +989,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
     /*
-     * Append the the second Vector onto the first Vector
+     * Append the second Vector onto the first Vector
      * (v2 must be non-null)
      */
     private static <T> Vector<T> appendVector(Vector<T> v1, Vector<T> v2) {

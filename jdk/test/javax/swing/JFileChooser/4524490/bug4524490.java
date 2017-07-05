@@ -25,24 +25,23 @@
  * @test
  * @bug 4524490
  * @summary Tests if in JFileChooser, ALT+L does not bring focus to 'Files' selection list in Motif LAF
- * @library ../../regtesthelpers
- * @build Util
  * @author Konstantin Eremin
+ * @library ../../regtesthelpers
+ * @library ../../../../lib/testlibrary
+ * @build Util jdk.testlibrary.OSInfo
  * @run main bug4524490
  */
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 public class bug4524490 {
 
     private static JFileChooser fileChooser;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -56,7 +55,7 @@ public class bug4524490 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (OSInfo.OSType.MACOSX.equals(OSInfo.getOSType())) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_L);

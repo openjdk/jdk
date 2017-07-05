@@ -58,7 +58,7 @@ public class MonitoredVmUtil {
      *
      * @param vm the target MonitoredVm
      * @return String - contains the command line of the target Java
-     *                  application or the the string "Unknown" if the
+     *                  application or the string "Unknown" if the
      *                  command line cannot be determined.
      */
     public static String commandLine(MonitoredVm vm) throws MonitorException {
@@ -73,7 +73,7 @@ public class MonitoredVmUtil {
      *
      * @param vm the target MonitoredVm
      * @return String - contains the arguments to the main class for the
-     *                  target Java application or the the string "Unknown"
+     *                  target Java application or the string "Unknown"
      *                  if the command line cannot be determined.
      */
     public static String mainArgs(MonitoredVm vm) throws MonitorException {
@@ -97,7 +97,7 @@ public class MonitoredVmUtil {
      * @param vm the target MonitoredVm
      * @param fullPath include the full path to Jar file, where applicable
      * @return String - contains the main class of the target Java
-     *                  application or the the string "Unknown" if the
+     *                  application or the string "Unknown" if the
      *                  command line cannot be determined.
      */
     public static String mainClass(MonitoredVm vm, boolean fullPath)
@@ -138,7 +138,7 @@ public class MonitoredVmUtil {
      *
      * @param vm the target MonitoredVm
      * @return String - contains the arguments passed to the JVM for the
-     *                  target Java application or the the string "Unknown"
+     *                  target Java application or the string "Unknown"
      *                  if the command line cannot be determined.
      */
     public static String jvmArgs(MonitoredVm vm) throws MonitorException {
@@ -151,7 +151,7 @@ public class MonitoredVmUtil {
      *
      * @param vm the target MonitoredVm
      * @return String - contains the flags passed to the JVM for the
-     *                  target Java application or the the string "Unknown"
+     *                  target Java application or the string "Unknown"
      *                  if the command line cannot be determined.
      */
     public static String jvmFlags(MonitoredVm vm) throws MonitorException {

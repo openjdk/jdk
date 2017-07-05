@@ -54,7 +54,7 @@ import java.security.*;
  *
  * </ol>
  *
- * <p>Note: it is not always necessary to do do algorithm-specific
+ * <p>Note: it is not always necessary to do algorithm-specific
  * initialization for a DSA key pair generator. That is, it is not always
  * necessary to call an {@code initialize} method in this interface.
  * Algorithm-independent initialization using the {@code initialize} method

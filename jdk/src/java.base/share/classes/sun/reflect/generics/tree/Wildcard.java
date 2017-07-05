@@ -28,8 +28,8 @@ package sun.reflect.generics.tree;
 import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 public class Wildcard implements TypeArgument {
-    private FieldTypeSignature[] upperBounds;
-    private FieldTypeSignature[] lowerBounds;
+    private final FieldTypeSignature[] upperBounds;
+    private final FieldTypeSignature[] lowerBounds;
 
     private Wildcard(FieldTypeSignature[] ubs, FieldTypeSignature[] lbs) {
         upperBounds = ubs;
@@ -43,11 +43,11 @@ public class Wildcard implements TypeArgument {
         return new Wildcard(ubs, lbs);
     }
 
-    public FieldTypeSignature[] getUpperBounds(){
+    public FieldTypeSignature[] getUpperBounds() {
         return upperBounds;
     }
 
-    public FieldTypeSignature[] getLowerBounds(){
+    public FieldTypeSignature[] getLowerBounds() {
         if (lowerBounds.length == 1 &&
             lowerBounds[0] == BottomSignature.make())
             return emptyBounds;
