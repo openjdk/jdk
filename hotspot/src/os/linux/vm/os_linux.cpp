@@ -1639,8 +1639,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   //
   // See Linux man page execstack(8) for more info.
   if (os::uses_stack_guard_pages() && !os::Linux::_stack_is_executable) {
-    ElfFile ef(filename);
-    if (!ef.specifies_noexecstack()) {
+    if (!ElfFile::specifies_noexecstack(filename)) {
       if (!is_init_completed()) {
         os::Linux::_stack_is_executable = true;
         // This is OK - No Java threads have been created yet, and hence no
