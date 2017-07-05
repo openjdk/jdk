@@ -57,7 +57,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   mark_sweep_phase1(marked_for_unloading, clear_all_softrefs);
 
-  if (G1VerifyConcMark) {
+  if (VerifyDuringGC) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       g1h->checkConcurrentMark();
   }

@@ -47,14 +47,6 @@ class MethodHandleNatives {
     static native int getMembers(Class<?> defc, String matchName, String matchSig,
             int matchFlags, Class<?> caller, int skip, MemberName[] results);
 
-    static Class<?> asNativeCaller(Class<?> lookupClass) {
-        if (lookupClass == null)  // means "public only, non-privileged"
-            return sun.dyn.empty.Empty.class;
-        if (lookupClass == Access.class)  // means "internal, privileged"
-            return null;    // to the JVM, null means completely privileged
-        return lookupClass;
-    }
-
     /// MethodHandle support
 
     /** Initialize the method handle to adapt the call. */

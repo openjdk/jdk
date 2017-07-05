@@ -180,6 +180,7 @@ class ScanRSClosure : public HeapRegionClosure {
   CardTableModRefBS *_ct_bs;
   int _worker_i;
   bool _try_claimed;
+  size_t _min_skip_distance, _max_skip_distance;
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc, int worker_i) :
     _oc(oc),
@@ -191,6 +192,8 @@ public:
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
     _ct_bs = (CardTableModRefBS*) (_g1h->barrier_set());
+    _min_skip_distance = 16;
+    _max_skip_distance = 2 * _g1h->n_par_threads() * _min_skip_distance;
   }
 
   void set_try_claimed() { _try_claimed = true; }
@@ -245,9 +248,13 @@ public:
     HeapRegionRemSetIterator* iter = _g1h->rem_set_iterator(_worker_i);
     hrrs->init_iterator(iter);
     size_t card_index;
+    size_t skip_distance = 0, current_card = 0, jump_to_card = 0;
     while (iter->has_next(card_index)) {
+      if (current_card < jump_to_card) {
+        ++current_card;
+        continue;
+      }
       HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
-
 #if 0
       gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
                           card_start, card_start + CardTableModRefBS::card_size_in_words);
@@ -257,20 +264,28 @@ public:
       assert(card_region != NULL, "Yielding cards not in the heap?");
       _cards++;
 
-      if (!card_region->in_collection_set()) {
-        // If the card is dirty, then we will scan it during updateRS.
-        if (!_ct_bs->is_card_claimed(card_index) &&
-            !_ct_bs->is_card_dirty(card_index)) {
-          assert(_ct_bs->is_card_clean(card_index) ||
-                 _ct_bs->is_card_claimed(card_index) ||
-                 _ct_bs->is_card_deferred(card_index),
-                 "Card is either clean, claimed or deferred");
-          if (_ct_bs->claim_card(card_index))
+       // If the card is dirty, then we will scan it during updateRS.
+      if (!card_region->in_collection_set() && !_ct_bs->is_card_dirty(card_index)) {
+          if (!_ct_bs->is_card_claimed(card_index) && _ct_bs->claim_card(card_index)) {
             scanCard(card_index, card_region);
-        }
+          } else if (_try_claimed) {
+            if (jump_to_card == 0 || jump_to_card != current_card) {
+              // We did some useful work in the previous iteration.
+              // Decrease the distance.
+              skip_distance = MAX2(skip_distance >> 1, _min_skip_distance);
+            } else {
+              // Previous iteration resulted in a claim failure.
+              // Increase the distance.
+              skip_distance = MIN2(skip_distance << 1, _max_skip_distance);
+            }
+            jump_to_card = current_card + skip_distance;
+          }
       }
+      ++current_card;
     }
-    hrrs->set_iter_complete();
+    if (!_try_claimed) {
+      hrrs->set_iter_complete();
+    }
     return false;
   }
   // Set all cards back to clean.
@@ -508,7 +523,7 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     // and they are causing failures. When we resolve said race
     // conditions, we'll revert back to parallel remembered set
     // updating and scanning. See CRs 6677707 and 6677708.
-    if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
+    if (G1ParallelRSetUpdatingEnabled || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
     } else {
@@ -517,7 +532,7 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
       _g1p->record_update_rs_time(worker_i, 0.0);
       _g1p->record_scan_new_refs_time(worker_i, 0.0);
     }
-    if (G1EnableParallelRSetScanning || (worker_i == 0)) {
+    if (G1ParallelRSetScanningEnabled || (worker_i == 0)) {
       scanRS(oc, worker_i);
     } else {
       _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime());
