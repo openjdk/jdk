@@ -41,7 +41,7 @@ public class HotspotInternal
 
     private final static String HOTSPOT_INTERNAL_MBEAN_NAME =
         "sun.management:type=HotspotInternal";
-    private static ObjectName objName = Util.newObjectName(HOTSPOT_INTERNAL_MBEAN_NAME);
+    private static ObjectName objName = ObjectName.valueOf(HOTSPOT_INTERNAL_MBEAN_NAME);
     private MBeanServer server = null;
 
     /**

@@ -415,7 +415,7 @@ class ThreadImpl implements ThreadMXBean {
     private static native void resetContentionTimes0(long tid);
 
     public ObjectName getObjectName() {
-        return Util.newObjectName(ManagementFactory.THREAD_MXBEAN_NAME);
+        return ObjectName.valueOf(ManagementFactory.THREAD_MXBEAN_NAME);
     }
 
 }

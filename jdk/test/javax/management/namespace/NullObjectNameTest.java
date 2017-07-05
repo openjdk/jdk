@@ -24,6 +24,7 @@
  * @test NullObjectNameTest.java
  * @summary Test that null ObjectName are correctly handled in namespaces.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean NullObjectNameTest Wombat WombatMBean
  * @compile -XDignore.symbol.file=true  NullObjectNameTest.java
  * @run build NullObjectNameTest Wombat WombatMBean

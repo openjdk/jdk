@@ -61,7 +61,7 @@ public class NamespaceDispatchInterceptor
     private static final int NAMESPACE_SEPARATOR_LENGTH =
             NAMESPACE_SEPARATOR.length();
 
-    private final DomainDispatchInterceptor localNamespace;
+    private final DomainDispatchInterceptor nextInterceptor;
     private final String           serverName;
 
     /**
@@ -84,7 +84,7 @@ public class NamespaceDispatchInterceptor
                                MBeanServerDelegate delegate,
                                MBeanInstantiator   instantiator,
                                Repository          repository)  {
-           localNamespace = new DomainDispatchInterceptor(outer,delegate,
+           nextInterceptor = new DomainDispatchInterceptor(outer,delegate,
                    instantiator,repository,this);
            serverName = Util.getMBeanServerSecurityName(delegate);
     }
@@ -94,21 +94,21 @@ public class NamespaceDispatchInterceptor
      * Get first name space in ObjectName path. Ignore leading namespace
      * separators.
      **/
-    public static String getFirstNamespace(ObjectName name) {
+    static String getFirstNamespace(ObjectName name) {
         if (name == null) return "";
         final String domain = name.getDomain();
         if (domain.equals("")) return "";
 
+        // skip leading separators
         int first = 0;
-        int end = domain.indexOf(NAMESPACE_SEPARATOR,first);
-        while (end == first) {
-            first = end+NAMESPACE_SEPARATOR_LENGTH;
-            end = domain.indexOf(NAMESPACE_SEPARATOR,first);
-            if (end == -1) break;
-        }
+        while (domain.startsWith(NAMESPACE_SEPARATOR,first))
+            first += NAMESPACE_SEPARATOR_LENGTH;
 
-        if (end == -1) return "";
+        // go to next separator
+        final int end = domain.indexOf(NAMESPACE_SEPARATOR,first);
+        if (end == -1) return ""; // no namespace
 
+        // This is the first element in the namespace path.
         final String namespace = domain.substring(first,end);
 
         return namespace;
@@ -143,7 +143,7 @@ public class NamespaceDispatchInterceptor
         if (namespace.equals("") || isLocalHandlerNameFor(namespace,name) ||
             name.getDomain().equals(namespace+NAMESPACE_SEPARATOR)) {
             LOG.finer("dispatching to local name space");
-            return localNamespace;
+            return nextInterceptor;
         }
         final NamespaceInterceptor ns = getInterceptor(namespace);
         if (LOG.isLoggable(Level.FINER)) {
@@ -162,7 +162,7 @@ public class NamespaceDispatchInterceptor
         if (namespace.equals("") || isLocalHandlerNameFor(namespace,pattern) ||
             pattern.getDomain().equals(namespace+NAMESPACE_SEPARATOR)) {
             LOG.finer("dispatching to local name space");
-            return new QueryInterceptor(localNamespace);
+            return new QueryInterceptor(nextInterceptor);
         }
         final NamespaceInterceptor ns = getInterceptor(namespace);
         if (LOG.isLoggable(Level.FINER)) {
@@ -202,7 +202,7 @@ public class NamespaceDispatchInterceptor
 
     @Override
     final DomainDispatchInterceptor getNextInterceptor() {
-        return localNamespace;
+        return nextInterceptor;
     }
 
     /**
@@ -211,25 +211,25 @@ public class NamespaceDispatchInterceptor
      */
     @Override
     public String[] getDomains() {
-        return localNamespace.getDomains();
+        return nextInterceptor.getDomains();
     }
 
     @Override
-    public void addNamespace(ObjectName name, JMXNamespace handler,
+    public void addInterceptorFor(ObjectName name, JMXNamespace handler,
             Queue<Runnable> postRegisterQueue) {
         if (handler instanceof JMXDomain)
-            localNamespace.addNamespace(name,
+            nextInterceptor.addInterceptorFor(name,
                     (JMXDomain)handler,postRegisterQueue);
-        else super.addNamespace(name,handler,postRegisterQueue);
+        else super.addInterceptorFor(name,handler,postRegisterQueue);
     }
 
     @Override
-    public void removeNamespace(ObjectName name, JMXNamespace handler,
+    public void removeInterceptorFor(ObjectName name, JMXNamespace handler,
             Queue<Runnable> postDeregisterQueue) {
         if (handler instanceof JMXDomain)
-            localNamespace.removeNamespace(name,(JMXDomain)handler,
+            nextInterceptor.removeInterceptorFor(name,(JMXDomain)handler,
                     postDeregisterQueue);
-        else super.removeNamespace(name,handler,postDeregisterQueue);
+        else super.removeInterceptorFor(name,handler,postDeregisterQueue);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,6 @@ public final class StringBuilder
         append(seq);
     }
 
-    /**
-     * @see     java.lang.String#valueOf(java.lang.Object)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(Object obj) {
         return append(String.valueOf(obj));
     }
@@ -175,7 +171,6 @@ public final class StringBuilder
     }
 
     /**
-     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public StringBuilder append(CharSequence s) {
         if (s == null)
@@ -197,20 +192,19 @@ public final class StringBuilder
         return this;
     }
 
-    public StringBuilder append(char str[]) {
+    public StringBuilder append(char[] str) {
         super.append(str);
         return this;
     }
 
-    public StringBuilder append(char str[], int offset, int len) {
+    /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     */
+    public StringBuilder append(char[] str, int offset, int len) {
         super.append(str, offset, len);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(boolean)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(boolean b) {
         super.append(b);
         return this;
@@ -221,37 +215,21 @@ public final class StringBuilder
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(int)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(int i) {
         super.append(i);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(long)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(long lng) {
         super.append(lng);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(float)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(float f) {
         super.append(f);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(double)
-     * @see     #append(java.lang.String)
-     */
     public StringBuilder append(double d) {
         super.append(d);
         return this;
@@ -292,7 +270,7 @@ public final class StringBuilder
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
-    public StringBuilder insert(int index, char str[], int offset,
+    public StringBuilder insert(int index, char[] str, int offset,
                                 int len)
     {
         super.insert(index, str, offset, len);
@@ -301,9 +279,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(java.lang.Object)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, Object obj) {
         return insert(offset, String.valueOf(obj));
@@ -311,7 +286,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        #length()
      */
     public StringBuilder insert(int offset, String str) {
         super.insert(offset, str);
@@ -321,7 +295,7 @@ public final class StringBuilder
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
-    public StringBuilder insert(int offset, char str[]) {
+    public StringBuilder insert(int offset, char[] str) {
         super.insert(offset, str);
         return this;
     }
@@ -349,9 +323,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(boolean)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, boolean b) {
         super.insert(offset, b);
@@ -360,7 +331,6 @@ public final class StringBuilder
 
     /**
      * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @see        #length()
      */
     public StringBuilder insert(int offset, char c) {
         super.insert(offset, c);
@@ -369,9 +339,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(int)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, int i) {
         return insert(offset, String.valueOf(i));
@@ -379,9 +346,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(long)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, long l) {
         return insert(offset, String.valueOf(l));
@@ -389,9 +353,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(float)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, float f) {
         return insert(offset, String.valueOf(f));
@@ -399,9 +360,6 @@ public final class StringBuilder
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(double)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuilder insert(int offset, double d) {
         return insert(offset, String.valueOf(d));

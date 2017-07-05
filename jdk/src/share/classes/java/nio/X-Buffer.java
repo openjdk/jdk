@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1239,13 +1239,13 @@ public abstract class $Type$Buffer
      *         smaller than <tt>start</tt> and no larger than
      *         <tt>remaining()</tt>
      *
-     * @return  The new character sequence
+     * @return  The new character buffer
      *
      * @throws  IndexOutOfBoundsException
      *          If the preconditions on <tt>start</tt> and <tt>end</tt>
      *          do not hold
      */
-    public abstract CharSequence subSequence(int start, int end);
+    public abstract CharBuffer subSequence(int start, int end);
 
 
     // --- Methods to support Appendable ---
