@@ -318,6 +318,16 @@ void DelayedConstant::update_all() {
   }
 }
 
+RegisterOrConstant AbstractAssembler::delayed_value(int(*value_fn)(), Register tmp, int offset) {
+  intptr_t val = (intptr_t) (*value_fn)();
+  if (val != 0)  return val + offset;
+  return delayed_value_impl(delayed_value_addr(value_fn), tmp, offset);
+}
+RegisterOrConstant AbstractAssembler::delayed_value(address(*value_fn)(), Register tmp, int offset) {
+  intptr_t val = (intptr_t) (*value_fn)();
+  if (val != 0)  return val + offset;
+  return delayed_value_impl(delayed_value_addr(value_fn), tmp, offset);
+}
 intptr_t* AbstractAssembler::delayed_value_addr(int(*value_fn)()) {
   DelayedConstant* dcon = DelayedConstant::add(T_INT, (DelayedConstant::value_fn_t) value_fn);
   return &dcon->value;

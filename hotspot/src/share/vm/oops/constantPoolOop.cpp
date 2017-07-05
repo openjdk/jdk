@@ -267,25 +267,61 @@ klassOop constantPoolOopDesc::klass_ref_at_if_loaded_check(constantPoolHandle th
 
 
 methodOop constantPoolOopDesc::method_at_if_loaded(constantPoolHandle cpool,
-                                                   int which, Bytecodes::Code invoke_code) {
+                                                   int which) {
   assert(!constantPoolCacheOopDesc::is_secondary_index(which), "no indy instruction here");
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
-  int cache_index = which - CPCACHE_INDEX_TAG;
+  int cache_index = get_cpcache_index(which);
   if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
     if (PrintMiscellaneous && (Verbose||WizardMode)) {
-      tty->print_cr("bad operand %d for %d in:", which, invoke_code); cpool->print();
+      tty->print_cr("bad operand %d in:", which); cpool->print();
     }
     return NULL;
   }
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  if (invoke_code != Bytecodes::_illegal)
-    return e->get_method_if_resolved(invoke_code, cpool);
-  Bytecodes::Code bc;
-  if ((bc = e->bytecode_1()) != (Bytecodes::Code)0)
-    return e->get_method_if_resolved(bc, cpool);
-  if ((bc = e->bytecode_2()) != (Bytecodes::Code)0)
-    return e->get_method_if_resolved(bc, cpool);
-  return NULL;
+  return e->method_if_resolved(cpool);
+}
+
+
+bool constantPoolOopDesc::has_appendix_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  // XXX Is there a simpler way to get to the secondary entry?
+  ConstantPoolCacheEntry* e;
+  if (constantPoolCacheOopDesc::is_secondary_index(which)) {
+    e = cpool->cache()->secondary_entry_at(which);
+  } else {
+    int cache_index = get_cpcache_index(which);
+    if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
+      if (PrintMiscellaneous && (Verbose||WizardMode)) {
+        tty->print_cr("bad operand %d in:", which); cpool->print();
+      }
+      return false;
+    }
+    e = cpool->cache()->entry_at(cache_index);
+  }
+  return e->has_appendix();
+}
+
+
+oop constantPoolOopDesc::appendix_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
+  // XXX Is there a simpler way to get to the secondary entry?
+  ConstantPoolCacheEntry* e;
+  if (constantPoolCacheOopDesc::is_secondary_index(which)) {
+    e = cpool->cache()->secondary_entry_at(which);
+  } else {
+    int cache_index = get_cpcache_index(which);
+    if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
+      if (PrintMiscellaneous && (Verbose||WizardMode)) {
+        tty->print_cr("bad operand %d in:", which); cpool->print();
+      }
+      return NULL;
+    }
+    e = cpool->cache()->entry_at(cache_index);
+  }
+  if (!e->has_appendix()) {
+    return NULL;
+  }
+  return e->f1_as_instance();
 }
 
 
@@ -481,7 +517,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
   if (cache_index >= 0) {
     assert(index == _no_index_sentinel, "only one kind of index at a time");
     ConstantPoolCacheEntry* cpc_entry = this_oop->cache()->entry_at(cache_index);
-    result_oop = cpc_entry->f1();
+    result_oop = cpc_entry->f1_as_instance();
     if (result_oop != NULL) {
       return decode_exception_from_f1(result_oop, THREAD);
       // That was easy...
@@ -553,12 +589,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
                       index, this_oop->method_type_index_at(index),
                       signature->as_C_string());
       KlassHandle klass(THREAD, this_oop->pool_holder());
-      bool ignore_is_on_bcp = false;
-      Handle value = SystemDictionary::find_method_handle_type(signature,
-                                                               klass,
-                                                               false,
-                                                               ignore_is_on_bcp,
-                                                               THREAD);
+      Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         throw_exception = Handle(THREAD, PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
@@ -608,7 +639,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
     result_oop = NULL;  // safety
     ObjectLocker ol(this_oop, THREAD);
     ConstantPoolCacheEntry* cpc_entry = this_oop->cache()->entry_at(cache_index);
-    result_oop = cpc_entry->f1();
+    result_oop = cpc_entry->f1_as_instance();
     // Benign race condition:  f1 may already be filled in while we were trying to lock.
     // The important thing here is that all threads pick up the same result.
     // It doesn't matter which racing thread wins, as long as only one
@@ -625,6 +656,45 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
     }
     return result_oop;
   }
+}
+
+
+oop constantPoolOopDesc::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_oop, int index, TRAPS) {
+  assert(this_oop->tag_at(index).is_invoke_dynamic(), "Corrupted constant pool");
+
+  Handle bsm;
+  int argc;
+  {
+    // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type], plus optional arguments
+    // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
+    // It is accompanied by the optional arguments.
+    int bsm_index = this_oop->invoke_dynamic_bootstrap_method_ref_index_at(index);
+    oop bsm_oop = this_oop->resolve_possibly_cached_constant_at(bsm_index, CHECK_NULL);
+    if (!java_lang_invoke_MethodHandle::is_instance(bsm_oop)) {
+      THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "BSM not an MethodHandle");
+    }
+
+    // Extract the optional static arguments.
+    argc = this_oop->invoke_dynamic_argument_count_at(index);
+    if (argc == 0)  return bsm_oop;
+
+    bsm = Handle(THREAD, bsm_oop);
+  }
+
+  objArrayHandle info;
+  {
+    objArrayOop info_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1+argc, CHECK_NULL);
+    info = objArrayHandle(THREAD, info_oop);
+  }
+
+  info->obj_at_put(0, bsm());
+  for (int i = 0; i < argc; i++) {
+    int arg_index = this_oop->invoke_dynamic_argument_index_at(index, i);
+    oop arg_oop = this_oop->resolve_possibly_cached_constant_at(arg_index, CHECK_NULL);
+    info->obj_at_put(1+i, arg_oop);
+  }
+
+  return info();
 }
 
 oop constantPoolOopDesc::string_at_impl(constantPoolHandle this_oop, int which, TRAPS) {

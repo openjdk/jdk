@@ -26,7 +26,7 @@
 package java.lang.invoke;
 
 import sun.invoke.empty.Empty;
-import sun.misc.Unsafe;
+import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
@@ -86,13 +86,9 @@ abstract
 public class CallSite {
     static { MethodHandleImpl.initStatics(); }
 
-    // Fields used only by the JVM.  Do not use or change.
-    private MemberName vmmethod; // supplied by the JVM (ref. to calling method)
-    private int        vmindex;  // supplied by the JVM (BCI within calling method)
-
     // The actual payload of this call site:
     /*package-private*/
-    MethodHandle target;
+    MethodHandle target;    // Note: This field is known to the JVM.  Do not change.
 
     /**
      * Make a blank call site object with the given method type.
@@ -149,24 +145,6 @@ public class CallSite {
     public MethodType type() {
         // warning:  do not call getTarget here, because CCS.getTarget can throw IllegalStateException
         return target.type();
-    }
-
-    /** Called from JVM (or low-level Java code) after the BSM returns the newly created CallSite.
-     *  The parameters are JVM-specific.
-     */
-    void initializeFromJVM(String name,
-                           MethodType type,
-                           MemberName callerMethod,
-                           int        callerBCI) {
-        if (this.vmmethod != null) {
-            // FIXME
-            throw new BootstrapMethodError("call site has already been linked to an invokedynamic instruction");
-        }
-        if (!this.type().equals(type)) {
-            throw wrongTargetType(target, type);
-        }
-        this.vmindex  = callerBCI;
-        this.vmmethod = callerMethod;
     }
 
     /**
@@ -233,7 +211,7 @@ public class CallSite {
     public abstract MethodHandle dynamicInvoker();
 
     /*non-public*/ MethodHandle makeDynamicInvoker() {
-        MethodHandle getTarget = MethodHandleImpl.bindReceiver(GET_TARGET, this);
+        MethodHandle getTarget = GET_TARGET.bindReceiver(this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
@@ -255,12 +233,10 @@ public class CallSite {
     }
 
     // unsafe stuff:
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final long TARGET_OFFSET;
-
     static {
         try {
-            TARGET_OFFSET = unsafe.objectFieldOffset(CallSite.class.getDeclaredField("target"));
+            TARGET_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 
@@ -270,7 +246,7 @@ public class CallSite {
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
-        return (MethodHandle) unsafe.getObjectVolatile(this, TARGET_OFFSET);
+        return (MethodHandle) UNSAFE.getObjectVolatile(this, TARGET_OFFSET);
     }
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {
@@ -284,8 +260,7 @@ public class CallSite {
                              // Extra arguments for BSM, if any:
                              Object info,
                              // Caller information:
-                             MemberName callerMethod, int callerBCI) {
-        Class<?> callerClass = callerMethod.getDeclaringClass();
+                             Class<?> callerClass) {
         Object caller = IMPL_LOOKUP.in(callerClass);
         CallSite site;
         try {

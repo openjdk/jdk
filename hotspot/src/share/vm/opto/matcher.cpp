@@ -1283,8 +1283,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   if (is_method_handle_invoke) {
     // Kill some extra stack space in case method handles want to do
     // a little in-place argument insertion.
+    // FIXME: Is this still necessary?
     int regs_per_word  = NOT_LP64(1) LP64_ONLY(2); // %%% make a global const!
-    out_arg_limit_per_call += MethodHandlePushLimit * regs_per_word;
+    out_arg_limit_per_call += methodOopDesc::extra_stack_entries() * regs_per_word;
     // Do not update mcall->_argsize because (a) the extra space is not
     // pushed as arguments and (b) _argsize is dead (not used anywhere).
   }
