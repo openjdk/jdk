@@ -35,9 +35,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build FiniteGCLatency
- * @build FiniteGCLatency_Stub
- * @build TestLibrary
+ * @build TestLibrary FiniteGCLatency_Stub
  * @run main/othervm/timeout=120 FiniteGCLatency
  */
 

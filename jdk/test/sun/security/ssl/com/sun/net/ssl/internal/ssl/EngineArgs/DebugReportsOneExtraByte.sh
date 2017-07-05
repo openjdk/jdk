@@ -59,7 +59,7 @@ echo "Examining debug output for the string:"
 echo "${STRING}"
 echo "========="
 
-${TESTJAVA}${FS}bin${FS}java -Djavax.net.debug=all \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Djavax.net.debug=all \
     -Dtest.src=${TESTSRC} \
     DebugReportsOneExtraByte 2>&1 | \
     grep "${STRING}"

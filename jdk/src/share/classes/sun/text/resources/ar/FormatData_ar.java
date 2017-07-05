@@ -107,6 +107,17 @@ public class FormatData_ar extends ListResourceBundle {
                     "\u0633" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u062d",
+                    "\u0646",
+                    "\u062b",
+                    "\u0631",
+                    "\u062e",
+                    "\u062c",
+                    "\u0633",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\u0635", // am marker

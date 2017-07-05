@@ -119,9 +119,9 @@ fi
 # run
 if [ "$3" = "true" ]
 then
-  RUNCMD="${TESTJAVA}${FS}bin${FS}java -Djava.ext.dirs=${EXTDIRS} $2 "
+  RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Djava.ext.dirs=${EXTDIRS} $2 "
 else
-  RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${CLASSPATHARG} $2 "
+  RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${CLASSPATHARG} $2 "
 fi
 
 echo ${RUNCMD}

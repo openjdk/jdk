@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,17 +53,13 @@ public class KeyManagerFactory {
      * Obtains the default KeyManagerFactory algorithm name.
      *
      * <p>The default algorithm can be changed at runtime by setting
-     * the value of the "ssl.KeyManagerFactory.algorithm" security
-     * property (set in the Java security properties file or by calling
-     * {@link java.security.Security#setProperty(java.lang.String,
-     * java.lang.String)})
-     * to the desired algorithm name.
+     * the value of the {@code ssl.KeyManagerFactory.algorithm}
+     * security property to the desired algorithm name.
      *
-     * @see java.security.Security#setProperty(java.lang.String,
-     *          java.lang.String)
-     * @return the default algorithm name as specified in the
-     *          Java security properties, or an implementation-specific
-     *          default if no such property exists.
+     * @see java.security.Security security properties
+     * @return the default algorithm name as specified by the
+     *          {@code ssl.KeyManagerFactory.algorithm} security property, or an
+     *          implementation-specific default if no such property exists.
      */
     public final static String getDefaultAlgorithm() {
         String type;

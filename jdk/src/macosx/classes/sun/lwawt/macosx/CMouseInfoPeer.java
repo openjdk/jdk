@@ -26,7 +26,6 @@
 package sun.lwawt.macosx;
 
 import java.awt.Window;
-
 import sun.lwawt.LWMouseInfoPeer;
 import sun.lwawt.LWWindowPeer;
 
@@ -41,10 +40,6 @@ public class CMouseInfoPeer extends LWMouseInfoPeer
             return false;
         }
 
-        LWWindowPeer peer = (LWWindowPeer)w.getPeer();
-        CPlatformWindow platformWindow = (CPlatformWindow)peer.getPlatformWindow();
-        return nativeIsWindowUnderMouse(platformWindow.getNSWindowPtr());
+        return ((LWWindowPeer)w.getPeer()).getPlatformWindow().isUnderMouse();
     }
-
-    private static native boolean nativeIsWindowUnderMouse(long ptr);
 }

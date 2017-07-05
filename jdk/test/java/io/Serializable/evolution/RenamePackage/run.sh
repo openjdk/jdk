@@ -86,13 +86,13 @@ ${JAVAC} -d ${TESTCLASSES}/nclasses ${TESTSRC}/install/SerialDriver.java
 
 # Run Case 1. Map test.SerialDriver within stream to install.SerialDriver.
 CLASSPATH="${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
-${JAVA} test.SerialDriver -s
+${JAVA} ${TESTVMOPTS} test.SerialDriver -s
 CLASSPATH="${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
-${JAVA} install.SerialDriver -d
+${JAVA} ${TESTVMOPTS} install.SerialDriver -d
 rm stream.ser
 
 # Run Case 2. Map install.SerialDriver within stream to test.SerialDriver.
 CLASSPATH="${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
-${JAVA} install.SerialDriver -s
+${JAVA} ${TESTVMOPTS} install.SerialDriver -s
 CLASSPATH="${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
-${JAVA} test.SerialDriver -d
+${JAVA} ${TESTVMOPTS} test.SerialDriver -d

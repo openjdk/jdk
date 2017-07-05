@@ -46,5 +46,5 @@ case "$OS" in
 esac
 
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}SlowStream.java
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=${TESTSRC} SlowStreamWriter | \
-        ${TESTJAVA}${FS}bin${FS}java SlowStreamReader
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=${TESTSRC} SlowStreamWriter | \
+        ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} SlowStreamReader

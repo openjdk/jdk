@@ -99,6 +99,23 @@ public class FormatData_th extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "\u0e21.\u0e04.",
+                    "\u0e01.\u0e1e.",
+                    "\u0e21\u0e35.\u0e04.",
+                    "\u0e40\u0e21.\u0e22.",
+                    "\u0e1e.\u0e04.",
+                    "\u0e21\u0e34.\u0e22.",
+                    "\u0e01.\u0e04.",
+                    "\u0e2a.\u0e04.",
+                    "\u0e01.\u0e22.",
+                    "\u0e15.\u0e04.",
+                    "\u0e1e.\u0e22.",
+                    "\u0e18.\u0e04.",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "\u0e27\u0e31\u0e19\u0e2d\u0e32\u0e17\u0e34\u0e15\u0e22\u0e4c", // Sunday
@@ -119,6 +136,17 @@ public class FormatData_th extends ListResourceBundle {
                     "\u0e1e\u0e24.", // abb Thursday
                     "\u0e28.", // abb Friday
                     "\u0e2a." // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "\u0e2d",
+                    "\u0e08",
+                    "\u0e2d",
+                    "\u0e1e",
+                    "\u0e1e",
+                    "\u0e28",
+                    "\u0e2a",
                 }
             },
             { "AmPmMarkers",
@@ -143,6 +171,12 @@ public class FormatData_th extends ListResourceBundle {
                 new String[] { // era strings
                     "\u0e1b\u0e35\u0e01\u0e48\u0e2d\u0e19\u0e04\u0e23\u0e34\u0e2a\u0e15\u0e4c\u0e01\u0e32\u0e25\u0e17\u0e35\u0e48",
                     "\u0e04.\u0e28."
+                }
+            },
+            { "narrow.Eras",
+                new String[] {
+                    "\u0e01\u0e48\u0e2d\u0e19 \u0e04.\u0e28.",
+                    "\u0e04.\u0e28.",
                 }
             },
             { "buddhist.TimePatterns",

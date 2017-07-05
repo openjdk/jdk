@@ -178,7 +178,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     int count;
     netif *netifP;
     DWORD i;
-    int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, wlan=0, net=0;
+    int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, wlan=0, net=0, wlen=0;
 
     /*
      * Ask the IP Helper library to enumerate the adapters
@@ -260,8 +260,17 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
          */
         curr = (netif *)calloc(1, sizeof(netif));
         if (curr != NULL) {
+            wlen = MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
+                       ifrowP->dwDescrLen, NULL, 0);
+            if(wlen == 0) {
+                // MultiByteToWideChar should not fail
+                // But in rare case it fails, we allow 'char' to be displayed
+                curr->displayName = (char *)malloc(ifrowP->dwDescrLen + 1);
+            } else {
+                curr->displayName = (wchar_t *)malloc(wlen*(sizeof(wchar_t))+1);
+            }
+
             curr->name = (char *)malloc(strlen(dev_name) + 1);
-            curr->displayName = (char *)malloc(ifrowP->dwDescrLen + 1);
 
             if (curr->name == NULL || curr->displayName == NULL) {
                 if (curr->name) free(curr->name);
@@ -282,8 +291,29 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
          * 32-bit numbers as index values.
          */
         strcpy(curr->name, dev_name);
-        strncpy(curr->displayName, ifrowP->bDescr, ifrowP->dwDescrLen);
-        curr->displayName[ifrowP->dwDescrLen] = '\0';
+        if (wlen == 0) {
+            // display char type in case of MultiByteToWideChar failure
+            strncpy(curr->displayName, ifrowP->bDescr, ifrowP->dwDescrLen);
+            curr->displayName[ifrowP->dwDescrLen] = '\0';
+        } else {
+            // call MultiByteToWideChar again to fill curr->displayName
+            // it should not fail, because we have called it once before
+            if (MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
+                   ifrowP->dwDescrLen, curr->displayName, wlen) == 0) {
+                JNU_ThrowByName(env, "java/lang/Error",
+                       "Cannot get multibyte char for interface display name");
+                free_netif(netifP);
+                free(tableP);
+                free(curr->name);
+                free(curr->displayName);
+                free(curr);
+                return -1;
+            } else {
+                curr->displayName[wlen*(sizeof(wchar_t))] = '\0';
+                curr->dNameIsUnicode = TRUE;
+            }
+        }
+
         curr->dwIndex = ifrowP->dwIndex;
         curr->ifType = ifrowP->dwType;
         curr->index = GetFriendlyIfIndex(ifrowP->dwIndex);

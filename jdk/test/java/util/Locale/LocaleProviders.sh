@@ -96,12 +96,12 @@ ${TESTJAVA}${FS}bin${FS}javac -d ${SPIDIR}${FS}dest ${SPIDIR}${FS}src${FS}tznp.j
 ${TESTJAVA}${FS}bin${FS}jar cvf ${SPIDIR}${FS}tznp.jar -C ${SPIDIR}${FS}dest .
 
 # get the platform default locales
-PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`
 DEFLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
 DEFCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
 echo "DEFLANG=${DEFLANG}"
 echo "DEFCTRY=${DEFCTRY}"
-PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale format`
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale format`
 DEFFMTLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
 DEFFMTCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
 echo "DEFFMTLANG=${DEFFMTLANG}"
@@ -109,7 +109,7 @@ echo "DEFFMTCTRY=${DEFFMTCTRY}"
 
 runTest()
 {
-    RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
+    RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
     echo ${RUNCMD}
     ${RUNCMD}
     result=$?

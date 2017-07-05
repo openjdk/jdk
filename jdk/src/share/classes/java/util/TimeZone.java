@@ -43,12 +43,12 @@ import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.misc.SharedSecrets;
 import sun.misc.JavaAWTAccess;
+import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
-import sun.util.locale.provider.TimeZoneNameUtility;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
+import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
  * <code>TimeZone</code> represents a time zone offset, and also figures out daylight
@@ -399,28 +399,23 @@ abstract public class TimeZone implements Serializable, Cloneable {
         if (style != SHORT && style != LONG) {
             throw new IllegalArgumentException("Illegal style: " + style);
         }
-
         String id = getID();
-        String[] names = getDisplayNames(id, locale);
-        if (names == null) {
-            if (id.startsWith("GMT") && id.length() > 3) {
-                char sign = id.charAt(3);
-                if (sign == '+' || sign == '-') {
-                    return id;
-                }
-            }
-            int offset = getRawOffset();
-            if (daylight) {
-                offset += getDSTSavings();
-            }
-            return ZoneInfoFile.toCustomID(offset);
+        String name = TimeZoneNameUtility.retrieveDisplayName(id, daylight, style, locale);
+        if (name != null) {
+            return name;
         }
 
-        int index = daylight ? 3 : 1;
-        if (style == SHORT) {
-            index++;
+        if (id.startsWith("GMT") && id.length() > 3) {
+            char sign = id.charAt(3);
+            if (sign == '+' || sign == '-') {
+                return id;
+            }
         }
-        return names[index];
+        int offset = getRawOffset();
+        if (daylight) {
+            offset += getDSTSavings();
+        }
+        return ZoneInfoFile.toCustomID(offset);
     }
 
     private static class DisplayNames {
@@ -429,9 +424,12 @@ abstract public class TimeZone implements Serializable, Cloneable {
         //   Map(key=id, value=SoftReference(Map(key=locale, value=displaynames)))
         private static final Map<String, SoftReference<Map<Locale, String[]>>> CACHE =
             new ConcurrentHashMap<>();
+
+        private DisplayNames() {
+        }
     }
 
-    private static final String[] getDisplayNames(String id, Locale locale) {
+    private static String[] getDisplayNames(String id, Locale locale) {
         Map<String, SoftReference<Map<Locale, String[]>>> displayNames = DisplayNames.CACHE;
 
         SoftReference<Map<Locale, String[]>> ref = displayNames.get(id);
@@ -631,14 +629,14 @@ abstract public class TimeZone implements Serializable, Cloneable {
     }
 
     private static synchronized TimeZone setDefaultZone() {
-        TimeZone tz = null;
+        TimeZone tz;
         // get the time zone ID from the system properties
         String zoneID = AccessController.doPrivileged(
                 new GetPropertyAction("user.timezone"));
 
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
-        if (zoneID == null || zoneID.equals("")) {
+        if (zoneID == null || zoneID.isEmpty()) {
             String country = AccessController.doPrivileged(
                     new GetPropertyAction("user.country"));
             String javaHome = AccessController.doPrivileged(
@@ -670,8 +668,9 @@ abstract public class TimeZone implements Serializable, Cloneable {
         assert tz != null;
 
         final String id = zoneID;
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+                public Void run() {
                     System.setProperty("user.timezone", id);
                     return null;
                 }

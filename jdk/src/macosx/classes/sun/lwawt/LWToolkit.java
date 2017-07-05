@@ -210,9 +210,9 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
      * and DialogPeer interfaces.
      */
     private LWWindowPeer createDelegatedPeer(Window target, PlatformComponent platformComponent,
-                                             PlatformWindow platformWindow)
+                                             PlatformWindow platformWindow, LWWindowPeer.PeerType peerType)
     {
-        LWWindowPeer peer = new LWWindowPeer(target, platformComponent, platformWindow);
+        LWWindowPeer peer = new LWWindowPeer(target, platformComponent, platformWindow, peerType);
         targetCreatedPeer(target, peer);
         peer.initialize();
         return peer;
@@ -222,21 +222,28 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     public WindowPeer createWindow(Window target) {
         PlatformComponent platformComponent = createPlatformComponent();
         PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.SIMPLEWINDOW);
-        return createDelegatedPeer(target, platformComponent, platformWindow);
+        return createDelegatedPeer(target, platformComponent, platformWindow, LWWindowPeer.PeerType.SIMPLEWINDOW);
     }
 
     @Override
     public FramePeer createFrame(Frame target) {
         PlatformComponent platformComponent = createPlatformComponent();
         PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.FRAME);
-        return createDelegatedPeer(target, platformComponent, platformWindow);
+        return createDelegatedPeer(target, platformComponent, platformWindow, LWWindowPeer.PeerType.FRAME);
     }
 
     public LWWindowPeer createEmbeddedFrame(CEmbeddedFrame target) {
         PlatformComponent platformComponent = createPlatformComponent();
-        PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.EMBEDDEDFRAME);
-        return createDelegatedPeer(target, platformComponent, platformWindow);
+        PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.EMBEDDED_FRAME);
+        return createDelegatedPeer(target, platformComponent, platformWindow, LWWindowPeer.PeerType.EMBEDDED_FRAME);
     }
+
+    public LWWindowPeer createEmbeddedFrame(CViewEmbeddedFrame target) {
+        PlatformComponent platformComponent = createPlatformComponent();
+        PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.VIEW_EMBEDDED_FRAME);
+        return createDelegatedPeer(target, platformComponent, platformWindow, LWWindowPeer.PeerType.VIEW_EMBEDDED_FRAME);
+    }
+
 
     CPrinterDialogPeer createCPrinterDialog(CPrinterDialog target) {
         PlatformComponent platformComponent = createPlatformComponent();
@@ -254,7 +261,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
 
         PlatformComponent platformComponent = createPlatformComponent();
         PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.DIALOG);
-        return createDelegatedPeer(target, platformComponent, platformWindow);
+        return createDelegatedPeer(target, platformComponent, platformWindow, LWWindowPeer.PeerType.DIALOG);
     }
 
     @Override

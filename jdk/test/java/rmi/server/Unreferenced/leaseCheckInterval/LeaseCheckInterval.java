@@ -37,11 +37,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build JavaVM
- * @build LeaseCheckInterval
- * @build LeaseCheckInterval_Stub
- * @build SelfTerminator
+ * @build TestLibrary JavaVM LeaseCheckInterval_Stub SelfTerminator
  * @run main/othervm LeaseCheckInterval
  */
 

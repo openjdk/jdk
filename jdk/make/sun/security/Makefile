@@ -38,10 +38,12 @@ SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
 SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
-# build sun/security/jgss/wrapper on non-windows platform
+# build sun/security/jgss/wrapper on non-windows non-macosx platforms
 JGSS_WRAPPER =
 ifneq ($(PLATFORM), windows)
-    JGSS_WRAPPER = jgss/wrapper
+    ifneq ($(PLATFORM), macosx)
+    	JGSS_WRAPPER = jgss/wrapper
+    endif
 endif
 
 # Build PKCS#11 on all platforms

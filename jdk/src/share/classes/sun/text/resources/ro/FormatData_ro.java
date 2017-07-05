@@ -82,6 +82,23 @@ public class FormatData_ro extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "I",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "I",
+                    "I",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "duminic\u0103", // Sunday
@@ -102,6 +119,29 @@ public class FormatData_ro extends ListResourceBundle {
                     "J", // abb Thursday
                     "V", // abb Friday
                     "S" // abb Saturday
+                }
+            },
+            // commented out DayNarrows because most names are contributed.
+//          { "DayNarrows",
+//              new String[] {
+//                  "D",
+//                  "",
+//                  "",
+//                  "",
+//                  "",
+//                  "",
+//                  "",
+//              }
+//          },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "D",
+                    "L",
+                    "M",
+                    "M",
+                    "J",
+                    "V",
+                    "S",
                 }
             },
             { "Eras",

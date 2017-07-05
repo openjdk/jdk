@@ -63,4 +63,4 @@ CLASSPATH=${TESTCLASSES}:${TESTSRC}
 export CLASSPATH
 
 # Run sanity test (IPv4-only for now)
-$JAVA -Djava.net.preferIPv4Stack=true Sanity ${IB_LINKS}
+$JAVA ${TESTVMOPTS} -Djava.net.preferIPv4Stack=true Sanity ${IB_LINKS}

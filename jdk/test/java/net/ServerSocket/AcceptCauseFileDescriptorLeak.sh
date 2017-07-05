@@ -45,4 +45,4 @@ if [ "$NOFILES" = "unlimited" ] || [ $NOFILES -ge 1024 ]; then
     ulimit -n 1024
 fi
 
-${TESTJAVA}/bin/java AcceptCauseFileDescriptorLeak
+${TESTJAVA}/bin/java ${TESTVMOPTS} AcceptCauseFileDescriptorLeak

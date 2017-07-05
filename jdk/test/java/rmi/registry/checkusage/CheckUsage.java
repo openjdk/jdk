@@ -27,7 +27,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build TestLibrary JavaVM CheckUsage
+ * @build TestLibrary JavaVM
  * @run main/othervm CheckUsage
  */
 

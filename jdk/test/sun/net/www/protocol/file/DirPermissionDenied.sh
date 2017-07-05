@@ -35,7 +35,7 @@ rm -rf ${TESTDIR}
 mkdir -p ${TESTDIR}
 chmod 333 ${TESTDIR}
 
-$TESTJAVA/bin/java -classpath $TESTCLASSES DirPermissionDenied ${TESTDIR}
+$TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES DirPermissionDenied ${TESTDIR}
 result=$?
 
 # Add back read access for user, otherwise not removable on some systems

@@ -30,7 +30,7 @@ if [ "x$TESTJAVA" = x ]; then
   TESTCLASSES=.
 fi
 
-tmpfile=`$TESTJAVA/bin/java -classpath $TESTCLASSES DeleteTempJar`
+tmpfile=`$TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES DeleteTempJar`
 rc=$?
 if [ $rc != 0 ]; then
     echo Unexpected failure with exit status $rc

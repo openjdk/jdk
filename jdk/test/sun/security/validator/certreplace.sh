@@ -82,4 +82,4 @@ $KT -delete -alias user
 # 5. Build and run test
 
 $JAVAC -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA CertReplace certreplace.jks certreplace.certs
+$JAVA ${TESTVMOPTS} CertReplace certreplace.jks certreplace.certs

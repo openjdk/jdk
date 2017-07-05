@@ -39,9 +39,7 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build UnreferencedContext
- * @build UnreferencedContext_Stub
- * @build TestLibrary
+ * @build TestLibrary UnreferencedContext_Stub
  * @run main/othervm/timeout=120 UnreferencedContext
  */
 

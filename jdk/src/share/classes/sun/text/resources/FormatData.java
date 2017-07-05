@@ -50,6 +50,20 @@ public class FormatData extends ListResourceBundle {
      * Overrides ListResourceBundle
      */
     protected final Object[][] getContents() {
+        final String[] buddhistEras = new String[] { // Thai Buddhist calendar era strings
+            "BC",     // BC
+            "B.E."    // Buddhist Era
+        };
+
+        // Japanese imperial calendar era abbreviations
+        final String[] japaneseEraAbbrs = new String[] {
+            "",
+            "M",
+            "T",
+            "S",
+            "H",
+        };
+
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -107,10 +121,27 @@ public class FormatData extends ListResourceBundle {
                     "Sat" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "W",
+                    "T",
+                    "F",
+                    "S",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "AM", // am marker
                     "PM" // pm marker
+                }
+            },
+            { "narrow.AmPmMarkers",
+                new String[] {
+                    "a", // am marker
+                    "p"  // pm marker
                 }
             },
             { "Eras",
@@ -119,17 +150,20 @@ public class FormatData extends ListResourceBundle {
                     "AD"
                 }
             },
-            { "buddhist.Eras",
-                new String[] { // Thai Buddhist calendar era strings
-                    "BC",     // BC
-                    "B.E."    // Buddhist Era
+            { "narrow.Eras",
+                new String[] {
+                    "B",
+                    "A",
                 }
             },
+            { "buddhist.Eras",
+              buddhistEras
+            },
             { "buddhist.short.Eras",
-                new String[] { // Thai Buddhist calendar era strings
-                    "BC",     // BC
-                    "B.E."    // Buddhist Era
-                }
+              buddhistEras
+            },
+            { "buddhist.narrow.Eras",
+              buddhistEras
             },
             { "japanese.Eras",
                 new String[] { // Japanese imperial calendar era strings
@@ -141,13 +175,10 @@ public class FormatData extends ListResourceBundle {
                 }
             },
             { "japanese.short.Eras",
-                new String[] { // Japanese imperial calendar era abbreviations
-                    "",
-                    "M",
-                    "T",
-                    "S",
-                    "H",
-                }
+              japaneseEraAbbrs
+            },
+            { "japanese.narrow.Eras",
+              japaneseEraAbbrs
             },
             { "japanese.FirstYear",
                 new String[] { // Japanese imperial calendar year name

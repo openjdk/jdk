@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,25 +389,23 @@ public class CertStore {
     }
 
     /**
-     * Returns the default <code>CertStore</code> type as specified in the
-     * Java security properties file, or the string &quot;LDAP&quot; if no
-     * such property exists. The Java security properties file is located in
-     * the file named &lt;JAVA_HOME&gt;/lib/security/java.security.
-     * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
-     * and specifies the directory where the JRE is installed.
+     * Returns the default {@code CertStore} type as specified by the
+     * {@code certstore.type} security property, or the string
+     * {@literal "LDAP"} if no such property exists.
      *
-     * <p>The default <code>CertStore</code> type can be used by applications
+     * <p>The default {@code CertStore} type can be used by applications
      * that do not want to use a hard-coded type when calling one of the
-     * <code>getInstance</code> methods, and want to provide a default
-     * <code>CertStore</code> type in case a user does not specify its own.
+     * {@code getInstance} methods, and want to provide a default
+     * {@code CertStore} type in case a user does not specify its own.
      *
-     * <p>The default <code>CertStore</code> type can be changed by setting
-     * the value of the "certstore.type" security property (in the Java
-     * security properties file) to the desired type.
+     * <p>The default {@code CertStore} type can be changed by setting
+     * the value of the {@code certstore.type} security property to the
+     * desired type.
      *
-     * @return the default <code>CertStore</code> type as specified in the
-     * Java security properties file, or the string &quot;LDAP&quot;
-     * if no such property exists.
+     * @see java.security.Security security properties
+     * @return the default {@code CertStore} type as specified by the
+     * {@code certstore.type} security property, or the string
+     * {@literal "LDAP"} if no such property exists.
      */
     public final static String getDefaultType() {
         String cstype;

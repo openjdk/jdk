@@ -53,7 +53,7 @@ case "$OS" in
 esac
 
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}PrintSSL.java || exit 10
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC PrintSSL | ( read PORT; ${TESTJAVA}${FS}bin${FS}keytool -printcert -sslserver localhost:$PORT )
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=$TESTSRC PrintSSL | ( read PORT; ${TESTJAVA}${FS}bin${FS}keytool -printcert -sslserver localhost:$PORT )
 status=$?
 
 rm PrintSSL*.class

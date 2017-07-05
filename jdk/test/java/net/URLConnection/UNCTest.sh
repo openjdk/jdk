@@ -36,7 +36,7 @@ OS=`uname -s`
 case "$OS" in
     Windows_95 | Windows_98 | Windows_NT )
 	${TESTJAVA}/bin/javac -d . ${TESTSRC}\\UNCTest.java
-	${TESTJAVA}/bin/java UNCTest ${UNC}
+	${TESTJAVA}/bin/java ${TESTVMOPTS} UNCTest ${UNC}
 	exit
         ;;
 

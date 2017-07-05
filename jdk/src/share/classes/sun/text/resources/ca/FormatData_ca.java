@@ -119,6 +119,23 @@ public class FormatData_ca extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "g",
+                    "f",
+                    "m",
+                    "a",
+                    "m",
+                    "j",
+                    "j",
+                    "a",
+                    "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "diumenge", // Sunday
@@ -139,6 +156,28 @@ public class FormatData_ca extends ListResourceBundle {
                     "dj.", // abb Thursday
                     "dv.", // abb Friday
                     "ds." // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "G",
+                    "L",  // Note: contributed item in CDLR
+                    "T",
+                    "C",
+                    "J",
+                    "V",
+                    "S",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "g",
+                    "l",
+                    "t",
+                    "c",
+                    "j",
+                    "v",
+                    "s",
                 }
             },
             { "NumberElements",

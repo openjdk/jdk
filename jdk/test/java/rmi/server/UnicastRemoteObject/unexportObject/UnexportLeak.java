@@ -29,10 +29,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build UnexportLeak
- * @build UnexportLeak_Stub
- * @build TestLibrary
- * @build Ping
+ * @build TestLibrary UnexportLeak_Stub Ping
  * @run main/othervm UnexportLeak
  */
 

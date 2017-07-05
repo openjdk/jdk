@@ -83,6 +83,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     mouseIsOver = NO;
     [self resetTrackingArea];
+    [self setAutoresizesSubviews:NO];
 
     if (windowLayer != nil) {
         self.cglLayer = windowLayer;
@@ -173,6 +174,11 @@ AWT_ASSERT_APPKIT_THREAD;
 /*
  * Automatically triggered functions.
  */
+
+- (void)resizeWithOldSuperviewSize:(NSSize)oldBoundsSize {
+    [super resizeWithOldSuperviewSize: oldBoundsSize];
+    [self deliverResize: [self frame]];
+}
 
 /*
  * MouseEvents support
@@ -436,6 +442,18 @@ AWT_ASSERT_APPKIT_THREAD;
         (*env)->DeleteLocalRef(env, characters);
     }
 }
+
+-(void) deliverResize: (NSRect) rect {
+    jint x = (jint) rect.origin.x;
+    jint y = (jint) rect.origin.y;
+    jint w = (jint) rect.size.width;
+    jint h = (jint) rect.size.height;
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
+    static JNF_MEMBER_CACHE(jm_deliverResize, jc_PlatformView, "deliverResize", "(IIII)V");
+    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverResize, x,y,w,h);
+}
+
 
 - (void) drawRect:(NSRect)dirtyRect {
 AWT_ASSERT_APPKIT_THREAD;
@@ -1220,21 +1238,19 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
     __block AWTView *newView = nil;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSRect rect = NSMakeRect(originX, originY, width, height);
     jobject cPlatformView = (*env)->NewGlobalRef(env, obj);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         AWT_ASSERT_APPKIT_THREAD;
-
+                                           
         CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
         AWTView *view = [[AWTView alloc] initWithRect:rect
                                          platformView:cPlatformView
                                          windowLayer:windowLayer];
         CFRetain(view);
         [view release]; // GC
-
         newView = view;
     }];
 
@@ -1242,3 +1258,125 @@ JNF_COCOA_EXIT(env);
 
     return ptr_to_jlong(newView);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformView
+ * Method:    nativeSetAutoResizable
+ * Signature: (JZ)V;
+ */
+
+JNIEXPORT void JNICALL
+Java_sun_lwawt_macosx_CPlatformView_nativeSetAutoResizable
+(JNIEnv *env, jclass cls, jlong viewPtr, jboolean toResize)
+{
+JNF_COCOA_ENTER(env);
+    
+    NSView *view = (NSView *)jlong_to_ptr(viewPtr);    
+
+   [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+       AWT_ASSERT_APPKIT_THREAD;
+       
+       if (toResize) {
+           [view setAutoresizingMask: NSViewHeightSizable | NSViewWidthSizable];
+       } else {
+           [view setAutoresizingMask: NSViewMinYMargin | NSViewMaxXMargin];
+       }
+       
+       if ([view superview] != nil) {
+           [[view superview] setAutoresizesSubviews:(BOOL)toResize];
+       }
+       
+    }];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformView
+ * Method:    nativeGetNSViewDisplayID
+ * Signature: (J)I;
+ */
+
+JNIEXPORT jint JNICALL
+Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
+(JNIEnv *env, jclass cls, jlong viewPtr)
+{
+    __block jint ret; //CGDirectDisplayID
+    
+JNF_COCOA_ENTER(env);
+    
+    NSView *view = (NSView *)jlong_to_ptr(viewPtr);    
+    NSWindow *window = [view window];
+    
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+            AWT_ASSERT_APPKIT_THREAD;
+        
+            ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
+    }];
+    
+JNF_COCOA_EXIT(env);
+    
+    return ret;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformView
+ * Method:    nativeGetLocationOnScreen
+ * Signature: (J)Ljava/awt/Rectangle;
+ */
+
+JNIEXPORT jobject JNICALL
+Java_sun_lwawt_macosx_CPlatformView_nativeGetLocationOnScreen
+(JNIEnv *env, jclass cls, jlong viewPtr)
+{
+    jobject jRect = NULL;
+    
+JNF_COCOA_ENTER(env);
+    
+    __block NSRect rect = NSZeroRect;
+    
+    NSView *view = (NSView *)jlong_to_ptr(viewPtr);    
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        AWT_ASSERT_APPKIT_THREAD;
+        
+        NSRect viewBounds = [view bounds];
+        NSRect frameInWindow = [view convertRect:viewBounds toView:nil];
+        rect = [[view window] convertRectToScreen:frameInWindow];
+        NSRect screenRect = [[NSScreen mainScreen] frame];
+        //Convert coordinates to top-left corner origin
+        rect.origin.y = screenRect.size.height - rect.origin.y - viewBounds.size.height;
+    }];
+    jRect = NSToJavaRect(env, rect);
+    
+JNF_COCOA_EXIT(env);
+    
+    return jRect;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformView
+ * Method:    nativeIsViewUnderMouse
+ * Signature: (J)Z;
+ */
+
+JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPlatformView_nativeIsViewUnderMouse
+(JNIEnv *env, jclass clazz, jlong viewPtr)
+{
+    __block jboolean underMouse = JNI_FALSE;
+    
+JNF_COCOA_ENTER(env);
+    
+    NSView *nsView = OBJC(viewPtr);
+   [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+       AWT_ASSERT_APPKIT_THREAD;
+       
+       NSPoint ptWindowCoords = [[nsView window] mouseLocationOutsideOfEventStream];
+       NSPoint ptViewCoords = [nsView convertPoint:ptWindowCoords fromView:nil];
+       underMouse = [nsView hitTest:ptViewCoords] != nil;
+    }];
+    
+JNF_COCOA_EXIT(env);
+    
+    return underMouse;
+}
+
+

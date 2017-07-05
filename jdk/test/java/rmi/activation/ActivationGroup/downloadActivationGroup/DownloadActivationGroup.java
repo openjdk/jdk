@@ -33,9 +33,7 @@
  *
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
- * @build MyActivationGroupImpl
- * @build DownloadActivationGroup
- * @build DownloadActivationGroup_Stub
+ *     DownloadActivationGroup MyActivationGroupImpl DownloadActivationGroup_Stub
  * @run main/othervm/policy=security.policy/timeout=240 DownloadActivationGroup
  */
 

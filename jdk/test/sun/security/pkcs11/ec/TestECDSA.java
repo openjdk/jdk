@@ -179,7 +179,6 @@ public class TestECDSA extends PKCS11Test {
         // SHA1withECDSA and NONEwithECDSA
         Signature s = Signature.getInstance("SHA1withECDSA", provider);
         s.initSign(privateKey);
-        s.initSign(privateKey);
         s.update(data);
         byte[] s1 = s.sign();
 
