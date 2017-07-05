@@ -1186,7 +1186,7 @@ JavaVM* jvm = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
     if (jvm != NULL) {
         JNIEnv * env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit", "GlobalErrorHandler", "(JJ)I",
+        return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit", "globalErrorHandler", "(JJ)I",
                                           ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
     } else {
         return 0;
@@ -1229,6 +1229,28 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_CallErrorHandler
     return (*(XErrorHandler)jlong_to_ptr(handler))((Display*) jlong_to_ptr(display), (XErrorEvent*) jlong_to_ptr(event_ptr));
 }
 
+/*
+ * Class:     sun_awt_X11_XlibWrapper
+ * Method:    PrintXErrorEvent
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_PrintXErrorEvent
+(JNIEnv *env, jclass clazz, jlong display, jlong event_ptr)
+{
+    char msg[128];
+    char buf[128];
+
+    XErrorEvent* err = (XErrorEvent *)jlong_to_ptr(event_ptr);
+
+    XGetErrorText((Display *)jlong_to_ptr(display), err->error_code, msg, sizeof(msg));
+    jio_fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid, err->serial);
+    jio_snprintf(buf, sizeof(buf), "%d", err->request_code);
+    XGetErrorDatabaseText((Display *)jlong_to_ptr(display), "XRequest", buf, "Unknown", msg, sizeof(msg));
+    jio_fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
+    if (err->request_code > 128) {
+        jio_fprintf(stderr, "Minor opcode %d\n", err->minor_code);
+    }
+}
 
 
 /*

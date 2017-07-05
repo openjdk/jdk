@@ -171,6 +171,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                       "\ud2b8\ub8e8\ud06c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "TRUST"};
         String ULAT[]= new String[] {"\uc6b8\ub780\ubc14\ud0c0\ub974 \uc2dc\uac04", "ULAT",
                                      "\uc6b8\ub780\ubc14\ud0c0\ub974 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ULAST"};
+        String WART[] = new String[] {"\uc544\ub974\ud5e8\ud2f0\ub098 \uc2dc\uac04", "WART",
+                                      "\uc544\ub974\ud5e8\ud2f0\ub098 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "WARST"};
         String WAT[] = new String[] {"\uc11c\ubd80 \uc544\ud504\ub9ac\uce74 \uc2dc\uac04", "WAT",
                                      "\uc11c\ubd80 \uc544\ud504\ub9ac\uce74 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "WAST"};
         String WET[] = new String[] {"\uc11c\uc720\ub7fd \uc2dc\uac04", "WET",
@@ -296,7 +298,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/Argentina/Rio_Gallegos", AGT},
             {"America/Argentina/Salta", AGT},
             {"America/Argentina/San_Juan", AGT},
-            {"America/Argentina/San_Luis", AGT},
+            {"America/Argentina/San_Luis", WART},
             {"America/Argentina/Tucuman", AGT},
             {"America/Argentina/Ushuaia", AGT},
             {"America/Aruba", AST},

@@ -189,6 +189,7 @@ jtreg_tests: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
           $(shell $(GETMIXEDPATH) "$(JTREG)")                                \
             -a -v:fail,error                                                 \
 	    -ignore:quiet                                                    \
+	    -timeoutFactor:2                                                 \
             $(EXTRA_JTREG_OPTIONS)                                           \
             -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport    \
             -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork      \
