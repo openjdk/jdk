@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ class ciMethod : public ciObject {
 
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;
-    return Bytecodes::java_code_at(bcp);
+    return Bytecodes::java_code_at(NULL, bcp);
   }
   BCEscapeAnalyzer  *get_bcea();
   ciMethodBlocks    *get_method_blocks();

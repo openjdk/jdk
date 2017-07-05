@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ void BaseBytecodeStream::assert_raw_index_size(int size) const {
     // in raw mode, pretend indy is "bJJ__"
     assert(size == 2, "raw invokedynamic instruction has 2-byte index only");
   } else {
-    bytecode()->assert_index_size(size, raw_code(), is_wide());
+    bytecode().assert_index_size(size, raw_code(), is_wide());
   }
 }
 

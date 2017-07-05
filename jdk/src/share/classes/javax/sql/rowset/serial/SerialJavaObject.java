@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package javax.sql.rowset.serial;
 
-import java.sql.*;
 import java.io.*;
-import java.util.Map;
 import java.lang.reflect.*;
 import javax.sql.rowset.RowSetWarning;
 
@@ -51,7 +49,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     /**
      * Placeholder for object to be serialized.
      */
-    private Object obj;
+    private final Object obj;
 
 
    /**
@@ -64,8 +62,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * <p>
      *
      * @param obj the Java <code>Object</code> to be serialized
-     * @throws SerialException if the object is found
-     * to be unserializable
+     * @throws SerialException if the object is found not to be serializable
      */
     public SerialJavaObject(Object obj) throws SerialException {
 
@@ -74,16 +71,11 @@ public class SerialJavaObject implements Serializable, Cloneable {
 
 
         // get Class. Object instance should always be available
-        Class c = obj.getClass();
+        Class<?> c = obj.getClass();
 
         // determine if object implements Serializable i/f
-        boolean serializableImpl = false;
-        Class[] theIf = c.getInterfaces();
-        for (int i = 0; i < theIf.length; i++) {
-            String ifName = theIf[i].getName();
-            if (ifName == "java.io.Serializable") {
-                serializableImpl = true;
-            }
+        if (!(obj instanceof java.io.Serializable)) {
+            setWarning(new RowSetWarning("Warning, the object passed to the constructor does not implement Serializable"));
         }
 
         // can only determine public fields (obviously). If
@@ -93,21 +85,13 @@ public class SerialJavaObject implements Serializable, Cloneable {
 
         boolean anyStaticFields = false;
         fields = c.getFields();
-        //fields = new Object[field.length];
 
         for (int i = 0; i < fields.length; i++ ) {
             if ( fields[i].getModifiers() == Modifier.STATIC ) {
                 anyStaticFields = true;
             }
-            //fields[i] = field[i].get(obj);
         }
-        try {
-            if (!(serializableImpl)) {
-               throw new RowSetWarning("Test");
-            }
-        } catch (RowSetWarning w) {
-            setWarning(w);
-        }
+
 
         if (anyStaticFields) {
             throw new SerialException("Located static fields in " +
@@ -139,11 +123,8 @@ public class SerialJavaObject implements Serializable, Cloneable {
      */
     public Field[] getFields() throws SerialException {
         if (fields != null) {
-            Class c = this.obj.getClass();
-            //the following has to be commented before mustang integration
-            //return c.getFields();
-            //the following has to be uncommented before mustang integration
-            return sun.reflect.misc.FieldUtil.getFields(c);
+            Class<?> c = this.obj.getClass();
+            return c.getFields();
         } else {
             throw new SerialException("SerialJavaObject does not contain" +
                 " a serialized object instance");

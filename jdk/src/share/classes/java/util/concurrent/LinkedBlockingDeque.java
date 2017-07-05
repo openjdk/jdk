@@ -1029,6 +1029,8 @@ public class LinkedBlockingDeque<E>
      * elements as they existed upon construction of the iterator, and
      * may (but is not guaranteed to) reflect any modifications
      * subsequent to construction.
+     *
+     * @return an iterator over the elements in this deque in reverse order
      */
     public Iterator<E> descendingIterator() {
         return new DescendingItr();

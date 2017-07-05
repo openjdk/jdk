@@ -73,47 +73,20 @@ module-image-jdk:: initial-module-image-jdk trim-module-image-jdk process-module
 
 #
 # Paths to these files we need
-JDK_MODULE_LICENSES   = $(LICENSE_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%)
-JDK_MODULE_64_LICENSES = $(LICENSE_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%64)
-JDK_MODULE_DOCFILES   = $(OTHER_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%)
-
-JRE_MODULE_LICENSES   = $(LICENSE_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%)
-JRE_MODULE_64_LICENSES = $(LICENSE_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%64)
-JRE_MODULE_DOCFILES   = $(OTHER_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%)
-JRE_MODULE_DOCFILES  += $(JRE_NAMECHANGE_DOCLIST:%=$(JRE_MODULE_IMAGE_DIR)/%$(TEXT_SUFFIX))
+JDK_MODULE_DOCFILES   = $(IMAGE_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%)
+JRE_MODULE_DOCFILES   = $(IMAGE_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%)
 
 ###### RULES
 
 # JDK files
 $(JDK_MODULE_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%
 	$(process-doc-file)
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JDK_MODULE_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JDK_MODULE_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JDK_MODULE_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%
-	$(process-doc-file)
-endif
 
 # JRE files 
 $(JRE_MODULE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
 	$(process-doc-file)
-# Add $(TEXT_SUFFIX) suffix
-ifdef TEXT_SUFFIX
-$(JRE_MODULE_IMAGE_DIR)/%$(TEXT_SUFFIX): $(SHARE_JRE_DOC_SRC)/%
-	$(process-doc-file)
-endif
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JRE_MODULE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JRE_MODULE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JRE_MODULE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%
+ifeq ($(PLATFORM), windows)
+$(JRE_MODULE_IMAGE_DIR)/README.txt: $(SHARE_JRE_DOC_SRC)/README
 	$(process-doc-file)
 endif
 
@@ -157,8 +130,7 @@ initial-module-image-jre-setup:
 	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)
 
 # 64-bit solaris jre image contains only the 64-bit add-on files.
-initial-module-image-jre-sol64:: initial-module-image-jre-setup \
-			  $(JRE_MODULE_LICENSES) $(JRE_MODULE_64_LICENSES)
+initial-module-image-jre-sol64:: initial-module-image-jre-setup
 	@# Use tar instead of cp to preserve the symbolic links
 	for dir in bin lib ; do \
 	  ( $(CD) $(OUTPUTDIR) && \
@@ -174,7 +146,7 @@ initial-module-image-jre-sol64:: initial-module-image-jre-setup \
 
 # Construct an initial jre image (initial jdk jre) no trimming or stripping
 initial-module-image-jre:: initial-module-image-jre-setup \
-		    $(JRE_LICENSES) $(JRE_MODULE_DOCFILES) \
+		    $(JRE_MODULE_DOCFILES) \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
 	$(CD) $(OUTPUTDIR) && $(FIND) bin -depth | $(CPIO) -pdum $(JRE_MODULE_IMAGE_DIR)
@@ -222,7 +194,7 @@ ifeq ($(PLATFORM), windows)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_MODULE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
-                  hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+                  awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@# The Java Kernel JRE image ships with a special VM.  It is not included
 	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
@@ -310,8 +282,7 @@ initial-module-image-jdk64-bindemos:
 
 # Solaris 64 bit image is special
 initial-module-image-jdk-sol64:: initial-module-image-jdk-setup \
-			  initial-module-image-jdk64-bindemos \
-			  $(JDK_MODULE_LICENSES) $(JDK_MODULARLIZED_64_LICENSES)
+			  initial-module-image-jdk64-bindemos
 
 # DB files to add
 ifeq ($(OPENJDK),true)
@@ -335,7 +306,7 @@ endif
 # Standard jdk image
 initial-module-image-jdk:: initial-module-image-jdk-setup \
 		    initial-module-image-jdk-db \
-		    $(JDK_MODULE_LICENSES) $(JDK_MODULE_DOCFILES)
+		    $(JDK_MODULE_DOCFILES)
 	$(MKDIR) $(JDK_MODULE_IMAGE_DIR)/lib
 	@#
 	@# copy jdk modules to jdk/lib
@@ -415,8 +386,7 @@ endif # !windows
 trim-module-image-jdk::
 	@# Remove tools that should not be part of SDK.
 	for t in $(NOTJDKTOOLS); do \
-	    $(RM) $(JDK_MODULE_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX) \
-		  $(JDK_MODULE_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
+	    $(RM) $(JDK_MODULE_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX); \
 	done
 
 # Get list of Elf files in the jdk

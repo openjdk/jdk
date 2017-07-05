@@ -569,7 +569,7 @@ abstract class Handshaker {
                 activeProtocols = getActiveProtocols();
             }
 
-            ArrayList<CipherSuite> suites = new ArrayList<CipherSuite>();
+            ArrayList<CipherSuite> suites = new ArrayList<>();
             if (!(activeProtocols.collection().isEmpty()) &&
                     activeProtocols.min.v != ProtocolVersion.NONE.v) {
                 for (CipherSuite suite : enabledCipherSuites.collection()) {
@@ -614,8 +614,7 @@ abstract class Handshaker {
      */
     ProtocolList getActiveProtocols() {
         if (activeProtocols == null) {
-            ArrayList<ProtocolVersion> protocols =
-                                            new ArrayList<ProtocolVersion>(4);
+            ArrayList<ProtocolVersion> protocols = new ArrayList<>(4);
             for (ProtocolVersion protocol : enabledProtocols.collection()) {
                 boolean found = false;
                 for (CipherSuite suite : enabledCipherSuites.collection()) {
