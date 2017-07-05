@@ -43,7 +43,6 @@ public final class CGraphicsDevice extends GraphicsDevice
      * therefore methods, which is using this id should be ready to it.
      */
     private volatile int displayID;
-    private volatile Insets screenInsets;
     private volatile double xResolution;
     private volatile double yResolution;
     private volatile int scale;
@@ -120,7 +119,13 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     public Insets getScreenInsets() {
-        return screenInsets;
+        // the insets are queried synchronously and are not cached
+        // since there are no Quartz or Cocoa means to receive notifications
+        // on insets changes (e.g. when the Dock is resized):
+        // the existing CGDisplayReconfigurationCallBack is not notified
+        // as well as the NSApplicationDidChangeScreenParametersNotification
+        // is fired on the Dock location changes only
+        return nativeGetScreenInsets(displayID);
     }
 
     public int getScaleFactor() {
@@ -135,7 +140,6 @@ public final class CGraphicsDevice extends GraphicsDevice
     public void displayChanged() {
         xResolution = nativeGetXResolution(displayID);
         yResolution = nativeGetYResolution(displayID);
-        screenInsets = nativeGetScreenInsets(displayID);
         scale = (int) nativeGetScaleFactor(displayID);
         //TODO configs/fullscreenWindow/modes?
     }

@@ -450,8 +450,8 @@ class LIR_OprDesc: public CompilationResourceObj {
   XMMRegister as_xmm_double_reg() const;
   // for compatibility with RInfo
   int fpu () const                                  { return lo_reg_half(); }
-#endif // X86
-#if defined(SPARC) || defined(ARM) || defined(PPC)
+#endif
+#if defined(SPARC) || defined(ARM) || defined(PPC) || defined(AARCH64)
   FloatRegister as_float_reg   () const;
   FloatRegister as_double_reg  () const;
 #endif
@@ -541,7 +541,7 @@ class LIR_Address: public LIR_OprPtr {
      , _type(type)
      , _disp(0) { verify(); }
 
-#if defined(X86) || defined(ARM)
+#if defined(X86) || defined(ARM) || defined(AARCH64)
   LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, intx disp, BasicType type):
        _base(base)
      , _index(index)
@@ -622,7 +622,7 @@ class LIR_OprFact: public AllStatic {
                                                                              LIR_OprDesc::fpu_register         |
                                                                              LIR_OprDesc::double_size); }
 #endif
-#ifdef X86
+#if defined(X86) || defined(AARCH64)
   static LIR_Opr double_fpu(int reg)            { return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
                                                                              (reg  << LIR_OprDesc::reg2_shift) |
                                                                              LIR_OprDesc::double_type          |

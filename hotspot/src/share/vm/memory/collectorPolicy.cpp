@@ -965,32 +965,38 @@ public:
   }
 
   static void test_old_size() {
-      size_t flag_value;
+    size_t flag_value;
+    size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
 
-      save_flags();
+    save_flags();
 
-      // If OldSize is set on the command line, it should be used
-      // for both min and initial old size if less than min heap.
-      flag_value = 20 * M;
-      set_basic_flag_values();
-      FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
-      verify_old_min(flag_value);
+    // If OldSize is set on the command line, it should be used
+    // for both min and initial old size if less than min heap.
+    flag_value = 20 * M;
+    set_basic_flag_values();
+    FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
+    verify_old_min(flag_value);
 
-      set_basic_flag_values();
-      FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
-      verify_old_initial(flag_value);
+    set_basic_flag_values();
+    FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
+    // Calculate what we expect the flag to be.
+    size_t expected_old_initial = align_size_up(InitialHeapSize, heap_alignment) - MaxNewSize;
+    verify_old_initial(expected_old_initial);
 
-      // If MaxNewSize is large, the maximum OldSize will be less than
-      // what's requested on the command line and it should be reset
-      // ergonomically.
-      flag_value = 30 * M;
-      set_basic_flag_values();
-      FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, 170*M);
-      // Calculate what we expect the flag to be.
-      flag_value = MaxHeapSize - MaxNewSize;
-      verify_old_initial(flag_value);
-
+    // If MaxNewSize is large, the maximum OldSize will be less than
+    // what's requested on the command line and it should be reset
+    // ergonomically.
+    // We intentionally set MaxNewSize + OldSize > MaxHeapSize (see over_size).
+    flag_value = 30 * M;
+    set_basic_flag_values();
+    FLAG_SET_CMDLINE(uintx, OldSize, flag_value);
+    size_t over_size = 20*M;
+    size_t new_size_value = align_size_up(MaxHeapSize, heap_alignment) - flag_value + over_size;
+    FLAG_SET_CMDLINE(uintx, MaxNewSize, new_size_value);
+    // Calculate what we expect the flag to be.
+    expected_old_initial = align_size_up(MaxHeapSize, heap_alignment) - MaxNewSize;
+    verify_old_initial(expected_old_initial);
+    restore_flags();
   }
 
   static void verify_young_min(size_t expected) {
@@ -1010,6 +1016,12 @@ public:
   static void verify_scaled_young_initial(size_t initial_heap_size) {
     MarkSweepPolicy msp;
     msp.initialize_all();
+
+    if (InitialHeapSize > initial_heap_size) {
+      // InitialHeapSize was adapted by msp.initialize_all, e.g. due to alignment
+      // caused by 64K page size.
+      initial_heap_size = InitialHeapSize;
+    }
 
     size_t expected = msp.scale_by_NewRatio_aligned(initial_heap_size);
     assert(msp.initial_young_size() == expected, err_msg("%zu != %zu", msp.initial_young_size(), expected));
