@@ -611,7 +611,8 @@ void InterpreterMacroAssembler::pop_l(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register r) {
   subptr(rsp, 2 * wordSize);
-  movq(Address(rsp, 0), r);
+  movptr(Address(rsp, Interpreter::expr_offset_in_bytes(0)), r         );
+  movptr(Address(rsp, Interpreter::expr_offset_in_bytes(1)), NULL_WORD );
 }
 
 void InterpreterMacroAssembler::pop(TosState state) {

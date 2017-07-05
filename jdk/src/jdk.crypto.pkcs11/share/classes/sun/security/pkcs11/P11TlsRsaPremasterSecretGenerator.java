@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,20 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     private TlsRsaPremasterSecretParameterSpec spec;
 
+    // whether SSLv3 is supported
+    private final boolean supportSSLv3;
+
     P11TlsRsaPremasterSecretGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
         super();
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
+
+        // Given the current lookup order specified in SunPKCS11.java,
+        // if CKM_SSL3_PRE_MASTER_KEY_GEN is not used to construct this object,
+        // it means that this mech is disabled or unsupported.
+        this.supportSSLv3 = (mechanism == CKM_SSL3_PRE_MASTER_KEY_GEN);
     }
 
     protected void engineInit(SecureRandom random) {
@@ -78,7 +86,20 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
         if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
-        this.spec = (TlsRsaPremasterSecretParameterSpec)params;
+
+        TlsRsaPremasterSecretParameterSpec spec =
+            (TlsRsaPremasterSecretParameterSpec) params;
+
+        int version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+
+        if ((version == 0x0300 && !supportSSLv3) || (version < 0x0300) ||
+            (version > 0x0302)) {
+             throw new InvalidAlgorithmParameterException
+                    ("Only" + (supportSSLv3? " SSL 3.0,": "") +
+                     " TLS 1.0, and TLS 1.1 are supported (0x" +
+                     Integer.toHexString(version) + ")");
+        }
+        this.spec = spec;
     }
 
     protected void engineInit(int keysize, SecureRandom random) {

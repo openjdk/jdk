@@ -41,7 +41,6 @@ import java.util.HashMap;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
-import java.util.Objects;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.
@@ -732,9 +731,9 @@ class LambdaForm {
     boolean isLoop(int pos) {
         // loop idiom:
         //   t_{n}:L=MethodHandle.invokeBasic(...)
-        //   t_{n+1}:L=MethodHandleImpl.loop(types, *, *, *, *, t_{n})
+        //   t_{n+1}:L=MethodHandleImpl.loop(types, *, t_{n})
         //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
-        return isMatchingIdiom(pos, "loop", 5);
+        return isMatchingIdiom(pos, "loop", 2);
     }
 
     /*
