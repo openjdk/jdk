@@ -148,14 +148,9 @@ class JVMCIJavaClasses : AllStatic {
     int_field(CompilationResult_DataSectionReference, offset)                                                                                                  \
   end_class                                                                                                                                                    \
   start_class(InfopointReason)                                                                                                                                 \
-    static_oop_field(InfopointReason, UNKNOWN, "Ljdk/vm/ci/code/InfopointReason;")                                                                             \
     static_oop_field(InfopointReason, SAFEPOINT, "Ljdk/vm/ci/code/InfopointReason;")                                                                           \
     static_oop_field(InfopointReason, CALL, "Ljdk/vm/ci/code/InfopointReason;")                                                                                \
     static_oop_field(InfopointReason, IMPLICIT_EXCEPTION, "Ljdk/vm/ci/code/InfopointReason;")                                                                  \
-    static_oop_field(InfopointReason, METHOD_START, "Ljdk/vm/ci/code/InfopointReason;")                                                                        \
-    static_oop_field(InfopointReason, METHOD_END, "Ljdk/vm/ci/code/InfopointReason;")                                                                          \
-    static_oop_field(InfopointReason, LINE_NUMBER, "Ljdk/vm/ci/code/InfopointReason;")                                                                         \
-    static_oop_field(InfopointReason, METASPACE_ACCESS, "Ljdk/vm/ci/code/InfopointReason;")                                                                    \
   end_class                                                                                                                                                    \
   start_class(CompilationResult_Infopoint)                                                                                                                     \
     oop_field(CompilationResult_Infopoint, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                                                            \

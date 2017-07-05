@@ -847,9 +847,12 @@ public class XMLDocumentScannerImpl
 
                         case SCANNER_STATE_START_OF_MARKUP: {
                             fMarkupDepth++;
-
-                            if (fEntityScanner.skipChar('?')) {
-                                setScannerState(SCANNER_STATE_PI);
+                            if (isValidNameStartChar(fEntityScanner.peekChar()) ||
+                                    isValidNameStartHighSurrogate(fEntityScanner.peekChar())) {
+                                setScannerState(SCANNER_STATE_ROOT_ELEMENT);
+                                setDriver(fContentDriver);
+                                //from now onwards this would be handled by fContentDriver,in the same next() call
+                                return fContentDriver.next();
                             } else if (fEntityScanner.skipChar('!')) {
                                 if (fEntityScanner.skipChar('-')) {
                                     if (!fEntityScanner.skipChar('-')) {
@@ -872,12 +875,8 @@ public class XMLDocumentScannerImpl
                                     reportFatalError("MarkupNotRecognizedInProlog",
                                             null);
                                 }
-                            } else if (XMLChar.isNameStart(fEntityScanner.peekChar())) {
-                                setScannerState(SCANNER_STATE_ROOT_ELEMENT);
-                                setDriver(fContentDriver);
-                                //from now onwards this would be handled by fContentDriver,in the same next() call
-                                return fContentDriver.next();
-
+                            } else if (fEntityScanner.skipChar('?')) {
+                                setScannerState(SCANNER_STATE_PI);
                             } else {
                                 reportFatalError("MarkupNotRecognizedInProlog",
                                         null);
@@ -1395,7 +1394,8 @@ public class XMLDocumentScannerImpl
                             } else if (fEntityScanner.skipChar('/')) {
                                 reportFatalError("MarkupNotRecognizedInMisc",
                                         null);
-                            } else if (XMLChar.isNameStart(fEntityScanner.peekChar())) {
+                            } else if (isValidNameStartChar(fEntityScanner.peekChar()) ||
+                                    isValidNameStartHighSurrogate(fEntityScanner.peekChar())) {
                                 reportFatalError("MarkupNotRecognizedInMisc",
                                         null);
                                 scanStartElement();
