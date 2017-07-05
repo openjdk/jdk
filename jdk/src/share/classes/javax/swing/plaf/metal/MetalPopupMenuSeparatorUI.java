@@ -35,7 +35,7 @@ import javax.swing.plaf.*;
 
 
 /**
- * A Metal L&F implementation of PopupMenuSeparatorUI.  This implementation
+ * A Metal L&amp;F implementation of PopupMenuSeparatorUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Jeff Shapiro

@@ -74,7 +74,7 @@ import javax.swing.text.*;
  * is stored to translate the context of an element to a
  * rule quickly.  The following code fragment will display
  * the named styles, and therefore the CSS rules contained.
- * <code><pre>
+ * <pre><code>
  * &nbsp;
  * &nbsp; import java.util.*;
  * &nbsp; import javax.swing.text.*;
@@ -97,7 +97,7 @@ import javax.swing.text.*;
  * &nbsp;     }
  * &nbsp; }
  * &nbsp;
- * </pre></code>
+ * </code></pre>
  * <p>
  * The semantics for when a CSS style should overide visual attributes
  * defined by an element are not well defined. For example, the html

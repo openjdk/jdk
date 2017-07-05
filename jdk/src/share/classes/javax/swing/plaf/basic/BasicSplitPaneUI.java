@@ -44,7 +44,7 @@ import sun.swing.SwingUtilities2;
 
 
 /**
- * A Basic L&F implementation of the SplitPaneUI.
+ * A Basic L&amp;F implementation of the SplitPaneUI.
  *
  * @author Scott Violet
  * @author Steve Wilson
@@ -1060,7 +1060,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public void paint(Graphics g, JComponent jc) {
         if (!painted && splitPane.getDividerLocation()<0) {

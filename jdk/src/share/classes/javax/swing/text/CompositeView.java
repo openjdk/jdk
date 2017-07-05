@@ -143,7 +143,7 @@ public abstract class CompositeView extends View {
     /**
      * Returns the number of child views of this view.
      *
-     * @return the number of views >= 0
+     * @return the number of views &gt;= 0
      * @see #getView
      */
     public int getViewCount() {
@@ -153,7 +153,7 @@ public abstract class CompositeView extends View {
     /**
      * Returns the n-th view in this container.
      *
-     * @param n the number of the desired view, >= 0 && < getViewCount()
+     * @param n the number of the desired view, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @return the view at index <code>n</code>
      */
     public View getView(int n) {
@@ -169,9 +169,9 @@ public abstract class CompositeView extends View {
      * may be garbage collected.
      *
      * @param offset the starting index into the child views to insert
-     *   the new views; >= 0 and <= getViewCount
+     *   the new views; &gt;= 0 and &lt;= getViewCount
      * @param length the number of existing child views to remove;
-     *   this should be a value >= 0 and <= (getViewCount() - offset)
+     *   this should be a value &gt;= 0 and &lt;= (getViewCount() - offset)
      * @param views the child views to add; this value can be
      *  <code>null</code>
      *   to indicate no children are being added (useful to remove)
@@ -223,7 +223,7 @@ public abstract class CompositeView extends View {
      * render into. This enables finding out where various views
      * are located.
      *
-     * @param index the index of the child, >= 0 && < getViewCount()
+     * @param index the index of the child, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @param a  the allocation to this view
      * @return the allocation to the child
      */
@@ -237,7 +237,7 @@ public abstract class CompositeView extends View {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
@@ -280,13 +280,13 @@ public abstract class CompositeView extends View {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param p0 the position to convert >= 0
+     * @param p0 the position to convert &gt;= 0
      * @param b0 the bias toward the previous character or the
      *  next character represented by p0, in case the
      *  position is a boundary of two views; either
      *  <code>Position.Bias.Forward</code> or
      *  <code>Position.Bias.Backward</code>
-     * @param p1 the position to convert >= 0
+     * @param p1 the position to convert &gt;= 0
      * @param b1 the bias toward the previous character or the
      *  next character represented by p1, in case the
      *  position is a boundary of two views
@@ -378,13 +378,13 @@ public abstract class CompositeView extends View {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x   x coordinate of the view location to convert >= 0
-     * @param y   y coordinate of the view location to convert >= 0
+     * @param x   x coordinate of the view location to convert &gt;= 0
+     * @param y   y coordinate of the view location to convert &gt;= 0
      * @param a the allocated region to render into
      * @param bias either <code>Position.Bias.Forward</code> or
      *  <code>Position.Bias.Backward</code>
      * @return the location within the model that best represents the
-     *  given point in the view >= 0
+     *  given point in the view &gt;= 0
      * @see View#viewToModel
      */
     public int viewToModel(float x, float y, Shape a, Position.Bias[] bias) {
@@ -436,7 +436,7 @@ public abstract class CompositeView extends View {
      * This is a convenience method for {@link #getNextNorthSouthVisualPositionFrom}
      * and {@link #getNextEastWestVisualPositionFrom}.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @param a the allocated region to render into
@@ -484,7 +484,7 @@ public abstract class CompositeView extends View {
      * <code>getViewIndexByPosition</code>
      * method for backward compatibility.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      * @since 1.3
@@ -505,8 +505,8 @@ public abstract class CompositeView extends View {
     /**
      * Tests whether a point lies before the rectangle range.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param alloc the rectangle
      * @return true if the point is before the specified range
      */
@@ -515,8 +515,8 @@ public abstract class CompositeView extends View {
     /**
      * Tests whether a point lies after the rectangle range.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param alloc the rectangle
      * @return true if the point is after the specified range
      */
@@ -525,8 +525,8 @@ public abstract class CompositeView extends View {
     /**
      * Fetches the child view at the given coordinates.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param alloc the parent's allocation on entry, which should
      *   be changed to the child's allocation on exit
      * @return the child view
@@ -536,7 +536,7 @@ public abstract class CompositeView extends View {
     /**
      * Returns the allocation for a given child.
      *
-     * @param index the index of the child, >= 0 && < getViewCount()
+     * @param index the index of the child, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @param a  the allocation to the interior of the box on entry,
      *   and the allocation of the child view at the index on exit.
      */
@@ -547,7 +547,7 @@ public abstract class CompositeView extends View {
      * the model.  This is implemented to fetch the view in the case
      * where there is a child view for each child element.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @param a  the allocation to the interior of the box on entry,
      *   and the allocation of the view containing the position on exit
      * @return  the view representing the given position, or
@@ -570,7 +570,7 @@ public abstract class CompositeView extends View {
      * the model.  This is implemented to fetch the view in the case
      * where there is a child view for each child element.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      */
@@ -639,10 +639,10 @@ public abstract class CompositeView extends View {
     /**
      * Sets the insets for the view.
      *
-     * @param top the top inset >= 0
-     * @param left the left inset >= 0
-     * @param bottom the bottom inset >= 0
-     * @param right the right inset >= 0
+     * @param top the top inset &gt;= 0
+     * @param left the left inset &gt;= 0
+     * @param bottom the bottom inset &gt;= 0
+     * @param right the right inset &gt;= 0
      */
     protected void setInsets(short top, short left, short bottom, short right) {
         this.top = top;
@@ -654,7 +654,7 @@ public abstract class CompositeView extends View {
     /**
      * Gets the left inset.
      *
-     * @return the inset >= 0
+     * @return the inset &gt;= 0
      */
     protected short getLeftInset() {
         return left;
@@ -663,7 +663,7 @@ public abstract class CompositeView extends View {
     /**
      * Gets the right inset.
      *
-     * @return the inset >= 0
+     * @return the inset &gt;= 0
      */
     protected short getRightInset() {
         return right;
@@ -672,7 +672,7 @@ public abstract class CompositeView extends View {
     /**
      * Gets the top inset.
      *
-     * @return the inset >= 0
+     * @return the inset &gt;= 0
      */
     protected short getTopInset() {
         return top;
@@ -681,7 +681,7 @@ public abstract class CompositeView extends View {
     /**
      * Gets the bottom inset.
      *
-     * @return the inset >= 0
+     * @return the inset &gt;= 0
      */
     protected short getBottomInset() {
         return bottom;
@@ -691,7 +691,7 @@ public abstract class CompositeView extends View {
      * Returns the next visual position for the cursor, in either the
      * north or south direction.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @param a the allocated region to render into
@@ -723,7 +723,7 @@ public abstract class CompositeView extends View {
      * Returns the next visual position for the cursor, in either the
      * east or west direction.
      *
-    * @param pos the position to convert >= 0
+    * @param pos the position to convert &gt;= 0
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @param a the allocated region to render into

@@ -43,7 +43,7 @@ import javax.accessibility.*;
  * This is what a menu bar might look like:
  * <p>
  * <img src="doc-files/MenuBar-1.gif"
- * <alt="Diagram of MenuBar containing 2 menus: Examples and Options.
+ * alt="Diagram of MenuBar containing 2 menus: Examples and Options.
  * Examples menu is expanded showing items: Basic, Simple, Check, and More Examples."
  * ALIGN=center HSPACE=10 VSPACE=7>
  * <p>

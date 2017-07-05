@@ -42,6 +42,7 @@ import javax.swing.filechooser.*;
 import javax.swing.plaf.*;
 import javax.swing.table.*;
 
+import sun.swing.AbstractFilterComboBoxModel;
 import sun.swing.SwingUtilities2;
 
 public class AquaFileChooserUI extends FileChooserUI {
@@ -1266,64 +1267,9 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends DefaultListModel implements ComboBoxModel, PropertyChangeListener {
-        int selectedIndex = -1;
-
-        protected FilterComboBoxModel() {
-            super();
-            final FileFilter filters[] = getFileChooser().getChoosableFileFilters();
-            for (int i = 0; i < filters.length; i++) {
-                this.add(i, filters[i]);
-            }
-        }
-
-        public void propertyChange(final PropertyChangeEvent e) {
-            final String prop = e.getPropertyName();
-            if (prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
-                this.clear();
-                final FileFilter filters[] = (FileFilter[])e.getNewValue();
-
-                for (int i = 0; i < filters.length; i++) {
-                    this.add(i, filters[i]);
-                }
-
-                fireContentsChanged(this, -1, -1);
-            } else if (prop == JFileChooser.FILE_FILTER_CHANGED_PROPERTY) {
-                final FileFilter currentFilter = (FileFilter)e.getNewValue();
-                FileFilter filters[] = getFileChooser().getChoosableFileFilters();
-
-                boolean found = false;
-                if (currentFilter != null) {
-                    for (final FileFilter element : filters) {
-                        if (element == currentFilter) {
-                            found = true;
-                        }
-                    }
-                    if (found == false) {
-                        getFileChooser().addChoosableFileFilter(currentFilter);
-                    }
-                }
-
-                filters = getFileChooser().getChoosableFileFilters();
-                setSelectedItem(e.getNewValue());
-            }
-        }
-
-        public void setSelectedItem(final Object filter) {
-            if (filter != null) {
-                selectedIndex = this.indexOf(filter);
-                fireContentsChanged(this, -1, -1);
-            }
-        }
-
-        public Object getSelectedItem() {
-            final Object returnValue = null;
-
-            if (this.size() > 0) {
-                if ((selectedIndex != -1) && (selectedIndex < size())) { return this.get(selectedIndex); }
-            }
-
-            return returnValue;
+    protected class FilterComboBoxModel extends AbstractFilterComboBoxModel {
+        protected JFileChooser getFileChooser() {
+            return AquaFileChooserUI.this.getFileChooser();
         }
     }
 

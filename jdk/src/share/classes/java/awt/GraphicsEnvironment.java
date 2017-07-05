@@ -95,18 +95,18 @@ public abstract class GraphicsEnvironment {
         String nm = AccessController.doPrivileged(new GetPropertyAction("java.awt.graphicsenv", null));
         try {
 //          long t0 = System.currentTimeMillis();
-            Class geCls;
+            Class<GraphicsEnvironment> geCls;
             try {
                 // First we try if the bootclassloader finds the requested
                 // class. This way we can avoid to run in a privileged block.
-                geCls = Class.forName(nm);
+                geCls = (Class<GraphicsEnvironment>)Class.forName(nm);
             } catch (ClassNotFoundException ex) {
                 // If the bootclassloader fails, we try again with the
                 // application classloader.
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
-                geCls = Class.forName(nm, true, cl);
+                geCls = (Class<GraphicsEnvironment>)Class.forName(nm, true, cl);
             }
-            ge = (GraphicsEnvironment) geCls.newInstance();
+            ge = geCls.newInstance();
 //          long t1 = System.currentTimeMillis();
 //          System.out.println("GE creation took " + (t1-t0)+ "ms.");
             if (isHeadless()) {
@@ -161,7 +161,7 @@ public abstract class GraphicsEnvironment {
     private static boolean getHeadlessProperty() {
         if (headless == null) {
             java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     String nm = System.getProperty("java.awt.headless");
 
