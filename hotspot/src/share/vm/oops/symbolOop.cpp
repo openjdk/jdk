@@ -68,8 +68,17 @@ char* symbolOopDesc::as_C_string_flexible_buffer(Thread* t,
 
 void symbolOopDesc::print_symbol_on(outputStream* st) {
   st = st ? st : tty;
-  for (int index = 0; index < utf8_length(); index++)
-    st->put((char)byte_at(index));
+  int length = UTF8::unicode_length((const char*)bytes(), utf8_length());
+  const char *ptr = (const char *)bytes();
+  jchar value;
+  for (int index = 0; index < length; index++) {
+    ptr = UTF8::next(ptr, &value);
+    if (value >= 32 && value < 127 || value == '\'' || value == '\\') {
+      st->put(value);
+    } else {
+      st->print("\\u%04x", value);
+    }
+  }
 }
 
 jchar* symbolOopDesc::as_unicode(int& length) const {

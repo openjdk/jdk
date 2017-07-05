@@ -4754,6 +4754,33 @@ operand immI_32_63() %{
   interface(CONST_INTER);
 %}
 
+operand immI_1() %{
+  predicate( n->get_int() == 1 );
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_2() %{
+  predicate( n->get_int() == 2 );
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_3() %{
+  predicate( n->get_int() == 3 );
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Pointer Immediate
 operand immP() %{
   match(ConP);
@@ -8941,6 +8968,63 @@ instruct xorl_eReg_mem(eRegL dst, load_long_memory mem, eFlagsReg cr) %{
   opcode(0x33,0x33);
   ins_encode( OpcP, RegMem( dst, mem), OpcS, RegMem_Hi(dst,mem) );
   ins_pipe( ialu_reg_long_mem );
+%}
+
+// Shift Left Long by 1
+instruct shlL_eReg_1(eRegL dst, immI_1 cnt, eFlagsReg cr) %{
+  predicate(UseNewLongLShift);
+  match(Set dst (LShiftL dst cnt));
+  effect(KILL cr);
+  ins_cost(100);
+  format %{ "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+  %}
+  ins_pipe( ialu_reg_long );
+%}
+
+// Shift Left Long by 2
+instruct shlL_eReg_2(eRegL dst, immI_2 cnt, eFlagsReg cr) %{
+  predicate(UseNewLongLShift);
+  match(Set dst (LShiftL dst cnt));
+  effect(KILL cr);
+  ins_cost(100);
+  format %{ "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+  %}
+  ins_pipe( ialu_reg_long );
+%}
+
+// Shift Left Long by 3
+instruct shlL_eReg_3(eRegL dst, immI_3 cnt, eFlagsReg cr) %{
+  predicate(UseNewLongLShift);
+  match(Set dst (LShiftL dst cnt));
+  effect(KILL cr);
+  ins_cost(100);
+  format %{ "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi\n\t" 
+            "ADD    $dst.lo,$dst.lo\n\t"
+            "ADC    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+    __ addl($dst$$Register,$dst$$Register);
+    __ adcl(HIGH_FROM_LOW($dst$$Register),HIGH_FROM_LOW($dst$$Register));
+  %}
+  ins_pipe( ialu_reg_long );
 %}
 
 // Shift Left Long by 1-31
