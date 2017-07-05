@@ -12,22 +12,13 @@
 #
 
 if [ "${TESTSRC}" = "" ]
-  then TESTSRC=.
-fi
-
-if [ "${TESTJAVA}" = "" ]
 then
-  PARENT=`dirname \`which java\``
-  TESTJAVA=`dirname ${PARENT}`
-  echo "TESTJAVA not set, selecting " ${TESTJAVA}
-  echo "If this is incorrect, try setting the variable manually."
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
-
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
-  exit 1
-fi
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 # Jtreg sets TESTVMOPTS which may include -d64 which is
 # required to test a 64-bit JVM on some platforms.

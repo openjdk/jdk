@@ -26,7 +26,7 @@
 #include "splashscreen_impl.h"
 #include "splashscreen_gfx.h"
 
-#include "../giflib/gif_lib.h"
+#include <gif_lib.h>
 
 #define GIF_TRANSPARENT     0x01
 #define GIF_USER_INPUT      0x02

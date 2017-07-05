@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,8 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
 #include "jvm.h"
+#include "io_util_md.h"
 
 #include "java_io_FileDescriptor.h"
 
@@ -51,8 +50,8 @@ Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
 
 JNIEXPORT void JNICALL
 Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
-    int fd = (*env)->GetIntField(env, this, IO_fd_fdID);
-    if (JVM_Sync(fd) == -1) {
+    FD fd = THIS_FD(this);
+    if (IO_Sync(fd) == -1) {
         JNU_ThrowByName(env, "java/io/SyncFailedException", "sync failed");
     }
 }

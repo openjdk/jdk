@@ -33,17 +33,17 @@ import com.oracle.java.testlibrary.*;
 public class NonBooleanFlagWithInvalidBooleanPrefix {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:-ObjectAlignmentInBytes=16", "-version");
+        "-XX:-MaxRAMFraction=16", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Unexpected +/- setting in VM option 'ObjectAlignmentInBytes=16'");
+    output.shouldContain("Unexpected +/- setting in VM option 'MaxRAMFraction=16'");
     output.shouldHaveExitValue(1);
 
     pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+ObjectAlignmentInBytes=16", "-version");
+        "-XX:+MaxRAMFraction=16", "-version");
 
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Unexpected +/- setting in VM option 'ObjectAlignmentInBytes=16'");
+    output.shouldContain("Unexpected +/- setting in VM option 'MaxRAMFraction=16'");
     output.shouldHaveExitValue(1);
 
   }

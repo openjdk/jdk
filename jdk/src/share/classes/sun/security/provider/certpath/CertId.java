@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import javax.security.auth.x500.X500Principal;
 import sun.misc.HexDumpEncoder;
 import sun.security.x509.*;
 import sun.security.util.*;
@@ -70,6 +72,13 @@ public class CertId {
     public CertId(X509Certificate issuerCert, SerialNumber serialNumber)
         throws IOException {
 
+        this(issuerCert.getSubjectX500Principal(),
+             issuerCert.getPublicKey(), serialNumber);
+    }
+
+    public CertId(X500Principal issuerName, PublicKey issuerKey,
+                  SerialNumber serialNumber) throws IOException {
+
         // compute issuerNameHash
         MessageDigest md = null;
         try {
@@ -78,11 +87,11 @@ public class CertId {
             throw new IOException("Unable to create CertId", nsae);
         }
         hashAlgId = SHA1_ALGID;
-        md.update(issuerCert.getSubjectX500Principal().getEncoded());
+        md.update(issuerName.getEncoded());
         issuerNameHash = md.digest();
 
         // compute issuerKeyHash (remove the tag and length)
-        byte[] pubKey = issuerCert.getPublicKey().getEncoded();
+        byte[] pubKey = issuerKey.getEncoded();
         DerValue val = new DerValue(pubKey);
         DerValue[] seq = new DerValue[2];
         seq[0] = val.data.getDerValue(); // AlgorithmID
@@ -94,7 +103,7 @@ public class CertId {
 
         if (debug) {
             HexDumpEncoder encoder = new HexDumpEncoder();
-            System.out.println("Issuer Certificate is " + issuerCert);
+            System.out.println("Issuer Name is " + issuerName);
             System.out.println("issuerNameHash is " +
                 encoder.encodeBuffer(issuerNameHash));
             System.out.println("issuerKeyHash is " +
