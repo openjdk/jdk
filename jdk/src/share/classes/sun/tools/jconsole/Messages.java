@@ -240,6 +240,11 @@ final public class Messages {
     public static String PLOTTER_ACCESSIBLE_NAME_NO_DATA;
     public static String PLOTTER_SAVE_AS_MENU_ITEM;
     public static String PLOTTER_TIME_RANGE_MENU;
+    public static String PLUGIN_EXCEPTION_DIALOG_BUTTON_EXIT;
+    public static String PLUGIN_EXCEPTION_DIALOG_BUTTON_IGNORE;
+    public static String PLUGIN_EXCEPTION_DIALOG_BUTTON_OK;
+    public static String PLUGIN_EXCEPTION_DIALOG_MESSAGE;
+    public static String PLUGIN_EXCEPTION_DIALOG_TITLE;
     public static String PROBLEM_ADDING_LISTENER;
     public static String PROBLEM_DISPLAYING_MBEAN;
     public static String PROBLEM_INVOKING;

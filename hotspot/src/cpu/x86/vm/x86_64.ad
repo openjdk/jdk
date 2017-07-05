@@ -1393,9 +1393,7 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedKlassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (Universe::narrow_klass_shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    }
+    st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
     st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
   } else {
     st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
@@ -4035,146 +4033,6 @@ operand indPosIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegI idx, immI2 sca
   %}
 %}
 
-operand indirectNarrowKlass(rRegN reg)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(DecodeNKlass reg);
-
-  format %{ "[$reg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp(0x0);
-  %}
-%}
-
-operand indOffset8NarrowKlass(rRegN reg, immL8 off)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeNKlass reg) off);
-
-  format %{ "[$reg + $off (8-bit)]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indOffset32NarrowKlass(rRegN reg, immL32 off)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeNKlass reg) off);
-
-  format %{ "[$reg + $off (32-bit)]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indIndexOffsetNarrowKlass(rRegN reg, rRegL lreg, immL32 off)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeNKlass reg) lreg) off);
-
-  op_cost(10);
-  format %{"[$reg + $off + $lreg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indIndexNarrowKlass(rRegN reg, rRegL lreg)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeNKlass reg) lreg);
-
-  op_cost(10);
-  format %{"[$reg + $lreg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale(0x0);
-    disp(0x0);
-  %}
-%}
-
-operand indIndexScaleNarrowKlass(rRegN reg, rRegL lreg, immI2 scale)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeNKlass reg) (LShiftL lreg scale));
-
-  op_cost(10);
-  format %{"[$reg + $lreg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp(0x0);
-  %}
-%}
-
-operand indIndexScaleOffsetNarrowKlass(rRegN reg, immL32 off, rRegL lreg, immI2 scale)
-%{
-  predicate(Universe::narrow_klass_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeNKlass reg) (LShiftL lreg scale)) off);
-
-  op_cost(10);
-  format %{"[$reg + $off + $lreg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
-operand indCompressedKlassOffset(rRegN reg, immL32 off) %{
-  predicate(UseCompressedKlassPointers && (Universe::narrow_klass_shift() == Address::times_8));
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeNKlass reg) off);
-
-  op_cost(10);
-  format %{"[R12 + $reg << 3 + $off] (compressed klass addressing)" %}
-  interface(MEMORY_INTER) %{
-    base(0xc); // R12
-    index($reg);
-    scale(0x3);
-    disp($off);
-  %}
-%}
-
-operand indPosIndexScaleOffsetNarrowKlass(rRegN reg, immL32 off, rRegI idx, immI2 scale)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  predicate(Universe::narrow_klass_shift() == 0 && n->in(2)->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
-  match(AddP (AddP (DecodeNKlass reg) (LShiftL (ConvI2L idx) scale)) off);
-
-  op_cost(10);
-  format %{"[$reg + $off + $idx << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($idx);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
 //                      values on the stack where a match requires a value to
@@ -4345,11 +4203,7 @@ opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indCompressedOopOffset,
                indirectNarrow, indOffset8Narrow, indOffset32Narrow,
                indIndexOffsetNarrow, indIndexNarrow, indIndexScaleNarrow,
-               indIndexScaleOffsetNarrow, indPosIndexScaleOffsetNarrow,
-               indCompressedKlassOffset,
-               indirectNarrowKlass, indOffset8NarrowKlass, indOffset32NarrowKlass,
-               indIndexOffsetNarrowKlass, indIndexNarrowKlass, indIndexScaleNarrowKlass,
-               indIndexScaleOffsetNarrowKlass, indPosIndexScaleOffsetNarrowKlass);
+               indIndexScaleOffsetNarrow, indPosIndexScaleOffsetNarrow);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -6665,7 +6519,7 @@ instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
 instruct encodeKlass_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
   match(Set dst (EncodePKlass src));
   effect(KILL cr);
-  format %{ "encode_heap_oop_not_null $dst,$src" %}
+  format %{ "encode_klass_not_null $dst,$src" %}
   ins_encode %{
     __ encode_klass_not_null($dst$$Register, $src$$Register);
   %}
@@ -6675,7 +6529,7 @@ instruct encodeKlass_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
 instruct decodeKlass_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
   match(Set dst (DecodeNKlass src));
   effect(KILL cr);
-  format %{ "decode_heap_oop_not_null $dst,$src" %}
+  format %{ "decode_klass_not_null $dst,$src" %}
   ins_encode %{
     Register s = $src$$Register;
     Register d = $dst$$Register;

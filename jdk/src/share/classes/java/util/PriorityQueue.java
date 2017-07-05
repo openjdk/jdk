@@ -795,6 +795,19 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         heapify();
     }
 
+    /**
+     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
+     * and <em>fail-fast</em> {@link Spliterator} over the elements in this
+     * queue.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
+     * {@link Spliterator#SUBSIZED}, and {@link Spliterator#NONNULL}.
+     * Overriding implementations should document the reporting of additional
+     * characteristic values.
+     *
+     * @return a {@code Spliterator} over the elements in this queue
+     * @since 1.8
+     */
     public final Spliterator<E> spliterator() {
         return new PriorityQueueSpliterator<E>(this, 0, -1, 0);
     }

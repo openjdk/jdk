@@ -23,6 +23,7 @@
 
 /*
  * @test ClearMethodStateTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build ClearMethodStateTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -59,16 +60,19 @@ public class ClearMethodStateTest extends CompilerWhiteBoxTest {
         WHITE_BOX.clearMethodState(method);
         checkCompiled();
         WHITE_BOX.clearMethodState(method);
-        WHITE_BOX.deoptimizeMethod(method);
+        deoptimize();
         checkNotCompiled();
 
-
+        if (testCase.isOsr) {
+            // part test isn't applicable for OSR test case
+            return;
+        }
         if (!TIERED_COMPILATION) {
             WHITE_BOX.clearMethodState(method);
             compile(COMPILE_THRESHOLD);
             checkCompiled();
 
-            WHITE_BOX.deoptimizeMethod(method);
+            deoptimize();
             checkNotCompiled();
             WHITE_BOX.clearMethodState(method);
 

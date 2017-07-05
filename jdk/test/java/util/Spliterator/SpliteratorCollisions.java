@@ -148,7 +148,6 @@ public class SpliteratorCollisions {
         List<Object[]> data = new ArrayList<>();
         for (int size : SIZES) {
             List<HashableInteger> exp = listIntRange(size, true);
-            exp.add(0, null);
             SpliteratorDataBuilder<HashableInteger> db = new SpliteratorDataBuilder<>(data, exp);
 
             // Maps

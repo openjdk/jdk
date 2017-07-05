@@ -50,6 +50,7 @@ int AbstractAssembler::code_fill_byte() {
 #ifdef ASSERT
 bool AbstractAssembler::pd_check_instruction_mark() {
   ShouldNotCallThis();
+  return false;
 }
 #endif
 
@@ -73,6 +74,7 @@ void MacroAssembler::advance(int bytes) {
 RegisterOrConstant MacroAssembler::delayed_value_impl(
   intptr_t* delayed_value_addr, Register tmpl, int offset) {
   ShouldNotCallThis();
+  return RegisterOrConstant();
 }
 
 void MacroAssembler::store_oop(jobject obj) {

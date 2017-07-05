@@ -156,9 +156,10 @@ public abstract class Policy {
 
     private static Policy policy;
     private static ClassLoader contextClassLoader;
+    private final static String AUTH_POLICY =
+        "sun.security.provider.AuthPolicyFile";
 
-    // true if a custom (not com.sun.security.auth.PolicyFile) system-wide
-    // policy object is set
+    // true if a custom (not AUTH_POLICY) system-wide policy object is set
     private static boolean isCustomPolicy;
 
     static {
@@ -220,7 +221,7 @@ public abstract class Policy {
                         }
                     });
                     if (policy_class == null) {
-                        policy_class = "com.sun.security.auth.PolicyFile";
+                        policy_class = AUTH_POLICY;
                     }
 
                     try {
@@ -236,8 +237,7 @@ public abstract class Policy {
                                         contextClassLoader).newInstance();
                             }
                         });
-                        isCustomPolicy =
-                            !finalClass.equals("com.sun.security.auth.PolicyFile");
+                        isCustomPolicy = !finalClass.equals(AUTH_POLICY);
                     } catch (Exception e) {
                         throw new SecurityException
                                 (sun.security.util.ResourcesMgr.getString
@@ -274,14 +274,14 @@ public abstract class Policy {
     }
 
     /**
-     * Returns true if a custom (not com.sun.security.auth.PolicyFile)
-     * system-wide policy object has been set or installed. This method is
-     * called by SubjectDomainCombiner to provide backwards compatibility for
+     * Returns true if a custom (not AUTH_POLICY) system-wide policy object
+     * has been set or installed. This method is called by
+     * SubjectDomainCombiner to provide backwards compatibility for
      * developers that provide their own javax.security.auth.Policy
      * implementations.
      *
-     * @return true if a custom (not com.sun.security.auth.PolicyFile)
-     * system-wide policy object has been set; false otherwise
+     * @return true if a custom (not AUTH_POLICY) system-wide policy object
+     * has been set; false otherwise
      */
     static boolean isCustomPolicySet(Debug debug) {
         if (policy != null) {
@@ -299,8 +299,7 @@ public abstract class Policy {
                     return Security.getProperty("auth.policy.provider");
                 }
         });
-        if (policyClass != null
-            && !policyClass.equals("com.sun.security.auth.PolicyFile")) {
+        if (policyClass != null && !policyClass.equals(AUTH_POLICY)) {
             if (debug != null) {
                 debug.println("Providing backwards compatibility for " +
                               "javax.security.auth.policy implementation: " +

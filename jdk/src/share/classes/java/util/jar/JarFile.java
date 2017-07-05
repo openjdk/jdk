@@ -69,8 +69,6 @@ class JarFile extends ZipFile {
 
     // indicates if Class-Path attribute present (only valid if hasCheckedSpecialAttributes true)
     private boolean hasClassPathAttribute;
-    // indicates if Profile attribute present (only valid if hasCheckedSpecialAttributes true)
-    private boolean hasProfileAttribute;
     // true if manifest checked for special attributes
     private volatile boolean hasCheckedSpecialAttributes;
 
@@ -459,15 +457,10 @@ class JarFile extends ZipFile {
 
     // Statics for hand-coded Boyer-Moore search
     private static final char[] CLASSPATH_CHARS = {'c','l','a','s','s','-','p','a','t','h'};
-    private static final char[] PROFILE_CHARS = { 'p', 'r', 'o', 'f', 'i', 'l', 'e' };
     // The bad character shift for "class-path"
     private static final int[] CLASSPATH_LASTOCC;
     // The good suffix shift for "class-path"
     private static final int[] CLASSPATH_OPTOSFT;
-    // The bad character shift for "profile"
-    private static final int[] PROFILE_LASTOCC;
-    // The good suffix shift for "profile"
-    private static final int[] PROFILE_OPTOSFT;
 
     static {
         CLASSPATH_LASTOCC = new int[128];
@@ -483,19 +476,6 @@ class JarFile extends ZipFile {
         for (int i=0; i<9; i++)
             CLASSPATH_OPTOSFT[i] = 10;
         CLASSPATH_OPTOSFT[9]=1;
-
-        PROFILE_LASTOCC = new int[128];
-        PROFILE_OPTOSFT = new int[7];
-        PROFILE_LASTOCC[(int)'p'] = 1;
-        PROFILE_LASTOCC[(int)'r'] = 2;
-        PROFILE_LASTOCC[(int)'o'] = 3;
-        PROFILE_LASTOCC[(int)'f'] = 4;
-        PROFILE_LASTOCC[(int)'i'] = 5;
-        PROFILE_LASTOCC[(int)'l'] = 6;
-        PROFILE_LASTOCC[(int)'e'] = 7;
-        for (int i=0; i<6; i++)
-            PROFILE_OPTOSFT[i] = 7;
-        PROFILE_OPTOSFT[6] = 1;
     }
 
     private JarEntry getManEntry() {
@@ -530,15 +510,6 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns {@code true} iff this JAR file has a manifest with the
-     * Profile attribute
-     */
-    boolean hasProfileAttribute() throws IOException {
-        checkForSpecialAttributes();
-        return hasProfileAttribute;
-    }
-
-    /**
      * Returns true if the pattern {@code src} is found in {@code b}.
      * The {@code lastOcc} and {@code optoSft} arrays are the precomputed
      * bad character and good suffix shifts.
@@ -564,7 +535,7 @@ class JarFile extends ZipFile {
 
     /**
      * On first invocation, check if the JAR file has the Class-Path
-     * and/or Profile attributes. A no-op on subsequent calls.
+     * attribute. A no-op on subsequent calls.
      */
     private void checkForSpecialAttributes() throws IOException {
         if (hasCheckedSpecialAttributes) return;
@@ -574,8 +545,6 @@ class JarFile extends ZipFile {
                 byte[] b = getBytes(manEntry);
                 if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
                     hasClassPathAttribute = true;
-                if (match(PROFILE_CHARS, b, PROFILE_LASTOCC, PROFILE_OPTOSFT))
-                    hasProfileAttribute = true;
             }
         }
         hasCheckedSpecialAttributes = true;

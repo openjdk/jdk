@@ -25,6 +25,8 @@
 
 package javax.sound.sampled;
 
+import java.util.Arrays;
+
 /**
  * <code>DataLine</code> adds media-related functionality to its
  * superinterface, <code>{@link Line}</code>.  This functionality includes
@@ -282,9 +284,9 @@ public interface DataLine extends Line {
      */
     public static class Info extends Line.Info {
 
-        private AudioFormat[] formats;
-        private int minBufferSize;
-        private int maxBufferSize;
+        private final AudioFormat[] formats;
+        private final int minBufferSize;
+        private final int maxBufferSize;
 
         /**
          * Constructs a data line's info object from the specified information,
@@ -304,7 +306,7 @@ public interface DataLine extends Line {
             if (formats == null) {
                 this.formats = new AudioFormat[0];
             } else {
-                this.formats = formats;
+                this.formats = Arrays.copyOf(formats, formats.length);
             }
 
             this.minBufferSize = minBufferSize;
@@ -329,8 +331,7 @@ public interface DataLine extends Line {
             if (format == null) {
                 this.formats = new AudioFormat[0];
             } else {
-                AudioFormat[] formats = { format };
-                this.formats = formats;
+                this.formats = new AudioFormat[]{format};
             }
 
             this.minBufferSize = bufferSize;
@@ -373,10 +374,7 @@ public interface DataLine extends Line {
          * @see #isFormatSupported(AudioFormat)
          */
         public AudioFormat[] getFormats() {
-
-            AudioFormat[] returnedArray = new AudioFormat[formats.length];
-            System.arraycopy(formats, 0, returnedArray, 0, formats.length);
-            return returnedArray;
+            return Arrays.copyOf(formats, formats.length);
         }
 
         /**

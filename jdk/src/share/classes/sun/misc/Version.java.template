@@ -339,68 +339,6 @@ public class Version {
     // Return false if not available which implies an old VM (Tiger or before).
     private static native boolean getJvmVersionInfo();
     private static native void getJdkVersionInfo();
-
-    // Possible runtime profiles, ordered from small to large
-    private final static String[] PROFILES = { "compact1", "compact2", "compact3" };
-
-    /**
-     * Returns the name of the profile that this runtime implements. The empty
-     * string is returned for the full Java Runtime.
-     */
-    public static String profileName() {
-        return java_profile_name;
-    }
-
-    /**
-     * Indicates if this runtime implements the full Java Runtime.
-     */
-    public static boolean isFullJre() {
-        return java_profile_name.length() == 0;
-    }
-
-    // cached index of this profile's name in PROFILES (1-based)
-    private static int thisRuntimeIndex;
-
-    /**
-     * Indicates if this runtime supports the given profile. Profile names are
-     * case sensitive. 
-     *
-     * @return {@code true} if the given profile is supported
-     */
-    public static boolean supportsProfile(String requiredProfile) {
-        int x = thisRuntimeIndex - 1;
-        if (x < 0) {
-            String profile = profileName();
-            if (profile.length() > 0) {
-                x = 0;
-                while (x < PROFILES.length) {
-                    if (PROFILES[x].equals(profile))
-                        break;
-                    x++;
-                }
-                if (x >= PROFILES.length)
-                    throw new InternalError(profile + " not known to sun.misc.Version");
-
-                // okay if another thread has already set it
-                thisRuntimeIndex = x + 1;
-            }
-            // else we are a full JRE
-        }
-
-        int y = 0;
-        while (y < PROFILES.length) {
-            if (PROFILES[y].equals(requiredProfile))
-                break;
-            y++;
-        }
-        if (y >= PROFILES.length) {
-            // profile not found so caller has requested something that is not defined
-            return false;
-        }
-
-        return x < 0 || x >= y;
-    }
-
 }
 
 // Help Emacs a little because this file doesn't end in .java.
