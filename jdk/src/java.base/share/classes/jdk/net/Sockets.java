@@ -55,7 +55,6 @@ import sun.net.ExtendedOptionsImpl;
  *
  * @see java.nio.channels.NetworkChannel
  */
-@jdk.Exported
 public class Sockets {
 
     private static final HashMap<Class<?>,Set<SocketOption<?>>>

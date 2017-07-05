@@ -2059,7 +2059,7 @@ public final class URI
 
         // 5.2 (2): Reference to current document (lone fragment)
         if ((child.scheme == null) && (child.authority == null)
-            && child.path.equals("") && (child.fragment != null)
+            && child.path.isEmpty() && (child.fragment != null)
             && (child.query == null)) {
             if ((base.fragment != null)
                 && child.fragment.equals(base.fragment)) {
@@ -2647,13 +2647,6 @@ public final class URI
     private static final long L_SCHEME = L_ALPHA | L_DIGIT | lowMask("+-.");
     private static final long H_SCHEME = H_ALPHA | H_DIGIT | highMask("+-.");
 
-    // uric_no_slash = unreserved | escaped | ";" | "?" | ":" | "@" |
-    //                 "&" | "=" | "+" | "$" | ","
-    private static final long L_URIC_NO_SLASH
-        = L_UNRESERVED | L_ESCAPED | lowMask(";?:@&=+$,");
-    private static final long H_URIC_NO_SLASH
-        = H_UNRESERVED | H_ESCAPED | highMask(";?:@&=+$,");
-
     // scope_id = alpha | digit | "_" | "."
     private static final long L_SCOPE_ID
         = L_ALPHANUM | lowMask("_.");
@@ -2884,23 +2877,10 @@ public final class URI
 
         // -- Simple access to the input string --
 
-        // Return a substring of the input string
-        //
-        private String substring(int start, int end) {
-            return input.substring(start, end);
-        }
-
-        // Return the char at position p,
-        // assuming that p < input.length()
-        //
-        private char charAt(int p) {
-            return input.charAt(p);
-        }
-
         // Tells whether start < end and, if so, whether charAt(start) == c
         //
         private boolean at(int start, int end, char c) {
-            return (start < end) && (charAt(start) == c);
+            return (start < end) && (input.charAt(start) == c);
         }
 
         // Tells whether start + s.length() < end and, if so,
@@ -2913,7 +2893,7 @@ public final class URI
                 return false;
             int i = 0;
             while (i < sn) {
-                if (charAt(p++) != s.charAt(i)) {
+                if (input.charAt(p++) != s.charAt(i)) {
                     break;
                 }
                 i++;
@@ -2953,7 +2933,7 @@ public final class URI
         // start position.
         //
         private int scan(int start, int end, char c) {
-            if ((start < end) && (charAt(start) == c))
+            if ((start < end) && (input.charAt(start) == c))
                 return start + 1;
             return start;
         }
@@ -2968,9 +2948,26 @@ public final class URI
         private int scan(int start, int end, String err, String stop) {
             int p = start;
             while (p < end) {
-                char c = charAt(p);
+                char c = input.charAt(p);
                 if (err.indexOf(c) >= 0)
                     return -1;
+                if (stop.indexOf(c) >= 0)
+                    break;
+                p++;
+            }
+            return p;
+        }
+
+        // Scan forward from the given start position.  Stop at the first char
+        // in the stop string (in which case the index of the preceding char is
+        // returned), or the end of the input string (in which case the length
+        // of the input string is returned).  May return the start position if
+        // nothing matches.
+        //
+        private int scan(int start, int end, String stop) {
+            int p = start;
+            while (p < end) {
+                char c = input.charAt(p);
                 if (stop.indexOf(c) >= 0)
                     break;
                 p++;
@@ -2992,8 +2989,8 @@ public final class URI
             if (c == '%') {
                 // Process escape pair
                 if ((p + 3 <= n)
-                    && match(charAt(p + 1), L_HEX, H_HEX)
-                    && match(charAt(p + 2), L_HEX, H_HEX)) {
+                    && match(input.charAt(p + 1), L_HEX, H_HEX)
+                    && match(input.charAt(p + 2), L_HEX, H_HEX)) {
                     return p + 3;
                 }
                 fail("Malformed escape pair", p);
@@ -3013,7 +3010,7 @@ public final class URI
         {
             int p = start;
             while (p < n) {
-                char c = charAt(p);
+                char c = input.charAt(p);
                 if (match(c, lowMask, highMask)) {
                     p++;
                     continue;
@@ -3067,13 +3064,13 @@ public final class URI
                     failExpecting("scheme name", 0);
                 checkChar(0, L_ALPHA, H_ALPHA, "scheme name");
                 checkChars(1, p, L_SCHEME, H_SCHEME, "scheme name");
-                scheme = substring(0, p);
+                scheme = input.substring(0, p);
                 p++;                    // Skip ':'
                 ssp = p;
                 if (at(p, n, '/')) {
                     p = parseHierarchical(p, n);
                 } else {
-                    int q = scan(p, n, "", "#");
+                    int q = scan(p, n, "#");
                     if (q <= p)
                         failExpecting("scheme-specific part", p);
                     checkChars(p, q, L_URIC, H_URIC, "opaque part");
@@ -3083,10 +3080,10 @@ public final class URI
                 ssp = 0;
                 p = parseHierarchical(0, n);
             }
-            schemeSpecificPart = substring(ssp, p);
+            schemeSpecificPart = input.substring(ssp, p);
             if (at(p, n, '#')) {
                 checkChars(p + 1, n, L_URIC, H_URIC, "fragment");
-                fragment = substring(p + 1, n);
+                fragment = input.substring(p + 1, n);
                 p = n;
             }
             if (p < n)
@@ -3113,7 +3110,7 @@ public final class URI
             int p = start;
             if (at(p, n, '/') && at(p + 1, n, '/')) {
                 p += 2;
-                int q = scan(p, n, "", "/?#");
+                int q = scan(p, n, "/?#");
                 if (q > p) {
                     p = parseAuthority(p, q);
                 } else if (q < n) {
@@ -3122,15 +3119,15 @@ public final class URI
                 } else
                     failExpecting("authority", p);
             }
-            int q = scan(p, n, "", "?#"); // DEVIATION: May be empty
+            int q = scan(p, n, "?#"); // DEVIATION: May be empty
             checkChars(p, q, L_PATH, H_PATH, "path");
-            path = substring(p, q);
+            path = input.substring(p, q);
             p = q;
             if (at(p, n, '?')) {
                 p++;
-                q = scan(p, n, "", "#");
+                q = scan(p, n, "#");
                 checkChars(p, q, L_URIC, H_URIC, "query");
-                query = substring(p, q);
+                query = input.substring(p, q);
                 p = q;
             }
             return p;
@@ -3154,7 +3151,7 @@ public final class URI
             boolean serverChars;
             boolean regChars;
 
-            if (scan(p, n, "", "]") > p) {
+            if (scan(p, n, "]") > p) {
                 // contains a literal IPv6 address, therefore % is allowed
                 serverChars = (scan(p, n, L_SERVER_PERCENT, H_SERVER_PERCENT) == n);
             } else {
@@ -3164,7 +3161,7 @@ public final class URI
 
             if (regChars && !serverChars) {
                 // Must be a registry-based authority
-                authority = substring(p, n);
+                authority = input.substring(p, n);
                 return n;
             }
 
@@ -3176,7 +3173,7 @@ public final class URI
                     q = parseServer(p, n);
                     if (q < n)
                         failExpecting("end of authority", q);
-                    authority = substring(p, n);
+                    authority = input.substring(p, n);
                 } catch (URISyntaxException x) {
                     // Undo results of failed parse
                     userInfo = null;
@@ -3198,7 +3195,7 @@ public final class URI
             if (q < n) {
                 if (regChars) {
                     // Registry-based authority
-                    authority = substring(p, n);
+                    authority = input.substring(p, n);
                 } else if (ex != null) {
                     // Re-throw exception; it was probably due to
                     // a malformed IPv6 address
@@ -3224,7 +3221,7 @@ public final class URI
             q = scan(p, n, "/?#", "@");
             if ((q >= p) && at(q, n, '@')) {
                 checkChars(p, q, L_USERINFO, H_USERINFO, "user info");
-                userInfo = substring(p, q);
+                userInfo = input.substring(p, q);
                 p = q + 1;              // Skip '@'
             }
 
@@ -3235,7 +3232,7 @@ public final class URI
                 q = scan(p, n, "/?#", "]");
                 if ((q > p) && at(q, n, ']')) {
                     // look for a "%" scope id
-                    int r = scan (p, q, "", "%");
+                    int r = scan (p, q, "%");
                     if (r > p) {
                         parseIPv6Reference(p, r);
                         if (r+1 == q) {
@@ -3246,7 +3243,7 @@ public final class URI
                     } else {
                         parseIPv6Reference(p, q);
                     }
-                    host = substring(p-1, q+1);
+                    host = input.substring(p-1, q+1);
                     p = q + 1;
                 } else {
                     failExpecting("closing bracket for IPv6 address", q);
@@ -3261,7 +3258,7 @@ public final class URI
             // port
             if (at(p, n, ':')) {
                 p++;
-                q = scan(p, n, "", "/");
+                q = scan(p, n, "/");
                 if (q > p) {
                     checkChars(p, q, L_DIGIT, H_DIGIT, "port number");
                     try {
@@ -3361,13 +3358,13 @@ public final class URI
                 // IPv4 address is followed by something - check that
                 // it's a ":" as this is the only valid character to
                 // follow an address.
-                if (charAt(p) != ':') {
+                if (input.charAt(p) != ':') {
                     p = -1;
                 }
             }
 
             if (p > start)
-                host = substring(start, p);
+                host = input.substring(start, p);
 
             return p;
         }
@@ -3393,7 +3390,7 @@ public final class URI
                     p = q;
                     q = scan(p, n, L_ALPHANUM | L_DASH, H_ALPHANUM | H_DASH);
                     if (q > p) {
-                        if (charAt(q - 1) == '-')
+                        if (input.charAt(q - 1) == '-')
                             fail("Illegal character in hostname", q - 1);
                         p = q;
                     }
@@ -3412,11 +3409,11 @@ public final class URI
 
             // for a fully qualified hostname check that the rightmost
             // label starts with an alpha character.
-            if (l > start && !match(charAt(l), L_ALPHA, H_ALPHA)) {
+            if (l > start && !match(input.charAt(l), L_ALPHA, H_ALPHA)) {
                 fail("Illegal character in hostname", l);
             }
 
-            host = substring(start, p);
+            host = input.substring(start, p);
             return p;
         }
 

@@ -43,7 +43,6 @@ import javax.accessibility.*;
  *
  */
 
-@jdk.Exported
 public class AccessibilityEventMonitor {
 
     // listeners

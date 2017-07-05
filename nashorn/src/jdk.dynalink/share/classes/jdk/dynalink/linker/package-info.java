@@ -113,5 +113,4 @@
  * </p>
  * @since 1.9
  */
-@jdk.Exported
 package jdk.dynalink.linker;

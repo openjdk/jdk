@@ -65,7 +65,7 @@ public class StatementTests extends BaseTest {
      * enquoteLiteral is null
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void test01()  throws SQLException {
+    public void test01() throws SQLException {
         stmt.enquoteLiteral(null);
 
     }
@@ -110,13 +110,31 @@ public class StatementTests extends BaseTest {
     }
 
     /*
-     * Validate a NullPointerException is thrown is the string passed to
+     * Validate a NullPointerException is thrown if the string passed to
      * isSimpleIdentifier is null
      */
     @Test(expectedExceptions = NullPointerException.class)
     public void test06() throws SQLException {
         stmt.isSimpleIdentifier(null);
 
+    }
+
+    /*
+     * Verify that enquoteLiteral creates a  valid literal and converts every
+     * single quote to two single quotes
+     */
+    @Test(dataProvider = "validEnquotedNCharLiteralValues")
+    public void test07(String s, String expected) throws SQLException {
+        assertEquals(stmt.enquoteNCharLiteral(s), expected);
+    }
+
+    /*
+     * Validate a NullPointerException is thrown if the string passed to
+     * enquoteNCharLiteral is null
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test08() throws SQLException {
+        stmt.enquoteNCharLiteral(null);
     }
 
     /*
@@ -169,8 +187,7 @@ public class StatementTests extends BaseTest {
             {"\"Hel\"lo\"", true},
             {"Hello" + '\0', false},
             {"", false},
-            {maxIdentifier + 'a', false},
-            };
+            {maxIdentifier + 'a', false},};
     }
 
     /*
@@ -194,4 +211,22 @@ public class StatementTests extends BaseTest {
             {"", false},};
     }
 
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that enquoteNCharLiteral converts a string to a National Character
+     * literal and every instance of
+     * a single quote will be converted into two single quotes in the literal.
+     */
+    @DataProvider(name = "validEnquotedNCharLiteralValues")
+    protected Object[][] validEnquotedNCharLiteralValues() {
+        return new Object[][]{
+            {"Hello", "N'Hello'"},
+            {"G'Day", "N'G''Day'"},
+            {"'G''Day'", "N'''G''''Day'''"},
+            {"I'''M", "N'I''''''M'"},
+            {"N'Hello'", "N'N''Hello'''"},
+            {"The Dark Knight", "N'The Dark Knight'"}
+
+        };
+    }
 }

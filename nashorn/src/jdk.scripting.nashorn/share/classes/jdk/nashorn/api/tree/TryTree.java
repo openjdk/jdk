@@ -41,7 +41,6 @@ import java.util.List;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface TryTree extends StatementTree {
     /**
      * Returns the 'try' block of this 'try' statement.

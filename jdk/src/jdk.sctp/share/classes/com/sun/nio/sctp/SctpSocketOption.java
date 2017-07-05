@@ -35,5 +35,4 @@ import java.net.SocketOption;
  *
  * @see SctpStandardSocketOptions
  */
-@jdk.Exported
 public interface SctpSocketOption<T> extends SocketOption<T> { }

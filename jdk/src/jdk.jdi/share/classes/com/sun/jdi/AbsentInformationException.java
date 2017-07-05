@@ -31,7 +31,6 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public class AbsentInformationException extends Exception
 {
     private static final long serialVersionUID = 4988939309582416373L;

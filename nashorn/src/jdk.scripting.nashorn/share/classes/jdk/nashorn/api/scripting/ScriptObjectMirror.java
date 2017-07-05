@@ -60,7 +60,6 @@ import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
  *
  * @since 1.8u40
  */
-@jdk.Exported
 public final class ScriptObjectMirror extends AbstractJSObject implements Bindings {
     private static AccessControlContext getContextAccCtxt() {
         final Permissions perms = new Permissions();

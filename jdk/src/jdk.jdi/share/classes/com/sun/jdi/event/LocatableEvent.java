@@ -36,7 +36,6 @@ import java.util.List;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public interface LocatableEvent extends Event, Locatable {
 
     /**
