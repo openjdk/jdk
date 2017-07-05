@@ -156,7 +156,7 @@ ifeq ($(NATIVE_ECC_AVAILABLE), true)
       $(PKGDIR)/ECDSASignature.java \
       $(PKGDIR)/ECKeyPairGenerator.java
 
-  JAVAHFLAGS += -classpath $(CLASSDESTDIR)
+  JAVAHFLAGS += -Xbootclasspath/p:$(CLASSDESTDIR)
 
   #
   # C and C++ files

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
 
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
-class FilterInHeapRegionAndIntoCSClosure;
-class FilterAndMarkInHeapRegionAndIntoCSClosure;
+class G1CMOopClosure;
 
 #ifdef FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES
 #error "FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES already defined."
@@ -58,8 +57,7 @@ class FilterAndMarkInHeapRegionAndIntoCSClosure;
       f(G1ParPushHeapRSClosure,_nv)                     \
       f(FilterIntoCSClosure,_nv)                        \
       f(FilterOutOfRegionClosure,_nv)                   \
-      f(FilterInHeapRegionAndIntoCSClosure,_nv)         \
-      f(FilterAndMarkInHeapRegionAndIntoCSClosure,_nv)
+      f(G1CMOopClosure,_nv)
 
 #ifdef FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES
 #error "FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES already defined."

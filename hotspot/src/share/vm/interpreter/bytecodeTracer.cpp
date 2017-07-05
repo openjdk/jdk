@@ -203,11 +203,14 @@ void print_oop(oop value, outputStream* st) {
   if (value == NULL) {
     st->print_cr(" NULL");
   } else if (java_lang_String::is_instance(value)) {
-    EXCEPTION_MARK;
-    Handle h_value (THREAD, value);
-    Symbol* sym = java_lang_String::as_symbol(h_value, CATCH);
-    print_symbol(sym, st);
-    sym->decrement_refcount();
+    char buf[40];
+    int len = java_lang_String::utf8_length(value);
+    java_lang_String::as_utf8_string(value, buf, sizeof(buf));
+    if (len >= (int)sizeof(buf)) {
+      st->print_cr(" %s...[%d]", buf, len);
+    } else {
+      st->print_cr(" %s", buf);
+    }
   } else {
     st->print_cr(" " PTR_FORMAT, (intptr_t) value);
   }

@@ -444,7 +444,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * renderer installed on a Synth combo box is a JLabel. If this is changed,
      * then an assert will fail in SynthFileChooserUIImpl
      */
-    private class SynthComboBoxRenderer extends JLabel implements ListCellRenderer, UIResource {
+    private class SynthComboBoxRenderer extends JLabel implements ListCellRenderer<Object>, UIResource {
         public SynthComboBoxRenderer() {
             super();
             setName("ComboBox.renderer");
@@ -452,7 +452,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         @Override
-        public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList<?> list, Object value,
                          int index, boolean isSelected, boolean cellHasFocus) {
             setName("ComboBox.listRenderer");
             SynthLookAndFeel.resetSelectedUI();

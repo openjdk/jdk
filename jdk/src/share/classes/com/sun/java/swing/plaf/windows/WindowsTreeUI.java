@@ -81,19 +81,22 @@ public class WindowsTreeUI extends BasicTreeUI {
             else {
                 Rectangle   beginRect = getPathBounds(tree, getPathForRow
                                                       (tree, beginRow));
-                Rectangle   testRect = beginRect;
-                int         beginY = beginRect.y;
-                int         maxY = beginY + visRect.height;
+                if (beginRect != null) {
+                    Rectangle   testRect = beginRect;
+                    int         beginY = beginRect.y;
+                    int         maxY = beginY + visRect.height;
 
-                for(int counter = beginRow + 1; counter <= endRow; counter++) {
-                    testRect = getPathBounds(tree,
-                                             getPathForRow(tree, counter));
-                    if((testRect.y + testRect.height) > maxY)
-                        counter = endRow;
+                    for(int counter = beginRow + 1; counter <= endRow; counter++) {
+                        testRect = getPathBounds(tree,
+                                                 getPathForRow(tree, counter));
+                        if(testRect != null && (testRect.y + testRect.height) > maxY) {
+                            counter = endRow;
+                        }
+                    }
+                    tree.scrollRectToVisible(new Rectangle(visRect.x, beginY, 1,
+                                                      testRect.y + testRect.height-
+                                                      beginY));
                 }
-                tree.scrollRectToVisible(new Rectangle(visRect.x, beginY, 1,
-                                                  testRect.y + testRect.height-
-                                                  beginY));
             }
         }
     }

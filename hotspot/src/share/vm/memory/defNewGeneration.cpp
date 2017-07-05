@@ -905,6 +905,10 @@ void DefNewGeneration::gc_epilogue(bool full) {
     to()->check_mangled_unused_area_complete();
   }
 
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
+  }
+
   // update the generation and space performance counters
   update_counters();
   gch->collector_policy()->counters()->update_counters();

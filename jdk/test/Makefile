@@ -510,12 +510,16 @@ jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
-jdk_nio3: $(call TestDirs, com/sun/nio sun/nio)
+jdk_nio3: $(call TestDirs, sun/nio)
 	$(call RunSamevmBatch)
 
 # All nio tests
 jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
 	@$(SummaryInfo)
+
+# Stable samevm testruns (minus items from PROBLEM_LIST)
+jdk_sctp: $(call TestDirs, com/sun/nio/sctp)
+	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
@@ -532,7 +536,7 @@ jdk_security1: $(call TestDirs, java/security)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security2
 jdk_security2: $(call TestDirs, javax/crypto com/sun/crypto)
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests

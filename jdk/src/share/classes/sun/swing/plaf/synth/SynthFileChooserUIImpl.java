@@ -60,7 +60,7 @@ import sun.swing.*;
  */
 public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     private JLabel lookInLabel;
-    private JComboBox directoryComboBox;
+    private JComboBox<File> directoryComboBox;
     private DirectoryComboBoxModel directoryComboBoxModel;
     private Action directoryComboBoxAction = new DirectoryComboBoxAction();
 
@@ -77,10 +77,9 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     private JPanel buttonPanel;
     private JPanel bottomPanel;
 
-    private JComboBox filterComboBox;
+    private JComboBox<FileFilter> filterComboBox;
 
     private static final Dimension hstrut5 = new Dimension(5, 1);
-    private static final Dimension vstrut5  = new Dimension(1, 5);
 
     private static final Insets shrinkwrap = new Insets(0,0,0,0);
 
@@ -217,7 +216,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         topPanel.add(lookInLabel, BorderLayout.BEFORE_LINE_BEGINS);
 
         // CurrentDir ComboBox
-        directoryComboBox = new JComboBox();
+        directoryComboBox = new JComboBox<File>();
         directoryComboBox.getAccessibleContext().setAccessibleDescription(lookInLabelText);
         directoryComboBox.putClientProperty( "JComboBox.isTableCellEditor", Boolean.TRUE );
         lookInLabel.setLabelFor(directoryComboBox);
@@ -394,7 +393,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
         filterComboBoxModel = createFilterComboBoxModel();
         fc.addPropertyChangeListener(filterComboBoxModel);
-        filterComboBox = new JComboBox(filterComboBoxModel);
+        filterComboBox = new JComboBox<FileFilter>(filterComboBoxModel);
         filterComboBox.getAccessibleContext().setAccessibleDescription(filesOfTypeLabelText);
         filesOfTypeLabel.setLabelFor(filterComboBox);
         filterComboBox.setRenderer(createFilterComboBoxRenderer());
@@ -671,16 +670,16 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     // looking combo boxes.
     // So what we do here is delegate most jobs to the "real" or original renderer,
     // and simply monkey with the icon and text of the renderer.
-    private class DirectoryComboBoxRenderer implements ListCellRenderer {
-        private ListCellRenderer delegate;
+    private class DirectoryComboBoxRenderer implements ListCellRenderer<File> {
+        private ListCellRenderer<? super File> delegate;
         IndentIcon ii = new IndentIcon();
 
-        private DirectoryComboBoxRenderer(ListCellRenderer delegate) {
+        private DirectoryComboBoxRenderer(ListCellRenderer<? super File> delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList<? extends File> list, File value, int index, boolean isSelected, boolean cellHasFocus) {
             Component c = delegate.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             assert c instanceof JLabel;
@@ -689,9 +688,8 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
                 label.setText("");
                 return label;
             }
-            File directory = (File) value;
-            label.setText(getFileChooser().getName(directory));
-            Icon icon = getFileChooser().getIcon(directory);
+            label.setText(getFileChooser().getName(value));
+            Icon icon = getFileChooser().getIcon(value);
             ii.icon = icon;
             ii.depth = directoryComboBoxModel.getDepth(index);
             label.setIcon(ii);
@@ -736,7 +734,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class DirectoryComboBoxModel extends AbstractListModel implements ComboBoxModel {
+    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
         File selectedDirectory = null;
@@ -857,7 +855,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return directories.size();
         }
 
-        public Object getElementAt(int index) {
+        public File getElementAt(int index) {
             return directories.elementAt(index);
         }
     }
@@ -890,18 +888,19 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Render different type sizes and styles.
      */
-    public class FilterComboBoxRenderer implements ListCellRenderer {
-        private ListCellRenderer delegate;
-        private FilterComboBoxRenderer(ListCellRenderer delegate) {
+    public class FilterComboBoxRenderer implements ListCellRenderer<FileFilter> {
+        private ListCellRenderer<? super FileFilter> delegate;
+        private FilterComboBoxRenderer(ListCellRenderer<? super FileFilter> delegate) {
             this.delegate = delegate;
         }
 
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList<? extends FileFilter> list, FileFilter value, int index,
+                                                      boolean isSelected, boolean cellHasFocus) {
             Component c = delegate.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             String text = null;
-            if (value != null && value instanceof FileFilter) {
-                text = ((FileFilter) value).getDescription();
+            if (value != null) {
+                text = value.getDescription();
             }
 
             //this should always be true, since SynthComboBoxUI's SynthComboBoxRenderer
@@ -924,7 +923,8 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends AbstractListModel implements ComboBoxModel, PropertyChangeListener {
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+            PropertyChangeListener {
         protected FileFilter[] filters;
         protected FilterComboBoxModel() {
             super();
@@ -977,7 +977,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             }
         }
 
-        public Object getElementAt(int index) {
+        public FileFilter getElementAt(int index) {
             if(index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
                 return getFileChooser().getFileFilter();

@@ -417,17 +417,10 @@ void Parse::do_multianewarray() {
 
   // Note:  Array classes are always initialized; no is_initialized check.
 
-  enum { MAX_DIMENSION = 5 };
-  if (ndimensions > MAX_DIMENSION || ndimensions <= 0) {
-    uncommon_trap(Deoptimization::Reason_unhandled,
-                  Deoptimization::Action_none);
-    return;
-  }
-
   kill_dead_locals();
 
   // get the lengths from the stack (first dimension is on top)
-  Node* length[MAX_DIMENSION+1];
+  Node** length = NEW_RESOURCE_ARRAY(Node*, ndimensions + 1);
   length[ndimensions] = NULL;  // terminating null for make_runtime_call
   int j;
   for (j = ndimensions-1; j >= 0 ; j--) length[j] = pop();
@@ -470,20 +463,43 @@ void Parse::do_multianewarray() {
 
   address fun = NULL;
   switch (ndimensions) {
-  //case 1: Actually, there is no case 1.  It's handled by new_array.
+  case 1: ShouldNotReachHere(); break;
   case 2: fun = OptoRuntime::multianewarray2_Java(); break;
   case 3: fun = OptoRuntime::multianewarray3_Java(); break;
   case 4: fun = OptoRuntime::multianewarray4_Java(); break;
   case 5: fun = OptoRuntime::multianewarray5_Java(); break;
-  default: ShouldNotReachHere();
   };
+  Node* c = NULL;
 
-  Node* c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
-                              OptoRuntime::multianewarray_Type(ndimensions),
-                              fun, NULL, TypeRawPtr::BOTTOM,
-                              makecon(TypeKlassPtr::make(array_klass)),
-                              length[0], length[1], length[2],
-                              length[3], length[4]);
+  if (fun != NULL) {
+    c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
+                          OptoRuntime::multianewarray_Type(ndimensions),
+                          fun, NULL, TypeRawPtr::BOTTOM,
+                          makecon(TypeKlassPtr::make(array_klass)),
+                          length[0], length[1], length[2],
+                          length[3], length[4]);
+  } else {
+    // Create a java array for dimension sizes
+    Node* dims = NULL;
+    { PreserveReexecuteState preexecs(this);
+      _sp += ndimensions;
+      Node* dims_array_klass = makecon(TypeKlassPtr::make(ciArrayKlass::make(ciType::make(T_INT))));
+      dims = new_array(dims_array_klass, intcon(ndimensions), 0);
+
+      // Fill-in it with values
+      for (j = 0; j < ndimensions; j++) {
+        Node *dims_elem = array_element_address(dims, intcon(j), T_INT);
+        store_to_memory(control(), dims_elem, length[j], T_INT, TypeAryPtr::INTS);
+      }
+    }
+
+    c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
+                          OptoRuntime::multianewarrayN_Type(),
+                          OptoRuntime::multianewarrayN_Java(), NULL, TypeRawPtr::BOTTOM,
+                          makecon(TypeKlassPtr::make(array_klass)),
+                          dims);
+  }
+
   Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms));
 
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass);
@@ -496,7 +512,7 @@ void Parse::do_multianewarray() {
   if (ltype != NULL)
     type = type->is_aryptr()->cast_to_size(ltype);
 
-  // We cannot sharpen the nested sub-arrays, since the top level is mutable.
+    // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 
   Node* cast = _gvn.transform( new (C, 2) CheckCastPPNode(control(), res, type) );
   push(cast);
