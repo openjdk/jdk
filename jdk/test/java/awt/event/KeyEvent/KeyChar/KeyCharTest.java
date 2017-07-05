@@ -32,7 +32,7 @@ import java.util.Locale;
 /*
  * @test
  * @key headful
- * @bug 8022401
+ * @bug 8022401 8160623
  * @summary Wrong key char
  * @author Alexandr Scherbatiy
  * @run main KeyCharTest

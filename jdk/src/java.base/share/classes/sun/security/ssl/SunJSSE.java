@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,6 +237,8 @@ public abstract class SunJSSE extends java.security.Provider {
             "sun.security.pkcs12.PKCS12KeyStore");
     }
 
+    // com.sun.net.ssl.internal.ssl.Provider has been deprecated since JDK 9
+    @SuppressWarnings("deprecation")
     private void subclassCheck() {
         if (getClass() != com.sun.net.ssl.internal.ssl.Provider.class) {
             throw new AssertionError("Illegal subclass: " + getClass());

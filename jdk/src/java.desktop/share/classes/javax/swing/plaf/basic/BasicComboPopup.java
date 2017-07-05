@@ -1049,6 +1049,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                 @SuppressWarnings("unchecked")
                 JComboBox<Object> comboBox = (JComboBox)e.getSource();
                 setListSelection(comboBox.getSelectedIndex());
+            } else {
+                setListSelection(-1);
             }
         }
 

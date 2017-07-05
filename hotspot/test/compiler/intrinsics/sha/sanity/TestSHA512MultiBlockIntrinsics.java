@@ -21,18 +21,16 @@
  * questions.
  */
 
-import sha.predicate.IntrinsicPredicates;
-
 /**
  * @test
  * @bug 8035968
  * @summary Verify that SHA-512 multi block intrinsic is actually used.
- * @library /testlibrary /test/lib /compiler/testlibrary ../
+ * @library /testlibrary /test/lib / ../
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestSHA intrinsics.Verifier TestSHA512MultiBlockIntrinsics
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build TestSHA compiler.testlibrary.intrinsics.Verifier TestSHA512MultiBlockIntrinsics
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -82,10 +80,13 @@ import sha.predicate.IntrinsicPredicates;
  *                   -XX:CompileOnly=sun/security/provider/SHA -XX:-UseSHA
  *                   -Dalgorithm=SHA-512 TestSHA512MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
- *                    intrinsics.Verifier positive_384.log positive_512.log
+ *                    compiler.testlibrary.intrinsics.Verifier positive_384.log positive_512.log
  *                    positive_384_def.log positive_512_def.log negative_384.log
  *                    negative_512.log
  */
+
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+
 public class TestSHA512MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
         new SHASanityTestBase(IntrinsicPredicates.SHA512_INTRINSICS_AVAILABLE,

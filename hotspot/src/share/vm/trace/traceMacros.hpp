@@ -33,6 +33,9 @@ typedef u8 traceid;
 #define TRACE_KLASS_DEFINITION(k, t)
 
 #define TRACE_INIT_KLASS_ID(k)
+#define TRACE_REMOVE_KLASS_ID(k)
+#define TRACE_RESTORE_KLASS_ID(k)
+
 #define TRACE_INIT_MODULE_ID(m)
 #define TRACE_INIT_PACKAGE_ID(p)
 #define TRACE_INIT_THREAD_ID(td)

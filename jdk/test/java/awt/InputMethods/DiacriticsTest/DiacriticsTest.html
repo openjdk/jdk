@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ questions.
 Test run requires the following keyboard layouts to be installed:
 Linux OS: English (US, alternative international)
 Windows OS: Hungarian
+A keyboard layout having compose function or compose-like key. Programmer
+Dvorak (http://www.kaufmann.no/roland/dvorak/) is suggested to use.
 
 To test JDK-8000423 fix (Linux only!):
 please switch to US alternative international layout and try to type diacritics
@@ -39,6 +41,12 @@ please switch to US alternative international layout and try to type diacritics
 To test JDK-7197619 fix (Windows only!):
 please switch to Hungarian keyboard layout and try to type diacritics 
 (Ctrl+Alt+2 e; Ctrl+Alt+2 E)
+
+To test JDK-8139189 fix:
+please switch to Programmer Dvorak keyboard layout try to type diacritics
+using compose combinations (Compose+z+d, Compose+z+Shift+d). The Compose key
+in Programmer Dvorak layout is OEM102 the key which is located between
+Left Shift and Z keys on the standard 102-key keyboard.
 
 If you can do that then the test is passed; otherwise failed.
 </body>

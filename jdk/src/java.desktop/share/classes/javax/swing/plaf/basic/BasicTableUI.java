@@ -1856,7 +1856,9 @@ public class BasicTableUI extends TableUI
             // otherwise 1 extra row is printed per page than that are displayed
             // when there is no scrollPane and we do printing of table
             // but not when rmax is already pointing to index of last row
-            if (rMax != (table.getRowCount() - 1)) {
+            // and if there is any selected rows
+            if (rMax != (table.getRowCount() - 1) &&
+                    (table.getSelectedRow() == -1)) {
                 rMax = rMax - 1;
             }
         }

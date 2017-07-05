@@ -24,11 +24,13 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,6 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Stack;
@@ -191,6 +194,46 @@ public class SpliteratorLateBindingFailFastTest {
 
         db.addList(Vector::new);
 
+        class AbstractRandomAccessListImpl extends AbstractList<Integer> implements RandomAccess {
+            List<Integer> l;
+
+            AbstractRandomAccessListImpl(Collection<Integer> c) {
+                this.l = new ArrayList<>(c);
+            }
+
+            @Override
+            public boolean add(Integer integer) {
+                modCount++;
+                return l.add(integer);
+            }
+
+            @Override
+            public Iterator<Integer> iterator() {
+                return l.iterator();
+            }
+
+            @Override
+            public Integer get(int index) {
+                return l.get(index);
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                modCount++;
+                return l.remove(o);
+            }
+
+            @Override
+            public int size() {
+                return l.size();
+            }
+
+            @Override
+            public List<Integer> subList(int fromIndex, int toIndex) {
+                return l.subList(fromIndex, toIndex);
+            }
+        }
+        db.addList(AbstractRandomAccessListImpl::new);
 
         db.addCollection(HashSet::new);
 

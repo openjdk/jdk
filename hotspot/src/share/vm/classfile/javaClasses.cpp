@@ -1377,7 +1377,6 @@ int java_lang_ThreadGroup::_groups_offset = 0;
 int java_lang_ThreadGroup::_maxPriority_offset = 0;
 int java_lang_ThreadGroup::_destroyed_offset = 0;
 int java_lang_ThreadGroup::_daemon_offset = 0;
-int java_lang_ThreadGroup::_vmAllowSuspension_offset = 0;
 int java_lang_ThreadGroup::_nthreads_offset = 0;
 int java_lang_ThreadGroup::_ngroups_offset = 0;
 
@@ -1435,11 +1434,6 @@ bool java_lang_ThreadGroup::is_daemon(oop java_thread_group) {
   return java_thread_group->bool_field(_daemon_offset) != 0;
 }
 
-bool java_lang_ThreadGroup::is_vmAllowSuspension(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
-  return java_thread_group->bool_field(_vmAllowSuspension_offset) != 0;
-}
-
 void java_lang_ThreadGroup::compute_offsets() {
   assert(_parent_offset == 0, "offsets should be initialized only once");
 
@@ -1452,7 +1446,6 @@ void java_lang_ThreadGroup::compute_offsets() {
   compute_offset(_maxPriority_offset, k, vmSymbols::maxPriority_name(), vmSymbols::int_signature());
   compute_offset(_destroyed_offset,   k, vmSymbols::destroyed_name(),   vmSymbols::bool_signature());
   compute_offset(_daemon_offset,      k, vmSymbols::daemon_name(),      vmSymbols::bool_signature());
-  compute_offset(_vmAllowSuspension_offset, k, vmSymbols::vmAllowSuspension_name(), vmSymbols::bool_signature());
   compute_offset(_nthreads_offset,    k, vmSymbols::nthreads_name(),    vmSymbols::int_signature());
   compute_offset(_ngroups_offset,     k, vmSymbols::ngroups_name(),     vmSymbols::int_signature());
 }

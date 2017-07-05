@@ -65,7 +65,7 @@ public abstract class Value {
      * {@link #toString()} implementation of subclasses.
      */
     protected final String getKindSuffix() {
-        return "|" + getPlatformKind().getTypeChar();
+        return "|" + valueKind.getKindSuffix();
     }
 
     public final ValueKind<?> getValueKind() {

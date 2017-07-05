@@ -264,7 +264,8 @@ inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
 
 inline jint Atomic::cmpxchg(jint exchange_value,
                             volatile jint* dest,
-                            jint compare_value) {
+                            jint compare_value,
+                            cmpxchg_memory_order order) {
 #ifdef ARM
   return arm_compare_and_swap(dest, compare_value, exchange_value);
 #else
@@ -278,14 +279,16 @@ inline jint Atomic::cmpxchg(jint exchange_value,
 
 inline jlong Atomic::cmpxchg(jlong exchange_value,
                              volatile jlong* dest,
-                             jlong compare_value) {
+                             jlong compare_value,
+                             cmpxchg_memory_order order) {
 
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 }
 
 inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value,
                                     volatile intptr_t* dest,
-                                    intptr_t compare_value) {
+                                    intptr_t compare_value,
+                                    cmpxchg_memory_order order) {
 #ifdef ARM
   return arm_compare_and_swap(dest, compare_value, exchange_value);
 #else
@@ -299,11 +302,13 @@ inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value,
 
 inline void* Atomic::cmpxchg_ptr(void* exchange_value,
                                  volatile void* dest,
-                                 void* compare_value) {
+                                 void* compare_value,
+                                 cmpxchg_memory_order order) {
 
   return (void *) cmpxchg_ptr((intptr_t) exchange_value,
                               (volatile intptr_t*) dest,
-                              (intptr_t) compare_value);
+                              (intptr_t) compare_value,
+                              order);
 }
 
 inline jlong Atomic::load(volatile jlong* src) {

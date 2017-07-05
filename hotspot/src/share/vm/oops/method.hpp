@@ -638,6 +638,9 @@ class Method : public Metadata {
   // valid static initializer flags.
   bool is_static_initializer() const;
 
+  // returns true if the method name is <init>
+  bool is_object_initializer() const;
+
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.

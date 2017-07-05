@@ -124,6 +124,10 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
+java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessBoolean.java	8160690 generic-all
+java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessByte.java	8160690 generic-all
+java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessChar.java	8160690 generic-all
+java/lang/invoke/VarHandles/VarHandleTestMethodHandleAccessShort.java	8160690 generic-all
 
 ############################################################################
 
@@ -135,6 +139,9 @@ java/lang/instrument/RetransformBigClass.sh                     8061177 generic-
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
 java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
+
+java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
+java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
 
 ############################################################################
 
@@ -278,8 +285,6 @@ sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
-sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
-
 ############################################################################
 
 # jdk_sound
@@ -344,8 +349,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
 
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java 8130337 generic-all
-
 java/util/Arrays/ParallelPrefix.java                            8080165,8085982 generic-all
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
@@ -363,6 +366,8 @@ sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-
 sun/tools/jmap/heapconfig/JMapHeapConfigTest.java               8072131,8132452 generic-all
 
 sun/tools/jstatd/TestJstatdExternalRegistry.java                8046285 generic-all
+
+sun/tools/jps/TestJpsJar.java                                   8160923 generic-all
 
 sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 

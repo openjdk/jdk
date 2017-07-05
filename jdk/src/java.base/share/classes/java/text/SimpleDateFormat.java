@@ -276,9 +276,16 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     it is interpreted as a <a href="#number">number</a>.<br>
  *     <ul>
  *     <li>Letter <em>M</em> produces context-sensitive month names, such as the
- *         embedded form of names. If a {@code DateFormatSymbols} has been set
- *         explicitly with constructor {@link #SimpleDateFormat(String,
- *         DateFormatSymbols)} or method {@link
+ *         embedded form of names. Letter <em>M</em> is context-sensitive in the
+ *         sense that when it is used in the standalone pattern, for example,
+ *         "MMMM", it gives the standalone form of a month name and when it is
+ *         used in the pattern containing other field(s), for example, "d MMMM",
+ *         it gives the format form of a month name. For example, January in the
+ *         Catalan language is "de gener" in the format form while it is "gener"
+ *         in the standalone form. In this case, "MMMM" will produce "gener" and
+ *         the month part of the "d MMMM" will produce "de gener". If a
+ *         {@code DateFormatSymbols} has been set explicitly with constructor
+ *         {@link #SimpleDateFormat(String,DateFormatSymbols)} or method {@link
  *         #setDateFormatSymbols(DateFormatSymbols)}, the month names given by
  *         the {@code DateFormatSymbols} are used.</li>
  *     <li>Letter <em>L</em> produces the standalone form of month names.</li>

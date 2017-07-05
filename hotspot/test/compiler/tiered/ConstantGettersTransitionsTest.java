@@ -21,13 +21,9 @@
  * questions.
  */
 
-import java.lang.reflect.Executable;
-import java.util.concurrent.Callable;
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /**
  * @test ConstantGettersTransitionsTest
- * @library /testlibrary /test/lib /compiler/whitebox /
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TransitionsTestExecutor ConstantGettersTransitionsTest
@@ -38,6 +34,11 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  *                   TransitionsTestExecutor ConstantGettersTransitionsTest
  * @summary Test the correctness of compilation level transitions for constant getters methods
  */
+
+import java.lang.reflect.Executable;
+import java.util.concurrent.Callable;
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 public class ConstantGettersTransitionsTest extends LevelTransitionTest {
     public static void main(String[] args) {
         assert (!CompilerWhiteBoxTest.skipOnTieredCompilation(false));

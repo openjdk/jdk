@@ -23,7 +23,7 @@
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import sha.predicate.IntrinsicPredicates;
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 import java.util.function.BooleanSupplier;
 

@@ -27,12 +27,12 @@
  * @bug 8031320
  * @summary Verify RTMTotalCountIncrRate option processing on CPU with
  *          rtm support and on VM with rtm locking support.
- * @library /testlibrary /test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMTotalCountIncrRateOptionOnSupportedConfig
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestRTMTotalCountIncrRateOptionOnSupportedConfig

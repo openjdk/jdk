@@ -908,6 +908,7 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing heap information")
 
   if (Universe::is_fully_initialized()) {
+    MutexLocker hl(Heap_lock);
     Universe::heap()->print_on_error(st);
     st->cr();
     st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
