@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,13 @@
 // Inline allocation implementations.
 
 void CollectedHeap::post_allocation_setup_common(KlassHandle klass,
-                                                 HeapWord* obj,
-                                                 size_t size) {
-  post_allocation_setup_no_klass_install(klass, obj, size);
-  post_allocation_install_obj_klass(klass, oop(obj), (int) size);
+                                                 HeapWord* obj) {
+  post_allocation_setup_no_klass_install(klass, obj);
+  post_allocation_install_obj_klass(klass, oop(obj));
 }
 
 void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
-                                                           HeapWord* objPtr,
-                                                           size_t size) {
+                                                           HeapWord* objPtr) {
   oop obj = (oop)objPtr;
 
   assert(obj != NULL, "NULL object pointer");
@@ -71,8 +69,7 @@ void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
 }
 
 void CollectedHeap::post_allocation_install_obj_klass(KlassHandle klass,
-                                                   oop obj,
-                                                   int size) {
+                                                   oop obj) {
   // These asserts are kind of complicated because of klassKlass
   // and the beginning of the world.
   assert(klass() != NULL || !Universe::is_fully_initialized(), "NULL klass");
@@ -101,9 +98,8 @@ inline void post_allocation_notify(KlassHandle klass, oop obj) {
 }
 
 void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
-                                              HeapWord* obj,
-                                              size_t size) {
-  post_allocation_setup_common(klass, obj, size);
+                                              HeapWord* obj) {
+  post_allocation_setup_common(klass, obj);
   assert(Universe::is_bootstrapping() ||
          !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
   // notify jvmti and dtrace
@@ -112,14 +108,13 @@ void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
 
 void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
                                                 HeapWord* obj,
-                                                size_t size,
                                                 int length) {
   // Set array length before setting the _klass field
   // in post_allocation_setup_common() because the klass field
   // indicates that the object is parsable by concurrent GC.
   assert(length >= 0, "length should be non-negative");
   ((arrayOop)obj)->set_length(length);
-  post_allocation_setup_common(klass, obj, size);
+  post_allocation_setup_common(klass, obj);
   assert(((oop)obj)->blueprint()->oop_is_array(), "must be an array");
   // notify jvmti and dtrace (must be after length is set for dtrace)
   post_allocation_notify(klass, (oop)obj);
@@ -256,7 +251,7 @@ oop CollectedHeap::obj_allocate(KlassHandle klass, int size, TRAPS) {
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_mem_allocate_init(size, CHECK_NULL);
-  post_allocation_setup_obj(klass, obj, size);
+  post_allocation_setup_obj(klass, obj);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
@@ -269,7 +264,7 @@ oop CollectedHeap::array_allocate(KlassHandle klass,
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_mem_allocate_init(size, CHECK_NULL);
-  post_allocation_setup_array(klass, obj, size, length);
+  post_allocation_setup_array(klass, obj, length);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
@@ -283,7 +278,7 @@ oop CollectedHeap::array_allocate_nozero(KlassHandle klass,
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_mem_allocate_noinit(size, CHECK_NULL);
   ((oop)obj)->set_klass_gap(0);
-  post_allocation_setup_array(klass, obj, size, length);
+  post_allocation_setup_array(klass, obj, length);
 #ifndef PRODUCT
   const size_t hs = oopDesc::header_size()+1;
   Universe::heap()->check_for_non_bad_heap_word_value(obj+hs, size-hs);
@@ -293,7 +288,7 @@ oop CollectedHeap::array_allocate_nozero(KlassHandle klass,
 
 oop CollectedHeap::permanent_obj_allocate(KlassHandle klass, int size, TRAPS) {
   oop obj = permanent_obj_allocate_no_klass_install(klass, size, CHECK_NULL);
-  post_allocation_install_obj_klass(klass, obj, size);
+  post_allocation_install_obj_klass(klass, obj);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value((HeapWord*) obj,
                                                               size));
   return obj;
@@ -306,7 +301,7 @@ oop CollectedHeap::permanent_obj_allocate_no_klass_install(KlassHandle klass,
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_permanent_mem_allocate_init(size, CHECK_NULL);
-  post_allocation_setup_no_klass_install(klass, obj, size);
+  post_allocation_setup_no_klass_install(klass, obj);
 #ifndef PRODUCT
   const size_t hs = oopDesc::header_size();
   Universe::heap()->check_for_bad_heap_word_value(obj+hs, size-hs);
@@ -322,7 +317,7 @@ oop CollectedHeap::permanent_array_allocate(KlassHandle klass,
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_permanent_mem_allocate_init(size, CHECK_NULL);
-  post_allocation_setup_array(klass, obj, size, length);
+  post_allocation_setup_array(klass, obj, length);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
