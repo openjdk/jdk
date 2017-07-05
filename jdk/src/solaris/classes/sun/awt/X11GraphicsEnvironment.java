@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.logging.*;
 
 import sun.awt.motif.MFontConfiguration;
+import sun.font.FcFontConfiguration;
 import sun.font.Font2D;
 import sun.font.FontManager;
 import sun.font.NativeFont;
@@ -350,6 +351,14 @@ public class X11GraphicsEnvironment
      * only to get called for these fonts.
      */
     public String getFileNameFromPlatformName(String platName) {
+
+        /* If the FontConfig file doesn't use xlfds, or its
+         * FcFontConfiguration, this may be already a file name.
+         */
+        if (platName.startsWith("/")) {
+            return platName;
+        }
+
         String fileName = null;
         String fontID = specificFontIDForName(platName);
 
@@ -905,11 +914,49 @@ public class X11GraphicsEnvironment
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.
     protected FontConfiguration createFontConfiguration() {
-        return new MFontConfiguration(this);
+
+        /* The logic here decides whether to use a preconfigured
+         * fontconfig.properties file, or synthesise one using platform APIs.
+         * On Solaris (as opposed to OpenSolaris) we try to use the
+         * pre-configured ones, but if the files it specifies are missing
+         * we fail-safe to synthesising one. This might happen if Solaris
+         * changes its fonts.
+         * For OpenSolaris I don't expect us to ever create fontconfig files,
+         * so it will always synthesise. Note that if we misidentify
+         * OpenSolaris as Solaris, then the test for the presence of
+         * Solaris-only font files will correct this.
+         * For Linux we require an exact match of distro and version to
+         * use the preconfigured file, and also that it points to
+         * existent fonts.
+         * If synthesising fails, we fall back to any preconfigured file
+         * and do the best we can. For the commercial JDK this will be
+         * fine as it includes the Lucida fonts. OpenJDK should not hit
+         * this as the synthesis should always work on its platforms.
+         */
+        FontConfiguration mFontConfig = new MFontConfiguration(this);
+        if (isOpenSolaris ||
+            (isLinux &&
+             (!mFontConfig.foundOsSpecificFile() ||
+              !mFontConfig.fontFilesArePresent()) ||
+             (isSolaris && !mFontConfig.fontFilesArePresent()))) {
+            FcFontConfiguration fcFontConfig =
+                new FcFontConfiguration(this);
+            if (fcFontConfig.init()) {
+                return fcFontConfig;
+            }
+        }
+        mFontConfig.init();
+        return mFontConfig;
     }
     public FontConfiguration
         createFontConfiguration(boolean preferLocaleFonts,
                                 boolean preferPropFonts) {
+
+        FontConfiguration config = getFontConfiguration();
+        if (config instanceof FcFontConfiguration) {
+            // Doesn't need to implement the alternate support.
+            return config;
+        }
 
         return new MFontConfiguration(this,
                                       preferLocaleFonts, preferPropFonts);
@@ -921,6 +968,7 @@ public class X11GraphicsEnvironment
      * for this platform.
      */
     public String getDefaultFontFaceName() {
+
         return null;
     }
 

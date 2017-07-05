@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.SurfaceType;
@@ -36,6 +38,8 @@ import sun.java2d.loops.TransformBlit;
 import sun.java2d.pipe.DrawImage;
 
 public class D3DDrawImage extends DrawImage {
+
+    @Override
     protected void renderImageXform(SunGraphics2D sg, Image img,
                                     AffineTransform tx, int interpType,
                                     int sx1, int sy1, int sx2, int sy2,
@@ -44,7 +48,6 @@ public class D3DDrawImage extends DrawImage {
         // punt to the MediaLib-based transformImage() in the superclass if:
         //     - bicubic interpolation is specified
         //     - a background color is specified and will be used
-        //     - the source surface is not a texture
         //     - an appropriate TransformBlit primitive could not be found
         if (interpType != AffineTransformOp.TYPE_BICUBIC) {
             SurfaceData dstData = sg.surfaceData;
@@ -54,10 +57,7 @@ public class D3DDrawImage extends DrawImage {
                                              sg.imageComp,
                                              bgColor);
 
-            if (srcData != null &&
-                !isBgOperation(srcData, bgColor) &&
-                srcData.getSurfaceType() == D3DSurfaceData.D3DTexture)
-            {
+            if (srcData != null && !isBgOperation(srcData, bgColor)) {
                 SurfaceType srcType = srcData.getSurfaceType();
                 SurfaceType dstType = dstData.getSurfaceType();
                 TransformBlit blit = TransformBlit.getFromCache(srcType,
@@ -76,5 +76,26 @@ public class D3DDrawImage extends DrawImage {
 
         super.renderImageXform(sg, img, tx, interpType,
                                sx1, sy1, sx2, sy2, bgColor);
+    }
+
+    @Override
+    public void transformImage(SunGraphics2D sg, BufferedImage img,
+                               BufferedImageOp op, int x, int y)
+    {
+        if (op != null) {
+            if (op instanceof AffineTransformOp) {
+                AffineTransformOp atop = (AffineTransformOp) op;
+                transformImage(sg, img, x, y,
+                               atop.getTransform(),
+                               atop.getInterpolationType());
+                return;
+            } else {
+                if (D3DBufImgOps.renderImageWithOp(sg, img, op, x, y)) {
+                    return;
+                }
+            }
+            img = op.filter(img, null);
+        }
+        copyImage(sg, img, x, y, null);
     }
 }

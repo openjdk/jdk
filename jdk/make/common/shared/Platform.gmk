@@ -370,7 +370,7 @@ ifeq ($(PLATFORM), windows)
   # ISHIELD_TEMP_MIN is the difference of an empty C:\TEMP vs. one after a
   #     bundles build on windows.
   ISHIELD_TEMP_MIN=250000
-  REQUIRED_DXSDK_VER = 0x0700
+  REQUIRED_DXSDK_VER = 0x0900
   OS_VENDOR = Microsoft
   # How much RAM does this machine have:
   ifeq ($(JDK_HAS_MEM_INFO),)

@@ -50,7 +50,7 @@ class DevPollSelectorImpl
     private int totalChannels;
 
     // Maps from file descriptors to keys
-    private HashMap fdToKey;
+    private Map<Integer,SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
     private boolean closed = false;
@@ -71,7 +71,7 @@ class DevPollSelectorImpl
         fd1 = fdes[1];
         pollWrapper = new DevPollArrayWrapper();
         pollWrapper.initInterrupt(fd0, fd1);
-        fdToKey = new HashMap();
+        fdToKey = new HashMap<Integer,SelectionKeyImpl>();
         totalChannels = 1;
     }
 
@@ -110,8 +110,7 @@ class DevPollSelectorImpl
         int numKeysUpdated = 0;
         for (int i=0; i<entries; i++) {
             int nextFD = pollWrapper.getDescriptor(i);
-            SelectionKeyImpl ski = (SelectionKeyImpl) fdToKey.get(
-                new Integer(nextFD));
+            SelectionKeyImpl ski = fdToKey.get(Integer.valueOf(nextFD));
             // ski is null in the case of an interrupt
             if (ski != null) {
                 int rOps = pollWrapper.getReventOps(i);
@@ -169,7 +168,7 @@ class DevPollSelectorImpl
 
     protected void implRegister(SelectionKeyImpl ski) {
         int fd = IOUtil.fdVal(ski.channel.getFD());
-        fdToKey.put(new Integer(fd), ski);
+        fdToKey.put(Integer.valueOf(fd), ski);
         totalChannels++;
         keys.add(ski);
     }
@@ -178,7 +177,7 @@ class DevPollSelectorImpl
         int i = ski.getIndex();
         assert (i >= 0);
         int fd = ski.channel.getFDVal();
-        fdToKey.remove(new Integer(fd));
+        fdToKey.remove(Integer.valueOf(fd));
         pollWrapper.release(fd);
         totalChannels--;
         ski.setIndex(-1);

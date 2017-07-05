@@ -120,8 +120,8 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
  * function pointer table, but our pointer should still be good.
  */
 int
-dbgsysListen(int fd, INT32 count) {
-    return listen(fd, (int)count);
+dbgsysListen(int fd, int backlog) {
+    return listen(fd, backlog);
 }
 
 int
@@ -172,7 +172,7 @@ int dbgsysFinishConnect(int fd, long timeout) {
 
 int
 dbgsysAccept(int fd, struct sockaddr *name, int *namelen) {
-    return accept(fd, name, namelen);
+    return (int)accept(fd, name, namelen);
 }
 
 int
@@ -209,7 +209,7 @@ dbgsysHostToNetworkShort(unsigned short hostshort) {
 
 int
 dbgsysSocket(int domain, int type, int protocol) {
-  int fd = socket(domain, type, protocol);
+  int fd = (int)socket(domain, type, protocol);
   if (fd != SOCKET_ERROR) {
       SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
   }
@@ -229,12 +229,6 @@ dbgsysSocketClose(int fd) {
     return closesocket(fd);
 }
 
-INT32
-dbgsysSocketAvailable(int fd, INT32 *pbytes) {
-    u_long arg = (u_long)*pbytes;
-    return (INT32)ioctlsocket(fd, FIONREAD, &arg);
-}
-
 /* Additions to original follow */
 
 int
@@ -243,14 +237,14 @@ dbgsysBind(int fd, struct sockaddr *name, int namelen) {
 }
 
 
-UINT32
+uint32_t
 dbgsysInetAddr(const char* cp) {
-    return (UINT32)inet_addr(cp);
+    return (uint32_t)inet_addr(cp);
 }
 
-UINT32
-dbgsysHostToNetworkLong(UINT32 hostlong) {
-    return (UINT32)htonl((u_long)hostlong);
+uint32_t
+dbgsysHostToNetworkLong(uint32_t hostlong) {
+    return (uint32_t)htonl((u_long)hostlong);
 }
 
 unsigned short
@@ -263,9 +257,9 @@ dbgsysGetSocketName(int fd, struct sockaddr *name, int *namelen) {
     return getsockname(fd, name, namelen);
 }
 
-UINT32
-dbgsysNetworkToHostLong(UINT32 netlong) {
-    return (UINT32)ntohl((u_long)netlong);
+uint32_t
+dbgsysNetworkToHostLong(uint32_t netlong) {
+    return (uint32_t)ntohl((u_long)netlong);
 }
 
 /*

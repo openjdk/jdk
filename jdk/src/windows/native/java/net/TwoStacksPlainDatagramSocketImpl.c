@@ -651,7 +651,6 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
     SOCKETADDRESS rmtaddr;
     SOCKETADDRESS *addrp = &rmtaddr;
     int addrlen;
-    int x; /* DELETE ME */
 
 
     if (IS_NULL(packet)) {
@@ -883,7 +882,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
                  */
                 if (timeout) {
                     jlong newTime = JVM_CurrentTimeMillis(env, 0);
-                    timeout -= (newTime - prevTime);
+                    timeout -= (jint)(newTime - prevTime);
                     if (timeout <= 0) {
                         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                 "Receive timed out");
@@ -929,9 +928,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
 
     int fd, fd1, fduse, nsockets=0, errorCode;
     int port;
-    jbyteArray data;
 
-    int checkBoth = 0, datalen;
+    int checkBoth = 0;
     int n;
     SOCKETADDRESS remote_addr;
     jint remote_addrsize=sizeof(remote_addr);
@@ -1101,7 +1099,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
                  */
                 if (timeout) {
                     jlong newTime = JVM_CurrentTimeMillis(env, 0);
-                    timeout -= (newTime - prevTime);
+                    timeout -= (jint)(newTime - prevTime);
                     if (timeout <= 0) {
                         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                 "Receive timed out");
@@ -1203,9 +1201,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
      * must be called prior to receive() so that fduse can be set.
      */
     int fd, fd1, fduse, errorCode;
-    jbyteArray data;
 
-    int datalen;
     int n, nsockets=0;
     SOCKETADDRESS remote_addr;
     jint remote_addrsize=sizeof(remote_addr);
@@ -1376,7 +1372,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
                 if (timeout) {
                     int ret;
                     jlong newTime = JVM_CurrentTimeMillis(env, 0);
-                    timeout -= (newTime - prevTime);
+                    timeout -= (jint)(newTime - prevTime);
                     prevTime = newTime;
 
                     if (timeout <= 0) {

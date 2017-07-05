@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/types.h>
+#include <process.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
@@ -307,10 +308,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     jstring ret = NULL;
 
     char host[NI_MAXHOST+1];
-    jfieldID fid;
     int error = 0;
-    jint family;
-    struct sockaddr *him ;
     int len = 0;
     jbyte caddr[16];
 
@@ -374,7 +372,7 @@ static jboolean
 ping6(JNIEnv *env, jint fd, struct SOCKADDR_IN6* him, jint timeout,
       struct SOCKADDR_IN6* netif, jint ttl) {
     jint size;
-    jint n, len, hlen1, icmplen, i;
+    jint n, len, i;
     char sendbuf[1500];
     char auxbuf[1500];
     unsigned char recvbuf[1500];
@@ -392,7 +390,7 @@ ping6(JNIEnv *env, jint fd, struct SOCKADDR_IN6* him, jint timeout,
     seq = ((unsigned short)rand()) >> 1;
 
     /* icmp_id is a 16 bit data type, therefore down cast the pid */
-    pid = (unsigned short) getpid();
+    pid = (unsigned short) _getpid();
 
     size = 60*1024;
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char *)&size, sizeof(size));
@@ -520,7 +518,6 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jbyteArray ifArray,
                                            jint ttl, jint if_scope) {
 #ifdef AF_INET6
-    jint addr;
     jbyte caddr[16];
     jint fd, sz;
     struct sockaddr_in6 him6;

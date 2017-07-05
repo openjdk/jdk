@@ -193,7 +193,7 @@ build-jar: $(UNSIGNED_DIR)/sunjce_provider.jar
 $(UNSIGNED_DIR)/sunjce_provider.jar: build $(JCE_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ $(JAR_DIRS) \
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 
@@ -253,7 +253,7 @@ endif
 	@$(CD) $(OBFUS_DIR); $(java-vm-cleanup)
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ \
 	    -C $(OBFUS_DIR)/build com \
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	$(sign-target)
 	@$(java-vm-cleanup)
 

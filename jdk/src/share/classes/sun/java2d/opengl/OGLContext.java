@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,91 +25,24 @@
 
 package sun.java2d.opengl;
 
-import java.awt.AlphaComposite;
-import java.awt.Composite;
-import java.awt.Paint;
-import java.awt.geom.AffineTransform;
-import sun.java2d.SunGraphics2D;
 import sun.java2d.pipe.BufferedContext;
-import sun.java2d.pipe.Region;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
+import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.pipe.BufferedOpCodes.*;
+import static sun.java2d.pipe.hw.ContextCapabilities.*;
 
 /**
  * Note that the RenderQueue lock must be acquired before calling any of
  * the methods in this class.
  */
-class OGLContext extends BufferedContext {
+public class OGLContext extends BufferedContext {
 
-    /** Indicates that the context has no capabilities. */
-    static final int CAPS_EMPTY            = (0 << 0);
-    /** Indicates that the context is doublebuffered. */
-    static final int CAPS_DOUBLEBUFFERED   = (1 << 0);
-    /** Indicates that the context supports a stored alpha channel. */
-    static final int CAPS_STORED_ALPHA     = (1 << 1);
-    /** Indicates the presence of the GL_ARB_multitexture extension. */
-    static final int CAPS_EXT_MULTITEXTURE = (1 << 2);
-    /** Indicates the presence of the GL_ARB_texture_non_power_of_two ext. */
-    static final int CAPS_EXT_TEXNONPOW2   = (1 << 3);
-    /**
-     * Indicates the presence of the GL_EXT_framebuffer_object extension.
-     * This cap will only be set if the fbobject system property has been
-     * enabled and we are able to create an FBO with depth buffer.
-     */
-    static final int CAPS_EXT_FBOBJECT     = (1 << 4);
-    /**
-     * Indicates the presence of the GL_ARB_fragment_shader extension.
-     * This cap will only be set if the lcdshader system property has been
-     * enabled and the hardware supports the minimum number of texture units.
-     */
-    static final int CAPS_EXT_LCD_SHADER   = (1 << 5);
-    /** Indicates the presence of the GL_ARB_texture_rectangle extension. */
-    static final int CAPS_EXT_TEXRECT      = (1 << 6);
-    /**
-     * Indicates the presence of the GL_ARB_fragment_shader extension.
-     * This cap will only be set if the biopshader system property has been
-     * enabled and the hardware meets our minimum requirements.
-     */
-    static final int CAPS_EXT_BIOP_SHADER  = (1 << 7);
-    /**
-     * Indicates the presence of the GL_ARB_fragment_shader extension.
-     * This cap will only be set if the gradshader system property has been
-     * enabled and the hardware meets our minimum requirements.
-     */
-    static final int CAPS_EXT_GRAD_SHADER  = (1 << 8);
+    private final OGLGraphicsConfig config;
 
-    OGLContext(RenderQueue rq) {
+    OGLContext(RenderQueue rq, OGLGraphicsConfig config) {
         super(rq);
-    }
-
-    /**
-     * Fetches the OGLContext associated with the current GraphicsConfig
-     * and validates the context using the given parameters.  Most rendering
-     * operations will call this method first in order to set the necessary
-     * state before issuing rendering commands.
-     */
-    static void validateContext(OGLSurfaceData srcData,
-                                OGLSurfaceData dstData,
-                                Region clip, Composite comp,
-                                AffineTransform xform,
-                                Paint paint, SunGraphics2D sg2d,
-                                int flags)
-    {
-        // assert rq.lock.isHeldByCurrentThread();
-        OGLContext oglc = dstData.getContext();
-        oglc.validate(srcData, dstData,
-                      clip, comp, xform, paint, sg2d, flags);
-    }
-
-    /**
-     * Simplified version of validateContext() that disables all context
-     * state settings.
-     */
-    static void validateContext(OGLSurfaceData dstData) {
-        // assert rq.lock.isHeldByCurrentThread();
-        validateContext(dstData, dstData,
-                        null, null, null, null, null, NO_CONTEXT_FLAGS);
+        this.config = config;
     }
 
     /**
@@ -160,19 +93,128 @@ class OGLContext extends BufferedContext {
     static void invalidateCurrentContext() {
         // assert OGLRenderQueue.getInstance().lock.isHeldByCurrentThread();
 
-        // first invalidate the context reference at the native level, and
+        // invalidate the current Java-level context so that we
+        // revalidate everything the next time around
+        if (currentContext != null) {
+            currentContext.invalidateContext();
+            currentContext = null;
+        }
+
+        // invalidate the context reference at the native level, and
         // then flush the queue so that we have no pending operations
         // dependent on the current context
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.ensureCapacity(4);
         rq.getBuffer().putInt(INVALIDATE_CONTEXT);
         rq.flushNow();
+    }
 
-        // then invalidate the current Java-level context so that we
-        // revalidate everything the next time around
-        if (currentContext != null) {
-            currentContext.invalidateSurfaces();
-            currentContext = null;
+    public RenderQueue getRenderQueue() {
+        return OGLRenderQueue.getInstance();
+    }
+
+    /**
+     * Returns a string representing adapter id (vendor, renderer, version).
+     * Must be called on the rendering thread.
+     *
+     * @return an id string for the adapter
+     */
+    static final native String getOGLIdString();
+
+    @Override
+    public void saveState() {
+        // assert rq.lock.isHeldByCurrentThread();
+
+        // reset all attributes of this and current contexts
+        invalidateContext();
+        invalidateCurrentContext();
+
+        setScratchSurface(config);
+
+        // save the state on the native level
+        rq.ensureCapacity(4);
+        buf.putInt(SAVE_STATE);
+        rq.flushNow();
+    }
+
+    @Override
+    public void restoreState() {
+        // assert rq.lock.isHeldByCurrentThread();
+
+        // reset all attributes of this and current contexts
+        invalidateContext();
+        invalidateCurrentContext();
+
+        setScratchSurface(config);
+
+        // restore the state on the native level
+        rq.ensureCapacity(4);
+        buf.putInt(RESTORE_STATE);
+        rq.flushNow();
+    }
+
+    static class OGLContextCaps extends ContextCapabilities {
+        /**
+         * Indicates the presence of the GL_EXT_framebuffer_object extension.
+         * This cap will only be set if the fbobject system property has been
+         * enabled and we are able to create an FBO with depth buffer.
+         */
+        static final int CAPS_EXT_FBOBJECT     =
+                (CAPS_RT_TEXTURE_ALPHA | CAPS_RT_TEXTURE_OPAQUE);
+        /** Indicates that the context supports a stored alpha channel. */
+        static final int CAPS_STORED_ALPHA     = CAPS_RT_PLAIN_ALPHA;
+        /** Indicates that the context is doublebuffered. */
+        static final int CAPS_DOUBLEBUFFERED   = (FIRST_PRIVATE_CAP << 0);
+        /**
+         * Indicates the presence of the GL_ARB_fragment_shader extension.
+         * This cap will only be set if the lcdshader system property has been
+         * enabled and the hardware supports the minimum number of texture units
+         */
+        static final int CAPS_EXT_LCD_SHADER   = (FIRST_PRIVATE_CAP << 1);
+        /**
+         * Indicates the presence of the GL_ARB_fragment_shader extension.
+         * This cap will only be set if the biopshader system property has been
+         * enabled and the hardware meets our minimum requirements.
+         */
+        static final int CAPS_EXT_BIOP_SHADER  = (FIRST_PRIVATE_CAP << 2);
+        /**
+         * Indicates the presence of the GL_ARB_fragment_shader extension.
+         * This cap will only be set if the gradshader system property has been
+         * enabled and the hardware meets our minimum requirements.
+         */
+        static final int CAPS_EXT_GRAD_SHADER  = (FIRST_PRIVATE_CAP << 3);
+        /** Indicates the presence of the GL_ARB_texture_rectangle extension. */
+        static final int CAPS_EXT_TEXRECT      = (FIRST_PRIVATE_CAP << 4);
+
+        OGLContextCaps(int caps, String adapterId) {
+            super(caps, adapterId);
+        }
+
+        @Override
+        public String toString() {
+            StringBuffer buf = new StringBuffer(super.toString());
+            if ((caps & CAPS_EXT_FBOBJECT) != 0) {
+                buf.append("CAPS_EXT_FBOBJECT|");
+            }
+            if ((caps & CAPS_STORED_ALPHA) != 0) {
+                buf.append("CAPS_STORED_ALPHA|");
+            }
+            if ((caps & CAPS_DOUBLEBUFFERED) != 0) {
+                buf.append("CAPS_DOUBLEBUFFERED|");
+            }
+            if ((caps & CAPS_EXT_LCD_SHADER) != 0) {
+                buf.append("CAPS_EXT_LCD_SHADER|");
+            }
+            if ((caps & CAPS_EXT_BIOP_SHADER) != 0) {
+                buf.append("CAPS_BIOP_SHADER|");
+            }
+            if ((caps & CAPS_EXT_GRAD_SHADER) != 0) {
+                buf.append("CAPS_EXT_GRAD_SHADER|");
+            }
+            if ((caps & CAPS_EXT_TEXRECT) != 0) {
+                buf.append("CAPS_EXT_TEXRECT|");
+            }
+            return buf.toString();
         }
     }
 }

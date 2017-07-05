@@ -63,15 +63,6 @@ endif
 
 JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
 
-# Choose the right set of documents for the images
-ifdef OPENJDK
-  SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)/make
-  SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)/make
-else
-  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
-  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
-endif
-
 #We use this for man page header
 jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
 
@@ -81,13 +72,20 @@ ifeq ($(PLATFORM), windows)
 endif
 
 # The base names of all the license and document files for the jdk and jre
+#   (These files get placed in the jdk and jre install images)
 ifdef OPENJDK
+  # Where to find these files
+  SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)
+  SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)
   # Same files for jdk and jre, no name changes
   LICENSE_DOCLIST_JDK = LICENSE     ASSEMBLY_EXCEPTION
   LICENSE_DOCLIST_JRE = LICENSE     ASSEMBLY_EXCEPTION
-  OTHER_DOCLIST_JDK   = README.html THIRD_PARTY_README
-  OTHER_DOCLIST_JRE   = README.html THIRD_PARTY_README
+  OTHER_DOCLIST_JDK   = THIRD_PARTY_README
+  OTHER_DOCLIST_JRE   = THIRD_PARTY_README
 else
+  # Where to find these files
+  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
+  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
   # Select the pre-release or FCS license version based on the build milestone.
   LICENSE_VERSION=.pre
   ifeq ($(MILESTONE), fcs)
@@ -662,7 +660,7 @@ $(RES_JAR_ARGLIST): $(RES_JAR_FILELIST)
 $(RESOURCES_JAR): $(RES_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RES_JAR_ARGLIST) $(JAR_JFLAGS)
+	    @$(RES_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Create jsse.jar containing SunJSSE implementation classes
@@ -671,7 +669,7 @@ $(JSSE_JAR): $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
 		$(JSSE_CLASSES_DIRS:%=-C $(CLASSBINDIR) %) \
-		$(JAR_JFLAGS)
+		$(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Create sec-bin.zip
@@ -721,7 +719,7 @@ $(RT_JAR_ARGLIST): $(RT_JAR_FILELIST)
 $(RT_JAR): $(RT_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RT_JAR_ARGLIST) $(JAR_JFLAGS)
+	    @$(RT_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Meta-index construction to make core class loaders lazier
@@ -955,7 +953,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@#
 	$(BOOT_JAR_CMD) c0f $(LIBDIR)/tools.jar $(addprefix \
 		-C $(CLASSBINDIR) , $(TOOLS)) \
-	        $(JAR_JFLAGS)
+	        $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 	$(CP) $(LIBDIR)/tools.jar $(JDK_IMAGE_DIR)/lib/tools.jar
 	@#
@@ -968,7 +966,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	    -Acom.sun.tools.javac.sym.Dest=$(OUTPUTDIR)/symbols/META-INF/sym/rt.jar \
 	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS)
 	$(BOOT_JAR_CMD) c0f $(LIBDIR)/ct.sym \
-	    -C $(OUTPUTDIR)/symbols META-INF $(JAR_JFLAGS)
+	    -C $(OUTPUTDIR)/symbols META-INF $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 	$(CP) $(LIBDIR)/ct.sym $(JDK_IMAGE_DIR)/lib/ct.sym
 	@#
@@ -1132,11 +1130,11 @@ endef
 COMPARE_FILTER = | $(EGREP) -v /fastdebug/ | $(EGREP) -v /demo/ | $(EGREP) -v /sample/
 
 # If a previuous image is provided, no need to install it.
-ifdef PREVIOUS_JDK_IMAGE
+ifdef PREVIOUS_RELEASE_IMAGE
 
   # Just use the pre-installed images
-  PREV_JRE_IMAGE_DIR=$(PREVIOUS_JDK_IMAGE)/jre
-  PREV_JDK_IMAGE_DIR=$(PREVIOUS_JDK_IMAGE)
+  PREV_JRE_IMAGE_DIR=$(PREVIOUS_RELEASE_IMAGE)/jre
+  PREV_JDK_IMAGE_DIR=$(PREVIOUS_RELEASE_IMAGE)
 
 else
 
