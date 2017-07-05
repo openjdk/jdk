@@ -223,7 +223,7 @@ void emit_constraint_double(const char* name, CommandLineFlagConstraintFunc_doub
 #define EMIT_CONSTRAINT_CHECK(func, type)                               , func, CommandLineFlagConstraint::type
 
 // the "name" argument must be a string literal
-#define INITIAL_CONSTRAINTS_SIZE 69
+#define INITIAL_CONSTRAINTS_SIZE 72
 GrowableArray<CommandLineFlagConstraint*>* CommandLineFlagConstraintList::_constraints = NULL;
 CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_validating_type = CommandLineFlagConstraint::AtParse;
 

@@ -37,12 +37,17 @@ fi
 if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
     FULLDUMP_CMD="$OTOOL -v -V -h -X -d"
     LDD_CMD="$OTOOL -L"
-    DIS_CMD="$OTOOL -v -t"
+    DIS_CMD="$OTOOL -v -V -t"
     STAT_PRINT_SIZE="-f %z"
 elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     FULLDUMP_CMD="$DUMPBIN -all"
     LDD_CMD="$DUMPBIN -dependants | $GREP .dll"
     DIS_CMD="$DUMPBIN -disasm:nobytes"
+    STAT_PRINT_SIZE="-c %s"
+elif [ "$OPENJDK_TARGET_OS" = "aix" ]; then
+    FULLDUMP_CMD="dump -h -r -t -n -X64"
+    LDD_CMD="$LDD"
+    DIS_CMD="$OBJDUMP -d"
     STAT_PRINT_SIZE="-c %s"
 else
     FULLDUMP_CMD="$READELF -a"
@@ -730,6 +735,9 @@ compare_bin_file() {
         # Some symbols get seemingly random 15 character prefixes. Filter them out.
         $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SED 's/^\([a-zA-Z] [\.\$]\)[a-zA-Z0-9_\$]\{15,15\}\./\1./g' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SED 's/^\([a-zA-Z] [\.\$]\)[a-zA-Z0-9_\$]\{15,15\}\./\1./g' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
+    elif [ "$OPENJDK_TARGET_OS" = "aix" ]; then
+        $OBJDUMP -T $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
+        $OBJDUMP -T $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
     else
         $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
@@ -796,14 +804,21 @@ compare_bin_file() {
         DEP_MSG="    -    "
     fi
 
+    # Some linux compilers add a unique Build ID
+    if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
+      BUILD_ID_FILTER="$SED -r 's/(Build ID:) [0-9a-f]{40}/\1/'"
+    else
+      BUILD_ID_FILTER="$CAT"
+    fi
+
     # Compare fulldump output
     if [ -n "$FULLDUMP_CMD" ] && [ -z "$SKIP_FULLDUMP_DIFF" ]; then
         if [ -z "$FULLDUMP_DIFF_FILTER" ]; then
             FULLDUMP_DIFF_FILTER="$CAT"
         fi
-        $FULLDUMP_CMD $OTHER_FILE | eval "$FULLDUMP_DIFF_FILTER" \
+        $FULLDUMP_CMD $OTHER_FILE | eval "$BUILD_ID_FILTER" | eval "$FULLDUMP_DIFF_FILTER" \
             > $WORK_FILE_BASE.fulldump.other 2>&1
-        $FULLDUMP_CMD $THIS_FILE  | eval "$FULLDUMP_DIFF_FILTER" \
+        $FULLDUMP_CMD $THIS_FILE  | eval "$BUILD_ID_FILTER" | eval "$FULLDUMP_DIFF_FILTER" \
             > $WORK_FILE_BASE.fulldump.this  2>&1
 
         LC_ALL=C $DIFF $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this \

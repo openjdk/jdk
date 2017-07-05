@@ -248,8 +248,8 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
 
 template <class T>
 inline void EventLogBase<T>::print_log_on(outputStream* out) {
-  if (ThreadLocalStorage::get_thread_slow() == NULL) {
-    // Not a regular Java thread so don't bother locking
+  if (Thread::current_or_null() == NULL) {
+    // Not yet attached? Don't try to use locking
     print_log_impl(out);
   } else {
     MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);

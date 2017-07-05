@@ -95,16 +95,19 @@ jdk_util_other = \
     -:jdk_concurrent \
     -:jdk_stream
 
-# java.util.concurrent (JSR-166)
-# Maintained by JSR-166 EG (Doug Lea et al)
-# Deque and PriorityQueue are also generally maintained by JSR-166
-jdk_concurrent = \
-    java/util/concurrent \
-    java/util/Deque \
-    java/util/PriorityQueue
-
-# Java Collections Framework
+# All collections, core and concurrent
 jdk_collections = \
+    :jdk_collections_core \
+    :jdk_concurrent
+
+# java.util.concurrent
+# Includes concurrent collections plus other stuff
+# Maintained by JSR-166 EG (Doug Lea et al)
+jdk_concurrent = \
+    java/util/concurrent
+
+# Java Collections Framework core classes
+jdk_collections_core = \
     java/util/AbstractCollection \
     java/util/AbstractList \
     java/util/AbstractMap \
@@ -114,19 +117,22 @@ jdk_collections = \
     java/util/BitSet \
     java/util/Collection \
     java/util/Collections \
+    java/util/Comparator \
+    java/util/Deque \
     java/util/EnumMap \
     java/util/EnumSet \
-    java/util/Comparator \
-    java/util/Iterator \
     java/util/HashMap \
+    java/util/HashSet \
     java/util/Hashtable \
     java/util/IdentityHashMap \
-    java/util/List \
+    java/util/Iterator \
     java/util/LinkedHashMap \
     java/util/LinkedHashSet \
     java/util/LinkedList \
+    java/util/List \
     java/util/Map \
     java/util/NavigableMap \
+    java/util/PriorityQueue \
     java/util/TimSort \
     java/util/TreeMap \
     java/util/Vector \

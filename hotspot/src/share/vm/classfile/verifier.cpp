@@ -48,6 +48,7 @@
 #include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/bytes.hpp"
+#include "logging/log.hpp"
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
@@ -111,6 +112,18 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
   }
 }
 
+// Prints the end-verification message to the appropriate output.
+void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS) {
+  if (HAS_PENDING_EXCEPTION) {
+    st->print("Verification for %s has", klassName);
+    st->print_cr(" exception pending %s ",
+                 PENDING_EXCEPTION->klass()->external_name());
+  } else if (exception_name != NULL) {
+    st->print_cr("Verification for %s failed", klassName);
+  }
+  st->print_cr("End class verification for: %s", klassName);
+}
+
 bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool should_verify_class, TRAPS) {
   HandleMark hm;
   ResourceMark rm(THREAD);
@@ -155,9 +168,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   bool can_failover = FailOverToOldVerifier &&
      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
-  if (TraceClassInitialization) {
-    tty->print_cr("Start class verification for: %s", klassName);
-  }
+  log_info(classinit)("Start class verification for: %s", klassName);
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
     ClassVerifier split_verifier(klass, THREAD);
     split_verifier.verify_class(THREAD);
@@ -165,10 +176,10 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (can_failover && !HAS_PENDING_EXCEPTION &&
         (exception_name == vmSymbols::java_lang_VerifyError() ||
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
-      if (TraceClassInitialization || VerboseVerification) {
-        tty->print_cr(
-          "Fail over class verification to old verifier for: %s", klassName);
+      if (VerboseVerification) {
+        tty->print_cr("Fail over class verification to old verifier for: %s", klassName);
       }
+      log_info(classinit)("Fail over class verification to old verifier for: %s", klassName);
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
     }
@@ -180,15 +191,11 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
         klass, message_buffer, message_buffer_len, THREAD);
   }
 
-  if (TraceClassInitialization || VerboseVerification) {
-    if (HAS_PENDING_EXCEPTION) {
-      tty->print("Verification for %s has", klassName);
-      tty->print_cr(" exception pending %s ",
-        PENDING_EXCEPTION->klass()->external_name());
-    } else if (exception_name != NULL) {
-      tty->print_cr("Verification for %s failed", klassName);
-    }
-    tty->print_cr("End class verification for: %s", klassName);
+  if (log_is_enabled(Info, classinit)){
+    log_end_verification(LogHandle(classinit)::info_stream(), klassName, exception_name, THREAD);
+  }
+  if (VerboseVerification){
+    log_end_verification(tty, klassName, exception_name, THREAD);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -598,10 +605,13 @@ void ClassVerifier::verify_class(TRAPS) {
     verify_method(methodHandle(THREAD, m), CHECK_VERIFY(this));
   }
 
-  if (VerboseVerification || TraceClassInitialization) {
-    if (was_recursively_verified())
+  if (was_recursively_verified()){
+    if (VerboseVerification){
       tty->print_cr("Recursive verification detected for: %s",
-          _klass->external_name());
+                    _klass->external_name());
+    }
+    log_info(classinit)("Recursive verification detected for: %s",
+                        _klass->external_name());
   }
 }
 

@@ -2577,7 +2577,7 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
     if (!k->is_instance_klass()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
-    char* sde = InstanceKlass::cast(k)->source_debug_extension();
+    const char* sde = InstanceKlass::cast(k)->source_debug_extension();
     NULL_CHECK(sde, JVMTI_ERROR_ABSENT_INFORMATION);
 
     {
