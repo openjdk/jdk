@@ -25,7 +25,6 @@
 #ifndef OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 

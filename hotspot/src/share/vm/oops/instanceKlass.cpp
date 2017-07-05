@@ -2170,7 +2170,11 @@ void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
       if (impl != NULL) {
         if (!impl->is_loader_alive(is_alive)) {
           // remove this guy
-          *adr_implementor() = NULL;
+          Klass** klass = adr_implementor();
+          assert(klass != NULL, "null klass");
+          if (klass != NULL) {
+            *klass = NULL;
+          }
         }
       }
     }
@@ -3151,9 +3155,10 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (protection_domain() != NULL) {
     guarantee(protection_domain()->is_oop(), "should be oop");
   }
-  if (host_klass() != NULL) {
-    guarantee(host_klass()->is_metadata(), "should be in metaspace");
-    guarantee(host_klass()->is_klass(), "should be klass");
+  const Klass* host = host_klass();
+  if (host != NULL) {
+    guarantee(host->is_metadata(), "should be in metaspace");
+    guarantee(host->is_klass(), "should be klass");
   }
   if (signers() != NULL) {
     guarantee(signers()->is_objArray(), "should be obj array");
