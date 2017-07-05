@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1673,6 +1673,11 @@ void Assembler::movdqa(XMMRegister dst, XMMRegister src) {
   emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_66);
 }
 
+void Assembler::movdqa(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_66);
+}
+
 void Assembler::movdqu(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_F3);
@@ -2282,6 +2287,38 @@ void Assembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
   int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A);
   emit_int8(0x61);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::pextrd(Register dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
+  int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, false);
+  emit_int8(0x16);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::pextrq(Register dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
+  int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, true);
+  emit_int8(0x16);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::pinsrd(XMMRegister dst, Register src, int imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
+  int encode = simd_prefix_and_encode(dst, dst, as_XMMRegister(src->encoding()), VEX_SIMD_66, VEX_OPCODE_0F_3A, false);
+  emit_int8(0x22);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::pinsrq(XMMRegister dst, Register src, int imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
+  int encode = simd_prefix_and_encode(dst, dst, as_XMMRegister(src->encoding()), VEX_SIMD_66, VEX_OPCODE_0F_3A, true);
+  emit_int8(0x22);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8(imm8);
 }
@@ -3689,6 +3726,16 @@ void Assembler::vpbroadcastd(XMMRegister dst, XMMRegister src) {
   int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
   emit_int8(0x58);
   emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// Carry-Less Multiplication Quadword
+void Assembler::vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask) {
+  assert(VM_Version::supports_avx() && VM_Version::supports_clmul(), "");
+  bool vector256 = false;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_int8(0x44);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)mask);
 }
 
 void Assembler::vzeroupper() {

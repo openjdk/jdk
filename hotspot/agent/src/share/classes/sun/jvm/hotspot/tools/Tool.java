@@ -35,12 +35,20 @@ import sun.jvm.hotspot.debugger.*;
 
 public abstract class Tool implements Runnable {
    private HotSpotAgent agent;
+   private JVMDebugger jvmDebugger;
    private int debugeeType;
 
    // debugeeType is one of constants below
    protected static final int DEBUGEE_PID    = 0;
    protected static final int DEBUGEE_CORE   = 1;
    protected static final int DEBUGEE_REMOTE = 2;
+
+   public Tool() {
+   }
+
+   public Tool(JVMDebugger d) {
+      jvmDebugger = d;
+   }
 
    public String getName() {
       return getClass().getName();
@@ -90,7 +98,6 @@ public abstract class Tool implements Runnable {
 
    protected void usage() {
       printUsage();
-      System.exit(1);
    }
 
    /*
@@ -106,13 +113,13 @@ public abstract class Tool implements Runnable {
    protected void stop() {
       if (agent != null) {
          agent.detach();
-         System.exit(0);
       }
    }
 
    protected void start(String[] args) {
       if ((args.length < 1) || (args.length > 2)) {
          usage();
+         return;
       }
 
       // Attempt to handle -h or -help or some invalid flag
@@ -185,13 +192,31 @@ public abstract class Tool implements Runnable {
         }
         if (e.getMessage() != null) {
           err.print(e.getMessage());
+          e.printStackTrace();
         }
         err.println();
-        System.exit(1);
+        return;
       }
 
       err.println("Debugger attached successfully.");
+      startInternal();
+   }
 
+   // When using an existing JVMDebugger.
+   public void start() {
+
+      if (jvmDebugger == null) {
+         throw new RuntimeException("Tool.start() called with no JVMDebugger set.");
+      }
+      agent = new HotSpotAgent();
+      agent.attach(jvmDebugger);
+      startInternal();
+   }
+
+   // Remains of the start mechanism, common to both start methods.
+   private void startInternal() {
+
+      PrintStream err = System.err;
       VM vm = VM.getVM();
       if (vm.isCore()) {
         err.println("Core build detected.");
