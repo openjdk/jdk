@@ -34,6 +34,11 @@ import  java.io.*;
  * this class or one of its subclasses can be the argument type in a
  * <code>catch</code> clause.
  *
+ * For the purposes of compile-time checking of exceptions, {@code
+ * Throwable} and any subclass of {@code Throwable} that is not also a
+ * subclass of either {@link RuntimeException} or {@link Error} are
+ * regarded as checked exceptions.
+ *
  * <p>Instances of two subclasses, {@link java.lang.Error} and
  * {@link java.lang.Exception}, are conventionally used to indicate
  * that exceptional situations have occurred. Typically, these instances
@@ -142,6 +147,7 @@ import  java.io.*;
  * @author  unascribed
  * @author  Josh Bloch (Added exception chaining and programmatic access to
  *          stack trace in 1.4.)
+ * @jls3 11.2 Compile-Time Checking of Exceptions
  * @since JDK1.0
  */
 public class Throwable implements Serializable {

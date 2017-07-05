@@ -1441,6 +1441,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 }
 
 jint G1CollectedHeap::initialize() {
+  CollectedHeap::pre_initialize();
   os::enable_vtime();
 
   // Necessary to satisfy locking discipline assertions.

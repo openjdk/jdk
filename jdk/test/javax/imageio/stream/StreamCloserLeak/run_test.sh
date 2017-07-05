@@ -92,7 +92,7 @@ case "$OS" in
       TMP="/tmp"
       ;;
 
-   Windows_95 | Windows_98 | Windows_NT | Windows_ME )
+   Windows_95 | Windows_98 | Windows_NT | Windows_ME | CYGWIN* )
       VAR="A different value for Win32"
       DEFAULT_JDK=/usr/local/java/jdk1.2/win32
       FILESEP="\\"

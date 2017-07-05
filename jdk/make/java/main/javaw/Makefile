@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = base
 PROGRAM = javaw
 PRODUCT = java
 

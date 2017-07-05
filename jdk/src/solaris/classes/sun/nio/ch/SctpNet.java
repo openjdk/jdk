@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.AlreadyBoundException;
 import java.util.Set;
 import java.util.HashSet;
 import java.security.AccessController;
@@ -52,8 +53,29 @@ public class SctpNet {
         return false;
     }
 
+    static boolean throwAlreadyBoundException() throws IOException {
+        throw new AlreadyBoundException();
+    }
+
+    static void listen(int fd, int backlog) throws IOException {
+        listen0(fd, backlog);
+    }
+
+    static int connect(int fd, InetAddress remote, int remotePort)
+            throws IOException {
+        return connect0(fd, remote, remotePort);
+    }
+
+    static void close(int fd) throws IOException {
+        close0(fd);
+    }
+
+    static void preClose(int fd) throws IOException {
+        preClose0(fd);
+    }
+
     /**
-     * @param  oneToone
+     * @param  oneToOne
      *         if {@code true} returns a one-to-one sctp socket, otherwise
      *         returns a one-to-many sctp socket
      */
@@ -240,6 +262,15 @@ public class SctpNet {
     /* Native Methods */
     static native int socket0(boolean oneToOne) throws IOException;
 
+    static native void listen0(int fd, int backlog) throws IOException;
+
+    static native int connect0(int fd, InetAddress remote, int remotePort)
+        throws IOException;
+
+    static native void close0(int fd) throws IOException;
+
+    static native void preClose0(int fd) throws IOException;
+
     static native void bindx(int fd, InetAddress[] addrs, int port, int length,
             boolean add, boolean preferIPv6) throws IOException;
 
@@ -271,5 +302,11 @@ public class SctpNet {
             throws IOException;
 
     static native void shutdown0(int fd, int assocId);
+
+    static native void init();
+
+    static {
+        init();
+    }
 }
 

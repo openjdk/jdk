@@ -69,7 +69,7 @@ export LC_ALL
 HAS_S=NO
 
 case "`uname`" in
-Windows*)
+Windows* | CYGWIN* )
     DEL=";"
     ;;
 SunOS)
