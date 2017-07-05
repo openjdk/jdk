@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@ class CompilerOracle : AllStatic {
   // For updating the oracle file
   static void append_comment_to_file(const char* message);
   static void append_exclude_to_file(methodHandle method);
+
+  // Tells whether there are any methods to print for print_method_statistics()
+  static bool should_print_methods();
 };
 
 #endif // SHARE_VM_COMPILER_COMPILERORACLE_HPP

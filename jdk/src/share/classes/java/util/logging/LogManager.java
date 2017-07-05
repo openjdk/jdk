@@ -779,7 +779,7 @@ public class LogManager {
 
             int ix = 1;
             for (;;) {
-                int ix2 = name.indexOf(".", ix);
+                int ix2 = name.indexOf('.', ix);
                 if (ix2 < 0) {
                     break;
                 }
@@ -802,7 +802,7 @@ public class LogManager {
             }
             LogNode node = root;
             while (name.length() > 0) {
-                int ix = name.indexOf(".");
+                int ix = name.indexOf('.');
                 String head;
                 if (ix > 0) {
                     head = name.substring(0, ix);

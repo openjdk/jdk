@@ -57,7 +57,7 @@ public class JSONParser extends AbstractParser {
      * @param errors  the error manager
      */
     public JSONParser(final Source source, final ErrorManager errors) {
-        super(source, errors, false);
+        super(source, errors, false, 0);
     }
 
     /**
@@ -160,7 +160,7 @@ public class JSONParser extends AbstractParser {
                 }
 
                 // First digit of number.
-                int digit = convertDigit(ch0, 10);
+                final int digit = convertDigit(ch0, 10);
 
                 // skip first digit
                 skip(1);

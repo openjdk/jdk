@@ -36,7 +36,7 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
 
     private final static int INT_SIGN_BIT = 1 << 31;
 
-    protected ScannerSupport(char[] chars, int p, int end) {
+    protected ScannerSupport(final char[] chars, final int p, final int end) {
         this.chars = chars;
         this.begin = p;
         this.end = end;
@@ -53,12 +53,12 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
     }
 
     protected final int scanUnsignedNumber() {
-        int last = c;
+        final int last = c;
         int num = 0; // long ???
         while(left()) {
             fetch();
             if (Character.isDigit(c)) {
-                int onum = num;
+                final int onum = num;
                 num = num * 10 + EncodingHelper.digitVal(c);
                 if (((onum ^ num) & INT_SIGN_BIT) != 0) return -1;
             } else {
@@ -71,13 +71,13 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
     }
 
     protected final int scanUnsignedHexadecimalNumber(int maxLength) {
-        int last = c;
+        final int last = c;
         int num = 0;
         while(left() && maxLength-- != 0) {
             fetch();
             if (EncodingHelper.isXDigit(c)) {
-                int onum = num;
-                int val = EncodingHelper.xdigitVal(c);
+                final int onum = num;
+                final int val = EncodingHelper.xdigitVal(c);
                 num = (num << 4) + val;
                 if (((onum ^ num) & INT_SIGN_BIT) != 0) return -1;
             } else {
@@ -90,13 +90,13 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
     }
 
     protected final int scanUnsignedOctalNumber(int maxLength) {
-        int last = c;
+        final int last = c;
         int num = 0;
         while(left() && maxLength-- != 0) {
             fetch();
             if (Character.isDigit(c) && c < '8') {
-                int onum = num;
-                int val = EncodingHelper.odigitVal(c);
+                final int onum = num;
+                final int val = EncodingHelper.odigitVal(c);
                 num = (num << 3) + val;
                 if (((onum ^ num) & INT_SIGN_BIT) != 0) return -1;
             } else {
@@ -144,7 +144,7 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
         return p < stop ? chars[p] : 0;
     }
 
-    protected final boolean peekIs(int c) {
+    protected final boolean peekIs(final int c) {
         return peek() == c;
     }
 

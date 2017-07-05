@@ -40,7 +40,8 @@ import com.oracle.java.testlibrary.*;
 import com.oracle.java.testlibrary.cli.*;
 
 public class TestUseCountTrailingZerosInstructionOnSupportedCPU
-     extends BMISupportedCPUTest {
+        extends BMISupportedCPUTest {
+    private static final String DISABLE_BMI = "-XX:-UseBMI1Instructions";
 
     public TestUseCountTrailingZerosInstructionOnSupportedCPU() {
         super("UseCountTrailingZerosInstruction", TZCNT_WARNING, "bmi1");
@@ -51,18 +52,23 @@ public class TestUseCountTrailingZerosInstructionOnSupportedCPU
 
         super.runTestCases();
 
-        // verify that option will be disabled if all BMI1 instuctions
-        // are explicitly disabled
-        CommandLineOptionTest.
-            verifyOptionValue("UseCountTrailingZerosInstruction", "false",
-                              "-XX:-UseBMI1Instructions");
+        /*
+          Verify that option will be disabled if all BMI1 instructions
+          are explicitly disabled. VM will be launched with following options:
+          -XX:-UseBMI1Instructions -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                TestUseCountTrailingZerosInstructionOnSupportedCPU.DISABLE_BMI);
 
-        // verify that option could be turned on even if other BMI1
-        // instructions were turned off
-        CommandLineOptionTest.
-            verifyOptionValue("UseCountTrailingZerosInstruction", "true",
-                              "-XX:-UseBMI1Instructions",
-                              "-XX:+UseCountTrailingZerosInstruction");
+        /*
+          Verify that option could be turned on even if other BMI1
+          instructions were turned off. VM will be launched with following
+          options: -XX:-UseBMI1Instructions
+          -XX:+UseCountTrailingZerosInstruction -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                TestUseCountTrailingZerosInstructionOnSupportedCPU.DISABLE_BMI,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
 
     public static void main(String args[]) throws Throwable {

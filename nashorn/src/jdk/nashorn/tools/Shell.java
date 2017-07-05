@@ -41,6 +41,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
@@ -178,7 +179,6 @@ public class Shell {
      *
      * @return null if there are problems with option parsing.
      */
-    @SuppressWarnings("resource")
     private static Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
         final PrintStream pout = out instanceof PrintStream ? (PrintStream) out : new PrintStream(out);
         final PrintStream perr = err instanceof PrintStream ? (PrintStream) err : new PrintStream(err);
@@ -225,6 +225,7 @@ public class Shell {
 
     /**
      * Compiles the given script files in the command line
+     * This is called only when using the --compile-only flag
      *
      * @param context the nashorn context
      * @param global the global scope
@@ -245,7 +246,7 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
-                final FunctionNode functionNode = new Parser(env, sourceFor(fileName, new File(fileName)), errors).parse();
+                final FunctionNode functionNode = new Parser(env, sourceFor(fileName, new File(fileName)), errors, env._strict, FunctionNode.FIRST_FUNCTION_ID, 0, context.getLogger(Parser.class)).parse();
 
                 if (errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
@@ -260,7 +261,14 @@ public class Shell {
                 }
 
                 //null - pass no code installer - this is compile only
-                new Compiler(env).compile(functionNode);
+                new Compiler(
+                       context,
+                       env,
+                       null,
+                       functionNode.getSource(),
+                       functionNode.getSourceURL(),
+                       env._strict | functionNode.isStrict()).
+                       compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
             }
         } finally {
             env.getOut().flush();
@@ -390,7 +398,6 @@ public class Shell {
      * @param global  global scope object to use
      * @return return code
      */
-    @SuppressWarnings("resource")
     private static int readEvalPrint(final Context context, final Global global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));

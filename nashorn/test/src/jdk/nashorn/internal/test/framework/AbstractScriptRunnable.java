@@ -155,7 +155,7 @@ public abstract class AbstractScriptRunnable {
     // VM options when a @fork test is executed by a separate process
     protected static final String[] forkJVMOptions;
     static {
-        String vmOptions = System.getProperty(TestConfig.TEST_FORK_JVM_OPTIONS);
+        final String vmOptions = System.getProperty(TestConfig.TEST_FORK_JVM_OPTIONS);
         forkJVMOptions = (vmOptions != null)? vmOptions.split(" ") : new String[0];
     }
 

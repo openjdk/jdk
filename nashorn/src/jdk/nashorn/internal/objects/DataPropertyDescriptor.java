@@ -197,6 +197,11 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
     }
 
     @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + " writable=" + writable + " value=" + value + "}]";
+    }
+
+    @Override
     public int hashCode() {
         int hash = 5;
         hash = 43 * hash + Objects.hashCode(this.configurable);

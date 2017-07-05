@@ -25,8 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import static jdk.nashorn.internal.runtime.Source.readFully;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -56,7 +56,7 @@ public class CompilerTest {
         public boolean exclude(File file, String content);
     }
 
-    private void log(String msg) {
+    private void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 

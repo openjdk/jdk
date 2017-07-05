@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,6 +47,7 @@ final class DebuggerSupport {
          * available to external debuggers.
          */
         @SuppressWarnings("unused")
+        final
         DebuggerValueDesc forceLoad = new DebuggerValueDesc(null, false, null, null);
     }
 
@@ -94,7 +97,7 @@ final class DebuggerSupport {
 
         try {
             return context.eval(initialScope, string, callThis, ScriptRuntime.UNDEFINED, false);
-        } catch (Throwable ex) {
+        } catch (final Throwable ex) {
             return returnException ? ex : null;
         }
     }
@@ -176,12 +179,12 @@ final class DebuggerSupport {
 
         if (ScriptObject.isArray(object)) {
             sb.append('[');
-            final long length = object.getLong("length");
+            final long length = object.getLong("length", INVALID_PROGRAM_POINT);
 
             for (long i = 0; i < length; i++) {
                 if (object.has(i)) {
                     final Object valueAsObject = object.get(i);
-                    final boolean isUndefined = JSType.of(valueAsObject) == JSType.UNDEFINED;
+                    final boolean isUndefined = valueAsObject == ScriptRuntime.UNDEFINED;
 
                     if (isUndefined) {
                         if (i != 0) {

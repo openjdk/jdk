@@ -71,8 +71,8 @@ public final class ExpressionStatement extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        expression.toString(sb);
+    public void toString(final StringBuilder sb, final boolean printTypes) {
+        expression.toString(sb, printTypes);
     }
 
     /**

@@ -66,8 +66,7 @@ enum Condition {
         case GT:
             return IFGT;
         default:
-            assert false;
-            return -1;
+            throw new UnsupportedOperationException("toUnary:" + c.toString());
         }
     }
 
@@ -86,8 +85,7 @@ enum Condition {
         case GT:
             return IF_ICMPGT;
         default:
-            assert false;
-            return -1;
+            throw new UnsupportedOperationException("toBinary:" + c.toString());
         }
     }
 }

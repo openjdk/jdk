@@ -1138,7 +1138,7 @@ class InetAddress implements java.io.Serializable {
                 // This is supposed to be an IPv6 literal
                 // Check if a numeric or string zone id is present
                 int pos;
-                if ((pos=host.indexOf ("%")) != -1) {
+                if ((pos=host.indexOf ('%')) != -1) {
                     numericZone = checkNumericZone (host);
                     if (numericZone == -1) { /* remainder of string must be an ifname */
                         ifname = host.substring (pos+1);

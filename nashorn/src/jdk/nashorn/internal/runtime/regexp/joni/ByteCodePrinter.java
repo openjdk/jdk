@@ -214,7 +214,7 @@ class ByteCodePrinter {
             Arguments.OPTION, /*OP_SET_OPTION*/
     };
 
-    public ByteCodePrinter(Regex regex) {
+    public ByteCodePrinter(final Regex regex) {
         code = regex.code;
         codeLength = regex.codeLength;
         operands = regex.operands;
@@ -226,30 +226,30 @@ class ByteCodePrinter {
         return compiledByteCodeListToString();
     }
 
-    private void pString(StringBuilder sb, int len, int s) {
+    private void pString(final StringBuilder sb, final int len, final int s) {
         sb.append(":");
         sb.append(new String(code, s, len));
     }
 
-    private void pLenString(StringBuilder sb, int len, int s) {
+    private void pLenString(final StringBuilder sb, final int len, final int s) {
         sb.append(":").append(len).append(":");
         sb.append(new String(code, s, len));
     }
 
-    private void pLenStringFromTemplate(StringBuilder sb, int len, char[] tm, int idx) {
+    private void pLenStringFromTemplate(final StringBuilder sb, final int len, final char[] tm, final int idx) {
         sb.append(":T:").append(len).append(":");
         sb.append(tm, idx, len);
     }
 
-    public int compiledByteCodeToString(StringBuilder sb, int bp) {
+    public int compiledByteCodeToString(final StringBuilder sb, int bp) {
         int len, n, mem, addr, scn, cod;
         BitSet bs;
         CClassNode cc;
         int tm, idx;
 
         sb.append("[").append(OpCodeNames[code[bp]]);
-        int argType = OpCodeArgTypes[code[bp]];
-        int ip = bp;
+        final int argType = OpCodeArgTypes[code[bp]];
+        final int ip = bp;
         if (argType != Arguments.SPECIAL) {
             bp++;
             switch (argType) {
@@ -416,10 +416,10 @@ class ByteCodePrinter {
                 break;
 
             case OPCode.BACKREF_WITH_LEVEL: {
-                int option = code[bp];
+                final int option = code[bp];
                 bp += OPSize.OPTION;
                 sb.append(":").append(option);
-                int level = code[bp];
+                final int level = code[bp];
                 bp += OPSize.LENGTH;
                 sb.append(":").append(level);
                 sb.append(" ");
@@ -491,12 +491,12 @@ class ByteCodePrinter {
     }
 
     private String compiledByteCodeListToString() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("code length: ").append(codeLength).append("\n");
 
         int ncode = 0;
         int bp = 0;
-        int end = codeLength;
+        final int end = codeLength;
 
         while (bp < end) {
             ncode++;

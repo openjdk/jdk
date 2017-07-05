@@ -273,8 +273,8 @@ public class ExtensionInfo {
         else
         {
             // Look for index of "." in the string
-            int sIdx = source.indexOf(".");
-            int tIdx = target.indexOf(".");
+            int sIdx = source.indexOf('.');
+            int tIdx = target.indexOf('.');
 
             if (sIdx == -1)
                 sIdx = source.length() - 1;
@@ -304,10 +304,10 @@ public class ExtensionInfo {
         String versionError = mf.format(args);
 
         // Look for "-" for pre-release
-        int prIndex = token.indexOf("-");
+        int prIndex = token.indexOf('-');
 
         // Look for "_" for patch release
-        int patchIndex = token.indexOf("_");
+        int patchIndex = token.indexOf('_');
 
         if (prIndex == -1 && patchIndex == -1)
         {

@@ -27,7 +27,7 @@ public final class NodeOptInfo {
     final OptExactInfo expr = new OptExactInfo();           /* prec read (?=...) */
     final OptMapInfo map = new OptMapInfo();                /* boundary */
 
-    public void setBoundNode(MinMaxLen mmd) {
+    public void setBoundNode(final MinMaxLen mmd) {
         exb.mmd.copy(mmd);
         expr.mmd.copy(mmd);
         map.mmd.copy(mmd);
@@ -42,7 +42,7 @@ public final class NodeOptInfo {
         map.clear();
     }
 
-    public void copy(NodeOptInfo other) {
+    public void copy(final NodeOptInfo other) {
         length.copy(other.length);
         anchor.copy(other.anchor);
         exb.copy(other.exb);
@@ -51,8 +51,8 @@ public final class NodeOptInfo {
         map.copy(other.map);
     }
 
-    public void concatLeftNode(NodeOptInfo other) {
-        OptAnchorInfo tanchor = new OptAnchorInfo(); // remove it somehow ?
+    public void concatLeftNode(final NodeOptInfo other) {
+        final OptAnchorInfo tanchor = new OptAnchorInfo(); // remove it somehow ?
         tanchor.concat(anchor, other.anchor, length.max, other.length.max);
         anchor.copy(tanchor);
 
@@ -67,8 +67,8 @@ public final class NodeOptInfo {
             }
         }
 
-        boolean exbReach = exb.reachEnd;
-        boolean exmReach = exm.reachEnd;
+        final boolean exbReach = exb.reachEnd;
+        final boolean exmReach = exm.reachEnd;
 
         if (other.length.max != 0) {
             exb.reachEnd = exm.reachEnd = false;
@@ -107,7 +107,7 @@ public final class NodeOptInfo {
         length.add(other.length);
     }
 
-    public void altMerge(NodeOptInfo other, OptEnvironment env) {
+    public void altMerge(final NodeOptInfo other, final OptEnvironment env) {
         anchor.altMerge(other.anchor);
         exb.altMerge(other.exb, env);
         exm.altMerge(other.exm, env);
@@ -116,7 +116,7 @@ public final class NodeOptInfo {
         length.altMerge(other.length);
     }
 
-    public void setBound(MinMaxLen mmd) {
+    public void setBound(final MinMaxLen mmd) {
         exb.mmd.copy(mmd);
         expr.mmd.copy(mmd);
         map.mmd.copy(mmd);

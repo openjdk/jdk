@@ -28,7 +28,7 @@ package jdk.nashorn.test.models;
 public abstract class ConstructorWithArgument {
     private final String token;
 
-    protected ConstructorWithArgument(String token) {
+    protected ConstructorWithArgument(final String token) {
         this.token = token;
     }
 

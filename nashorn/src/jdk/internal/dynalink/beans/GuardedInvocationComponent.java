@@ -105,38 +105,38 @@ class GuardedInvocationComponent {
     private final GuardedInvocation guardedInvocation;
     private final Validator validator;
 
-    GuardedInvocationComponent(MethodHandle invocation) {
+    GuardedInvocationComponent(final MethodHandle invocation) {
         this(invocation, null, ValidationType.NONE);
     }
 
-    GuardedInvocationComponent(MethodHandle invocation, MethodHandle guard, ValidationType validationType) {
+    GuardedInvocationComponent(final MethodHandle invocation, final MethodHandle guard, final ValidationType validationType) {
         this(invocation, guard, null, validationType);
     }
 
-    GuardedInvocationComponent(MethodHandle invocation, MethodHandle guard, Class<?> validatorClass,
-            ValidationType validationType) {
+    GuardedInvocationComponent(final MethodHandle invocation, final MethodHandle guard, final Class<?> validatorClass,
+            final ValidationType validationType) {
         this(invocation, guard, new Validator(validatorClass, validationType));
     }
 
-    GuardedInvocationComponent(GuardedInvocation guardedInvocation, Class<?> validatorClass,
-            ValidationType validationType) {
+    GuardedInvocationComponent(final GuardedInvocation guardedInvocation, final Class<?> validatorClass,
+            final ValidationType validationType) {
         this(guardedInvocation, new Validator(validatorClass, validationType));
     }
 
-    GuardedInvocationComponent replaceInvocation(MethodHandle newInvocation) {
+    GuardedInvocationComponent replaceInvocation(final MethodHandle newInvocation) {
         return replaceInvocation(newInvocation, guardedInvocation.getGuard());
     }
 
-    GuardedInvocationComponent replaceInvocation(MethodHandle newInvocation, MethodHandle newGuard) {
+    GuardedInvocationComponent replaceInvocation(final MethodHandle newInvocation, final MethodHandle newGuard) {
         return new GuardedInvocationComponent(guardedInvocation.replaceMethods(newInvocation,
                 newGuard), validator);
     }
 
-    private GuardedInvocationComponent(MethodHandle invocation, MethodHandle guard, Validator validator) {
+    private GuardedInvocationComponent(final MethodHandle invocation, final MethodHandle guard, final Validator validator) {
         this(new GuardedInvocation(invocation, guard), validator);
     }
 
-    private GuardedInvocationComponent(GuardedInvocation guardedInvocation, Validator validator) {
+    private GuardedInvocationComponent(final GuardedInvocation guardedInvocation, final Validator validator) {
         this.guardedInvocation = guardedInvocation;
         this.validator = validator;
     }
@@ -153,8 +153,8 @@ class GuardedInvocationComponent {
         return validator.validationType;
     }
 
-    GuardedInvocationComponent compose(MethodHandle compositeInvocation, MethodHandle otherGuard,
-            Class<?> otherValidatorClass, ValidationType otherValidationType) {
+    GuardedInvocationComponent compose(final MethodHandle compositeInvocation, final MethodHandle otherGuard,
+            final Class<?> otherValidatorClass, final ValidationType otherValidationType) {
         final Validator compositeValidator = validator.compose(new Validator(otherValidatorClass, otherValidationType));
         final MethodHandle compositeGuard = compositeValidator == validator ? guardedInvocation.getGuard() : otherGuard;
         return new GuardedInvocationComponent(compositeInvocation, compositeGuard, compositeValidator);
@@ -164,12 +164,12 @@ class GuardedInvocationComponent {
         /*private*/ final Class<?> validatorClass;
         /*private*/ final ValidationType validationType;
 
-        Validator(Class<?> validatorClass, ValidationType validationType) {
+        Validator(final Class<?> validatorClass, final ValidationType validationType) {
             this.validatorClass = validatorClass;
             this.validationType = validationType;
         }
 
-        Validator compose(Validator other) {
+        Validator compose(final Validator other) {
             if(other.validationType == ValidationType.NONE) {
                 return this;
             }
@@ -240,7 +240,7 @@ class GuardedInvocationComponent {
             throw new AssertionError("Incompatible composition " + this + " vs " + other);
         }
 
-        private boolean isAssignableFrom(Validator other) {
+        private boolean isAssignableFrom(final Validator other) {
             return validatorClass.isAssignableFrom(other.validatorClass);
         }
 

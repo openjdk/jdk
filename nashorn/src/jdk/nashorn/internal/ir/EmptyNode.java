@@ -64,7 +64,7 @@ public final class EmptyNode extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printTypes) {
         sb.append(';');
     }
 

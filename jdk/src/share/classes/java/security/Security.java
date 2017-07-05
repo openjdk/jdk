@@ -1114,7 +1114,7 @@ public final class Security {
                     // implementation of an algorithm. We are only interested
                     // in entries which lead to the implementation
                     // classes.
-                    if (currentKey.indexOf(" ") < 0) {
+                    if (currentKey.indexOf(' ') < 0) {
                         result.add(currentKey.substring(
                                                 serviceName.length() + 1));
                     }

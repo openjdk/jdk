@@ -107,14 +107,14 @@ public class CallerSensitiveDetector {
 
     private static final DetectionStrategy DETECTION_STRATEGY = getDetectionStrategy();
 
-    static boolean isCallerSensitive(AccessibleObject ao) {
+    static boolean isCallerSensitive(final AccessibleObject ao) {
         return DETECTION_STRATEGY.isCallerSensitive(ao);
     }
 
     private static DetectionStrategy getDetectionStrategy() {
         try {
             return new PrivilegedDetectionStrategy();
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             return new UnprivilegedDetectionStrategy();
         }
     }
@@ -127,7 +127,7 @@ public class CallerSensitiveDetector {
         private static final Class<? extends Annotation> CALLER_SENSITIVE_ANNOTATION_CLASS = CallerSensitive.class;
 
         @Override
-        boolean isCallerSensitive(AccessibleObject ao) {
+        boolean isCallerSensitive(final AccessibleObject ao) {
             return ao.getAnnotation(CALLER_SENSITIVE_ANNOTATION_CLASS) != null;
         }
     }
@@ -136,8 +136,8 @@ public class CallerSensitiveDetector {
         private static final String CALLER_SENSITIVE_ANNOTATION_STRING = "@sun.reflect.CallerSensitive()";
 
         @Override
-        boolean isCallerSensitive(AccessibleObject o) {
-            for(Annotation a: o.getAnnotations()) {
+        boolean isCallerSensitive(final AccessibleObject o) {
+            for(final Annotation a: o.getAnnotations()) {
                 if(String.valueOf(a).equals(CALLER_SENSITIVE_ANNOTATION_STRING)) {
                     return true;
                 }

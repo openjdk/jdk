@@ -182,7 +182,7 @@ public abstract class NashornException extends RuntimeException {
             if (ECMAErrors.isScriptFrame(st)) {
                 final String className = "<" + st.getFileName() + ">";
                 String methodName = st.getMethodName();
-                if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
+                if (methodName.equals(CompilerConstants.PROGRAM.symbolName())) {
                     methodName = "<program>";
                 }
 
@@ -224,10 +224,22 @@ public abstract class NashornException extends RuntimeException {
         return buf.toString();
     }
 
+    /**
+     * Get the thrown object. Subclass responsibility
+     * @return thrown object
+     */
     protected Object getThrown() {
         return null;
     }
 
+    /**
+     * Initialization function for ECMA errors. Stores the error
+     * in the ecmaError field of this class. It is only initialized
+     * once, and then reused
+     *
+     * @param global the global
+     * @return initialized exception
+     */
     protected NashornException initEcmaError(final ScriptObject global) {
         if (ecmaError != null) {
             return this; // initialized already!

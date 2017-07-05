@@ -30,7 +30,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
@@ -56,7 +55,7 @@ import org.testng.annotations.Test;
  */
 public class ScriptEngineTest {
 
-    private void log(String msg) {
+    private void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -65,11 +64,11 @@ public class ScriptEngineTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
 
-        String[] args = new String[] { "hello", "world" };
+        final String[] args = new String[] { "hello", "world" };
         try {
             e.put("arguments", args);
-            Object arg0 = e.eval("arguments[0]");
-            Object arg1 = e.eval("arguments[1]");
+            final Object arg0 = e.eval("arguments[0]");
+            final Object arg1 = e.eval("arguments[1]");
             assertEquals(args[0], arg0);
             assertEquals(args[1], arg1);
         } catch (final Exception exp) {
@@ -83,12 +82,12 @@ public class ScriptEngineTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
 
-        String[] args = new String[] { "hello", "world" };
+        final String[] args = new String[] { "hello", "world" };
         try {
             e.put("arguments", args);
-            Object arg0 = e.eval("var imports = new JavaImporter(java.io); " +
+            final Object arg0 = e.eval("var imports = new JavaImporter(java.io); " +
                     " with(imports) { arguments[0] }");
-            Object arg1 = e.eval("var imports = new JavaImporter(java.util, java.io); " +
+            final Object arg1 = e.eval("var imports = new JavaImporter(java.util, java.io); " +
                     " with(imports) { arguments[1] }");
             assertEquals(args[0], arg0);
             assertEquals(args[1], arg1);
@@ -129,18 +128,18 @@ public class ScriptEngineTest {
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
 
         boolean seenJS = false;
-        for (String ext : fac.getExtensions()) {
+        for (final String ext : fac.getExtensions()) {
             if (ext.equals("js")) {
                 seenJS = true;
             }
         }
 
         assertEquals(seenJS, true);
-        String str = fac.getMethodCallSyntax("obj", "foo", "x");
+        final String str = fac.getMethodCallSyntax("obj", "foo", "x");
         assertEquals(str, "obj.foo(x)");
 
         boolean seenNashorn = false, seenJavaScript = false, seenECMAScript = false;
-        for (String name : fac.getNames()) {
+        for (final String name : fac.getNames()) {
             switch (name) {
                 case "nashorn": seenNashorn = true; break;
                 case "javascript": seenJavaScript = true; break;
@@ -153,7 +152,7 @@ public class ScriptEngineTest {
         assertTrue(seenECMAScript);
 
         boolean seenAppJS = false, seenAppECMA = false, seenTextJS = false, seenTextECMA = false;
-        for (String mime : fac.getMimeTypes()) {
+        for (final String mime : fac.getMimeTypes()) {
             switch (mime) {
                 case "application/javascript": seenAppJS = true; break;
                 case "application/ecmascript": seenAppECMA = true; break;
@@ -548,7 +547,7 @@ public class ScriptEngineTest {
             new Class[] { Runnable.class },
             new InvocationHandler() {
                 @Override
-                public Object invoke(Object p, Method m, Object[] a) {
+                public Object invoke(final Object p, final Method m, final Object[] a) {
                     reached[0] = true;
                     return null;
                 }
@@ -596,7 +595,7 @@ public class ScriptEngineTest {
 
     private static void checkProperty(final ScriptEngine e, final String name)
         throws ScriptException {
-        String value = System.getProperty(name);
+        final String value = System.getProperty(name);
         e.put("name", name);
         assertEquals(value, e.eval("java.lang.System.getProperty(name)"));
     }
