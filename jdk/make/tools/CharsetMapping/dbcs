@@ -1,6 +1,7 @@
 #
 #clzName  csName     hisName  dbtype    pkg               ascii   b1min  b1max  b2min b2max
 #
+Big5      Big5       Big5     basic     sun.nio.cs.ext    true    0xa1   0xf9   0x40  0xfe
 Johab     x-Johab    x-Johab  basic     sun.nio.cs.ext    true    0x84   0xf9   0x31  0xfe
 EUC_CN	  GB2312     EUC_CN   basic     sun.nio.cs.ext    true    0xa1   0xf7   0xa1  0xfe
 EUC_KR	  EUC-KR     EUC_KR   basic     sun.nio.cs.ext    true    0xa1   0xfd   0xa1  0xfe

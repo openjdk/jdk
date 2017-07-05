@@ -48,7 +48,6 @@ public class TestHttpCookie {
     }
 
     TestHttpCookie(String cHeader) {
-        assert cHeader != null;
         this.cHeader = cHeader;
 
         try {
