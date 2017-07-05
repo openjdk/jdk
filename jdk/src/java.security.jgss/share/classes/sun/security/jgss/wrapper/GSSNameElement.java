@@ -233,6 +233,9 @@ public class GSSNameElement implements GSSNameSpi {
                               ((0xFF & nameVal[pos++]) << 16) |
                               ((0xFF & nameVal[pos++]) << 8) |
                               (0xFF & nameVal[pos++]));
+        if (mechPortionLen < 0) {
+            throw new GSSException(GSSException.BAD_NAME);
+        }
         byte[] mechPortion = new byte[mechPortionLen];
         System.arraycopy(nameVal, pos, mechPortion, 0, mechPortionLen);
         return mechPortion;

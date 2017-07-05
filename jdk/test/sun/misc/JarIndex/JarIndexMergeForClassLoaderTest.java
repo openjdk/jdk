@@ -48,14 +48,7 @@ public class JarIndexMergeForClassLoaderTest {
     static final File tmpFolder = new File(testClassesDir);
 
     static {
-        String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            int index = javaHome.lastIndexOf(slash);
-            if (index != -1)
-                javaHome = javaHome.substring(0, index);
-        }
-
-        jar = javaHome + slash + "bin" + slash + "jar";
+        jar = System.getProperty("java.home") + slash + "bin" + slash + "jar";
     }
 
     public static void main(String[] args) throws Exception {

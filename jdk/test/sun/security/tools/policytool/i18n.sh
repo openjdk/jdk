@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,9 @@ if [ -f $HOME/.java.policy ]; then
     exit 1
 fi
 
+# The keystore type is set to JKS, to match the type expected by i18n.html
 ${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -genkeypair -alias hello -dname CN=Hello \
-        -storepass changeit -keypass changeit -keystore ks
+        -storepass changeit -keypass changeit -keystore ks -storetype jks
 echo changeit > good
 echo badpass > bad
 ${TESTJAVA}${FS}bin${FS}policytool ${TESTTOOLVMOPTS}

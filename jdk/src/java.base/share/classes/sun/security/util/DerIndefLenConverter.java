@@ -156,12 +156,18 @@ class DerIndefLenConverter {
         }
         if (isLongForm(lenByte)) {
             lenByte &= LEN_MASK;
-            if (lenByte > 4)
+            if (lenByte > 4) {
                 throw new IOException("Too much data");
-            if ((dataSize - dataPos) < (lenByte + 1))
+            }
+            if ((dataSize - dataPos) < (lenByte + 1)) {
                 throw new IOException("Too little data");
-            for (int i = 0; i < lenByte; i++)
+            }
+            for (int i = 0; i < lenByte; i++) {
                 curLen = (curLen << 8) + (data[dataPos++] & 0xff);
+            }
+            if (curLen < 0) {
+                throw new IOException("Invalid length bytes");
+            }
         } else {
            curLen = (lenByte & LEN_MASK);
         }
@@ -188,10 +194,15 @@ class DerIndefLenConverter {
         }
         if (isLongForm(lenByte)) {
             lenByte &= LEN_MASK;
-            for (int i = 0; i < lenByte; i++)
+            for (int i = 0; i < lenByte; i++) {
                 curLen = (curLen << 8) + (data[dataPos++] & 0xff);
-        } else
+            }
+            if (curLen < 0) {
+                throw new IOException("Invalid length bytes");
+            }
+        } else {
             curLen = (lenByte & LEN_MASK);
+        }
         writeLength(curLen);
         writeValue(curLen);
     }

@@ -149,7 +149,8 @@ public final class Class<T> implements java.io.Serializable,
      * {@code getName}.  If this {@code Class} object represents a
      * primitive type, this method returns the name of the primitive type.  If
      * this {@code Class} object represents void this method returns
-     * "void".
+     * "void". If this {@code Class} object represents an array type,
+     * this method returns "class " followed by {@code getName}.
      *
      * @return a string representation of this class object.
      */
@@ -174,6 +175,12 @@ public final class Class<T> implements java.io.Serializable,
      * occur in canonical order. If there are no type parameters, the
      * type parameter list is elided.
      *
+     * For an array type, the string starts with the type name,
+     * followed by an angle-bracketed comma-separated list of the
+     * type's type parameters, if any, followed by a sequence of
+     * {@code []} characters, one set of brackets per dimension of
+     * the array.
+     *
      * <p>Note that since information about the runtime representation
      * of a type is being generated, modifiers not present on the
      * originating source code or illegal on the originating source
@@ -189,29 +196,39 @@ public final class Class<T> implements java.io.Serializable,
             return toString();
         } else {
             StringBuilder sb = new StringBuilder();
+            Class<?> component = this;
+            int arrayDepth = 0;
 
-            // Class modifiers are a superset of interface modifiers
-            int modifiers = getModifiers() & Modifier.classModifiers();
-            if (modifiers != 0) {
-                sb.append(Modifier.toString(modifiers));
-                sb.append(' ');
-            }
-
-            if (isAnnotation()) {
-                sb.append('@');
-            }
-            if (isInterface()) { // Note: all annotation types are interfaces
-                sb.append("interface");
+            if (isArray()) {
+                do {
+                    arrayDepth++;
+                    component = component.getComponentType();
+                } while (component.isArray());
+                sb.append(component.getName());
             } else {
-                if (isEnum())
-                    sb.append("enum");
-                else
-                    sb.append("class");
-            }
-            sb.append(' ');
-            sb.append(getName());
+                // Class modifiers are a superset of interface modifiers
+                int modifiers = getModifiers() & Modifier.classModifiers();
+                if (modifiers != 0) {
+                    sb.append(Modifier.toString(modifiers));
+                    sb.append(' ');
+                }
 
-            TypeVariable<?>[] typeparms = getTypeParameters();
+                if (isAnnotation()) {
+                    sb.append('@');
+                }
+                if (isInterface()) { // Note: all annotation types are interfaces
+                    sb.append("interface");
+                } else {
+                    if (isEnum())
+                        sb.append("enum");
+                    else
+                        sb.append("class");
+                }
+                sb.append(' ');
+                sb.append(getName());
+            }
+
+            TypeVariable<?>[] typeparms = component.getTypeParameters();
             if (typeparms.length > 0) {
                 boolean first = true;
                 sb.append('<');
@@ -223,6 +240,9 @@ public final class Class<T> implements java.io.Serializable,
                 }
                 sb.append('>');
             }
+
+            for (int i = 0; i < arrayDepth; i++)
+                sb.append("[]");
 
             return sb.toString();
         }

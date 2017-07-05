@@ -199,7 +199,38 @@ static pid_t filename_to_pid(const char* filename) {
 }
 
 
-// check if the given path is considered a secure directory for
+// Check if the given statbuf is considered a secure directory for
+// the backing store files. Returns true if the directory is considered
+// a secure location. Returns false if the statbuf is a symbolic link or
+// if an error occurred.
+//
+static bool is_statbuf_secure(struct stat *statp) {
+  if (S_ISLNK(statp->st_mode) || !S_ISDIR(statp->st_mode)) {
+    // The path represents a link or some non-directory file type,
+    // which is not what we expected. Declare it insecure.
+    //
+    return false;
+  }
+  // We have an existing directory, check if the permissions are safe.
+  //
+  if ((statp->st_mode & (S_IWGRP|S_IWOTH)) != 0) {
+    // The directory is open for writing and could be subjected
+    // to a symlink or a hard link attack. Declare it insecure.
+    //
+    return false;
+  }
+  // See if the uid of the directory matches the effective uid of the process.
+  //
+  if (statp->st_uid != geteuid()) {
+    // The directory was not created by this user, declare it insecure.
+    //
+    return false;
+  }
+  return true;
+}
+
+
+// Check if the given path is considered a secure directory for
 // the backing store files. Returns true if the directory exists
 // and is considered a secure location. Returns false if the path
 // is a symbolic link or if an error occurred.
@@ -213,26 +244,184 @@ static bool is_directory_secure(const char* path) {
     return false;
   }
 
-  // the path exists, now check it's mode
-  if (S_ISLNK(statbuf.st_mode) || !S_ISDIR(statbuf.st_mode)) {
-    // the path represents a link or some non-directory file type,
-    // which is not what we expected. declare it insecure.
-    //
+  // The path exists, see if it is secure.
+  return is_statbuf_secure(&statbuf);
+}
+
+
+// Check if the given directory file descriptor is considered a secure
+// directory for the backing store files. Returns true if the directory
+// exists and is considered a secure location. Returns false if the path
+// is a symbolic link or if an error occurred.
+//
+static bool is_dirfd_secure(int dir_fd) {
+  struct stat statbuf;
+  int result = 0;
+
+  RESTARTABLE(::fstat(dir_fd, &statbuf), result);
+  if (result == OS_ERR) {
     return false;
   }
-  else {
-    // we have an existing directory, check if the permissions are safe.
-    //
-    if ((statbuf.st_mode & (S_IWGRP|S_IWOTH)) != 0) {
-      // the directory is open for writing and could be subjected
-      // to a symlnk attack. declare it insecure.
-      //
-      return false;
+
+  // The path exists, now check its mode.
+  return is_statbuf_secure(&statbuf);
+}
+
+
+// Check to make sure fd1 and fd2 are referencing the same file system object.
+//
+static bool is_same_fsobject(int fd1, int fd2) {
+  struct stat statbuf1;
+  struct stat statbuf2;
+  int result = 0;
+
+  RESTARTABLE(::fstat(fd1, &statbuf1), result);
+  if (result == OS_ERR) {
+    return false;
+  }
+  RESTARTABLE(::fstat(fd2, &statbuf2), result);
+  if (result == OS_ERR) {
+    return false;
+  }
+
+  if ((statbuf1.st_ino == statbuf2.st_ino) &&
+      (statbuf1.st_dev == statbuf2.st_dev)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+// Open the directory of the given path and validate it.
+// Return a DIR * of the open directory.
+//
+static DIR *open_directory_secure(const char* dirname) {
+  // Open the directory using open() so that it can be verified
+  // to be secure by calling is_dirfd_secure(), opendir() and then check
+  // to see if they are the same file system object.  This method does not
+  // introduce a window of opportunity for the directory to be attacked that
+  // calling opendir() and is_directory_secure() does.
+  int result;
+  DIR *dirp = NULL;
+  RESTARTABLE(::open(dirname, O_RDONLY|O_NOFOLLOW), result);
+  if (result == OS_ERR) {
+    // Directory doesn't exist or is a symlink, so there is nothing to cleanup.
+    if (PrintMiscellaneous && Verbose) {
+      if (errno == ELOOP) {
+        warning("directory %s is a symlink and is not secure\n", dirname);
+      } else {
+        warning("could not open directory %s: %s\n", dirname, strerror(errno));
+      }
     }
+    return dirp;
+  }
+  int fd = result;
+
+  // Determine if the open directory is secure.
+  if (!is_dirfd_secure(fd)) {
+    // The directory is not a secure directory.
+    os::close(fd);
+    return dirp;
+  }
+
+  // Open the directory.
+  dirp = ::opendir(dirname);
+  if (dirp == NULL) {
+    // The directory doesn't exist, close fd and return.
+    os::close(fd);
+    return dirp;
+  }
+
+  // Check to make sure fd and dirp are referencing the same file system object.
+  if (!is_same_fsobject(fd, dirp->dd_fd)) {
+    // The directory is not secure.
+    os::close(fd);
+    os::closedir(dirp);
+    dirp = NULL;
+    return dirp;
+  }
+
+  // Close initial open now that we know directory is secure
+  os::close(fd);
+
+  return dirp;
+}
+
+// NOTE: The code below uses fchdir(), open() and unlink() because
+// fdopendir(), openat() and unlinkat() are not supported on all
+// versions.  Once the support for fdopendir(), openat() and unlinkat()
+// is available on all supported versions the code can be changed
+// to use these functions.
+
+// Open the directory of the given path, validate it and set the
+// current working directory to it.
+// Return a DIR * of the open directory and the saved cwd fd.
+//
+static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
+
+  // Open the directory.
+  DIR* dirp = open_directory_secure(dirname);
+  if (dirp == NULL) {
+    // Directory doesn't exist or is insecure, so there is nothing to cleanup.
+    return dirp;
+  }
+  int fd = dirp->dd_fd;
+
+  // Open a fd to the cwd and save it off.
+  int result;
+  RESTARTABLE(::open(".", O_RDONLY), result);
+  if (result == OS_ERR) {
+    *saved_cwd_fd = -1;
+  } else {
+    *saved_cwd_fd = result;
+  }
+
+  // Set the current directory to dirname by using the fd of the directory.
+  result = fchdir(fd);
+
+  return dirp;
+}
+
+// Close the directory and restore the current working directory.
+//
+static void close_directory_secure_cwd(DIR* dirp, int saved_cwd_fd) {
+
+  int result;
+  // If we have a saved cwd change back to it and close the fd.
+  if (saved_cwd_fd != -1) {
+    result = fchdir(saved_cwd_fd);
+    ::close(saved_cwd_fd);
+  }
+
+  // Close the directory.
+  os::closedir(dirp);
+}
+
+// Check if the given file descriptor is considered a secure.
+//
+static bool is_file_secure(int fd, const char *filename) {
+
+  int result;
+  struct stat statbuf;
+
+  // Determine if the file is secure.
+  RESTARTABLE(::fstat(fd, &statbuf), result);
+  if (result == OS_ERR) {
+    if (PrintMiscellaneous && Verbose) {
+      warning("fstat failed on %s: %s\n", filename, strerror(errno));
+    }
+    return false;
+  }
+  if (statbuf.st_nlink > 1) {
+    // A file with multiple links is not expected.
+    if (PrintMiscellaneous && Verbose) {
+      warning("file %s has multiple links\n", filename);
+    }
+    return false;
   }
   return true;
 }
-
 
 // return the user name for the given user id
 //
@@ -308,9 +497,11 @@ static char* get_user_name_slow(int vmid, TRAPS) {
 
   const char* tmpdirname = os::get_temp_directory();
 
+  // open the temp directory
   DIR* tmpdirp = os::opendir(tmpdirname);
 
   if (tmpdirp == NULL) {
+    // Cannot open the directory to get the user name, return.
     return NULL;
   }
 
@@ -335,7 +526,8 @@ static char* get_user_name_slow(int vmid, TRAPS) {
     strcat(usrdir_name, "/");
     strcat(usrdir_name, dentry->d_name);
 
-    DIR* subdirp = os::opendir(usrdir_name);
+    // open the user directory
+    DIR* subdirp = open_directory_secure(usrdir_name);
 
     if (subdirp == NULL) {
       FREE_C_HEAP_ARRAY(char, usrdir_name);
@@ -504,26 +696,6 @@ static void remove_file(const char* path) {
 }
 
 
-// remove file
-//
-// this method removes the file with the given file name in the
-// named directory.
-//
-static void remove_file(const char* dirname, const char* filename) {
-
-  size_t nbytes = strlen(dirname) + strlen(filename) + 2;
-  char* path = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-
-  strcpy(path, dirname);
-  strcat(path, "/");
-  strcat(path, filename);
-
-  remove_file(path);
-
-  FREE_C_HEAP_ARRAY(char, path);
-}
-
-
 // cleanup stale shared memory resources
 //
 // This method attempts to remove all stale shared memory files in
@@ -535,17 +707,11 @@ static void remove_file(const char* dirname, const char* filename) {
 //
 static void cleanup_sharedmem_resources(const char* dirname) {
 
-  // open the user temp directory
-  DIR* dirp = os::opendir(dirname);
-
+  int saved_cwd_fd;
+  // open the directory
+  DIR* dirp = open_directory_secure_cwd(dirname, &saved_cwd_fd);
   if (dirp == NULL) {
-    // directory doesn't exist, so there is nothing to cleanup
-    return;
-  }
-
-  if (!is_directory_secure(dirname)) {
-    // the directory is not a secure directory
-    os::closedir(dirp);
+    // directory doesn't exist or is insecure, so there is nothing to cleanup
     return;
   }
 
@@ -559,6 +725,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   //
   struct dirent* entry;
   char* dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(dirname), mtInternal);
+
   errno = 0;
   while ((entry = os::readdir(dirp, (struct dirent *)dbuf)) != NULL) {
 
@@ -569,7 +736,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
       if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
 
         // attempt to remove all unexpected files, except "." and ".."
-        remove_file(dirname, entry->d_name);
+        unlink(entry->d_name);
       }
 
       errno = 0;
@@ -592,11 +759,14 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     if ((pid == os::current_process_id()) ||
         (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
 
-        remove_file(dirname, entry->d_name);
+        unlink(entry->d_name);
     }
     errno = 0;
   }
-  os::closedir(dirp);
+
+  // close the directory and reset the current working directory
+  close_directory_secure_cwd(dirp, saved_cwd_fd);
+
   FREE_C_HEAP_ARRAY(char, dbuf);
 }
 
@@ -653,19 +823,54 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     return -1;
   }
 
-  int result;
-
-  RESTARTABLE(::open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IREAD|S_IWRITE), result);
-  if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
-      warning("could not create file %s: %s\n", filename, strerror(errno));
-    }
+  int saved_cwd_fd;
+  // open the directory and set the current working directory to it
+  DIR* dirp = open_directory_secure_cwd(dirname, &saved_cwd_fd);
+  if (dirp == NULL) {
+    // Directory doesn't exist or is insecure, so cannot create shared
+    // memory file.
     return -1;
   }
+
+  // Open the filename in the current directory.
+  // Cannot use O_TRUNC here; truncation of an existing file has to happen
+  // after the is_file_secure() check below.
+  int result;
+  RESTARTABLE(::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IREAD|S_IWRITE), result);
+  if (result == OS_ERR) {
+    if (PrintMiscellaneous && Verbose) {
+      if (errno == ELOOP) {
+        warning("file %s is a symlink and is not secure\n", filename);
+      } else {
+        warning("could not create file %s: %s\n", filename, strerror(errno));
+      }
+    }
+    // close the directory and reset the current working directory
+    close_directory_secure_cwd(dirp, saved_cwd_fd);
+
+    return -1;
+  }
+  // close the directory and reset the current working directory
+  close_directory_secure_cwd(dirp, saved_cwd_fd);
 
   // save the file descriptor
   int fd = result;
 
+  // check to see if the file is secure
+  if (!is_file_secure(fd, filename)) {
+    ::close(fd);
+    return -1;
+  }
+
+  // truncate the file to get rid of any existing data
+  RESTARTABLE(::ftruncate(fd, (off_t)0), result);
+  if (result == OS_ERR) {
+    if (PrintMiscellaneous && Verbose) {
+      warning("could not truncate shared memory file: %s\n", strerror(errno));
+    }
+    ::close(fd);
+    return -1;
+  }
   // set the file size
   RESTARTABLE(::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
@@ -701,8 +906,15 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
       THROW_MSG_(vmSymbols::java_io_IOException(), strerror(errno), OS_ERR);
     }
   }
+  int fd = result;
 
-  return result;
+  // check to see if the file is secure
+  if (!is_file_secure(fd, filename)) {
+    ::close(fd);
+    return -1;
+  }
+
+  return fd;
 }
 
 // create a named shared memory region. returns the address of the
@@ -734,13 +946,21 @@ static char* mmap_create_shared(size_t size) {
   char* dirname = get_user_tmp_dir(user_name);
   char* filename = get_sharedmem_filename(dirname, vmid);
 
+  // get the short filename
+  char* short_filename = strrchr(filename, '/');
+  if (short_filename == NULL) {
+    short_filename = filename;
+  } else {
+    short_filename++;
+  }
+
   // cleanup any stale shared memory files
   cleanup_sharedmem_resources(dirname);
 
   assert(((size > 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemory region size");
 
-  fd = create_sharedmem_resources(dirname, filename, size);
+  fd = create_sharedmem_resources(dirname, short_filename, size);
 
   FREE_C_HEAP_ARRAY(char, user_name);
   FREE_C_HEAP_ARRAY(char, dirname);
@@ -856,12 +1076,12 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   // constructs for the file and the shared memory mapping.
   if (mode == PerfMemory::PERF_MODE_RO) {
     mmap_prot = PROT_READ;
-    file_flags = O_RDONLY;
+    file_flags = O_RDONLY | O_NOFOLLOW;
   }
   else if (mode == PerfMemory::PERF_MODE_RW) {
 #ifdef LATER
     mmap_prot = PROT_READ | PROT_WRITE;
-    file_flags = O_RDWR;
+    file_flags = O_RDWR | O_NOFOLLOW;
 #else
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Unsupported access mode");

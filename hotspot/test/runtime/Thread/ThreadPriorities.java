@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,21 @@
  * @summary Creates several threads with different java priorities and checks
  *      whether jstack reports correct priorities for them.
  *
- * @ignore 8060219
- * @run main Test7194254
+ * @library /testlibrary
+ * @run main ThreadPriorities
  */
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Test7194254 {
+import com.oracle.java.testlibrary.*;
+import static com.oracle.java.testlibrary.Asserts.*;
 
-    public static void main(String[] args) throws Exception {
+public class ThreadPriorities {
+
+    public static void main(String[] args) throws Throwable {
         final int NUMBER_OF_JAVA_PRIORITIES =
                 Thread.MAX_PRIORITY - Thread.MIN_PRIORITY + 1;
         final CyclicBarrier barrier =
@@ -68,53 +66,31 @@ public class Test7194254 {
         barrier.await(); // 1st
 
         int matches = 0;
-        List<String> failed = new ArrayList<>();
-        try {
-            String pid = getPid();
-            String jstack = System.getProperty("java.home") + "/../bin/jstack";
-            Process process = new ProcessBuilder(jstack, pid)
-                    .redirectErrorStream(true).start();
-            Pattern pattern = Pattern.compile(
-                    "\\\"Priority=(\\d+)\\\".* prio=(\\d+).*");
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while((line = reader.readLine()) != null) {
-                    Matcher matcher = pattern.matcher(line);
-                    if (matcher.matches()) {
-                        matches += 1;
-                        String expected = matcher.group(1);
-                        String actual = matcher.group(2);
-                        if (!expected.equals(actual)) {
-                            failed.add(line);
-                        }
-                    }
+        ArrayList<String> failed = new ArrayList<>();
+        ProcessBuilder pb = new ProcessBuilder(
+                JDKToolFinder.getJDKTool("jstack"),
+                String.valueOf(ProcessTools.getProcessId()));
+
+        String[] output = new OutputAnalyzer(pb.start()).getOutput().split("\\n+");
+
+        Pattern pattern = Pattern.compile(
+                "\\\"Priority=(\\d+)\\\".* prio=(\\d+).*");
+        for (String line : output) {
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.matches()) {
+                matches += 1;
+                String expected = matcher.group(1);
+                String actual = matcher.group(2);
+                if (!expected.equals(actual)) {
+                    failed.add(line);
                 }
             }
-            barrier.await(); // 2nd
-        } finally {
-            barrier.reset();
         }
+        barrier.await(); // 2nd
+        barrier.reset();
 
-        if (matches != NUMBER_OF_JAVA_PRIORITIES) {
-            throw new AssertionError("matches: expected " +
-                    NUMBER_OF_JAVA_PRIORITIES + ", but was " + matches);
-        }
-        if (!failed.isEmpty()) {
-            throw new AssertionError(failed.size() + ":" + failed);
-        }
-        System.out.println("Test passes.");
+        assertEquals(matches, NUMBER_OF_JAVA_PRIORITIES);
+        assertTrue(failed.isEmpty(), failed.size() + ":" + failed);
     }
-
-    static String getPid() {
-        RuntimeMXBean runtimebean = ManagementFactory.getRuntimeMXBean();
-        String vmname = runtimebean.getName();
-        int i = vmname.indexOf('@');
-        if (i != -1) {
-            vmname = vmname.substring(0, i);
-        }
-        return vmname;
-    }
-
 }
 
