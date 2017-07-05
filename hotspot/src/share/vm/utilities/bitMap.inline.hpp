@@ -130,7 +130,7 @@ inline void BitMap::par_set_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 
 inline void BitMap::set_range_of_words(idx_t beg, idx_t end) {
   bm_word_t* map = _map;
-  for (idx_t i = beg; i < end; ++i) map[i] = ~(uintptr_t)0;
+  for (idx_t i = beg; i < end; ++i) map[i] = ~(bm_word_t)0;
 }
 
 
@@ -172,8 +172,8 @@ BitMap::get_next_one_offset_inline(idx_t l_offset, idx_t r_offset) const {
 
   // check bits including and to the _left_ of offset's position
   idx_t pos = bit_in_word(res_offset);
-  idx_t res = map(index) >> pos;
-  if (res != (uintptr_t)NoBits) {
+  bm_word_t res = map(index) >> pos;
+  if (res != 0) {
     // find the position of the 1-bit
     for (; !(res & 1); res_offset++) {
       res = res >> 1;
@@ -207,7 +207,7 @@ BitMap::get_next_one_offset_inline(idx_t l_offset, idx_t r_offset) const {
   // skip over all word length 0-bit runs
   for (index++; index < r_index; index++) {
     res = map(index);
-    if (res != (uintptr_t)NoBits) {
+    if (res != 0) {
       // found a 1, return the offset
       for (res_offset = bit_index(index); !(res & 1); res_offset++) {
         res = res >> 1;
@@ -235,9 +235,9 @@ BitMap::get_next_zero_offset_inline(idx_t l_offset, idx_t r_offset) const {
 
   // check bits including and to the _left_ of offset's position
   idx_t pos = res_offset & (BitsPerWord - 1);
-  idx_t res = (map(index) >> pos) | left_n_bits((int)pos);
+  bm_word_t res = (map(index) >> pos) | left_n_bits((int)pos);
 
-  if (res != (uintptr_t)AllBits) {
+  if (res != ~(bm_word_t)0) {
     // find the position of the 0-bit
     for (; res & 1; res_offset++) {
       res = res >> 1;
@@ -248,7 +248,7 @@ BitMap::get_next_zero_offset_inline(idx_t l_offset, idx_t r_offset) const {
   // skip over all word length 1-bit runs
   for (index++; index < r_index; index++) {
     res = map(index);
-    if (res != (uintptr_t)AllBits) {
+    if (res != ~(bm_word_t)0) {
       // found a 0, return the offset
       for (res_offset = index << LogBitsPerWord; res & 1;
            res_offset++) {
@@ -277,8 +277,8 @@ BitMap::get_next_one_offset_inline_aligned_right(idx_t l_offset,
   idx_t res_offset = l_offset;
 
   // check bits including and to the _left_ of offset's position
-  idx_t res = map(index) >> bit_in_word(res_offset);
-  if (res != (uintptr_t)NoBits) {
+  bm_word_t res = map(index) >> bit_in_word(res_offset);
+  if (res != 0) {
     // find the position of the 1-bit
     for (; !(res & 1); res_offset++) {
       res = res >> 1;
@@ -290,7 +290,7 @@ BitMap::get_next_one_offset_inline_aligned_right(idx_t l_offset,
   // skip over all word length 0-bit runs
   for (index++; index < r_index; index++) {
     res = map(index);
-    if (res != (uintptr_t)NoBits) {
+    if (res != 0) {
       // found a 1, return the offset
       for (res_offset = bit_index(index); !(res & 1); res_offset++) {
         res = res >> 1;
@@ -321,11 +321,11 @@ BitMap::inverted_bit_mask_for_range(idx_t beg, idx_t end) const {
 }
 
 inline void BitMap::set_large_range_of_words(idx_t beg, idx_t end) {
-  memset(_map + beg, ~(unsigned char)0, (end - beg) * sizeof(uintptr_t));
+  memset(_map + beg, ~(unsigned char)0, (end - beg) * sizeof(bm_word_t));
 }
 
 inline void BitMap::clear_large_range_of_words(idx_t beg, idx_t end) {
-  memset(_map + beg, 0, (end - beg) * sizeof(uintptr_t));
+  memset(_map + beg, 0, (end - beg) * sizeof(bm_word_t));
 }
 
 inline BitMap::idx_t BitMap::word_index_round_up(idx_t bit) const {

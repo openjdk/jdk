@@ -34,7 +34,7 @@ found in:
     Protocol (LDAP) that many organizations are expecting will help
     address online certificate distribution over the Internet.
 
-    RFC 3280, which describes the Internet X.509 Public Key
+    RFC 5280, which describes the Internet X.509 Public Key
     Infrastructure Certificate and CRL Profile.  
 
     RSA DSI has a bunch of "Public Key Cryptography Standards" (PKCS) which
