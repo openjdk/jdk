@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,13 +418,12 @@ int LIR_Assembler::initial_frame_size_in_bytes() {
 }
 
 
-void LIR_Assembler::emit_exception_handler() {
+int LIR_Assembler::emit_exception_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
-
   __ nop();
 
   // generate code for exception handler
@@ -432,17 +431,14 @@ void LIR_Assembler::emit_exception_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
-  int offset = code_offset();
-#endif // ASSERT
 
-  compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
+  int offset = code_offset();
 
   // if the method does not have an exception handler, then there is
   // no reason to search for one
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
+  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_on_exceptions()) {
     // the exception oop and pc are in rax, and rdx
     // no other registers need to be preserved, so invalidate them
     __ invalidate_registers(false, true, true, false, true, true);
@@ -474,19 +470,19 @@ void LIR_Assembler::emit_exception_handler() {
   // unwind activation and forward exception to caller
   // rax,: exception
   __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
-
   assert(code_offset() - offset <= exception_handler_size, "overflow");
-
   __ end_a_stub();
+
+  return offset;
 }
 
-void LIR_Assembler::emit_deopt_handler() {
+
+int LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
-
   __ nop();
 
   // generate code for exception handler
@@ -494,23 +490,17 @@ void LIR_Assembler::emit_deopt_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
+
   int offset = code_offset();
-#endif // ASSERT
-
-  compilation()->offsets()->set_value(CodeOffsets::Deopt, code_offset());
-
   InternalAddress here(__ pc());
   __ pushptr(here.addr());
-
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-
   assert(code_offset() - offset <= deopt_handler_size, "overflow");
-
   __ end_a_stub();
 
+  return offset;
 }
 
 
@@ -3219,7 +3209,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   Register mdo  = op->mdo()->as_register();
   __ movoop(mdo, md->constant_encoding());
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  __ addl(counter_addr, DataLayout::counter_increment);
   Bytecodes::Code bc = method->java_code_at_bci(bci);
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
@@ -3286,14 +3275,18 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ jcc(Assembler::notEqual, next_test);
         __ movptr(recv_addr, recv);
         __ movl(Address(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i))), DataLayout::counter_increment);
-        if (i < (VirtualCallData::row_limit() - 1)) {
-          __ jmp(update_done);
-        }
+        __ jmp(update_done);
         __ bind(next_test);
       }
+      // Receiver did not match any saved receiver and there is no empty row for it.
+      // Increment total counter to indicate polimorphic case.
+      __ addl(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
+  } else {
+    // Static call
+    __ addl(counter_addr, DataLayout::counter_increment);
   }
 }
 

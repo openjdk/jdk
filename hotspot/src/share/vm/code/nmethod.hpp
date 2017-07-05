@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ struct nmFlags {
   unsigned int has_unsafe_access:1;          // May fault due to unsafe access.
   unsigned int has_method_handle_invokes:1;  // Has this method MethodHandle invokes?
 
+  unsigned int speculatively_disconnected:1; // Marked for potential unload
+
   void clear();
 };
 
@@ -137,6 +139,7 @@ class nmethod : public CodeBlob {
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from instanceKlass::osr_nmethods_head
   nmethod*  _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
+  nmethod*  _saved_nmethod_link; // from CodeCache::speculatively_disconnect
 
   static nmethod* volatile _oops_do_mark_nmethods;
   nmethod*        volatile _oops_do_mark_link;
@@ -145,8 +148,12 @@ class nmethod : public CodeBlob {
 
   // Offsets for different nmethod parts
   int _exception_offset;
-  // All deoptee's will resume execution at this location described by this offset
+  // All deoptee's will resume execution at this location described by
+  // this offset.
   int _deoptimize_offset;
+  // All deoptee's at a MethodHandle call site will resume execution
+  // at this location described by this offset.
+  int _deoptimize_mh_offset;
 #ifdef HAVE_DTRACE_H
   int _trap_offset;
 #endif // def HAVE_DTRACE_H
@@ -329,24 +336,25 @@ class nmethod : public CodeBlob {
   bool is_compiled_by_c2() const;
 
   // boundaries for different parts
-  address code_begin         () const             { return _entry_point; }
-  address code_end           () const             { return           header_begin() + _stub_offset          ; }
-  address exception_begin    () const             { return           header_begin() + _exception_offset     ; }
-  address deopt_handler_begin() const             { return           header_begin() + _deoptimize_offset    ; }
-  address stub_begin         () const             { return           header_begin() + _stub_offset          ; }
-  address stub_end           () const             { return           header_begin() + _consts_offset        ; }
-  address consts_begin       () const             { return           header_begin() + _consts_offset        ; }
-  address consts_end         () const             { return           header_begin() + _scopes_data_offset   ; }
-  address scopes_data_begin  () const             { return           header_begin() + _scopes_data_offset   ; }
-  address scopes_data_end    () const             { return           header_begin() + _scopes_pcs_offset    ; }
-  PcDesc* scopes_pcs_begin   () const             { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
-  PcDesc* scopes_pcs_end     () const             { return (PcDesc*)(header_begin() + _dependencies_offset); }
-  address dependencies_begin () const             { return           header_begin() + _dependencies_offset ; }
-  address dependencies_end   () const             { return           header_begin() + _handler_table_offset ; }
-  address handler_table_begin() const             { return           header_begin() + _handler_table_offset ; }
-  address handler_table_end  () const             { return           header_begin() + _nul_chk_table_offset   ; }
-  address nul_chk_table_begin() const             { return           header_begin() + _nul_chk_table_offset ; }
-  address nul_chk_table_end  () const             { return           header_begin() + _nmethod_end_offset   ; }
+  address code_begin            () const          { return _entry_point; }
+  address code_end              () const          { return           header_begin() + _stub_offset          ; }
+  address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
+  address deopt_handler_begin   () const          { return           header_begin() + _deoptimize_offset    ; }
+  address deopt_mh_handler_begin() const          { return           header_begin() + _deoptimize_mh_offset ; }
+  address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
+  address stub_end              () const          { return           header_begin() + _consts_offset        ; }
+  address consts_begin          () const          { return           header_begin() + _consts_offset        ; }
+  address consts_end            () const          { return           header_begin() + _scopes_data_offset   ; }
+  address scopes_data_begin     () const          { return           header_begin() + _scopes_data_offset   ; }
+  address scopes_data_end       () const          { return           header_begin() + _scopes_pcs_offset    ; }
+  PcDesc* scopes_pcs_begin      () const          { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
+  PcDesc* scopes_pcs_end        () const          { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
+  address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
+  address dependencies_end      () const          { return           header_begin() + _handler_table_offset ; }
+  address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
+  address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
+  address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
+  address nul_chk_table_end     () const          { return           header_begin() + _nmethod_end_offset   ; }
 
   int code_size         () const                  { return      code_end         () -      code_begin         (); }
   int stub_size         () const                  { return      stub_end         () -      stub_begin         (); }
@@ -413,6 +421,9 @@ class nmethod : public CodeBlob {
   bool  has_method_handle_invokes() const         { return flags.has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { flags.has_method_handle_invokes = z; }
 
+  bool  is_speculatively_disconnected() const     { return flags.speculatively_disconnected; }
+  void  set_speculatively_disconnected(bool z)     { flags.speculatively_disconnected = z; }
+
   int   level() const                             { return flags.level; }
   void  set_level(int newLevel)                   { check_safepoint(); flags.level = newLevel; }
 
@@ -436,6 +447,9 @@ class nmethod : public CodeBlob {
 #endif //PRODUCT
   nmethod* scavenge_root_link() const                  { return _scavenge_root_link; }
   void     set_scavenge_root_link(nmethod *n)          { _scavenge_root_link = n; }
+
+  nmethod* saved_nmethod_link() const                  { return _saved_nmethod_link; }
+  void     set_saved_nmethod_link(nmethod *n)          { _saved_nmethod_link = n; }
 
  public:
 
@@ -515,7 +529,7 @@ class nmethod : public CodeBlob {
  private:
   ScopeDesc* scope_desc_in(address begin, address end);
 
-  address* orig_pc_addr(const frame* fr ) { return (address*) ((address)fr->unextended_sp() + _orig_pc_offset); }
+  address* orig_pc_addr(const frame* fr) { return (address*) ((address)fr->unextended_sp() + _orig_pc_offset); }
 
   PcDesc* find_pc_desc_internal(address pc, bool approximate);
 
@@ -538,12 +552,16 @@ class nmethod : public CodeBlob {
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
 
-  // deopt
-  // return true is the pc is one would expect if the frame is being deopted.
-  bool is_deopt_pc(address pc);
+  // Deopt
+  // Return true is the PC is one would expect if the frame is being deopted.
+  bool is_deopt_pc      (address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
+  bool is_deopt_entry   (address pc) { return pc == deopt_handler_begin(); }
+  bool is_deopt_mh_entry(address pc) { return pc == deopt_mh_handler_begin(); }
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+
+  static address get_deopt_original_pc(const frame* fr);
 
   // MethodHandle
   bool is_method_handle_return(address return_pc);

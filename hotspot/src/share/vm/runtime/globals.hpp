@@ -742,6 +742,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintAdapterHandlers, false,                             \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
+  develop(bool, VerifyAdapterSharing, false,                                \
+          "Verify that the code for shared adapters is the equivalent")     \
+                                                                            \
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
@@ -1201,7 +1204,7 @@ class CommandLineFlags {
   product(bool, UseSerialGC, false,                                         \
           "Use the serial garbage collector")                               \
                                                                             \
-  experimental(bool, UseG1GC, false,                                        \
+  product(bool, UseG1GC, false,                                             \
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
@@ -2447,6 +2450,9 @@ class CommandLineFlags {
   notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
           "Compile all methods although class initializer failed")          \
                                                                             \
+  notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
+          "Force a safepoint every n compiles so sweeper can keep up")      \
+                                                                            \
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
@@ -2861,7 +2867,7 @@ class CommandLineFlags {
   product(intx, PerMethodRecompilationCutoff, 400,                          \
           "After recompiling N times, stay in the interpreter (-1=>'Inf')") \
                                                                             \
-  product(intx, PerBytecodeRecompilationCutoff, 100,                        \
+  product(intx, PerBytecodeRecompilationCutoff, 200,                        \
           "Per-BCI limit on repeated recompilation (-1=>'Inf')")            \
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
@@ -3113,6 +3119,15 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache.")                         \
+                                                                            \
+  product(bool, UseCodeCacheFlushing, false,                                \
+          "Attempt to clean the code cache before shutting off compiler")   \
+                                                                            \
+  product(intx,  MinCodeCacheFlushingInterval, 30,                          \
+          "Min number of seconds between code cache cleaning sessions")     \
+                                                                            \
+  product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
+          "When less than X space left, start code cache cleaning")         \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \

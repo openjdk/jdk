@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ static void deopt_caller() {
     RegisterMap reg_map(thread, false);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
     assert(caller_is_deopted(), "Must be deoptimized");
   }
 }
@@ -354,7 +354,7 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::post_jvmti_exception_throw(JavaThread* thread))
-  if (JvmtiExport::can_post_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions()) {
     vframeStream vfst(thread, true);
     address bcp = vfst.method()->bcp_from(vfst.bci());
     JvmtiExport::post_exception_throw(thread, vfst.method(), bcp, thread->exception_oop());
@@ -437,7 +437,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
   if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
 
-  if (JvmtiExport::can_post_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions()) {
     // To ensure correct notification of exception catches and throws
     // we have to deoptimize here.  If we attempted to notify the
     // catches and throws during this exception lookup it's possible
