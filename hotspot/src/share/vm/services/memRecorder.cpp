@@ -31,14 +31,19 @@
 #include "services/memTracker.hpp"
 
 MemPointer* SequencedRecordIterator::next_record() {
-  MemPointer* itr_cur = _itr.current();
-  if (itr_cur == NULL) return NULL;
-  MemPointer* itr_next = _itr.next();
+  MemPointerRecord* itr_cur = (MemPointerRecord*)_itr.current();
+  if (itr_cur == NULL)  {
+    return itr_cur;
+  }
 
-  while (itr_next != NULL &&
-    same_kind((MemPointerRecord*)itr_cur, (MemPointerRecord*)itr_next)) {
+  MemPointerRecord* itr_next = (MemPointerRecord*)_itr.next();
+
+  // don't collapse virtual memory records
+  while (itr_next != NULL && !itr_cur->is_vm_pointer() &&
+    !itr_next->is_vm_pointer() &&
+    same_kind(itr_cur, itr_next)) {
     itr_cur = itr_next;
-    itr_next = _itr.next();
+    itr_next = (MemPointerRecord*)_itr.next();
   }
 
   return itr_cur;

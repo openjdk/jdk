@@ -79,10 +79,10 @@ ifeq ($(INCLUDE_ALTERNATE_GCS), false)
       CXXFLAGS += -DSERIALGC
       CFLAGS += -DSERIALGC
       Src_Files_EXCLUDE += \
-	binaryTreeDictionary.cpp cmsAdaptiveSizePolicy.cpp cmsCollectorPolicy.cpp \
+	cmsAdaptiveSizePolicy.cpp cmsCollectorPolicy.cpp \
 	cmsGCAdaptivePolicyCounters.cpp cmsLockVerifier.cpp cmsPermGen.cpp compactibleFreeListSpace.cpp \
-	concurrentMarkSweepGeneration.cpp concurrentMarkSweepThread.cpp freeBlockDictionary.cpp \
-	freeChunk.cpp freeList.cpp promotionInfo.cpp vmCMSOperations.cpp collectionSetChooser.cpp \
+	concurrentMarkSweepGeneration.cpp concurrentMarkSweepThread.cpp \
+	freeChunk.cpp adaptiveFreeList.cpp promotionInfo.cpp vmCMSOperations.cpp collectionSetChooser.cpp \
 	concurrentG1Refine.cpp concurrentG1RefineThread.cpp concurrentMark.cpp concurrentMarkThread.cpp \
 	dirtyCardQueue.cpp g1AllocRegion.cpp g1BlockOffsetTable.cpp g1CollectedHeap.cpp g1GCPhaseTimes.cpp \
 	g1CollectorPolicy.cpp g1ErgoVerbose.cpp g1_globals.cpp g1HRPrinter.cpp g1MarkSweep.cpp \

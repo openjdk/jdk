@@ -58,9 +58,9 @@ JDK_DEFAULT_TEST_LIST = \
 	jdk_io  \
 	jdk_lang  \
 	jdk_math  \
-	jdk_misc  \
+	jdk_other  \
 	jdk_net  \
-	jdk_nio1 jdk_nio2 jdk_nio3  \
+	jdk_nio \
 	jdk_security1 \
 	jdk_text  \
 	jdk_util
@@ -69,12 +69,14 @@ JDK_DEFAULT_TEST_LIST = \
 JDK_NONDEFAULT_TEST_LIST = \
 	jdk_awt \
 	jdk_beans2 jdk_beans3  \
-	jdk_management1 jdk_management2  \
+	jdk_management \
+	jdk_jmx \
 	jdk_security2 jdk_security3  \
 	jdk_rmi \
 	jdk_sound \
 	jdk_swing \
-	jdk_tools1 jdk_tools2 \
+	jdk_tools \
+	jdk_jdi \
 	jdk_jfr
 
 # All jdk tests
