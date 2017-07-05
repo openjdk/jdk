@@ -248,8 +248,6 @@ constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
   constantPoolCacheOop cache = (constantPoolCacheOop)obj;
@@ -258,8 +256,6 @@ void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
   // print constant pool cache entries
   for (int i = 0; i < cache->length(); i++) cache->entry_at(i)->print(st, i);
 }
-
-#endif
 
 void constantPoolCacheKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_constantPoolCache(), "obj must be constant pool cache");

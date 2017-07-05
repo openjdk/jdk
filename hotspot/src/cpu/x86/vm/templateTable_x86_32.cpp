@@ -3112,21 +3112,24 @@ void TemplateTable::_new() {
   transition(vtos, atos);
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   Label slow_case;
+  Label slow_case_no_pop;
   Label done;
   Label initialize_header;
   Label initialize_object;  // including clearing the fields
   Label allocate_shared;
 
   __ get_cpool_and_tags(rcx, rax);
+
+  // Make sure the class we're about to instantiate has been resolved.
+  // This is done before loading instanceKlass to be consistent with the order
+  // how Constant Pool is updated (see constantPoolOopDesc::klass_at_put)
+  const int tags_offset = typeArrayOopDesc::header_size(T_BYTE) * wordSize;
+  __ cmpb(Address(rax, rdx, Address::times_1, tags_offset), JVM_CONSTANT_Class);
+  __ jcc(Assembler::notEqual, slow_case_no_pop);
+
   // get instanceKlass
   __ movptr(rcx, Address(rcx, rdx, Address::times_ptr, sizeof(constantPoolOopDesc)));
   __ push(rcx);  // save the contexts of klass for initializing the header
-
-  // make sure the class we're about to instantiate has been resolved.
-  // Note: slow_case does a pop of stack, which is why we loaded class/pushed above
-  const int tags_offset = typeArrayOopDesc::header_size(T_BYTE) * wordSize;
-  __ cmpb(Address(rax, rdx, Address::times_1, tags_offset), JVM_CONSTANT_Class);
-  __ jcc(Assembler::notEqual, slow_case);
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -3255,6 +3258,7 @@ void TemplateTable::_new() {
   // slow case
   __ bind(slow_case);
   __ pop(rcx);   // restore stack pointer to what it was when we came in.
+  __ bind(slow_case_no_pop);
   __ get_constant_pool(rax);
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), rax, rdx);

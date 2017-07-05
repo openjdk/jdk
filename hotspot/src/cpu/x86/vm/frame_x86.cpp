@@ -575,8 +575,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
 #ifdef CC_INTERP
-  // Needed for JVMTI. The result should always be in the interpreterState object
-  assert(false, "NYI");
+  // Needed for JVMTI. The result should always be in the
+  // interpreterState object
   interpreterState istate = get_interpreterState();
 #endif // CC_INTERP
   assert(is_interpreted_frame(), "interpreted frame expected");
