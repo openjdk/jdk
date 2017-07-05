@@ -21,32 +21,20 @@
  * questions.
  */
 
-package jdk.test.lib.unsafe;
-
-import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
-
-
 /**
- * Helper class for accessing the jdk.internal.misc.Unsafe functionality
+ *
+ * @test
+ * @summary Tests that the -javaagent option adds the java.instrument into
+ * the module graph
+ * @modules java.instrument
+ * @run shell MakeJAR3.sh SimpleAgent
+ * @run main/othervm -javaagent:SimpleAgent.jar -limitmods java.base TestAgentWithLimitMods
+ *
  */
-public final class UnsafeHelper {
-    private static Unsafe unsafe = null;
+public class TestAgentWithLimitMods {
 
-    /**
-     * @return Unsafe instance.
-     */
-    public static synchronized Unsafe getUnsafe() {
-        if (unsafe == null) {
-            try {
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                unsafe = (Unsafe) f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to get Unsafe instance.", e);
-            }
-        }
-        return unsafe;
+    public static void main(String[] args) {
+        System.out.println("Test passed");
     }
-}
 
+}

@@ -82,7 +82,7 @@ public class ImageStream {
 
     public void ensure(int needs) {
         if (needs < 0) {
-            throw new IndexOutOfBoundsException("needs");
+            throw new IndexOutOfBoundsException("Bad value: " + needs);
         }
 
         if (needs > buffer.remaining()) {
@@ -106,7 +106,7 @@ public class ImageStream {
 
     public void skip(int n) {
         if (n < 0) {
-            throw new IndexOutOfBoundsException("n");
+            throw new IndexOutOfBoundsException("skip value = " + n);
         }
 
         buffer.position(buffer.position() + n);

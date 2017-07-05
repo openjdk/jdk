@@ -632,6 +632,7 @@ public class MethodHandlesTest {
     }
 
     public void testFindVirtualClone0() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
         // test some ad hoc system methods
         testFindVirtual(false, PUBLIC, Object.class, Object.class, "clone");
 
@@ -2798,10 +2799,16 @@ public class MethodHandlesTest {
             toClauseMajor(postClauses, inits, steps, usePreds, finis);
             MethodHandle pre = MethodHandles.loop(preClauses);
             MethodHandle post = MethodHandles.loop(postClauses);
+            if (verbosity >= 6) {
+                System.out.println("pre-handle: " + pre);
+            }
             Object[] preResults = (Object[]) pre.invokeWithArguments(args);
             if (verbosity >= 4) {
                 System.out.println("pre-checked: expected " + Arrays.asList(preCheckedResults[i]) + ", actual " +
                         Arrays.asList(preResults));
+            }
+            if (verbosity >= 6) {
+                System.out.println("post-handle: " + post);
             }
             Object[] postResults = (Object[]) post.invokeWithArguments(args);
             if (verbosity >= 4) {

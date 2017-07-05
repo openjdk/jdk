@@ -768,6 +768,11 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
   Symbol* h_name      = method->name();
   Symbol* h_signature = method->signature();
 
+  if (MethodHandles::is_signature_polymorphic_method(method())) {
+      // Signature polymorphic methods are already resolved, JVMCI just returns NULL in this case.
+      return NULL;
+  }
+
   LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass);
   methodHandle m;
   // Only do exact lookup if receiver klass has been linked.  Otherwise,
@@ -782,7 +787,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
   }
 
   if (m.is_null()) {
-    // Return NULL only if there was a problem with lookup (uninitialized class, etc.)
+    // Return NULL if there was a problem with lookup (uninitialized class, etc.)
     return NULL;
   }
 

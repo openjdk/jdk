@@ -23,9 +23,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8153142
+ * @modules java.httpclient
+ *          jdk.httpserver
  * @run main/othervm HeadersTest1
  * @summary HeadersTest1
  */
@@ -39,9 +41,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.http.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpResponse;
+import java.net.http.HttpRequest;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.List;

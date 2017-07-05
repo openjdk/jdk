@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class SocketCreation {
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
         System.out.println("Server: Will call createServerSocket(int)");
-        ServerSocket sslServerSocket = sslssf.createServerSocket(serverPort);
+        ServerSocket sslServerSocket = sslssf.createServerSocket(0);
         serverPort = sslServerSocket.getLocalPort();
 
         System.out.println("Server: Will accept on SSL server socket...");
@@ -157,7 +157,7 @@ public class SocketCreation {
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
         System.out.println("Server: Will call createServerSocket(int, int)");
-        ServerSocket sslServerSocket = sslssf.createServerSocket(serverPort,
+        ServerSocket sslServerSocket = sslssf.createServerSocket(0,
                                                                  1);
         serverPort = sslServerSocket.getLocalPort();
 
@@ -177,7 +177,7 @@ public class SocketCreation {
 
         System.out.println("Server: Will call createServerSocket(int, " +
                            " int, InetAddress)");
-        ServerSocket sslServerSocket = sslssf.createServerSocket(serverPort,
+        ServerSocket sslServerSocket = sslssf.createServerSocket(0,
                                          1,
                                          InetAddress.getByName("localhost"));
         serverPort = sslServerSocket.getLocalPort();
@@ -203,13 +203,14 @@ public class SocketCreation {
         if (sslServerSocket.isBound())
             throw new Exception("Server socket is already bound!");
 
-        System.out.println("Server: Will bind SSL server socket to port " +
-                           serverPort + "...");
-
-        sslServerSocket.bind(new java.net.InetSocketAddress(serverPort));
+        sslServerSocket.bind(new java.net.InetSocketAddress(0));
 
         if (!sslServerSocket.isBound())
             throw new Exception("Server socket is not bound!");
+
+        serverPort = sslServerSocket.getLocalPort();
+        System.out.println("Server: Bound SSL server socket to port " +
+                serverPort + "...");
 
         serverReady = true;
 
@@ -224,11 +225,10 @@ public class SocketCreation {
         SSLSocketFactory sslsf =
             (SSLSocketFactory) SSLSocketFactory.getDefault();
 
-        System.out.println("Server: Will create normal server socket bound"
-                           + " to port " + serverPort + "...");
-
-        ServerSocket ss = new ServerSocket(serverPort);
+        ServerSocket ss = new ServerSocket(0);
         serverPort = ss.getLocalPort();
+        System.out.println("Server: Created normal server socket bound"
+                + " to port " + serverPort + "...");
         System.out.println("Server: Will accept on server socket...");
         serverReady = true;
         Socket s = ss.accept();

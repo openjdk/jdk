@@ -1603,11 +1603,50 @@ public final class Unsafe {
         return weakCompareAndSwapShort(o, offset, c2s(expected), c2s(x));
     }
 
+    /**
+     * The JVM converts integral values to boolean values using two
+     * different conventions, byte testing against zero and truncation
+     * to least-significant bit.
+     *
+     * <p>The JNI documents specify that, at least for returning
+     * values from native methods, a Java boolean value is converted
+     * to the value-set 0..1 by first truncating to a byte (0..255 or
+     * maybe -128..127) and then testing against zero. Thus, Java
+     * booleans in non-Java data structures are by convention
+     * represented as 8-bit containers containing either zero (for
+     * false) or any non-zero value (for true).
+     *
+     * <p>Java booleans in the heap are also stored in bytes, but are
+     * strongly normalized to the value-set 0..1 (i.e., they are
+     * truncated to the least-significant bit).
+     *
+     * <p>The main reason for having different conventions for
+     * conversion is performance: Truncation to the least-significant
+     * bit can be usually implemented with fewer (machine)
+     * instructions than byte testing against zero.
+     *
+     * <p>A number of Unsafe methods load boolean values from the heap
+     * as bytes. Unsafe converts those values according to the JNI
+     * rules (i.e, using the "testing against zero" convention). The
+     * method {@code byte2bool} implements that conversion.
+     *
+     * @param b the byte to be converted to boolean
+     * @return the result of the conversion
+     */
     @ForceInline
     private boolean byte2bool(byte b) {
-        return b > 0;
+        return b != 0;
     }
 
+    /**
+     * Convert a boolean value to a byte. The return value is strongly
+     * normalized to the value-set 0..1 (i.e., the value is truncated
+     * to the least-significant bit). See {@link #byte2bool(byte)} for
+     * more details on conversion conventions.
+     *
+     * @param b the boolean to be converted to byte (and then normalized)
+     * @return the result of the conversion
+     */
     @ForceInline
     private byte bool2byte(boolean b) {
         return b ? (byte)1 : (byte)0;

@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6239117
  * @summary verify that beginExclusive()/endExclusive() works
  * @author Andreas Sterbenz
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestExclusive
  */
 

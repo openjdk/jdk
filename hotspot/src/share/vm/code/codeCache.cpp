@@ -1305,7 +1305,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     event.set_entryCount(heap->blob_count());
     event.set_methodCount(heap->nmethod_count());
     event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity()/K);
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
     event.set_fullCount(heap->full_count());
     event.commit();
   }
