@@ -62,8 +62,8 @@ class SolarisSystemEnvironment extends SystemEnvironment {
             return "Sun Microsystems, Inc";
         }
 
-        // if we're here, then we'll try smbios (type 3)
-        return getSmbiosData("3", "Manufacturer: ");
+        // if we're here, then we'll try smbios (type 4)
+        return getSmbiosData("4", "Manufacturer: ");
     }
 
     /**

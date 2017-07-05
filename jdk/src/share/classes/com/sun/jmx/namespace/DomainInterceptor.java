@@ -42,7 +42,6 @@ import javax.management.ListenerNotFoundException;
 import javax.management.MBeanPermission;
 import javax.management.MBeanServerDelegate;
 import javax.management.MBeanServerNotification;
-import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
@@ -268,13 +267,9 @@ public class DomainInterceptor extends HandlerInterceptor<JMXDomain> {
     // When we reach here, it has been verified that 'name' matches our domain
     // name (done by DomainDispatchInterceptor)
     private ObjectName getPatternFor(final ObjectName name) {
-        try {
-            if (name == null) return ALL;
-            if (name.getDomain().equals(domainName)) return name;
-            return name.withDomain(domainName);
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(String.valueOf(name),x);
-        }
+        if (name == null) return ALL;
+        if (name.getDomain().equals(domainName)) return name;
+        return name.withDomain(domainName);
    }
 
     @Override

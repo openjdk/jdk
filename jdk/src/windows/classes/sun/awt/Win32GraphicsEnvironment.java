@@ -393,4 +393,9 @@ public class Win32GraphicsEnvironment
     private static void dwmCompositionChanged(boolean enabled) {
         isDWMCompositionEnabled = enabled;
     }
+
+    @Override
+    public boolean isDisplayLocal() {
+        return true;
+    }
 }

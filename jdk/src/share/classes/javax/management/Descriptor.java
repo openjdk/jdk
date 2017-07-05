@@ -147,6 +147,31 @@ import javax.management.openmbean.OpenType;
  * might be disabled if it cannot currently be emitted but could be in
  * other circumstances.</td>
  *
+ * <tr id="exceptions"><td><i>exceptions</i><td>String[]</td>
+ * <td>MBeanAttributeInfo, MBeanConstructorInfo, MBeanOperationInfo</td>
+ *
+ * <td>The class names of the exceptions that can be thrown when invoking a
+ * constructor or operation, or getting an attribute. Exceptions thrown when
+ * setting an attribute are specified by the field
+ * <a href="#setExceptions">{@code setExceptions}</a>.
+ *
+ * <tr id="exceptionErrorCodes"><td>exceptionErrorCodes</td><td>String[]</td>
+ * <td>MBeanAttributeInfo<br>MBeanConstructorInfo<br>MBeanOperationInfo</td>
+ *
+ * <td>The {@linkplain GenericMBeanException#getErrorCode() error codes}
+ * that can appear in a {@link GenericMBeanException} thrown when getting
+ * this attribute or invoking this operation or constructor.  See also
+ * <a href="#setExceptionErrorCodes">{@code setExceptionErrorCodes}</a>.
+ *
+ * <tr id="exceptionUserDataTypes"><td>exceptionUserDataTypes</td>
+ * <td>{@link javax.management.openmbean.CompositeType}[]</td>
+ * <td>MBeanAttributeInfo<br>MBeanConstructorInfo<br>MBeanOperationInfo</td>
+ *
+ * <td>The types of {@linkplain GenericMBeanException#getUserData() userData}
+ * that can appear in a {@link GenericMBeanException} thrown when getting
+ * this attribute or invoking this operation or constructor.  See also
+ * <a href="#setExceptionUserDataTypes">{@code setExceptionUserDataTypes}</a>.
+ *
  * <tr id="immutableInfo"><td><i>immutableInfo</i><td>String</td>
  * <td>MBeanInfo</td>
  *
@@ -237,6 +262,13 @@ import javax.management.openmbean.OpenType;
  * MXBean, if it was not the {@linkplain MXBeanMappingFactory#DEFAULT default}
  * one.</td>
  *
+ * <tr><td id="objectNameTemplate"><i>objectNameTemplate</i>
+ * </td><td>String</td>
+ * <td>MBeanInfo</td>
+ *
+ * <td>The template to use to name this MBean. Its value must be compliant with
+ * the specification of the {@link ObjectNameTemplate} annotation.</td>
+ *
  * <tr id="openType"><td><i>openType</i><td>{@link OpenType}</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
@@ -269,6 +301,30 @@ import javax.management.openmbean.OpenType;
  * <p>The format of this string is described in the section <a
  * href="MXBean.html#type-names">Type Names</a> of the MXBean
  * specification.</p>
+ *
+ * <tr id="setExceptions"><td><i>setExceptions</i><td>String[]</td>
+ * <td>MBeanAttributeInfo</td>
+ *
+ * <td>The class names of the exceptions that can be thrown when setting
+ * an attribute. Exceptions thrown when getting an attribute are specified
+ * by the field <a href="#exceptions">{@code exceptions}</a>.
+ *
+ * <tr id="setExceptionErrorCodes"><td>setExceptionErrorCodes</td>
+ * <td>String[]</td><td>MBeanAttributeInfo</td>
+ *
+ * <td>The {@linkplain GenericMBeanException#getErrorCode() error codes}
+ * that can appear in a {@link GenericMBeanException} thrown when setting
+ * this attribute.  See also
+ * <a href="#exceptionErrorCodes">{@code exceptionErrorCodes}</a>.
+ *
+ * <tr id="setExceptionUserDataTypes"><td>setExceptionUserDataTypes</td>
+ * <td>{@link javax.management.openmbean.CompositeType}[]</td>
+ * <td>MBeanAttributeInfo</td>
+ *
+ * <td>The types of {@linkplain GenericMBeanException#getUserData() userData}
+ * that can appear in a {@link GenericMBeanException} thrown when setting
+ * this attribute.  See also
+ * <a href="#exceptionUserDataTypes">{@code exceptionUserDataTypes}</a>.
  *
  * <tr><td>severity</td><td>String<br>Integer</td>
  * <td>MBeanNotificationInfo</td>

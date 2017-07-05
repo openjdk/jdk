@@ -387,6 +387,34 @@ public abstract class JMXConnectorServer
     }
 
     /**
+     * Closes a client connection. If the connection is successfully closed,
+     * the method {@link #connectionClosed} is called to notify interested parties.
+     * <P>Not all connector servers support this method. For those that do, it
+     * should be possible to cause a new client connection to fail before it
+     * can be used, by calling this method from within a
+     * {@link javax.management.NotificationListener}
+     * when it receives a {@link JMXConnectionNotification#OPENED} notification.
+     * This allows the owner of a connector server to deny certain connections,
+     * typically based on the information in the connection id.
+     * <P>The implementation of this method in {@code JMXConnectorServer} throws
+     * {@code UnsupportedOperationException}. Subclasses can override this
+     * method to support closing a specified client connection.
+     *
+     * @param connectionId the id of the client connection to be closed.
+     * @throws IllegalStateException if the server is not started or is closed.
+     * @throws IllegalArgumentException if {@code connectionId} is null or is
+     * not the id of any open connection.
+     * @throws java.io.IOException if an I/O error appears when closing the
+     * connection.
+     *
+     * @since 1.7
+     */
+    public void closeConnection(String connectionId)
+            throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * <p>Install {@link MBeanServerForwarder}s in the system chain
      * based on the attributes in the given {@code Map}.  A connector
      * server that {@linkplain #supportsSystemMBeanServerForwarder supports}

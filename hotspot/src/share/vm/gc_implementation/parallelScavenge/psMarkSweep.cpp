@@ -389,7 +389,7 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
   // full GC.
   const size_t alignment = old_gen->virtual_space()->alignment();
   const size_t eden_used = eden_space->used_in_bytes();
-  const size_t promoted = (size_t)(size_policy->avg_promoted()->padded_average());
+  const size_t promoted = (size_t)size_policy->avg_promoted()->padded_average();
   const size_t absorb_size = align_size_up(eden_used + promoted, alignment);
   const size_t eden_capacity = eden_space->capacity_in_bytes();
 
@@ -416,16 +416,14 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
 
   // Fill the unused part of the old gen.
   MutableSpace* const old_space = old_gen->object_space();
-  MemRegion old_gen_unused(old_space->top(), old_space->end());
+  HeapWord* const unused_start = old_space->top();
+  size_t const unused_words = pointer_delta(old_space->end(), unused_start);
 
-  // If the unused part of the old gen cannot be filled, skip
-  // absorbing eden.
-  if (old_gen_unused.word_size() < SharedHeap::min_fill_size()) {
-    return false;
-  }
-
-  if (!old_gen_unused.is_empty()) {
-    SharedHeap::fill_region_with_object(old_gen_unused);
+  if (unused_words > 0) {
+    if (unused_words < CollectedHeap::min_fill_size()) {
+      return false;  // If the old gen cannot be filled, must give up.
+    }
+    CollectedHeap::fill_with_objects(unused_start, unused_words);
   }
 
   // Take the live data from eden and set both top and end in the old gen to
@@ -441,9 +439,8 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
 
   // Update the object start array for the filler object and the data from eden.
   ObjectStartArray* const start_array = old_gen->start_array();
-  HeapWord* const start = old_gen_unused.start();
-  for (HeapWord* addr = start; addr < new_top; addr += oop(addr)->size()) {
-    start_array->allocate_block(addr);
+  for (HeapWord* p = unused_start; p < new_top; p += oop(p)->size()) {
+    start_array->allocate_block(p);
   }
 
   // Could update the promoted average here, but it is not typically updated at
