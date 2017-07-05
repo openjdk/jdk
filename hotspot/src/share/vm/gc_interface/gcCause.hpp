@@ -55,7 +55,7 @@ class GCCause : public AllStatic {
     /* implementation specific */
 
     _tenured_generation_full,
-    _permanent_generation_full,
+    _metadata_GC_threshold,
 
     _cms_generation_full,
     _cms_initial_mark,

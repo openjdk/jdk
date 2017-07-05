@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.VMObject;
 
 // The class for a boolean field simply provides access to the value.
 public class BooleanField extends Field {
@@ -41,6 +42,7 @@ public class BooleanField extends Field {
   }
 
   public boolean getValue(Oop obj) { return obj.getHandle().getJBooleanAt(getOffset()); }
+  public boolean getValue(VMObject obj) { return obj.getAddress().getJBooleanAt(getOffset()); }
   public void setValue(Oop obj, boolean value) throws MutationException {
     // Fix this: setJBooleanAt is missing in Address
   }

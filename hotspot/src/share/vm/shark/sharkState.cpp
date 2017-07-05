@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,7 @@ void SharkState::merge(SharkState* other,
   Value *this_method = this->method();
   Value *other_method = other->method();
   if (this_method != other_method) {
-    PHINode *phi = builder()->CreatePHI(SharkType::methodOop_type(), "method");
+    PHINode *phi = builder()->CreatePHI(SharkType::Method*_type(), "method");
     phi->addIncoming(this_method, this_block);
     phi->addIncoming(other_method, other_block);
     set_method(phi);
@@ -287,7 +287,7 @@ SharkPHIState::SharkPHIState(SharkTopLevelBlock* block)
   char name[18];
 
   // Method
-  set_method(builder()->CreatePHI(SharkType::methodOop_type(), "method"));
+  set_method(builder()->CreatePHI(SharkType::Method*_type(), "method"));
 
   // Local variables
   for (int i = 0; i < max_locals(); i++) {

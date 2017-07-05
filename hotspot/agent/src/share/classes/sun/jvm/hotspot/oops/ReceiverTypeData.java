@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ public class ReceiverTypeData extends CounterData {
   // would fail.  The 'normal' version should be used whenever possible.
   Klass receiverUnchecked(int row) {
     //assert(row < rowLimit(), "oob");
-    Oop recv = oopAt(receiverCellIndex(row));
-    return (Klass)recv;
+    Address recv = addressAt(receiverCellIndex(row));
+    return (Klass)Metadata.instantiateWrapperFor(recv);
   }
 
   public Klass receiver(int row) {

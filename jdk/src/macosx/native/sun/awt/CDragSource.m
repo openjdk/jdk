@@ -460,7 +460,7 @@ static BOOL                sNeedsEnter;
     }
 
     // Convert fModifiers (extModifiers) to NS:
-    NSUInteger modifiers = [DnDUtilities mapJavaExtModifiersToNSKeyModifiers:fModifiers];
+    NSUInteger modifiers = JavaModifiersToNsKeyModifiers(fModifiers, TRUE); 
 
     // Just a dummy value ...
     NSInteger eventNumber = 0;
@@ -658,7 +658,7 @@ JNF_COCOA_ENTER(env);
     }
 
     // b) drag actions (key modifiers) have changed:
-    jint modifiers = [DnDUtilities currentJavaExtKeyModifiers];
+    jint modifiers = NsKeyModifiersToJavaModifiers([NSEvent modifierFlags], YES);
     if (fDragKeyModifiers != modifiers) {
         NSDragOperation currentOp = [DnDUtilities nsDragOperationForModifiers:[NSEvent modifierFlags]];
         NSDragOperation allowedOp = [DnDUtilities mapJavaDragOperationToNS:fSourceActions] & currentOp;

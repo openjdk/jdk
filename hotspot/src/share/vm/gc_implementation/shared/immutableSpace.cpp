@@ -40,7 +40,7 @@ void ImmutableSpace::initialize(MemRegion mr) {
   _end = end;
 }
 
-void ImmutableSpace::oop_iterate(OopClosure* cl) {
+void ImmutableSpace::oop_iterate(ExtendedOopClosure* cl) {
   HeapWord* obj_addr = bottom();
   HeapWord* t = end();
   // Could call objects iterate, but this is easier.

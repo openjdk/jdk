@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 #ifndef SHARE_VM_CI_CITYPE_HPP
 #define SHARE_VM_CI_CITYPE_HPP
 
-#include "ci/ciObject.hpp"
-#include "oops/klassOop.hpp"
+#include "ci/ciMetadata.hpp"
 
 // ciType
 //
 // This class represents either a class (T_OBJECT), array (T_ARRAY),
 // or one of the primitive types such as T_INT.
-class ciType : public ciObject {
+class ciType : public ciMetadata {
   CI_PACKAGE_ACCESS
   friend class ciKlass;
   friend class ciReturnAddress;
@@ -40,9 +39,8 @@ class ciType : public ciObject {
 private:
   BasicType _basic_type;
 
-  ciType(BasicType t);     // for the primitive types only
+  ciType(BasicType t);     // for primitive and unloaded types
   ciType(KlassHandle k);   // for subclasses (reference types)
-  ciType(ciKlass* klass);  // for unloaded types
 
   const char* type_string() { return "ciType"; }
 
@@ -76,7 +74,7 @@ public:
   bool is_two_word() const                  { return size() == 2; }
 
   // What kind of ciObject is this?
-  bool is_type()                            { return true; }
+  bool is_type() const                      { return true; }
   bool is_classless() const                 { return is_primitive_type(); }
 
   virtual void print_name_on(outputStream* st);
@@ -106,7 +104,7 @@ private:
   void print_impl(outputStream* st);
 
 public:
-  bool is_return_address()  { return true; }
+  bool is_return_address() const { return true; }
 
   int  bci() { return _bci; }
 

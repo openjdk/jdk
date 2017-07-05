@@ -101,9 +101,7 @@ class BasicChecker extends PKIXCertPathChecker {
     public void init(boolean forward) throws CertPathValidatorException {
         if (!forward) {
             prevPubKey = trustedPubKey;
-            if (prevPubKey instanceof DSAPublicKey &&
-                ((DSAPublicKey)prevPubKey).getParams() == null)
-            {
+            if (PKIX.isDSAPublicKeyWithoutParams(prevPubKey)) {
                 // If TrustAnchor is a DSA public key and it has no params, it
                 // cannot be used to verify the signature of the first cert,
                 // so throw exception
@@ -248,8 +246,7 @@ class BasicChecker extends PKIXCertPathChecker {
                 currCert.getSubjectX500Principal() + "; serial#: " +
                 currCert.getSerialNumber().toString());
         }
-        if (cKey instanceof DSAPublicKey &&
-            ((DSAPublicKey)cKey).getParams() == null) {
+        if (PKIX.isDSAPublicKeyWithoutParams(cKey)) {
             // cKey needs to inherit DSA parameters from prev key
             cKey = makeInheritedParamsKey(cKey, prevPubKey);
             if (debug != null) debug.println("BasicChecker.updateState Made " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_sparc.hpp"
-#include "oops/compiledICHolderOop.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_sparc.hpp"
@@ -39,7 +39,7 @@
 
 // Implementation of StubAssembler
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry_point, int number_of_arguments) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry_point, int number_of_arguments) {
   // for sparc changing the number of arguments doesn't change
   // anything about the frame size so we'll always lie and claim that
   // we are only passing 1 argument.
@@ -100,8 +100,9 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     st_ptr(G0, vm_result_addr);
   }
 
-  if (oop_result2->is_valid()) {
-    get_vm_result_2(oop_result2);
+  // get second result if there is one and reset the value in the thread
+  if (metadata_result->is_valid()) {
+    get_vm_result_2  (metadata_result);
   } else {
     // be a little paranoid and clear the result
     Address vm_result_addr_2(G2_thread, JavaThread::vm_result_2_offset());
@@ -112,27 +113,27 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1) {
   // O0 is reserved for the thread
   mov(arg1, O1);
-  return call_RT(oop_result1, oop_result2, entry, 1);
+  return call_RT(oop_result1, metadata_result, entry, 1);
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2) {
   // O0 is reserved for the thread
   mov(arg1, O1);
   mov(arg2, O2); assert(arg2 != O1, "smashed argument");
-  return call_RT(oop_result1, oop_result2, entry, 2);
+  return call_RT(oop_result1, metadata_result, entry, 2);
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2, Register arg3) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3) {
   // O0 is reserved for the thread
   mov(arg1, O1);
   mov(arg2, O2); assert(arg2 != O1,               "smashed argument");
   mov(arg3, O3); assert(arg3 != O1 && arg3 != O2, "smashed argument");
-  return call_RT(oop_result1, oop_result2, entry, 3);
+  return call_RT(oop_result1, metadata_result, entry, 3);
 }
 
 
@@ -398,8 +399,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ ldub(G5_klass, in_bytes(instanceKlass::init_state_offset()), G3_t1);
-            __ cmp_and_br_short(G3_t1, instanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
+            __ ldub(G5_klass, in_bytes(InstanceKlass::init_state_offset()), G3_t1);
+            __ cmp_and_br_short(G3_t1, InstanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
           }
 #ifdef ASSERT
           // assert object can be fast path allocated
@@ -793,6 +794,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case load_klass_patching_id:
       { __ set_info("load_klass_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
+      }
+      break;
+
+    case load_mirror_patching_id:
+      { __ set_info("load_mirror_patching", dont_gc_arguments);
+        oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_mirror_patching));
       }
       break;
 

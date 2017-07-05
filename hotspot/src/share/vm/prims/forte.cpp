@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class vframeStreamForte : public vframeStreamCommon {
 static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm);
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
                                               frame* fr,
-                                              methodOop* method_p,
+                                              Method** method_p,
                                               int* bci_p);
 
 
@@ -178,12 +178,12 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmetho
 
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
                                               frame* fr,
-                                              methodOop* method_p,
+                                              Method** method_p,
                                               int* bci_p) {
   assert(fr->is_interpreted_frame(), "just checking");
 
   // top frame is an interpreted frame
-  // check if it is walkable (i.e. valid methodOop and valid bci)
+  // check if it is walkable (i.e. valid Method* and valid bci)
 
   // Because we may be racing a gc thread the method and/or bci
   // of a valid interpreter frame may look bad causing us to
@@ -199,14 +199,14 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
   if (known_valid || fr->is_interpreted_frame_valid(thread)) {
 
     // The frame code should completely validate the frame so that
-    // references to methodOop and bci are completely safe to access
+    // references to Method* and bci are completely safe to access
     // If they aren't the frame code should be fixed not this
     // code. However since gc isn't locked out the values could be
     // stale. This is a race we can never completely win since we can't
     // lock out gc so do one last check after retrieving their values
     // from the frame for additional safety
 
-    methodOop method = fr->interpreter_frame_method();
+    Method* method = fr->interpreter_frame_method();
 
     // We've at least found a method.
     // NOTE: there is something to be said for the approach that
@@ -250,13 +250,13 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 static bool find_initial_Java_frame(JavaThread* thread,
                                     frame* fr,
                                     frame* initial_frame_p,
-                                    methodOop* method_p,
+                                    Method** method_p,
                                     int* bci_p) {
 
   // It is possible that for a frame containing an nmethod
   // we can capture the method but no bci. If we get no
   // bci the frame isn't walkable but the method is usable.
-  // Therefore we init the returned methodOop to NULL so the
+  // Therefore we init the returned Method* to NULL so the
   // caller can make the distinction.
 
   *method_p = NULL;
@@ -384,7 +384,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   NoHandleMark nhm;
 
   frame initial_Java_frame;
-  methodOop method;
+  Method* method;
   int bci;
   int count;
 
@@ -402,9 +402,9 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 
   // The method is not stored GC safe so see if GC became active
   // after we entered AsyncGetCallTrace() and before we try to
-  // use the methodOop.
+  // use the Method*.
   // Yes, there is still a window after this check and before
-  // we use methodOop below, but we can't lock out GC so that
+  // we use Method* below, but we can't lock out GC so that
   // has to be an acceptable risk.
   if (!ch->is_valid_method(method)) {
     trace->num_frames = ticks_GC_active; // -2
@@ -442,9 +442,9 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 
     // The method is not stored GC safe so see if GC became active
     // after we entered AsyncGetCallTrace() and before we try to
-    // use the methodOop.
+    // use the Method*.
     // Yes, there is still a window after this check and before
-    // we use methodOop below, but we can't lock out GC so that
+    // we use Method* below, but we can't lock out GC so that
     // has to be an acceptable risk.
     if (!ch->is_valid_method(method)) {
       // we throw away everything we've gathered in this sample since

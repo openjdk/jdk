@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // ciTypeArrayKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
+// This class represents a Klass* in the HotSpot virtual machine
 // whose Klass part in a TypeArrayKlass.
 class ciTypeArrayKlass : public ciArrayKlass {
   CI_PACKAGE_ACCESS
@@ -53,7 +53,7 @@ public:
   }
 
   // What kind of ciObject is this?
-  bool is_type_array_klass() { return true; }
+  bool is_type_array_klass() const { return true; }
 
   // Make an array klass corresponding to the specified primitive type.
   static ciTypeArrayKlass* make(BasicType type);

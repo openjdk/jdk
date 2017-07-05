@@ -212,13 +212,13 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
     new_obj = o->forwardee();
   }
 
-#ifdef DEBUG
+#ifndef PRODUCT
   // This code must come after the CAS test, or it will print incorrect
   // information.
   if (TraceScavenge) {
-    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (" SIZE_FORMAT ")}",
+    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        PSScavenge::should_scavenge(&new_obj) ? "copying" : "tenuring",
-       new_obj->blueprint()->internal_name(), o, new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), o, new_obj, new_obj->size());
   }
 #endif
 

@@ -298,13 +298,12 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this);
 }
 
-void CardTableRS::clear_into_younger(Generation* gen, bool clear_perm) {
+void CardTableRS::clear_into_younger(Generation* gen) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   // Generations younger than gen have been evacuated. We can clear
   // card table entries for gen (we know that it has no pointers
   // to younger gens) and for those below. The card tables for
-  // the youngest gen need never be cleared, and those for perm gen
-  // will be cleared based on the parameter clear_perm.
+  // the youngest gen need never be cleared.
   // There's a bit of subtlety in the clear() and invalidate()
   // methods that we exploit here and in invalidate_or_clear()
   // below to avoid missing cards at the fringes. If clear() or
@@ -317,17 +316,11 @@ void CardTableRS::clear_into_younger(Generation* gen, bool clear_perm) {
     MemRegion to_be_cleared_mr = g->prev_used_region();
     clear(to_be_cleared_mr);
   }
-  // Clear perm gen cards if asked to do so.
-  if (clear_perm) {
-    MemRegion to_be_cleared_mr = gch->perm_gen()->prev_used_region();
-    clear(to_be_cleared_mr);
-  }
 }
 
-void CardTableRS::invalidate_or_clear(Generation* gen, bool younger,
-                                      bool perm) {
+void CardTableRS::invalidate_or_clear(Generation* gen, bool younger) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  // For each generation gen (and younger and/or perm)
+  // For each generation gen (and younger)
   // invalidate the cards for the currently occupied part
   // of that generation and clear the cards for the
   // unoccupied part of the generation (if any, making use
@@ -344,16 +337,6 @@ void CardTableRS::invalidate_or_clear(Generation* gen, bool younger,
     }
     invalidate(used_mr);
     if (!younger) break;
-  }
-  // Clear perm gen cards if asked to do so.
-  if (perm) {
-    g = gch->perm_gen();
-    MemRegion used_mr = g->used_region();
-    MemRegion to_be_cleared_mr = g->prev_used_region().minus(used_mr);
-    if (!to_be_cleared_mr.is_empty()) {
-      clear(to_be_cleared_mr);
-    }
-    invalidate(used_mr);
   }
 }
 
@@ -456,7 +439,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
         VerifyCleanCardClosure verify_blk(gen_boundary, begin, end);
         for (HeapWord* cur = start_block; cur < end; cur += s->block_size(cur)) {
           if (s->block_is_obj(cur) && s->obj_is_alive(cur)) {
-            oop(cur)->oop_iterate(&verify_blk, mr);
+            oop(cur)->oop_iterate_no_header(&verify_blk, mr);
           }
         }
       }
@@ -624,25 +607,12 @@ void CardTableRS::verify() {
   // generational heaps.
   VerifyCTGenClosure blk(this);
   CollectedHeap* ch = Universe::heap();
-  // We will do the perm-gen portion of the card table, too.
-  Generation* pg = SharedHeap::heap()->perm_gen();
-  HeapWord* pg_boundary = pg->reserved().start();
 
   if (ch->kind() == CollectedHeap::GenCollectedHeap) {
     GenCollectedHeap::heap()->generation_iterate(&blk, false);
     _ct_bs->verify();
-
-    // If the old gen collections also collect perm, then we are only
-    // interested in perm-to-young pointers, not perm-to-old pointers.
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    CollectorPolicy* cp = gch->collector_policy();
-    if (cp->is_mark_sweep_policy() || cp->is_concurrent_mark_sweep_policy()) {
-      pg_boundary = gch->get_gen(1)->reserved().start();
     }
   }
-  VerifyCTSpaceClosure perm_space_blk(this, pg_boundary);
-  SharedHeap::heap()->perm_gen()->space_iterate(&perm_space_blk, true);
-}
 
 
 void CardTableRS::verify_aligned_region_empty(MemRegion mr) {

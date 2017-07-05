@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     assert(is_op2(*(unsigned int *)pc, Assembler::sethi_op2), "must be sethi");
     intptr_t hi = (intptr_t)gethi( (unsigned int *)pc );
     intptr_t lo = (intptr_t)get_simm13(arith_insn);
-    assert((unsigned)lo < (1 << 10), "offset field of set_oop must be 10 bits");
+    assert((unsigned)lo < (1 << 10), "offset field of set_metadata must be 10 bits");
     return hi | lo;
   }
 
@@ -261,7 +261,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     assert(is_op2(sethi_insn, Assembler::sethi_op2), "must be sethi");
     int hi = Assembler::inv_hi22(sethi_insn);
     int lo = get_simm13(arith_insn);
-    assert((unsigned)lo < (1 << 10), "offset field of set_oop must be 10 bits");
+    assert((unsigned)lo < (1 << 10), "offset field of set_metadata must be 10 bits");
     return hi | lo;
   }
 
@@ -508,9 +508,9 @@ class NativeFarCall: public NativeInstruction {
 
 #endif // _LP64
 
-// An interface for accessing/manipulating native set_oop imm, reg instructions.
+// An interface for accessing/manipulating native set_metadata imm, reg instructions.
 // (used to manipulate inlined data references, etc.)
-//      set_oop imm, reg
+//      set_metadata imm, reg
 //      == sethi %hi22(imm), reg ;  add reg, %lo10(imm), reg
 class NativeMovConstReg;
 inline NativeMovConstReg* nativeMovConstReg_at(address address);
@@ -564,9 +564,9 @@ class NativeMovConstReg: public NativeInstruction {
 };
 
 
-// An interface for accessing/manipulating native set_oop imm, reg instructions.
+// An interface for accessing/manipulating native set_metadata imm, reg instructions.
 // (used to manipulate inlined data references, etc.)
-//      set_oop imm, reg
+//      set_metadata imm, reg
 //      == sethi %hi22(imm), reg; nop; add reg, %lo10(imm), reg
 //
 // Note that it is identical to NativeMovConstReg with the exception of a nop between the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,27 +54,6 @@ void VM_ParallelGCFailedAllocation::doit() {
   }
 }
 
-VM_ParallelGCFailedPermanentAllocation::VM_ParallelGCFailedPermanentAllocation(size_t size,
-  unsigned int gc_count, unsigned int full_gc_count) :
-  VM_GC_Operation(gc_count, GCCause::_allocation_failure, full_gc_count, true /* full */),
-  _size(size),
-  _result(NULL)
-{
-}
-
-void VM_ParallelGCFailedPermanentAllocation::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::FULL);
-
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
-
-  GCCauseSetter gccs(heap, _gc_cause);
-  _result = heap->failed_permanent_mem_allocate(_size);
-  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
-}
-
 // Only used for System.gc() calls
 VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(unsigned int gc_count,
                                              unsigned int full_gc_count,
@@ -96,6 +75,6 @@ void VM_ParallelGCSystemGC::doit() {
     // If (and only if) the scavenge fails, this will invoke a full gc.
     heap->invoke_scavenge();
   } else {
-    heap->invoke_full_gc(false);
+    heap->do_full_collection(false);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,9 @@ public class Dictionary extends TwoOopHashtable {
     for (int index = 0; index < tblSize; index++) {
       for (DictionaryEntry probe = (DictionaryEntry) bucket(index); probe != null;
                                              probe = (DictionaryEntry) probe.next()) {
-        Oop k = probe.klass();
-        if (k.isKlass() &&
-            heap.equal(probe.loader(), ((InstanceKlass) k).getClassLoader())) {
-          v.visit((Klass) k);
+        Klass k = probe.klass();
+        if (heap.equal(probe.loader(), ((InstanceKlass) k).getClassLoader())) {
+            v.visit(k);
         }
       }
     }
@@ -78,10 +77,8 @@ public class Dictionary extends TwoOopHashtable {
     for (int index = 0; index < tblSize; index++) {
       for (DictionaryEntry probe = (DictionaryEntry) bucket(index); probe != null;
                                              probe = (DictionaryEntry) probe.next()) {
-        Oop k = probe.klass();
-        if (k.isKlass()) {
-          v.visit((Klass) k, probe.loader());
-        }
+        Klass k = probe.klass();
+        v.visit(k, probe.loader());
       }
     }
   }

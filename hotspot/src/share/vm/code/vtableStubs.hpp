@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ class VtableStubs : AllStatic {
   static inline uint hash              (bool is_vtable_stub, int vtable_index);
 
  public:
-  static address     create_stub(bool is_vtable_stub, int vtable_index, methodOop method); // return the entry point of a stub for this call
+  static address     create_stub(bool is_vtable_stub, int vtable_index, Method* method); // return the entry point of a stub for this call
   static bool        is_entry_point(address pc);                     // is pc a vtable stub entry point?
   static bool        contains(address pc);                           // is pc within any stub?
   static VtableStub* stub_containing(address pc);                    // stub containing pc or NULL

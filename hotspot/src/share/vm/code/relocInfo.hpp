@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "memory/allocation.hpp"
 #include "utilities/top.hpp"
 
+class NativeMovConstReg;
+
 // Types in this file:
 //    relocInfo
 //      One element of an array of halfwords encoding compressed relocations.
@@ -35,8 +37,11 @@
 //    Relocation
 //      A flyweight object representing a single relocation.
 //      It is fully unpacked from the compressed relocation array.
+//    metadata_Relocation, ... (subclasses of Relocation)
+//      The location of some type-specific operations (metadata_addr, ...).
+//      Also, the source of relocation specs (metadata_Relocation::spec, ...).
 //    oop_Relocation, ... (subclasses of Relocation)
-//      The location of some type-specific operations (oop_addr, ...).
+//      oops in the code stream (strings, class loaders)
 //      Also, the source of relocation specs (oop_Relocation::spec, ...).
 //    RelocationHolder
 //      A ValueObj type which acts as a union holding a Relocation object.
@@ -118,7 +123,7 @@
 //   (This means that any relocInfo can be disabled by setting
 //   its type to none.  See relocInfo::remove.)
 //
-// relocInfo::oop_type -- a reference to an oop
+// relocInfo::oop_type, relocInfo::metadata_type -- a reference to an oop or meta data
 //   Value:  an oop, or else the address (handle) of an oop
 //   Instruction types: memory (load), set (load address)
 //   Data:  []       an oop stored in 4 bytes of instruction
@@ -267,7 +272,7 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
     poll_type               = 10, // polling instruction for safepoints
     poll_return_type        = 11, // polling instruction for safepoints at return
     breakpoint_type         = 12, // an initialization barrier or safepoint
-    yet_unused_type         = 13, // Still unused
+    metadata_type           = 13, // metadata that used to be oops
     yet_unused_type_2       = 14, // Still unused
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     type_mask               = 15  // A mask which selects only the above values
@@ -297,6 +302,7 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
 
   #define APPLY_TO_RELOCATIONS(visitor) \
     visitor(oop) \
+    visitor(metadata) \
     visitor(virtual_call) \
     visitor(opt_virtual_call) \
     visitor(static_call) \
@@ -972,35 +978,94 @@ class oop_Relocation : public DataRelocation {
   // Note:  oop_value transparently converts Universe::non_oop_word to NULL.
 };
 
+
+// copy of oop_Relocation for now but may delete stuff in both/either
+class metadata_Relocation : public DataRelocation {
+  relocInfo::relocType type() { return relocInfo::metadata_type; }
+
+ public:
+  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
+  // an metadata in the CodeBlob's metadata pool
+  static RelocationHolder spec(int metadata_index, int offset = 0) {
+    assert(metadata_index > 0, "must be a pool-resident metadata");
+    RelocationHolder rh = newHolder();
+    new(rh) metadata_Relocation(metadata_index, offset);
+    return rh;
+  }
+  // an metadata in the instruction stream
+  static RelocationHolder spec_for_immediate() {
+    const int metadata_index = 0;
+    const int offset    = 0;    // if you want an offset, use the metadata pool
+    RelocationHolder rh = newHolder();
+    new(rh) metadata_Relocation(metadata_index, offset);
+    return rh;
+  }
+
+ private:
+  jint _metadata_index;            // if > 0, index into nmethod::metadata_at
+  jint _offset;                     // byte offset to apply to the metadata itself
+
+  metadata_Relocation(int metadata_index, int offset) {
+    _metadata_index = metadata_index; _offset = offset;
+  }
+
+  friend class RelocIterator;
+  metadata_Relocation() { }
+
+  // Fixes a Metadata pointer in the code. Most platforms embeds the
+  // Metadata pointer in the code at compile time so this is empty
+  // for them.
+  void pd_fix_value(address x);
+
+ public:
+  int metadata_index() { return _metadata_index; }
+  int offset()    { return _offset; }
+
+  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  void pack_data_to(CodeSection* dest);
+  void unpack_data();
+
+  void fix_metadata_relocation();        // reasserts metadata value
+
+  void verify_metadata_relocation();
+
+  address value()  { return (address) *metadata_addr(); }
+
+  bool metadata_is_immediate()  { return metadata_index() == 0; }
+
+  Metadata**   metadata_addr();                  // addr or &pool[jint_data]
+  Metadata*    metadata_value();                 // *metadata_addr
+  // Note:  metadata_value transparently converts Universe::non_metadata_word to NULL.
+};
+
+
 class virtual_call_Relocation : public CallRelocation {
   relocInfo::relocType type() { return relocInfo::virtual_call_type; }
 
  public:
-  // "first_oop" points to the first associated set-oop.
+  // "cached_value" points to the first associated set-oop.
   // The oop_limit helps find the last associated set-oop.
   // (See comments at the top of this file.)
-  static RelocationHolder spec(address first_oop, address oop_limit = NULL) {
+  static RelocationHolder spec(address cached_value) {
     RelocationHolder rh = newHolder();
-    new(rh) virtual_call_Relocation(first_oop, oop_limit);
+    new(rh) virtual_call_Relocation(cached_value);
     return rh;
   }
 
-  virtual_call_Relocation(address first_oop, address oop_limit) {
-    _first_oop = first_oop; _oop_limit = oop_limit;
-    assert(first_oop != NULL, "first oop address must be specified");
+  virtual_call_Relocation(address cached_value) {
+    _cached_value = cached_value;
+    assert(cached_value != NULL, "first oop address must be specified");
   }
 
  private:
-  address _first_oop;               // location of first set-oop instruction
-  address _oop_limit;               // search limit for set-oop instructions
+  address _cached_value;               // location of set-value instruction
 
   friend class RelocIterator;
   virtual_call_Relocation() { }
 
 
  public:
-  address first_oop();
-  address oop_limit();
+  address cached_value();
 
   // data is packed as scaled offsets in "2_ints" format:  [f l] or [Ff Ll]
   // oop_limit is set to 0 if the limit falls somewhere within the call.
@@ -1010,15 +1075,6 @@ class virtual_call_Relocation : public CallRelocation {
   void unpack_data();
 
   void clear_inline_cache();
-
-  // Figure out where an ic_call is hiding, given a set-oop or call.
-  // Either ic_call or first_oop must be non-null; the other is deduced.
-  // Code if non-NULL must be the nmethod, else it is deduced.
-  // The address of the patchable oop is also deduced.
-  // The returned iterator will enumerate over the oops and the ic_call,
-  // as well as any other relocations that happen to be in that span of code.
-  // Recognize relevant set_oops with:  oop_reloc()->oop_addr() == oop_addr.
-  static RelocIterator parse_ic(nmethod* &nm, address &ic_call, address &first_oop, oop* &oop_addr, bool *is_optimized);
 };
 
 

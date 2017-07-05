@@ -136,7 +136,7 @@ class JvmtiExport : public AllStatic {
     JVMDI_VERSION_VALUE  = 0x20000000
   };
 
-  static void post_field_modification(JavaThread *thread, methodOop method, address location,
+  static void post_field_modification(JavaThread *thread, Method* method, address location,
                                       KlassHandle field_klass, Handle object, jfieldID field,
                                       char sig_type, jvalue *value);
 
@@ -236,7 +236,7 @@ class JvmtiExport : public AllStatic {
                                     int * micro);
 
   // single stepping management methods
-  static void at_single_stepping_point(JavaThread *thread, methodOop method, address location) KERNEL_RETURN;
+  static void at_single_stepping_point(JavaThread *thread, Method* method, address location) KERNEL_RETURN;
   static void expose_single_stepping(JavaThread *thread) KERNEL_RETURN;
   static bool hide_single_stepping(JavaThread *thread) KERNEL_RETURN_(false);
 
@@ -245,41 +245,41 @@ class JvmtiExport : public AllStatic {
   static void post_vm_initialized        ();
   static void post_vm_death              ();
 
-  static void post_single_step           (JavaThread *thread, methodOop method, address location) KERNEL_RETURN;
-  static void post_raw_breakpoint        (JavaThread *thread, methodOop method, address location) KERNEL_RETURN;
+  static void post_single_step           (JavaThread *thread, Method* method, address location) KERNEL_RETURN;
+  static void post_raw_breakpoint        (JavaThread *thread, Method* method, address location) KERNEL_RETURN;
 
-  static void post_exception_throw       (JavaThread *thread, methodOop method, address location, oop exception) KERNEL_RETURN;
-  static void notice_unwind_due_to_exception (JavaThread *thread, methodOop method, address location, oop exception, bool in_handler_frame) KERNEL_RETURN;
+  static void post_exception_throw       (JavaThread *thread, Method* method, address location, oop exception) KERNEL_RETURN;
+  static void notice_unwind_due_to_exception (JavaThread *thread, Method* method, address location, oop exception, bool in_handler_frame) KERNEL_RETURN;
 
   static oop jni_GetField_probe          (JavaThread *thread, jobject jobj,
-    oop obj, klassOop klass, jfieldID fieldID, bool is_static)
+    oop obj, Klass* klass, jfieldID fieldID, bool is_static)
     KERNEL_RETURN_(NULL);
   static oop jni_GetField_probe_nh       (JavaThread *thread, jobject jobj,
-    oop obj, klassOop klass, jfieldID fieldID, bool is_static)
+    oop obj, Klass* klass, jfieldID fieldID, bool is_static)
     KERNEL_RETURN_(NULL);
   static void post_field_access_by_jni   (JavaThread *thread, oop obj,
-    klassOop klass, jfieldID fieldID, bool is_static) KERNEL_RETURN;
-  static void post_field_access          (JavaThread *thread, methodOop method,
+    Klass* klass, jfieldID fieldID, bool is_static) KERNEL_RETURN;
+  static void post_field_access          (JavaThread *thread, Method* method,
     address location, KlassHandle field_klass, Handle object, jfieldID field) KERNEL_RETURN;
   static oop jni_SetField_probe          (JavaThread *thread, jobject jobj,
-    oop obj, klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
+    oop obj, Klass* klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value) KERNEL_RETURN_(NULL);
   static oop jni_SetField_probe_nh       (JavaThread *thread, jobject jobj,
-    oop obj, klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
+    oop obj, Klass* klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value) KERNEL_RETURN_(NULL);
   static void post_field_modification_by_jni(JavaThread *thread, oop obj,
-    klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
+    Klass* klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value);
-  static void post_raw_field_modification(JavaThread *thread, methodOop method,
+  static void post_raw_field_modification(JavaThread *thread, Method* method,
     address location, KlassHandle field_klass, Handle object, jfieldID field,
     char sig_type, jvalue *value) KERNEL_RETURN;
 
-  static void post_method_entry          (JavaThread *thread, methodOop method, frame current_frame) KERNEL_RETURN;
-  static void post_method_exit           (JavaThread *thread, methodOop method, frame current_frame) KERNEL_RETURN;
+  static void post_method_entry          (JavaThread *thread, Method* method, frame current_frame) KERNEL_RETURN;
+  static void post_method_exit           (JavaThread *thread, Method* method, frame current_frame) KERNEL_RETURN;
 
-  static void post_class_load            (JavaThread *thread, klassOop klass) KERNEL_RETURN;
-  static void post_class_unload          (klassOop klass) KERNEL_RETURN;
-  static void post_class_prepare         (JavaThread *thread, klassOop klass) KERNEL_RETURN;
+  static void post_class_load            (JavaThread *thread, Klass* klass) KERNEL_RETURN;
+  static void post_class_unload          (Klass* klass) KERNEL_RETURN;
+  static void post_class_prepare         (JavaThread *thread, Klass* klass) KERNEL_RETURN;
 
   static void post_thread_start          (JavaThread *thread) KERNEL_RETURN;
   static void post_thread_end            (JavaThread *thread) KERNEL_RETURN;
@@ -293,7 +293,7 @@ class JvmtiExport : public AllStatic {
                                         unsigned char **data_ptr, unsigned char **end_ptr,
                                         unsigned char **cached_data_ptr,
                                         jint *cached_length_ptr);
-  static void post_native_method_bind(methodOop method, address* function_ptr) KERNEL_RETURN;
+  static void post_native_method_bind(Method* method, address* function_ptr) KERNEL_RETURN;
   static void post_compiled_method_load(nmethod *nm) KERNEL_RETURN;
   static void post_dynamic_code_generated(const char *name, const void *code_begin, const void *code_end) KERNEL_RETURN;
 

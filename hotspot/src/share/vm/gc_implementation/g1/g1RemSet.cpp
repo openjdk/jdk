@@ -380,7 +380,10 @@ public:
     assert(r != NULL, "unexpected null");
 
     // Scan oops in the card looking for references into the collection set
-    HeapWord* end   = _ct_bs->addr_for(card_ptr + 1);
+    // Don't use addr_for(card_ptr + 1) which can ask for
+    // a card beyond the heap.  This is not safe without a perm
+    // gen.
+    HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
     MemRegion scanRegion(start, end);
 
     UpdateRSetImmediate update_rs_cl(_g1->g1_rem_set());
@@ -530,7 +533,10 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   HeapRegion* r = _g1->heap_region_containing(start);
   assert(r != NULL, "unexpected null");
 
-  HeapWord* end   = _ct_bs->addr_for(card_ptr + 1);
+  // Don't use addr_for(card_ptr + 1) which can ask for
+  // a card beyond the heap.  This is not safe without a perm
+  // gen at the upper end of the heap.
+  HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
   MemRegion dirtyRegion(start, end);
 
 #if CARD_REPEAT_HISTO
@@ -622,7 +628,6 @@ bool G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
   if (r == NULL) {
-    guarantee(_g1->is_in_permanent(start), "Or else where?");
     // Again no need to return that this card contains refs that
     // point into the collection set.
     return false;  // Not in the G1 heap (might be in perm, for example.)
@@ -706,9 +711,7 @@ bool G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
     if (res != NULL && (res != card_ptr || defer)) {
       start = _ct_bs->addr_for(res);
       r = _g1->heap_region_containing(start);
-      if (r == NULL) {
-        assert(_g1->is_in_permanent(start), "Or else where?");
-      } else {
+      if (r != NULL) {
         // Checking whether the region we got back from the cache
         // is young here is inappropriate. The region could have been
         // freed, reallocated and tagged as young while in the cache.

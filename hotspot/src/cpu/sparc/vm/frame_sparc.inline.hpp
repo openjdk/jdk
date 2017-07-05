@@ -138,7 +138,7 @@ inline int frame::interpreter_frame_monitor_size() {
   return round_to(BasicObjectLock::size(), WordsPerLong);
 }
 
-inline methodOop* frame::interpreter_frame_method_addr() const {
+inline Method** frame::interpreter_frame_method_addr() const {
   interpreterState istate = get_interpreterState();
   return &istate->_method;
 }
@@ -147,12 +147,12 @@ inline methodOop* frame::interpreter_frame_method_addr() const {
 // Constant pool cache
 
 // where LcpoolCache is saved:
-inline constantPoolCacheOop* frame::interpreter_frame_cpoolcache_addr() const {
+inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
   interpreterState istate = get_interpreterState();
   return &istate->_constants; // should really use accessor
   }
 
-inline constantPoolCacheOop* frame::interpreter_frame_cache_addr() const {
+inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
   interpreterState istate = get_interpreterState();
   return &istate->_constants;
 }
@@ -213,20 +213,20 @@ inline int frame::interpreter_frame_monitor_size() {
   return round_to(BasicObjectLock::size(), WordsPerLong);
 }
 
-inline methodOop* frame::interpreter_frame_method_addr() const {
-  return (methodOop*)sp_addr_at( Lmethod->sp_offset_in_saved_window());
+inline Method** frame::interpreter_frame_method_addr() const {
+  return (Method**)sp_addr_at( Lmethod->sp_offset_in_saved_window());
 }
 
 
 // Constant pool cache
 
 // where LcpoolCache is saved:
-inline constantPoolCacheOop* frame::interpreter_frame_cpoolcache_addr() const {
-    return (constantPoolCacheOop*)sp_addr_at(LcpoolCache->sp_offset_in_saved_window());
+inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
+    return (ConstantPoolCache**)sp_addr_at(LcpoolCache->sp_offset_in_saved_window());
   }
 
-inline constantPoolCacheOop* frame::interpreter_frame_cache_addr() const {
-  return (constantPoolCacheOop*)sp_addr_at( LcpoolCache->sp_offset_in_saved_window());
+inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
+  return (ConstantPoolCache**)sp_addr_at( LcpoolCache->sp_offset_in_saved_window());
 }
 #endif // CC_INTERP
 

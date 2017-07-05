@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -59,16 +59,17 @@ DEF_STUB_INTERFACE(ICStub);
 StubQueue* InlineCacheBuffer::_buffer    = NULL;
 ICStub*    InlineCacheBuffer::_next_stub = NULL;
 
+CompiledICHolder* InlineCacheBuffer::_pending_released = NULL;
+int InlineCacheBuffer::_pending_count = 0;
 
 void ICStub::finalize() {
   if (!is_empty()) {
     ResourceMark rm;
-    CompiledIC *ic = CompiledIC_at(ic_site());
+    CompiledIC *ic = CompiledIC_at(CodeCache::find_nmethod(ic_site()), ic_site());
     assert(CodeCache::find_nmethod(ic->instruction_address()) != NULL, "inline cache in non-nmethod?");
 
     assert(this == ICStub_from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
-    ic->set_cached_oop(cached_oop());
-    ic->set_ic_destination(destination());
+    ic->set_ic_destination_and_value(destination(), cached_value());
   }
 }
 
@@ -77,25 +78,28 @@ address ICStub::destination() const {
   return InlineCacheBuffer::ic_buffer_entry_point(code_begin());
 }
 
-oop ICStub::cached_oop() const {
-  return InlineCacheBuffer::ic_buffer_cached_oop(code_begin());
+void* ICStub::cached_value() const {
+  return InlineCacheBuffer::ic_buffer_cached_value(code_begin());
 }
 
 
-void ICStub::set_stub(CompiledIC *ic, oop cached_value, address dest_addr) {
+void ICStub::set_stub(CompiledIC *ic, void* cached_val, address dest_addr) {
   // We cannot store a pointer to the 'ic' object, since it is resource allocated. Instead we
   // store the location of the inline cache. Then we have enough information recreate the CompiledIC
   // object when we need to remove the stub.
   _ic_site = ic->instruction_address();
 
   // Assemble new stub
-  InlineCacheBuffer::assemble_ic_buffer_code(code_begin(), cached_value, dest_addr);
+  InlineCacheBuffer::assemble_ic_buffer_code(code_begin(), cached_val, dest_addr);
   assert(destination() == dest_addr,   "can recover destination");
-  assert(cached_oop() == cached_value, "can recover destination");
+  assert(cached_value() == cached_val, "can recover destination");
 }
 
 
 void ICStub::clear() {
+  if (CompiledIC::is_icholder_entry(destination())) {
+    InlineCacheBuffer::queue_for_release((CompiledICHolder*)cached_value());
+  }
   _ic_site = NULL;
 }
 
@@ -161,6 +165,7 @@ void InlineCacheBuffer::update_inline_caches() {
     buffer()->remove_all();
     init_next_stub();
   }
+  release_pending_icholders();
 }
 
 
@@ -179,11 +184,13 @@ void InlineCacheBuffer_init() {
 }
 
 
-void InlineCacheBuffer::create_transition_stub(CompiledIC *ic, oop cached_oop, address entry) {
+void InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_value, address entry) {
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be called during a safepoint");
   assert (CompiledIC_lock->is_locked(), "");
-  assert(cached_oop == NULL || cached_oop->is_perm(), "must belong to perm. space");
-  if (TraceICBuffer) { tty->print_cr("  create transition stub for " INTPTR_FORMAT, ic->instruction_address()); }
+  if (TraceICBuffer) {
+    tty->print_cr("  create transition stub for " INTPTR_FORMAT " destination " INTPTR_FORMAT " cached value " INTPTR_FORMAT,
+                  ic->instruction_address(), entry, cached_value);
+  }
 
   // If an transition stub is already associate with the inline cache, then we remove the association.
   if (ic->is_in_transition_state()) {
@@ -193,10 +200,10 @@ void InlineCacheBuffer::create_transition_stub(CompiledIC *ic, oop cached_oop, a
 
   // allocate and initialize new "out-of-line" inline-cache
   ICStub* ic_stub = get_next_stub();
-  ic_stub->set_stub(ic, cached_oop, entry);
+  ic_stub->set_stub(ic, cached_value, entry);
 
   // Update inline cache in nmethod to point to new "out-of-line" allocated inline cache
-  ic->set_ic_destination(ic_stub->code_begin());
+  ic->set_ic_destination(ic_stub);
 
   set_next_stub(new_ic_stub()); // can cause safepoint synchronization
 }
@@ -208,7 +215,35 @@ address InlineCacheBuffer::ic_destination_for(CompiledIC *ic) {
 }
 
 
-oop InlineCacheBuffer::cached_oop_for(CompiledIC *ic) {
+void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
   ICStub* stub = ICStub_from_destination_address(ic->stub_address());
-  return stub->cached_oop();
+  return stub->cached_value();
+}
+
+
+// Free CompiledICHolder*s that are no longer in use
+void InlineCacheBuffer::release_pending_icholders() {
+  assert(SafepointSynchronize::is_at_safepoint(), "should only be called during a safepoint");
+  CompiledICHolder* holder = _pending_released;
+  _pending_released = NULL;
+  while (holder != NULL) {
+    CompiledICHolder* next = holder->next();
+    delete holder;
+    holder = next;
+    _pending_count--;
+  }
+  assert(_pending_count == 0, "wrong count");
+}
+
+// Enqueue this icholder for release during the next safepoint.  It's
+// not safe to free them until them since they might be visible to
+// another thread.
+void InlineCacheBuffer::queue_for_release(CompiledICHolder* icholder) {
+  MutexLockerEx mex(InlineCacheBuffer_lock);
+  icholder->set_next(_pending_released);
+  _pending_released = icholder;
+  _pending_count++;
+  if (TraceICBuffer) {
+    tty->print_cr("enqueueing icholder " INTPTR_FORMAT " to be freed", icholder);
+  }
 }

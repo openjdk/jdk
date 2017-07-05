@@ -114,6 +114,38 @@ CollectedHeap::CollectedHeap() : _n_par_threads(0)
   }
 }
 
+// This interface assumes that it's being called by the
+// vm thread. It collects the heap assuming that the
+// heap lock is already held and that we are executing in
+// the context of the vm thread.
+void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
+  assert(Thread::current()->is_VM_thread(), "Precondition#1");
+  assert(Heap_lock->is_locked(), "Precondition#2");
+  GCCauseSetter gcs(this, cause);
+  switch (cause) {
+    case GCCause::_heap_inspection:
+    case GCCause::_heap_dump:
+    case GCCause::_metadata_GC_threshold : {
+      HandleMark hm;
+      do_full_collection(false);        // don't clear all soft refs
+      break;
+    }
+    case GCCause::_last_ditch_collection: {
+      HandleMark hm;
+      do_full_collection(true);         // do clear all soft refs
+      break;
+    }
+    default:
+      ShouldNotReachHere(); // Unexpected use of this function
+  }
+}
+MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(
+                                              ClassLoaderData* loader_data,
+                                              size_t size, Metaspace::MetadataType mdtype) {
+  return collector_policy()->satisfy_failed_metadata_allocation(loader_data, size, mdtype);
+}
+
+
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);
   // otherwise remains unused.
@@ -215,9 +247,7 @@ void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
       assert(is_in(old_obj), "Not in allocated heap");
       assert(!can_elide_initializing_store_barrier(old_obj),
              "Else should have been filtered in new_store_pre_barrier()");
-      assert(!is_in_permanent(old_obj), "Sanity: not expected");
       assert(old_obj->is_oop(true), "Not an oop");
-      assert(old_obj->is_parsable(), "Will not be concurrently parsable");
       assert(deferred.word_size() == (size_t)(old_obj->size()),
              "Mismatch: multiple objects?");
     }
@@ -470,15 +500,11 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj;
-  if (JavaObjectsInPerm) {
-    obj = common_permanent_mem_allocate_init(size, CHECK_NULL);
-  } else {
     assert(ScavengeRootsInCode > 0, "must be");
     obj = common_mem_allocate_init(size, CHECK_NULL);
-  }
   post_allocation_setup_common(klass, obj);
   assert(Universe::is_bootstrapping() ||
-         !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
+         !((oop)obj)->is_array(), "must not be an array");
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   oop mirror = (oop)obj;
 
@@ -490,7 +516,7 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
     real_klass->set_java_mirror(mirror);
   }
 
-  instanceMirrorKlass* mk = instanceMirrorKlass::cast(mirror->klass());
+  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(size == mk->instance_size(real_klass), "should have been set");
 
   // notify jvmti and dtrace

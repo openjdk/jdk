@@ -171,7 +171,7 @@ int PrintVMFlagsDCmd::num_arguments() {
 void PrintSystemPropertiesDCmd::execute(TRAPS) {
   // load sun.misc.VMSupport
   Symbol* klass = vmSymbols::sun_misc_VMSupport();
-  klassOop k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {
     ik->initialize(THREAD);
@@ -243,7 +243,7 @@ void SystemGCDCmd::execute(TRAPS) {
 }
 
 void RunFinalizationDCmd::execute(TRAPS) {
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
                                                  true, CHECK);
   instanceKlassHandle klass(THREAD, k);
   JavaValue result(T_VOID);
@@ -447,7 +447,7 @@ void JMXStartRemoteDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if the method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
@@ -506,7 +506,7 @@ void JMXStartLocalDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
@@ -524,7 +524,7 @@ void JMXStopRemoteDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);

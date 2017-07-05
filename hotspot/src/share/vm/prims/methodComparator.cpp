@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@
 
 BytecodeStream *MethodComparator::_s_old;
 BytecodeStream *MethodComparator::_s_new;
-constantPoolOop MethodComparator::_old_cp;
-constantPoolOop MethodComparator::_new_cp;
+ConstantPool* MethodComparator::_old_cp;
+ConstantPool* MethodComparator::_new_cp;
 BciMap *MethodComparator::_bci_map;
 bool MethodComparator::_switchable_test;
 GrowableArray<int> *MethodComparator::_fwd_jmps;
 
-bool MethodComparator::methods_EMCP(methodOop old_method, methodOop new_method) {
+bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   if (old_method->code_size() != new_method->code_size())
     return false;
   if (check_stack_and_locals_size(old_method, new_method) != 0) {
@@ -69,7 +69,7 @@ bool MethodComparator::methods_EMCP(methodOop old_method, methodOop new_method) 
 }
 
 
-bool MethodComparator::methods_switchable(methodOop old_method, methodOop new_method,
+bool MethodComparator::methods_switchable(Method* old_method, Method* new_method,
                                           BciMap &bci_map) {
   if (old_method->code_size() > new_method->code_size())
     // Something has definitely been deleted in the new method, compared to the old one.
@@ -167,14 +167,20 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_invokedynamic: {
     int cpci_old = _s_old->get_index_u4();
     int cpci_new = _s_new->get_index_u4();
+
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
     if ((_old_cp->name_ref_at(cpci_old) != _new_cp->name_ref_at(cpci_new)) ||
         (_old_cp->signature_ref_at(cpci_old) != _new_cp->signature_ref_at(cpci_new)))
       return false;
-    int cpi_old = _old_cp->cache()->main_entry_at(cpci_old)->constant_pool_index();
-    int cpi_new = _new_cp->cache()->main_entry_at(cpci_new)->constant_pool_index();
+
+    // Translate object indexes to constant pool cache indexes.
+    cpci_old = _old_cp->invokedynamic_cp_cache_index(cpci_old);
+    cpci_new = _new_cp->invokedynamic_cp_cache_index(cpci_new);
+
+    int cpi_old = _old_cp->cache()->entry_at(cpci_old)->constant_pool_index();
+    int cpi_new = _new_cp->cache()->entry_at(cpci_new)->constant_pool_index();
     int bsm_old = _old_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_old);
     int bsm_new = _new_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_new);
     if (!pool_constants_same(bsm_old, bsm_new))
@@ -395,9 +401,7 @@ bool MethodComparator::pool_constants_same(int cpi_old, int cpi_new) {
       if (jint_cast(_old_cp->float_at(cpi_old)) != jint_cast(_new_cp->float_at(cpi_new)))
         return false;
     }
-  } else if (tag_old.is_string() || tag_old.is_unresolved_string()) {
-    if (! (tag_new.is_unresolved_string() || tag_new.is_string()))
-      return false;
+  } else if (tag_old.is_string() && tag_new.is_string()) {
     if (strcmp(_old_cp->string_at_noresolve(cpi_old),
                _new_cp->string_at_noresolve(cpi_new)) != 0)
       return false;
@@ -430,7 +434,7 @@ bool MethodComparator::pool_constants_same(int cpi_old, int cpi_new) {
 }
 
 
-int MethodComparator::check_stack_and_locals_size(methodOop old_method, methodOop new_method) {
+int MethodComparator::check_stack_and_locals_size(Method* old_method, Method* new_method) {
   if (old_method->max_stack() != new_method->max_stack()) {
     return 1;
   } else if (old_method->max_locals() != new_method->max_locals()) {

@@ -248,7 +248,7 @@ public abstract class AsynchronousFileChannel
         return provider.newAsynchronousFileChannel(file, options, executor, attrs);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" }) // generic array construction
+    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**

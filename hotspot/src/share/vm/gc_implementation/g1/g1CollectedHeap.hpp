@@ -45,9 +45,9 @@
 
 class HeapRegion;
 class HRRSCleanupTask;
-class PermanentGenerationSpec;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
+class G1KlassScanClosure;
 class G1ScanHeapEvacClosure;
 class ObjectClosure;
 class SpaceClosure;
@@ -190,7 +190,6 @@ class RefineCardTableEntryClosure;
 
 class G1CollectedHeap : public SharedHeap {
   friend class VM_G1CollectForAllocation;
-  friend class VM_GenCollectForPermanentAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1IncCollectionPause;
   friend class VMStructs;
@@ -225,7 +224,7 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // Storage for the G1 heap (excludes the permanent generation).
+  // Storage for the G1 heap.
   VirtualSpace _g1_storage;
   MemRegion    _g1_reserved;
 
@@ -408,6 +407,9 @@ private:
   double verify(bool guard, const char* msg);
   void verify_before_gc();
   void verify_after_gc();
+
+  void log_gc_header();
+  void log_gc_footer(double pause_time_sec);
 
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
@@ -630,7 +632,7 @@ protected:
 
   // Callback from VM_G1CollectFull operation.
   // Perform a full collection.
-  void do_full_collection(bool clear_all_soft_refs);
+  virtual void do_full_collection(bool clear_all_soft_refs);
 
   // Resize the heap if necessary after a full collection.  If this is
   // after a collect-for allocation, "word_size" is the allocation size,
@@ -805,17 +807,17 @@ protected:
 
   // Applies "scan_non_heap_roots" to roots outside the heap,
   // "scan_rs" to roots inside the heap (having done "set_region" to
-  // indicate the region in which the root resides), and does "scan_perm"
-  // (setting the generation to the perm generation.)  If "scan_rs" is
+  // indicate the region in which the root resides),
+  // and does "scan_metadata" If "scan_rs" is
   // NULL, then this step is skipped.  The "worker_i"
   // param is for use with parallel roots processing, and should be
   // the "i" of the calling parallel worker thread's work(i) function.
   // In the sequential case this param will be ignored.
-  void g1_process_strong_roots(bool collecting_perm_gen,
+  void g1_process_strong_roots(bool is_scavenging,
                                ScanningOption so,
                                OopClosure* scan_non_heap_roots,
                                OopsInHeapRegionClosure* scan_rs,
-                               OopsInGenClosure* scan_perm,
+                               G1KlassScanClosure* scan_klasses,
                                int worker_i);
 
   // Apply "blk" to all the weak roots of the system.  These include
@@ -1071,7 +1073,7 @@ public:
   G1CollectedHeap(G1CollectorPolicy* policy);
 
   // Initialize the G1CollectedHeap to have the initial and
-  // maximum sizes, permanent generation, and remembered and barrier sets
+  // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize();
 
@@ -1099,6 +1101,8 @@ public:
 
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
+
+  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) g1_policy(); }
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
@@ -1278,12 +1282,6 @@ public:
   // The same as above but assume that the caller holds the Heap_lock.
   void collect_locked(GCCause::Cause cause);
 
-  // This interface assumes that it's being called by the
-  // vm thread. It collects the heap assuming that the
-  // heap lock is already held and that we are executing in
-  // the context of the vm thread.
-  virtual void collect_as_vm_thread(GCCause::Cause cause);
-
   // True iff a evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
@@ -1317,7 +1315,7 @@ public:
   inline bool obj_in_cs(oop obj);
 
   // Return "TRUE" iff the given object address is in the reserved
-  // region of g1 (excluding the permanent generation).
+  // region of g1.
   bool is_in_g1_reserved(const void* p) const {
     return _g1_reserved.contains(p);
   }
@@ -1344,25 +1342,17 @@ public:
 
   // Iterate over all the ref-containing fields of all objects, calling
   // "cl.do_oop" on each.
-  virtual void oop_iterate(OopClosure* cl) {
-    oop_iterate(cl, true);
-  }
-  void oop_iterate(OopClosure* cl, bool do_perm);
+  virtual void oop_iterate(ExtendedOopClosure* cl);
 
   // Same as above, restricted to a memory region.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl) {
-    oop_iterate(mr, cl, true);
-  }
-  void oop_iterate(MemRegion mr, OopClosure* cl, bool do_perm);
+  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
 
   // Iterate over all objects, calling "cl.do_object" on each.
-  virtual void object_iterate(ObjectClosure* cl) {
-    object_iterate(cl, true);
-  }
+  virtual void object_iterate(ObjectClosure* cl);
+
   virtual void safe_object_iterate(ObjectClosure* cl) {
-    object_iterate(cl, true);
+    object_iterate(cl);
   }
-  void object_iterate(ObjectClosure* cl, bool do_perm);
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl.do_object" on each.  The heap must have been initialized properly
@@ -1524,15 +1514,6 @@ public:
     return is_in_young(new_obj);
   }
 
-  // Can a compiler elide a store barrier when it writes
-  // a permanent oop into the heap?  Applies when the compiler
-  // is storing x to the heap, where x->is_perm() is true.
-  virtual bool can_elide_permanent_oop_store_barriers() const {
-    // At least until perm gen collection is also G1-ified, at
-    // which point this should return false.
-    return true;
-  }
-
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
     // Note this has to be strictly greater-than as the TLABs
@@ -1657,15 +1638,12 @@ public:
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
 
-  // Added if it is in permanent gen it isn't dead.
   // Added if it is NULL it isn't dead.
 
   bool is_obj_dead(const oop obj) const {
     const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
-      if (Universe::heap()->is_in_permanent(obj))
-        return false;
-      else if (obj == NULL) return false;
+      if (obj == NULL) return false;
       else return true;
     }
     else return is_obj_dead(obj, hr);
@@ -1674,9 +1652,7 @@ public:
   bool is_obj_ill(const oop obj) const {
     const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
-      if (Universe::heap()->is_in_permanent(obj))
-        return false;
-      else if (obj == NULL) return false;
+      if (obj == NULL) return false;
       else return true;
     }
     else return is_obj_ill(obj, hr);
@@ -1875,9 +1851,7 @@ public:
     if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-      alloc_buf->flush_stats_and_retire(_g1h->stats_for_purpose(purpose),
-                                        false /* end_of_gc */,
-                                        false /* retain */);
+      alloc_buf->retire(false /* end_of_gc */, false /* retain */);
 
       HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.

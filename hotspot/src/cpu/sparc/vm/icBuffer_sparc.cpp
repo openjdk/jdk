@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,18 +45,17 @@ int InlineCacheBuffer::ic_stub_code_size() {
 #endif
 }
 
-void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, oop cached_oop, address entry_point) {
+void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {
   ResourceMark rm;
   CodeBuffer     code(code_begin, ic_stub_code_size());
   MacroAssembler* masm            = new MacroAssembler(&code);
-  // note: even though the code contains an embedded oop, we do not need reloc info
+  // note: even though the code contains an embedded metadata, we do not need reloc info
   // because
-  // (1) the oop is old (i.e., doesn't matter for scavenges)
+  // (1) the metadata is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
-  assert(cached_oop == NULL || cached_oop->is_perm(), "must be old oop");
-  AddressLiteral cached_oop_addrlit(cached_oop, relocInfo::none);
+  AddressLiteral cached_value_addrlit((address)cached_value, relocInfo::none);
   // Force the set to generate the fixed sequence so next_instruction_address works
-  masm->patchable_set(cached_oop_addrlit, G5_inline_cache_reg);
+  masm->patchable_set(cached_value_addrlit, G5_inline_cache_reg);
   assert(G3_scratch != G5_method, "Do not clobber the method oop in the transition stub");
   assert(G3_scratch != G5_inline_cache_reg, "Do not clobber the inline cache register in the transition stub");
   AddressLiteral entry(entry_point);
@@ -73,8 +72,9 @@ address InlineCacheBuffer::ic_buffer_entry_point(address code_begin) {
 }
 
 
-oop InlineCacheBuffer::ic_buffer_cached_oop(address code_begin) {
+void* InlineCacheBuffer::ic_buffer_cached_value(address code_begin) {
   NativeMovConstReg* move = nativeMovConstReg_at(code_begin);   // creation also verifies the object
   NativeJump*        jump = nativeJump_at(move->next_instruction_address());
-  return (oop)move->data();
+  void* o = (void*)move->data();
+  return o;
 }
