@@ -72,7 +72,6 @@ FDDLIBM_SUFFIX = a
 SCRIPT_SUFFIX =
 # CC compiler object code output directive flag value
 CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
-CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
 
 # Default OBJCOPY comes from GNU Binutils on Linux:
 DEF_OBJCOPY=/usr/bin/objcopy

@@ -1164,6 +1164,7 @@ redefineClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classDefinitio
     jmethodID   getDefinitionClassMethodID      = NULL;
     jmethodID   getDefinitionClassFileMethodID  = NULL;
     jvmtiClassDefinition* classDefs             = NULL;
+    jbyteArray* targetFiles                     = NULL;
     jsize       numDefs                         = 0;
 
     jplis_assert(classDefinitions != NULL);
@@ -1207,61 +1208,112 @@ redefineClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classDefinitio
         if ( errorOccurred ) {
             createAndThrowThrowableFromJVMTIErrorCode(jnienv, JVMTI_ERROR_OUT_OF_MEMORY);
         }
+
         else {
-            jint i;
-            for (i = 0; i < numDefs; i++) {
-                jclass      classDef    = NULL;
-                jbyteArray  targetFile  = NULL;
-
-                classDef = (*jnienv)->GetObjectArrayElement(jnienv, classDefinitions, i);
-                errorOccurred = checkForThrowable(jnienv);
-                jplis_assert(!errorOccurred);
-                if (errorOccurred) {
-                    break;
-                }
-
-                classDefs[i].klass = (*jnienv)->CallObjectMethod(jnienv, classDef, getDefinitionClassMethodID);
-                errorOccurred = checkForThrowable(jnienv);
-                jplis_assert(!errorOccurred);
-                if (errorOccurred) {
-                    break;
-                }
-
-                targetFile = (*jnienv)->CallObjectMethod(jnienv, classDef, getDefinitionClassFileMethodID);
-                errorOccurred = checkForThrowable(jnienv);
-                jplis_assert(!errorOccurred);
-                if (errorOccurred) {
-                    break;
-                }
-
-                classDefs[i].class_bytes = (unsigned char*)(*jnienv)->GetByteArrayElements(jnienv, targetFile, NULL);
-                errorOccurred = checkForThrowable(jnienv);
-                jplis_assert(!errorOccurred);
-                if (errorOccurred) {
-                    break;
-                }
-
-                classDefs[i].class_byte_count = (*jnienv)->GetArrayLength(jnienv, targetFile);
-                errorOccurred = checkForThrowable(jnienv);
-                jplis_assert(!errorOccurred);
-                if (errorOccurred) {
-                    break;
-                }
-            }
-
-            if (!errorOccurred) {
-                jvmtiError  errorCode = JVMTI_ERROR_NONE;
-                errorCode = (*jvmtienv)->RedefineClasses(jvmtienv, numDefs, classDefs);
-                check_phase_blob_ret(errorCode, deallocate(jvmtienv, (void*)classDefs));
-                errorOccurred = (errorCode != JVMTI_ERROR_NONE);
-                if ( errorOccurred ) {
-                    createAndThrowThrowableFromJVMTIErrorCode(jnienv, errorCode);
-                }
-            }
-
-            /* Give back the buffer if we allocated it.
+            /*
+             * We have to save the targetFile values that we compute so
+             * that we can release the class_bytes arrays that are
+             * returned by GetByteArrayElements(). In case of a JNI
+             * error, we can't (easily) recompute the targetFile values
+             * and we still want to free any memory we allocated.
              */
-            deallocate(jvmtienv, (void*)classDefs);
+            targetFiles = (jbyteArray *) allocate(jvmtienv,
+                                                  numDefs * sizeof(jbyteArray));
+            errorOccurred = (targetFiles == NULL);
+            jplis_assert(!errorOccurred);
+            if ( errorOccurred ) {
+                deallocate(jvmtienv, (void*)classDefs);
+                createAndThrowThrowableFromJVMTIErrorCode(jnienv,
+                    JVMTI_ERROR_OUT_OF_MEMORY);
+            }
+            else {
+                jint i, j;
+
+                // clear classDefs so we can correctly free memory during errors
+                memset(classDefs, 0, numDefs * sizeof(jvmtiClassDefinition));
+
+                for (i = 0; i < numDefs; i++) {
+                    jclass      classDef    = NULL;
+
+                    classDef = (*jnienv)->GetObjectArrayElement(jnienv, classDefinitions, i);
+                    errorOccurred = checkForThrowable(jnienv);
+                    jplis_assert(!errorOccurred);
+                    if (errorOccurred) {
+                        break;
+                    }
+
+                    classDefs[i].klass = (*jnienv)->CallObjectMethod(jnienv, classDef, getDefinitionClassMethodID);
+                    errorOccurred = checkForThrowable(jnienv);
+                    jplis_assert(!errorOccurred);
+                    if (errorOccurred) {
+                        break;
+                    }
+
+                    targetFiles[i] = (*jnienv)->CallObjectMethod(jnienv, classDef, getDefinitionClassFileMethodID);
+                    errorOccurred = checkForThrowable(jnienv);
+                    jplis_assert(!errorOccurred);
+                    if (errorOccurred) {
+                        break;
+                    }
+
+                    classDefs[i].class_byte_count = (*jnienv)->GetArrayLength(jnienv, targetFiles[i]);
+                    errorOccurred = checkForThrowable(jnienv);
+                    jplis_assert(!errorOccurred);
+                    if (errorOccurred) {
+                        break;
+                    }
+
+                    /*
+                     * Allocate class_bytes last so we don't have to free
+                     * memory on a partial row error.
+                     */
+                    classDefs[i].class_bytes = (unsigned char*)(*jnienv)->GetByteArrayElements(jnienv, targetFiles[i], NULL);
+                    errorOccurred = checkForThrowable(jnienv);
+                    jplis_assert(!errorOccurred);
+                    if (errorOccurred) {
+                        break;
+                    }
+                }
+
+                if (!errorOccurred) {
+                    jvmtiError  errorCode = JVMTI_ERROR_NONE;
+                    errorCode = (*jvmtienv)->RedefineClasses(jvmtienv, numDefs, classDefs);
+                    if (errorCode == JVMTI_ERROR_WRONG_PHASE) {
+                        /* insulate caller from the wrong phase error */
+                        errorCode = JVMTI_ERROR_NONE;
+                    } else {
+                        errorOccurred = (errorCode != JVMTI_ERROR_NONE);
+                        if ( errorOccurred ) {
+                            createAndThrowThrowableFromJVMTIErrorCode(jnienv, errorCode);
+                        }
+                    }
+                }
+
+                /*
+                 * Cleanup memory that we allocated above. If we had a
+                 * JNI error, a JVM/TI error or no errors, index 'i'
+                 * tracks how far we got in processing the classDefs
+                 * array. Note:  ReleaseByteArrayElements() is safe to
+                 * call with a JNI exception pending.
+                 */
+                for (j = 0; j < i; j++) {
+                    if ((jbyte *)classDefs[j].class_bytes != NULL) {
+                        (*jnienv)->ReleaseByteArrayElements(jnienv,
+                            targetFiles[j], (jbyte *)classDefs[j].class_bytes,
+                            0 /* copy back and free */);
+                        /*
+                         * Only check for error if we didn't already have one
+                         * so we don't overwrite errorOccurred.
+                         */
+                        if (!errorOccurred) {
+                            errorOccurred = checkForThrowable(jnienv);
+                            jplis_assert(!errorOccurred);
+                        }
+                    }
+                }
+                deallocate(jvmtienv, (void*)targetFiles);
+                deallocate(jvmtienv, (void*)classDefs);
+            }
         }
     }
 
