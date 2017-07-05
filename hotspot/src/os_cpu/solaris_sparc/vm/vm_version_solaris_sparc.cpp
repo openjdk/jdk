@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_sparc.hpp"
 
@@ -48,7 +50,7 @@ static void do_sysinfo(int si, const char* string, int* features, int mask) {
   // All SI defines used below must be supported.
   guarantee(bufsize != -1, "must be supported");
 
-  char* buf = (char*) malloc(bufsize);
+  char* buf = (char*) os::malloc(bufsize, mtInternal);
 
   if (buf == NULL)
     return;
@@ -60,7 +62,7 @@ static void do_sysinfo(int si, const char* string, int* features, int mask) {
     }
   }
 
-  free(buf);
+  os::free(buf);
 }
 
 int VM_Version::platform_features(int features) {
@@ -161,7 +163,7 @@ int VM_Version::platform_features(int features) {
 
     char   tmp;
     size_t bufsize = sysinfo(SI_ISALIST, &tmp, 1);
-    char*  buf     = (char*) malloc(bufsize);
+    char*  buf     = (char*) os::malloc(bufsize, mtInternal);
 
     if (buf != NULL) {
       if (sysinfo(SI_ISALIST, buf, bufsize) == bufsize) {
@@ -184,7 +186,7 @@ int VM_Version::platform_features(int features) {
           if (vis[3] == '2')                     features |= vis2_instructions_m;
         }
       }
-      free(buf);
+      os::free(buf);
     }
   }
 
@@ -228,7 +230,7 @@ int VM_Version::platform_features(int features) {
             }
 #endif
             // Convert to UPPER case before compare.
-            char* impl = strdup(implementation);
+            char* impl = os::strdup_check_oom(implementation);
 
             for (int i = 0; impl[i] != 0; i++)
               impl[i] = (char)toupper((uint)impl[i]);
@@ -252,7 +254,7 @@ int VM_Version::platform_features(int features) {
                 implementation = "SPARC";
               }
             }
-            free((void*)impl);
+            os::free((void*)impl);
             break;
           }
         } // for(

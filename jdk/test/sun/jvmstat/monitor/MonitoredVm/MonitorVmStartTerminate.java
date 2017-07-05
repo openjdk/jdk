@@ -73,7 +73,6 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
 public final class MonitorVmStartTerminate {
 
     private static final int PROCESS_COUNT = 10;
-    private static final long PROCESS_TIMEOUT_IN_NS = 1000*1000_000_000L;
 
     public static void main(String... args) throws Exception {
 
@@ -223,13 +222,12 @@ public final class MonitorVmStartTerminate {
 
         private static void createFile(Path path) throws IOException {
             Files.write(path, new byte[0], StandardOpenOption.CREATE);
-            if (!Files.exists(path)) {
-                throw new Error("Newly created file " + path
-                        + " does not exist!");
-            }
         }
 
         private static void waitForRemoval(Path path) {
+            String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
+            double timeoutFactor = Double.parseDouble(timeoutFactorText);
+            long timeoutNanos = 1000_000_000L*(long)(1000*timeoutFactor);
             long start = System.nanoTime();
             while (true) {
                 long now = System.nanoTime();
@@ -238,10 +236,10 @@ public final class MonitorVmStartTerminate {
                 if (!Files.exists(path)) {
                     return;
                 }
-                if (waited > PROCESS_TIMEOUT_IN_NS) {
+                if (waited > timeoutNanos) {
                     System.out.println("Start: " + start);
                     System.out.println("Now: " + now);
-                    System.out.print("Process timed out after " + waited + " ns. Abort.");
+                    System.out.println("Process timed out after " + waited + " ns. Abort.");
                     System.exit(1);
                 }
                 takeNap();
@@ -293,7 +291,14 @@ public final class MonitorVmStartTerminate {
         public void terminate() {
             try {
                 System.out.println("Terminating " + mainArgsIdentifier);
-                Files.delete(Paths.get(mainArgsIdentifier));
+                // File must be created before proceeding,
+                // otherwise Java process may loop forever
+                // waiting for file to be removed.
+                Path path = Paths.get(mainArgsIdentifier);
+                while (!Files.exists(path)) {
+                    takeNap();
+                }
+                Files.delete(path);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -303,10 +308,11 @@ public final class MonitorVmStartTerminate {
         private void executeJava() throws Exception, IOException {
             String className = JavaProcess.class.getName();
             String classPath = System.getProperty("test.classes");
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-cp",
-                    classPath, className, mainArgsIdentifier);
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-Dtest.timeout.factor=" + System.getProperty("test.timeout.factor", "1.0"),
+                "-cp", classPath, className, mainArgsIdentifier);
             OutputBuffer ob = ProcessTools.getOutput(pb.start());
-            System.out.println("Java Process " + getMainArgsIdentifier() + " stder:"
+            System.out.println("Java Process " + getMainArgsIdentifier() + " stderr:"
                     + ob.getStderr());
             System.err.println("Java Process " + getMainArgsIdentifier() + " stdout:"
                     + ob.getStdout());

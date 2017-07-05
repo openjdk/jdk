@@ -24,7 +24,6 @@
 #
 
 ##
-## @ignore 8028806
 ## @test Test8017498.sh
 ## @bug 8017498
 ## @bug 8020791
@@ -75,7 +74,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac *.java
 
 $gcc_cmd -DLINUX -fPIC -shared \
     ${EXTRA_CFLAG} -z noexecstack \
-    -o ${TESTSRC}${FS}libTestJNI.so \
+    -o libTestJNI.so \
     -I${COMPILEJAVA}${FS}include \
     -I${COMPILEJAVA}${FS}include${FS}linux \
     ${TESTSRC}${FS}TestJNI.c
@@ -83,7 +82,7 @@ $gcc_cmd -DLINUX -fPIC -shared \
 # run the java test in the background
 cmd="LD_PRELOAD=$MY_LD_PRELOAD \
     ${TESTJAVA}${FS}bin${FS}java \
-    -Djava.library.path=${TESTSRC}${FS} -server TestJNI 100"
+    -Djava.library.path=. -server TestJNI 100"
 echo "$cmd > test.out 2>&1"
 eval $cmd > test.out 2>&1
 

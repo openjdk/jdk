@@ -35,6 +35,7 @@ import rtm.predicate.SupportedVM;
  * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
  * @build TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestRTMTotalCountIncrRateOptionOnUnsupportedConfig

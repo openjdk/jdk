@@ -27,6 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build BooleanTest ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BooleanTest
  * @summary testing of WB::set/getBooleanVMFlag()
  * @author igor.ignatyev@oracle.com

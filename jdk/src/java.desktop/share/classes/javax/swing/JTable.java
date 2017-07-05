@@ -37,6 +37,7 @@ import java.beans.*;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 
 import javax.accessibility.*;
 
@@ -1203,11 +1204,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *              AUTO_RESIZE_ALL_COLUMNS        JTable.AUTO_RESIZE_ALL_COLUMNS
      */
     public void setAutoResizeMode(int mode) {
-        if ((mode == AUTO_RESIZE_OFF) ||
-            (mode == AUTO_RESIZE_NEXT_COLUMN) ||
-            (mode == AUTO_RESIZE_SUBSEQUENT_COLUMNS) ||
-            (mode == AUTO_RESIZE_LAST_COLUMN) ||
-            (mode == AUTO_RESIZE_ALL_COLUMNS)) {
+        if (isValidAutoResizeMode(mode)) {
             int old = autoResizeMode;
             autoResizeMode = mode;
             resizeAndRepaint();
@@ -1216,6 +1213,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             }
             firePropertyChange("autoResizeMode", old, autoResizeMode);
         }
+    }
+
+    private static boolean isValidAutoResizeMode(int mode) {
+        return (mode == AUTO_RESIZE_OFF)
+                || (mode == AUTO_RESIZE_NEXT_COLUMN)
+                || (mode == AUTO_RESIZE_SUBSEQUENT_COLUMNS)
+                || (mode == AUTO_RESIZE_LAST_COLUMN)
+                || (mode == AUTO_RESIZE_ALL_COLUMNS);
     }
 
     /**
@@ -1439,10 +1444,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *        bound: false
      */
     public void setDragEnabled(boolean b) {
+        checkDragEnabled(b);
+        dragEnabled = b;
+    }
+
+    private void checkDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        dragEnabled = b;
     }
 
     /**
@@ -1489,6 +1498,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.6
      */
     public final void setDropMode(DropMode dropMode) {
+        checkDropMode(dropMode);
+        this.dropMode = dropMode;
+    }
+
+    private static void checkDropMode(DropMode dropMode) {
         if (dropMode != null) {
             switch (dropMode) {
                 case USE_SELECTION:
@@ -1499,14 +1513,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 case ON_OR_INSERT:
                 case ON_OR_INSERT_ROWS:
                 case ON_OR_INSERT_COLS:
-                    this.dropMode = dropMode;
                     return;
             }
         }
-
-        throw new IllegalArgumentException(dropMode + ": Unsupported drop mode for table");
+        throw new IllegalArgumentException(dropMode
+                + ": Unsupported drop mode for table");
     }
-
     /**
      * Returns the drop mode for this component.
      *
@@ -5865,7 +5877,75 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        TableModel newDataModel = (TableModel) f.get("dataModel", null);
+        if (newDataModel == null) {
+            throw new InvalidObjectException("Null dataModel");
+        }
+        dataModel = newDataModel;
+
+        TableColumnModel newColumnModel = (TableColumnModel) f.get("columnModel", null);
+        if (newColumnModel == null) {
+            throw new InvalidObjectException("Null columnModel");
+        }
+        columnModel = newColumnModel;
+
+        ListSelectionModel newSelectionModel = (ListSelectionModel) f.get("selectionModel", null);
+        if (newSelectionModel == null) {
+            throw new InvalidObjectException("Null selectionModel");
+        }
+        selectionModel = newSelectionModel;
+
+        tableHeader = (JTableHeader) f.get("tableHeader", null);
+        int newRowHeight = f.get("rowHeight", 0);
+        if (newRowHeight <= 0) {
+            throw new InvalidObjectException("Row height less than 1");
+        }
+        rowHeight = newRowHeight;
+
+        rowMargin = f.get("rowMargin", 0);
+        Color newGridColor = (Color) f.get("gridColor", null);
+        if (newGridColor == null) {
+            throw new InvalidObjectException("Null gridColor");
+        }
+        gridColor = newGridColor;
+
+        showHorizontalLines = f.get("showHorizontalLines", false);
+        showVerticalLines = f.get("showVerticalLines", false);
+        int newAutoResizeMode = f.get("autoResizeMode", 0);
+        if (!isValidAutoResizeMode(newAutoResizeMode)) {
+            throw new InvalidObjectException("autoResizeMode is not valid");
+        }
+        autoResizeMode = newAutoResizeMode;
+        autoCreateColumnsFromModel = f.get("autoCreateColumnsFromModel", false);
+        preferredViewportSize = (Dimension) f.get("preferredViewportSize", null);
+        rowSelectionAllowed = f.get("rowSelectionAllowed", false);
+        cellSelectionEnabled = f.get("cellSelectionEnabled", false);
+        selectionForeground = (Color) f.get("selectionForeground", null);
+        selectionBackground = (Color) f.get("selectionBackground", null);
+        rowModel = (SizeSequence) f.get("rowModel", null);
+
+        boolean newDragEnabled = f.get("dragEnabled", false);
+        checkDragEnabled(newDragEnabled);
+        dragEnabled = newDragEnabled;
+
+        surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
+        editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+        columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
+        rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
+        printError = (Throwable) f.get("printError", null);
+        isRowHeightSet = f.get("isRowHeightSet", false);
+        updateSelectionOnSort = f.get("updateSelectionOnSort", false);
+        ignoreSortChange = f.get("ignoreSortChange", false);
+        sorterChanged = f.get("sorterChanged", false);
+        autoCreateRowSorter = f.get("autoCreateRowSorter", false);
+        fillsViewportHeight = f.get("fillsViewportHeight", false);
+        DropMode newDropMode = (DropMode) f.get("dropMode",
+                DropMode.USE_SELECTION);
+        checkDropMode(newDropMode);
+        dropMode = newDropMode;
+
         if ((ui != null) && (getUIClassID().equals(uiClassID))) {
             ui.installUI(this);
         }

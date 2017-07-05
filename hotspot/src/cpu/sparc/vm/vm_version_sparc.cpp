@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_sparc.hpp"
 
@@ -249,7 +250,7 @@ void VM_Version::initialize() {
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
 
   // buf is started with ", " or is empty
-  _features_str = strdup(strlen(buf) > 2 ? buf + 2 : buf);
+  _features_str = os::strdup(strlen(buf) > 2 ? buf + 2 : buf);
 
   // There are three 64-bit SPARC families that do not overlap, e.g.,
   // both is_ultra3() and is_sparc64() cannot be true at the same time.

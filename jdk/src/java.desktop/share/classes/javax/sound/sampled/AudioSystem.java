@@ -26,19 +26,19 @@
 package javax.sound.sampled;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
-import java.util.ArrayList;
 
-import javax.sound.sampled.spi.AudioFileWriter;
 import javax.sound.sampled.spi.AudioFileReader;
+import javax.sound.sampled.spi.AudioFileWriter;
 import javax.sound.sampled.spi.FormatConversionProvider;
 import javax.sound.sampled.spi.MixerProvider;
 
@@ -60,14 +60,14 @@ import com.sun.media.sound.JDK13Services;
  * <p>
  * Properties can be used to specify the default mixer for specific line types.
  * Both system properties and a properties file are considered. The
- * {@code sound.properties} properties file is read from an
- * implementation-specific location (typically it is the {@code lib} directory
- * in the Java installation directory). If a property exists both as a system
- * property and in the properties file, the system property takes precedence.
- * If none is specified, a suitable default is chosen among the available
- * devices. The syntax of the properties file is specified in
- * {@link java.util.Properties#load(InputStream) Properties.load}. The following
- * table lists the available property keys and which methods consider them:
+ * "sound.properties" properties file is read from an implementation-specific
+ * location (typically it is the {@code lib} directory in the Java installation
+ * directory). If a property exists both as a system property and in the
+ * properties file, the system property takes precedence. If none is specified,
+ * a suitable default is chosen among the available devices. The syntax of the
+ * properties file is specified in
+ * {@link Properties#load(InputStream) Properties.load}. The following table
+ * lists the available property keys and which methods consider them:
  *
  * <table border=0>
  *  <caption>Audio System Property Keys</caption>
@@ -100,12 +100,11 @@ import com.sun.media.sound.JDK13Services;
  *
  * The property value consists of the provider class name and the mixer name,
  * separated by the hash mark (&quot;#&quot;). The provider class name is the
- * fully-qualified name of a concrete
- * {@link javax.sound.sampled.spi.MixerProvider mixer provider} class. The mixer
- * name is matched against the {@code String} returned by the {@code getName}
- * method of {@code Mixer.Info}. Either the class name, or the mixer name may be
- * omitted. If only the class name is specified, the trailing hash mark is
- * optional.
+ * fully-qualified name of a concrete {@link MixerProvider mixer provider}
+ * class. The mixer name is matched against the {@code String} returned by the
+ * {@code getName} method of {@code Mixer.Info}. Either the class name, or the
+ * mixer name may be omitted. If only the class name is specified, the trailing
+ * hash mark is optional.
  * <p>
  * If the provider class is specified, and it can be successfully retrieved from
  * the installed providers, the list of {@code Mixer.Info} objects is retrieved
@@ -1324,10 +1323,9 @@ public class AudioSystem {
      * Obtains the set of format converters (codecs, transcoders, etc.) that are
      * currently installed on the system.
      *
-     * @return an array of {@link javax.sound.sampled.spi.FormatConversionProvider
-     *         FormatConversionProvider} objects representing the available
-     *         format converters. If no format converters readers are available
-     *         on the system, an array of length 0 is returned.
+     * @return an array of {@link FormatConversionProvider} objects representing
+     *         the available format converters. If no format converters readers
+     *         are available on the system, an array of length 0 is returned.
      */
     @SuppressWarnings("unchecked")
     private static List<FormatConversionProvider> getFormatConversionProviders() {
@@ -1338,10 +1336,9 @@ public class AudioSystem {
      * Obtains the set of audio file readers that are currently installed on the
      * system.
      *
-     * @return a List of {@link javax.sound.sampled.spi.AudioFileReader
-     *         AudioFileReader} objects representing the installed audio file
-     *         readers. If no audio file readers are available on the system, an
-     *         empty List is returned.
+     * @return a List of {@link AudioFileReader} objects representing the
+     *         installed audio file readers. If no audio file readers are
+     *         available on the system, an empty List is returned.
      */
     @SuppressWarnings("unchecked")
     private static List<AudioFileReader> getAudioFileReaders() {
@@ -1352,10 +1349,9 @@ public class AudioSystem {
      * Obtains the set of audio file writers that are currently installed on the
      * system.
      *
-     * @return a List of {@link javax.sound.sampled.spi.AudioFileWriter
-     *         AudioFileWriter} objects representing the available audio file
-     *         writers. If no audio file writers are available on the system, an
-     *         empty List is returned.
+     * @return a List of {@link AudioFileWriter} objects representing the
+     *         available audio file writers. If no audio file writers are
+     *         available on the system, an empty List is returned.
      */
     @SuppressWarnings("unchecked")
     private static List<AudioFileWriter> getAudioFileWriters() {

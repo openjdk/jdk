@@ -369,20 +369,36 @@ class Dependencies: public ResourceObj {
   void copy_to(nmethod* nm);
 
   void log_all_dependencies();
-  void log_dependency(DepType dept, int nargs, ciBaseObject* args[]) {
-    write_dependency_to(log(), dept, nargs, args);
+
+  void log_dependency(DepType dept, GrowableArray<ciBaseObject*>* args) {
+    ResourceMark rm;
+    int argslen = args->length();
+    write_dependency_to(log(), dept, args);
+    guarantee(argslen == args->length(),
+              "args array cannot grow inside nested ResoureMark scope");
   }
+
   void log_dependency(DepType dept,
                       ciBaseObject* x0,
                       ciBaseObject* x1 = NULL,
                       ciBaseObject* x2 = NULL) {
-    if (log() == NULL)  return;
-    ciBaseObject* args[max_arg_count];
-    args[0] = x0;
-    args[1] = x1;
-    args[2] = x2;
-    assert(2 < max_arg_count, "");
-    log_dependency(dept, dep_args(dept), args);
+    if (log() == NULL) {
+      return;
+    }
+    ResourceMark rm;
+    GrowableArray<ciBaseObject*>* ciargs =
+                new GrowableArray<ciBaseObject*>(dep_args(dept));
+    assert (x0 != NULL, "no log x0");
+    ciargs->push(x0);
+
+    if (x1 != NULL) {
+      ciargs->push(x1);
+    }
+    if (x2 != NULL) {
+      ciargs->push(x2);
+    }
+    assert(ciargs->length() == dep_args(dept), "");
+    log_dependency(dept, ciargs);
   }
 
   class DepArgument : public ResourceObj {
@@ -405,20 +421,8 @@ class Dependencies: public ResourceObj {
     Metadata* metadata_value() const { assert(!_is_oop && _valid, "must be"); return (Metadata*) _value; }
   };
 
-  static void write_dependency_to(CompileLog* log,
-                                  DepType dept,
-                                  int nargs, ciBaseObject* args[],
-                                  Klass* witness = NULL);
-  static void write_dependency_to(CompileLog* log,
-                                  DepType dept,
-                                  int nargs, DepArgument args[],
-                                  Klass* witness = NULL);
-  static void write_dependency_to(xmlStream* xtty,
-                                  DepType dept,
-                                  int nargs, DepArgument args[],
-                                  Klass* witness = NULL);
   static void print_dependency(DepType dept,
-                               int nargs, DepArgument args[],
+                               GrowableArray<DepArgument>* args,
                                Klass* witness = NULL);
 
  private:
@@ -427,6 +431,18 @@ class Dependencies: public ResourceObj {
 
   static Klass* ctxk_encoded_as_null(DepType dept, Metadata* x);
 
+  static void write_dependency_to(CompileLog* log,
+                                  DepType dept,
+                                  GrowableArray<ciBaseObject*>* args,
+                                  Klass* witness = NULL);
+  static void write_dependency_to(CompileLog* log,
+                                  DepType dept,
+                                  GrowableArray<DepArgument>* args,
+                                  Klass* witness = NULL);
+  static void write_dependency_to(xmlStream* xtty,
+                                  DepType dept,
+                                  GrowableArray<DepArgument>* args,
+                                  Klass* witness = NULL);
  public:
   // Use this to iterate over an nmethod's dependency set.
   // Works on new and old dependency sets.

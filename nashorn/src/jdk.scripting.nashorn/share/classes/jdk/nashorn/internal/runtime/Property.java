@@ -287,17 +287,6 @@ public abstract class Property implements Serializable {
     }
 
     /**
-     * Does this property use any slots in the spill array described in
-     * {@link Property#isSpill}? In that case how many. Currently a property
-     * only uses max one spill slot, but this may change in future representations
-     *
-     * @return number of spill slots a property is using
-     */
-    public int getSpillCount() {
-        return 0;
-    }
-
-    /**
      * Add more property flags to the property. Properties are immutable here,
      * so any property change that results in a larger flag set results in the
      * property being cloned. Use only the return value

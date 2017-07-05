@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/*/share/classes \
     -name "TimeZoneNames_*.java" -o -name "TimeZoneNames_*.properties" -o \
     -name "LocaleNames_*.java" -o -name "LocaleNames_*.properties" -o \
     -name "CurrencyNames_*.java" -o -name "CurrencyNames_*.properties" -o \
-    -name "CalendarData_*.java" -o -name "CalendarData_*.properties")
+    -name "CalendarData_*.java" -o -name "CalendarData_*.properties" -o \
+    -name "BreakIteratorInfo_*.java" -o -name "BreakIteratorRules_*.java")
 
 # Then translate the locale files into for example: FormatData_sv
 LOCALE_RESOURCES := $(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
@@ -85,6 +86,12 @@ $(eval $(call CaptureLocale,FormatData))
 
 #sun.text.resources.CollationData
 $(eval $(call CaptureLocale,CollationData))
+
+#sun.text.resources.BreakIteratorInfo
+$(eval $(call CaptureLocale,BreakIteratorInfo))
+
+#sun.text.resources.BreakIteratorRules
+$(eval $(call CaptureLocale,BreakIteratorRules))
 
 #sun.util.resources.TimeZoneNames
 $(eval $(call CaptureLocale,TimeZoneNames))

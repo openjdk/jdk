@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 package sun.awt.X11;
 
 import java.security.AccessController;
-import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
-import sun.misc.*;
 
-final public class XlibWrapper
-{
+import sun.misc.Unsafe;
+import sun.security.action.GetPropertyAction;
+
+final class XlibWrapper {
+
     static Unsafe unsafe = Unsafe.getUnsafe();
     // strange constants
     static final int MAXSIZE = 32767;
@@ -48,7 +48,7 @@ final public class XlibWrapper
    char *display_name;
 
 */
-    public final static String eventToString[]=
+    static final String[] eventToString =
     {"<none:0>", "<none:1>", "KeyPress", "KeyRelease", "ButtonPress", "ButtonRelease",
      "MotionNotify", "EnterNotify", "LeaveNotify", "FocusIn", "FocusOut",
      "KeymapNotify", "Expose", "GraphicsExpose", "NoExpose", "VisibilityNotify",
@@ -66,7 +66,7 @@ final public class XlibWrapper
 
     /**
      * Gets byte string from str_ptr and copies it into byte array
-     * String should be NULL terminated
+     * String should be NULL terminated.
      */
     static native byte[] getStringBytes(long str_ptr);
 
@@ -529,7 +529,7 @@ static native String XSetLocaleModifiers(String modifier_list);
           display   Specifies the connection to the X server.
           onoff     Specifies a Boolean value that indicates whether to enable or disable synchronization.
      */
-    public static native int XSynchronize(long display, boolean onoff);
+    static native int XSynchronize(long display, boolean onoff);
 
     /**
      * Extracts an X event that can be processed in a secondary loop.

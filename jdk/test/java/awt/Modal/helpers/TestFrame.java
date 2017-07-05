@@ -203,19 +203,37 @@ public class TestFrame extends Frame implements ActionListener,
     }
 
     public void clickOpenButton(ExtendedRobot robot) throws Exception {
+        clickOpenButton(robot, true, "");
+    }
+
+    public void clickOpenButton(ExtendedRobot robot,
+                                boolean       refState,
+                                String        message) throws Exception {
         openClicked.reset();
         clickButton(openButton, robot);
         openClicked.waitForFlagTriggered();
-        assertTrue(openClicked.flag(),
-            "clicking the frame Open button did not trigger an action");
+
+        String msg = "Clicking the frame Open button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(openClicked.flag(), refState, msg + " " + message);
     }
 
     public void clickCloseButton(ExtendedRobot robot) throws Exception {
+        clickCloseButton(robot, true, "");
+    }
+
+    public void clickCloseButton(ExtendedRobot robot,
+                                 boolean       refState,
+                                 String        message) throws Exception {
         closeClicked.reset();
         clickButton(closeButton, robot);
         closeClicked.waitForFlagTriggered();
-        assertTrue(closeClicked.flag(),
-            "clicking the frame Close button did not trigger an action");
+
+        String msg = "Clicking the frame Close button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(closeClicked.flag(), refState, msg + " " + message);
     }
 
     public void clickDummyButton(ExtendedRobot robot) throws Exception {
@@ -223,13 +241,22 @@ public class TestFrame extends Frame implements ActionListener,
     }
 
     public void clickDummyButton(ExtendedRobot robot,
-                                 int amountOfAttempts) throws Exception {
+                                 int           attempts) throws Exception {
+        clickDummyButton(robot, attempts, true, "");
+    }
+
+    public void clickDummyButton(ExtendedRobot robot,
+                                 int           attempts,
+                                 boolean       refState,
+                                 String        message) throws Exception {
         dummyClicked.reset();
         clickButton(dummyButton, robot);
-
         dummyClicked.waitForFlagTriggered();
-        assertTrue(dummyClicked.flag(),
-            "clicking the frame Dummy button did not trigger an action");
+
+        String msg = "Clicking the frame Dummy button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(dummyClicked.flag(), refState, msg + " " + message);
     }
 
     public void clickInside(ExtendedRobot robot) throws Exception {

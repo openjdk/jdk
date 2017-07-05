@@ -49,11 +49,11 @@ print("delete foo? " + delete foo);
 print("typeof foo? " + typeof foo);
 print("foo = " + foo);
 
-var x = "global"; 
+var x = "global";
 (function(){
     eval("var x='local'");
     print("x in function = "+ x);
     print("delete x? = " + delete x);
     print("x after delete = " + x);
 })();
-print("x = " + x); 
+print("x = " + x);

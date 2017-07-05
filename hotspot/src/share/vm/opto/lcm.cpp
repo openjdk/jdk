@@ -464,7 +464,9 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
         iop == Op_CreateEx ||   // Create-exception must start block
         iop == Op_CheckCastPP
         ) {
-      worklist.map(i,worklist.pop());
+      // select the node n
+      // remove n from worklist and retain the order of remaining nodes
+      worklist.remove((uint)i);
       return n;
     }
 
@@ -550,7 +552,9 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
   assert(idx >= 0, "index should be set");
   Node *n = worklist[(uint)idx];      // Get the winner
 
-  worklist.map((uint)idx, worklist.pop());     // Compress worklist
+  // select the node n
+  // remove n from worklist and retain the order of remaining nodes
+  worklist.remove((uint)idx);
   return n;
 }
 
