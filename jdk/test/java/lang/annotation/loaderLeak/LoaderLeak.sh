@@ -33,6 +33,10 @@ then
   exit 1
 fi
 echo "TESTJAVA=${TESTJAVA}"
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
@@ -67,8 +71,8 @@ esac
 
 mkdir -p classes
 cp ${TESTSRC}${FS}*.java .
-${TESTJAVA}${FS}bin${FS}javac -d classes A.java B.java C.java
-${TESTJAVA}${FS}bin${FS}javac Main.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d classes A.java B.java C.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Main.java
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} Main
 result=$?
 if [ $result -eq 0 ]

@@ -304,7 +304,7 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
 
     {
         char buf[20];
-        int len = sizeof(sa);
+        socklen_t len = sizeof(sa);
         jint portNum;
         err = dbgsysGetSocketName(serverSocketFD,
                                (struct sockaddr *)&sa, &len);
@@ -324,7 +324,8 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
 static jdwpTransportError JNICALL
 socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handshakeTimeout)
 {
-    int socketLen, err;
+    socklen_t socketLen;
+    int err;
     struct sockaddr_in socket;
     jlong startTime = (jlong)0;
 
@@ -508,7 +509,7 @@ socketTransport_close(jdwpTransportEnv* env)
     if (dbgsysSocketClose(fd) < 0) {
         /*
          * close failed - it's pointless to restore socketFD here because
-         * any subsequent close will likely fail aswell.
+         * any subsequent close will likely fail as well.
          */
         RETURN_IO_ERROR("close failed");
     }

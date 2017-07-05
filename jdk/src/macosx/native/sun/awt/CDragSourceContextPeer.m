@@ -46,7 +46,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativ
     __block CDragSource* dragSource = nil;
 
 JNF_COCOA_ENTER(env);
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         dragSource = [[CDragSource alloc] init:jthis component:jcomponent peer:jpeer control:controlObj
             transferable:jtransferable triggerEvent:jtrigger dragPosX:jdragposx
             dragPosY:jdragposy modifiers:jextmodifiers clickCount:jclickcount timeStamp:jtimestamp
@@ -103,7 +103,7 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_setNativeCursor
   (JNIEnv *env, jobject jthis, jlong nativeDragSourceVal, jobject jcursor, jint jcursortype)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
+   //AWT_ASSERT_NOT_APPKIT_THREAD;
 
 //JNF_COCOA_ENTER(env);
 //    jobject gCursor = JNFNewGlobalRef(env, jcursor);

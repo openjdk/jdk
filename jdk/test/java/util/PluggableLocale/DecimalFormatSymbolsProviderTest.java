@@ -61,17 +61,15 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getNumberFormatData(target);
+            Object[] data = LocaleProviderAdapter.forJRE().getLocaleResources(target).getDecimalFormatSymbolsData();
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays
             String[] jres = new String[2];
             if (jreSupportsLocale) {
-                try {
-                    String[] tmp = rb.getStringArray("NumberElements");
-                    jres[0] = tmp[9]; // infinity
-                    jres[1] = tmp[10]; // NaN
-                } catch (MissingResourceException mre) {}
+                String[] tmp = (String[]) data[0];
+                jres[0] = tmp[9]; // infinity
+                jres[1] = tmp[10]; // NaN
             }
 
             // result object

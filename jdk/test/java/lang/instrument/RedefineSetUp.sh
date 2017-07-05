@@ -41,6 +41,12 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
@@ -50,15 +56,15 @@ fi
 echo "TESTCLASSES=${TESTCLASSES}"
 echo "CLASSPATH=${CLASSPATH}"
 
-JAVAC="${TESTJAVA}/bin/javac -g"
+JAVAC="${COMPILEJAVA}/bin/javac -g"
 
 cp ${TESTSRC}/Different_ExampleRedefine.java ExampleRedefine.java
 cp ${TESTSRC}/Counter.java .
-${JAVAC} ExampleRedefine.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ExampleRedefine.java
 mv ExampleRedefine.class Different_ExampleRedefine.class
 rm -f ExampleRedefine.java Counter.java
 
 cp ${TESTSRC}/ExampleRedefine.java ExampleRedefine.java
 cp ${TESTSRC}/Counter.java .
-${JAVAC} ExampleRedefine.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ExampleRedefine.java
 rm -f ExampleRedefine.java Counter.java

@@ -787,7 +787,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "List.font", new FontLazyValue(Region.LIST),
             "List.rendererUseUIBorder", Boolean.FALSE,
 
-            "Menu.shortcutKeys", new int[] {KeyEvent.ALT_MASK},
             "Menu.arrowIcon", new GTKStyle.GTKLazyValue(
                               "com.sun.java.swing.plaf.gtk.GTKIconFactory",
                               "getMenuArrowIcon"),

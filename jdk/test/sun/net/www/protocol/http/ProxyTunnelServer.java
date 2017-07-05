@@ -31,6 +31,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.Base64;
 import javax.net.ssl.*;
 import javax.net.ServerSocketFactory;
 import sun.net.www.*;
@@ -295,10 +296,8 @@ public class ProxyTunnelServer extends Thread {
             String recvdUserPlusPass = authInfo.substring(ind + 1).trim();
             // extract encoded (username:passwd
             if (userPlusPass.equals(
-                                new String(
-                                (new sun.misc.BASE64Decoder()).
-                                decodeBuffer(recvdUserPlusPass)
-                                ))) {
+                                new String(Base64.getDecoder().decode(recvdUserPlusPass))
+                                )) {
                 matched = true;
             }
         } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ import java.util.ServiceConfigurationError;
  * <code>ImageWriter</code>, <code>ImageTranscoder</code>,
  * <code>ImageInputStream</code>, and <code>ImageOutputStream</code>.
  *
- * <p> Service providers found on the system classpath (<i>e.g.</i>,
- * the <code>jre/lib/ext</code> directory in Sun's implementation of
- * JDK) are automatically loaded as soon as this class is
+ * <p> Service providers found on the system classpath (typically
+ * the <code>lib/ext</code> directory in the Java
+ * installation directory) are automatically loaded as soon as this class is
  * instantiated.
  *
  * <p> When the <code>registerApplicationClasspathSpis</code> method
@@ -226,8 +226,10 @@ public final class IIORegistry extends ServiceRegistry {
 
     private void registerInstalledProviders() {
         /*
-          We need load installed providers from lib/ext
-          directory in the privileged mode in order to
+          We need to load installed providers from the
+          system classpath (typically the <code>lib/ext</code>
+          directory in in the Java installation directory)
+          in the privileged mode in order to
           be able read corresponding jar files even if
           file read capability is restricted (like the
           applet context case).

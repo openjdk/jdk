@@ -33,12 +33,13 @@
 if [ -z "$TESTJAVA" ]; then
   if [ $# -lt 1 ]; then exit 1; fi
   TESTJAVA="$1"; shift
+  COMPILEJAVA="${TESTJAVA}"
   TESTSRC="`pwd`"
   TESTCLASSES="`pwd`"
 fi
 
 JAVA="$TESTJAVA/bin/java"
-JAR="$TESTJAVA/bin/jar"
+JAR="$COMPILEJAVA/bin/jar"
 
 OS=`uname -s`
 case "$OS" in
@@ -68,7 +69,7 @@ if [ \! -d $EXTD ]; then
       if [ $n = 3 ]; then
         cp $TESTCLASSES/FooService.class $JARD
       fi
-      (cd $JARD; "$JAR" -cf ../p$n.jar *)
+      (cd $JARD; "$JAR" ${TESTTOOLVMOPTS} -cf ../p$n.jar *)
     done
 
     mv p3.jar $EXTD

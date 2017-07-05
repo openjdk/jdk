@@ -23,6 +23,11 @@
  * questions.
  */
 
+/* Access APIs for Windows Vista and above */
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0601
+#endif
+
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -48,8 +53,6 @@
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
 static void SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding);
-
-#define SHELL_KEY "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders"
 
 #define PROPSIZE 9      // eight-letter + null terminator
 #define SNAMESIZE 86    // max number of chars for LOCALE_SNAME is 85
@@ -174,75 +177,53 @@ getJavaIDFromLangID(LANGID langID)
 }
 
 /*
- * Code to figure out the user's home directory using the registry
-*/
-static WCHAR*
-getHomeFromRegistry()
-{
-    HKEY key;
-    int rc;
-    DWORD type;
-    WCHAR *p;
-    WCHAR path[MAX_PATH+1];
-    int size = MAX_PATH+1;
-
-    rc = RegOpenKeyEx(HKEY_CURRENT_USER, SHELL_KEY, 0, KEY_READ, &key);
-    if (rc != ERROR_SUCCESS) {
-        // Shell folder doesn't exist??!!
-        return NULL;
-    }
-
-    path[0] = 0;
-    rc = RegQueryValueExW(key, L"Desktop", 0, &type, (LPBYTE)path, &size);
-    if (rc != ERROR_SUCCESS || type != REG_SZ) {
-        return NULL;
-    }
-    RegCloseKey(key);
-    /* Get the parent of Desktop directory */
-    p = wcsrchr(path, L'\\');
-    if (p == NULL) {
-        return NULL;
-    }
-    *p = L'\0';
-    return _wcsdup(path);
-}
-
-/*
  * Code to figure out the user's home directory using shell32.dll
  */
 WCHAR*
 getHomeFromShell32()
 {
-    HRESULT rc;
-    LPITEMIDLIST item_list = 0;
-    WCHAR *p;
-    WCHAR path[MAX_PATH+1];
-    int size = MAX_PATH+1;
-
-    rc = SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &item_list);
-    if (!SUCCEEDED(rc)) {
-        // we can't find the shell folder.
-        return NULL;
-    }
-
-    path[0] = 0;
-    SHGetPathFromIDListW(item_list, (LPWSTR)path);
-
-    /* Get the parent of Desktop directory */
-    p = wcsrchr(path, L'\\');
-    if (p) {
-        *p = 0;
-    }
-
     /*
-     * We've been successful.  Note that we don't free the memory allocated
-     * by ShGetSpecialFolderLocation.  We only ever come through here once,
-     * and only if the registry lookup failed, so it's just not worth it.
-     *
-     * We also don't unload the SHELL32 DLL.  We've paid the hit for loading
-     * it and we may need it again later.
+     * Note that we don't free the memory allocated
+     * by getHomeFromShell32.
      */
-    return _wcsdup(path);
+    static WCHAR *u_path = NULL;
+    if (u_path == NULL) {
+        HRESULT hr;
+
+        /*
+         * SHELL32 DLL is delay load DLL and we can use the trick with
+         * __try/__except block.
+         */
+        __try {
+            /*
+             * For Windows Vista and later (or patched MS OS) we need to use
+             * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
+             * Shell32.dll (version 6.0.6000 or later)
+             */
+            hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+            /* Exception: no [SHGetKnownFolderPath] entry */
+            hr = E_FAIL;
+        }
+
+        if (FAILED(hr)) {
+            WCHAR path[MAX_PATH+1];
+
+            /* fallback solution for WinXP and Windows 2000 */
+            hr = SHGetFolderPathW(NULL, CSIDL_FLAG_DONT_VERIFY | CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path);
+            if (FAILED(hr)) {
+                /* we can't find the shell folder. */
+                u_path = NULL;
+            } else {
+                /* Just to be sure about the path length until Windows Vista approach.
+                 * [S_FALSE] could not be returned due to [CSIDL_FLAG_DONT_VERIFY] flag and UNICODE version.
+                 */
+                path[MAX_PATH] = 0;
+                u_path = _wcsdup(path);
+            }
+        }
+    }
+    return u_path;
 }
 
 static boolean
@@ -336,7 +317,7 @@ GetJavaProperties(JNIEnv* env)
 
     OSVERSIONINFOEX ver;
 
-    if (sprops.user_dir) {
+    if (sprops.line_separator) {
         return &sprops;
     }
 
@@ -538,15 +519,7 @@ GetJavaProperties(JNIEnv* env)
     }
 
     /*
-     * Home directory/
-     *
-     * We first look under a standard registry key.  If that fails we
-     * fall back on using a SHELL32.DLL API.  If that fails we use a
-     * default value.
-     *
-     * Note: To save space we want to avoid loading SHELL32.DLL
-     * unless really necessary.  However if we do load it, we leave it
-     * in memory, as it may be needed again later.
+     * Home directory
      *
      * The normal result is that for a given user name XXX:
      *     On multi-user NT, user.home gets set to c:\winnt\profiles\XXX.
@@ -554,13 +527,11 @@ GetJavaProperties(JNIEnv* env)
      *     On single-user Win95, user.home gets set to c:\windows.
      */
     {
-        WCHAR *homep = getHomeFromRegistry();
+        WCHAR *homep = getHomeFromShell32();
         if (homep == NULL) {
-            homep = getHomeFromShell32();
-            if (homep == NULL)
-                homep = L"C:\\";
+            homep = L"C:\\";
         }
-        sprops.user_home = _wcsdup(homep);
+        sprops.user_home = homep;
     }
 
     /*

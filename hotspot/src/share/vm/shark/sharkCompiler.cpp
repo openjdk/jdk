@@ -185,6 +185,9 @@ void SharkCompiler::compile_method(ciEnv*    env,
 
   // Build the LLVM IR for the method
   Function *function = SharkFunction::build(env, &builder, flow, name);
+  if (env->failing()) {
+    return;
+  }
 
   // Generate native code.  It's unpleasant that we have to drop into
   // the VM to do this -- it blocks safepoints -- but I can't see any

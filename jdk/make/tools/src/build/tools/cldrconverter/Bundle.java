@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ class Bundle {
             handleDateTimeFormatPatterns(DATETIME_PATTERN_KEYS, myMap, parentsMap, calendarType, "DateTimePatterns");
         }
 
-        // if myMap has any empty timezone or metazone names, weed out them.
+        // First, weed out any empty timezone or metazone names from myMap.
         // Fill in any missing abbreviations if locale is "en".
         for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
             String key = it.next();
@@ -426,7 +426,7 @@ class Bundle {
 
     /*
      * Adjusts String[] for era names because JRE's Calendars use different
-     * ERA value indexes in the Buddhist and Japanese Imperial calendars.
+     * ERA value indexes in the Buddhist, Japanese Imperial, and Islamic calendars.
      */
     private void adjustEraNames(Map<String, Object> map, CalendarType type) {
         String[][] eraNames = new String[ERA_KEYS.length][];
@@ -458,6 +458,11 @@ class Bundle {
                     // Replace the value
                     value = new String[] {"BC", value[0]};
                     break;
+
+                case ISLAMIC:
+                    // Replace the value
+                    value = new String[] {"", value[0]};
+                    break;
                 }
                 if (!key.equals(realKey)) {
                     map.put(realKey, value);
@@ -479,6 +484,7 @@ class Bundle {
         for (String k : patternKeys) {
             if (myMap.containsKey(calendarPrefix + k)) {
                 int len = patternKeys.length;
+                List<String> rawPatterns = new ArrayList<>();
                 List<String> patterns = new ArrayList<>();
                 for (int i = 0; i < len; i++) {
                     String key = calendarPrefix + patternKeys[i];
@@ -487,6 +493,7 @@ class Bundle {
                         pattern = (String) parentsMap.remove(key);
                     }
                     if (pattern != null) {
+                        rawPatterns.add(i, pattern);
                         patterns.add(i, translateDateFormatLetters(calendarType, pattern));
                     }
                 }
@@ -494,6 +501,9 @@ class Bundle {
                     return;
                 }
                 String key = calendarPrefix + name;
+                if (!rawPatterns.equals(patterns)) {
+                    myMap.put("cldr." + key, rawPatterns.toArray(new String[len]));
+                }
                 myMap.put(key, patterns.toArray(new String[len]));
                 break;
             }

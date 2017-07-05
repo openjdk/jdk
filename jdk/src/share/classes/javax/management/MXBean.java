@@ -907,6 +907,14 @@ public interface ModuleMXBean {
       <li><p>Otherwise, <em>J</em> is not reconstructible.</p></li>
     </ol>
 
+    <p>Rule 2 is not applicable to subset Profiles of Java SE that do not
+    include the {@code java.beans} package. When targeting a runtime that does
+    not include the {@code java.beans} package, and where there is a mismatch
+    between the compile-time and runtime environment whereby <em>J</em> is
+    compiled with a public constructor and the {@code ConstructorProperties}
+    annotation, then <em>J</em> is not reconstructible unless another rule
+    applies.</p>
+
     <p>Here are examples showing different ways to code a type {@code
       NamedNumber} that consists of an {@code int} and a {@code
       String}.  In each case, the {@code CompositeType} looks like this:</p>

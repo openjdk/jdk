@@ -441,7 +441,7 @@ public class Window extends Container implements Accessible {
     transient Object anchor = new Object();
     static class WindowDisposerRecord implements sun.java2d.DisposerRecord {
         final WeakReference<Window> owner;
-        final WeakReference weakThis;
+        final WeakReference<Window> weakThis;
         final WeakReference<AppContext> context;
         WindowDisposerRecord(AppContext context, Window victim) {
             owner = new WeakReference<Window>(victim.getOwner());
@@ -1542,6 +1542,7 @@ public class Window extends Container implements Accessible {
     private static Window[] getWindows(AppContext appContext) {
         synchronized (Window.class) {
             Window realCopy[];
+            @SuppressWarnings("unchecked")
             Vector<WeakReference<Window>> windowList =
                 (Vector<WeakReference<Window>>)appContext.get(Window.class);
             if (windowList != null) {
@@ -1866,7 +1867,7 @@ public class Window extends Container implements Accessible {
      * @since 1.4
      */
     public synchronized WindowListener[] getWindowListeners() {
-        return (WindowListener[])(getListeners(WindowListener.class));
+        return getListeners(WindowListener.class);
     }
 
     /**
@@ -1882,7 +1883,7 @@ public class Window extends Container implements Accessible {
      * @since 1.4
      */
     public synchronized WindowFocusListener[] getWindowFocusListeners() {
-        return (WindowFocusListener[])(getListeners(WindowFocusListener.class));
+        return getListeners(WindowFocusListener.class);
     }
 
     /**
@@ -1898,7 +1899,7 @@ public class Window extends Container implements Accessible {
      * @since 1.4
      */
     public synchronized WindowStateListener[] getWindowStateListeners() {
-        return (WindowStateListener[])(getListeners(WindowStateListener.class));
+        return getListeners(WindowStateListener.class);
     }
 
 
@@ -2014,7 +2015,6 @@ public class Window extends Container implements Accessible {
                     break;
                 case WindowEvent.WINDOW_STATE_CHANGED:
                     processWindowStateEvent((WindowEvent)e);
-                default:
                     break;
             }
             return;
@@ -2382,12 +2382,14 @@ public class Window extends Container implements Accessible {
      *         KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS
      * @since 1.4
      */
+    @SuppressWarnings("unchecked")
     public Set<AWTKeyStroke> getFocusTraversalKeys(int id) {
         if (id < 0 || id >= KeyboardFocusManager.TRAVERSAL_KEY_LENGTH) {
             throw new IllegalArgumentException("invalid focus traversal key identifier");
         }
 
         // Okay to return Set directly because it is an unmodifiable view
+        @SuppressWarnings("rawtypes")
         Set keystrokes = (focusTraversalKeys != null)
             ? focusTraversalKeys[id]
             : null;
@@ -2765,7 +2767,7 @@ public class Window extends Container implements Accessible {
    /*
     * Support for tracking all windows owned by this window
     */
-    void addOwnedWindow(WeakReference weakWindow) {
+    void addOwnedWindow(WeakReference<Window> weakWindow) {
         if (weakWindow != null) {
             synchronized(ownedWindowList) {
                 // this if statement should really be an assert, but we don't
@@ -2777,7 +2779,7 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    void removeOwnedWindow(WeakReference weakWindow) {
+    void removeOwnedWindow(WeakReference<Window> weakWindow) {
         if (weakWindow != null) {
             // synchronized block not required since removeElement is
             // already synchronized
@@ -2792,6 +2794,7 @@ public class Window extends Container implements Accessible {
 
     private void addToWindowList() {
         synchronized (Window.class) {
+            @SuppressWarnings("unchecked")
             Vector<WeakReference<Window>> windowList = (Vector<WeakReference<Window>>)appContext.get(Window.class);
             if (windowList == null) {
                 windowList = new Vector<WeakReference<Window>>();
@@ -2801,8 +2804,9 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    private static void removeFromWindowList(AppContext context, WeakReference weakThis) {
+    private static void removeFromWindowList(AppContext context, WeakReference<Window> weakThis) {
         synchronized (Window.class) {
+            @SuppressWarnings("unchecked")
             Vector<WeakReference<Window>> windowList = (Vector<WeakReference<Window>>)context.get(Window.class);
             if (windowList != null) {
                 windowList.remove(weakThis);
@@ -2945,7 +2949,7 @@ public class Window extends Container implements Accessible {
         // Deserialized Windows are not yet visible.
         visible = false;
 
-        weakThis = new WeakReference(this);
+        weakThis = new WeakReference<>(this);
 
         anchor = new Object();
         sun.java2d.Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
@@ -2956,7 +2960,7 @@ public class Window extends Container implements Accessible {
 
     private void deserializeResources(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
-            ownedWindowList = new Vector();
+            ownedWindowList = new Vector<>();
 
             if (windowSerializedDataVersion < 2) {
                 // Translate old-style focus tracking to new model. For 1.4 and

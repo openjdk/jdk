@@ -145,11 +145,11 @@ class CodeCache : AllStatic {
   static void prune_scavenge_root_nmethods();
 
   // Printing/debugging
-  static void print()   PRODUCT_RETURN;          // prints summary
+  static void print();                           // prints summary
   static void print_internals();
   static void verify();                          // verifies the code cache
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
-  static void print_bounds(outputStream* st);    // Prints a summary of the bounds of the code cache
+  static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
 
   // The full limits of the codeCache
