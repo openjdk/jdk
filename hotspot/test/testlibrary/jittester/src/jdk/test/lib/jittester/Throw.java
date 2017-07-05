@@ -27,6 +27,7 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Throw extends IRNode {
     public Throw(IRNode throwable) {
+        super(throwable.getResultType());
         addChild(throwable);
     }
 

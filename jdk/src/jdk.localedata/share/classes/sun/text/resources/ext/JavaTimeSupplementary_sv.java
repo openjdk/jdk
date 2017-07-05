@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -111,22 +111,24 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
                 "kinesiska republikens kalender" },
             { "field.dayperiod",
                 "fm/em" },
+            { "field.era",
+                "era" },
             { "field.hour",
-                "Timme" },
+                "timme" },
             { "field.minute",
-                "Minut" },
+                "minut" },
             { "field.month",
-                "M\u00e5nad" },
+                "m\u00e5nad" },
             { "field.second",
-                "Sekund" },
+                "sekund" },
             { "field.week",
-                "Vecka" },
+                "vecka" },
             { "field.weekday",
-                "Veckodag" },
+                "veckodag" },
             { "field.year",
-                "\u00c5r" },
+                "\u00e5r" },
             { "field.zone",
-                "Tidszon" },
+                "tidszon" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "fm",
@@ -229,6 +231,12 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "fm",
+                    "em",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
@@ -237,8 +245,8 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "f",
-                    "e",
+                    "fm",
+                    "em",
                 }
             },
             { "islamic.narrow.Eras",
@@ -287,6 +295,24 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
                     "d MMMM y G",
                     "d MMM y G",
                     "G y-MM-dd",
+                }
+            },
+            { "java.time.japanese.long.Eras",
+                new String[] {
+                    "efter Kristus",
+                    "Meiji",
+                    "Taish\u014d",
+                    "Sh\u014dwa",
+                    "Heisei",
+                }
+            },
+            { "java.time.japanese.short.Eras",
+                new String[] {
+                    "e.Kr.",
+                    "Meiji",
+                    "Taish\u014d",
+                    "Sh\u014dwa",
+                    "Heisei",
                 }
             },
             { "java.time.long.Eras",
@@ -429,6 +455,12 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "fm",
+                    "em",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "f\u00f6re R.K.",
@@ -437,8 +469,8 @@ public class JavaTimeSupplementary_sv extends OpenListResourceBundle {
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "f",
-                    "e",
+                    "fm",
+                    "em",
                 }
             },
             { "roc.narrow.Eras",

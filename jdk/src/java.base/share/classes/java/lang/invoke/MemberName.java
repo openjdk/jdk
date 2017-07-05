@@ -54,7 +54,7 @@ import java.util.Objects;
  * a naked name/type pair.
  * A member name may also have non-zero modifier flags.
  * Finally, a member name may be either resolved or unresolved.
- * If it is resolved, the existence of the named
+ * If it is resolved, the existence of the named member has been determined by the JVM.
  * <p>
  * Whether resolved or not, a member name provides no access rights or
  * invocation capability to its possessor.  It is merely a compact

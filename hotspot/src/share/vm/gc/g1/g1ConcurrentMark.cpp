@@ -438,6 +438,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   }
 
   assert(ConcGCThreads > 0, "Should have been set");
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
+  log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
   _parallel_marking_threads = ConcGCThreads;
   _max_parallel_marking_threads = _parallel_marking_threads;
 

@@ -1499,7 +1499,8 @@ void MachNodeForm::output(FILE *fp) {
 // twice, we need to check that the operands are pointer-eequivalent in
 // the DFA during the labeling process.
 Predicate *InstructForm::build_predicate() {
-  char buf[1024], *s=buf;
+  const int buflen = 1024;
+  char buf[buflen], *s=buf;
   Dict names(cmpstr,hashstr,Form::arena);       // Map Names to counts
 
   MatchNode *mnode =
@@ -1508,12 +1509,12 @@ Predicate *InstructForm::build_predicate() {
 
   uint first = 1;
   // Start with the predicate supplied in the .ad file.
-  if( _predicate ) {
-    if( first ) first=0;
-    strcpy(s,"("); s += strlen(s);
-    strcpy(s,_predicate->_pred);
+  if (_predicate) {
+    if (first) first = 0;
+    strcpy(s, "("); s += strlen(s);
+    strncpy(s, _predicate->_pred, buflen - strlen(s) - 1);
     s += strlen(s);
-    strcpy(s,")"); s += strlen(s);
+    strcpy(s, ")"); s += strlen(s);
   }
   for( DictI i(&names); i.test(); ++i ) {
     uintptr_t cnt = (uintptr_t)i._value;

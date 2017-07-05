@@ -26,18 +26,12 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public abstract class Initialization extends IRNode {
-    protected VariableInfo variableInfo = new VariableInfo();
-
-    protected Initialization() {
-    }
+    private final VariableInfo variableInfo;
 
     protected Initialization(VariableInfo varInfo, IRNode initExpr) {
+        super(varInfo.type);
         variableInfo = varInfo;
         addChild(initExpr);
-    }
-
-    public VariableInfo get() {
-        return variableInfo;
     }
 
     @Override

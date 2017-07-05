@@ -31,8 +31,8 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.VariableBase;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
@@ -49,7 +49,7 @@ class AssignmentOperatorImplFactory extends BinaryOperatorFactory {
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, PseudoRandom.randomElement(
                 TypeUtil.getImplicitlyCastable(TypeList.getAll(), resultType)));
     }
@@ -68,23 +68,22 @@ class AssignmentOperatorImplFactory extends BinaryOperatorFactory {
                 .setOperatorLimit(leftOperatorLimit)
                 .setResultType(leftOperandType)
                 .setIsConstant(false);
-        Rule rule = new Rule("assignment");
+        Rule<VariableBase> rule = new Rule<>("assignment");
         rule.add("initialized_nonconst_var", builder.setIsInitialized(true).getVariableFactory());
         rule.add("uninitialized_nonconst_var", builder.setIsInitialized(false).getVariableFactory());
-        IRNode leftOperandValue = rule.produce();
+        VariableBase leftOperandValue = rule.produce();
         IRNode rightOperandValue = builder.setComplexityLimit(rightComplexityLimit)
                 .setOperatorLimit(rightOperatorLimit)
                 .setResultType(rightOperandType)
                 .getExpressionFactory()
                 .produce();
         try {
-            VariableBase v = (VariableBase) leftOperandValue;
-            if ((v.get().flags & VariableInfo.INITIALIZED) == 0) {
-                v.get().flags |= VariableInfo.INITIALIZED;
+            if ((leftOperandValue.getVariableInfo().flags & VariableInfo.INITIALIZED) == 0) {
+                leftOperandValue.getVariableInfo().flags |= VariableInfo.INITIALIZED;
             }
         } catch (Exception e) {
             throw new ProductionFailedException(e.getMessage());
         }
-        return new BinaryOperator(opKind, leftOperandValue, rightOperandValue);
+        return new BinaryOperator(opKind, resultType, leftOperandValue, rightOperandValue);
     }
 }

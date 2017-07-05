@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8149452
+ * @bug 8149452 8151876
  * @summary Check the missing time zone names.
  */
 import java.text.DateFormatSymbols;
@@ -42,7 +42,10 @@ public class Bug8149452 {
             if (!Arrays.stream(zoneStrings)
                     .anyMatch(zone -> tzID.equalsIgnoreCase(zone[0]))) {
                 // to ignore names for Etc/GMT[+-][0-9]+ which are not supported
-                if (!tzID.startsWith("Etc/GMT") && !tzID.startsWith("GMT")) {
+                // Also ignore the TimeZone DisplayNames with GMT[+-]:hh:mm
+                if (!tzID.startsWith("Etc/GMT")
+                        && !tzID.startsWith("GMT")
+                        && !TimeZone.getTimeZone(tzID).getDisplayName().startsWith("GMT")) {
                     listNotFound.add(tzID);
                 }
             }

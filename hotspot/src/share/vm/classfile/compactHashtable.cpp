@@ -38,6 +38,7 @@
 CompactHashtableWriter::CompactHashtableWriter(int num_buckets,
                                                CompactHashtableStats* stats) {
   assert(DumpSharedSpaces, "dump-time only");
+  assert(num_buckets > 0, "no buckets");
   _num_buckets = num_buckets;
   _num_entries = 0;
   _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);

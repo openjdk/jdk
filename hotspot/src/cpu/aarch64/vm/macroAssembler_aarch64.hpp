@@ -545,6 +545,15 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b111, reg);
   }
 
+  // CTR_EL0:   op1 == 011
+  //            CRn == 0000
+  //            CRm == 0000
+  //            op2 == 001
+  inline void get_ctr_el0(Register reg)
+  {
+    mrs(0b011, 0b0000, 0b0000, 0b001, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -1217,7 +1226,7 @@ public:
                       Register cnt1, Register cnt2,
                       Register tmp1, Register tmp2,
                       Register tmp3, Register tmp4,
-                      int int_cnt1, Register result);
+                      int int_cnt1, Register result, int ae);
 private:
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2);

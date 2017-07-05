@@ -34,11 +34,10 @@
 // * @compile ConstantTest.java FieldUniverse.java TypeUniverse.java TestMetaAccessProvider.java
 package jdk.vm.ci.runtime.test;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import jdk.vm.ci.meta.JavaConstant;
 
 public class ConstantTest extends FieldUniverse {
 
@@ -51,31 +50,5 @@ public class ConstantTest extends FieldUniverse {
     @Test
     public void testNullIsNull() {
         Assert.assertTrue(JavaConstant.NULL_POINTER.isNull());
-    }
-
-    @Test
-    public void testOne() {
-        for (JavaKind kind : JavaKind.values()) {
-            if (kind.isNumericInteger() || kind.isNumericFloat()) {
-                Assert.assertTrue(JavaConstant.one(kind).getJavaKind() == kind);
-            }
-        }
-        Assert.assertEquals(1, JavaConstant.one(JavaKind.Int).asInt());
-        Assert.assertEquals(1L, JavaConstant.one(JavaKind.Long).asLong());
-        Assert.assertEquals(1, JavaConstant.one(JavaKind.Byte).asInt());
-        Assert.assertEquals(1, JavaConstant.one(JavaKind.Short).asInt());
-        Assert.assertEquals(1, JavaConstant.one(JavaKind.Char).asInt());
-        Assert.assertTrue(1F == JavaConstant.one(JavaKind.Float).asFloat());
-        Assert.assertTrue(1D == JavaConstant.one(JavaKind.Double).asDouble());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalOne() {
-        JavaConstant.one(JavaKind.Illegal);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testVoidOne() {
-        JavaConstant.one(JavaKind.Void);
     }
 }

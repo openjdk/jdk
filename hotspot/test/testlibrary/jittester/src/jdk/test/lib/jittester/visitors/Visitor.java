@@ -34,7 +34,6 @@ import jdk.test.lib.jittester.If;
 import jdk.test.lib.jittester.Initialization;
 import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
-import jdk.test.lib.jittester.LogicOperator;
 import jdk.test.lib.jittester.NonStaticMemberVariable;
 import jdk.test.lib.jittester.Nothing;
 import jdk.test.lib.jittester.PrintVariables;
@@ -106,7 +105,6 @@ public interface Visitor<T> {
     T visit(Klass node);
     T visit(Literal node);
     T visit(LocalVariable node);
-    T visit(LogicOperator node);
     T visit(LoopingCondition node);
     T visit(MainKlass node);
     T visit(NonStaticMemberVariable node);

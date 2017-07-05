@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +23,21 @@
  */
 
 import static java.lang.System.out;
-
 import java.nio.ByteBuffer;
 import java.security.DigestException;
 import java.security.MessageDigest;
-import java.util.Random;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import jdk.testlibrary.RandomFactory;
 
 /**
  * @test
- * @bug 8050371
+ * @bug 8050371 8156059
  * @summary Check md.digest(data) value whether same with digest output value
  *          with various update/digest methods.
  * @author Kevin Liu
  * @key randomness
+ * @library /lib/testlibrary
  */
 
 public class TestSameValue {
@@ -49,24 +52,17 @@ public class TestSameValue {
         byte[] data = new byte[6706];
         MessageDigest md = null;
         // Initialize input data
-        new Random().nextBytes(data);
+        RandomFactory.getRandom().nextBytes(data);
 
-        String[] providers = {
-                null, "SUN"
-        };
-        String[] algorithmArr = {
-                "SHA", "Sha", "MD5", "md5", "SHA-224", "SHA-256", "SHA-384",
-                "SHA-512"
-        };
+        String[] algorithmArr = { "SHA", "Sha", "MD5", "md5", "SHA-224",
+                "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256",
+                "SHA3-384", "SHA3-512" };
 
-        for (String algorithm: algorithmArr) {
-            for (String provider: providers) {
-                if (provider != null) {
-                    md = MessageDigest.getInstance(algorithm, provider);
-                } else {
-                    md = MessageDigest.getInstance(algorithm);
-                }
-                for (UpdateDigestMethod updateMethod: UpdateDigestMethod
+        for (String algorithm : algorithmArr) {
+            try {
+                md = MessageDigest.getInstance(algorithm);
+
+                for (UpdateDigestMethod updateMethod : UpdateDigestMethod
                         .values()) {
                     byte[] output = updateMethod.updateDigest(data, md);
                     // Get the output and the "correct" one
@@ -75,50 +71,71 @@ public class TestSameValue {
                     if (!MessageDigest.isEqual(output, standard)) {
                         throw new RuntimeException(
                                 "Test failed at algorithm/provider/numUpdate:"
-                                        + algorithm + "/" + provider + "/"
-                                        + updateMethod);
+                                        + algorithm + "/" + md.getProvider()
+                                        + "/" + updateMethod);
                     }
+                }
+            } catch (NoSuchAlgorithmException nae) {
+                if (algorithm.startsWith("SHA3") && !isSHA3supported()) {
+                    continue;
+                } else {
+                    throw nae;
                 }
             }
         }
 
-        out.println("All " + algorithmArr.length
-                * UpdateDigestMethod.values().length * providers.length
+        out.println("All "
+                + algorithmArr.length * UpdateDigestMethod.values().length
                 + " tests Passed");
+    }
+
+    // SHA-3 hash algorithms are only supported by "SUN" provider
+    // and "OracleUcrypto" provider on Solaris 12.0 or later
+    // This method checks if system supports SHA-3
+    private boolean isSHA3supported() {
+        if (Security.getProvider("SUN") != null) {
+            return true;
+        }
+        if (Security.getProvider("OracleUcrypto") != null
+                && "SunOS".equals(System.getProperty("os.name"))
+                && System.getProperty("os.version").compareTo("5.12") >= 0) {
+            return true;
+        }
+        return false;
     }
 
     private static enum UpdateDigestMethod {
 
         /*
-         * update the data one by one using method update(byte input) then
-         * do digest (giving the output buffer, offset, and the number of
-         * bytes to put in the output buffer)
+         * update the data one by one using method update(byte input) then do
+         * digest (giving the output buffer, offset, and the number of bytes to
+         * put in the output buffer)
          */
         UPDATE_DIGEST_BUFFER {
             @Override
             public byte[] updateDigest(byte[] data, MessageDigest md)
                     throws DigestException {
-                for (byte element: data) {
+                for (byte element : data) {
                     md.update(element);
                 }
                 byte[] output = new byte[md.getDigestLength()];
                 int len = md.digest(output, 0, output.length);
                 if (len != output.length) {
                     throw new RuntimeException(
-                        "ERROR" + ": digest length differs!");
+                            "ERROR" + ": digest length differs!");
                 }
                 return output;
             }
         },
 
         /*
-         * update the data one by one using method update(byte input)
-         * then do digest
+         * update the data one by one using method update(byte input) then do
+         * digest
          */
         UPDATE_DIGEST {
             @Override
             public byte[] updateDigest(byte[] data, MessageDigest md) {
-                for (byte element: data) {
+                for (byte element : data) {
                     md.update(element);
                 }
                 return md.digest();
@@ -139,7 +156,7 @@ public class TestSameValue {
                 int len = md.digest(output, 0, output.length);
                 if (len != output.length) {
                     throw new RuntimeException(
-                        "ERROR" + ": digest length differs!");
+                            "ERROR" + ": digest length differs!");
                 }
                 return output;
             }
@@ -155,10 +172,10 @@ public class TestSameValue {
         },
 
         /*
-         * update the leading bytes (length is "data.length-LASTNBYTES")
-         * at once as a block, then do digest (do a final update using
-         * the left LASTNBYTES bytes which is passed as a parameter for
-         * the digest method, then complete the digest)
+         * update the leading bytes (length is "data.length-LASTNBYTES") at once
+         * as a block, then do digest (do a final update using the left
+         * LASTNBYTES bytes which is passed as a parameter for the digest
+         * method, then complete the digest)
          */
         UPDATE_LEADING_BLOCK_DIGEST_REMAIN {
             @Override
@@ -176,9 +193,9 @@ public class TestSameValue {
         },
 
         /*
-         * update the data 2 bytes each time, after finishing updating,
-         * do digest (giving the output buffer, offset, and the number
-         * of bytes to put in the output buffer)
+         * update the data 2 bytes each time, after finishing updating, do
+         * digest (giving the output buffer, offset, and the number of bytes to
+         * put in the output buffer)
          */
         UPDATE_BYTES_DIGEST_BUFFER {
             @Override
@@ -192,32 +209,32 @@ public class TestSameValue {
                 int len = md.digest(output, 0, output.length);
                 if (len != output.length) {
                     throw new RuntimeException(
-                        "ERROR" + ": digest length differs!");
+                            "ERROR" + ": digest length differs!");
                 }
                 return output;
             }
         },
 
         /*
-         * update the data 2 bytes each time, after finishing updating,
-         * do digest
+         * update the data 2 bytes each time, after finishing updating, do
+         * digest
          */
         UPDATE_BYTES_DIGEST {
             @Override
             public byte[] updateDigest(byte[] data, MessageDigest md) {
-                for (int i=0;i<data.length/2;i++){
-                    md.update(data,i*2,2);
+                for (int i = 0; i < data.length / 2; i++) {
+                    md.update(data, i * 2, 2);
                 }
                 return md.digest();
             }
         },
 
         /*
-         * update the data one by one using method update(byte[] input,
-         * int offset, int len) for the leading bytes (length is
-         * "data.length-LASTNBYTES"), then do digest (do a final
-         * update using the left LASTNBYTES bytes which is passed
-         * as a parameter for digest method then complete the digest)
+         * update the data one by one using method update(byte[] input, int
+         * offset, int len) for the leading bytes (length is
+         * "data.length-LASTNBYTES"), then do digest (do a final update using
+         * the left LASTNBYTES bytes which is passed as a parameter for digest
+         * method then complete the digest)
          */
         UPDATE_BUFFER_LEADING_DIGEST_REMAIN {
             @Override
@@ -233,11 +250,10 @@ public class TestSameValue {
         },
 
         /*
-         * update the data one by one using method update(byte input)
-         * for the leading bytes (length is "data.length-LASTNBYTES"),
-         * then do digest (do a final update using the left LASTNBYTES
-         * bytes which is passed as a parameter for digest method,
-         * then complete the digest)
+         * update the data one by one using method update(byte input) for the
+         * leading bytes (length is "data.length-LASTNBYTES"), then do digest
+         * (do a final update using the left LASTNBYTES bytes which is passed as
+         * a parameter for digest method, then complete the digest)
          */
         UPDATE_LEADING_DIGEST_REMAIN {
             @Override
@@ -253,9 +269,9 @@ public class TestSameValue {
         },
 
         /*
-         * update all the data at once as a ByteBuffer, then do digest
-         * (giving the output buffer, offset, and the number of bytes
-         * to put in the output buffer)
+         * update all the data at once as a ByteBuffer, then do digest (giving
+         * the output buffer, offset, and the number of bytes to put in the
+         * output buffer)
          */
         UPDATE_BYTE_BUFFER_DIGEST_BUFFER {
             @Override
@@ -266,7 +282,7 @@ public class TestSameValue {
                 int len = md.digest(output, 0, output.length);
                 if (len != output.length) {
                     throw new RuntimeException(
-                          "ERROR" + ": digest length differs!");
+                            "ERROR" + ": digest length differs!");
                 }
                 return output;
             }
@@ -282,10 +298,10 @@ public class TestSameValue {
         },
 
         /*
-         * update the leading bytes (length is "data.length-LASTNBYTES")
-         * at once as a ByteBuffer, then do digest (do a final update
-         * using the left LASTNBYTES bytes which is passed as a parameter
-         * for the digest method, then complete the digest)
+         * update the leading bytes (length is "data.length-LASTNBYTES") at once
+         * as a ByteBuffer, then do digest (do a final update using the left
+         * LASTNBYTES bytes which is passed as a parameter for the digest
+         * method, then complete the digest)
          */
         UPDATE_BYTE_BUFFER_LEADING_DIGEST_REMAIN {
             @Override

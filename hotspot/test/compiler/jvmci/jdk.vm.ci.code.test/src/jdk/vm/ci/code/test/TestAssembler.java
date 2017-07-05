@@ -48,9 +48,10 @@ import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.InvokeTarget;
-import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ValueKind;
 import jdk.vm.ci.meta.VMConstant;
 
 /**
@@ -173,7 +174,7 @@ public abstract class TestAssembler {
      */
     public abstract void emitTrap(DebugInfo info);
 
-    public final LIRKind narrowOopKind;
+    public final ValueKind<?> narrowOopKind;
 
     protected final Buffer code;
     protected final Buffer data;
@@ -191,8 +192,20 @@ public abstract class TestAssembler {
 
     private StackSlot deoptRescue;
 
+    private static class TestValueKind extends ValueKind<TestValueKind> {
+
+        TestValueKind(PlatformKind kind) {
+            super(kind);
+        }
+
+        @Override
+        public TestValueKind changeType(PlatformKind kind) {
+            return new TestValueKind(kind);
+        }
+    }
+
     protected TestAssembler(CodeCacheProvider codeCache, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
-        this.narrowOopKind = LIRKind.reference(narrowOopKind);
+        this.narrowOopKind = new TestValueKind(narrowOopKind);
 
         this.code = new Buffer();
         this.data = new Buffer();
@@ -209,12 +222,16 @@ public abstract class TestAssembler {
         this.curStackSlot = initialFrameSize;
     }
 
+    public ValueKind<?> getValueKind(JavaKind kind) {
+        return new TestValueKind(codeCache.getTarget().arch.getPlatformKind(kind));
+    }
+
     protected Register newRegister() {
         return registers[nextRegister++];
     }
 
-    protected StackSlot newStackSlot(LIRKind kind) {
-        curStackSlot += kind.getPlatformKind().getSizeInBytes();
+    protected StackSlot newStackSlot(PlatformKind kind) {
+        curStackSlot += kind.getSizeInBytes();
         if (curStackSlot > frameSize) {
             int newFrameSize = curStackSlot;
             if (newFrameSize % stackAlignment != 0) {
@@ -223,7 +240,7 @@ public abstract class TestAssembler {
             emitGrowStack(newFrameSize - frameSize);
             frameSize = newFrameSize;
         }
-        return StackSlot.get(kind, -curStackSlot, true);
+        return StackSlot.get(new TestValueKind(kind), -curStackSlot, true);
     }
 
     protected void setDeoptRescueSlot(StackSlot deoptRescue) {

@@ -82,7 +82,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
     public void testRegInt() {
         DebugInfoCompiler compiler = (asm, values) -> {
             Register reg = asm.emitLoadInt(42);
-            values[0] = reg.asValue(target.getLIRKind(JavaKind.Int));
+            values[0] = reg.asValue(asm.getValueKind(JavaKind.Int));
             return null;
         };
         testIntOnStack(compiler);
@@ -131,7 +131,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
     public void testRegFloat() {
         DebugInfoCompiler compiler = (asm, values) -> {
             Register reg = asm.emitLoadFloat(42.0f);
-            values[0] = reg.asValue(target.getLIRKind(JavaKind.Float));
+            values[0] = reg.asValue(asm.getValueKind(JavaKind.Float));
             return null;
         };
         testFloatOnStack(compiler);
@@ -181,7 +181,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
     public void testRegLong() {
         DebugInfoCompiler compiler = (asm, values) -> {
             Register reg = asm.emitLoadLong(42);
-            values[0] = reg.asValue(target.getLIRKind(JavaKind.Long));
+            values[0] = reg.asValue(asm.getValueKind(JavaKind.Long));
             values[1] = Value.ILLEGAL;
             return null;
         };
@@ -234,7 +234,7 @@ public class SimpleDebugInfoTest extends DebugInfoTest {
         ResolvedJavaType type = metaAccess.lookupJavaType(objectOnStack());
         DebugInfoCompiler compiler = (asm, values) -> {
             Register reg = asm.emitLoadPointer((HotSpotConstant) constantReflection.asJavaClass(type));
-            values[0] = reg.asValue(target.getLIRKind(JavaKind.Object));
+            values[0] = reg.asValue(asm.getValueKind(JavaKind.Object));
             return null;
         };
         testObjectOnStack(compiler);

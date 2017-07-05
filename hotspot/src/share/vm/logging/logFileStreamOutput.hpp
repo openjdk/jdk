@@ -54,7 +54,7 @@ class LogStdoutOutput : public LogFileStreamOutput {
  private:
   static LogStdoutOutput _instance;
   LogStdoutOutput() : LogFileStreamOutput(stdout) {
-    set_config_string("all=off");
+    set_config_string("all=warning");
   }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;
@@ -70,7 +70,7 @@ class LogStderrOutput : public LogFileStreamOutput {
  private:
   static LogStderrOutput _instance;
   LogStderrOutput() : LogFileStreamOutput(stderr) {
-    set_config_string("all=warning");
+    set_config_string("all=off");
   }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;

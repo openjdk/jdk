@@ -24,7 +24,7 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
-import jdk.test.lib.jittester.IRNode;
+
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.StaticMemberVariable;
 import jdk.test.lib.jittester.Symbol;
@@ -34,7 +34,7 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class StaticMemberVariableFactory extends Factory {
+class StaticMemberVariableFactory extends Factory<StaticMemberVariable> {
     private final Type type;
     private final int flags;
     private final Type ownerClass;
@@ -46,7 +46,7 @@ class StaticMemberVariableFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public StaticMemberVariable produce() throws ProductionFailedException {
         // Get the variables of the requested type from SymbolTable
         ArrayList<Symbol> variables = new ArrayList<>(SymbolTable.get(type, VariableInfo.class));
         if (!variables.isEmpty()) {

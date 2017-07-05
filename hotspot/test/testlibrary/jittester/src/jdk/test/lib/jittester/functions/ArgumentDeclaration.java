@@ -28,9 +28,10 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class ArgumentDeclaration extends IRNode {
-    public VariableInfo variableInfo;
+    public final VariableInfo variableInfo;
 
     public ArgumentDeclaration(VariableInfo variableInfo) {
+        super(variableInfo.type);
         this.variableInfo = variableInfo;
     }
 
