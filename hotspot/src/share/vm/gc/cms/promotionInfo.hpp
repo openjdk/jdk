@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,29 +64,8 @@ class PromotedObject VALUE_OBJ_CLASS_SPEC {
     Data     _data;
   };
  public:
-  inline PromotedObject* next() const {
-    assert(!((FreeChunk*)this)->is_free(), "Error");
-    PromotedObject* res;
-    if (UseCompressedOops) {
-      // The next pointer is a compressed oop stored in the top 32 bits
-      res = (PromotedObject*)oopDesc::decode_heap_oop(_data._narrow_next);
-    } else {
-      res = (PromotedObject*)(_next & next_mask);
-    }
-    assert(oop(res)->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(res)));
-    return res;
-  }
-  inline void setNext(PromotedObject* x) {
-    assert(((intptr_t)x & ~next_mask) == 0, "Conflict in bit usage, "
-           "or insufficient alignment of objects");
-    if (UseCompressedOops) {
-      assert(_data._narrow_next == 0, "Overwrite?");
-      _data._narrow_next = oopDesc::encode_heap_oop(oop(x));
-    } else {
-      _next |= (intptr_t)x;
-    }
-    assert(!((FreeChunk*)this)->is_free(), "Error");
-  }
+  PromotedObject* next() const;
+  void setNext(PromotedObject* x);
   inline void setPromotedMark() {
     _next |= promoted_mask;
     assert(!((FreeChunk*)this)->is_free(), "Error");

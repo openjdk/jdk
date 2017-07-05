@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class Klass extends Metadata implements ClassConstants {
     }
     subklass     = new MetadataField(type.getAddressField("_subklass"), 0);
     nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
+    vtableLen    = new CIntField(type.getCIntegerField("_vtable_len"), 0);
 
     LH_INSTANCE_SLOW_PATH_BIT  = db.lookupIntConstant("Klass::_lh_instance_slow_path_bit").intValue();
     LH_LOG2_ELEMENT_SIZE_SHIFT = db.lookupIntConstant("Klass::_lh_log2_element_size_shift").intValue();
@@ -70,6 +71,7 @@ public class Klass extends Metadata implements ClassConstants {
     LH_ARRAY_TAG_TYPE_VALUE    = db.lookupIntConstant("Klass::_lh_array_tag_type_value").intValue();
     LH_ARRAY_TAG_OBJ_VALUE     = db.lookupIntConstant("Klass::_lh_array_tag_obj_value").intValue();
   }
+
 
   public Klass(Address addr) {
     super(addr);
@@ -91,6 +93,7 @@ public class Klass extends Metadata implements ClassConstants {
   private static MetadataField  subklass;
   private static MetadataField  nextSibling;
   private static sun.jvm.hotspot.types.Field traceIDField;
+  private static CIntField vtableLen;
 
   private Address getValue(AddressField field) {
     return addr.getAddressAt(field.getOffset());
@@ -111,6 +114,7 @@ public class Klass extends Metadata implements ClassConstants {
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
   public Klass    getSubklassKlass()    { return (Klass)    subklass.getValue(this);     }
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
+  public long     getVtableLen()        { return            vtableLen.getValue(this); }
 
   public long traceID() {
     if (traceIDField == null) return 0;
@@ -179,6 +183,7 @@ public class Klass extends Metadata implements ClassConstants {
       visitor.doCInt(accessFlags, true);
     visitor.doMetadata(subklass, true);
     visitor.doMetadata(nextSibling, true);
+    visitor.doCInt(vtableLen, true);
     }
 
   public long getObjectSize() {

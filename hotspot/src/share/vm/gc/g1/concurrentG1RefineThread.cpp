@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
     _monitor = DirtyCardQ_CBL_mon;
   }
   initialize();
-  create_and_start();
 
   // set name
   set_name("G1 Refine#%d", worker_id);
+  create_and_start();
 }
 
 void ConcurrentG1RefineThread::initialize() {

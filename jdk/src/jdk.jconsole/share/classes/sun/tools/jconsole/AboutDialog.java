@@ -34,8 +34,6 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
-import static sun.misc.Version.jdkMinorVersion;
-
 import static java.awt.BorderLayout.*;
 import static sun.tools.jconsole.Utilities.*;
 
@@ -183,7 +181,7 @@ public class AboutDialog extends InternalDialog {
     }
 
     private static String getOnlineDocUrl() {
-        String version = Integer.toString(jdkMinorVersion());
+        String version = Integer.toString(jdk.Version.current().major());
         return Resources.format(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL,
                                 version);
     }

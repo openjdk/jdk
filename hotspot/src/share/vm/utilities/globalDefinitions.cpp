@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ void basic_types_init() {
   assert( 1 == sizeof( u1),        "wrong size for basic type");
   assert( 2 == sizeof( u2),        "wrong size for basic type");
   assert( 4 == sizeof( u4),        "wrong size for basic type");
+  assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
+  assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
 
   int num_type_chars = 0;
   for (int i = 0; i < 99; i++) {

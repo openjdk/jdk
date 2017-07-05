@@ -41,10 +41,6 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
 TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.addjsum.AddJsum
 
-# The buildmetaindex tool creates a meta-index to make core class loaders lazier.
-TOOL_BUILDMETAINDEX = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.buildmetaindex.BuildMetaIndex
-
 TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.compilefontconfig.CompileFontConfig
 

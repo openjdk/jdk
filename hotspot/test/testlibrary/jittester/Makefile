@@ -35,6 +35,15 @@ ifeq "x$(TESTBASE_DIR)" "x"
 	TESTBASE_DIR := ws/hotspot/test
 endif
 
+APPLICATION_ARGS =
+ifneq "x$(TESTS_NUMBER)" "x"
+	APPLICATION_ARGS += --number-of-tests $(TESTS_NUMBER)
+endif
+
+ifneq "x$(SEED)" "x"
+	APPLICATION_ARGS += --seed $(SEED)
+endif
+
 JAVA = $(JDK_HOME)/bin/java
 JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
@@ -43,8 +52,9 @@ BUILD_DIR = build
 CLASSES_DIR = $(BUILD_DIR)/classes
 SRC_DIR = src
 TEST_DIR = test
+DRIVER_DIR = $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 MANIFEST = manifest.mf
-APPLICATION_ARGS = \
+APPLICATION_ARGS += \
     --property-file $(PROPERTY_FILE) \
     --testbase-dir $(TESTBASE_DIR)
 MAIN_CLASS = JitTestGenerator.Automatic
@@ -103,8 +113,8 @@ cleantmp:
 	@rm filelist
 	@rm -rf $(CLASSES_DIR)
 
-copytestlibrary:
-	@cp -r src/jdk/test/lib/jittester/jtreg $(TESTBASE_DIR)/
+copytestlibrary: $(DRIVER_DIR)
+	@cp -r src/jdk/test/lib/jittester/jtreg/*.java $(DRIVER_DIR)
 	@cp -r ../jdk $(TESTBASE_DIR)/
 
 testgroup: $(TESTBASE_DIR)
@@ -117,9 +127,6 @@ testgroup: $(TESTBASE_DIR)
 testroot: $(TESTBASE_DIR)
 	@echo 'groups=TEST.groups' > $(TESTROOT_FILE)
 
-$(TESTBASE_DIR):
-	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)
-
-$(DIST_DIR):
+$(TESTBASE_DIR) $(DIST_DIR) $(DRIVER_DIR):
 	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,35 +94,52 @@ public class ReferenceEnqueuePending {
         }
 
         // Do a final collection to discover and process all
-        // Reference objects created above, allowing enough time
+        // Reference objects created above, allowing some time
         // for the ReferenceHandler thread to queue the References.
         forceGc(100);
         forceGc(100);
 
         // Verify that all WeakReference objects ended up queued.
-        checkResult(refQueue, obj, iterations-1);
+        checkResult(refQueue, iterations-1);
+
+        // Ensure the final weaky is live but won't be enqueued during
+        // result checking, by ensuring its referent remains live.
+        // This eliminates behavior changes resulting from different
+        // compiler optimizations.
+        Reference.reachabilityFence(weaky);
+        Reference.reachabilityFence(obj);
+
         System.out.println("Test passed.");
     }
 
+    private static NumberedWeakReference waitForReference(ReferenceQueue<Integer> queue) {
+        try {
+            return (NumberedWeakReference) queue.remove(30000); // 30sec
+        } catch (InterruptedException ie) {
+            return null;
+        }
+    }
+
     private static void checkResult(ReferenceQueue<Integer> queue,
-                                    Integer obj,
                                     int expected) {
         if (debug) {
             System.out.println("Reading the queue");
         }
 
         // Empty the queue and record numbers into a[];
-        NumberedWeakReference weakRead = (NumberedWeakReference) queue.poll();
+        NumberedWeakReference weakRead = waitForReference(queue);
         int length = 0;
         while (weakRead != null) {
             a[length++] = weakRead.number;
-            weakRead = (NumberedWeakReference) queue.poll();
+            if (length < expected) {
+                weakRead = waitForReference(queue);
+            } else {            // Check for unexpected extra entries.
+                weakRead = (NumberedWeakReference) queue.poll();
+            }
         }
         if (debug) {
             System.out.println("Reference Queue had " + length + " elements");
         }
-        // Use the last Reference object of those created above, so as to keep it "alive".
-        System.out.println("I must write " + obj + " to prevent compiler optimizations.");
 
 
         // verify the queued references: all but the last Reference object
