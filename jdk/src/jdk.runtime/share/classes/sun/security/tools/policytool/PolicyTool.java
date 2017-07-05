@@ -1400,7 +1400,13 @@ class ToolWindow extends JFrame {
         if (t instanceof NoDisplayException) {
             return;
         }
-        displayErrorDialog(w, t.toString());
+        if (t.getClass() == Exception.class) {
+            // Exception is usually thrown inside policytool for user
+            // interaction error. There is no need to show the type.
+            displayErrorDialog(w, t.getLocalizedMessage());
+        } else {
+            displayErrorDialog(w, t.toString());
+        }
     }
 
     /**

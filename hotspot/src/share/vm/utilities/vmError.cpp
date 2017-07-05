@@ -975,11 +975,13 @@ void VMError::report_and_die() {
     // Run error reporting to determine whether or not to report the crash.
     if (!transmit_report_done && should_report_bug(first_error->_id)) {
       transmit_report_done = true;
-      FILE* hs_err = os::open(log.fd(), "r");
+      const int fd2 = ::dup(log.fd());
+      FILE* const hs_err = ::fdopen(fd2, "r");
       if (NULL != hs_err) {
         ErrorReporter er;
         er.call(hs_err, buffer, O_BUFLEN);
       }
+      ::fclose(hs_err);
     }
 
     if (log.fd() != defaultStream::output_fd()) {

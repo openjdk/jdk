@@ -65,7 +65,7 @@ public abstract class ContinuousArrayData extends ArrayData {
      * @return true if we don't need to do any array reallocation to fit an element at index
      */
     public final boolean hasRoomFor(final int index) {
-        return has(index) || (index == length && ensure(index) == this);
+        return has(index) || (index == length() && ensure(index) == this);
     }
 
     /**
@@ -73,7 +73,7 @@ public abstract class ContinuousArrayData extends ArrayData {
      * @return true if empty
      */
     public boolean isEmpty() {
-        return length == 0L;
+        return length() == 0L;
     }
 
     /**

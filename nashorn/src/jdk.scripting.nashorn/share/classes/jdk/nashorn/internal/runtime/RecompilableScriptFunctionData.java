@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -620,20 +619,25 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return f;
     }
 
-    MethodHandle lookup(final FunctionInitializer fnInit) {
+    private void logLookup(final boolean shouldLog, final MethodType targetType) {
+        if (shouldLog && log.isEnabled()) {
+            log.info("Looking up ", DebugLogger.quote(functionName), " type=", targetType);
+        }
+    }
+
+    private MethodHandle lookup(final FunctionInitializer fnInit, final boolean shouldLog) {
         final MethodType type = fnInit.getMethodType();
+        logLookup(shouldLog, type);
         return lookupCodeMethod(fnInit.getCode(), type);
     }
 
     MethodHandle lookup(final FunctionNode fn) {
         final MethodType type = new FunctionSignature(fn).getMethodType();
+        logLookup(true, type);
         return lookupCodeMethod(fn.getCompileUnit().getCode(), type);
     }
 
     MethodHandle lookupCodeMethod(final Class<?> codeClass, final MethodType targetType) {
-        if (log.isEnabled()) {
-            log.info("Looking up ", DebugLogger.quote(functionName), " type=", targetType);
-        }
         return MH.findStatic(LOOKUP, codeClass, functionName, targetType);
     }
 
@@ -649,7 +653,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if(!code.isEmpty()) {
             throw new IllegalStateException(name);
         }
-        addCode(lookup(initializer), null, null, initializer.getFlags());
+        addCode(lookup(initializer, true), null, null, initializer.getFlags());
     }
 
     private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints,
@@ -671,10 +675,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      */
     private CompiledFunction addCode(final FunctionInitializer fnInit, final MethodType callSiteType) {
         if (isVariableArity()) {
-            return addCode(lookup(fnInit), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
+            return addCode(lookup(fnInit, true), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
         }
 
-        final MethodHandle handle = lookup(fnInit);
+        final MethodHandle handle = lookup(fnInit, true);
         final MethodType fromType = handle.type();
         MethodType toType = needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1);
         toType = toType.changeReturnType(fromType.returnType());
@@ -699,7 +703,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             toType = toType.dropParameterTypes(fromCount, toCount);
         }
 
-        return addCode(lookup(fnInit).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
+        return addCode(lookup(fnInit, false).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
     }
 
     /**

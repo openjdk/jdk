@@ -141,6 +141,11 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         try {
             functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
+                public boolean enterFunctionNode(final FunctionNode fn) {
+                    return fn == functionNode;
+                }
+
+                @Override
                 public boolean enterCallNode(final CallNode callNode) {
                     if (isApply(callNode)) {
                         throw HAS_APPLIES;
@@ -162,7 +167,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
      * scope, thus we are conservative and treat any access to arguments outside the
      * apply call as a case of "we cannot apply the optimization".
      */
-    private void checkValidTransform(final FunctionNode functionNode) {
+    private static void checkValidTransform(final FunctionNode functionNode) {
 
         final Set<Expression> argumentsFound = new HashSet<>();
         final Deque<Set<Expression>> stack = new ArrayDeque<>();

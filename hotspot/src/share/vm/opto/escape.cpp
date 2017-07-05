@@ -38,6 +38,8 @@
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   _nodes(C->comp_arena(), C->unique(), C->unique(), NULL),
+  _in_worklist(C->comp_arena()),
+  _next_pidx(0),
   _collecting(true),
   _verify(false),
   _compile(C),
@@ -125,13 +127,19 @@ bool ConnectionGraph::compute_escape() {
   if (C->root() != NULL) {
     ideal_nodes.push(C->root());
   }
+  // Processed ideal nodes are unique on ideal_nodes list
+  // but several ideal nodes are mapped to the phantom_obj.
+  // To avoid duplicated entries on the following worklists
+  // add the phantom_obj only once to them.
+  ptnodes_worklist.append(phantom_obj);
+  java_objects_worklist.append(phantom_obj);
   for( uint next = 0; next < ideal_nodes.size(); ++next ) {
     Node* n = ideal_nodes.at(next);
     // Create PointsTo nodes and add them to Connection Graph. Called
     // only once per ideal node since ideal_nodes is Unique_Node list.
     add_node_to_connection_graph(n, &delayed_worklist);
     PointsToNode* ptn = ptnode_adr(n->_idx);
-    if (ptn != NULL) {
+    if (ptn != NULL && ptn != phantom_obj) {
       ptnodes_worklist.append(ptn);
       if (ptn->is_JavaObject()) {
         java_objects_worklist.append(ptn->as_JavaObject());
@@ -415,7 +423,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     }
     case Op_CreateEx: {
       // assume that all exception objects globally escape
-      add_java_object(n, PointsToNode::GlobalEscape);
+      map_ideal_node(n, phantom_obj);
       break;
     }
     case Op_LoadKlass:
@@ -1074,13 +1082,8 @@ bool ConnectionGraph::complete_connection_graph(
   // on graph complexity. Observed 8 passes in jvm2008 compiler.compiler.
   // Set limit to 20 to catch situation when something did go wrong and
   // bailout Escape Analysis.
-  // Also limit build time to 30 sec (60 in debug VM).
+  // Also limit build time to 20 sec (60 in debug VM), EscapeAnalysisTimeout flag.
 #define CG_BUILD_ITER_LIMIT 20
-#ifdef ASSERT
-#define CG_BUILD_TIME_LIMIT 60.0
-#else
-#define CG_BUILD_TIME_LIMIT 30.0
-#endif
 
   // Propagate GlobalEscape and ArgEscape escape states and check that
   // we still have non-escaping objects. The method pushs on _worklist
@@ -1091,12 +1094,13 @@ bool ConnectionGraph::complete_connection_graph(
   // Now propagate references to all JavaObject nodes.
   int java_objects_length = java_objects_worklist.length();
   elapsedTimer time;
+  bool timeout = false;
   int new_edges = 1;
   int iterations = 0;
   do {
     while ((new_edges > 0) &&
-          (iterations++   < CG_BUILD_ITER_LIMIT) &&
-          (time.seconds() < CG_BUILD_TIME_LIMIT)) {
+           (iterations++ < CG_BUILD_ITER_LIMIT)) {
+      double start_time = time.seconds();
       time.start();
       new_edges = 0;
       // Propagate references to phantom_object for nodes pushed on _worklist
@@ -1105,7 +1109,26 @@ bool ConnectionGraph::complete_connection_graph(
       for (int next = 0; next < java_objects_length; ++next) {
         JavaObjectNode* ptn = java_objects_worklist.at(next);
         new_edges += add_java_object_edges(ptn, true);
+
+#define SAMPLE_SIZE 4
+        if ((next % SAMPLE_SIZE) == 0) {
+          // Each 4 iterations calculate how much time it will take
+          // to complete graph construction.
+          time.stop();
+          double stop_time = time.seconds();
+          double time_per_iter = (stop_time - start_time) / (double)SAMPLE_SIZE;
+          double time_until_end = time_per_iter * (double)(java_objects_length - next);
+          if ((start_time + time_until_end) >= EscapeAnalysisTimeout) {
+            timeout = true;
+            break; // Timeout
+          }
+          start_time = stop_time;
+          time.start();
+        }
+#undef SAMPLE_SIZE
+
       }
+      if (timeout) break;
       if (new_edges > 0) {
         // Update escape states on each iteration if graph was updated.
         if (!find_non_escaped_objects(ptnodes_worklist, non_escaped_worklist)) {
@@ -1113,9 +1136,12 @@ bool ConnectionGraph::complete_connection_graph(
         }
       }
       time.stop();
+      if (time.seconds() >= EscapeAnalysisTimeout) {
+        timeout = true;
+        break;
+      }
     }
-    if ((iterations     < CG_BUILD_ITER_LIMIT) &&
-        (time.seconds() < CG_BUILD_TIME_LIMIT)) {
+    if ((iterations < CG_BUILD_ITER_LIMIT) && !timeout) {
       time.start();
       // Find fields which have unknown value.
       int fields_length = oop_fields_worklist.length();
@@ -1128,18 +1154,21 @@ bool ConnectionGraph::complete_connection_graph(
         }
       }
       time.stop();
+      if (time.seconds() >= EscapeAnalysisTimeout) {
+        timeout = true;
+        break;
+      }
     } else {
       new_edges = 0; // Bailout
     }
   } while (new_edges > 0);
 
   // Bailout if passed limits.
-  if ((iterations     >= CG_BUILD_ITER_LIMIT) ||
-      (time.seconds() >= CG_BUILD_TIME_LIMIT)) {
+  if ((iterations >= CG_BUILD_ITER_LIMIT) || timeout) {
     Compile* C = _compile;
     if (C->log() != NULL) {
       C->log()->begin_elem("connectionGraph_bailout reason='reached ");
-      C->log()->text("%s", (iterations >= CG_BUILD_ITER_LIMIT) ? "iterations" : "time");
+      C->log()->text("%s", timeout ? "time" : "iterations");
       C->log()->end_elem(" limit'");
     }
     assert(ExitEscapeAnalysisOnTimeout, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
@@ -1156,7 +1185,6 @@ bool ConnectionGraph::complete_connection_graph(
 #endif
 
 #undef CG_BUILD_ITER_LIMIT
-#undef CG_BUILD_TIME_LIMIT
 
   // Find fields initialized by NULL for non-escaping Allocations.
   int non_escaped_length = non_escaped_worklist.length();
@@ -1280,8 +1308,8 @@ int ConnectionGraph::add_java_object_edges(JavaObjectNode* jobj, bool populate_w
       }
     }
   }
-  while(_worklist.length() > 0) {
-    PointsToNode* use = _worklist.pop();
+  for (int l = 0; l < _worklist.length(); l++) {
+    PointsToNode* use = _worklist.at(l);
     if (PointsToNode::is_base_use(use)) {
       // Add reference from jobj to field and from field to jobj (field's base).
       use = PointsToNode::get_use_node(use)->as_Field();
@@ -1328,6 +1356,8 @@ int ConnectionGraph::add_java_object_edges(JavaObjectNode* jobj, bool populate_w
       add_field_uses_to_worklist(use->as_Field());
     }
   }
+  _worklist.clear();
+  _in_worklist.Reset();
   return new_edges;
 }
 
@@ -1906,7 +1936,7 @@ void ConnectionGraph::add_local_var(Node *n, PointsToNode::EscapeState es) {
     return;
   }
   Compile* C = _compile;
-  ptadr = new (C->comp_arena()) LocalVarNode(C, n, es);
+  ptadr = new (C->comp_arena()) LocalVarNode(this, n, es);
   _nodes.at_put(n->_idx, ptadr);
 }
 
@@ -1917,7 +1947,7 @@ void ConnectionGraph::add_java_object(Node *n, PointsToNode::EscapeState es) {
     return;
   }
   Compile* C = _compile;
-  ptadr = new (C->comp_arena()) JavaObjectNode(C, n, es);
+  ptadr = new (C->comp_arena()) JavaObjectNode(this, n, es);
   _nodes.at_put(n->_idx, ptadr);
 }
 
@@ -1933,7 +1963,7 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     es = PointsToNode::GlobalEscape;
   }
   Compile* C = _compile;
-  FieldNode* field = new (C->comp_arena()) FieldNode(C, n, es, offset, is_oop);
+  FieldNode* field = new (C->comp_arena()) FieldNode(this, n, es, offset, is_oop);
   _nodes.at_put(n->_idx, field);
 }
 
@@ -1947,7 +1977,7 @@ void ConnectionGraph::add_arraycopy(Node *n, PointsToNode::EscapeState es,
     return;
   }
   Compile* C = _compile;
-  ptadr = new (C->comp_arena()) ArraycopyNode(C, n, es);
+  ptadr = new (C->comp_arena()) ArraycopyNode(this, n, es);
   _nodes.at_put(n->_idx, ptadr);
   // Add edge from arraycopy node to source object.
   (void)add_edge(ptadr, src);
