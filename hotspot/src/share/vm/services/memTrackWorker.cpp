@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ MemTrackWorker::MemTrackWorker(MemSnapshot* snapshot): _snapshot(snapshot) {
   // create thread uses cgc thread type for now. We should revisit
   // the option, or create new thread type.
   _has_error = !os::create_thread(this, os::cgc_thread);
-  set_name("MemTrackWorker", 0);
+  set_name("MemTrackWorker");
 
   // initial generation circuit buffer
   if (!has_error()) {

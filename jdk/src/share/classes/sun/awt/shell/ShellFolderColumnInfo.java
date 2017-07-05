@@ -38,7 +38,7 @@ public class ShellFolderColumnInfo {
      */
     private Integer alignment;
     private SortOrder sortOrder;
-    private Comparator comparator;
+    private Comparator<?> comparator;
     /**
      * <code>false</code> (default) if the {@link comparator} expects folders as arguments,
      * and <code>true</code> if folder's column values. The first option is used default for comparison
@@ -49,7 +49,7 @@ public class ShellFolderColumnInfo {
 
     public ShellFolderColumnInfo(String title, Integer width,
                                  Integer alignment, boolean visible,
-                                 SortOrder sortOrder, Comparator comparator,
+                                 SortOrder sortOrder, Comparator<?> comparator,
                                  boolean compareByColumn) {
         this.title = title;
         this.width = width;
@@ -62,7 +62,7 @@ public class ShellFolderColumnInfo {
 
     public ShellFolderColumnInfo(String title, Integer width,
                                  Integer alignment, boolean visible,
-                                 SortOrder sortOrder, Comparator comparator) {
+                                 SortOrder sortOrder, Comparator<?> comparator) {
         this(title, width, alignment, visible, sortOrder, comparator, false);
     }
 
@@ -115,11 +115,11 @@ public class ShellFolderColumnInfo {
         this.sortOrder = sortOrder;
     }
 
-    public Comparator getComparator() {
+    public Comparator<?> getComparator() {
         return comparator;
     }
 
-    public void setComparator(Comparator comparator) {
+    public void setComparator(Comparator<?> comparator) {
         this.comparator = comparator;
     }
 

@@ -34,7 +34,6 @@ import java.awt.image.WritableRaster;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.security.action.GetPropertyAction;
-import java.util.ServiceLoader;
 
 public class CMSManager {
     public static ColorSpace GRAYspace;       // These two fields allow access
@@ -52,35 +51,28 @@ public class CMSManager {
             return cmmImpl;
         }
 
-        CMMServiceProvider spi = AccessController.doPrivileged(
-                new PrivilegedAction<CMMServiceProvider>() {
-                    public CMMServiceProvider run() {
-                        String cmmClass = System.getProperty(
-                            "sun.java2d.cmm", "sun.java2d.cmm.lcms.LcmsServiceProvider");
-
-                    ServiceLoader<CMMServiceProvider> cmmLoader
-                    = ServiceLoader.loadInstalled(CMMServiceProvider.class);
-
-                CMMServiceProvider spi = null;
-
-                for (CMMServiceProvider cmm : cmmLoader) {
-                    spi = cmm;
-                    if (cmm.getClass().getName().equals(cmmClass)) {
-                        break;
-                    }
-                }
-                return spi;
+        GetPropertyAction gpa = new GetPropertyAction("sun.java2d.cmm");
+        String cmmProviderClass = AccessController.doPrivileged(gpa);
+        CMMServiceProvider provider = null;
+        if (cmmProviderClass != null) {
+            try {
+                Class<?> cls = Class.forName(cmmProviderClass);
+                provider = (CMMServiceProvider)cls.newInstance();
+            } catch (ReflectiveOperationException e) {
             }
-        });
+        }
+        if (provider == null) {
+            provider = new sun.java2d.cmm.lcms.LcmsServiceProvider();
+        }
 
-        cmmImpl = spi.getColorManagementModule();
+        cmmImpl = provider.getColorManagementModule();
 
         if (cmmImpl == null) {
             throw new CMMException("Cannot initialize Color Management System."+
                                    "No CM module found");
         }
 
-        GetPropertyAction gpa = new GetPropertyAction("sun.java2d.cmm.trace");
+        gpa = new GetPropertyAction("sun.java2d.cmm.trace");
         String cmmTrace = AccessController.doPrivileged(gpa);
         if (cmmTrace != null) {
             cmmImpl = new CMMTracer(cmmImpl);

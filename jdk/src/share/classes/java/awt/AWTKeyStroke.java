@@ -86,7 +86,8 @@ public class AWTKeyStroke implements Serializable {
      * Must be called under locked AWTKeyStro
      */
     private static Class<AWTKeyStroke> getAWTKeyStrokeClass() {
-        Class<AWTKeyStroke> clazz = (Class)AppContext.getAppContext().get(AWTKeyStroke.class);
+        @SuppressWarnings("unchecked")
+        Class<AWTKeyStroke> clazz = (Class<AWTKeyStroke>)AppContext.getAppContext().get(AWTKeyStroke.class);
         if (clazz == null) {
             clazz = AWTKeyStroke.class;
             AppContext.getAppContext().put(AWTKeyStroke.class, AWTKeyStroke.class);
@@ -182,6 +183,7 @@ public class AWTKeyStroke implements Serializable {
             throw new IllegalArgumentException("subclass cannot be null");
         }
         synchronized (AWTKeyStroke.class) {
+            @SuppressWarnings("unchecked")
             Class<AWTKeyStroke> keyStrokeClass = (Class)AppContext.getAppContext().get(AWTKeyStroke.class);
             if (keyStrokeClass != null && keyStrokeClass.equals(subclass)){
                 // Already registered
@@ -192,7 +194,7 @@ public class AWTKeyStroke implements Serializable {
             throw new ClassCastException("subclass is not derived from AWTKeyStroke");
         }
 
-        Constructor ctor = getCtor(subclass);
+        Constructor<?> ctor = getCtor(subclass);
 
         String couldNotInstantiate = "subclass could not be instantiated";
 
@@ -227,12 +229,12 @@ public class AWTKeyStroke implements Serializable {
        threat as accessible flag is set only for this Constructor object,
        not for Class constructor.
      */
-    private static Constructor getCtor(final Class clazz)
+    private static Constructor<?> getCtor(final Class<?> clazz)
     {
-        Constructor ctor = AccessController.doPrivileged(new PrivilegedAction<Constructor>() {
-            public Constructor run() {
+        Constructor<?> ctor = AccessController.doPrivileged(new PrivilegedAction<Constructor<?>>() {
+            public Constructor<?> run() {
                 try {
-                    Constructor ctor = clazz.getDeclaredConstructor((Class[]) null);
+                    Constructor<?> ctor = clazz.getDeclaredConstructor((Class<?>[]) null);
                     if (ctor != null) {
                         ctor.setAccessible(true);
                     }
@@ -249,6 +251,7 @@ public class AWTKeyStroke implements Serializable {
     private static synchronized AWTKeyStroke getCachedStroke
         (char keyChar, int keyCode, int modifiers, boolean onKeyRelease)
     {
+        @SuppressWarnings("unchecked")
         Map<AWTKeyStroke, AWTKeyStroke> cache = (Map)AppContext.getAppContext().get(APP_CONTEXT_CACHE_KEY);
         AWTKeyStroke cacheKey = (AWTKeyStroke)AppContext.getAppContext().get(APP_CONTEXT_KEYSTROKE_KEY);
 

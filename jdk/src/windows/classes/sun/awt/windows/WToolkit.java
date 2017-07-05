@@ -40,7 +40,7 @@ import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.Win32GraphicsEnvironment;
 import sun.awt.datatransfer.DataTransferer;

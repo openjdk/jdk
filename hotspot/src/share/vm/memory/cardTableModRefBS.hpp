@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ class CardTableModRefBS: public ModRefBarrierSet {
     assert(_whole_heap.contains(p),
            err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
                    " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
-                   p, _whole_heap.start(), _whole_heap.end()));
+                   p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end())));
     jbyte* result = &byte_map_base[uintptr_t(p) >> card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
@@ -431,7 +431,7 @@ public:
     assert(_whole_heap.contains(result),
            err_msg("Returning result = "PTR_FORMAT" out of bounds of "
                    " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
-                   result, _whole_heap.start(), _whole_heap.end()));
+                   p2i(result), p2i(_whole_heap.start()), p2i(_whole_heap.end())));
     return result;
   }
 
@@ -440,7 +440,7 @@ public:
     assert(_whole_heap.contains(p),
            err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
                    " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
-                   p, _whole_heap.start(), _whole_heap.end()));
+                   p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end())));
     return byte_for(p) - _byte_map;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,10 @@ class CodeBlob_sizes {
   bool is_empty()                                { return count == 0; }
 
   void print(const char* title) {
-    tty->print_cr(" #%d %s = %dK (hdr %d%%,  loc %d%%, code %d%%, stub %d%%, [oops %d%%, data %d%%, pcs %d%%])",
+    tty->print_cr(" #%d %s = %dK (hdr %d%%,  loc %d%%, code %d%%, stub %d%%, [oops %d%%, metadata %d%%, data %d%%, pcs %d%%])",
                   count,
                   title,
-                  total() / K,
+                  (int)(total() / K),
                   header_size             * 100 / total_size,
                   relocation_size         * 100 / total_size,
                   code_size               * 100 / total_size,
@@ -178,10 +178,12 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
   // cache will contain a garbage CodeBlob until the caller can
   // run the constructor for the CodeBlob subclass he is busy
   // instantiating.
-  guarantee(size >= 0, "allocation request must be reasonable");
   assert_locked_or_safepoint(CodeCache_lock);
+  assert(size > 0, "allocation request must be reasonable");
+  if (size <= 0) {
+    return NULL;
+  }
   CodeBlob* cb = NULL;
-  _number_of_blobs++;
   while (true) {
     cb = (CodeBlob*)_heap->allocate(size, is_critical);
     if (cb != NULL) break;
@@ -191,7 +193,7 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
     }
     if (PrintCodeCacheExtension) {
       ResourceMark rm;
-      tty->print_cr("code cache extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%d bytes)",
+      tty->print_cr("code cache extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
                     (intptr_t)_heap->low_boundary(), (intptr_t)_heap->high(),
                     (address)_heap->high() - (address)_heap->low_boundary());
     }
@@ -199,6 +201,7 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
   maxCodeCacheUsed = MAX2(maxCodeCacheUsed, ((address)_heap->high_boundary() -
                           (address)_heap->low_boundary()) - unallocated_capacity());
   print_trace("allocation", cb, size);
+  _number_of_blobs++;
   return cb;
 }
 
@@ -487,7 +490,7 @@ void CodeCache::gc_epilogue() {
           if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
             CompiledIC *ic = CompiledIC_at(iter.reloc());
             if (TraceCompiledIC) {
-              tty->print("noticed icholder " INTPTR_FORMAT " ", ic->cached_icholder());
+              tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
               ic->print();
             }
             assert(ic->cached_icholder() != NULL, "must be non-NULL");
@@ -741,10 +744,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: %d",    freelist_length());
-  tty->print_cr("Allocated in freelist:          %dkB",  bytes_allocated_in_freelist()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      %dkB",  (int)(wasted_bytes/K));
-  tty->print_cr("Segment map size:               %dkB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,    freelist_length());
+  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelist()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------
@@ -756,7 +759,7 @@ void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
   if (PrintCodeCache2) {  // Need to add a new flag
     ResourceMark rm;
     if (size == 0)  size = cb->size();
-    tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, cb, size);
+    tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
   }
 }
 
@@ -926,9 +929,9 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 
   if (detailed) {
     st->print_cr(" bounds [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT "]",
-                 _heap->low_boundary(),
-                 _heap->high(),
-                 _heap->high_boundary());
+                 p2i(_heap->low_boundary()),
+                 p2i(_heap->high()),
+                 p2i(_heap->high_boundary()));
     st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
                  " adapters=" UINT32_FORMAT,
                  nof_blobs(), nof_nmethods(), nof_adapters());

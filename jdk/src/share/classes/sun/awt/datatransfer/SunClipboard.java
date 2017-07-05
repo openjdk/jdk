@@ -78,7 +78,7 @@ public abstract class SunClipboard extends Clipboard
      * this clipboard. It is used for tracking changes
      * of <code>DataFlavor</code>s available on this clipboard.
      */
-    private volatile Set currentDataFlavors;
+    private volatile Set<DataFlavor> currentDataFlavors;
 
 
     public SunClipboard(String name) {
@@ -338,7 +338,7 @@ public abstract class SunClipboard extends Clipboard
     protected abstract byte[] getClipboardData(long format) throws IOException;
 
 
-    private static Set formatArrayAsDataFlavorSet(long[] formats) {
+    private static Set<DataFlavor> formatArrayAsDataFlavorSet(long[] formats) {
         return (formats == null) ? null :
                 DataTransferer.getInstance().
                 getFlavorsForFormatsAsSet(formats, getDefaultFlavorTable());
@@ -417,7 +417,7 @@ public abstract class SunClipboard extends Clipboard
      *        this clipboard
      */
     public void checkChange(long[] formats) {
-        Set prevDataFlavors = currentDataFlavors;
+        Set<DataFlavor> prevDataFlavors = currentDataFlavors;
         currentDataFlavors = formatArrayAsDataFlavorSet(formats);
 
         if (Objects.equals(prevDataFlavors, currentDataFlavors)) {

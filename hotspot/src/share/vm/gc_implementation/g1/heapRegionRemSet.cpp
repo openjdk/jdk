@@ -36,6 +36,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
   friend class HeapRegionRemSetIterator;
@@ -1218,7 +1220,7 @@ void HeapRegionRemSet::print_recorded() {
     while (cur_evnt < _n_recorded_events && i == cur_evnt_ind) {
       gclog_or_tty->print("Event: ");
       print_event(gclog_or_tty, cur_evnt_kind);
-      gclog_or_tty->print_cr("");
+      gclog_or_tty->cr();
       cur_evnt++;
       if (cur_evnt < MaxRecordedEvents) {
         cur_evnt_kind = _recorded_events[cur_evnt];

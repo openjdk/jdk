@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.tools.serialver;
 
 import java.io.*;
-import java.awt.*;
-import java.applet.*;
 import java.io.ObjectStreamClass;
 import java.util.Properties;
 import java.text.MessageFormat;
@@ -39,106 +37,7 @@ import java.net.MalformedURLException;
 import java.util.StringTokenizer;
 import sun.net.www.ParseUtil;
 
-public class SerialVer extends Applet {
-    GridBagLayout gb;
-    TextField classname_t;
-    Button show_b;
-    TextField serialversion_t;
-    Label footer_l;
-
-    private static final long serialVersionUID = 7666909783837760853L;
-
-    public synchronized void init() {
-        gb = new GridBagLayout();
-        setLayout(gb);
-
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.BOTH;
-
-        Label l1 = new Label(Res.getText("FullClassName"));
-        l1.setAlignment(Label.RIGHT);
-        gb.setConstraints(l1, c);
-        add(l1);
-
-        classname_t = new TextField(20);
-        c.gridwidth = GridBagConstraints.RELATIVE;
-        c.weightx = 1.0;
-        gb.setConstraints(classname_t, c);
-        add(classname_t);
-
-        show_b = new Button(Res.getText("Show"));
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        c.weightx = 0.0;        /* Don't grow the button */
-        gb.setConstraints(show_b, c);
-        add(show_b);
-
-        Label l2 = new Label(Res.getText("SerialVersion"));
-        l2.setAlignment(Label.RIGHT);
-        c.gridwidth = 1;
-        gb.setConstraints(l2, c);
-        add(l2);
-
-        serialversion_t = new TextField(50);
-        serialversion_t.setEditable(false);
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        gb.setConstraints(serialversion_t, c);
-        add(serialversion_t);
-
-        footer_l = new Label();
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        gb.setConstraints(footer_l, c);
-        add(footer_l);
-
-        /* Give the focus to the type-in area */
-        classname_t.requestFocus();
-    }
-
-    public void start() {
-        /* Give the focus to the type-in area */
-        classname_t.requestFocus();
-    }
-
-    @SuppressWarnings("deprecation")
-    public boolean action(Event ev, Object obj) {
-        if (ev.target == classname_t) {
-            show((String)ev.arg);
-            return true;
-        } else if (ev.target == show_b) {
-            show(classname_t.getText());
-            return true;
-        }
-        return false;
-    }
-
-
-    @SuppressWarnings("deprecation")
-    public boolean handleEvent(Event ev) {
-        boolean rc = super.handleEvent(ev);
-        return rc;
-    }
-
-    /**
-     * Lookup the specified classname and display it.
-     */
-    void show(String classname) {
-        try {
-            footer_l.setText(""); // Clear the message
-            serialversion_t.setText(""); // clear the last value
-
-            if (classname.equals("")) {
-                return;
-            }
-
-            String s = serialSyntax(classname);
-            if (s != null) {
-                serialversion_t.setText(s);
-            } else {
-                footer_l.setText(Res.getText("NotSerializable", classname));
-            }
-        } catch (ClassNotFoundException cnf) {
-            footer_l.setText(Res.getText("ClassNotFound", classname));
-        }
-    }
+public class SerialVer {
 
     /*
      * A class loader that will load from the CLASSPATH environment
@@ -218,13 +117,7 @@ public class SerialVer extends Applet {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private static void showWindow(Window w) {
-        w.show();
-    }
-
     public static void main(String[] args) {
-        boolean show = false;
         String envcp = null;
         int i = 0;
 
@@ -234,9 +127,7 @@ public class SerialVer extends Applet {
         }
 
         for (i = 0; i < args.length; i++) {
-            if (args[i].equals("-show")) {
-                show = true;
-            } else if (args[i].equals("-classpath")) {
+            if (args[i].equals("-classpath")) {
                 if ((i+1 == args.length) || args[i+1].startsWith("-")) {
                     System.err.println(Res.getText("error.missing.classpath"));
                     usage();
@@ -278,51 +169,35 @@ public class SerialVer extends Applet {
             System.exit(3);
         }
 
-        if (!show) {
-            /*
-             * Check if there are any class names specified, if it is not a
-             * invocation with the -show option.
-             */
-            if (i == args.length) {
-                usage();
-                System.exit(1);
-            }
+        /*
+         * Check if there are any class names specified
+         */
+        if (i == args.length) {
+            usage();
+            System.exit(1);
+        }
 
-            /*
-             * The rest of the parameters are classnames.
-             */
-            boolean exitFlag = false;
-            for (i = i; i < args.length; i++ ) {
-                try {
-                    String syntax = serialSyntax(args[i]);
-                    if (syntax != null)
-                        System.out.println(args[i] + ":" + syntax);
-                    else {
-                        System.err.println(Res.getText("NotSerializable",
-                            args[i]));
-                        exitFlag = true;
-                    }
-                } catch (ClassNotFoundException cnf) {
-                    System.err.println(Res.getText("ClassNotFound", args[i]));
+        /*
+         * The rest of the parameters are classnames.
+         */
+        boolean exitFlag = false;
+        for (i = i; i < args.length; i++ ) {
+            try {
+                String syntax = serialSyntax(args[i]);
+                if (syntax != null)
+                    System.out.println(args[i] + ":" + syntax);
+                else {
+                    System.err.println(Res.getText("NotSerializable",
+                        args[i]));
                     exitFlag = true;
                 }
+            } catch (ClassNotFoundException cnf) {
+                System.err.println(Res.getText("ClassNotFound", args[i]));
+                exitFlag = true;
             }
-            if (exitFlag) {
-                System.exit(1);
-            }
-        } else {
-            if (i < args.length) {
-                System.err.println(Res.getText("ignoring.classes"));
-                System.exit(1);
-            }
-            Frame f =  new SerialVerFrame();
-            //  f.setLayout(new FlowLayout());
-            SerialVer sv = new SerialVer();
-            sv.init();
-
-            f.add("Center", sv);
-            f.pack();
-            showWindow(f);
+        }
+        if (exitFlag) {
+            System.exit(1);
         }
     }
 
@@ -332,65 +207,6 @@ public class SerialVer extends Applet {
      */
     public static void usage() {
         System.err.println(Res.getText("usage"));
-    }
-
-}
-
-/**
- * Top level frame so serialVer can be run as an main program
- * and have an exit menu item.
- */
-class SerialVerFrame extends Frame {
-    MenuBar menu_mb;
-    Menu file_m;
-    MenuItem exit_i;
-
-    private static final long serialVersionUID = -7248105987187532533L;
-
-    /*
-     * Construct a new Frame with title and menu.
-     */
-    SerialVerFrame() {
-        super(Res.getText("SerialVersionInspector"));
-
-        /* Create the file menu */
-        file_m = new Menu(Res.getText("File"));
-        file_m.add(exit_i = new MenuItem(Res.getText("Exit")));
-
-        /* Now add the file menu to the menu bar  */
-        menu_mb = new MenuBar();
-        menu_mb.add(file_m);
-
-        /* Add the menubar to the frame */
-        // Bug in JDK1.1        setMenuBar(menu_mb);
-    }
-
-    /*
-     * Handle a window destroy event by exiting.
-     */
-    @SuppressWarnings("deprecation")
-    public boolean handleEvent(Event e) {
-        if (e.id == Event.WINDOW_DESTROY) {
-            exit(0);
-        }
-        return super.handleEvent(e);
-    }
-    /*
-     * Handle an Exit event by exiting.
-     */
-    @SuppressWarnings("deprecation")
-    public boolean action(Event ev, Object obj) {
-        if (ev.target == exit_i) {
-            exit(0);
-        }
-        return false;
-    }
-
-    /*
-     * Cleanup and exit.
-     */
-    void exit(int ret) {
-        System.exit(ret);
     }
 
 }

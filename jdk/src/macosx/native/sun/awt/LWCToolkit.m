@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,61 +155,6 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_flushNativeSelectors
 JNF_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThreadWaiting:YES block:^(){}];
 JNF_COCOA_EXIT(env);
-}
-
-static JNF_CLASS_CACHE(jc_Component, "java/awt/Component");
-static JNF_MEMBER_CACHE(jf_Component_appContext, jc_Component, "appContext", "Lsun/awt/AppContext;");
-static JNF_CLASS_CACHE(jc_MenuComponent, "java/awt/MenuComponent");
-static JNF_MEMBER_CACHE(jf_MenuComponent_appContext, jc_MenuComponent, "appContext", "Lsun/awt/AppContext;");
-
-/*
- * Class:     sun_awt_SunToolkit
- * Method:    getAppContext
- * Signature: (Ljava/awt/Object;)Lsun/awt/AppContext;
- */
-JNIEXPORT jobject JNICALL
-Java_sun_awt_SunToolkit_getAppContext
-(JNIEnv *env, jclass cls, jobject obj)
-{
-    jobject appContext = NULL;
-
-JNF_COCOA_ENTER(env);
-
-    if (JNFIsInstanceOf(env, obj, &jc_Component)) {
-        appContext = JNFGetObjectField(env, obj, jf_Component_appContext);
-    } else if (JNFIsInstanceOf(env, obj, &jc_MenuComponent)) {
-        appContext = JNFGetObjectField(env, obj, jf_MenuComponent_appContext);
-    }
-
-JNF_COCOA_EXIT(env);
-
-    return appContext;
-}
-
-/*
- * Class:     sun_awt_SunToolkit
- * Method:    setAppContext
- * Signature: (Ljava/lang/Object;Lsun/awt/AppContext;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_SunToolkit_setAppContext
-(JNIEnv *env, jclass cls, jobject obj, jobject appContext)
-{
-    jboolean isComponent;
-
-JNF_COCOA_ENTER(env);
-
-    if (JNFIsInstanceOf(env, obj, &jc_Component)) {
-        JNFSetObjectField(env, obj, jf_Component_appContext, appContext);
-        isComponent = JNI_TRUE;
-    } else if (JNFIsInstanceOf(env, obj, &jc_MenuComponent)) {
-        JNFSetObjectField(env, obj, jf_MenuComponent_appContext, appContext);
-        isComponent = JNI_FALSE;
-    }
-
-JNF_COCOA_EXIT(env);
-
-    return isComponent;
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,5 +258,5 @@ void TruncatedSeq::dump_on(outputStream* s) {
     }
     s->print("\t[%d]=%7.3f", i, _sequence[i]);
   }
-  s->print_cr("");
+  s->cr();
 }

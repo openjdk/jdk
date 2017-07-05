@@ -28,7 +28,7 @@
  * @test JdpDefaultsTest
  * @summary Assert that we can read JDP packets from a multicast socket connection, on default IP and port.
  * @library /lib/testlibrary
- * @build ClientConnection JdpTestUtil JdpTestCase JdpOnTestCase DynamicLauncher
+ * @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpOnTestCase DynamicLauncher
  * @run main JdpDefaultsTest
  */
 

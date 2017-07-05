@@ -32,7 +32,7 @@ import java.awt.image.*;
 import java.util.Arrays;
 import java.util.List;
 import sun.awt.image.MultiResolutionImage;
-import sun.awt.image.MultiResolutionBufferedImage;
+import sun.awt.image.MultiResolutionCachedImage;
 
 import sun.awt.image.SunWritableRaster;
 
@@ -62,41 +62,41 @@ public class CImage extends CFRetainedResource {
         // This is used to create a CImage with an NSImage pointer. It MUST be a CFRetained
         // NSImage, and the CImage takes ownership of the non-GC retain. If callers need the
         // NSImage themselves, they MUST call retain on the NSImage themselves.
-        public BufferedImage createImageUsingNativeSize(final long image) {
+        public Image createImageUsingNativeSize(final long image) {
             if (image == 0) return null;
             final Dimension2D size = nativeGetNSImageSize(image);
-            return createBufferedImage(image, size.getWidth(), size.getHeight());
+            return createImage(image, size.getWidth(), size.getHeight());
         }
 
         // the width and height passed in as a parameter could differ than the width and the height of the NSImage (image), in that case, the image will be scaled
-        BufferedImage createBufferedImage(long image, double width, double height) {
+        Image createImage(long image, double width, double height) {
             if (image == 0) throw new Error("Unable to instantiate CImage with null native image reference.");
             return createImageWithSize(image, width, height);
         }
 
-        public BufferedImage createImageWithSize(final long image, final double width, final double height) {
+        public Image createImageWithSize(final long image, final double width, final double height) {
             final CImage img = new CImage(image);
             img.resize(width, height);
             return img.toImage();
         }
 
         // This is used to create a CImage that represents the icon of the given file.
-        public BufferedImage createImageOfFile(final String file, final int width, final int height) {
-            return createBufferedImage(nativeCreateNSImageOfFileFromLaunchServices(file), width, height);
+        public Image createImageOfFile(final String file, final int width, final int height) {
+            return createImage(nativeCreateNSImageOfFileFromLaunchServices(file), width, height);
         }
 
-        public BufferedImage createImageFromFile(final String file, final double width, final double height) {
+        public Image createImageFromFile(final String file, final double width, final double height) {
             final long image = nativeCreateNSImageFromFileContents(file);
             nativeSetNSImageSize(image, width, height);
-            return createBufferedImage(image, width, height);
+            return createImage(image, width, height);
         }
 
-        public BufferedImage createSystemImageFromSelector(final String iconSelector, final int width, final int height) {
-            return createBufferedImage(nativeCreateNSImageFromIconSelector(getSelectorAsInt(iconSelector)), width, height);
+        public Image createSystemImageFromSelector(final String iconSelector, final int width, final int height) {
+            return createImage(nativeCreateNSImageFromIconSelector(getSelectorAsInt(iconSelector)), width, height);
         }
 
         public Image createImageFromName(final String name, final int width, final int height) {
-            return createBufferedImage(nativeCreateNSImageFromImageName(name), width, height);
+            return createImage(nativeCreateNSImageFromImageName(name), width, height);
         }
 
         public Image createImageFromName(final String name) {
@@ -232,7 +232,7 @@ public class CImage extends CFRetainedResource {
     }
 
     /** @return A MultiResolution image created from nsImagePtr, or null. */
-    private BufferedImage toImage() {
+    private Image toImage() {
         if (ptr == 0) return null;
 
         final Dimension2D size = nativeGetNSImageSize(ptr);
@@ -243,11 +243,11 @@ public class CImage extends CFRetainedResource {
                 = nativeGetNSImageRepresentationSizes(ptr,
                         size.getWidth(), size.getHeight());
 
-        BufferedImage baseImage = toImage(w, h, w, h);
-
-        return sizes == null || sizes.length < 2 ? baseImage
-                : new MultiResolutionBufferedImage(baseImage, sizes,
-                        (width, height) -> toImage(w, h, width, height));
+        return sizes == null || sizes.length < 2 ?
+                new MultiResolutionCachedImage(w, h, (width, height)
+                        -> toImage(w, h, width, height))
+                : new MultiResolutionCachedImage(w, h, sizes, (width, height)
+                        -> toImage(w, h, width, height));
     }
 
     private BufferedImage toImage(int srcWidth, int srcHeight, int dstWidth, int dstHeight) {

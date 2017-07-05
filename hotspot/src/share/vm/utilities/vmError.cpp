@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@
 #include "utilities/events.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {
@@ -358,17 +360,17 @@ void VMError::report(outputStream* st) {
            st->print((_id == (int)OOM_MALLOC_ERROR) ? "(malloc) failed to allocate " :
                                                  "(mmap) failed to map ");
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
-           st->print(buf);
+           st->print("%s", buf);
            st->print(" bytes");
            if (_message != NULL) {
              st->print(" for ");
-             st->print(_message);
+             st->print("%s", _message);
            }
            st->cr();
          } else {
            if (_message != NULL)
              st->print("# ");
-             st->print_cr(_message);
+             st->print_cr("%s", _message);
          }
          // In error file give some solutions
          if (_verbose) {
@@ -485,7 +487,7 @@ void VMError::report(outputStream* st) {
     } else {
       st->print("Failed to write core dump. %s", coredump_message);
     }
-    st->print_cr("");
+    st->cr();
     st->print_cr("#");
 
   STEP(65, "(printing bug submit message)")

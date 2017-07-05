@@ -412,7 +412,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 
         @Override
-        MethodHandle bindArgument(int pos, char basicType, Object value) {
+        MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
             return asFixedArity().bindArgument(pos, basicType, value);
         }
 

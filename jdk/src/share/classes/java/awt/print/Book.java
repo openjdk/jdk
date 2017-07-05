@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class Book implements Pageable {
     /**
      * The set of pages that make up the Book.
      */
-    private Vector mPages;
+    private Vector<BookPage> mPages;
 
  /* Instance Methods */
 
@@ -55,7 +55,7 @@ public class Book implements Pageable {
      *  Creates a new, empty <code>Book</code>.
      */
     public Book() {
-        mPages = new Vector();
+        mPages = new Vector<>();
     }
 
     /**
@@ -167,7 +167,7 @@ public class Book implements Pageable {
     private BookPage getPage(int pageIndex)
         throws ArrayIndexOutOfBoundsException
     {
-        return (BookPage) mPages.elementAt(pageIndex);
+        return mPages.elementAt(pageIndex);
     }
 
     /**

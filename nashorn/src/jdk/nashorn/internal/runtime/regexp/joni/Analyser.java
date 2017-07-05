@@ -771,7 +771,7 @@ final class Analyser extends Parser {
 
         while (value < end) {
             int ovalue = value;
-            buf = Character.toLowerCase(chars[value++]);
+            buf = EncodingHelper.toLowerCase(chars[value++]);
 
             if (chars[ovalue] != buf) {
 
@@ -779,7 +779,7 @@ final class Analyser extends Parser {
                 System.arraycopy(chars, sn.p, sbuf, 0, ovalue - sn.p);
                 value = ovalue;
                 while (value < end) {
-                    buf = Character.toLowerCase(chars[value++]);
+                    buf = EncodingHelper.toLowerCase(chars[value++]);
                     if (sp >= sbuf.length) {
                         char[]tmp = new char[sbuf.length << 1];
                         System.arraycopy(sbuf, 0, tmp, 0, sbuf.length);
