@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,8 +617,8 @@ public final class SF2Soundbank implements Soundbank {
 
     private void writeGenerators(RIFFWriter writer, Map<Integer, Short> generators)
             throws IOException {
-        Short keyrange = (Short) generators.get(SF2Region.GENERATOR_KEYRANGE);
-        Short velrange = (Short) generators.get(SF2Region.GENERATOR_VELRANGE);
+        Short keyrange = generators.get(SF2Region.GENERATOR_KEYRANGE);
+        Short velrange = generators.get(SF2Region.GENERATOR_VELRANGE);
         if (keyrange != null) {
             writer.writeUnsignedShort(SF2Region.GENERATOR_KEYRANGE);
             writer.writeShort(keyrange);
@@ -706,7 +706,7 @@ public final class SF2Soundbank implements Soundbank {
             }
             for (SF2InstrumentRegion region : preset.getRegions()) {
                 writeGenerators(pgen_chunk, region.getGenerators());
-                int ix = (int) layers.indexOf(region.layer);
+                int ix = layers.indexOf(region.layer);
                 if (ix != -1) {
                     pgen_chunk.writeUnsignedShort(SF2Region.GENERATOR_INSTRUMENT);
                     pgen_chunk.writeShort((short) ix);

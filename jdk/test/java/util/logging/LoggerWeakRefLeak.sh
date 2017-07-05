@@ -83,9 +83,9 @@ if [ "$status" != 0 ]; then
     fi
 
     if [ "$status" != 0 ]; then
-        echo "ERROR: 'jmap $jmap_option' is not supported so this test"
-        echo "ERROR: cannot work reliably. Aborting!"
-        exit 2
+        echo "WARNING: 'jmap $jmap_option' is not supported on this platform"
+        echo "WARNING: so this test cannot work reliably. Aborting!"
+        exit 0
     fi
 fi
 

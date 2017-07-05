@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,80 +25,151 @@
 
 GENSRC_CHARSETMAPPING :=
 
-GENSRC_TMP := $(JDK_OUTPUTDIR)/gensrc
-GENSRC_DST := $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs
-
-GENSRC_DATA := $(JDK_TOPDIR)/make/data/charsetmapping
-GENSRC_JAVA_SRC := $(JDK_TOPDIR)/make/src/classes/build/tools/charsetmapping
-
-GENSRC_TEMPLATES := $(GENSRC_DATA)/SingleByte-X.java.template $(GENSRC_DATA)/DoubleByte-X.java.template
+CHARSET_DATA_DIR := $(JDK_TOPDIR)/make/data/charsetmapping
 
 ###
-
-$(GENSRC_TMP)/_the.charsetmapping.dir:
-	$(ECHO) Generating charsetmapping classes
-	$(MKDIR) -p $(GENSRC_DST)/ext
-	$(TOUCH) $@
-
+### Generate files using the charsetmapping tool
 ###
 
-GENSRC_SB := $(GENSRC_TMP)/_the.charsetmapping.sbcs
+CHARSET_GENSRC_JAVA_DIR := $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs
+CHARSET_DONE := $(CHARSET_GENSRC_JAVA_DIR)/_the.charsetmapping
+CHARSET_COPYRIGHT_HEADER_BASE := $(JDK_TOPDIR)/make/src/classes/build/tools/charsetmapping
+CHARSET_TEMPLATES := \
+    $(CHARSET_DATA_DIR)/SingleByte-X.java.template \
+    $(CHARSET_DATA_DIR)/DoubleByte-X.java.template
 
-$(GENSRC_SB): $(GENSRC_DATA)/sbcs $(GENSRC_TEMPLATES) $(GENSRC_TMP)/_the.charsetmapping.dir
-	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_DATA) $(GENSRC_DST) sbcs
-	$(TOUCH) $@
+# This target should be referenced using the order-only operator (|)
+$(CHARSET_GENSRC_JAVA_DIR)/ext:
+	$(ECHO)	"Generating charset mappings"
+	$(MKDIR) -p $(CHARSET_GENSRC_JAVA_DIR)/ext
 
-GENSRC_CHARSETMAPPING += $(GENSRC_SB)
+$(CHARSET_DONE)-sbcs: $(CHARSET_DATA_DIR)/sbcs \
+    $(CHARSET_TEMPLATES) $(BUILD_TOOLS) | $(CHARSET_GENSRC_JAVA_DIR)/ext
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR) sbcs
+	$(TOUCH) '$@'
+
+$(CHARSET_DONE)-extsbcs: $(CHARSET_DATA_DIR)/extsbcs  \
+    $(CHARSET_DONE)-sbcs $(CHARSET_TEMPLATES) $(BUILD_TOOLS) 
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR)/ext extsbcs
+	$(TOUCH) '$@'
+
+$(CHARSET_DONE)-dbcs: $(CHARSET_DATA_DIR)/dbcs \
+    $(CHARSET_DONE)-sbcs $(CHARSET_TEMPLATES) $(BUILD_TOOLS) 
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR)/ext dbcs
+	$(TOUCH) '$@'
+
+$(CHARSET_DONE)-hkscs: $(CHARSET_COPYRIGHT_HEADER_BASE)/HKSCS.java \
+    $(CHARSET_DONE)-sbcs $(BUILD_TOOLS)
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR)/ext hkscs '$<'
+	$(TOUCH) '$@'
+
+$(CHARSET_DONE)-euctw: $(CHARSET_COPYRIGHT_HEADER_BASE)/EUC_TW.java \
+    $(CHARSET_DONE)-sbcs $(BUILD_TOOLS)
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR)/ext euctw '$<'
+	$(TOUCH) '$@'
+
+$(CHARSET_GENSRC_JAVA_DIR)/ext/sjis0213.dat: $(CHARSET_DATA_DIR)/sjis0213.map \
+    $(CHARSET_DONE)-sbcs $(BUILD_TOOLS)
+	$(TOOL_CHARSETMAPPING) '$<' '$@' sjis0213
+
+GENSRC_CHARSETMAPPING += \
+    $(CHARSET_DONE)-sbcs \
+    $(CHARSET_DONE)-extsbcs \
+    $(CHARSET_DONE)-dbcs \
+    $(CHARSET_DONE)-hkscs \
+    $(CHARSET_DONE)-euctw \
+    $(CHARSET_GENSRC_JAVA_DIR)/ext/sjis0213.dat \
+    #
 
 ###
-
-$(GENSRC_DST)/ext/sjis0213.dat: $(GENSRC_DATA)/sjis0213.map $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $< $@ sjis0213
-
-GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/sjis0213.dat
-
+### Generate the sun/nio/cs/StandardCharsets.java file
 ###
 
-$(GENSRC_DST)/ext/EUC_TWMapping.java: $(GENSRC_JAVA_SRC)/EUC_TW.java $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_DATA) $(GENSRC_DST)/ext euctw $(GENSRC_JAVA_SRC)/EUC_TW.java
+CHARSET_STANDARD_GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc/standardcharsets
+CHARSET_STANDARD_DATA := $(CHARSET_DATA_DIR)/standard-charsets
+CHARSET_STANDARD_JAVA :=  sun/nio/cs/StandardCharsets.java
 
-GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/EUC_TWMapping.java
+CHARSET_ALIASES_TABLES_AWK := ' \
+    BEGIN { n = 1; m = 1; } \
+    /^[ \t]*charset / { \
+      csn = $$2; cln = $$3; \
+      lcsn = tolower(csn); \
+      lcsns[n++] = lcsn; \
+      csns[lcsn] = csn; \
+      classMap[lcsn] = cln; \
+      if (n > 2) \
+        printf "    };\n\n"; \
+      printf "    static final String[] aliases_%s = new String[] {\n", cln; \
+    } \
+    /^[ \t]*alias / { \
+      acsns[m++] = tolower($$2); \
+      aliasMap[tolower($$2)] = lcsn; \
+      printf "        \"%s\",\n", $$2; \
+    } \
+    END { \
+      printf "    };\n\n"; \
+    } '
 
-###
+CHARSET_ALIASES_MAP_AWK := ' \
+    /^[ \t]*charset / { \
+      csn = $$2; \
+      lcsn = tolower(csn); \
+    } \
+    /^[ \t]*alias / { \
+      an = tolower($$2); \
+      printf "%-20s \"%s\"\n", an, lcsn; \
+    } '
 
-$(GENSRC_DST)/ext/HKSCSMapping.java: $(GENSRC_JAVA_SRC)/HKSCS.java $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_DATA) $(GENSRC_DST)/ext hkscs $(GENSRC_JAVA_SRC)/HKSCS.java
+CHARSET_CLASSES_MAP_AWK := ' \
+    /^[ \t]*charset / { \
+      csn = $$2; cln = $$3; \
+      lcsn = tolower(csn); \
+      printf "%-20s \"%s\"\n", lcsn, cln; \
+    } '
 
-GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/HKSCSMapping.java
+# This target should be referenced using the order-only operator (|)
+$(CHARSET_STANDARD_GENSRC_DIR):
+	$(MKDIR) -p '$@'
 
-###
+$(CHARSET_STANDARD_GENSRC_DIR)/aliases-tables.java.snippet: $(CHARSET_STANDARD_DATA) \
+    | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(NAWK) < '$<' > '$@' $(CHARSET_ALIASES_TABLES_AWK)
 
-$(GENSRC_TMP)/gensrc_the.charsetmapping.extsbcs: $(GENSRC_DATA)/extsbcs $(GENSRC_TEMPLATES) $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_DATA) $(LOG_INFO) $(GENSRC_DST)/ext extsbcs
-	$(TOUCH) $@
+$(CHARSET_STANDARD_GENSRC_DIR)/aliases-map: $(CHARSET_STANDARD_DATA) \
+    | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(NAWK) < '$<' > '$@' $(CHARSET_ALIASES_MAP_AWK)
 
-GENSRC_CHARSETMAPPING += $(GENSRC_TMP)/gensrc_the.charsetmapping.extsbcs
+$(CHARSET_STANDARD_GENSRC_DIR)/classes-map: $(CHARSET_STANDARD_DATA) \
+    | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(NAWK) < '$<' > '$@' $(CHARSET_CLASSES_MAP_AWK)
 
-###
+$(CHARSET_STANDARD_GENSRC_DIR)/aliases-map.java.snippet: $(CHARSET_STANDARD_GENSRC_DIR)/aliases-map \
+    $(BUILD_TOOLS) | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(TOOL_HASHER) -i Aliases < '$<' > '$@'
 
-$(GENSRC_TMP)/gensrc_the.charsetmapping.dbcs: $(GENSRC_DATA)/dbcs $(GENSRC_TEMPLATES) $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_DATA) $(LOG_INFO) $(GENSRC_DST)/ext dbcs
-	$(TOUCH) $@
+$(CHARSET_STANDARD_GENSRC_DIR)/classes-map.java.snippet: $(CHARSET_STANDARD_GENSRC_DIR)/classes-map \
+    $(BUILD_TOOLS) | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(TOOL_HASHER) -i Classes < '$<' > '$@'
 
-GENSRC_CHARSETMAPPING += $(GENSRC_TMP)/gensrc_the.charsetmapping.dbcs
+$(CHARSET_STANDARD_GENSRC_DIR)/cache-map.java.snippet: $(CHARSET_STANDARD_GENSRC_DIR)/classes-map \
+    $(BUILD_TOOLS) | $(CHARSET_STANDARD_GENSRC_DIR)
+	$(TOOL_HASHER) -i -e Cache -t Charset < '$<' > '$@'
 
-###
+$(eval $(call SetupTextFileProcessing, BUILD_CHARSET_STANDARD, \
+    SOURCE_FILES := $(JDK_TOPDIR)/src/share/classes/$(CHARSET_STANDARD_JAVA).template, \
+    OUTPUT_FILE := $(JDK_OUTPUTDIR)/gensrc/$(CHARSET_STANDARD_JAVA), \
+    INCLUDES := \
+        _INCLUDE_ALIASES_TABLES_ => $(CHARSET_STANDARD_GENSRC_DIR)/aliases-tables.java.snippet ; \
+        _INCLUDE_ALIASES_MAP_ => $(CHARSET_STANDARD_GENSRC_DIR)/aliases-map.java.snippet ; \
+        _INCLUDE_CLASSES_MAP_ => $(CHARSET_STANDARD_GENSRC_DIR)/classes-map.java.snippet ; \
+        _INCLUDE_CACHE_MAP_ => $(CHARSET_STANDARD_GENSRC_DIR)/cache-map.java.snippet ; , \
+))
 
-GENSRC_CHARSET_PROVIDER_CMD := $(JDK_TOPDIR)/make/scripts/genCharsetProvider.sh
+# Processing of template depends on the snippets being generated first
+$(BUILD_CHARSET_STANDARD): \
+    $(CHARSET_STANDARD_GENSRC_DIR)/aliases-tables.java.snippet \
+    $(CHARSET_STANDARD_GENSRC_DIR)/aliases-map.java.snippet \
+    $(CHARSET_STANDARD_GENSRC_DIR)/classes-map.java.snippet \
+    $(CHARSET_STANDARD_GENSRC_DIR)/cache-map.java.snippet
 
-$(GENSRC_DST)/StandardCharsets.java: $(JDK_TOPDIR)/src/share/classes/sun/nio/cs/standard-charsets \
-    $(GENSRC_CHARSET_PROVIDER_CMD) \
-    $(GENSRC_TMP)/_the.charsetmapping.dir
-	NAWK="$(NAWK)" TEMPDIR="$(GENSRC_TMP)" SH="$(SH)" \
-	    HASHER="$(TOOL_HASHER)" \
-	    SCRIPTS="$(JDK_TOPDIR)/make/scripts" \
-	    $(SH) -e $(GENSRC_CHARSET_PROVIDER_CMD) $(LOG_INFO) $< $(@D)
-
-GENSRC_CHARSETMAPPING += $(GENSRC_DST)/StandardCharsets.java
-
-$(GENSRC_CHARSETMAPPING): $(BUILD_TOOLS)
+GENSRC_CHARSETMAPPING += $(BUILD_CHARSET_STANDARD)

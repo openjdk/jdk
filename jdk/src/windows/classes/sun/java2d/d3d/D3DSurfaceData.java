@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -542,7 +542,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         // REMIND: the D3D pipeline doesn't support XOR!, more
         // fixes will be needed below. For now we disable D3D rendering
         // for the surface which had any XOR rendering done to.
-        if (sg2d.compositeState >= sg2d.COMP_XOR) {
+        if (sg2d.compositeState >= SunGraphics2D.COMP_XOR) {
             super.validatePipe(sg2d);
             sg2d.imagepipe = d3dImagePipe;
             disableAccelerationForSurface();
@@ -557,18 +557,18 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         // by the CompositeType.SrcNoEa (any color) test below.)
 
         if (/* CompositeType.SrcNoEa (any color) */
-            (sg2d.compositeState <= sg2d.COMP_ISCOPY &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR)        ||
+            (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR)        ||
 
             /* CompositeType.SrcOver (any color) */
-            (sg2d.compositeState == sg2d.COMP_ALPHA    &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
+            (sg2d.compositeState == SunGraphics2D.COMP_ALPHA    &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
              (((AlphaComposite)sg2d.composite).getRule() ==
               AlphaComposite.SRC_OVER))                       ||
 
             /* CompositeType.Xor (any color) */
-            (sg2d.compositeState == sg2d.COMP_XOR &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR))
+            (sg2d.compositeState == SunGraphics2D.COMP_XOR &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR))
         {
             textpipe = d3dTextPipe;
         } else {
@@ -583,12 +583,12 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         D3DRenderer nonTxPipe = null;
 
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON) {
-            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
-                if (sg2d.compositeState <= sg2d.COMP_XOR) {
+            if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR) {
+                if (sg2d.compositeState <= SunGraphics2D.COMP_XOR) {
                     txPipe = d3dTxRenderPipe;
                     nonTxPipe = d3dRenderPipe;
                 }
-            } else if (sg2d.compositeState <= sg2d.COMP_ALPHA) {
+            } else if (sg2d.compositeState <= SunGraphics2D.COMP_ALPHA) {
                 if (D3DPaints.isValid(sg2d)) {
                     txPipe = d3dTxRenderPipe;
                     nonTxPipe = d3dRenderPipe;
@@ -596,7 +596,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
                 // custom paints handled by super.validatePipe() below
             }
         } else {
-            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
+            if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR) {
                 if (graphicsDevice.isCapPresent(CAPS_AA_SHADER) &&
                     (sg2d.imageComp == CompositeType.SrcOverNoEa ||
                      sg2d.imageComp == CompositeType.SrcOver))
@@ -613,7 +613,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
                     sg2d.drawpipe = aaConverter;
                     sg2d.fillpipe = aaConverter;
                     sg2d.shapepipe = aaConverter;
-                } else if (sg2d.compositeState == sg2d.COMP_XOR) {
+                } else if (sg2d.compositeState == SunGraphics2D.COMP_XOR) {
                     // install the solid pipes when AA and XOR are both enabled
                     txPipe = d3dTxRenderPipe;
                     nonTxPipe = d3dRenderPipe;
@@ -623,10 +623,10 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         }
 
         if (txPipe != null) {
-            if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                 sg2d.drawpipe = txPipe;
                 sg2d.fillpipe = txPipe;
-            } else if (sg2d.strokeState != sg2d.STROKE_THIN) {
+            } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
                 sg2d.drawpipe = txPipe;
                 sg2d.fillpipe = nonTxPipe;
             } else {
@@ -653,7 +653,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
 
     @Override
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
-        if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR) {
+        if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR) {
             /*
              * We can only accelerate non-Color MaskFill operations if
              * all of the following conditions hold true:
@@ -678,8 +678,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     public boolean copyArea(SunGraphics2D sg2d,
                             int x, int y, int w, int h, int dx, int dy)
     {
-        if (sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE &&
-            sg2d.compositeState < sg2d.COMP_XOR)
+        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
+            sg2d.compositeState < SunGraphics2D.COMP_XOR)
         {
             x += sg2d.transX;
             y += sg2d.transY;
@@ -738,7 +738,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         // swapBuffers can be called from the toolkit thread by swing, we
         // should detect this and prevent the deadlocks
-        if (rq.isRenderQueueThread()) {
+        if (D3DRenderQueue.isRenderQueueThread()) {
             if (!rq.tryLock()) {
                 // if we could not obtain the lock, repaint the area
                 // that was supposed to be swapped, and no-op this swap

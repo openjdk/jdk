@@ -44,8 +44,8 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   _vtime_accum(0.0)
 {
 
-  // Each thread has its own monitor. The i-th thread is responsible for signalling
-  // to thread i+1 if the number of buffers in the queue exceeds a threashold for this
+  // Each thread has its own monitor. The i-th thread is responsible for signaling
+  // to thread i+1 if the number of buffers in the queue exceeds a threshold for this
   // thread. Monitors are also used to wake up the threads during termination.
   // The 0th worker in notified by mutator threads and has a special monitor.
   // The last worker is used for young gen rset size sampling.

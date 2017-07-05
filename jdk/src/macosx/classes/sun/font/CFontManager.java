@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class CFontManager extends SunFontManager {
 
     // This is a way to register any kind of Font2D, not just files and composites.
     public static Font2D[] getGenericFonts() {
-        return (Font2D[])genericFonts.values().toArray(new Font2D[0]);
+        return genericFonts.values().toArray(new Font2D[0]);
     }
 
     public Font2D registerGenericFont(Font2D f)
@@ -117,7 +117,7 @@ public class CFontManager extends SunFontManager {
             }
             return f;
         } else {
-            return (Font2D)genericFonts.get(fontName);
+            return genericFonts.get(fontName);
         }
     }
 

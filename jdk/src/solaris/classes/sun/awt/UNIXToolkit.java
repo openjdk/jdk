@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public abstract class UNIXToolkit extends SunToolkit
     private BufferedImage tmpImage = null;
 
     public static int getDatatransferTimeout() {
-        Integer dt = (Integer)AccessController.doPrivileged(
+        Integer dt = AccessController.doPrivileged(
                 new GetIntegerAction("sun.awt.datatransfer.timeout"));
         if (dt == null || dt <= 0) {
             return DEFAULT_DATATRANSFER_TIMEOUT;

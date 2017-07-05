@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
              *     CARD32       heap_offset B32;
              * } xmDragReceiverInfoStruct;
              */
-            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
+            if (status == XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -220,7 +220,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                  *     CARD32   heap_offset B32;
                  * } xmDragReceiverInfoStruct;
                  */
-                if (status == (int)XConstants.Success && wpg.getData() != 0 &&
+                if (status == XConstants.Success && wpg.getData() != 0 &&
                     wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                     wpg.getNumberOfItems() >=
                     MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -292,7 +292,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
              *     CARD32       heap_offset B32;
              * } xmDragReceiverInfoStruct;
              */
-            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
+            if (status == XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -327,7 +327,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         try {
             int status = wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
-            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
+            if (status == XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {

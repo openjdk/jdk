@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ public class Sequence {
      */
     public Track[] getTracks() {
 
-        return (Track[]) tracks.toArray(new Track[tracks.size()]);
+        return tracks.toArray(new Track[tracks.size()]);
     }
 
 
@@ -312,7 +312,7 @@ public class Sequence {
         synchronized(tracks) {
 
             for(int i=0; i<tracks.size(); i++ ) {
-                long temp = ((Track)tracks.elementAt(i)).ticks();
+                long temp = tracks.elementAt(i).ticks();
                 if( temp>length ) {
                     length = temp;
                 }

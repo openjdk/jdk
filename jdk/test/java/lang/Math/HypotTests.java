@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  */
 
 import sun.misc.DoubleConsts;
-import sun.misc.FpUtils;
 
 public class HypotTests {
     private HypotTests(){}
@@ -127,7 +126,7 @@ public class HypotTests {
             double d = rand.nextDouble();
             // Scale d to have an exponent equal to MAX_EXPONENT -15
             d = Math.scalb(d, DoubleConsts.MAX_EXPONENT
-                                 -15 - FpUtils.ilogb(d));
+                                 -15 - Tests.ilogb(d));
             for(int j = 0; j <= 13; j += 1) {
                 failures += testHypotCase(3*d, 4*d, 5*d, 2.5);
                 d *= 2.0; // increase exponent by 1

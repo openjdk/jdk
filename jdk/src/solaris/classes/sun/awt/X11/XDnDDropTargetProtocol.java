@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -742,7 +742,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                 long data3, long data4) {
         XClientMessageEvent enter = new XClientMessageEvent();
         try {
-            enter.set_type((int)XConstants.ClientMessage);
+            enter.set_type(XConstants.ClientMessage);
             enter.set_window(toplevel);
             enter.set_format(32);
             enter.set_message_type(XDnDConstants.XA_XdndEnter.getAtom());
@@ -768,7 +768,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                   long sourceWindow) {
         XClientMessageEvent leave = new XClientMessageEvent();
         try {
-            leave.set_type((int)XConstants.ClientMessage);
+            leave.set_type(XConstants.ClientMessage);
             leave.set_window(toplevel);
             leave.set_format(32);
             leave.set_message_type(XDnDConstants.XA_XdndLeave.getAtom());
@@ -798,7 +798,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndStatus.getAtom());
@@ -886,7 +886,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndFinished.getAtom());
@@ -1005,6 +1005,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @SuppressWarnings("static")
     private void notifyProtocolListener(XWindow xwindow, int x, int y,
                                         int dropAction,
                                         XClientMessageEvent xclient,
@@ -1147,7 +1148,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                event while it still can be referenced from other Java events. */
             {
                 XClientMessageEvent copy = new XClientMessageEvent();
-                unsafe.copyMemory(xclient.pData, copy.pData, copy.getSize());
+                unsafe.copyMemory(xclient.pData, copy.pData, XClientMessageEvent.getSize());
 
                 copy.set_data(0, xclient.get_window());
 

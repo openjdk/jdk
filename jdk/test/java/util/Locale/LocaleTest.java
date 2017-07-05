@@ -25,7 +25,7 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276 7066203 7085757
+ * 6786276 7066203 7085757 8030696
  * @summary test Locales
  */
 /*
@@ -62,6 +62,8 @@
  */
 
 import java.text.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Date;
@@ -925,16 +927,20 @@ test commented out pending API-change approval
     }
 
     /*
-     * @bug 4147552 4778440
+     * @bug 4147552 4778440 8030696
      */
     public void Test4147552() {
         Locale[] locales = { new Locale("no", "NO"), new Locale("no", "NO", "B"),
-                             new Locale("no", "NO", "NY") };
+                             new Locale("no", "NO", "NY"), new Locale("nb", "NO"),
+                             new Locale("nn", "NO") };
         String[] englishDisplayNames = { "Norwegian (Norway)",
                      "Norwegian (Norway,Bokm\u00e5l)",
-                     "Norwegian (Norway,Nynorsk)" };
+                     "Norwegian (Norway,Nynorsk)",
+                     "Norwegian Bokm\u00e5l (Norway)",
+                     "Norwegian Nynorsk (Norway)" };
         String[] norwegianDisplayNames = { "norsk (Norge)",
-                     "norsk (Norge,bokm\u00e5l)", "norsk (Norge,nynorsk)" };
+                     "norsk (Norge,bokm\u00e5l)", "norsk (Noreg,nynorsk)",
+                     "bokm\u00e5l (Norge)", "nynorsk (Noreg)" };
 
         for (int i = 0; i < locales.length; i++) {
             Locale loc = locales[i];
@@ -945,6 +951,17 @@ test commented out pending API-change approval
                 errln("Norwegian display-name mismatch: expected " +
                        norwegianDisplayNames[i] + ", got " +
                        loc.getDisplayName(loc));
+        }
+    }
+
+    /*
+     * @bug 8030696
+     */
+    public void Test8030696() {
+        List<Locale> av = Arrays.asList(Locale.getAvailableLocales());
+        if (!av.contains(new Locale("nb", "NO")) ||
+            !av.contains(new Locale("nn", "NO"))) {
+                errln("\"nb-NO\" and/or \"nn-NO\" locale(s) not returned from getAvailableLocales().");
         }
     }
 

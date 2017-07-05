@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ public abstract class PlatformFont implements FontPeer {
             currentDefaultChar = data[stringIndex];
 
             // Note that cache sizes must be a power of two!
-            cacheIndex = (int)(currentDefaultChar & this.FONTCACHEMASK);
+            cacheIndex = (currentDefaultChar & PlatformFont.FONTCACHEMASK);
 
             theChar = (PlatformFontCache)getFontCache()[cacheIndex];
 
@@ -280,7 +280,7 @@ public abstract class PlatformFont implements FontPeer {
                 /* find a converter that can convert the current character */
                 currentFontDescriptor = defaultFont;
                 currentDefaultChar = defaultChar;
-                char ch = (char)data[stringIndex];
+                char ch = data[stringIndex];
                 int componentCount = componentFonts.length;
 
                 for (int j = 0; j < componentCount; j++) {
@@ -309,7 +309,7 @@ public abstract class PlatformFont implements FontPeer {
                                                                     theChar.bb,
                                                                     true);
                         */
-                        if (currentFontDescriptor.isLE) {
+                        if (FontDescriptor.isLE) {
                             theChar.bb.put((byte)(input[0] & 0xff));
                             theChar.bb.put((byte)(input[0] >>8));
                         } else {
@@ -420,7 +420,7 @@ public abstract class PlatformFont implements FontPeer {
         // twice or return an array which will be dereferenced and gced
         // right away.
         if (fontCache == null) {
-            fontCache = new Object[this.FONTCACHESIZE];
+            fontCache = new Object[PlatformFont.FONTCACHESIZE];
         }
 
         return fontCache;

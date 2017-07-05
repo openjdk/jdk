@@ -43,8 +43,8 @@ static jfieldID key_st_ino;    /* id for FileKey.st_ino */
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
 {
-    key_st_dev = (*env)->GetFieldID(env, clazz, "st_dev", "J");
-    key_st_ino = (*env)->GetFieldID(env, clazz, "st_ino", "J");
+    CHECK_NULL(key_st_dev = (*env)->GetFieldID(env, clazz, "st_dev", "J"));
+    CHECK_NULL(key_st_ino = (*env)->GetFieldID(env, clazz, "st_ino", "J"));
 }
 
 

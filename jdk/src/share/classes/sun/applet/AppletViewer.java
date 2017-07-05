@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.applet.*;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.SocketPermission;
-import sun.misc.Ref;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.InvocationTargetException;
@@ -390,22 +389,18 @@ public class AppletViewer extends Frame implements AppletContext,
         return getCachedImage(url);
     }
 
+    /**
+     * Get an image.
+     */
     static Image getCachedImage(URL url) {
         // System.getSecurityManager().checkConnection(url.getHost(), url.getPort());
-        return (Image)getCachedImageRef(url).get();
-    }
-
-    /**
-     * Get an image ref.
-     */
-    static Ref getCachedImageRef(URL url) {
         synchronized (imageRefs) {
             AppletImageRef ref = (AppletImageRef)imageRefs.get(url);
             if (ref == null) {
                 ref = new AppletImageRef(url);
                 imageRefs.put(url, ref);
             }
-            return ref;
+            return ref.get();
         }
     }
 

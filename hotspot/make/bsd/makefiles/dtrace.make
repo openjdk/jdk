@@ -68,11 +68,9 @@ endif
 
 # Use mapfile with libjvm_db.so
 LIBJVM_DB_MAPFILE = # no mapfile for usdt2 # $(MAKEFILES_DIR)/mapfile-vers-jvm_db
-#LFLAGS_JVM_DB += $(MAPFLAG:FILENAME=$(LIBJVM_DB_MAPFILE))
 
 # Use mapfile with libjvm_dtrace.so
 LIBJVM_DTRACE_MAPFILE = # no mapfile for usdt2 # $(MAKEFILES_DIR)/mapfile-vers-jvm_dtrace
-#LFLAGS_JVM_DTRACE += $(MAPFLAG:FILENAME=$(LIBJVM_DTRACE_MAPFILE))
 
 LFLAGS_JVM_DB += $(PICFLAG) # -D_REENTRANT
 LFLAGS_JVM_DTRACE += $(PICFLAG) # -D_REENTRANT
@@ -260,9 +258,6 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   endif
 endif
 
-#$(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
-#             $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d
-#	$(QUIETLY) cat $^ > $@
 
 $(DtraceOutDir):
 	mkdir $(DtraceOutDir)
@@ -276,100 +271,25 @@ $(DtraceOutDir)/hotspot_jni.h: $(DTRACE_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
 $(DtraceOutDir)/hs_private.h: $(DTRACE_SRCDIR)/hs_private.d | $(DtraceOutDir)
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hs_private.d
 
-$(DtraceOutDir)/jhelper.h: $(DTRACE_SRCDIR)/jhelper.d $(JVMOFFS).o | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/jhelper.d
-
-# jhelper currently disabled
 dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h 
 
-DTraced_Files = ciEnv.o \
-                classLoadingService.o \
-                compileBroker.o \
-                hashtable.o \
-                instanceKlass.o \
-                java.o \
-                jni.o \
-                jvm.o \
-                memoryManager.o \
-                nmethod.o \
-                objectMonitor.o \
-                runtimeService.o \
-                sharedRuntime.o \
-                synchronizer.o \
-                thread.o \
-                unsafe.o \
-                vmThread.o \
-                vmCMSOperations.o \
-                vmPSOperations.o \
-                vmGCOperations.o \
-
-# Dtrace is available, so we build $(DTRACE.o)  
-#$(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
-#	@echo Compiling $(DTRACE).d
-
-#	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
-#     $(DTraced_Files) ||\
-#  STATUS=$$?;\
-#	if [ x"$$STATUS" = x"1" -a \
-#       x`uname -r` = x"5.10" -a \
-#       x`uname -p` = x"sparc" ]; then\
-#    echo "*****************************************************************";\
-#    echo "* If you are building server compiler, and the error message is ";\
-#    echo "* \"incorrect ELF machine type...\", you have run into solaris bug ";\
-#    echo "* 6213962, \"dtrace -G doesn't work on sparcv8+ object files\".";\
-#    echo "* Either patch/upgrade your system (>= S10u1_15), or set the ";\
-#    echo "* environment variable HOTSPOT_DISABLE_DTRACE_PROBES to disable ";\
-#    echo "* dtrace probes for this build.";\
-#    echo "*****************************************************************";\
-#  fi;\
-#  exit $$STATUS
-  # Since some DTraced_Files are in LIBJVM.o and they are touched by this
-  # command, and libgenerateJvmOffsets.so depends on LIBJVM.o, 'make' will
-  # think it needs to rebuild libgenerateJvmOffsets.so and thus JvmOffsets*
-  # files, but it doesn't, so we touch the necessary files to prevent later
-  # recompilation. Note: we only touch the necessary files if they already
-  # exist in order to close a race where an empty file can be created
-  # before the real build rule is executed.
-  # But, we can't touch the *.h files:  This rule depends
-  # on them, and that would cause an infinite cycle of rebuilding.
-  # Neither the *.h or *.ccp files need to be touched, since they have
-  # rules which do not update them when the generator file has not
-  # changed their contents.
-#	$(QUIETLY) if [ -f lib$(GENOFFS).so ]; then touch lib$(GENOFFS).so; fi
-#	$(QUIETLY) if [ -f $(GENOFFS) ]; then touch $(GENOFFS); fi
-#	$(QUIETLY) if [ -f $(JVMOFFS.o) ]; then touch $(JVMOFFS.o); fi
 
 .PHONY: dtraceCheck
 
-#SYSTEM_DTRACE_H = /usr/include/dtrace.h
 SYSTEM_DTRACE_PROG = /usr/sbin/dtrace
-#PATCH_DTRACE_PROG = /opt/SUNWdtrd/sbin/dtrace
 systemDtraceFound := $(wildcard ${SYSTEM_DTRACE_PROG})
-#patchDtraceFound := $(wildcard ${PATCH_DTRACE_PROG})
-#systemDtraceHdrFound := $(wildcard $(SYSTEM_DTRACE_H))
 
-#ifneq ("$(systemDtraceHdrFound)", "") 
-#CFLAGS += -DHAVE_DTRACE_H
-#endif
-
-#ifneq ("$(patchDtraceFound)", "")
-#DTRACE_PROG=$(PATCH_DTRACE_PROG)
-#DTRACE_INCL=-I/opt/SUNWdtrd/include
-#else
 ifneq ("$(systemDtraceFound)", "")
 DTRACE_PROG=$(SYSTEM_DTRACE_PROG)
 else
 
-endif # ifneq ("$(systemDtraceFound)", "")
-#endif # ifneq ("$(patchDtraceFound)", "")
+endif
 
 ifneq ("${DTRACE_PROG}", "")
 ifeq ("${HOTSPOT_DISABLE_DTRACE_PROBES}", "")
 
 DTRACE_OBJS = $(DTRACE.o) #$(JVMOFFS.o)
 CFLAGS += -DDTRACE_ENABLED #$(DTRACE_INCL)
-#clangCFLAGS += -DDTRACE_ENABLED -fno-optimize-sibling-calls
-#MAPFILE_DTRACE_OPT = $(MAPFILE_DTRACE)
 
 
 dtraceCheck:

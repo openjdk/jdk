@@ -590,7 +590,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
       // Then, the case analysis above reveals that, in the worst case,
       // any such stale card will be scanned unnecessarily at most twice.
       //
-      // It is nonethelss advisable to try and get rid of some of this
+      // It is nonetheless advisable to try and get rid of some of this
       // redundant work in a subsequent (low priority) re-design of
       // the card-scanning code, if only to simplify the underlying
       // state machine analysis/proof. ysr 1/28/2002. XXX

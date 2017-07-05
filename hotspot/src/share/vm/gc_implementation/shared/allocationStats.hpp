@@ -49,11 +49,11 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
   // estimates.
   AdaptivePaddedAverage _demand_rate_estimate;
 
-  ssize_t     _desired;         // Demand stimate computed as described above
+  ssize_t     _desired;          // Demand estimate computed as described above
   ssize_t     _coal_desired;     // desired +/- small-percent for tuning coalescing
 
-  ssize_t     _surplus;         // count - (desired +/- small-percent),
-                                // used to tune splitting in best fit
+  ssize_t     _surplus;          // count - (desired +/- small-percent),
+                                 // used to tune splitting in best fit
   ssize_t     _bfr_surp;         // surplus at start of current sweep
   ssize_t     _prev_sweep;       // count from end of previous sweep
   ssize_t     _before_sweep;     // count from before current sweep

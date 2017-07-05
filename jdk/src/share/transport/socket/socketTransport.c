@@ -506,6 +506,19 @@ socketTransport_close(jdwpTransportEnv* env)
     if (fd < 0) {
         return JDWPTRANSPORT_ERROR_NONE;
     }
+#ifdef _AIX
+    /*
+      AIX needs a workaround for I/O cancellation, see:
+      http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/close.htm
+      ...
+      The close subroutine is blocked until all subroutines which use the file
+      descriptor return to usr space. For example, when a thread is calling close
+      and another thread is calling select with the same file descriptor, the
+      close subroutine does not return until the select call returns.
+      ...
+    */
+    shutdown(fd, 2);
+#endif
     if (dbgsysSocketClose(fd) < 0) {
         /*
          * close failed - it's pointless to restore socketFD here because

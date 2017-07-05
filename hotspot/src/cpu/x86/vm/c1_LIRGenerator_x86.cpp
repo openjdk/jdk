@@ -941,6 +941,8 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
     case vmIntrinsics::_updateCRC32: {
       LIRItem crc(x->argument_at(0), this);
       LIRItem val(x->argument_at(1), this);
+      // val is destroyed by update_crc32
+      val.set_destroys_register();
       crc.load_item();
       val.load_item();
       __ update_crc32(crc.result(), val.result(), result);
