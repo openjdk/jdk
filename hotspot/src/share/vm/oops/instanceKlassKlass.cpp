@@ -31,6 +31,7 @@
 #include "memory/gcLocker.hpp"
 #include "oops/constantPoolOop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlassKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/objArrayKlassKlass.hpp"
@@ -86,7 +87,6 @@ void instanceKlassKlass::oop_follow_contents(oop obj) {
   assert(klassOop(obj)->klass_part()->oop_is_instance_slow(), "must be instance klass");
 
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->follow_static_fields();
   {
     HandleMark hm;
     ik->vtable()->oop_follow_contents();
@@ -127,7 +127,6 @@ void instanceKlassKlass::oop_follow_contents(ParCompactionManager* cm,
   assert(klassOop(obj)->klass_part()->oop_is_instance_slow(), "must be instance klass");
 
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->follow_static_fields(cm);
   ik->vtable()->oop_follow_contents(cm);
   ik->itable()->oop_follow_contents(cm);
 
@@ -168,7 +167,6 @@ int instanceKlassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   // Don't call size() or oop_size() since that is a virtual call.
   int size = ik->object_size();
 
-  ik->iterate_static_fields(blk);
   ik->vtable()->oop_oop_iterate(blk);
   ik->itable()->oop_oop_iterate(blk);
 
@@ -209,7 +207,6 @@ int instanceKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk,
   // Don't call size() or oop_size() since that is a virtual call.
   int size = ik->object_size();
 
-  ik->iterate_static_fields(blk, mr);
   ik->vtable()->oop_oop_iterate_m(blk, mr);
   ik->itable()->oop_oop_iterate_m(blk, mr);
 
@@ -266,7 +263,6 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
   assert(klassOop(obj)->klass_part()->oop_is_instance_slow(), "must be instance klass");
 
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->adjust_static_fields();
   ik->vtable()->oop_adjust_pointers();
   ik->itable()->oop_adjust_pointers();
 
@@ -300,7 +296,6 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
 #ifndef SERIALGC
 void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->push_static_fields(pm);
 
   oop* loader_addr = ik->adr_class_loader();
   if (PSScavenge::should_scavenge(loader_addr)) {
@@ -336,7 +331,6 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
          "must be instance klass");
 
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->update_static_fields();
   ik->vtable()->oop_update_pointers(cm);
   ik->itable()->oop_update_pointers(cm);
 
@@ -356,22 +350,28 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 #endif // SERIALGC
 
 klassOop
-instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
+instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int itable_len,
                                             int static_field_size,
                                             unsigned nonstatic_oop_map_count,
                                             ReferenceType rt, TRAPS) {
 
   const int nonstatic_oop_map_size =
     instanceKlass::nonstatic_oop_map_size(nonstatic_oop_map_count);
-  int size = instanceKlass::object_size(align_object_offset(vtable_len) + align_object_offset(itable_len) + static_field_size + nonstatic_oop_map_size);
+  int size = instanceKlass::object_size(align_object_offset(vtable_len) + align_object_offset(itable_len) + nonstatic_oop_map_size);
 
   // Allocation
   KlassHandle h_this_klass(THREAD, as_klassOop());
   KlassHandle k;
   if (rt == REF_NONE) {
-    // regular klass
-    instanceKlass o;
-    k = base_create_klass(h_this_klass, size, o.vtbl_value(), CHECK_NULL);
+    if (name != vmSymbols::java_lang_Class()) {
+      // regular klass
+      instanceKlass o;
+      k = base_create_klass(h_this_klass, size, o.vtbl_value(), CHECK_NULL);
+    } else {
+      // Class
+      instanceMirrorKlass o;
+      k = base_create_klass(h_this_klass, size, o.vtbl_value(), CHECK_NULL);
+    }
   } else {
     // reference klass
     instanceRefKlass o;
@@ -408,7 +408,7 @@ instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
     ik->set_source_debug_extension(NULL);
     ik->set_array_name(NULL);
     ik->set_inner_classes(NULL);
-    ik->set_static_oop_field_size(0);
+    ik->set_static_oop_field_count(0);
     ik->set_nonstatic_field_size(0);
     ik->set_is_marked_dependent(false);
     ik->set_init_state(instanceKlass::allocated);
@@ -442,9 +442,6 @@ instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
     // To get verify to work - must be set to partial loaded before first GC point.
     k()->set_partially_loaded();
   }
-
-  // GC can happen here
-  java_lang_Class::create_mirror(k, CHECK_NULL); // Allocate mirror
   return k();
 }
 
@@ -566,13 +563,6 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   FieldPrinter print_nonstatic_field(st);
   ik->do_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"static oop maps:     ");
-  if (ik->static_oop_field_size() > 0) {
-    int first_offset = ik->offset_of_static_fields();
-    st->print("%d-%d", first_offset, first_offset + ik->static_oop_field_size() - 1);
-  }
-  st->cr();
-
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = ik->start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + ik->nonstatic_oop_map_count();
@@ -630,7 +620,6 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
 
     // Verify static fields
     VerifyFieldClosure blk;
-    ik->iterate_static_fields(&blk);
 
     // Verify vtables
     if (ik->is_linked()) {

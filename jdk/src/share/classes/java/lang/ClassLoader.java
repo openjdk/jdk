@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1626,20 +1626,28 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected Package getPackage(String name) {
+        Package pkg;
         synchronized (packages) {
-            Package pkg = packages.get(name);
-            if (pkg == null) {
-                if (parent != null) {
-                    pkg = parent.getPackage(name);
-                } else {
-                    pkg = Package.getSystemPackage(name);
-                }
-                if (pkg != null) {
-                    packages.put(name, pkg);
+            pkg = packages.get(name);
+        }
+        if (pkg == null) {
+            if (parent != null) {
+                pkg = parent.getPackage(name);
+            } else {
+                pkg = Package.getSystemPackage(name);
+            }
+            if (pkg != null) {
+                synchronized (packages) {
+                    Package pkg2 = packages.get(name);
+                    if (pkg2 == null) {
+                        packages.put(name, pkg);
+                    } else {
+                        pkg = pkg2;
+                    }
                 }
             }
-            return pkg;
         }
+        return pkg;
     }
 
     /**

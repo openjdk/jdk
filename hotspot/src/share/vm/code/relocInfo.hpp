@@ -765,7 +765,8 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
 
  protected:
   // platform-dependent utilities for decoding and patching instructions
-  void       pd_set_data_value       (address x, intptr_t off); // a set or mem-ref
+  void       pd_set_data_value       (address x, intptr_t off, bool verify_only = false); // a set or mem-ref
+  void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
   address    pd_call_destination     (address orig_addr = NULL);
   void       pd_set_call_destination (address x);
   void       pd_swap_in_breakpoint   (address x, short* instrs, int instrlen);
@@ -880,6 +881,12 @@ class DataRelocation : public Relocation {
     else
       pd_set_data_value(x, o);
   }
+  void        verify_value(address x) {
+    if (addr_in_const())
+      assert(*(address*)addr() == x, "must agree");
+    else
+      pd_verify_data_value(x, offset());
+  }
 
   // The "o" (displacement) argument is relevant only to split relocations
   // on RISC machines.  In some CPUs (SPARC), the set-hi and set-lo ins'ns
@@ -949,6 +956,8 @@ class oop_Relocation : public DataRelocation {
   void unpack_data();
 
   void fix_oop_relocation();        // reasserts oop value
+
+  void verify_oop_relocation();
 
   address value()  { return (address) *oop_addr(); }
 

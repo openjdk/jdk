@@ -123,7 +123,7 @@ keystore.type=jks
 # passed to checkPackageAccess unless the
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
-package.access=sun.,com.sun.imageio.
+package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.
 
 #
 # List of comma-separated packages that start with or equal this string

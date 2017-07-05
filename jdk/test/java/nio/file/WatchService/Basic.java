@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 7017446
  * @summary Unit test for java.nio.file.WatchService
  * @library ..
  * @run main/timeout=120 Basic
@@ -44,6 +44,8 @@ public class Basic {
     static void checkKey(WatchKey key, Path dir) {
         if (!key.isValid())
             throw new RuntimeException("Key is not valid");
+        if (key.watchable() != dir)
+            throw new RuntimeException("Unexpected watchable");
     }
 
     static void takeExpectedKey(WatchService watcher, WatchKey expected) {
