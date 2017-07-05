@@ -29,7 +29,7 @@
 #include "gc/g1/g1HotCardCache.hpp"
 #include "runtime/java.hpp"
 
-ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure) :
+ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
   _threads(NULL), _n_threads(0),
   _hot_card_cache(g1h)
 {
@@ -48,29 +48,46 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosu
     FLAG_SET_DEFAULT(G1ConcRefinementRedZone, yellow_zone() * 2);
   }
   set_red_zone(MAX2<int>(G1ConcRefinementRedZone, yellow_zone()));
+}
 
-  _n_worker_threads = thread_num();
+ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure, jint* ecode) {
+  ConcurrentG1Refine* cg1r = new ConcurrentG1Refine(g1h);
+  if (cg1r == NULL) {
+    *ecode = JNI_ENOMEM;
+    vm_shutdown_during_initialization("Could not create ConcurrentG1Refine");
+    return NULL;
+  }
+  cg1r->_n_worker_threads = thread_num();
   // We need one extra thread to do the young gen rset size sampling.
-  _n_threads = _n_worker_threads + 1;
+  cg1r->_n_threads = cg1r->_n_worker_threads + 1;
 
-  reset_threshold_step();
+  cg1r->reset_threshold_step();
 
-  _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads, mtGC);
+  cg1r->_threads = NEW_C_HEAP_ARRAY_RETURN_NULL(ConcurrentG1RefineThread*, cg1r->_n_threads, mtGC);
+  if (cg1r->_threads == NULL) {
+    *ecode = JNI_ENOMEM;
+    vm_shutdown_during_initialization("Could not allocate an array for ConcurrentG1RefineThread");
+    return NULL;
+  }
 
   uint worker_id_offset = DirtyCardQueueSet::num_par_ids();
 
   ConcurrentG1RefineThread *next = NULL;
-  for (uint i = _n_threads - 1; i != UINT_MAX; i--) {
-    ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, refine_closure, worker_id_offset, i);
+  for (uint i = cg1r->_n_threads - 1; i != UINT_MAX; i--) {
+    ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(cg1r, next, refine_closure, worker_id_offset, i);
     assert(t != NULL, "Conc refine should have been created");
     if (t->osthread() == NULL) {
-        vm_shutdown_during_initialization("Could not create ConcurrentG1RefineThread");
+      *ecode = JNI_ENOMEM;
+      vm_shutdown_during_initialization("Could not create ConcurrentG1RefineThread");
+      return NULL;
     }
 
-    assert(t->cg1r() == this, "Conc refine thread should refer to this");
-    _threads[i] = t;
+    assert(t->cg1r() == cg1r, "Conc refine thread should refer to this");
+    cg1r->_threads[i] = t;
     next = t;
   }
+  *ecode = JNI_OK;
+  return cg1r;
 }
 
 void ConcurrentG1Refine::reset_threshold_step() {

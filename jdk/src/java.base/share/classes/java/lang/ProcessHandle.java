@@ -149,14 +149,15 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
 
     /**
      * Returns a snapshot of the current direct children of the process.
-     * A process that is {@link #isAlive not alive} has zero children.
+     * The {@link #parent} of a direct child process is the process.
+     * Typically, a process that is {@link #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
      * There is no guarantee that a process is {@link #isAlive alive}.
      * </em>
      *
-     * @return a Stream of ProcessHandles for processes that are direct children
-     *         of the process
+     * @return a sequential Stream of ProcessHandles for processes that are
+     *         direct children of the process
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
      */
@@ -164,14 +165,16 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
 
     /**
      * Returns a snapshot of the current direct and indirect children of the process.
-     * A process that is {@link #isAlive not alive} has zero children.
+     * An indirect child is one whose parent is either a direct child or
+     * another indirect child.
+     * Typically, a process that is {@link #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
      * There is no guarantee that a process is {@link #isAlive alive}.
      * </em>
      *
-     * @return a Stream of ProcessHandles for processes that are direct and
-     *         indirect children of the process
+     * @return a sequential Stream of ProcessHandles for processes that are
+     *         direct and indirect children of the process
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
      */

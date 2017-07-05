@@ -309,6 +309,14 @@ class DivVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------SqrtVDNode--------------------------------------
+// Vector Sqrt double
+class SqrtVDNode : public VectorNode {
+ public:
+  SqrtVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------LShiftVBNode-----------------------------------
 // Vector left shift bytes
 class LShiftVBNode : public VectorNode {

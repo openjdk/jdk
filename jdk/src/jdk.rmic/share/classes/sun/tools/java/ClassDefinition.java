@@ -259,7 +259,7 @@ class ClassDefinition implements Constants {
      * Tell if the class is inner.
      * This predicate also returns true for top-level nested types.
      * To test for a true inner class as seen by the programmer,
-     * use <tt>!isTopLevel()</tt>.
+     * use {@code !isTopLevel()}.
      */
     public final boolean isInnerClass() {
         return outerClass != null;
@@ -911,7 +911,7 @@ class ClassDefinition implements Constants {
     }
 
     /**
-     * Note that this class is being used somehow by <tt>ref</tt>.
+     * Note that this class is being used somehow by {@code ref}.
      * Report deprecation errors, etc.
      */
     public void noteUsedBy(ClassDefinition ref, long where, Environment env) {

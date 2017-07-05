@@ -32,10 +32,10 @@ import java.lang.reflect.TypeVariable;
 /**
  * Abstract superclass for lazy scope objects, used when building
  * factories for generic information repositories.
- * The type parameter <tt>D</tt> represents the type of reflective
+ * The type parameter {@code D} represents the type of reflective
  * object whose scope this class is representing.
  * <p> To subclass this, all one needs to do is implement
- * <tt>computeEnclosingScope</tt> and the subclass' constructor.
+ * {@code computeEnclosingScope} and the subclass' constructor.
  */
 public abstract class AbstractScope<D extends GenericDeclaration>
     implements Scope {
@@ -54,9 +54,9 @@ public abstract class AbstractScope<D extends GenericDeclaration>
     protected AbstractScope(D decl){ recvr = decl;}
 
     /**
-     * Accessor for the receiver - the object whose scope this <tt>Scope</tt>
+     * Accessor for the receiver - the object whose scope this {@code Scope}
      * object represents.
-     * @return The object whose scope this <tt>Scope</tt> object represents
+     * @return The object whose scope this {@code Scope} object represents
      */
     protected D getRecvr() {return recvr;}
 

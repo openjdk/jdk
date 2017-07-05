@@ -200,7 +200,7 @@ class Identifier implements Constants {
     /** A space character, which precedes the first inner class
      *  name in a qualified name, and thus marks the qualification
      *  as involving inner classes, instead of merely packages.<p>
-     *  Ex:  <tt>java.util.Vector. Enumerator</tt>.
+     *  Ex:  {@code java.util.Vector. Enumerator}.
      */
     public static final char INNERCLASS_PREFIX = ' ';
 
@@ -229,7 +229,7 @@ class Identifier implements Constants {
      * and with any nesting flattened into a new qualfication structure.
      * If the original identifier is inner,
      * the result will be qualified, and can be further
-     * decomposed by means of <tt>getQualifier</tt> and <tt>getName</tt>.
+     * decomposed by means of {@code getQualifier} and {@code getName}.
      * <p>
      * For example:
      * <pre>
