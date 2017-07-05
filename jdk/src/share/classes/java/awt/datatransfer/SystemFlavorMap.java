@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
 
     /**
      * Returns the default FlavorMap for this thread's ClassLoader.
+     * @return the default FlavorMap for this thread's ClassLoader
      */
     public static FlavorMap getDefaultFlavorMap() {
         ClassLoader contextClassLoader =
@@ -1309,6 +1310,8 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * @param nat the <code>String</code> to decode
      * @return the decoded <code>DataFlavor</code>, or <code>null</code> if
      *         nat is not an encoded <code>String</code> native
+     * @throws ClassNotFoundException if the class of the data flavor
+     * is not loaded
      */
     public static DataFlavor decodeDataFlavor(String nat)
         throws ClassNotFoundException

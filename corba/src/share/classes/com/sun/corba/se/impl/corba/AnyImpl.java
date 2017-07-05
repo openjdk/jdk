@@ -82,11 +82,18 @@ public class AnyImpl extends Any
             super((ORB)orb);
         }
 
-        public org.omg.CORBA.portable.InputStream create_input_stream()
-        {
-            return new AnyInputStream(
-                (com.sun.corba.se.impl.encoding.EncapsInputStream)
-                    super.create_input_stream());
+        public org.omg.CORBA.portable.InputStream create_input_stream() {
+            final org.omg.CORBA.portable.InputStream is = super
+                    .create_input_stream();
+            AnyInputStream aIS = AccessController
+                    .doPrivileged(new PrivilegedAction<AnyInputStream>() {
+                        @Override
+                        public AnyInputStream run() {
+                            return new AnyInputStream(
+                                    (com.sun.corba.se.impl.encoding.EncapsInputStream) is);
+                        }
+                    });
+            return aIS;
         }
     }
 

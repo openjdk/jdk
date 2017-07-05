@@ -659,12 +659,12 @@ public class XMLDocumentFragmentScannerImpl
         dtdGrammarUtil = null;
 
         if (fSecurityManager != null) {
-            fLimitAnalyzer = fSecurityManager.getLimitAnalyzer();
             fElementAttributeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT);
         } else {
-            fLimitAnalyzer = null;
             fElementAttributeLimit = 0;
         }
+        fLimitAnalyzer = new XMLLimitAnalyzer();
+        fEntityManager.setLimitAnalyzer(fLimitAnalyzer);
     }
 
     /**
@@ -3154,16 +3154,16 @@ public class XMLDocumentFragmentScannerImpl
          */
         protected void checkLimit(XMLStringBuffer buffer) {
             if (fLimitAnalyzer.isTracking(fCurrentEntityName)) {
-                fLimitAnalyzer.addValue(Limit.GENEAL_ENTITY_SIZE_LIMIT, fCurrentEntityName, buffer.length);
-                if (fSecurityManager.isOverLimit(Limit.GENEAL_ENTITY_SIZE_LIMIT)) {
-                    fSecurityManager.debugPrint();
+                fLimitAnalyzer.addValue(Limit.GENERAL_ENTITY_SIZE_LIMIT, fCurrentEntityName, buffer.length);
+                if (fSecurityManager.isOverLimit(Limit.GENERAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {
+                    fSecurityManager.debugPrint(fLimitAnalyzer);
                     reportFatalError("MaxEntitySizeLimit", new Object[]{fCurrentEntityName,
-                        fLimitAnalyzer.getValue(Limit.GENEAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getLimit(Limit.GENEAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getStateLiteral(Limit.GENEAL_ENTITY_SIZE_LIMIT)});
+                        fLimitAnalyzer.getValue(Limit.GENERAL_ENTITY_SIZE_LIMIT),
+                        fSecurityManager.getLimit(Limit.GENERAL_ENTITY_SIZE_LIMIT),
+                        fSecurityManager.getStateLiteral(Limit.GENERAL_ENTITY_SIZE_LIMIT)});
                 }
-                if (fSecurityManager.isOverLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT)) {
-                    fSecurityManager.debugPrint();
+                if (fSecurityManager.isOverLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {
+                    fSecurityManager.debugPrint(fLimitAnalyzer);
                     reportFatalError("TotalEntitySizeLimit",
                         new Object[]{fLimitAnalyzer.getTotalValue(Limit.TOTAL_ENTITY_SIZE_LIMIT),
                         fSecurityManager.getLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT),

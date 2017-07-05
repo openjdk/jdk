@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public interface KeyListener extends EventListener {
      * Invoked when a key has been typed.
      * See the class description for {@link KeyEvent} for a definition of
      * a key typed event.
+     * @param e the event to be processed
      */
     public void keyTyped(KeyEvent e);
 
@@ -61,6 +62,7 @@ public interface KeyListener extends EventListener {
      * Invoked when a key has been pressed.
      * See the class description for {@link KeyEvent} for a definition of
      * a key pressed event.
+     * @param e the event to be processed
      */
     public void keyPressed(KeyEvent e);
 
@@ -68,6 +70,7 @@ public interface KeyListener extends EventListener {
      * Invoked when a key has been released.
      * See the class description for {@link KeyEvent} for a definition of
      * a key released event.
+     * @param e the event to be processed
      */
     public void keyReleased(KeyEvent e);
 }

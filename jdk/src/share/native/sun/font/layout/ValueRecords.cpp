@@ -59,8 +59,8 @@ le_int16 ValueRecord::getFieldValue(le_int16 index, ValueFormat valueFormat, Val
     return SWAPW(value);
 }
 
-void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, GlyphIterator &glyphIterator,
-                                 const LEFontInstance *fontInstance) const
+void ValueRecord::adjustPosition(ValueFormat valueFormat, const LETableReference& base, GlyphIterator &glyphIterator,
+                                 const LEFontInstance *fontInstance, LEErrorCode &success) const
 {
     float xPlacementAdjustment = 0;
     float yPlacementAdjustment = 0;
@@ -118,8 +118,8 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
             Offset dtOffset = getFieldValue(valueFormat, vrfXPlaDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 xAdj = dt->getAdjustment(xppem);
+                 LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 xAdj = dt->getAdjustment(dt, xppem, success);
 
                 xPlacementAdjustment += fontInstance->xPixelsToUnits(xAdj);
             }
@@ -129,8 +129,8 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
             Offset dtOffset = getFieldValue(valueFormat, vrfYPlaDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 yAdj = dt->getAdjustment(yppem);
+                 LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 yAdj = dt->getAdjustment(dt, yppem, success);
 
                 yPlacementAdjustment += fontInstance->yPixelsToUnits(yAdj);
             }
@@ -140,8 +140,8 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
             Offset dtOffset = getFieldValue(valueFormat, vrfXAdvDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 xAdj = dt->getAdjustment(xppem);
+                 LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 xAdj = dt->getAdjustment(dt, xppem, success);
 
                 xAdvanceAdjustment += fontInstance->xPixelsToUnits(xAdj);
             }
@@ -151,10 +151,10 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
             Offset dtOffset = getFieldValue(valueFormat, vrfYAdvDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 yAdj = dt->getAdjustment(yppem);
+              LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+              le_int16 yAdj = dt->getAdjustment(dt, yppem, success);
 
-                yAdvanceAdjustment += fontInstance->yPixelsToUnits(yAdj);
+              yAdvanceAdjustment += fontInstance->yPixelsToUnits(yAdj);
             }
         }
     }
@@ -163,8 +163,8 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
         xPlacementAdjustment, yPlacementAdjustment, xAdvanceAdjustment, yAdvanceAdjustment);
 }
 
-void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const char *base, GlyphIterator &glyphIterator,
-                                 const LEFontInstance *fontInstance) const
+void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const LETableReference& base, GlyphIterator &glyphIterator,
+                                 const LEFontInstance *fontInstance, LEErrorCode &success) const
 {
     float xPlacementAdjustment = 0;
     float yPlacementAdjustment = 0;
@@ -222,8 +222,8 @@ void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const 
             Offset dtOffset = getFieldValue(index, valueFormat, vrfXPlaDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 xAdj = dt->getAdjustment(xppem);
+                LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 xAdj = dt->getAdjustment(dt, xppem, success);
 
                 xPlacementAdjustment += fontInstance->xPixelsToUnits(xAdj);
             }
@@ -233,8 +233,8 @@ void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const 
             Offset dtOffset = getFieldValue(index, valueFormat, vrfYPlaDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 yAdj = dt->getAdjustment(yppem);
+                LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 yAdj = dt->getAdjustment(dt, yppem, success);
 
                 yPlacementAdjustment += fontInstance->yPixelsToUnits(yAdj);
             }
@@ -244,8 +244,8 @@ void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const 
             Offset dtOffset = getFieldValue(index, valueFormat, vrfXAdvDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 xAdj = dt->getAdjustment(xppem);
+                LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 xAdj = dt->getAdjustment(dt, xppem, success);
 
                 xAdvanceAdjustment += fontInstance->xPixelsToUnits(xAdj);
             }
@@ -255,8 +255,8 @@ void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const 
             Offset dtOffset = getFieldValue(index, valueFormat, vrfYAdvDevice);
 
             if (dtOffset != 0) {
-                const DeviceTable *dt = (const DeviceTable *) (base + dtOffset);
-                le_int16 yAdj = dt->getAdjustment(yppem);
+                LEReferenceTo<DeviceTable> dt(base, success, dtOffset);
+                le_int16 yAdj = dt->getAdjustment(dt, yppem, success);
 
                 yAdvanceAdjustment += fontInstance->yPixelsToUnits(yAdj);
             }

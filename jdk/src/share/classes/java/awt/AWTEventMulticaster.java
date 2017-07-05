@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,6 +609,7 @@ public class AWTEventMulticaster implements
      * @param b window-state-listener-b
      * @since 1.4
      */
+    @SuppressWarnings("overloads")
     public static WindowStateListener add(WindowStateListener a,
                                           WindowStateListener b) {
         return (WindowStateListener)addInternal(a, b);
@@ -632,6 +633,7 @@ public class AWTEventMulticaster implements
      * @param a action-listener-a
      * @param b action-listener-b
      */
+    @SuppressWarnings("overloads")
     public static ActionListener add(ActionListener a, ActionListener b) {
         return (ActionListener)addInternal(a, b);
     }
@@ -642,6 +644,7 @@ public class AWTEventMulticaster implements
      * @param a item-listener-a
      * @param b item-listener-b
      */
+    @SuppressWarnings("overloads")
     public static ItemListener add(ItemListener a, ItemListener b) {
         return (ItemListener)addInternal(a, b);
     }
@@ -652,9 +655,11 @@ public class AWTEventMulticaster implements
      * @param a adjustment-listener-a
      * @param b adjustment-listener-b
      */
+    @SuppressWarnings("overloads")
     public static AdjustmentListener add(AdjustmentListener a, AdjustmentListener b) {
         return (AdjustmentListener)addInternal(a, b);
     }
+    @SuppressWarnings("overloads")
     public static TextListener add(TextListener a, TextListener b) {
         return (TextListener)addInternal(a, b);
     }
@@ -676,6 +681,7 @@ public class AWTEventMulticaster implements
      * @param b hierarchy-listener-b
      * @since 1.3
      */
+    @SuppressWarnings("overloads")
      public static HierarchyListener add(HierarchyListener a, HierarchyListener b) {
         return (HierarchyListener)addInternal(a, b);
      }
@@ -698,6 +704,7 @@ public class AWTEventMulticaster implements
      * @param b mouse-wheel-listener-b
      * @since 1.4
      */
+    @SuppressWarnings("overloads")
     public static MouseWheelListener add(MouseWheelListener a,
                                          MouseWheelListener b) {
         return (MouseWheelListener)addInternal(a, b);
@@ -780,6 +787,7 @@ public class AWTEventMulticaster implements
      * @param oldl the window-state-listener being removed
      * @since 1.4
      */
+    @SuppressWarnings("overloads")
     public static WindowStateListener remove(WindowStateListener l,
                                              WindowStateListener oldl) {
         return (WindowStateListener) removeInternal(l, oldl);
@@ -803,6 +811,7 @@ public class AWTEventMulticaster implements
      * @param l action-listener-l
      * @param oldl the action-listener being removed
      */
+    @SuppressWarnings("overloads")
     public static ActionListener remove(ActionListener l, ActionListener oldl) {
         return (ActionListener) removeInternal(l, oldl);
     }
@@ -813,6 +822,7 @@ public class AWTEventMulticaster implements
      * @param l item-listener-l
      * @param oldl the item-listener being removed
      */
+    @SuppressWarnings("overloads")
     public static ItemListener remove(ItemListener l, ItemListener oldl) {
         return (ItemListener) removeInternal(l, oldl);
     }
@@ -823,9 +833,11 @@ public class AWTEventMulticaster implements
      * @param l adjustment-listener-l
      * @param oldl the adjustment-listener being removed
      */
+    @SuppressWarnings("overloads")
     public static AdjustmentListener remove(AdjustmentListener l, AdjustmentListener oldl) {
         return (AdjustmentListener) removeInternal(l, oldl);
     }
+    @SuppressWarnings("overloads")
     public static TextListener remove(TextListener l, TextListener oldl) {
         return (TextListener) removeInternal(l, oldl);
     }
@@ -847,6 +859,7 @@ public class AWTEventMulticaster implements
      * @param oldl the hierarchy-listener being removed
      * @since 1.3
      */
+    @SuppressWarnings("overloads")
     public static HierarchyListener remove(HierarchyListener l, HierarchyListener oldl) {
         return (HierarchyListener) removeInternal(l, oldl);
     }
@@ -870,6 +883,7 @@ public class AWTEventMulticaster implements
      * @param oldl the mouse-wheel-listener being removed
      * @since 1.4
      */
+    @SuppressWarnings("overloads")
     public static MouseWheelListener remove(MouseWheelListener l,
                                             MouseWheelListener oldl) {
       return (MouseWheelListener) removeInternal(l, oldl);

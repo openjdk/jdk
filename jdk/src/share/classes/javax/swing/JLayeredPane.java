@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,20 +58,20 @@ import javax.accessibility.*;
  * layers makes it easy to ensure that components overlap properly,
  * without having to worry about specifying numbers for specific depths:
  * <DL>
- *    <DT><FONT SIZE="2">DEFAULT_LAYER</FONT></DT>
+ *    <DT>DEFAULT_LAYER</DT>
  *         <DD>The standard layer, where most components go. This the bottommost
  *         layer.
- *    <DT><FONT SIZE="2">PALETTE_LAYER</FONT></DT>
+ *    <DT>PALETTE_LAYER</DT>
  *         <DD>The palette layer sits over the default layer. Useful for floating
  *         toolbars and palettes, so they can be positioned above other components.
- *    <DT><FONT SIZE="2">MODAL_LAYER</FONT></DT>
+ *    <DT>MODAL_LAYER</DT>
  *         <DD>The layer used for modal dialogs. They will appear on top of any
  *         toolbars, palettes, or standard components in the container.
- *    <DT><FONT SIZE="2">POPUP_LAYER</FONT></DT>
+ *    <DT>POPUP_LAYER</DT>
  *         <DD>The popup layer displays above dialogs. That way, the popup windows
  *         associated with combo boxes, tooltips, and other help text will appear
  *         above the component, palette, or dialog that generated them.
- *    <DT><FONT SIZE="2">DRAG_LAYER</FONT></DT>
+ *    <DT>DRAG_LAYER</DT>
  *         <DD>When dragging a component, reassigning it to the drag layer ensures
  *         that it is positioned over every other component in the container. When
  *         finished dragging, it can be reassigned to its normal layer.

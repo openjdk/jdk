@@ -3812,17 +3812,17 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
         tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
       }
     } else // Non integral arrays.
-    // Must fall to bottom if exact klasses in upper lattice
-    // are not equal or super klass is exact.
-    if ( above_centerline(ptr) && klass() != tap->klass() &&
-         // meet with top[] and bottom[] are processed further down:
-         tap ->_klass != NULL  && this->_klass != NULL   &&
-         // both are exact and not equal:
-        ((tap ->_klass_is_exact && this->_klass_is_exact) ||
-         // 'tap'  is exact and super or unrelated:
-         (tap ->_klass_is_exact && !tap->klass()->is_subtype_of(klass())) ||
-         // 'this' is exact and super or unrelated:
-         (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
+      // Must fall to bottom if exact klasses in upper lattice
+      // are not equal or super klass is exact.
+      if ((above_centerline(ptr) || ptr == Constant) && klass() != tap->klass() &&
+          // meet with top[] and bottom[] are processed further down:
+          tap->_klass != NULL  && this->_klass != NULL   &&
+          // both are exact and not equal:
+          ((tap->_klass_is_exact && this->_klass_is_exact) ||
+           // 'tap'  is exact and super or unrelated:
+           (tap->_klass_is_exact && !tap->klass()->is_subtype_of(klass())) ||
+           // 'this' is exact and super or unrelated:
+           (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
       tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
       return make(NotNull, NULL, tary, lazy_klass, false, off, InstanceBot);
     }

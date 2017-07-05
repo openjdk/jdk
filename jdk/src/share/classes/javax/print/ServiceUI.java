@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import sun.print.SunAlternateMedia;
  * The dialogs follow a standard pattern of acting as a continue/cancel option
  *for a user as well as allowing the user to select the print service to use
  *and specify choices such as paper size and number of copies.
- * <p>
  * <p>
  * The dialogs are designed to work with pluggable print services though the
  * public APIs of those print services.

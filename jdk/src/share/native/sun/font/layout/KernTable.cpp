@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 
-#define DEBUG 0
+#define DEBUG_KERN_TABLE 0
 
 U_NAMESPACE_BEGIN
 
@@ -99,14 +99,14 @@ KernTable::KernTable(const LETableReference& base, LEErrorCode &success)
   : pairsSwapped(NULL), fTable(base)
 {
   if(LE_FAILURE(success) || (fTable.isEmpty())) {
-#if DEBUG
+#if DEBUG_KERN_TABLE
     fprintf(stderr, "no kern data\n");
 #endif
     return;
   }
   LEReferenceTo<KernTableHeader> header(fTable, success);
 
-#if DEBUG
+#if DEBUG_KERN_TABLE
   // dump first 32 bytes of header
   for (int i = 0; i < 64; ++i) {
     fprintf(stderr, "%0.2x ", ((const char*)header.getAlias())[i]&0xff);
@@ -171,13 +171,13 @@ KernTable::KernTable(const LETableReference& base, LEErrorCode &success)
         fprintf(stderr, "  searchRange: %d entrySelector: %d rangeShift: %d\n", searchRange, entrySelector, rangeShift);
         fprintf(stderr, "[[ ignored font table entries: range %d selector %d shift %d ]]\n", SWAPW(table->searchRange), SWAPW(table->entrySelector), SWAPW(table->rangeShift));
 #endif
-#if DEBUG
+#if DEBUG_KERN_TABLE
         fprintf(stderr, "coverage: %0.4x nPairs: %d pairs 0x%x\n", coverage, nPairs, pairsSwapped);
         fprintf(stderr,
           "  searchRange(pairs): %d entrySelector: %d rangeShift(pairs): %d\n",
           searchRange, entrySelector, rangeShift);
 
-        {
+        if (LE_SUCCESS(success)) {
           // dump part of the pair list
           char ids[256];
           for (int i = 256; --i >= 0;) {
@@ -242,7 +242,7 @@ void KernTable::process(LEGlyphStorage& storage, LEErrorCode &success)
         p = tp;
       }
 
-#if DEBUG
+#if DEBUG_KERN_TABLE
       fprintf(stderr, "binary search for %0.8x\n", key);
 #endif
 
@@ -251,13 +251,13 @@ void KernTable::process(LEGlyphStorage& storage, LEErrorCode &success)
         probe >>= 1;
         tp = (const PairInfo*)(p + (probe/KERN_PAIRINFO_SIZE));
         le_uint32 tkey = tp->key;
-#if DEBUG
+#if DEBUG_KERN_TABLE
         fprintf(stdout, "   %.3d (%0.8x)\n", (tp - pairsSwapped), tkey);
 #endif
         if (tkey <= key) {
           if (tkey == key) {
             le_int16 value = SWAPW(tp->value);
-#if DEBUG
+#if DEBUG_KERN_TABLE
             fprintf(stdout, "binary found kerning pair %x:%x at %d, value: 0x%x (%g)\n",
                     storage[i-1], storage[i], i, value & 0xffff, font->xUnitsToPoints(value));
             fflush(stdout);

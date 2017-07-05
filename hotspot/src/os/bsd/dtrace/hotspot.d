@@ -47,8 +47,8 @@ provider hotspot {
   probe mem__pool__gc__end(
     char*, uintptr_t, char*, uintptr_t, 
     uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-  probe thread__probe__start(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-  probe thread__probe__stop(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+  probe thread__start(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+  probe thread__stop(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
   probe thread__sleep__begin(long long);
   probe thread__sleep__end(int);
   probe thread__yield();
@@ -68,7 +68,7 @@ provider hotspot {
   probe monitor__contended__entered(uintptr_t, uintptr_t, char*, uintptr_t);
   probe monitor__contended__exit(uintptr_t, uintptr_t, char*, uintptr_t);
   probe monitor__wait(uintptr_t, uintptr_t, char*, uintptr_t, uintptr_t);
-  probe monitor__probe__waited(uintptr_t, uintptr_t, char*, uintptr_t);
+  probe monitor__waited(uintptr_t, uintptr_t, char*, uintptr_t);
   probe monitor__notify(uintptr_t, uintptr_t, char*, uintptr_t);
   probe monitor__notifyAll(uintptr_t, uintptr_t, char*, uintptr_t);
 

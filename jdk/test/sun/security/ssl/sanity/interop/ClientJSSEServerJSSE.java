@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,15 @@
  * @author Andreas Sterbenz
  * @run main/othervm/timeout=300 ClientJSSEServerJSSE
  */
+import java.security.Security;
 
 public class ClientJSSEServerJSSE {
 
     public static void main(String[] args) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         CipherTest.main(new JSSEFactory(), args);
     }
 

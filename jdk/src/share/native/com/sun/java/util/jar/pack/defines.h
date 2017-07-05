@@ -158,10 +158,6 @@ enum { false, true };
 #define CHECK_(y)               _CHECK_DO(aborting(), return y)
 #define CHECK_0                 _CHECK_DO(aborting(), return 0)
 
-#define CHECK_NULL(p)           _CHECK_DO((p)==null, return)
-#define CHECK_NULL_(y,p)        _CHECK_DO((p)==null, return y)
-#define CHECK_NULL_0(p)         _CHECK_DO((p)==null, return 0)
-
 #define CHECK_COUNT(t)          if (t < 0){abort("bad value count");} CHECK
 
 #define STR_TRUE   "true"
