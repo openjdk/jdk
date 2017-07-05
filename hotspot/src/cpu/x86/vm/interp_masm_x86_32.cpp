@@ -196,6 +196,9 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register reg, int bcp_off
   } else {
     assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
     movl(reg, Address(rsi, bcp_offset));
+    // Check if the secondary index definition is still ~x, otherwise
+    // we have to change the following assembler code to calculate the
+    // plain index.
     assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
     notl(reg);  // convert to plain index
   }

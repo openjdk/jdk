@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ public class GSSNameElement implements GSSNameSpi {
     static final GSSNameElement DEF_ACCEPTOR = new GSSNameElement();
 
     private static Oid getNativeNameType(Oid nameType, GSSLibStub stub) {
-        if (GSSUtil.NT_GSS_KRB5_PRINCIPAL.equals(nameType) ||
-            GSSName.NT_HOSTBASED_SERVICE.equals(nameType)) {
+        if (GSSUtil.NT_GSS_KRB5_PRINCIPAL.equals(nameType)) {
             Oid[] supportedNTs = null;
             try {
                 supportedNTs = stub.inquireNamesForMech();
@@ -83,15 +82,9 @@ public class GSSNameElement implements GSSNameSpi {
                     if (supportedNTs[i].equals(nameType)) return nameType;
                 }
                 // Special handling the specified name type
-                if (GSSUtil.NT_GSS_KRB5_PRINCIPAL.equals(nameType)) {
-                    SunNativeProvider.debug("Override " + nameType +
-                        " with mechanism default(null)");
-                    return null; // Use mechanism specific default
-                } else {
-                    SunNativeProvider.debug("Override " + nameType +
-                        " with " + GSSUtil.NT_HOSTBASED_SERVICE2);
-                    return GSSUtil.NT_HOSTBASED_SERVICE2;
-                }
+                SunNativeProvider.debug("Override " + nameType +
+                    " with mechanism default(null)");
+                return null; // Use mechanism specific default
             }
         }
         return nameType;

@@ -48,16 +48,6 @@ void Rewriter::compute_index_maps() {
 }
 
 
-int Rewriter::add_extra_cp_cache_entry(int main_entry) {
-  // Hack: We put it on the map as an encoded value.
-  // The only place that consumes this is ConstantPoolCacheEntry::set_initial_state
-  int encoded = constantPoolCacheOopDesc::encode_secondary_index(main_entry);
-  int plain_secondary_index = _cp_cache_map.append(encoded);
-  return constantPoolCacheOopDesc::encode_secondary_index(plain_secondary_index);
-}
-
-
-
 // Creates a constant pool cache given a CPC map
 // This creates the constant pool cache initially in a state
 // that is unsafe for concurrent GC processing but sets it to
@@ -127,7 +117,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
   assert(p[-1] == Bytecodes::_invokedynamic, "");
   int cp_index = Bytes::get_Java_u2(p);
   int cpc  = maybe_add_cp_cache_entry(cp_index);  // add lazily
-  int cpc2 = add_extra_cp_cache_entry(cpc);
+  int cpc2 = add_secondary_cp_cache_entry(cpc);
 
   // Replace the trailing four bytes with a CPC index for the dynamic
   // call site.  Unlike other CPC entries, there is one per bytecode,
@@ -137,7 +127,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
   // all these entries.  That is the main reason invokedynamic
   // must have a five-byte instruction format.  (Of course, other JVM
   // implementations can use the bytes for other purposes.)
-  Bytes::put_native_u4(p, cpc2);
+  Bytes::put_native_u4(p, constantPoolCacheOopDesc::encode_secondary_index(cpc2));
   // Note: We use native_u4 format exclusively for 4-byte indexes.
 }
 

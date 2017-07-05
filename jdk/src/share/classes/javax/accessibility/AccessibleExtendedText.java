@@ -45,7 +45,6 @@ import javax.swing.text.*;
  * @see Accessible#getAccessibleContext
  * @see AccessibleContext
  * @see AccessibleContext#getAccessibleText
- * @see AccessibleText.AccessibleTextChunk
  *
  * @author       Peter Korn
  * @author       Lynn Monsanto

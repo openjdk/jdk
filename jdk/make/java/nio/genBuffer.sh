@@ -44,6 +44,7 @@ rwkey=XX
 
 case $type in
   char)  fulltype=character;;
+  int)   fulltype=integer;;
   *)     fulltype=$type;;
 esac
 
@@ -52,6 +53,11 @@ case $type in
   char | short)   LBPV=1;;
   int | float)    LBPV=2;;
   long | double)  LBPV=3;;
+esac
+
+case $type in 
+  float|double) floatingPointOrIntegralType=floatingPointType;;
+  *)            floatingPointOrIntegralType=integralType;;
 esac
 
 typesAndBits() {
@@ -101,6 +107,7 @@ set -e
 
 $SPP <$SRC >$DST \
   -K$type \
+  -K$floatingPointOrIntegralType \
   -Dtype=$type \
   -DType=$Type \
   -Dfulltype=$fulltype \

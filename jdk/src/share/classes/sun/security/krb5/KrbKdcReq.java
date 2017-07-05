@@ -31,24 +31,25 @@
 
 package sun.security.krb5;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
+import java.util.Locale;
 import sun.security.krb5.internal.Krb5;
 import sun.security.krb5.internal.UDPClient;
 import sun.security.krb5.internal.TCPClient;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 public abstract class KrbKdcReq {
-
-    /**
-     * Default port for a KDC.
-     */
-    private static final int DEFAULT_KDC_PORT = Krb5.KDC_INET_DEFAULT_PORT;
 
     // Currently there is no option to specify retries
     // in the kerberos configuration file
@@ -66,7 +67,48 @@ public abstract class KrbKdcReq {
 
     private static int udpPrefLimit = -1;
 
+    private static final String BAD_POLICY_KEY = "krb5.kdc.bad.policy";
+
+    /**
+     * What to do when a KDC is unavailable, specified in the
+     * java.security file with key krb5.kdc.bad.policy.
+     * Possible values can be TRY_LAST or TRY_LESS
+     */
+    private enum BpType {
+        NONE, TRY_LAST, TRY_LESS
+    }
+    private static int tryLessMaxRetries = 1;
+    private static int tryLessTimeout = 5000;
+
+    private static final BpType badPolicy;
+
     static {
+        String value = AccessController.doPrivileged(
+        new PrivilegedAction<String>() {
+            public String run() {
+                return Security.getProperty(BAD_POLICY_KEY);
+            }
+        });
+        if (value != null) {
+            value = value.toLowerCase(Locale.ENGLISH);
+            String[] ss = value.split(":");
+            if ("tryless".equals(ss[0])) {
+                if (ss.length > 1) {
+                    String[] params = ss[1].split(",");
+                    tryLessMaxRetries = Integer.parseInt(params[0]);
+                    if (params.length > 1) {
+                        tryLessTimeout = Integer.parseInt(params[1]);
+                    }
+                }
+                badPolicy = BpType.TRY_LESS;
+            } else if ("trylast".equals(ss[0])) {
+                badPolicy = BpType.TRY_LAST;
+            } else {
+                badPolicy = BpType.NONE;
+            }
+        } else {
+            badPolicy = BpType.NONE;
+        }
 
         /*
          * Get default timeout.
@@ -131,22 +173,16 @@ public abstract class KrbKdcReq {
             }
         }
 
-        /*
-         * Get timeout.
-         */
-
-        int timeout = getKdcTimeout(realm);
-
         String kdcList = cfg.getKDCList(realm);
         if (kdcList == null) {
             throw new KrbException("Cannot get kdc for realm " + realm);
         }
         String tempKdc = null; // may include the port number also
-        StringTokenizer st = new StringTokenizer(kdcList);
-        while (st.hasMoreTokens()) {
-            tempKdc = st.nextToken();
+        for (String tmp: KdcAccessibility.list(kdcList)) {
+            tempKdc = tmp;
             try {
                 send(realm,tempKdc,useTCP);
+                KdcAccessibility.removeBad(tempKdc);
                 break;
             } catch (Exception e) {
                 if (DEBUG) {
@@ -154,6 +190,7 @@ public abstract class KrbKdcReq {
                             tempKdc);
                     e.printStackTrace(System.out);
                 }
+                KdcAccessibility.addBad(tempKdc);
                 savedException = e;
             }
         }
@@ -174,16 +211,21 @@ public abstract class KrbKdcReq {
 
         if (obuf == null)
             return;
-        PrivilegedActionException savedException = null;
-        int port = Krb5.KDC_INET_DEFAULT_PORT;
 
-        /*
-         * Get timeout.
-         */
+        int port = Krb5.KDC_INET_DEFAULT_PORT;
+        int retries = DEFAULT_KDC_RETRY_LIMIT;
         int timeout = getKdcTimeout(realm);
-        /*
-         * Get port number for this KDC.
-         */
+
+        if (badPolicy == BpType.TRY_LESS &&
+                KdcAccessibility.isBad(tempKdc)) {
+            if (retries > tryLessMaxRetries) {
+                retries = tryLessMaxRetries; // less retries
+            }
+            if (timeout > tryLessTimeout) {
+                timeout = tryLessTimeout; // less time
+            }
+        }
+
         String kdc = null;
         String portStr = null;
 
@@ -225,12 +267,12 @@ public abstract class KrbKdcReq {
                                +  port +  ", timeout="
                                + timeout
                                + ", number of retries ="
-                               + DEFAULT_KDC_RETRY_LIMIT
+                               + retries
                                + ", #bytes=" + obuf.length);
         }
 
         KdcCommunication kdcCommunication =
-            new KdcCommunication(kdc, port, useTCP, timeout, obuf);
+            new KdcCommunication(kdc, port, useTCP, timeout, retries, obuf);
         try {
             ibuf = AccessController.doPrivileged(kdcCommunication);
             if (DEBUG) {
@@ -258,14 +300,16 @@ public abstract class KrbKdcReq {
         private int port;
         private boolean useTCP;
         private int timeout;
+        private int retries;
         private byte[] obuf;
 
         public KdcCommunication(String kdc, int port, boolean useTCP,
-                                int timeout, byte[] obuf) {
+                                int timeout, int retries, byte[] obuf) {
             this.kdc = kdc;
             this.port = port;
             this.useTCP = useTCP;
             this.timeout = timeout;
+            this.retries = retries;
             this.obuf = obuf;
         }
 
@@ -294,7 +338,7 @@ public abstract class KrbKdcReq {
             } else {
                 // For each KDC we try DEFAULT_KDC_RETRY_LIMIT (3) times to
                 // get the response
-                for (int i=1; i <= DEFAULT_KDC_RETRY_LIMIT; i++) {
+                for (int i=1; i <= retries; i++) {
                     UDPClient kdcClient = new UDPClient(kdc, port, timeout);
 
                     if (DEBUG) {
@@ -310,7 +354,7 @@ public abstract class KrbKdcReq {
                          * Send the data to the kdc.
                          */
 
-                    kdcClient.send(obuf);
+                        kdcClient.send(obuf);
 
                         /*
                          * And get a response.
@@ -323,7 +367,7 @@ public abstract class KrbKdcReq {
                                 System.out.println ("SocketTimeOutException with " +
                                                     "attempt: " + i);
                             }
-                            if (i == DEFAULT_KDC_RETRY_LIMIT) {
+                            if (i == retries) {
                                 ibuf = null;
                                 throw se;
                             }
@@ -385,4 +429,67 @@ public abstract class KrbKdcReq {
 
         return -1;
     }
+
+    /**
+     * Maintains a KDC accessible list. Unavailable KDCs are put into a
+     * blacklist, when a KDC in the blacklist is available, it's removed
+     * from there. No insertion order in the blacklist.
+     *
+     * There are two methods to deal with KDCs in the blacklist. 1. Only try
+     * them when there's no KDC not on the blacklist. 2. Still try them, but
+     * with lesser number of retries and smaller timeout value.
+     */
+    static class KdcAccessibility {
+        // Known bad KDCs
+        private static Set<String> bads = new HashSet<String>();
+
+        private static synchronized void addBad(String kdc) {
+            if (DEBUG) {
+                System.out.println(">>> KdcAccessibility: add " + kdc);
+            }
+            bads.add(kdc);
+        }
+
+        private static synchronized void removeBad(String kdc) {
+            if (DEBUG) {
+                System.out.println(">>> KdcAccessibility: remove " + kdc);
+            }
+            bads.remove(kdc);
+        }
+
+        private static synchronized boolean isBad(String kdc) {
+            return bads.contains(kdc);
+        }
+
+        public static synchronized void reset() {
+            if (DEBUG) {
+                System.out.println(">>> KdcAccessibility: reset");
+            }
+            bads.clear();
+        }
+
+        // Returns a preferred KDC list by putting the bad ones at the end
+        private static synchronized String[] list(String kdcList) {
+            StringTokenizer st = new StringTokenizer(kdcList);
+            List<String> list = new ArrayList<String>();
+            if (badPolicy == BpType.TRY_LAST) {
+                List<String> badkdcs = new ArrayList<String>();
+                while (st.hasMoreTokens()) {
+                    String t = st.nextToken();
+                    if (bads.contains(t)) badkdcs.add(t);
+                    else list.add(t);
+                }
+                // Bad KDCs are put at last
+                list.addAll(badkdcs);
+            } else {
+                // All KDCs are returned in their original order,
+                // This include TRY_LESS and NONE
+                while (st.hasMoreTokens()) {
+                    list.add(st.nextToken());
+                }
+            }
+            return list.toArray(new String[list.size()]);
+        }
+    }
 }
+

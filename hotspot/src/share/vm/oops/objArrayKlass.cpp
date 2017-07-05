@@ -127,16 +127,14 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
           // pointer delta is scaled to number of elements (length field in
           // objArrayOop) which we assume is 32 bit.
           assert(pd == (size_t)(int)pd, "length field overflow");
-          const size_t done_word_len = objArrayOopDesc::array_size((int)pd);
-          bs->write_ref_array(MemRegion((HeapWord*)dst, done_word_len));
+          bs->write_ref_array((HeapWord*)dst, pd);
           THROW(vmSymbols::java_lang_ArrayStoreException());
           return;
         }
       }
     }
   }
-  const size_t word_len = objArrayOopDesc::array_size(length);
-  bs->write_ref_array(MemRegion((HeapWord*)dst, word_len));
+  bs->write_ref_array((HeapWord*)dst, length);
 }
 
 void objArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,

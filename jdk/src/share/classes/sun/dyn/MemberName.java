@@ -25,7 +25,7 @@
 
 package sun.dyn;
 
-import sun.dyn.util.BytecodeSignature;
+import sun.dyn.util.BytecodeDescriptor;
 import java.dyn.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -93,7 +94,7 @@ public final class MemberName implements Member, Cloneable {
         }
         if (type instanceof String) {
             String sig = (String) type;
-            MethodType res = MethodType.fromBytecodeString(sig, getClassLoader());
+            MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
             this.type = res;
             return res;
         }
@@ -101,7 +102,7 @@ public final class MemberName implements Member, Cloneable {
             Object[] typeInfo = (Object[]) type;
             Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
             Class<?> rtype = (Class<?>) typeInfo[0];
-            MethodType res = MethodType.make(rtype, ptypes);
+            MethodType res = MethodType.methodType(rtype, ptypes);
             this.type = res;
             return res;
         }
@@ -111,7 +112,7 @@ public final class MemberName implements Member, Cloneable {
     public MethodType getInvocationType() {
         MethodType itype = getMethodType();
         if (!isStatic())
-            itype = itype.insertParameterType(0, clazz);
+            itype = itype.insertParameterTypes(0, clazz);
         return itype;
     }
 
@@ -135,7 +136,7 @@ public final class MemberName implements Member, Cloneable {
         }
         if (type instanceof String) {
             String sig = (String) type;
-            MethodType mtype = MethodType.fromBytecodeString("()"+sig, getClassLoader());
+            MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
             Class<?> res = mtype.returnType();
             this.type = res;
             return res;
@@ -155,9 +156,9 @@ public final class MemberName implements Member, Cloneable {
         if (type instanceof String)
             return (String) type;
         if (isInvocable())
-            return BytecodeSignature.unparse(getMethodType());
+            return BytecodeDescriptor.unparse(getMethodType());
         else
-            return BytecodeSignature.unparse(getFieldType());
+            return BytecodeDescriptor.unparse(getFieldType());
     }
 
     public int getModifiers() {
@@ -353,6 +354,8 @@ public final class MemberName implements Member, Cloneable {
             return type.toString();  // class java.lang.String
         // else it is a field, method, or constructor
         StringBuilder buf = new StringBuilder();
+        if (!isResolved())
+            buf.append("*.");
         if (getDeclaringClass() != null) {
             buf.append(getName(clazz));
             buf.append('.');
@@ -381,7 +384,7 @@ public final class MemberName implements Member, Cloneable {
     private static String getName(Object obj) {
         if (obj instanceof Class<?>)
             return ((Class<?>)obj).getName();
-        return obj.toString();
+        return String.valueOf(obj);
     }
 
     // Queries to the JVM:
@@ -407,6 +410,9 @@ public final class MemberName implements Member, Cloneable {
     }
     public static NoAccessException newNoAccessException(MemberName name, Class<?> lookupClass) {
         return newNoAccessException("cannot access", name, lookupClass);
+    }
+    public static NoAccessException newNoAccessException(MemberName name, MethodHandles.Lookup lookup) {
+        return newNoAccessException(name, lookup.lookupClass());
     }
     public static NoAccessException newNoAccessException(String message,
             MemberName name, Class<?> lookupClass) {
@@ -436,7 +442,7 @@ public final class MemberName implements Member, Cloneable {
             matchFlags &= ALLOWED_FLAGS;
             String matchSig = null;
             if (matchType != null) {
-                matchSig = BytecodeSignature.unparse(matchType);
+                matchSig = BytecodeDescriptor.unparse(matchType);
                 if (matchSig.startsWith("("))
                     matchFlags &= ~(ALL_KINDS & ~IS_INVOCABLE);
                 else
@@ -447,17 +453,18 @@ public final class MemberName implements Member, Cloneable {
             MemberName[] buf = newMemberBuffer(len1);
             int totalCount = 0;
             ArrayList<MemberName[]> bufs = null;
+            int bufCount = 0;
             for (;;) {
-                int bufCount = MethodHandleNatives.getMembers(defc,
+                bufCount = MethodHandleNatives.getMembers(defc,
                         matchName, matchSig, matchFlags,
                         lookupClass,
                         totalCount, buf);
                 if (bufCount <= buf.length) {
-                    if (bufCount >= 0)
-                        totalCount += bufCount;
+                    if (bufCount < 0)  bufCount = 0;
+                    totalCount += bufCount;
                     break;
                 }
-                // JVM returned tp us with an intentional overflow!
+                // JVM returned to us with an intentional overflow!
                 totalCount += buf.length;
                 int excess = bufCount - buf.length;
                 if (bufs == null)  bufs = new ArrayList<MemberName[]>(1);
@@ -473,7 +480,7 @@ public final class MemberName implements Member, Cloneable {
                     Collections.addAll(result, buf0);
                 }
             }
-            Collections.addAll(result, buf);
+            result.addAll(Arrays.asList(buf).subList(0, bufCount));
             // Signature matching is not the same as type matching, since
             // one signature might correspond to several types.
             // So if matchType is a Class or MethodType, refilter the results.
