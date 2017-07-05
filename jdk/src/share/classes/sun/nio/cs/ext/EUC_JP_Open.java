@@ -23,9 +23,6 @@
  * questions.
  */
 
-/*
- */
-
 package sun.nio.cs.ext;
 
 import java.nio.ByteBuffer;
@@ -35,7 +32,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
-import sun.nio.cs.Surrogate;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class EUC_JP_Open
     extends Charset
@@ -60,118 +57,55 @@ public class EUC_JP_Open
     }
 
     public CharsetEncoder newEncoder() {
-
-        // Need to force the replacement byte to 0x3f
-        // because JIS_X_0208_Encoder defines its own
-        // alternative 2 byte substitution to permit it
-        // to exist as a self-standing Encoder
-
-        byte[] replacementBytes = { (byte)0x3f };
-        return new Encoder(this).replaceWith(replacementBytes);
+        return new Encoder(this);
     }
 
     private static class Decoder extends EUC_JP.Decoder {
-        JIS_X_0201.Decoder decoderJ0201;
-        JIS_X_0212_Solaris_Decoder decodeMappingJ0212;
-        JIS_X_0208_Solaris_Decoder decodeMappingJ0208;
-
-        private static final short[] j0208Index1 =
-          JIS_X_0208_Solaris_Decoder.getIndex1();
-        private static final String[] j0208Index2 =
-          JIS_X_0208_Solaris_Decoder.getIndex2();
-        private static final int start = 0xa1;
-        private static final int end = 0xfe;
-
-        protected final char REPLACE_CHAR='\uFFFD';
+        private static DoubleByte.Decoder DEC0208_Solaris =
+            (DoubleByte.Decoder)new JIS_X_0208_Solaris().newDecoder();
+        private static DoubleByte.Decoder DEC0212_Solaris =
+            (DoubleByte.Decoder)new JIS_X_0212_Solaris().newDecoder();
 
         private Decoder(Charset cs) {
-            super(cs);
-            decoderJ0201 = new JIS_X_0201.Decoder(cs);
-            decodeMappingJ0212 = new JIS_X_0212_Solaris_Decoder(cs);
-        }
-
-
-        protected char decode0212(int byte1, int byte2) {
-             return decodeMappingJ0212.decodeDouble(byte1, byte2);
-
+            // JIS_X_0208_Solaris only has the "extra" mappings, it
+            // does not have the JIS_X_0208 entries
+            super(cs, 0.5f, 1.0f, DEC0201, DEC0208, DEC0212_Solaris);
         }
 
         protected char decodeDouble(int byte1, int byte2) {
-            if (byte1 == 0x8e) {
-                return decoderJ0201.decode(byte2 - 256);
-            }
-
-            if (((byte1 < 0)
-                || (byte1 > j0208Index1.length))
-                || ((byte2 < start)
-                || (byte2 > end)))
-                return REPLACE_CHAR;
-
-            char result = super.decodeDouble(byte1, byte2);
-            if (result != '\uFFFD') {
-                return result;
-            } else {
-                int n = (j0208Index1[byte1 - 0x80] & 0xf) *
-                        (end - start + 1)
-                        + (byte2 - start);
-                return j0208Index2[j0208Index1[byte1 - 0x80] >> 4].charAt(n);
-            }
+            char c = super.decodeDouble(byte1, byte2);
+            if (c == UNMAPPABLE_DECODING)
+                return DEC0208_Solaris.decodeDouble(byte1 - 0x80, byte2 - 0x80);
+            return c;
         }
     }
 
-
     private static class Encoder extends EUC_JP.Encoder {
+        private static DoubleByte.Encoder ENC0208_Solaris =
+            (DoubleByte.Encoder)new JIS_X_0208_Solaris().newEncoder();
 
-        JIS_X_0201.Encoder encoderJ0201;
-        JIS_X_0212_Solaris_Encoder encoderJ0212;
-
-        private static final short[] j0208Index1 =
-            JIS_X_0208_Solaris_Encoder.getIndex1();
-        private static final String[] j0208Index2 =
-            JIS_X_0208_Solaris_Encoder.getIndex2();
-
-        private final Surrogate.Parser sgp = new Surrogate.Parser();
+        private static DoubleByte.Encoder ENC0212_Solaris =
+            (DoubleByte.Encoder)new JIS_X_0212_Solaris().newEncoder();
 
         private Encoder(Charset cs) {
+            // The EUC_JP_Open has some interesting tweak for the
+            // encoding, so can't just pass the euc0208_solaris to
+            // the euc_jp. Have to override the encodeDouble() as
+            // showed below (mapping testing catches this).
+            // super(cs, 3.0f, 3.0f, ENC0201, ENC0208_Solaris, ENC0212_Solaris);
             super(cs);
-            encoderJ0201 = new JIS_X_0201.Encoder(cs);
-            encoderJ0212 = new JIS_X_0212_Solaris_Encoder(cs);
-        }
-
-        protected int encodeSingle(char inputChar, byte[] outputByte) {
-            byte b;
-
-            if (inputChar == 0) {
-                outputByte[0] = (byte)0;
-                return 1;
-            }
-
-            if ((b = encoderJ0201.encode(inputChar)) == 0)
-                return 0;
-
-            if (b > 0 && b < 128) {
-                outputByte[0] = b;
-                return 1;
-            }
-
-            outputByte[0] = (byte)0x8e;
-            outputByte[1] = b;
-            return 2;
         }
 
         protected int encodeDouble(char ch) {
-            int r = super.encodeDouble(ch);
-            if (r != 0) {
-                return r;
+            int b = super.encodeDouble(ch);
+            if (b != UNMAPPABLE_ENCODING)
+                return b;
+            b = ENC0208_Solaris.encodeChar(ch);
+            if (b != UNMAPPABLE_ENCODING && b > 0x7500) {
+                return 0x8F8080 + ENC0212_Solaris.encodeChar(ch);
             }
-            else {
-                int offset = j0208Index1[((ch & 0xff00) >> 8 )] << 8;
-                r = j0208Index2[offset >> 12].charAt((offset & 0xfff) +
-                    (ch & 0xFF));
-                if (r > 0x7500)
-                   return 0x8F8080 + encoderJ0212.encodeDouble(ch);
-                }
-                return (r==0 ? 0: r + 0x8080);
+            return b == UNMAPPABLE_ENCODING ? b : b + 0x8080;
+
         }
     }
 }

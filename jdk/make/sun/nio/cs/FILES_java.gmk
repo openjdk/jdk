@@ -127,7 +127,17 @@ FILES_gen_extcs = \
 	sun/nio/cs/ext/MS949.java \
 	sun/nio/cs/ext/MS950.java \
 	sun/nio/cs/ext/GBK.java   \
-	sun/nio/cs/ext/Big5.java
+	sun/nio/cs/ext/Big5.java  \
+	sun/nio/cs/ext/SJIS.java  \
+	sun/nio/cs/ext/PCK.java  \
+	sun/nio/cs/ext/JIS_X_0201.java \
+	sun/nio/cs/ext/JIS_X_0208.java \
+	sun/nio/cs/ext/JIS_X_0208_MS5022X.java \
+	sun/nio/cs/ext/JIS_X_0208_MS932.java \
+	sun/nio/cs/ext/JIS_X_0208_Solaris.java \
+	sun/nio/cs/ext/JIS_X_0212.java \
+	sun/nio/cs/ext/JIS_X_0212_MS5022X.java \
+	sun/nio/cs/ext/JIS_X_0212_Solaris.java
 
 FILES_java = $(FILES_src) $(FILES_gen_extcs)
 

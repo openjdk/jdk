@@ -305,8 +305,7 @@ SOURCES = \
 	org/ietf			\
 	org/omg				\
 	org/w3c/dom			\
-	org/xml/sax			\
-	sunw
+	org/xml/sax
 #
 # Directories where sources may be found.  If a file with the same path
 # name exists in more than one of these places, the one found last on this

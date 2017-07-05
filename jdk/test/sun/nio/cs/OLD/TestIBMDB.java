@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 6843578
- * @summary Test IBM DB charsets
- * @build IBM930_OLD IBM933_OLD IBM935_OLD IBM937_OLD IBM939_OLD IBM942_OLD IBM943_OLD IBM948_OLD IBM949_OLD IBM950_OLD IBM970_OLD IBM942C_OLD IBM943C_OLD IBM949C_OLD IBM1381_OLD IBM1383_OLD EUC_CN_OLD EUC_KR_OLD GBK_OLD Johab_OLD MS932_OLD MS936_OLD MS949_OLD MS950_OLD
+ * @summary Test old and new implementation of db charsets
+ * @build IBM930_OLD IBM933_OLD IBM935_OLD IBM937_OLD IBM939_OLD IBM942_OLD IBM943_OLD IBM948_OLD IBM949_OLD IBM950_OLD IBM970_OLD IBM942C_OLD IBM943C_OLD IBM949C_OLD IBM1381_OLD IBM1383_OLD EUC_CN_OLD EUC_KR_OLD GBK_OLD Johab_OLD MS932_OLD MS936_OLD MS949_OLD MS950_OLD SJIS_OLD PCK_OLD EUC_JP_OLD EUC_JP_LINUX_OLD EUC_JP_Open_OLD
  * @run main TestIBMDB
  */
 
@@ -490,6 +490,7 @@ if (sOld.charAt(0) == 0 && sNew.charAt(0) == 0xfffd)
     }
 
     static String[] csnames = new String[] {
+
         "IBM930",
         "IBM933",
         "IBM935",
@@ -515,12 +516,20 @@ if (sOld.charAt(0) == 0 && sNew.charAt(0) == 0xfffd)
         "MS936",
         "MS949",
         "MS950",
+
+        "EUC_JP",
+        "EUC_JP_LINUX",
+        "EUC_JP_Open",
+        "SJIS",
+        "PCK",
     };
 
     public static void main(String[] args) throws Exception {
         for (String csname: csnames) {
             System.out.printf("-----------------------------------%n");
             String oldname = csname + "_OLD";
+            if ("EUC_JP_Open".equals(csname))
+                csname = "eucjp-open";
             checkInit(csname);
             Charset csOld = (Charset)Class.forName(oldname).newInstance();
             Charset csNew = Charset.forName(csname);

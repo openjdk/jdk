@@ -282,6 +282,9 @@ FILES_java += \
 	sun/nio/fs/BsdFileSystem.java \
 	sun/nio/fs/BsdFileSystemProvider.java \
 	sun/nio/fs/BsdNativeDispatcher.java \
+	sun/nio/fs/MacOSXFileSystemProvider.java \
+	sun/nio/fs/MacOSXFileSystem.java \
+	sun/nio/fs/MacOSXNativeDispatcher.java \
 	sun/nio/fs/PollingWatchService.java \
 	sun/nio/fs/UnixChannelFactory.java \
 	sun/nio/fs/UnixCopyFile.java \
@@ -311,6 +314,7 @@ FILES_c += \
 	\
 	GnomeFileTypeDetector.c \
 	BsdNativeDispatcher.c \
+	MacOSXNativeDispatcher.c \
 	UnixCopyFile.c \
 	UnixNativeDispatcher.c \
 	\
@@ -385,7 +389,7 @@ ifeq ($(PLATFORM), linux)
 OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread $(LIBDL)
 endif
 ifeq ($(PLATFORM), macosx)
-OTHER_LDLIBS += -L$(LIBDIR) -ljava -lnet -pthread
+OTHER_LDLIBS += -L$(LIBDIR) -ljava -lnet -pthread -framework CoreFoundation
 endif
 ifeq ($(PLATFORM), solaris)
 OTHER_LDLIBS += $(JVMLIB) $(LIBSOCKET) -lposix4 $(LIBDL) -lsendfile \

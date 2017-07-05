@@ -33,7 +33,6 @@ EXCLUDE_PKGS =             \
   java.awt.peer            \
   java.awt.dnd.peer        \
   sun.*                    \
-  sunw.*                   \
   com.sun.*                \
   org.apache.*             \
   org.jcp.*		   \

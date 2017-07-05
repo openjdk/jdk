@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
  * @author Sergey Malenkov
  */
 public final class TypeResolver {
+
+    private static final WeakCache<Type, Map<Type, Type>> CACHE = new WeakCache<>();
+
     /**
      * Replaces the given {@code type} in an inherited method
      * with the actual type it has in the given {@code inClass}.
@@ -149,12 +152,55 @@ public final class TypeResolver {
      * @param formal  the type where occurrences of the variables
      *                in {@code actual} will be replaced by the corresponding bound values
      * @return a resolved type
-     *
-     * @see #TypeResolver(Type)
-     * @see #resolve(Type)
      */
     public static Type resolve(Type actual, Type formal) {
-        return getTypeResolver(actual).resolve(formal);
+        if (formal instanceof Class) {
+            return formal;
+        }
+        if (formal instanceof GenericArrayType) {
+            Type comp = ((GenericArrayType) formal).getGenericComponentType();
+            comp = resolve(actual, comp);
+            return (comp instanceof Class)
+                    ? Array.newInstance((Class<?>) comp, 0).getClass()
+                    : GenericArrayTypeImpl.make(comp);
+        }
+        if (formal instanceof ParameterizedType) {
+            ParameterizedType fpt = (ParameterizedType) formal;
+            Type[] actuals = resolve(actual, fpt.getActualTypeArguments());
+            return ParameterizedTypeImpl.make(
+                    (Class<?>) fpt.getRawType(), actuals, fpt.getOwnerType());
+        }
+        if (formal instanceof WildcardType) {
+            WildcardType fwt = (WildcardType) formal;
+            Type[] upper = resolve(actual, fwt.getUpperBounds());
+            Type[] lower = resolve(actual, fwt.getLowerBounds());
+            return new WildcardTypeImpl(upper, lower);
+        }
+        if (formal instanceof TypeVariable) {
+            Map<Type, Type> map;
+            synchronized (CACHE) {
+                map = CACHE.get(actual);
+                if (map == null) {
+                    map = new HashMap<>();
+                    prepare(map, actual);
+                    CACHE.put(actual, map);
+                }
+            }
+            Type result = map.get(formal);
+            if (result == null || result.equals(formal)) {
+                return formal;
+            }
+            result = fixGenericArray(result);
+            // A variable can be bound to another variable that is itself bound
+            // to something.  For example, given:
+            // class Super<T> {...}
+            // class Mid<X> extends Super<T> {...}
+            // class Sub extends Mid<String>
+            // the variable T is bound to X, which is in turn bound to String.
+            // So if we have to resolve T, we need the tail recursion here.
+            return resolve(actual, result);
+        }
+        throw new IllegalArgumentException("Bad Type kind: " + formal.getClass());
     }
 
     /**
@@ -164,12 +210,14 @@ public final class TypeResolver {
      * @param actual   the type that supplies bindings for type variables
      * @param formals  the array of types to resolve
      * @return an array of resolved types
-     *
-     * @see #TypeResolver(Type)
-     * @see #resolve(Type[])
      */
     public static Type[] resolve(Type actual, Type[] formals) {
-        return getTypeResolver(actual).resolve(formals);
+        int length = formals.length;
+        Type[] actuals = new Type[length];
+        for (int i = 0; i < length; i++) {
+            actuals[i] = resolve(actual, formals[i]);
+        }
+        return actuals;
     }
 
     /**
@@ -228,32 +276,6 @@ public final class TypeResolver {
         return classes;
     }
 
-    public static TypeResolver getTypeResolver(Type type) {
-        synchronized (CACHE) {
-            TypeResolver resolver = CACHE.get(type);
-            if (resolver == null) {
-                resolver = new TypeResolver(type);
-                CACHE.put(type, resolver);
-            }
-            return resolver;
-        }
-    }
-
-    private static final WeakCache<Type, TypeResolver> CACHE = new WeakCache<>();
-
-    private final Map<TypeVariable<?>, Type> map = new HashMap<>();
-
-    /**
-     * Constructs the type resolver for the given actual type.
-     *
-     * @param actual  the type that supplies bindings for type variables
-     *
-     * @see #prepare(Type)
-     */
-    private TypeResolver(Type actual) {
-        prepare(actual);
-    }
-
     /**
      * Fills the map from type parameters
      * to types as seen by the given {@code type}.
@@ -265,9 +287,10 @@ public final class TypeResolver {
      * to a {@link ParameterizedType ParameterizedType} with no parameters,
      * or it represents the erasure of a {@link ParameterizedType ParameterizedType}.
      *
+     * @param map   the mappings of all type variables
      * @param type  the next type in the hierarchy
      */
-    private void prepare(Type type) {
+    private static void prepare(Map<Type, Type> map, Type type) {
         Class<?> raw = (Class<?>)((type instanceof Class<?>)
                 ? type
                 : ((ParameterizedType)type).getRawType());
@@ -280,88 +303,22 @@ public final class TypeResolver {
 
         assert formals.length == actuals.length;
         for (int i = 0; i < formals.length; i++) {
-            this.map.put(formals[i], actuals[i]);
+            map.put(formals[i], actuals[i]);
         }
         Type gSuperclass = raw.getGenericSuperclass();
         if (gSuperclass != null) {
-            prepare(gSuperclass);
+            prepare(map, gSuperclass);
         }
         for (Type gInterface : raw.getGenericInterfaces()) {
-            prepare(gInterface);
+            prepare(map, gInterface);
         }
         // If type is the raw version of a parameterized class, we type-erase
         // all of its type variables, including inherited ones.
         if (type instanceof Class<?> && formals.length > 0) {
-            for (Map.Entry<TypeVariable<?>, Type> entry : this.map.entrySet()) {
+            for (Map.Entry<Type, Type> entry : map.entrySet()) {
                 entry.setValue(erase(entry.getValue()));
             }
         }
-    }
-
-    /**
-     * Replaces the given {@code formal} type
-     * with the type it stand for in this type resolver.
-     *
-     * @param formal  the array of types to resolve
-     * @return a resolved type
-     */
-    private Type resolve(Type formal) {
-        if (formal instanceof Class) {
-            return formal;
-        }
-        if (formal instanceof GenericArrayType) {
-            Type comp = ((GenericArrayType)formal).getGenericComponentType();
-            comp = resolve(comp);
-            return (comp instanceof Class)
-                    ? Array.newInstance((Class<?>)comp, 0).getClass()
-                    : GenericArrayTypeImpl.make(comp);
-        }
-        if (formal instanceof ParameterizedType) {
-            ParameterizedType fpt = (ParameterizedType)formal;
-            Type[] actuals = resolve(fpt.getActualTypeArguments());
-            return ParameterizedTypeImpl.make(
-                    (Class<?>)fpt.getRawType(), actuals, fpt.getOwnerType());
-        }
-        if (formal instanceof WildcardType) {
-            WildcardType fwt = (WildcardType)formal;
-            Type[] upper = resolve(fwt.getUpperBounds());
-            Type[] lower = resolve(fwt.getLowerBounds());
-            return new WildcardTypeImpl(upper, lower);
-        }
-        if (!(formal instanceof TypeVariable)) {
-            throw new IllegalArgumentException("Bad Type kind: " + formal.getClass());
-        }
-        Type actual = this.map.get((TypeVariable) formal);
-        if (actual == null || actual.equals(formal)) {
-            return formal;
-        }
-        actual = fixGenericArray(actual);
-        return resolve(actual);
-        // A variable can be bound to another variable that is itself bound
-        // to something.  For example, given:
-        // class Super<T> {...}
-        // class Mid<X> extends Super<T> {...}
-        // class Sub extends Mid<String>
-        // the variable T is bound to X, which is in turn bound to String.
-        // So if we have to resolve T, we need the tail recursion here.
-    }
-
-    /**
-     * Replaces all formal types in the given array
-     * with the types they stand for in this type resolver.
-     *
-     * @param formals  the array of types to resolve
-     * @return an array of resolved types
-     *
-     * @see #resolve(Type)
-     */
-    private Type[] resolve(Type[] formals) {
-        int length = formals.length;
-        Type[] actuals = new Type[length];
-        for (int i = 0; i < length; i++) {
-            actuals[i] = resolve(formals[i]);
-        }
-        return actuals;
     }
 
     /**
