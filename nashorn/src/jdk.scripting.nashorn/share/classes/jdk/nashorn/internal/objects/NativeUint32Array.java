@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -128,7 +129,7 @@ public final class NativeUint32Array extends ArrayBufferView {
 
         @Override
         public Class<?> getElementType() {
-            return int.class;
+            return long.class;
         }
 
         @Override
@@ -142,7 +143,17 @@ public final class NativeUint32Array extends ArrayBufferView {
         }
 
         @Override
+        public long getLongOptimistic(final int index, final int programPoint) {
+            return getElem(index);
+        }
+
+        @Override
         public double getDouble(final int index) {
+            return getLong(index);
+        }
+
+        @Override
+        public double getDoubleOptimistic(final int index, final int programPoint) {
             return getLong(index);
         }
 

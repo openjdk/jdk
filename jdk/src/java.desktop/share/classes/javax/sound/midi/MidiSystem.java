@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -162,18 +163,11 @@ public class MidiSystem {
      *         of length 0 is returned.
      */
     public static MidiDevice.Info[] getMidiDeviceInfo() {
-        List<MidiDevice.Info> allInfos = new ArrayList<>();
-        List<MidiDeviceProvider> providers = getMidiDeviceProviders();
-
-        for(int i = 0; i < providers.size(); i++) {
-            MidiDeviceProvider provider = providers.get(i);
-            MidiDevice.Info[] tmpinfo = provider.getDeviceInfo();
-            for (int j = 0; j < tmpinfo.length; j++) {
-                allInfos.add( tmpinfo[j] );
-            }
+        final List<MidiDevice.Info> allInfos = new ArrayList<>();
+        for (final MidiDeviceProvider provider : getMidiDeviceProviders()) {
+            Collections.addAll(allInfos, provider.getDeviceInfo());
         }
-        MidiDevice.Info[] infosArray = allInfos.toArray(new MidiDevice.Info[0]);
-        return infosArray;
+        return allInfos.toArray(new MidiDevice.Info[allInfos.size()]);
     }
 
     /**
@@ -187,17 +181,15 @@ public class MidiSystem {
      *         MIDI device installed on the system
      * @see #getMidiDeviceInfo
      */
-    public static MidiDevice getMidiDevice(MidiDevice.Info info) throws MidiUnavailableException {
-        List<MidiDeviceProvider> providers = getMidiDeviceProviders();
-
-        for(int i = 0; i < providers.size(); i++) {
-            MidiDeviceProvider provider = providers.get(i);
+    public static MidiDevice getMidiDevice(final MidiDevice.Info info)
+            throws MidiUnavailableException {
+        for (final MidiDeviceProvider provider : getMidiDeviceProviders()) {
             if (provider.isDeviceSupported(info)) {
-                MidiDevice device = provider.getDevice(info);
-                return device;
+                return provider.getDevice(info);
             }
         }
-        throw new IllegalArgumentException("Requested device not installed: " + info);
+        throw new IllegalArgumentException(String.format(
+                "Requested device not installed: %s", info));
     }
 
     /**

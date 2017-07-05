@@ -483,7 +483,7 @@ public final class Context {
 
         final int cacheSize = env._class_cache_size;
         if (cacheSize > 0) {
-            classCache = new ClassCache(cacheSize);
+            classCache = new ClassCache(this, cacheSize);
         }
 
         if (env._persistent_cache) {
@@ -1261,17 +1261,23 @@ public final class Context {
      * Cache for compiled script classes.
      */
     @SuppressWarnings("serial")
-    private static class ClassCache extends LinkedHashMap<Source, ClassReference> {
+    @Logger(name="classcache")
+    private static class ClassCache extends LinkedHashMap<Source, ClassReference> implements Loggable {
         private final int size;
         private final ReferenceQueue<Class<?>> queue;
+        private final DebugLogger log;
 
-        ClassCache(final int size) {
+        ClassCache(final Context context, final int size) {
             super(size, 0.75f, true);
             this.size = size;
             this.queue = new ReferenceQueue<>();
+            this.log   = initLogger(context);
         }
 
         void cache(final Source source, final Class<?> clazz) {
+            if (log.isEnabled()) {
+                log.info("Caching ", source, " in class cache");
+            }
             put(source, new ClassReference(clazz, queue, source));
         }
 
@@ -1283,9 +1289,28 @@ public final class Context {
         @Override
         public ClassReference get(final Object key) {
             for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
-                remove(ref.source);
+                final Source source = ref.source;
+                if (log.isEnabled()) {
+                    log.info("Evicting ", source, " from class cache.");
+                }
+                remove(source);
             }
-            return super.get(key);
+
+            final ClassReference ref = super.get(key);
+            if (ref != null && log.isEnabled()) {
+                log.info("Retrieved class reference for ", ref.source, " from class cache");
+            }
+            return ref;
+        }
+
+        @Override
+        public DebugLogger initLogger(final Context context) {
+            return context.getLogger(getClass());
+        }
+
+        @Override
+        public DebugLogger getLogger() {
+            return log;
         }
 
     }

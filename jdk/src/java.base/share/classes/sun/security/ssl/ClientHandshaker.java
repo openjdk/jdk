@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.security.spec.ECParameterSpec;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
+import javax.security.auth.x500.X500Principal;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -89,10 +91,64 @@ final class ClientHandshaker extends Handshaker {
     private final static boolean enableSNIExtension =
             Debug.getBooleanProperty("jsse.enableSNIExtension", true);
 
+    /*
+     * Allow unsafe server certificate change?
+     *
+     * Server certificate change during SSL/TLS renegotiation may be considered
+     * unsafe, as described in the Triple Handshake attacks:
+     *
+     *     https://secure-resumption.com/tlsauth.pdf
+     *
+     * Endpoint identification (See
+     * SSLParameters.getEndpointIdentificationAlgorithm()) is a pretty nice
+     * guarantee that the server certificate change in renegotiation is legal.
+     * However, endpoing identification is only enabled for HTTPS and LDAP
+     * over SSL/TLS by default.  It is not enough to protect SSL/TLS
+     * connections other than HTTPS and LDAP.
+     *
+     * The renegotiation indication extension (See RFC 5764) is a pretty
+     * strong guarantee that the endpoints on both client and server sides
+     * are identical on the same connection.  However, the Triple Handshake
+     * attacks can bypass this guarantee if there is a session-resumption
+     * handshake between the initial full handshake and the renegotiation
+     * full handshake.
+     *
+     * Server certificate change may be unsafe and should be restricted if
+     * endpoint identification is not enabled and the previous handshake is
+     * a session-resumption abbreviated initial handshake, unless the
+     * identities represented by both certificates can be regraded as the
+     * same (See isIdentityEquivalent()).
+     *
+     * Considering the compatibility impact and the actual requirements to
+     * support server certificate change in practice, the system property,
+     * jdk.tls.allowUnsafeServerCertChange, is used to define whether unsafe
+     * server certificate change in renegotiation is allowed or not.  The
+     * default value of the system property is "false".  To mitigate the
+     * compactibility impact, applications may want to set the system
+     * property to "true" at their own risk.
+     *
+     * If the value of the system property is "false", server certificate
+     * change in renegotiation after a session-resumption abbreviated initial
+     * handshake is restricted (See isIdentityEquivalent()).
+     *
+     * If the system property is set to "true" explicitly, the restriction on
+     * server certificate change in renegotiation is disabled.
+     */
+    private final static boolean allowUnsafeServerCertChange =
+        Debug.getBooleanProperty("jdk.tls.allowUnsafeServerCertChange", false);
+
     private List<SNIServerName> requestedServerNames =
             Collections.<SNIServerName>emptyList();
 
     private boolean serverNamesAccepted = false;
+
+    /*
+     * the reserved server certificate chain in previous handshaking
+     *
+     * The server certificate chain is only reserved if the previous
+     * handshake is a session-resumption abbreviated initial handshake.
+     */
+    private X509Certificate[] reservedServerCerts = null;
 
     /*
      * Constructors
@@ -555,14 +611,19 @@ final class ClientHandshaker extends Handshaker {
                 // we wanted to resume, but the server refused
                 session = null;
                 if (!enableNewSession) {
-                    throw new SSLException
-                        ("New session creation is disabled");
+                    throw new SSLException("New session creation is disabled");
                 }
             }
         }
 
         if (resumingSession && session != null) {
             setHandshakeSessionSE(session);
+            // Reserve the handshake state if this is a session-resumption
+            // abbreviated initial handshake.
+            if (isInitialHandshake) {
+                session.setAsSessionResumption(true);
+            }
+
             return;
         }
 
@@ -1064,6 +1125,13 @@ final class ClientHandshaker extends Handshaker {
         }
 
         /*
+         * Reset the handshake state if this is not an initial handshake.
+         */
+        if (!isInitialHandshake) {
+            session.setAsSessionResumption(false);
+        }
+
+        /*
          * OK, it verified.  If we're doing the fast handshake, add that
          * "Finished" message to the hash of handshake messages, then send
          * our own change_cipher_spec and Finished message for the server
@@ -1161,8 +1229,23 @@ final class ClientHandshaker extends Handshaker {
                 System.out.println("%% No cached client session");
             }
         }
-        if ((session != null) && (session.isRejoinable() == false)) {
-            session = null;
+        if (session != null) {
+            // If unsafe server certificate change is not allowed, reserve
+            // current server certificates if the previous handshake is a
+            // session-resumption abbreviated initial handshake.
+            if (!allowUnsafeServerCertChange && session.isSessionResumption()) {
+                try {
+                    // If existing, peer certificate chain cannot be null.
+                    reservedServerCerts =
+                        (X509Certificate[])session.getPeerCertificates();
+                } catch (SSLPeerUnverifiedException puve) {
+                    // Maybe not certificate-based, ignore the exception.
+                }
+            }
+
+            if (!session.isRejoinable()) {
+                session = null;
+            }
         }
 
         if (session != null) {
@@ -1331,9 +1414,28 @@ final class ClientHandshaker extends Handshaker {
         }
         X509Certificate[] peerCerts = mesg.getCertificateChain();
         if (peerCerts.length == 0) {
-            fatalSE(Alerts.alert_bad_certificate,
-                "empty certificate chain");
+            fatalSE(Alerts.alert_bad_certificate, "empty certificate chain");
         }
+
+        // Allow server certificate change in client side during renegotiation
+        // after a session-resumption abbreviated initial handshake?
+        //
+        // DO NOT need to check allowUnsafeServerCertChange here. We only
+        // reserve server certificates when allowUnsafeServerCertChange is
+        // flase.
+        if (reservedServerCerts != null) {
+            // It is not necessary to check the certificate update if endpoint
+            // identification is enabled.
+            String identityAlg = getEndpointIdentificationAlgorithmSE();
+            if ((identityAlg == null || identityAlg.length() == 0) &&
+                !isIdentityEquivalent(peerCerts[0], reservedServerCerts[0])) {
+
+                fatalSE(Alerts.alert_bad_certificate,
+                        "server certificate change is restricted " +
+                        "during renegotiation");
+            }
+        }
+
         // ask the trust manager to verify the chain
         X509TrustManager tm = sslContext.getX509TrustManager();
         try {
@@ -1369,5 +1471,82 @@ final class ClientHandshaker extends Handshaker {
             fatalSE(Alerts.alert_certificate_unknown, e);
         }
         session.setPeerCertificates(peerCerts);
+    }
+
+    /*
+     * Whether the certificates can represent the same identity?
+     *
+     * The certificates can be used to represent the same identity:
+     *     1. If the subject alternative names of IP address are present in
+     *        both certificates, they should be identical; otherwise,
+     *     2. if the subject alternative names of DNS name are present in
+     *        both certificates, they should be identical; otherwise,
+     *     3. if the subject fields are present in both certificates, the
+     *        certificate subjects and issuers should be identical.
+     */
+    private static boolean isIdentityEquivalent(X509Certificate thisCert,
+            X509Certificate prevCert) {
+        if (thisCert.equals(prevCert)) {
+            return true;
+        }
+
+        // check the iPAddress field in subjectAltName extension
+        Object thisIPAddress = getSubjectAltName(thisCert, 7);  // 7: iPAddress
+        Object prevIPAddress = getSubjectAltName(prevCert, 7);
+        if (thisIPAddress != null && prevIPAddress!= null) {
+            // only allow the exactly match
+            return Objects.equals(thisIPAddress, prevIPAddress);
+        }
+
+        // check the dNSName field in subjectAltName extension
+        Object thisDNSName = getSubjectAltName(thisCert, 2);    // 2: dNSName
+        Object prevDNSName = getSubjectAltName(prevCert, 2);
+        if (thisDNSName != null && prevDNSName!= null) {
+            // only allow the exactly match
+            return Objects.equals(thisDNSName, prevDNSName);
+        }
+
+        // check the certificate subject and issuer
+        X500Principal thisSubject = thisCert.getSubjectX500Principal();
+        X500Principal prevSubject = prevCert.getSubjectX500Principal();
+        X500Principal thisIssuer = thisCert.getIssuerX500Principal();
+        X500Principal prevIssuer = prevCert.getIssuerX500Principal();
+        if (!thisSubject.getName().isEmpty() &&
+                !prevSubject.getName().isEmpty() &&
+                thisSubject.equals(prevSubject) &&
+                thisIssuer.equals(prevIssuer)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * Returns the subject alternative name of the specified type in the
+     * subjectAltNames extension of a certificate.
+     */
+    private static Object getSubjectAltName(X509Certificate cert, int type) {
+        Collection<List<?>> subjectAltNames;
+
+        try {
+            subjectAltNames = cert.getSubjectAlternativeNames();
+        } catch (CertificateParsingException cpe) {
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println(
+                        "Attempt to obtain subjectAltNames extension failed!");
+            }
+            return null;
+        }
+
+        if (subjectAltNames != null) {
+            for (List<?> subjectAltName : subjectAltNames) {
+                int subjectAltNameType = (Integer)subjectAltName.get(0);
+                if (subjectAltNameType == type) {
+                    return subjectAltName.get(1);
+                }
+            }
+        }
+
+        return null;
     }
 }

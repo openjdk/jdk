@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -40,14 +41,14 @@ public class SubstitutionGroupHandler {
 
     private static final XSElementDecl[] EMPTY_GROUP = new XSElementDecl[0];
 
-    // grammar resolver
-    XSGrammarBucket fGrammarBucket;
+    // global element declaration resolver
+    private final XSElementDeclHelper fXSElementDeclHelper;
 
     /**
      * Default constructor
      */
-    public SubstitutionGroupHandler(XSGrammarBucket grammarBucket) {
-        fGrammarBucket = grammarBucket;
+    public SubstitutionGroupHandler(XSElementDeclHelper elementDeclHelper) {
+        fXSElementDeclHelper = elementDeclHelper;
     }
 
     // 3.9.4 Element Sequence Locally Valid (Particle) 2.3.3
@@ -60,26 +61,25 @@ public class SubstitutionGroupHandler {
 
         // if the exemplar is not a global element decl, then it's not possible
         // to be substituted by another element.
-        if (exemplar.fScope != XSConstants.SCOPE_GLOBAL)
+        if (exemplar.fScope != XSConstants.SCOPE_GLOBAL) {
             return null;
+        }
 
         // if the decl blocks substitution, return false
-        if ((exemplar.fBlock & XSConstants.DERIVATION_SUBSTITUTION) != 0)
+        if ((exemplar.fBlock & XSConstants.DERIVATION_SUBSTITUTION) != 0) {
             return null;
-
-        // get grammar of the element
-        SchemaGrammar sGrammar = fGrammarBucket.getGrammar(element.uri);
-        if (sGrammar == null)
-            return null;
+        }
 
         // get the decl for the element
-        XSElementDecl eDecl = sGrammar.getGlobalElementDecl(element.localpart);
-        if (eDecl == null)
+        XSElementDecl eDecl = fXSElementDeclHelper.getGlobalElementDecl(element);
+        if (eDecl == null) {
             return null;
+        }
 
         // and check by using substitutionGroup information
-        if (substitutionGroupOK(eDecl, exemplar, exemplar.fBlock))
+        if (substitutionGroupOK(eDecl, exemplar, exemplar.fBlock)) {
             return eDecl;
+        }
 
         return null;
     }
@@ -89,13 +89,15 @@ public class SubstitutionGroupHandler {
     protected boolean substitutionGroupOK(XSElementDecl element, XSElementDecl exemplar, short blockingConstraint) {
         // For an element declaration (call it D) to be validly substitutable for another element declaration (call it C) subject to a blocking constraint (a subset of {substitution, extension, restriction}, the value of a {disallowed substitutions}) one of the following must be true:
         // 1. D and C are the same element declaration.
-        if (element == exemplar)
+        if (element == exemplar) {
             return true;
+        }
 
         // 2 All of the following must be true:
         // 2.1 The blocking constraint does not contain substitution.
-        if ((blockingConstraint & XSConstants.DERIVATION_SUBSTITUTION) != 0)
+        if ((blockingConstraint & XSConstants.DERIVATION_SUBSTITUTION) != 0) {
             return false;
+        }
 
         // 2.2 There is a chain of {substitution group affiliation}s from D to C, that is, either D's {substitution group affiliation} is C, or D's {substitution group affiliation}'s {substitution group affiliation} is C, or . . .
         XSElementDecl subGroup = element.fSubGroup;
@@ -103,14 +105,16 @@ public class SubstitutionGroupHandler {
             subGroup = subGroup.fSubGroup;
         }
 
-        if (subGroup == null)
+        if (subGroup == null) {
             return false;
+        }
 
         // 2.3 The set of all {derivation method}s involved in the derivation of D's {type definition} from C's {type definition} does not intersect with the union of the blocking constraint, C's {prohibited substitutions} (if C is complex, otherwise the empty set) and the {prohibited substitutions} (respectively the empty set) of any intermediate {type definition}s in the derivation of D's {type definition} from C's {type definition}.
         // prepare the combination of {derivation method} and
         // {disallowed substitution}
         return typeDerivationOK(element.fType, exemplar.fType, blockingConstraint);
     }
+
     private boolean typeDerivationOK(XSTypeDefinition derived, XSTypeDefinition base, short blockingConstraint) {
 
         short devMethod = 0, blockConstraint = blockingConstraint;

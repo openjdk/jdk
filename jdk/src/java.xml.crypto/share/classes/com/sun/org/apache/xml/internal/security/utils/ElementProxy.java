@@ -468,9 +468,12 @@ public abstract class ElementProxy {
      * @param namespace
      * @param prefix
      * @throws XMLSecurityException
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to set the default prefix
      */
     public static void setDefaultPrefix(String namespace, String prefix)
         throws XMLSecurityException {
+        JavaUtils.checkRegisterPermission();
         if (prefixMappings.containsValue(prefix)) {
             String storedPrefix = prefixMappings.get(namespace);
             if (!storedPrefix.equals(prefix)) {

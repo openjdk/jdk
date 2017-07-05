@@ -29,16 +29,22 @@ import static jdk.nashorn.internal.runtime.Property.NOT_CONFIGURABLE;
 import static jdk.nashorn.internal.runtime.Property.NOT_ENUMERABLE;
 import static jdk.nashorn.internal.runtime.Property.NOT_WRITABLE;
 
+import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
+import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
+import jdk.nashorn.internal.objects.ArrayBufferView;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -47,6 +53,13 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Used during recompilation.
  */
 final class TypeEvaluator {
+    /**
+     * Type signature for invocation of functions without parameters: we must pass (callee, this) of type
+     * (ScriptFunction, Object) respectively. We also use Object as the return type (we must pass something,
+     * but it'll be ignored; it can't be void, though).
+     */
+    private static final MethodType EMPTY_INVOCATION_TYPE = MethodType.methodType(Object.class, ScriptFunction.class, Object.class);
+
     private final Compiler compiler;
     private final ScriptObject runtimeScope;
 
@@ -190,30 +203,46 @@ final class TypeEvaluator {
                 return null;
             }
             return getPropertyType(runtimeScope, ((IdentNode)expr).getName());
-        }
-
-        if (expr instanceof AccessNode) {
+        } else if (expr instanceof AccessNode) {
             final AccessNode accessNode = (AccessNode)expr;
             final Object base = evaluateSafely(accessNode.getBase());
             if (!(base instanceof ScriptObject)) {
                 return null;
             }
             return getPropertyType((ScriptObject)base, accessNode.getProperty());
-        }
-
-        if (expr instanceof IndexNode) {
+        } else if (expr instanceof IndexNode) {
             final IndexNode indexNode = (IndexNode)expr;
             final Object    base = evaluateSafely(indexNode.getBase());
-            if(!(base instanceof NativeArray)) {
-                // We only know how to deal with NativeArray. TODO: maybe manage buffers too
-                return null;
+            if(base instanceof NativeArray || base instanceof ArrayBufferView) {
+                // NOTE: optimistic array getters throw UnwarrantedOptimismException based on the type of their
+                // underlying array storage, not based on values of individual elements. Thus, a LongArrayData will
+                // throw UOE for every optimistic int linkage attempt, even if the long value being returned in the
+                // first invocation would be representable as int. That way, we can presume that the array's optimistic
+                // type is the most optimistic type for which an element getter has a chance of executing successfully.
+                return ((ScriptObject)base).getArray().getOptimisticType();
             }
-            // NOTE: optimistic array getters throw UnwarrantedOptimismException based on the type of their underlying
-            // array storage, not based on values of individual elements. Thus, a LongArrayData will throw UOE for every
-            // optimistic int linkage attempt, even if the long value being returned in the first invocation would be
-            // representable as int. That way, we can presume that the array's optimistic type is the most optimistic
-            // type for which an element getter has a chance of executing successfully.
-            return ((NativeArray)base).getArray().getOptimisticType();
+        } else if (expr instanceof CallNode) {
+            // Currently, we'll only try to guess the return type of immediately invoked function expressions with no
+            // parameters, that is (function() { ... })(). We could do better, but these are all heuristics and we can
+            // gradually introduce them as needed. An easy one would be to do the same for .call(this) idiom.
+            final CallNode callExpr = (CallNode)expr;
+            final Expression fnExpr = callExpr.getFunction();
+            if (fnExpr instanceof FunctionNode) {
+                final FunctionNode fn = (FunctionNode)fnExpr;
+                if (callExpr.getArgs().isEmpty()) {
+                    final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(fn.getId());
+                    if (data != null) {
+                        final Type returnType = Type.typeFor(data.getReturnType(EMPTY_INVOCATION_TYPE, runtimeScope));
+                        if (returnType == Type.BOOLEAN) {
+                            // We don't have optimistic booleans. In fact, optimistic call sites getting back boolean
+                            // currently deoptimize all the way to Object.
+                            return Type.OBJECT;
+                        }
+                        assert returnType == Type.INT || returnType == Type.LONG || returnType == Type.NUMBER || returnType == Type.OBJECT;
+                        return returnType;
+                    }
+                }
+            }
         }
 
         return null;
