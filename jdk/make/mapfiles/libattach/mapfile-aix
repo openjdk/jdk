@@ -27,13 +27,13 @@
 
 SUNWprivate_1.1 {
 	global:
-            Java_sun_tools_attach_AixVirtualMachine_socket
-            Java_sun_tools_attach_AixVirtualMachine_connect
-            Java_sun_tools_attach_AixVirtualMachine_sendQuitTo
-            Java_sun_tools_attach_AixVirtualMachine_checkPermissions
-            Java_sun_tools_attach_AixVirtualMachine_close
-            Java_sun_tools_attach_AixVirtualMachine_read
-            Java_sun_tools_attach_AixVirtualMachine_write
+            Java_sun_tools_attach_VirtualMachineImpl_socket
+            Java_sun_tools_attach_VirtualMachineImpl_connect
+            Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo
+            Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
+            Java_sun_tools_attach_VirtualMachineImpl_close
+            Java_sun_tools_attach_VirtualMachineImpl_read
+            Java_sun_tools_attach_VirtualMachineImpl_write
 	local:
 		*;
 };

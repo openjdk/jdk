@@ -30,20 +30,20 @@ $(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.desktop.gmk))
 ################################################################################
 
 JAVA_DESKTOP_HEADERS := \
-    $(INCLUDEDIR)/jawt.h \
-    $(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h \
+    $(INCLUDE_DST_DIR)/jawt.h \
+    $(INCLUDE_DST_OS_DIR)/jawt_md.h \
     #
 
-$(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/java.desktop/share/native/include/%.h
+$(INCLUDE_DST_DIR)/%.h: $(JDK_TOPDIR)/src/java.desktop/share/native/include/%.h
 	$(call install-file)
 
-$(OPENJDK_TARGET_OS_INCLUDE)/%.h: \
+$(INCLUDE_DST_OS_DIR)/%.h: \
     $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
 	$(call install-file)
 
 ################################################################################
 
-ICCPROFILE_DEST_DIR := $(LIBDIR)/cmm
+ICCPROFILE_DEST_DIR := $(LIB_DST_DIR)/cmm
 
 ifdef OPENJDK
   ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf/cmm/lcms
@@ -102,20 +102,20 @@ DESKTOP_CONF_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
 
 ################################################################################
 #
-# Copy property files from sun/print to LIBDIR
+# Copy property files from sun/print to LIB_DST_DIR
 #
 PSFONTPROPFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf
 PSFONTPROPFILE_SRCS := $(wildcard $(PSFONTPROPFILE_SRC_DIR)/psfont*.properties*)
-PSFONTPROPFILE_TARGET_FILES := $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIBDIR),$(PSFONTPROPFILE_SRCS))
+PSFONTPROPFILE_TARGET_FILES := $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIB_DST_DIR),$(PSFONTPROPFILE_SRCS))
 
-$(LIBDIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
+$(LIB_DST_DIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(call install-file)
 
 DESKTOP_CONF_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 
 ################################################################################
 #
-# Copy cursor.properties and cursors gif files to LIBDIR
+# Copy cursor.properties and cursors gif files to LIB_DST_DIR
 #
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/conf
@@ -123,7 +123,7 @@ else
   OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/conf
 endif
 
-CURSORS_DEST_DIR := $(LIBDIR)/images/cursors
+CURSORS_DEST_DIR := $(LIB_DST_DIR)/images/cursors
 CURSORS_OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/conf/images/cursors
 
 $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties

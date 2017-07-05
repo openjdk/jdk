@@ -333,7 +333,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_dup(JNIEnv* env, jclass this, jint fd) {
     int res = -1;
 
     RESTARTABLE(dup((int)fd), res);
-    if (fd == -1) {
+    if (res == -1) {
         throwUnixException(env, errno);
     }
     return (jint)res;
@@ -361,13 +361,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_fopen0(JNIEnv* env, jclass this,
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fclose(JNIEnv* env, jclass this, jlong stream)
 {
-    int res;
     FILE* fp = jlong_to_ptr(stream);
 
-    do {
-        res = fclose(fp);
-    } while (res == EOF && errno == EINTR);
-    if (res == EOF) {
+    /* NOTE: fclose() wrapper is only used with read-only streams.
+     * If it ever is used with write streams, it might be better to add
+     * RESTARTABLE(fflush(fp)) before closing, to make sure the stream
+     * is completely written even if fclose() failed.
+     */
+    if (fclose(fp) == EOF && errno != EINTR) {
         throwUnixException(env, errno);
     }
 }
@@ -675,11 +676,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_fdopendir(JNIEnv* env, jclass this, int dfd
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_closedir(JNIEnv* env, jclass this, jlong dir) {
-    int err;
     DIR* dirp = jlong_to_ptr(dir);
 
-    RESTARTABLE(closedir(dirp), err);
-    if (errno == -1) {
+    if (closedir(dirp) == -1 && errno != EINTR) {
         throwUnixException(env, errno);
     }
 }

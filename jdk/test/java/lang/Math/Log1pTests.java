@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 public class Log1pTests {
     private Log1pTests(){}
 
@@ -93,7 +91,7 @@ public class Log1pTests {
         }
 
         // For x > 2^53 log1p(x) ~= log(x)
-        for(int i = 53; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 53; i <= Double.MAX_EXPONENT; i++) {
             double d = Math.scalb(2, i);
             failures += testLog1pCaseWithUlpDiff(d, StrictMath.log(d), 2.001);
         }

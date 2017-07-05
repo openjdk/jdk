@@ -26,6 +26,7 @@
  * @bug 7158988
  * @key regression
  * @summary verify jvm does not crash while debugging
+ * @ignore 8055145
  * @run compile TestPostFieldModification.java
  * @run main/othervm FieldMonitor
  * @author axel.siebenborn@sap.com
