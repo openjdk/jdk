@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,9 +251,23 @@ public class Sockets {
         }
     }
 
+    private static volatile boolean checkedReusePort;
+    private static volatile boolean isReusePortAvailable;
+
+    /**
+     * Tells whether SO_REUSEPORT is supported.
+     */
+    static boolean isReusePortAvailable() {
+        if (!checkedReusePort) {
+            isReusePortAvailable = isReusePortAvailable0();
+            checkedReusePort = true;
+        }
+        return isReusePortAvailable;
+    }
+
     private static void initOptionSets() {
         boolean flowsupported = ExtendedOptionsImpl.flowSupported();
-
+        boolean reuseportsupported = isReusePortAvailable();
         // Socket
 
         Set<SocketOption<?>> set = new HashSet<>();
@@ -261,6 +275,9 @@ public class Sockets {
         set.add(StandardSocketOptions.SO_SNDBUF);
         set.add(StandardSocketOptions.SO_RCVBUF);
         set.add(StandardSocketOptions.SO_REUSEADDR);
+        if (reuseportsupported) {
+            set.add(StandardSocketOptions.SO_REUSEPORT);
+        }
         set.add(StandardSocketOptions.SO_LINGER);
         set.add(StandardSocketOptions.IP_TOS);
         set.add(StandardSocketOptions.TCP_NODELAY);
@@ -275,6 +292,9 @@ public class Sockets {
         set = new HashSet<>();
         set.add(StandardSocketOptions.SO_RCVBUF);
         set.add(StandardSocketOptions.SO_REUSEADDR);
+        if (reuseportsupported) {
+            set.add(StandardSocketOptions.SO_REUSEPORT);
+        }
         set.add(StandardSocketOptions.IP_TOS);
         set = Collections.unmodifiableSet(set);
         options.put(ServerSocket.class, set);
@@ -285,6 +305,9 @@ public class Sockets {
         set.add(StandardSocketOptions.SO_SNDBUF);
         set.add(StandardSocketOptions.SO_RCVBUF);
         set.add(StandardSocketOptions.SO_REUSEADDR);
+        if (reuseportsupported) {
+            set.add(StandardSocketOptions.SO_REUSEPORT);
+        }
         set.add(StandardSocketOptions.IP_TOS);
         if (flowsupported) {
             set.add(ExtendedSocketOptions.SO_FLOW_SLA);
@@ -298,6 +321,9 @@ public class Sockets {
         set.add(StandardSocketOptions.SO_SNDBUF);
         set.add(StandardSocketOptions.SO_RCVBUF);
         set.add(StandardSocketOptions.SO_REUSEADDR);
+        if (reuseportsupported) {
+            set.add(StandardSocketOptions.SO_REUSEPORT);
+        }
         set.add(StandardSocketOptions.IP_TOS);
         set.add(StandardSocketOptions.IP_MULTICAST_IF);
         set.add(StandardSocketOptions.IP_MULTICAST_TTL);
@@ -308,4 +334,6 @@ public class Sockets {
         set = Collections.unmodifiableSet(set);
         options.put(MulticastSocket.class, set);
     }
+
+    private static native boolean isReusePortAvailable0();
 }

@@ -1754,34 +1754,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int vep_offset = ((intptr_t)__ pc()) - start;
 
 #ifdef COMPILER1
-  if (InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) {
-    // Object.hashCode can pull the hashCode from the header word
-    // instead of doing a full VM transition once it's been computed.
-    // Since hashCode is usually polymorphic at call sites we can't do
-    // this optimization at the call site without a lot of work.
-    Label slowCase;
-    Register receiver = rcx;
-    Register result = rax;
-    __ movptr(result, Address(receiver, oopDesc::mark_offset_in_bytes()));
-
-    // check if locked
-    __ testptr(result, markOopDesc::unlocked_value);
-    __ jcc (Assembler::zero, slowCase);
-
-    if (UseBiasedLocking) {
-      // Check if biased and fall through to runtime if so
-      __ testptr(result, markOopDesc::biased_lock_bit_in_place);
-      __ jcc (Assembler::notZero, slowCase);
-    }
-
-    // get hash
-    __ andptr(result, markOopDesc::hash_mask_in_place);
-    // test if hashCode exists
-    __ jcc  (Assembler::zero, slowCase);
-    __ shrptr(result, markOopDesc::hash_shift);
-    __ ret(0);
-    __ bind (slowCase);
-  }
+  // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.
+  if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {
+    inline_check_hashcode_from_object_header(masm, method, rcx /*obj_reg*/, rax /*result*/);
+   }
 #endif // COMPILER1
 
   // The instruction at the verified entry point must be 5 bytes or longer

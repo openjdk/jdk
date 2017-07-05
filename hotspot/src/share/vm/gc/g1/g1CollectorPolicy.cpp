@@ -293,29 +293,83 @@ void G1CollectorPolicy::initialize_alignments() {
   _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
 }
 
-void G1CollectorPolicy::initialize_flags() {
-  if (G1HeapRegionSize != HeapRegion::GrainBytes) {
-    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
-  }
-
-  if (SurvivorRatio < 1) {
-    vm_exit_during_initialization("Invalid survivor ratio specified");
-  }
-  CollectorPolicy::initialize_flags();
-  _young_gen_sizer = new G1YoungGenSizer(); // Must be after call to initialize_flags
-}
-
-void G1CollectorPolicy::post_heap_initialize() {
-  uintx max_regions = G1CollectedHeap::heap()->max_regions();
-  size_t max_young_size = (size_t)_young_gen_sizer->max_young_length(max_regions) * HeapRegion::GrainBytes;
-  if (max_young_size != MaxNewSize) {
-    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
-  }
-
-  _ihop_control = create_ihop_control();
-}
-
 G1CollectorState* G1CollectorPolicy::collector_state() const { return _g1->collector_state(); }
+
+// There are three command line options related to the young gen size:
+// NewSize, MaxNewSize and NewRatio (There is also -Xmn, but that is
+// just a short form for NewSize==MaxNewSize). G1 will use its internal
+// heuristics to calculate the actual young gen size, so these options
+// basically only limit the range within which G1 can pick a young gen
+// size. Also, these are general options taking byte sizes. G1 will
+// internally work with a number of regions instead. So, some rounding
+// will occur.
+//
+// If nothing related to the the young gen size is set on the command
+// line we should allow the young gen to be between G1NewSizePercent
+// and G1MaxNewSizePercent of the heap size. This means that every time
+// the heap size changes, the limits for the young gen size will be
+// recalculated.
+//
+// If only -XX:NewSize is set we should use the specified value as the
+// minimum size for young gen. Still using G1MaxNewSizePercent of the
+// heap as maximum.
+//
+// If only -XX:MaxNewSize is set we should use the specified value as the
+// maximum size for young gen. Still using G1NewSizePercent of the heap
+// as minimum.
+//
+// If -XX:NewSize and -XX:MaxNewSize are both specified we use these values.
+// No updates when the heap size changes. There is a special case when
+// NewSize==MaxNewSize. This is interpreted as "fixed" and will use a
+// different heuristic for calculating the collection set when we do mixed
+// collection.
+//
+// If only -XX:NewRatio is set we should use the specified ratio of the heap
+// as both min and max. This will be interpreted as "fixed" just like the
+// NewSize==MaxNewSize case above. But we will update the min and max
+// every time the heap size changes.
+//
+// NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
+// combined with either NewSize or MaxNewSize. (A warning message is printed.)
+class G1YoungGenSizer : public CHeapObj<mtGC> {
+private:
+  enum SizerKind {
+    SizerDefaults,
+    SizerNewSizeOnly,
+    SizerMaxNewSizeOnly,
+    SizerMaxAndNewSize,
+    SizerNewRatio
+  };
+  SizerKind _sizer_kind;
+  uint _min_desired_young_length;
+  uint _max_desired_young_length;
+  bool _adaptive_size;
+  uint calculate_default_min_length(uint new_number_of_heap_regions);
+  uint calculate_default_max_length(uint new_number_of_heap_regions);
+
+  // Update the given values for minimum and maximum young gen length in regions
+  // given the number of heap regions depending on the kind of sizing algorithm.
+  void recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length);
+
+public:
+  G1YoungGenSizer();
+  // Calculate the maximum length of the young gen given the number of regions
+  // depending on the sizing algorithm.
+  uint max_young_length(uint number_of_heap_regions);
+
+  void heap_size_changed(uint new_number_of_heap_regions);
+  uint min_desired_young_length() {
+    return _min_desired_young_length;
+  }
+  uint max_desired_young_length() {
+    return _max_desired_young_length;
+  }
+
+  bool adaptive_young_list_length() const {
+    return _adaptive_size;
+  }
+};
+
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
         _min_desired_young_length(0), _max_desired_young_length(0) {
@@ -411,6 +465,29 @@ void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
   recalculate_min_max_young_length(new_number_of_heap_regions, &_min_desired_young_length,
           &_max_desired_young_length);
 }
+
+void G1CollectorPolicy::post_heap_initialize() {
+  uintx max_regions = G1CollectedHeap::heap()->max_regions();
+  size_t max_young_size = (size_t)_young_gen_sizer->max_young_length(max_regions) * HeapRegion::GrainBytes;
+  if (max_young_size != MaxNewSize) {
+    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
+  }
+
+  _ihop_control = create_ihop_control();
+}
+
+void G1CollectorPolicy::initialize_flags() {
+  if (G1HeapRegionSize != HeapRegion::GrainBytes) {
+    FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
+  }
+
+  if (SurvivorRatio < 1) {
+    vm_exit_during_initialization("Invalid survivor ratio specified");
+  }
+  CollectorPolicy::initialize_flags();
+  _young_gen_sizer = new G1YoungGenSizer(); // Must be after call to initialize_flags
+}
+
 
 void G1CollectorPolicy::init() {
   // Set aside an initial future to_space.
@@ -758,7 +835,7 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
        curr = curr->get_next_young_region()) {
     SurvRateGroup* group = curr->surv_rate_group();
     if (group == NULL && !curr->is_survivor()) {
-      log_info(gc, verify)("## %s: encountered NULL surv_rate_group", name);
+      log_error(gc, verify)("## %s: encountered NULL surv_rate_group", name);
       ret = false;
     }
 
@@ -766,12 +843,12 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
       int age = curr->age_in_surv_rate_group();
 
       if (age < 0) {
-        log_info(gc, verify)("## %s: encountered negative age", name);
+        log_error(gc, verify)("## %s: encountered negative age", name);
         ret = false;
       }
 
       if (age <= prev_age) {
-        log_info(gc, verify)("## %s: region ages are not strictly increasing (%d, %d)", name, age, prev_age);
+        log_error(gc, verify)("## %s: region ages are not strictly increasing (%d, %d)", name, age, prev_age);
         ret = false;
       }
       prev_age = age;
@@ -1599,6 +1676,10 @@ bool G1CollectorPolicy::can_expand_young_list() const {
   uint young_list_length = _g1->young_list()->length();
   uint young_list_max_length = _young_list_max_length;
   return young_list_length < young_list_max_length;
+}
+
+bool G1CollectorPolicy::adaptive_young_list_length() const {
+  return _young_gen_sizer->adaptive_young_list_length();
 }
 
 void G1CollectorPolicy::update_max_gc_locker_expansion() {

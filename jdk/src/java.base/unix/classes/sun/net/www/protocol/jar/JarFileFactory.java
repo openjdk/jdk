@@ -85,7 +85,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
                 synchronized (instance) {
                     result = getCachedJarFile(url);
                     if (result == null) {
-                        fileCache.put(URLUtil.urlNoFragString(url), local_result);
+                        fileCache.put(urlKey(url), local_result);
                         urlCache.put(local_result, url);
                         result = local_result;
                     } else {
@@ -113,13 +113,13 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
         synchronized (instance) {
             URL urlRemoved = urlCache.remove(jarFile);
             if (urlRemoved != null)
-                fileCache.remove(URLUtil.urlNoFragString(urlRemoved));
+                fileCache.remove(urlKey(urlRemoved));
         }
     }
 
     private JarFile getCachedJarFile(URL url) {
         assert Thread.holdsLock(instance);
-        JarFile result = fileCache.get(URLUtil.urlNoFragString(url));
+        JarFile result = fileCache.get(urlKey(url));
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {
@@ -147,6 +147,12 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             }
         }
         return result;
+    }
+
+    private String urlKey(URL url) {
+        String urlstr =  URLUtil.urlNoFragString(url);
+        if ("runtime".equals(url.getRef())) urlstr += "#runtime";
+        return urlstr;
     }
 
     private Permission getPermission(JarFile jarFile) {

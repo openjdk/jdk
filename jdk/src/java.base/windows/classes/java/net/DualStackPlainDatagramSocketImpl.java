@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,11 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
         int optionValue = 0;
 
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+
         switch(opt) {
             case IP_TOS :
             case SO_RCVBUF :
@@ -200,6 +205,9 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         }
         if (opt == SO_REUSEADDR && reuseAddressEmulated)
             return isReuseAddress;
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT)
+            throw new UnsupportedOperationException("unsupported option");
 
         int value = socketGetIntOption(nativefd, opt);
         Object returnValue = null;

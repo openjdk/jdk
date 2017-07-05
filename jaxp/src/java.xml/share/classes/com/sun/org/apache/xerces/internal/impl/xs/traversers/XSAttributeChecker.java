@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1172,7 +1172,7 @@ public class XSAttributeChecker {
             if (max != SchemaSymbols.OCCURRENCE_UNBOUNDED) {
 
                 // maxOccurLimit is only check in secure mode
-                if (fSchemaHandler.fSecureProcessing != null) {
+                if (fSchemaHandler.fSecurityManager != null) {
                     String localName = element.getLocalName();
 
                 // The maxOccurs restriction no longer applies to elements
@@ -1191,8 +1191,8 @@ public class XSAttributeChecker {
                     if (!optimize) {
                     //Revisit :: IMO this is not right place to check
                     // maxOccurNodeLimit.
-                    int maxOccurNodeLimit = fSchemaHandler.fSecureProcessing.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT);
-                    if (max > maxOccurNodeLimit && !fSchemaHandler.fSecureProcessing.isNoLimit(maxOccurNodeLimit)) {
+                    int maxOccurNodeLimit = fSchemaHandler.fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT);
+                    if (max > maxOccurNodeLimit && !fSchemaHandler.fSecurityManager.isNoLimit(maxOccurNodeLimit)) {
                         reportSchemaFatalError("MaxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
 
                         // reset max values in case processing continues on error
