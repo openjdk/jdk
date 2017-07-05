@@ -361,7 +361,7 @@ public class ClientCodeWrapper {
         @Override @DefinedBy(Api.COMPILER)
         public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
             try {
-                return clientJavaFileManager.getLocationForModule(location, fo, pkgName);
+                return clientJavaFileManager.getLocationForModule(location, unwrap(fo), pkgName);
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

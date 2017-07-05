@@ -755,6 +755,55 @@ define SetupCopyFilesBody
 endef
 
 ################################################################################
+# Parse a multiple-keyword variable, like FOO="KEYWORD1=val1;KEYWORD2=val2;..."
+# These will be converted into a series of variables like FOO_KEYWORD1=val1,
+# FOO_KEYWORD2=val2, etc. Unknown keywords will cause an error.
+#
+# Parameter 1 is the name of the rule, and is also the name of the variable.
+#
+# Remaining parameters are named arguments. These include:
+#   KEYWORDS          A list of valid keywords
+#   STRING_KEYWORDS   A list of valid keywords, processed as string. This means
+#       that '%20' will be replaced by ' ' to allow for multi-word strings.
+#
+ParseKeywordVariable = $(NamedParamsMacroTemplate)
+define ParseKeywordVariableBody
+  ifneq ($$($1), )
+    # To preserve spaces, substitute them with a hopefully unique pattern
+    # before splitting and then re-substitute spaces back.
+    $1_MANGLED := $$(subst $$(SPACE),||||,$$($1))
+    $$(foreach mangled_part, $$(subst ;, , $$($1_MANGLED)), \
+      $$(eval mangled_part_eval := $$(call DoubleDollar, $$(mangled_part))) \
+      $$(eval part := $$$$(subst ||||,$$$$(SPACE),$$$$(mangled_part_eval))) \
+      $$(eval $1_NO_MATCH := true) \
+      $$(foreach keyword, $$($1_KEYWORDS), \
+        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
+        $$(if $$(filter $$(keyword)=%, $$(part)), \
+          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part)))) \
+          $$(eval $1_NO_MATCH := ) \
+        ) \
+      ) \
+      $$(foreach keyword, $$($1_STRING_KEYWORDS), \
+        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
+        $$(if $$(filter $$(keyword)=%, $$(part)), \
+          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(subst %20, , $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part))))) \
+          $$(eval $1_NO_MATCH := ) \
+        ) \
+      ) \
+      $$(if $$($1_NO_MATCH), \
+        $$(if $$(filter $$(part), $$($1_KEYWORDS) $$($1_STRING_KEYWORDS)), \
+          $$(info Keyword $$(part) for $1 needs to be assigned a value.) \
+        , \
+          $$(info $$(part) is not a valid keyword for $1.) \
+          $$(info Valid keywords: $$($1_KEYWORDS) $$($1_STRING_KEYWORDS).) \
+        ) \
+        $$(error Cannot continue) \
+      ) \
+    )
+  endif
+endef
+
+################################################################################
 # ShellQuote
 #
 # Quotes a string with single quotes and replaces single quotes with '\'' so
@@ -762,6 +811,22 @@ endef
 
 ShellQuote = \
     $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
+
+################################################################################
+# FixPath
+#
+# On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
+# "mixed mode" (e.g. c:/cygwin/bin/foo). On other platforms, return the path
+# unchanged.
+# This is normally not needed since we use the FIXPATH prefix for command lines,
+# but might be needed in certain circumstances.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  FixPath = \
+      $(shell $(CYGPATH) -m $1)
+else
+  FixPath = \
+      $1
+endif
 
 ################################################################################
 # Write to and read from file
