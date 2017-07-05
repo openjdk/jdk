@@ -1509,15 +1509,21 @@ public class BasicComboBoxUI extends ComboBoxUI {
                             || ui.isTableCellEditor) {
                         Object listItem = ui.popup.getList().getSelectedValue();
                         if (listItem != null) {
-                            comboBox.getModel().setSelectedItem(listItem);
-                            // Ensure that JComboBox.actionPerformed()
-                            // doesn't set editor value as selected item
+                            // Use the selected value from popup
+                            // to set the selected item in combo box,
+                            // but ensure before that JComboBox.actionPerformed()
+                            // won't use editor's value to set the selected item
                             comboBox.getEditor().setItem(listItem);
+                            comboBox.setSelectedItem(listItem);
                         }
                     }
                     comboBox.setPopupVisible(false);
                 }
                 else {
+                    // Hide combo box if it is a table cell editor
+                    if (ui.isTableCellEditor && !comboBox.isEditable()) {
+                        comboBox.setSelectedItem(comboBox.getSelectedItem());
+                    }
                     // Call the default button binding.
                     // This is a pretty messy way of passing an event through
                     // to the root pane.

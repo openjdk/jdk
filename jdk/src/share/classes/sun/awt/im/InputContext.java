@@ -297,7 +297,7 @@ public class InputContext extends java.awt.im.InputContext
          */
         synchronized (source.getTreeLock()) {
             synchronized (this) {
-                if (source instanceof CompositionArea) {
+                if ("sun.awt.im.CompositionArea".equals(source.getClass().getName())) {
                     // no special handling for this one
                 } else if (getComponentWindow(source) instanceof InputMethodWindow) {
                     // no special handling for this one either

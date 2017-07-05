@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -36,7 +35,7 @@ import com.sun.org.apache.xml.internal.security.keys.content.X509Data;
 /**
  * Utility class for for <CODE>com.sun.org.apache.xml.internal.security.keys</CODE> package.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class KeyUtils {
 

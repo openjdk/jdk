@@ -24,7 +24,7 @@
 #
 
 #
-# Makefile for building JNDI service provider toolkit
+# Makefile for building JNDI DNS name service provider
 #
 
 BUILDDIR = ../../../../..

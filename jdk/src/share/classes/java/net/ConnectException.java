@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ package java.net;
  * @since   JDK1.1
  */
 public class ConnectException extends SocketException {
+    private static final long serialVersionUID = 3831404271622369215L;
+
     /**
      * Constructs a new ConnectException with the specified detail
      * message as to why the connect error occurred.

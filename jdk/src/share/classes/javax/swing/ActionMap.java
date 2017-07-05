@@ -197,7 +197,7 @@ public class ActionMap implements Serializable {
             return pKeys;
         }
 
-        HashMap        keyMap = new HashMap();
+        HashMap<Object, Object> keyMap = new HashMap<Object, Object>();
         int            counter;
 
         for (counter = keys.length - 1; counter >= 0; counter--) {

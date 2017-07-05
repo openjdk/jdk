@@ -39,7 +39,7 @@ import java.util.*;
  * @author Scott Violet
  */
 public class SynthContext {
-    private static final Map contextMap;
+    private static final Map<Class, List<SynthContext>> contextMap;
 
     private JComponent component;
     private Region region;
@@ -48,7 +48,7 @@ public class SynthContext {
 
 
     static {
-        contextMap = new HashMap();
+        contextMap = new HashMap<Class, List<SynthContext>>();
     }
 
 
@@ -58,13 +58,13 @@ public class SynthContext {
         SynthContext context = null;
 
         synchronized(contextMap) {
-            java.util.List instances = (java.util.List)contextMap.get(type);
+            List<SynthContext> instances = contextMap.get(type);
 
             if (instances != null) {
                 int size = instances.size();
 
                 if (size > 0) {
-                    context = (SynthContext)instances.remove(size - 1);
+                    context = instances.remove(size - 1);
                 }
             }
         }
@@ -81,11 +81,10 @@ public class SynthContext {
 
     static void releaseContext(SynthContext context) {
         synchronized(contextMap) {
-            java.util.List instances = (java.util.List)contextMap.get(
-                                       context.getClass());
+            List<SynthContext> instances = contextMap.get(context.getClass());
 
             if (instances == null) {
-                instances = new ArrayList(5);
+                instances = new ArrayList<SynthContext>(5);
                 contextMap.put(context.getClass(), instances);
             }
             instances.add(context);

@@ -65,6 +65,9 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
     protected static BasicLabelUI labelUI = new BasicLabelUI();
     private final static BasicLabelUI SAFE_BASIC_LABEL_UI = new BasicLabelUI();
 
+    private Rectangle paintIconR = new Rectangle();
+    private Rectangle paintTextR = new Rectangle();
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.PRESS));
         map.put(new Actions(Actions.RELEASE));
@@ -135,17 +138,6 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                                                    textX, textY);
     }
 
-
-    /* These rectangles/insets are allocated once for this shared LabelUI
-     * implementation.  Re-using rectangles rather than allocating
-     * them in each paint call halved the time it took paint to run.
-     */
-    private static Rectangle paintIconR = new Rectangle();
-    private static Rectangle paintTextR = new Rectangle();
-    private static Rectangle paintViewR = new Rectangle();
-    private static Insets paintViewInsets = new Insets(0, 0, 0, 0);
-
-
     /**
      * Paint the label text in the foreground color, if the label
      * is opaque then paint the entire background with the background
@@ -194,10 +186,11 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
 
     private String layout(JLabel label, FontMetrics fm,
                           int width, int height) {
-        Insets insets = label.getInsets(paintViewInsets);
+        Insets insets = label.getInsets(null);
         String text = label.getText();
         Icon icon = (label.isEnabled()) ? label.getIcon() :
                                           label.getDisabledIcon();
+        Rectangle paintViewR = new Rectangle();
         paintViewR.x = insets.left;
         paintViewR.y = insets.top;
         paintViewR.width = width - (insets.left + insets.right);
@@ -208,24 +201,13 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                         paintTextR);
     }
 
-
-    /* These rectangles/insets are allocated once for this shared LabelUI
-     * implementation.  Re-using rectangles rather than allocating
-     * them in each getPreferredSize call sped up the method substantially.
-     */
-    private static Rectangle iconR = new Rectangle();
-    private static Rectangle textR = new Rectangle();
-    private static Rectangle viewR = new Rectangle();
-    private static Insets viewInsets = new Insets(0, 0, 0, 0);
-
-
     public Dimension getPreferredSize(JComponent c)
     {
         JLabel label = (JLabel)c;
         String text = label.getText();
         Icon icon = (label.isEnabled()) ? label.getIcon() :
                                           label.getDisabledIcon();
-        Insets insets = label.getInsets(viewInsets);
+        Insets insets = label.getInsets(null);
         Font font = label.getFont();
 
         int dx = insets.left + insets.right;
@@ -242,6 +224,9 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
         }
         else {
             FontMetrics fm = label.getFontMetrics(font);
+            Rectangle iconR = new Rectangle();
+            Rectangle textR = new Rectangle();
+            Rectangle viewR = new Rectangle();
 
             iconR.x = iconR.y = iconR.width = iconR.height = 0;
             textR.x = textR.y = textR.width = textR.height = 0;

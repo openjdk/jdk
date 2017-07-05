@@ -72,7 +72,7 @@ public class ElementIterator implements Cloneable {
 
 
     private Element root;
-    private Stack elementStack = null;
+    private Stack<StackItem> elementStack = null;
 
     /**
      * The StackItem class stores the element
@@ -148,9 +148,9 @@ public class ElementIterator implements Cloneable {
         try {
             ElementIterator it = new ElementIterator(root);
             if (elementStack != null) {
-                it.elementStack = new Stack();
+                it.elementStack = new Stack<StackItem>();
                 for (int i = 0; i < elementStack.size(); i++) {
-                    StackItem item = (StackItem)elementStack.elementAt(i);
+                    StackItem item = elementStack.elementAt(i);
                     StackItem clonee = (StackItem)item.clone();
                     it.elementStack.push(clonee);
                 }
@@ -173,7 +173,7 @@ public class ElementIterator implements Cloneable {
             return null;
         }
 
-        elementStack = new Stack();
+        elementStack = new Stack<StackItem>();
         if (root.getElementCount() != 0) {
             elementStack.push(new StackItem(root));
         }
@@ -209,7 +209,7 @@ public class ElementIterator implements Cloneable {
           get a handle to the element on top of the stack.
         */
         if (! elementStack.empty()) {
-            StackItem item = (StackItem)elementStack.peek();
+            StackItem item = elementStack.peek();
             Element elem = item.getElement();
             int index = item.getIndex();
             // self reference
@@ -247,7 +247,7 @@ public class ElementIterator implements Cloneable {
 
         // get a handle to the element on top of the stack
 
-        StackItem item = (StackItem)elementStack.peek();
+        StackItem item = elementStack.peek();
         Element elem = item.getElement();
         int index = item.getIndex();
 
@@ -272,7 +272,7 @@ public class ElementIterator implements Cloneable {
             if (!elementStack.isEmpty()) {
                 /* Increment the child index for the item that
                    is now on top of the stack. */
-                StackItem top = (StackItem)elementStack.peek();
+                StackItem top = elementStack.peek();
                 top.incrementIndex();
                 /* We now want to return its next child, therefore
                    call next() recursively. */
@@ -300,7 +300,7 @@ public class ElementIterator implements Cloneable {
 
         // get a handle to the element on top of the stack
         //
-        StackItem item = (StackItem)elementStack.peek();
+        StackItem item = elementStack.peek();
         Element elem = item.getElement();
         int index = item.getIndex();
 
@@ -320,8 +320,8 @@ public class ElementIterator implements Cloneable {
             /* We need to return either the item
                below the top item or one of the
                former's children. */
-            Object top = elementStack.pop();
-            item = (StackItem)elementStack.peek();
+            StackItem top = elementStack.pop();
+            item = elementStack.peek();
 
             // restore the top item.
             elementStack.push(top);

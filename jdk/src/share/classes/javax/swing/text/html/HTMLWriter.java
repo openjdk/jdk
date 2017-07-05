@@ -46,7 +46,7 @@ public class HTMLWriter extends AbstractWriter {
      * Stores all elements for which end tags have to
      * be emitted.
      */
-    private Stack blockElementStack = new Stack();
+    private Stack<Element> blockElementStack = new Stack<Element>();
     private boolean inContent = false;
     private boolean inPre = false;
     /** When inPre is true, this will indicate the end offset of the pre
@@ -62,12 +62,12 @@ public class HTMLWriter extends AbstractWriter {
      * character level attributes.  Examples include
      * &lt;b&gt;, &lt;i&gt;, &lt;font&gt;, and &lt;a&gt;.
      */
-    private Vector tags = new Vector(10);
+    private Vector<HTML.Tag> tags = new Vector<HTML.Tag>(10);
 
     /**
      * Values for the tags.
      */
-    private Vector tagValues = new Vector(10);
+    private Vector<Object> tagValues = new Vector<Object>(10);
 
     /**
      * Used when writing out content.
@@ -77,7 +77,7 @@ public class HTMLWriter extends AbstractWriter {
     /*
      * This is used in closeOutUnwantedEmbeddedTags.
      */
-    private Vector tagsToRemove = new Vector(10);
+    private Vector<HTML.Tag> tagsToRemove = new Vector<HTML.Tag>(10);
 
     /**
      * Set to true after the head has been output.
@@ -133,7 +133,7 @@ public class HTMLWriter extends AbstractWriter {
     public void write() throws IOException, BadLocationException {
         ElementIterator it = getElementIterator();
         Element current = null;
-        Element next = null;
+        Element next;
 
         wroteHead = false;
         setCurrentLineLength(0);
@@ -169,7 +169,7 @@ public class HTMLWriter extends AbstractWriter {
                        item on top of the stack, is the parent of the
                        next.
                     */
-                    Element top = (Element)blockElementStack.peek();
+                    Element top = blockElementStack.peek();
                     while (top != next.getParentElement()) {
                         /*
                            pop() will return top.
@@ -183,7 +183,7 @@ public class HTMLWriter extends AbstractWriter {
                             }
                             endTag(top);
                         }
-                        top = (Element)blockElementStack.peek();
+                        top = blockElementStack.peek();
                     }
                 } else if (current.getParentElement() == next.getParentElement()) {
                     /*
@@ -191,7 +191,7 @@ public class HTMLWriter extends AbstractWriter {
                        is correct.  But, we need to make sure that if current is
                        on the stack, we pop it off, and put out its end tag.
                     */
-                    Element top = (Element)blockElementStack.peek();
+                    Element top = blockElementStack.peek();
                     if (top == current) {
                         blockElementStack.pop();
                         endTag(top);
@@ -219,7 +219,7 @@ public class HTMLWriter extends AbstractWriter {
             endTag(current);
         }
         while (!blockElementStack.empty()) {
-            current = (Element)blockElementStack.pop();
+            current = blockElementStack.pop();
             if (!synthesizedElement(current)) {
                 AttributeSet attrs = current.getAttributes();
                 if (!matchNameAttribute(attrs, HTML.Tag.PRE) &&
@@ -308,7 +308,7 @@ public class HTMLWriter extends AbstractWriter {
             //
             if (nameTag != null && endTag != null &&
                 (endTag instanceof String) &&
-                ((String)endTag).equals("true")) {
+                endTag.equals("true")) {
                 outputEndTag = true;
             }
 
@@ -769,7 +769,7 @@ public class HTMLWriter extends AbstractWriter {
         int size = tags.size();
         // First, find all the tags that need to be removed.
         for (int i = size - 1; i >= 0; i--) {
-            t = (HTML.Tag)tags.elementAt(i);
+            t = tags.elementAt(i);
             tValue = tagValues.elementAt(i);
             if ((attr == null) || noMatchForTagInAttributes(attr, t, tValue)) {
                 firstIndex = i;
@@ -780,7 +780,7 @@ public class HTMLWriter extends AbstractWriter {
             // Then close them out.
             boolean removeAll = ((size - firstIndex) == tagsToRemove.size());
             for (int i = size - 1; i >= firstIndex; i--) {
-                t = (HTML.Tag)tags.elementAt(i);
+                t = tags.elementAt(i);
                 if (removeAll || tagsToRemove.contains(t)) {
                     tags.removeElementAt(i);
                     tagValues.removeElementAt(i);
@@ -794,7 +794,7 @@ public class HTMLWriter extends AbstractWriter {
             // as we closed them out, but they should remain open.
             size = tags.size();
             for (int i = firstIndex; i < size; i++) {
-                t = (HTML.Tag)tags.elementAt(i);
+                t = tags.elementAt(i);
                 write('<');
                 write(t.toString());
                 Object o = tagValues.elementAt(i);
@@ -813,11 +813,8 @@ public class HTMLWriter extends AbstractWriter {
      * false
      */
     private boolean isFormElementWithContent(AttributeSet attr) {
-        if (matchNameAttribute(attr, HTML.Tag.TEXTAREA) ||
-            matchNameAttribute(attr, HTML.Tag.SELECT)) {
-            return true;
-        }
-        return false;
+        return matchNameAttribute(attr, HTML.Tag.TEXTAREA) ||
+                matchNameAttribute(attr, HTML.Tag.SELECT);
     }
 
 
