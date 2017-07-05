@@ -39,7 +39,7 @@ INTERIM_MODULES_LIST := $(call CommaList, $(INTERIM_IMAGE_MODULES))
 JMODS := $(patsubst %, $(IMAGES_OUTPUTDIR)/jmods/%.jmod, $(INTERIM_IMAGE_MODULES))
 
 JLINK_TOOL := $(JLINK) \
-    --modulepath $(IMAGES_OUTPUTDIR)/jmods \
+    --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN)
 
 $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
@@ -48,7 +48,7 @@ $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(RM) -r $(INTERIM_IMAGE_DIR)
 	$(JLINK_TOOL) \
 	    --output $(INTERIM_IMAGE_DIR) \
-	    --addmods $(INTERIM_MODULES_LIST)
+	    --add-modules $(INTERIM_MODULES_LIST)
 	$(TOUCH) $@
 
 TARGETS += $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
