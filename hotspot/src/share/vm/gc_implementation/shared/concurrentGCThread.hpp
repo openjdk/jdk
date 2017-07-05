@@ -93,6 +93,9 @@ class SurrogateLockerThread: public JavaThread {
  public:
   static SurrogateLockerThread* make(TRAPS);
 
+  // Terminate VM with error message that SLT needed but not yet created.
+  static void report_missing_slt();
+
   SurrogateLockerThread();
 
   bool is_hidden_from_external_view() const     { return true; }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 #
 # Makefile to run various hotspot tests
 #
+
+ALT_MAKE ?= closed
+
+-include $(ALT_MAKE)/Makefile
 
 GETMIXEDPATH=echo
 
@@ -305,14 +309,27 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
 
 PHONY_LIST += jtreg_tests
 
+# flags used to execute java in test targets
+TEST_FLAGS += -version -Xinternalversion -X -help 
+
+sanitytest: prep $(PRODUCT_HOME)
+	@for flag in $(TEST_FLAGS);                                             \
+	do                                                                      \
+	    echo Executing java $(JAVA_OPTIONS) $$flag;                         \
+	    $(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) $$flag;                    \
+	    res=$$?;                                                            \
+	    if [ $$res -ne 0 ]; then                                            \
+	        exit $$res;                                                     \
+	    fi;                                                                 \
+	done
+
+PHONY_LIST += sanitytest
+
 ################################################################
 
 # clienttest (make sure various basic java client options work)
 
-hotspot_clienttest clienttest: prep $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+hotspot_clienttest clienttest: sanitytest
 	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes.jsa
 	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes.jsa
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
@@ -323,10 +340,7 @@ PHONY_LIST += hotspot_clienttest clienttest
 
 # minimaltest (make sure various basic java minimal options work)
 
-hotspot_minimaltest minimaltest: prep $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+hotspot_minimaltest minimaltest: sanitytest
 
 PHONY_LIST += hotspot_minimaltest minimaltest
 
@@ -334,10 +348,7 @@ PHONY_LIST += hotspot_minimaltest minimaltest
 
 # servertest (make sure various basic java server options work)
 
-hotspot_servertest servertest: prep $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+hotspot_servertest servertest: sanitytest
 
 PHONY_LIST += hotspot_servertest servertest
 

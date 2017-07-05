@@ -332,7 +332,7 @@ class CompileReplay : public StackObj {
   // Lookup a klass
   Klass* resolve_klass(const char* klass, TRAPS) {
     Symbol* klass_name = SymbolTable::lookup(klass, (int)strlen(klass), CHECK_NULL);
-    return SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, CHECK_NULL);
+    return SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
   }
 
   // Parse the standard tuple of <klass> <name> <signature>

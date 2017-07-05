@@ -61,8 +61,8 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   if (!_head->is_Loop()) {
     return false;
   }
-  uint nodes_left = MaxNodeLimit - phase->C->live_nodes();
-  if (2 * _body.size() > nodes_left) {
+  int nodes_left = phase->C->max_node_limit() - phase->C->live_nodes();
+  if ((int)(2 * _body.size()) > nodes_left) {
     return false; // Too speculative if running low on nodes.
   }
   LoopNode* head = _head->as_Loop();

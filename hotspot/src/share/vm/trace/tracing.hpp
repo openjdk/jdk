@@ -28,4 +28,4 @@
 #include "tracefiles/traceEventClasses.hpp"
 #include "tracefiles/traceEventIds.hpp"
 
-#endif
+#endif // SHARE_VM_TRACE_TRACING_HPP

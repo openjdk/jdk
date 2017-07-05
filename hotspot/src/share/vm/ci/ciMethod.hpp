@@ -91,7 +91,7 @@ class ciMethod : public ciMetadata {
   BCEscapeAnalyzer*   _bcea;
 #endif
 
-  ciMethod(methodHandle h_m);
+  ciMethod(methodHandle h_m, ciInstanceKlass* holder);
   ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
   Method* get_Method() const {

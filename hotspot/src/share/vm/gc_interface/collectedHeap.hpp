@@ -644,10 +644,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // For each context in contexts, set the corresponding entries in the totals
   // and accuracy arrays to the current values held by the statistics.  Each
   // array should be of length len.
-  virtual void copy_allocation_context_stats(const jint* contexts,
+  // Returns true if there are more stats available.
+  virtual bool copy_allocation_context_stats(const jint* contexts,
                                              jlong* totals,
                                              jbyte* accuracy,
-                                             jint len) { }
+                                             jint len) {
+    return false;
+  }
 
   /////////////// Unit tests ///////////////
 
