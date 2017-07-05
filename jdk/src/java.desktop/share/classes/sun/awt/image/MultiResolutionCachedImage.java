@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.AbstractMultiResolutionImage;
 
 public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
@@ -44,17 +45,30 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
     private int availableInfo;
 
     public MultiResolutionCachedImage(int baseImageWidth, int baseImageHeight,
-            BiFunction<Integer, Integer, Image> mapper) {
-        this(baseImageWidth, baseImageHeight, new Dimension[]{new Dimension(
-            baseImageWidth, baseImageHeight)
+                                      BiFunction<Integer, Integer, Image> mapper)
+    {
+        this(baseImageWidth, baseImageHeight,
+             new Dimension[]{new Dimension( baseImageWidth, baseImageHeight)
         }, mapper);
     }
 
     public MultiResolutionCachedImage(int baseImageWidth, int baseImageHeight,
-            Dimension2D[] sizes, BiFunction<Integer, Integer, Image> mapper) {
+                                      Dimension2D[] sizes,
+                                      BiFunction<Integer, Integer, Image> mapper)
+    {
+        this(baseImageWidth, baseImageHeight, sizes, mapper, true);
+    }
+
+    private MultiResolutionCachedImage(int baseImageWidth, int baseImageHeight,
+                                       Dimension2D[] sizes,
+                                       BiFunction<Integer, Integer, Image> mapper,
+                                       boolean copySizes)
+    {
         this.baseImageWidth = baseImageWidth;
         this.baseImageHeight = baseImageHeight;
-        this.sizes = (sizes == null) ? null : Arrays.copyOf(sizes, sizes.length);
+        this.sizes = (copySizes && sizes != null)
+                                ? Arrays.copyOf(sizes, sizes.length)
+                                : sizes;
         this.mapper = mapper;
     }
 
@@ -97,6 +111,35 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
         return new MultiResolutionCachedImage(baseImageWidth, baseImageHeight,
                 sizes, (width, height) ->
                         mapper.apply(getResolutionVariant(width, height)));
+    }
+
+    public static Image map(MultiResolutionImage mrImage,
+                            Function<Image, Image> mapper) {
+
+        if (mrImage instanceof MultiResolutionToolkitImage) {
+            MultiResolutionToolkitImage mrtImage =
+                    (MultiResolutionToolkitImage) mrImage;
+            return MultiResolutionToolkitImage.map(mrtImage, mapper);
+        }
+
+        BiFunction<Integer, Integer, Image> sizeMapper
+                = (w, h) -> mapper.apply(mrImage.getResolutionVariant(w, h));
+
+        if (mrImage instanceof MultiResolutionCachedImage) {
+            MultiResolutionCachedImage mrcImage
+                    = (MultiResolutionCachedImage) mrImage;
+
+            return new MultiResolutionCachedImage(mrcImage.baseImageWidth,
+                                                  mrcImage.baseImageHeight,
+                                                  mrcImage.sizes,
+                                                  sizeMapper,
+                                                  false);
+        }
+
+        Image image = (Image) mrImage;
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        return new MultiResolutionCachedImage(width, height, sizeMapper);
     }
 
     @Override

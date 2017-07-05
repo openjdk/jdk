@@ -25,15 +25,14 @@
  * @test
  * @bug 8149383
  * @summary -Xlog:biasedlocking should have logging from statements in the source code
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver BiasedLockingTest
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class BiasedLockingTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {

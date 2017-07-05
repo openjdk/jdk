@@ -26,11 +26,12 @@
  * @test RemovedDevelopFlagsTest
  * @bug 8146632
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
+ * @library /test/lib
  * @run driver RemovedDevelopFlagsTest
  */
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class RemovedDevelopFlagsTest {
     public static ProcessBuilder pb;

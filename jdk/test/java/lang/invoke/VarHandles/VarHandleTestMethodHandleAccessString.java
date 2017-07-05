@@ -210,11 +210,11 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, "foo", "bar");
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, "foo", "bar");
             }
-            assertEquals(success, true, "weakCompareAndSet String");
+            assertEquals(success, true, "weakCompareAndSetPlain String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, "bar", "weakCompareAndSet String value");
+            assertEquals(x, "bar", "weakCompareAndSetPlain String value");
         }
 
         {
@@ -240,11 +240,11 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(recv, "bar", "foo");
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, "bar", "foo");
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile String");
+            assertEquals(success, true, "weakCompareAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, "foo", "weakCompareAndSetVolatile String");
+            assertEquals(x, "foo", "weakCompareAndSet String");
         }
 
         // Compare set and get
@@ -255,11 +255,18 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             assertEquals(x, "bar", "getAndSet String value");
         }
 
+
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessString recv, Handles hs) throws Throwable {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String r = (String) hs.get(am).invokeExact(recv, "foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact(recv, "foo");
             });
@@ -359,11 +366,11 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact("foo", "bar");
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact("foo", "bar");
             }
-            assertEquals(success, true, "weakCompareAndSet String");
+            assertEquals(success, true, "weakCompareAndSetPlain String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, "bar", "weakCompareAndSet String value");
+            assertEquals(x, "bar", "weakCompareAndSetPlain String value");
         }
 
         {
@@ -389,26 +396,55 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact("bar", "foo");
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact("bar", "foo");
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile String");
+            assertEquals(success, true, "weakCompareAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, "foo", "weakCompareAndSetVolatile String");
+            assertEquals(x, "foo", "weakCompareAndSet String");
         }
 
         // Compare set and get
         {
-            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact( "bar");
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact("bar");
             assertEquals(o, "foo", "getAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, "bar", "getAndSet String value");
         }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact("bar");
+            assertEquals(o, "foo", "getAndSetAcquire String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, "bar", "getAndSetAcquire String value");
+        }
+
+        // Compare set and get
+        {
+            hs.get(TestAccessMode.SET).invokeExact("foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact("bar");
+            assertEquals(o, "foo", "getAndSetRelease String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, "bar", "getAndSetRelease String value");
+        }
+
 
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String r = (String) hs.get(am).invokeExact("foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String r = (String) hs.get(am).invokeExact("foo");
             });
@@ -511,11 +547,11 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, "foo", "bar");
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, "foo", "bar");
                 }
-                assertEquals(success, true, "weakCompareAndSet String");
+                assertEquals(success, true, "weakCompareAndSetPlain String");
                 String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, "bar", "weakCompareAndSet String value");
+                assertEquals(x, "bar", "weakCompareAndSetPlain String value");
             }
 
             {
@@ -541,20 +577,41 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(array, i, "bar", "foo");
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, "bar", "foo");
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile String");
+                assertEquals(success, true, "weakCompareAndSet String");
                 String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, "foo", "weakCompareAndSetVolatile String");
+                assertEquals(x, "foo", "weakCompareAndSet String");
             }
 
             // Compare set and get
             {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
                 String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, "bar");
                 assertEquals(o, "foo", "getAndSet String");
                 String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, "bar", "getAndSet String value");
             }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
+                String o = (String) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetAcquire String");
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, "bar", "getAndSetAcquire String value");
+            }
+
+            {
+                hs.get(TestAccessMode.SET).invokeExact(array, i, "foo");
+
+                String o = (String) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, "bar");
+                assertEquals(o, "foo", "getAndSetRelease String");
+                String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, "bar", "getAndSetRelease String value");
+            }
+
 
         }
     }
@@ -565,6 +622,12 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         final int i = 0;
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkUOE(am, () -> {
+                String o = (String) hs.get(am).invokeExact(array, i, "foo");
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             checkUOE(am, () -> {
                 String o = (String) hs.get(am).invokeExact(array, i, "foo");
             });
@@ -606,6 +669,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
                     String o = (String) hs.get(am).invokeExact(array, ci, "foo");
                 });
             }
+
 
         }
     }

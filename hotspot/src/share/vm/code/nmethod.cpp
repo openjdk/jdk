@@ -41,7 +41,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"

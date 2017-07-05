@@ -60,7 +60,7 @@ bool klassVtable::is_preinitialized_vtable() {
 void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
     GrowableArray<Method*>* all_mirandas, const Klass* super,
-    Array<Method*>* methods, AccessFlags class_flags,
+    Array<Method*>* methods, AccessFlags class_flags, u2 major_version,
     Handle classloader, Symbol* classname, Array<Klass*>* local_interfaces,
     TRAPS) {
   NoSafepointVerifier nsv;
@@ -77,7 +77,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     assert(methods->at(i)->is_method(), "must be a Method*");
     methodHandle mh(THREAD, methods->at(i));
 
-    if (needs_new_vtable_entry(mh, super, classloader, classname, class_flags, THREAD)) {
+    if (needs_new_vtable_entry(mh, super, classloader, classname, class_flags, major_version, THREAD)) {
       vtable_length += vtableEntry::size(); // we need a new entry
     }
   }
@@ -256,10 +256,15 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 
     // In class hierarchies where the accessibility is not increasing (i.e., going from private ->
     // package_private -> public/protected), the vtable might actually be smaller than our initial
-    // calculation.
-    assert(initialized <= _length, "vtable initialization failed");
-    for(;initialized < _length; initialized++) {
-      put_method_at(NULL, initialized);
+    // calculation, for classfile versions for which we do not do transitive override
+    // calculations.
+    if (ik()->major_version() >= VTABLE_TRANSITIVE_OVERRIDE_VERSION) {
+      assert(initialized == _length, "vtable initialization failed");
+    } else {
+      assert(initialized <= _length, "vtable initialization failed");
+      for(;initialized < _length; initialized++) {
+        table()[initialized].clear();
+      }
     }
     NOT_PRODUCT(verify(tty, true));
   }
@@ -298,9 +303,9 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
           ResourceMark rm(THREAD);
           outputStream* logst = Log(vtables)::trace_stream();
           char* sig = target_method()->name_and_sig_as_C_string();
-          logst->print("transitive overriding superclass %s with %s::%s index %d, original flags: ",
+          logst->print("transitive overriding superclass %s with %s index %d, original flags: ",
                        supersuperklass->internal_name(),
-                       _klass->internal_name(), sig, vtable_index);
+                       sig, vtable_index);
           super_method->print_linkage_flags(logst);
           logst->print("overriders flags: ");
           target_method->print_linkage_flags(logst);
@@ -330,11 +335,11 @@ static void log_vtables(int i, bool overrides, methodHandle target_method,
     outputStream* logst = Log(vtables)::trace_stream();
     char* sig = target_method()->name_and_sig_as_C_string();
     if (overrides) {
-      logst->print("overriding with %s::%s index %d, original flags: ",
-                   target_klass->internal_name(), sig, i);
+      logst->print("overriding with %s index %d, original flags: ",
+                   sig, i);
     } else {
-      logst->print("NOT overriding with %s::%s index %d, original flags: ",
-                   target_klass->internal_name(), sig, i);
+      logst->print("NOT overriding with %s index %d, original flags: ",
+                   sig, i);
     }
     super_method->print_linkage_flags(logst);
     logst->print("overriders flags: ");
@@ -566,6 +571,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
                                          Handle classloader,
                                          Symbol* classname,
                                          AccessFlags class_flags,
+                                         u2 major_version,
                                          TRAPS) {
   if (class_flags.is_interface()) {
     // Interfaces do not use vtables, except for java.lang.Object methods,
@@ -646,8 +652,12 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
       }
     }
 
-    // Start with lookup result and continue to search up
-    k = superk->super(); // haven't found an override match yet; continue to look
+    // Start with lookup result and continue to search up, for versions supporting transitive override
+    if (major_version >= VTABLE_TRANSITIVE_OVERRIDE_VERSION) {
+      k = superk->super(); // haven't found an override match yet; continue to look
+    } else {
+      break;
+    }
   }
 
   // if the target method is public or protected it may have a matching
@@ -1500,15 +1510,22 @@ void klassVtable::print() {
 
 void vtableEntry::verify(klassVtable* vt, outputStream* st) {
   NOT_PRODUCT(FlagSetting fs(IgnoreLockingAssertions, true));
-  assert(method() != NULL, "must have set method");
-  method()->verify();
-  // we sub_type, because it could be a miranda method
-  if (!vt->klass()->is_subtype_of(method()->method_holder())) {
-#ifndef PRODUCT
-    print();
-#endif
-    fatal("vtableEntry " PTR_FORMAT ": method is from subclass", p2i(this));
+  KlassHandle vtklass_h = vt->klass();
+  Klass* vtklass = vtklass_h();
+  if (vtklass->is_instance_klass() &&
+     (InstanceKlass::cast(vtklass)->major_version() >= klassVtable::VTABLE_TRANSITIVE_OVERRIDE_VERSION)) {
+    assert(method() != NULL, "must have set method");
   }
+  if (method() != NULL) {
+    method()->verify();
+    // we sub_type, because it could be a miranda method
+    if (!vtklass_h->is_subtype_of(method()->method_holder())) {
+#ifndef PRODUCT
+      print();
+#endif
+      fatal("vtableEntry " PTR_FORMAT ": method is from subclass", p2i(this));
+    }
+ }
 }
 
 #ifndef PRODUCT

@@ -27,18 +27,21 @@
  * Started failing on 2016.06.24 due to 8160376 on MacOS X so quarantine
  * it on that platform:
  * @requires os.family != "mac"
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.memory
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
  *          jdk.hotspot.agent/sun.jvm.hotspot.tools
  *          java.management
- * @build SASymbolTableTestAgent SASymbolTableTestAttachee jdk.test.lib.*
+ * @build SASymbolTableTestAgent SASymbolTableTestAttachee
  * @run main SASymbolTableTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 
 /*
  * The purpose of this test is to validate that we can use SA to

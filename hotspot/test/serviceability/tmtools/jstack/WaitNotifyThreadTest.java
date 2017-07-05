@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@
  *           monitor info have to disappear from the stack.
  *           Repeats the same scenario calling interrupt() method
  * @modules java.base/jdk.internal.misc
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @library ../share
- * @build common.*
- *
  * @run main/othervm -XX:+UsePerfData WaitNotifyThreadTest
  */
 import common.ToolResults;

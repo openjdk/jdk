@@ -24,12 +24,11 @@
 /*
  * @test
  * @summary check calls from interpreted to native using InvokeDynamic
- * @library /test/lib /testlibrary /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.org.objectweb.asm
  *
- * @build compiler.calls.common.InvokeDynamic
- *        compiler.calls.common.InvokeDynamicPatcher
+ * @build sun.hotspot.WhiteBox
  * @run main compiler.calls.common.InvokeDynamicPatcher
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission

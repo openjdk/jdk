@@ -21,8 +21,8 @@
  * questions.
  */
 import java.io.File;
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.util.ArrayList;
 
 /*
@@ -31,8 +31,7 @@ import java.util.ArrayList;
  * @summary Check that availableProcessors reports the correct value when running in a cpuset on linux
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.*
+ * @library /test/lib
  * @run driver AvailableProcessors
  */
 public class AvailableProcessors {

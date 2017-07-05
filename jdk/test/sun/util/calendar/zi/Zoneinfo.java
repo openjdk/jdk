@@ -373,6 +373,7 @@ class Zoneinfo {
         tz.getOffsetIndex(zrec.getGmtOffset());
 
         int lastGmtOffsetValue = -1;
+        ZoneRec prevzrec = null;
         int currentSave = 0;
         boolean usedZone;
         for (int zindex = 0; zindex < zone.size(); zindex++) {
@@ -441,6 +442,15 @@ class Zoneinfo {
                                                                      currentSave);
                             if (zrec.hasUntil()) {
                                 if (transition >= zrec.getUntilTime(currentSave)) {
+                                    // If the GMT offset changed from the previous one,
+                                    // record fromTime as a transition.
+                                    if (!fromTimeUsed && prevzrec != null
+                                        && gmtOffset != prevzrec.getGmtOffset()) {
+                                        tz.addTransition(fromTime,
+                                                         tz.getOffsetIndex(gmtOffset+currentSave),
+                                                         tz.getDstOffsetIndex(currentSave));
+                                        fromTimeUsed = true; // for consistency
+                                    }
                                     break year_loop;
                                 }
                             }
@@ -451,8 +461,6 @@ class Zoneinfo {
 
                                     if (fromTime != minTime) {
                                         int prevsave;
-
-                                        ZoneRec prevzrec = zone.get(zindex - 1);
 
                                         // See if until time in the previous
                                         // ZoneRec is the same thing as the
@@ -555,6 +563,7 @@ class Zoneinfo {
                 fromYear = zrec.getUntilYear();
                 year = zrec.getUntilYear();
             }
+            prevzrec = zrec;
         }
 
         if (tz.getDSTType() == Timezone.UNDEF_DST) {

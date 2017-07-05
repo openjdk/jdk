@@ -394,7 +394,7 @@ int SolarisAttachListener::create_door() {
   snprintf(initial_path, sizeof(initial_path), "%s.tmp", door_path);
   RESTARTABLE(::creat(initial_path, S_IRUSR | S_IWUSR), fd);
   if (fd == -1) {
-    debug_only(warning("attempt to create %s failed", initial_path));
+    log_debug(attach)("attempt to create door file %s failed (%d)", initial_path, errno);
     ::door_revoke(dd);
     return -1;
   }
@@ -409,6 +409,7 @@ int SolarisAttachListener::create_door() {
       res = ::fattach(dd, initial_path);
     }
     if (res == -1) {
+      log_debug(attach)("unable to create door - fattach failed (%d)", errno);
       ::door_revoke(dd);
       dd = -1;
     }
@@ -419,12 +420,14 @@ int SolarisAttachListener::create_door() {
     if (::rename(initial_path, door_path) == -1) {
         ::close(dd);
         ::fdetach(initial_path);
+        log_debug(attach)("unable to create door - rename %s to %s failed (%d)", errno);
         dd = -1;
     }
   }
   if (dd >= 0) {
     set_door_descriptor(dd);
     set_door_path(door_path);
+    log_trace(attach)("door file %s created succesfully", door_path);
   } else {
     // unable to create door, attach it to file, or rename file into place
     ::unlink(initial_path);
@@ -602,7 +605,7 @@ void AttachListener::vm_start() {
   if (ret == 0) {
     ret = ::unlink(fn);
     if (ret == -1) {
-      debug_only(warning("failed to remove stale attach pid file at %s", fn));
+      log_debug(attach)("Failed to remove stale attach pid file at %s", fn);
     }
   }
 }
@@ -645,9 +648,13 @@ bool AttachListener::is_init_trigger() {
   struct stat64 st;
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
+    log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
              os::get_temp_directory(), os::current_process_id());
     RESTARTABLE(::stat64(fn, &st), ret);
+    if (ret == -1) {
+      log_debug(attach)("Failed to find attach file: %s", fn);
+    }
   }
   if (ret == 0) {
     // simple check to avoid starting the attach mechanism when

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,26 +858,23 @@ void TemplateTable::aload_0_internal(RewriteControl rc) {
     // get next byte
     __ load_unsigned_byte(rbx, at_bcp(Bytecodes::length_for(Bytecodes::_aload_0)));
 
-    // do actual aload_0
-    aload(0);
-
     // if _getfield then wait with rewrite
     __ cmpl(rbx, Bytecodes::_getfield);
     __ jcc(Assembler::equal, done);
 
-    // if _igetfield then reqrite to _fast_iaccess_0
+    // if _igetfield then rewrite to _fast_iaccess_0
     assert(Bytecodes::java_code(Bytecodes::_fast_iaccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
     __ cmpl(rbx, Bytecodes::_fast_igetfield);
     __ movl(bc, Bytecodes::_fast_iaccess_0);
     __ jccb(Assembler::equal, rewrite);
 
-    // if _agetfield then reqrite to _fast_aaccess_0
+    // if _agetfield then rewrite to _fast_aaccess_0
     assert(Bytecodes::java_code(Bytecodes::_fast_aaccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
     __ cmpl(rbx, Bytecodes::_fast_agetfield);
     __ movl(bc, Bytecodes::_fast_aaccess_0);
     __ jccb(Assembler::equal, rewrite);
 
-    // if _fgetfield then reqrite to _fast_faccess_0
+    // if _fgetfield then rewrite to _fast_faccess_0
     assert(Bytecodes::java_code(Bytecodes::_fast_faccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
     __ cmpl(rbx, Bytecodes::_fast_fgetfield);
     __ movl(bc, Bytecodes::_fast_faccess_0);
@@ -893,9 +890,10 @@ void TemplateTable::aload_0_internal(RewriteControl rc) {
     patch_bytecode(Bytecodes::_aload_0, bc, rbx, false);
 
     __ bind(done);
-  } else {
-    aload(0);
   }
+
+  // Do actual aload_0 (must do this after patch_bytecode which might call VM and GC might change oop).
+  aload(0);
 }
 
 void TemplateTable::istore() {

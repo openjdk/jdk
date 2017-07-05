@@ -27,10 +27,9 @@
  * @bug 8058354 8079208
  * @key gc
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @requires vm.gc.G1
- * @build jdk.test.lib.* sun.hotspot.WhiteBox
- * @build TestLargePageUseForAuxMemory
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages TestLargePageUseForAuxMemory
@@ -40,8 +39,10 @@ import java.lang.Math;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
 public class TestLargePageUseForAuxMemory {

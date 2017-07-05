@@ -4255,7 +4255,7 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
 #if INCLUDE_TRACE
   EventCompilerInlining event;
   if (event.should_commit()) {
-    event.set_compileID(compilation()->env()->task()->compile_id());
+    event.set_compileId(compilation()->env()->task()->compile_id());
     event.set_message(msg);
     event.set_succeeded(success);
     event.set_bci(bci());

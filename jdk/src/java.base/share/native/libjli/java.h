@@ -253,6 +253,13 @@ typedef struct {
 #define NULL_CHECK(NC_check_pointer) \
     NULL_CHECK_RETURN_VALUE(NC_check_pointer, )
 
+#define CHECK_EXCEPTION_RETURN_VALUE(CER_value) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            return CER_value; \
+        } \
+    } while (JNI_FALSE)
+
 #define CHECK_EXCEPTION_RETURN() \
     do { \
         if ((*env)->ExceptionOccurred(env)) { \
