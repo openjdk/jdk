@@ -73,7 +73,7 @@ esac
 # copy jar file into writeable location
 ${CP} ${TESTSRC}${FS}AlgOptions.jar ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}a%b${FS}percent.keystore \
     -storepass changeit \
     ${TESTCLASSES}${FS}AlgOptionsTmp.jar ok

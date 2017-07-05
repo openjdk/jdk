@@ -58,6 +58,7 @@ public class CheckOrigin {
 
             ProcessBuilder pb = ProcessTools.
                 createJavaProcessBuilder(
+                    "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
                     "-XX:+PrintGCDetails",
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
                     "-cp", System.getProperty("test.class.path") + File.pathSeparator + getToolsJarPath(),
@@ -84,12 +85,20 @@ public class CheckOrigin {
             setOptionUsingAttach("HeapDumpPath", "/a/sample/path");
 
             // check the origin field for all the options we set
+
+            // Not set, so should be default
             checkOrigin("ManagementServer", Origin.DEFAULT);
+            // Set on the command line
             checkOrigin("PrintGCDetails", Origin.VM_CREATION);
+            // Set in _JAVA_OPTIONS
             checkOrigin("PrintOopAddress", Origin.ENVIRON_VAR);
+            // Set in -XX:Flags file
             checkOrigin("PrintSafepointStatistics", Origin.CONFIG_FILE);
+            // Set through j.l.m
             checkOrigin("HeapDumpOnOutOfMemoryError", Origin.MANAGEMENT);
-            checkOrigin("NewSize", Origin.ERGONOMIC);
+            // Should be set by the VM, when we set UseConcMarkSweepGC
+            checkOrigin("UseParNewGC", Origin.ERGONOMIC);
+            // Set using attach
             checkOrigin("HeapDumpPath", Origin.ATTACH_ON_DEMAND);
         }
     }

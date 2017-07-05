@@ -45,9 +45,9 @@ esac
 KS=pt.jks
 JFILE=pt.jar
 
-KT="$TESTJAVA${FS}bin${FS}keytool -keystore $KS -validity 300 -keyalg rsa"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keystore $KS -validity 300 -keyalg rsa"
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS $JFILE
 

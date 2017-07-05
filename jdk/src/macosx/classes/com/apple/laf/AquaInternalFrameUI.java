@@ -787,8 +787,9 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     static final RecyclableSingleton<Icon> RESIZE_ICON = new RecyclableSingleton<Icon>() {
+        @Override
         protected Icon getInstance() {
-            return new AquaIcon.CachableJRSUIIcon(11, 11) {
+            return new AquaIcon.ScalingJRSUIIcon(11, 11) {
                 public void initIconPainter(final AquaPainter<JRSUIState> iconState) {
                     iconState.state.set(Widget.GROW_BOX_TEXTURED);
                     iconState.state.set(WindowType.UTILITY);

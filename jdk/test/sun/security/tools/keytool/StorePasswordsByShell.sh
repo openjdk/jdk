@@ -107,7 +107,7 @@ for i in $PBE_ALGORITHMS; do
 
     echo "Storing user password (protected by ${i})"
     echo "${USER_PWD}" | \
-        ${TESTJAVA}${FILESEP}bin${FILESEP}keytool ${IMPORTPASSWORD} \
+        ${TESTJAVA}${FILESEP}bin${FILESEP}keytool ${TESTTOOLVMOPTS} ${IMPORTPASSWORD} \
             -storetype pkcs12 -keystore mykeystore.p12 -storepass changeit \
             -alias "${ALIAS_PREFIX}${i}" ${KEYALG} > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -119,7 +119,7 @@ for i in $PBE_ALGORITHMS; do
 done
 echo
 
-COUNTER2=`${TESTJAVA}${FILESEP}bin${FILESEP}keytool -list -storetype pkcs12 \
+COUNTER2=`${TESTJAVA}${FILESEP}bin${FILESEP}keytool ${TESTTOOLVMOPTS} -list -storetype pkcs12 \
   -keystore mykeystore.p12 -storepass changeit | grep -c "${ALIAS_PREFIX}"`
 
 RESULT="stored ${COUNTER} user passwords, detected ${COUNTER2} user passwords"

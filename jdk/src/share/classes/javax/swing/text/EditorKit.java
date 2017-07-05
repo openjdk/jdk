@@ -39,9 +39,9 @@ import javax.swing.JEditorPane;
  * A kit can safely store editing state as an instance
  * of the kit will be dedicated to a text component.
  * New kits will normally be created by cloning a
- * prototype kit.  The kit will have it's
+ * prototype kit.  The kit will have its
  * <code>setComponent</code> method called to establish
- * it's relationship with a JTextComponent.
+ * its relationship with a JTextComponent.
  *
  * @author  Timothy Prinzing
  */

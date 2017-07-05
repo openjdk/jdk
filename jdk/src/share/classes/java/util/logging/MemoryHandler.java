@@ -82,7 +82,7 @@ package java.util.logging;
  * <li>   com.foo.MyHandler.level=INFO </li>
  * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
  * </ul>
- * <p>
+ *
  * @since 1.4
  */
 
@@ -267,7 +267,7 @@ public class MemoryHandler extends Handler {
      * whether it satisfies any <tt>Filter</tt>.  However it does <b>not</b>
      * check whether the <tt>LogRecord</tt> would result in a "push" of the
      * buffer contents. It will return false if the <tt>LogRecord</tt> is null.
-     * <p>
+     *
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.
      *

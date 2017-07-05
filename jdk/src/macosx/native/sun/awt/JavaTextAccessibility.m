@@ -40,6 +40,11 @@ static JNF_STATIC_MEMBER_CACHE(sjm_getAccessibleName, sjc_CAccessibility, "getAc
  */
 NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
     jint *values = (*env)->GetIntArrayElements(env, array, 0);
+    if (values == NULL) {
+        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
+        NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
+        return nil;
+    };
     NSValue *value = [NSValue valueWithRange:NSMakeRange(values[0], values[1] - values[0])];
     (*env)->ReleaseIntArrayElements(env, array, values, 0);
     return value;
@@ -285,6 +290,11 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
 
     // We cheat because we know that the array is 4 elements long (x, y, width, height)
     jdouble *values = (*env)->GetDoubleArrayElements(env, axBounds, 0);
+    if (values == NULL) {
+        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
+        NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__); 
+        return nil;
+    };
     NSRect bounds;
     bounds.origin.x = values[0];
     bounds.origin.y = [[[[self view] window] screen] frame].size.height - values[1] - values[3]; //values[1] is y-coord from top-left of screen. Flip. Account for the height (values[3]) when flipping

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,11 +310,19 @@ public class DrawImage implements DrawImagePipe
         return false;
     }
 
-    /*
-     * Return a BufferedImage of the requested type with the indicated
-     * subimage of the original image located at 0,0 in the new image.
-     * If a bgColor is supplied, composite the original image over that
-     * color with a SrcOver operation, otherwise make a SrcNoEa copy.
+    /**
+     * Return a non-accelerated BufferedImage of the requested type with the
+     * indicated subimage of the original image located at 0,0 in the new image.
+     * If a bgColor is supplied, composite the original image over that color
+     * with a SrcOver operation, otherwise make a SrcNoEa copy.
+     * <p>
+     * Returned BufferedImage is not accelerated for two reasons:
+     * <ul>
+     * <li> Types of the image and surface are predefined, because these types
+     *      correspond to the TransformHelpers, which we know we have. And
+     *      acceleration can change the type of the surface
+     * <li> Image will be used only once and acceleration caching wouldn't help
+     * </ul>
      */
     BufferedImage makeBufferedImage(Image img, Color bgColor, int type,
                                     int sx1, int sy1, int sx2, int sy2)
@@ -324,6 +332,7 @@ public class DrawImage implements DrawImagePipe
         final BufferedImage bimg = new BufferedImage(width, height, type);
         final SunGraphics2D g2d = (SunGraphics2D) bimg.createGraphics();
         g2d.setComposite(AlphaComposite.Src);
+        bimg.setAccelerationPriority(0);
         if (bgColor != null) {
             g2d.setColor(bgColor);
             g2d.fillRect(0, 0, width, height);
