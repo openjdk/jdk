@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+package sun.misc;
 
-package com.sun.corba.se.internal.io;
+import java.security.CodeSigner;
+import java.security.cert.CRL;
 
-public class ObjectStreamClass {
-
-    /* Find out if the class has a static class initializer <clinit> */
-    private static native boolean hasStaticInitializer(Class cl);
-
+public interface JavaSecurityCodeSignerAccess {
+    void setCRLs(CodeSigner signer, CRL[] crls);
+    CRL[] getCRLs(CodeSigner signer);
 }

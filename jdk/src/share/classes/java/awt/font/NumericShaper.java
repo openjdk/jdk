@@ -1163,8 +1163,14 @@ public final class NumericShaper implements java.io.Serializable {
                         lastkey = newkey;
 
                         ctxKey = newkey;
-                        if (((mask & EASTERN_ARABIC) != 0) && (ctxKey == ARABIC_KEY || ctxKey == EASTERN_ARABIC_KEY)) {
+                        if (((mask & EASTERN_ARABIC) != 0) &&
+                             (ctxKey == ARABIC_KEY ||
+                              ctxKey == EASTERN_ARABIC_KEY)) {
                             ctxKey = EASTERN_ARABIC_KEY;
+                        } else if (((mask & ARABIC) != 0) &&
+                             (ctxKey == ARABIC_KEY ||
+                              ctxKey == EASTERN_ARABIC_KEY)) {
+                            ctxKey = ARABIC_KEY;
                         } else if ((mask & (1<<ctxKey)) == 0) {
                             ctxKey = EUROPEAN_KEY;
                         }

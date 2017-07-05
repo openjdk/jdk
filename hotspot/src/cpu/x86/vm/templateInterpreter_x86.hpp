@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
   // Size of interpreter code.  Increase if too small.  Interpreter will
   // fail with a guarantee ("not enough space for interpreter generation");
   // if too small.
-  // Run with +PrintInterpreterSize to get the VM to print out the size.
-  // Max size with JVMTI and TaggedStackInterpreter
+  // Run with +PrintInterpreter to get the VM to print out the size.
+  // Max size with JVMTI
 #ifdef AMD64
   const static int InterpreterCodeSize = 200 * 1024;
 #else

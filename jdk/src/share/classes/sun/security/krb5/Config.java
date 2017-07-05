@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class Config {
     public static synchronized void refresh() throws KrbException {
         singleton = new Config();
         KeyTab.refresh();
-        KrbKdcReq.KdcAccessibility.reset();
+        KrbKdcReq.initStatic();
     }
 
 

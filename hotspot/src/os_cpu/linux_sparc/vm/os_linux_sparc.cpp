@@ -153,7 +153,7 @@ static void current_stack_region(address* bottom, size_t* size) {
       if (rslt == ENOMEM) {
         vm_exit_out_of_memory(0, "pthread_getattr_np");
       } else {
-        fatal1("pthread_getattr_np failed with errno = %d", rslt);
+        fatal(err_msg("pthread_getattr_np failed with errno = %d", rslt));
       }
     }
 

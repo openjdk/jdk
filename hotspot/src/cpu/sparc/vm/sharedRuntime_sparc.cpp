@@ -547,26 +547,17 @@ class AdapterGenerator {
   void set_Rdisp(Register r)  { Rdisp = r; }
 
   void patch_callers_callsite();
-  void tag_c2i_arg(frame::Tag t, Register base, int st_off, Register scratch);
 
   // base+st_off points to top of argument
-  int arg_offset(const int st_off) { return st_off + Interpreter::value_offset_in_bytes(); }
+  int arg_offset(const int st_off) { return st_off; }
   int next_arg_offset(const int st_off) {
-    return st_off - Interpreter::stackElementSize() + Interpreter::value_offset_in_bytes();
-  }
-
-  int tag_offset(const int st_off) { return st_off + Interpreter::tag_offset_in_bytes(); }
-  int next_tag_offset(const int st_off) {
-    return st_off - Interpreter::stackElementSize() + Interpreter::tag_offset_in_bytes();
+    return st_off - Interpreter::stackElementSize;
   }
 
   // Argument slot values may be loaded first into a register because
   // they might not fit into displacement.
   RegisterOrConstant arg_slot(const int st_off);
   RegisterOrConstant next_arg_slot(const int st_off);
-
-  RegisterOrConstant tag_slot(const int st_off);
-  RegisterOrConstant next_tag_slot(const int st_off);
 
   // Stores long into offset pointed to by base
   void store_c2i_long(Register r, Register base,
@@ -653,23 +644,6 @@ void AdapterGenerator::patch_callers_callsite() {
   __ bind(L);
 }
 
-void AdapterGenerator::tag_c2i_arg(frame::Tag t, Register base, int st_off,
-                 Register scratch) {
-  if (TaggedStackInterpreter) {
-    RegisterOrConstant slot = tag_slot(st_off);
-    // have to store zero because local slots can be reused (rats!)
-    if (t == frame::TagValue) {
-      __ st_ptr(G0, base, slot);
-    } else if (t == frame::TagCategory2) {
-      __ st_ptr(G0, base, slot);
-      __ st_ptr(G0, base, next_tag_slot(st_off));
-    } else {
-      __ mov(t, scratch);
-      __ st_ptr(scratch, base, slot);
-    }
-  }
-}
-
 
 RegisterOrConstant AdapterGenerator::arg_slot(const int st_off) {
   RegisterOrConstant roc(arg_offset(st_off));
@@ -678,17 +652,6 @@ RegisterOrConstant AdapterGenerator::arg_slot(const int st_off) {
 
 RegisterOrConstant AdapterGenerator::next_arg_slot(const int st_off) {
   RegisterOrConstant roc(next_arg_offset(st_off));
-  return __ ensure_simm13_or_reg(roc, Rdisp);
-}
-
-
-RegisterOrConstant AdapterGenerator::tag_slot(const int st_off) {
-  RegisterOrConstant roc(tag_offset(st_off));
-  return __ ensure_simm13_or_reg(roc, Rdisp);
-}
-
-RegisterOrConstant AdapterGenerator::next_tag_slot(const int st_off) {
-  RegisterOrConstant roc(next_tag_offset(st_off));
   return __ ensure_simm13_or_reg(roc, Rdisp);
 }
 
@@ -718,19 +681,16 @@ void AdapterGenerator::store_c2i_long(Register r, Register base,
   }
 #endif // COMPILER2
 #endif // _LP64
-  tag_c2i_arg(frame::TagCategory2, base, st_off, r);
 }
 
 void AdapterGenerator::store_c2i_object(Register r, Register base,
                       const int st_off) {
   __ st_ptr (r, base, arg_slot(st_off));
-  tag_c2i_arg(frame::TagReference, base, st_off, r);
 }
 
 void AdapterGenerator::store_c2i_int(Register r, Register base,
                    const int st_off) {
   __ st (r, base, arg_slot(st_off));
-  tag_c2i_arg(frame::TagValue, base, st_off, r);
 }
 
 // Stores into offset pointed to by base
@@ -745,13 +705,11 @@ void AdapterGenerator::store_c2i_double(VMReg r_2,
   __ stf(FloatRegisterImpl::S, r_1->as_FloatRegister(), base, next_arg_slot(st_off));
   __ stf(FloatRegisterImpl::S, r_2->as_FloatRegister(), base, arg_slot(st_off) );
 #endif
-  tag_c2i_arg(frame::TagCategory2, base, st_off, G1_scratch);
 }
 
 void AdapterGenerator::store_c2i_float(FloatRegister f, Register base,
                                        const int st_off) {
   __ stf(FloatRegisterImpl::S, f, base, arg_slot(st_off));
-  tag_c2i_arg(frame::TagValue, base, st_off, G1_scratch);
 }
 
 void AdapterGenerator::gen_c2i_adapter(
@@ -786,14 +744,14 @@ void AdapterGenerator::gen_c2i_adapter(
   // Since all args are passed on the stack, total_args_passed*wordSize is the
   // space we need.  Add in varargs area needed by the interpreter. Round up
   // to stack alignment.
-  const int arg_size = total_args_passed * Interpreter::stackElementSize();
+  const int arg_size = total_args_passed * Interpreter::stackElementSize;
   const int varargs_area =
                  (frame::varargs_offset - frame::register_save_words)*wordSize;
   const int extraspace = round_to(arg_size + varargs_area, 2*wordSize);
 
   int bias = STACK_BIAS;
   const int interp_arg_offset = frame::varargs_offset*wordSize +
-                        (total_args_passed-1)*Interpreter::stackElementSize();
+                        (total_args_passed-1)*Interpreter::stackElementSize;
 
   Register base = SP;
 
@@ -814,7 +772,7 @@ void AdapterGenerator::gen_c2i_adapter(
 
   // First write G1 (if used) to where ever it must go
   for (int i=0; i<total_args_passed; i++) {
-    const int st_off = interp_arg_offset - (i*Interpreter::stackElementSize()) + bias;
+    const int st_off = interp_arg_offset - (i*Interpreter::stackElementSize) + bias;
     VMReg r_1 = regs[i].first();
     VMReg r_2 = regs[i].second();
     if (r_1 == G1_scratch->as_VMReg()) {
@@ -831,7 +789,7 @@ void AdapterGenerator::gen_c2i_adapter(
 
   // Now write the args into the outgoing interpreter space
   for (int i=0; i<total_args_passed; i++) {
-    const int st_off = interp_arg_offset - (i*Interpreter::stackElementSize()) + bias;
+    const int st_off = interp_arg_offset - (i*Interpreter::stackElementSize) + bias;
     VMReg r_1 = regs[i].first();
     VMReg r_2 = regs[i].second();
     if (!r_1->is_valid()) {
@@ -900,7 +858,7 @@ void AdapterGenerator::gen_c2i_adapter(
 #endif // _LP64
 
   __ mov((frame::varargs_offset)*wordSize -
-         1*Interpreter::stackElementSize()+bias+BytesPerWord, G1);
+         1*Interpreter::stackElementSize+bias+BytesPerWord, G1);
   // Jump to the interpreter just as if interpreter was doing it.
   __ jmpl(G3_scratch, 0, G0);
   // Setup Lesp for the call.  Cannot actually set Lesp as the current Lesp
@@ -1051,7 +1009,7 @@ void AdapterGenerator::gen_i2c_adapter(
     // ldx/lddf optimizations.
 
     // Load in argument order going down.
-    const int ld_off = (total_args_passed-i)*Interpreter::stackElementSize();
+    const int ld_off = (total_args_passed-i)*Interpreter::stackElementSize;
     set_Rdisp(G1_scratch);
 
     VMReg r_1 = regs[i].first();
@@ -1120,7 +1078,7 @@ void AdapterGenerator::gen_i2c_adapter(
   for (int i=0; i<total_args_passed; i++) {
     if (regs[i].first()->is_Register() && regs[i].second()->is_valid()) {
       // Load in argument order going down
-      int ld_off = (total_args_passed-i)*Interpreter::stackElementSize();
+      int ld_off = (total_args_passed-i)*Interpreter::stackElementSize;
       // Need to marshal 64-bit value from misaligned Lesp loads
       Register r = regs[i].first()->as_Register()->after_restore();
       if (r == G1 || r == G4) {
@@ -3062,7 +3020,7 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
           "test and remove; got more parms than locals");
   if (callee_locals < callee_parameters)
     return 0;                   // No adjustment for negative locals
-  int diff = (callee_locals - callee_parameters) * Interpreter::stackElementWords();
+  int diff = (callee_locals - callee_parameters) * Interpreter::stackElementWords;
   return round_to(diff, WordsPerLong);
 }
 

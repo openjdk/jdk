@@ -163,18 +163,6 @@ public final class JLayer<V extends Component>
     private static final LayerEventController eventController =
             new LayerEventController();
 
-    private static final long ACCEPTED_EVENTS =
-            AWTEvent.COMPONENT_EVENT_MASK |
-                    AWTEvent.CONTAINER_EVENT_MASK |
-                    AWTEvent.FOCUS_EVENT_MASK |
-                    AWTEvent.KEY_EVENT_MASK |
-                    AWTEvent.MOUSE_WHEEL_EVENT_MASK |
-                    AWTEvent.MOUSE_MOTION_EVENT_MASK |
-                    AWTEvent.MOUSE_EVENT_MASK |
-                    AWTEvent.INPUT_METHOD_EVENT_MASK |
-                    AWTEvent.HIERARCHY_EVENT_MASK |
-                    AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
-
     /**
      * Creates a new {@code JLayer} object with a {@code null} view component
      * and {@code null} {@link javax.swing.plaf.LayerUI}.
@@ -396,24 +384,14 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * Sets the bitmask of event types to receive by this {@code JLayer}.
-     * Here is the list of the supported event types:
-     * <ul>
-     * <li>AWTEvent.COMPONENT_EVENT_MASK</li>
-     * <li>AWTEvent.CONTAINER_EVENT_MASK</li>
-     * <li>AWTEvent.FOCUS_EVENT_MASK</li>
-     * <li>AWTEvent.KEY_EVENT_MASK</li>
-     * <li>AWTEvent.MOUSE_WHEEL_EVENT_MASK</li>
-     * <li>AWTEvent.MOUSE_MOTION_EVENT_MASK</li>
-     * <li>AWTEvent.MOUSE_EVENT_MASK</li>
-     * <li>AWTEvent.INPUT_METHOD_EVENT_MASK</li>
-     * <li>AWTEvent.HIERARCHY_EVENT_MASK</li>
-     * <li>AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK</li>
-     * </ul>
+     * Enables the events from JLayer and <b>all its descendants</b>
+     * defined by the specified event mask parameter
+     * to be delivered to the
+     * {@link LayerUI#eventDispatched(AWTEvent, JLayer)} method.
      * <p/>
-     * If {@code LayerUI} is installed,
-     * {@link javax.swing.plaf.LayerUI#eventDispatched(AWTEvent, JLayer)} method
-     * will only receive events that match the event mask.
+     * Events are delivered provided that {@code LayerUI} is set
+     * for this {@code JLayer} and the {@code JLayer}
+     * is displayable.
      * <p/>
      * The following example shows how to correclty use this method
      * in the {@code LayerUI} implementations:
@@ -433,19 +411,15 @@ public final class JLayer<V extends Component>
      *    }
      * </pre>
      *
-     * By default {@code JLayer} receives no events.
+     * By default {@code JLayer} receives no events and its event mask is {@code 0}.
      *
      * @param layerEventMask the bitmask of event types to receive
      *
-     * @throws IllegalArgumentException if the {@code layerEventMask} parameter
-     * contains unsupported event types
      * @see #getLayerEventMask()
+     * @see LayerUI#eventDispatched(AWTEvent, JLayer)
+     * @see Component#isDisplayable()
      */
     public void setLayerEventMask(long layerEventMask) {
-        if (layerEventMask != (layerEventMask & ACCEPTED_EVENTS)) {
-            throw new IllegalArgumentException(
-                    "The event bitmask contains unsupported event types");
-        }
         long oldEventMask = getLayerEventMask();
         this.eventMask = layerEventMask;
         firePropertyChange("layerEventMask", oldEventMask, layerEventMask);
@@ -629,6 +603,18 @@ public final class JLayer<V extends Component>
 
         private long currentEventMask;
 
+        private static final long ACCEPTED_EVENTS =
+                AWTEvent.COMPONENT_EVENT_MASK |
+                        AWTEvent.CONTAINER_EVENT_MASK |
+                        AWTEvent.FOCUS_EVENT_MASK |
+                        AWTEvent.KEY_EVENT_MASK |
+                        AWTEvent.MOUSE_WHEEL_EVENT_MASK |
+                        AWTEvent.MOUSE_MOTION_EVENT_MASK |
+                        AWTEvent.MOUSE_EVENT_MASK |
+                        AWTEvent.INPUT_METHOD_EVENT_MASK |
+                        AWTEvent.HIERARCHY_EVENT_MASK |
+                        AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
+
         @SuppressWarnings("unchecked")
         public void eventDispatched(AWTEvent event) {
             Object source = event.getSource();
@@ -660,6 +646,8 @@ public final class JLayer<V extends Component>
             for (Long mask : layerMaskList) {
                 combinedMask |= mask;
             }
+            // filter out all unaccepted events
+            combinedMask &= ACCEPTED_EVENTS;
             if (combinedMask == 0) {
                 removeAWTEventListener();
             } else if (getCurrentEventMask() != combinedMask) {

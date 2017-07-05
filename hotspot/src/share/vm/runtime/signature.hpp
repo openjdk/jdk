@@ -402,6 +402,9 @@ class SignatureStream : public StackObj {
   bool is_array() const;                         // True if this argument is an array
   BasicType type() const                         { return _type; }
   symbolOop as_symbol(TRAPS);
+  enum FailureMode { ReturnNull, CNFException, NCDFError };
+  klassOop as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
 
   // return same as_symbol except allocation of new symbols is avoided.
   symbolOop as_symbol_or_null();

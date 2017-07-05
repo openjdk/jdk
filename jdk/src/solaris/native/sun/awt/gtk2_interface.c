@@ -32,6 +32,7 @@
 #include "java_awt_Transparency.h"
 
 #define GTK2_LIB "libgtk-x11-2.0.so.0"
+#define GTHREAD_LIB "libgthread-2.0.so.0"
 
 #define G_TYPE_INVALID                  G_TYPE_MAKE_FUNDAMENTAL (0)
 #define G_TYPE_NONE                     G_TYPE_MAKE_FUNDAMENTAL (1)
@@ -75,6 +76,8 @@ const gint SELECTED   = 1 << 9;
 const gint DEFAULT    = 1 << 10;
 
 static void *gtk2_libhandle = NULL;
+static void *gthread_libhandle = NULL;
+static gboolean flag_g_thread_get_initialized = FALSE;
 static jmp_buf j;
 
 /* Widgets */
@@ -150,7 +153,6 @@ static GtkWidget *gtk2_widgets[_GTK_WIDGET_TYPE_SIZE];
 /*************************
  * Glib function pointers
  *************************/
-static void     (*fp_g_free)(gpointer mem);
 
 static gboolean (*fp_g_main_context_iteration)(GMainContext *context,
                                              gboolean may_block);
@@ -204,9 +206,6 @@ static void (*fp_gdk_drawable_get_size)(GdkDrawable *drawable,
 /************************
  * Gtk function pointers
  ************************/
-static gchar*   (*fp_gtk_check_version)(guint required_major,
-                                        guint required_minor,
-                                        guint required_micro);
 static gboolean (*fp_gtk_init_check)(int* argc, char** argv);
 
 /* Painting */
@@ -330,7 +329,6 @@ static void (*fp_gtk_menu_shell_append)(GtkMenuShell *menu_shell,
 static void (*fp_gtk_menu_item_set_submenu)(GtkMenuItem *menu_item,
         GtkWidget *submenu);
 static void (*fp_gtk_widget_realize)(GtkWidget *widget);
-static void (*fp_gtk_widget_destroy)(GtkWidget *widget);
 static GdkPixbuf* (*fp_gtk_widget_render_icon)(GtkWidget *widget,
         const gchar *stock_id, GtkIconSize size, const gchar *detail);
 static void (*fp_gtk_widget_set_name)(GtkWidget *widget, const gchar *name);
@@ -388,6 +386,15 @@ static void* dl_symbol(const char* name)
     return result;
 }
 
+static void* dl_symbol_gthread(const char* name)
+{
+    void* result = dlsym(gthread_libhandle, name);
+    if (!result)
+        longjmp(j, NO_SYMBOL_EXCEPTION);
+
+    return result;
+}
+
 gboolean gtk2_check_version()
 {
     if (gtk2_libhandle != NULL) {
@@ -414,6 +421,35 @@ gboolean gtk2_check_version()
     }
 }
 
+/**
+ * Functions for sun_awt_X11_GtkFileDialogPeer.c
+ */
+void gtk2_file_chooser_load()
+{
+    fp_gtk_file_chooser_get_filename = dl_symbol(
+            "gtk_file_chooser_get_filename");
+    fp_gtk_file_chooser_dialog_new = dl_symbol("gtk_file_chooser_dialog_new");
+    fp_gtk_file_chooser_set_current_folder = dl_symbol(
+            "gtk_file_chooser_set_current_folder");
+    fp_gtk_file_chooser_set_filename = dl_symbol(
+            "gtk_file_chooser_set_filename");
+    fp_gtk_file_filter_add_custom = dl_symbol("gtk_file_filter_add_custom");
+    fp_gtk_file_chooser_set_filter = dl_symbol("gtk_file_chooser_set_filter");
+    fp_gtk_file_chooser_get_type = dl_symbol("gtk_file_chooser_get_type");
+    fp_gtk_file_filter_new = dl_symbol("gtk_file_filter_new");
+    if (fp_gtk_check_version(2, 8, 0) == NULL) {
+        fp_gtk_file_chooser_set_do_overwrite_confirmation = dl_symbol(
+                "gtk_file_chooser_set_do_overwrite_confirmation");
+    }
+    fp_gtk_file_chooser_set_select_multiple = dl_symbol(
+            "gtk_file_chooser_set_select_multiple");
+    fp_gtk_file_chooser_get_current_folder = dl_symbol(
+            "gtk_file_chooser_get_current_folder");
+    fp_gtk_file_chooser_get_filenames = dl_symbol(
+            "gtk_file_chooser_get_filenames");
+    fp_gtk_g_slist_length = dl_symbol("g_slist_length");
+}
+
 gboolean gtk2_load()
 {
     gboolean result;
@@ -423,7 +459,9 @@ gboolean gtk2_load()
     char *gtk_modules_env;
 
     gtk2_libhandle = dlopen(GTK2_LIB, RTLD_LAZY | RTLD_LOCAL);
-    if (gtk2_libhandle == NULL)
+    gthread_libhandle = dlopen(GTHREAD_LIB, RTLD_LAZY | RTLD_LOCAL);
+
+    if (gtk2_libhandle == NULL || gthread_libhandle == NULL)
         return FALSE;
 
     if (setjmp(j) == 0)
@@ -597,6 +635,28 @@ gboolean gtk2_load()
         fp_gtk_range_get_adjustment =
             dl_symbol("gtk_range_get_adjustment");
 
+        fp_gtk_widget_hide = dl_symbol("gtk_widget_hide");
+        fp_gtk_main_quit = dl_symbol("gtk_main_quit");
+        fp_g_signal_connect_data = dl_symbol("g_signal_connect_data");
+        fp_gtk_widget_show = dl_symbol("gtk_widget_show");
+        fp_gtk_main = dl_symbol("gtk_main");
+
+        /**
+         * GLib thread system
+         */
+        fp_g_thread_init = dl_symbol_gthread("g_thread_init");
+        fp_gdk_threads_init = dl_symbol("gdk_threads_init");
+        fp_gdk_threads_enter = dl_symbol("gdk_threads_enter");
+        fp_gdk_threads_leave = dl_symbol("gdk_threads_leave");
+
+        /**
+         * Functions for sun_awt_X11_GtkFileDialogPeer.c
+         */
+        if (fp_gtk_check_version(2, 4, 0) == NULL) {
+            // The current GtkFileChooser is available from GTK+ 2.4
+            gtk2_file_chooser_load();
+        }
+
         /* Some functions may be missing in pre-2.4 GTK.
            We handle them specially here.
          */
@@ -626,6 +686,10 @@ gboolean gtk2_load()
     {
         dlclose(gtk2_libhandle);
         gtk2_libhandle = NULL;
+
+        dlclose(gthread_libhandle);
+        gthread_libhandle = NULL;
+
         return FALSE;
     }
 
@@ -678,6 +742,19 @@ gboolean gtk2_load()
     */
     handler = XSetErrorHandler(NULL);
     io_handler = XSetIOErrorHandler(NULL);
+
+    if (fp_gtk_check_version(2, 2, 0) == NULL) {
+        // Init the thread system to use GLib in a thread-safe mode
+        if (!flag_g_thread_get_initialized) {
+            flag_g_thread_get_initialized = TRUE;
+
+            fp_g_thread_init(NULL);
+
+            //According the GTK documentation, gdk_threads_init() should be
+            //called before gtk_init() or gtk_init_check()
+            fp_gdk_threads_init();
+        }
+    }
     result = (*fp_gtk_init_check)(NULL, NULL);
 
     XSetErrorHandler(handler);
@@ -722,6 +799,7 @@ int gtk2_unload()
 
     dlerror();
     dlclose(gtk2_libhandle);
+    dlclose(gthread_libhandle);
     if ((gtk2_error = dlerror()) != NULL)
     {
         return FALSE;
