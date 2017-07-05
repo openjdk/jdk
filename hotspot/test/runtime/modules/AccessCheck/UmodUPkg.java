@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @summary class p3.c3 defined in module m1 tries to access c4 defined in unnamed module.
+ * @summary class p3.c3 defined in module m1x tries to access c4 defined in unnamed module.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
@@ -48,10 +48,10 @@ import java.util.Set;
 import myloaders.MySameClassLoader;
 
 //
-// ClassLoader1 --> defines m1 --> packages p3
-//                  package p3 in m1 is exported unqualifiedly
+// ClassLoader1 --> defines m1x --> packages p3
+//                  package p3 in m1x is exported unqualifiedly
 //
-// class p3.c3 defined in m1 tries to access c4 defined in
+// class p3.c3 defined in m1x tries to access c4 defined in
 // in unnamed module.
 //
 // Two access attempts occur in this test:
@@ -66,38 +66,38 @@ public class UmodUPkg {
  // Create Layers over the boot layer to test different
  // accessing scenarios of a named module to an unnamed module.
 
- // Module m1 is a strict module and has not established
+ // Module m1x is a strict module and has not established
  // readability to an unnamed module that c4 is defined in.
  public void test_strictModuleLayer() throws Throwable {
 
-     // Define module:     m1
+     // Define module:     m1x
      // Can read:          java.base
      // Packages:          p3
      // Packages exported: p3 is exported unqualifiedly
-     ModuleDescriptor descriptor_m1 =
-             ModuleDescriptor.module("m1")
+     ModuleDescriptor descriptor_m1x =
+             ModuleDescriptor.newModule("m1x")
                      .requires("java.base")
                      .exports("p3")
                      .build();
 
      // Set up a ModuleFinder containing all modules for this layer.
-     ModuleFinder finder = ModuleLibrary.of(descriptor_m1);
+     ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
-     // Resolves "m1"
+     // Resolves "m1x"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+             .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
-     // map module m1 to class loader.
+     // map module m1x to class loader.
      // class c4 will be loaded in an unnamed module/loader.
      MySameClassLoader loader = new MySameClassLoader();
      Map<String, ClassLoader> map = new HashMap<>();
-     map.put("m1", loader);
+     map.put("m1x", loader);
 
-     // Create Layer that contains m1
+     // Create Layer that contains m1x
      Layer layer = Layer.boot().defineModules(cf, map::get);
 
-     assertTrue(layer.findLoader("m1") == loader);
+     assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
 
      // now use the same loader to load class p3.c3
@@ -106,55 +106,55 @@ public class UmodUPkg {
      // Attempt access
      try {
          p3_c3_class.newInstance();
-         throw new RuntimeException("Test Failed, strict module m1, type p3.c3, should not be able to access " +
+         throw new RuntimeException("Test Failed, strict module m1x, type p3.c3, should not be able to access " +
                                     "public type c4 defined in unnamed module");
      } catch (IllegalAccessError e) {
      }
  }
 
- // Module m1 is a strict module and has established
+ // Module m1x is a strict module and has established
  // readability to an unnamed module that c4 is defined in.
  public void test_strictModuleUnnamedReadableLayer() throws Throwable {
 
-     // Define module:     m1
+     // Define module:     m1x
      // Can read:          java.base
      // Packages:          p3
      // Packages exported: p3 is exported unqualifiedly
-     ModuleDescriptor descriptor_m1 =
-             ModuleDescriptor.module("m1")
+     ModuleDescriptor descriptor_m1x =
+             ModuleDescriptor.newModule("m1x")
                      .requires("java.base")
                      .exports("p3")
                      .build();
 
      // Set up a ModuleFinder containing all modules for this layer.
-     ModuleFinder finder = ModuleLibrary.of(descriptor_m1);
+     ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
-     // Resolves "m1"
+     // Resolves "m1x"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+             .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
      MySameClassLoader loader = new MySameClassLoader();
-     // map module m1 to class loader.
+     // map module m1x to class loader.
      // class c4 will be loaded in an unnamed module/loader.
      Map<String, ClassLoader> map = new HashMap<>();
-     map.put("m1", loader);
+     map.put("m1x", loader);
 
-     // Create Layer that contains m1
+     // Create Layer that contains m1x
      Layer layer = Layer.boot().defineModules(cf, map::get);
 
-     assertTrue(layer.findLoader("m1") == loader);
+     assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
 
      // now use the same loader to load class p3.c3ReadEdge
      Class p3_c3_class = loader.loadClass("p3.c3ReadEdge");
 
      try {
-        // Read edge between m1 and the unnamed module that loads c4 is established in
+        // Read edge between m1x and the unnamed module that loads c4 is established in
         // c3ReadEdge's ctor before attempting access.
         p3_c3_class.newInstance();
      } catch (IllegalAccessError e) {
-         throw new RuntimeException("Test Failed, module m1, type p3.c3ReadEdge, has established readability to " +
+         throw new RuntimeException("Test Failed, module m1x, type p3.c3ReadEdge, has established readability to " +
                                     "c4 loader's unnamed module, access should be allowed: " + e.getMessage());
      }
  }
