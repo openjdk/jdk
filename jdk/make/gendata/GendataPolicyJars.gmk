@@ -87,8 +87,7 @@ $(eval $(call SetupJarArchive, BUILD_US_EXPORT_POLICY_JAR, \
 
 $(US_EXPORT_POLICY_JAR_LIMITED): \
     $(US_EXPORT_POLICY_JAR_UNLIMITED)
-	$(ECHO) $(LOG_INFO) \
-	    Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
 TARGETS += $(US_EXPORT_POLICY_JAR_LIMITED) $(US_EXPORT_POLICY_JAR_UNLIMITED)
@@ -99,7 +98,7 @@ ifeq ($(UNLIMITED_CRYPTO), true)
 else
   $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_LIMITED)
 	$(install-file)
-endif 
+endif
 
 ifndef OPENJDK
   ifneq ($(UNLIMITED_CRYPTO), true)

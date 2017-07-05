@@ -113,6 +113,7 @@ class xmlStream;
 
 class nmethod : public CodeBlob {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class NMethodSweeper;
   friend class CodeCache;  // scavengable oops
  private:
@@ -392,6 +393,9 @@ class nmethod : public CodeBlob {
   int handler_table_size() const                  { return            handler_table_end() -            handler_table_begin(); }
   int nul_chk_table_size() const                  { return            nul_chk_table_end() -            nul_chk_table_begin(); }
 
+  int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
+  int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
+
   int total_size        () const;
 
   void dec_hotness_counter()        { _hotness_counter--; }
@@ -491,7 +495,7 @@ class nmethod : public CodeBlob {
   oop   oop_at(int index) const                   { return index == 0 ? (oop) NULL: *oop_addr_at(index); }
   oop*  oop_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
-    assert(index > 0 && index <= oops_size(), "must be a valid non-zero index");
+    assert(index > 0 && index <= oops_count(), "must be a valid non-zero index");
     assert(!_oops_are_stale, "oops are stale");
     return &oops_begin()[index - 1];
   }
@@ -501,12 +505,15 @@ class nmethod : public CodeBlob {
   Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
   Metadata**  metadata_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
-    assert(index > 0 && index <= metadata_size(), "must be a valid non-zero index");
+    assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
     return &metadata_begin()[index - 1];
   }
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
+
+  Method* attached_method(address call_pc);
+  Method* attached_method_before_pc(address pc);
 
   // Relocation support
 private:
@@ -602,10 +609,20 @@ public:
 #if INCLUDE_JVMCI
   oop jvmci_installed_code() { return _jvmci_installed_code ; }
   char* jvmci_installed_code_name(char* buf, size_t buflen);
-  void clear_jvmci_installed_code();
+
+  // Update the state of any InstalledCode instance associated with
+  // this nmethod based on the current value of _state.
   void maybe_invalidate_installed_code();
+
+  // Helper function to invalidate InstalledCode instances
+  static void invalidate_installed_code(Handle installed_code, TRAPS);
+
   oop speculation_log() { return _speculation_log ; }
-  void set_speculation_log(oop speculation_log) { _speculation_log = speculation_log;  }
+
+ private:
+  void clear_jvmci_installed_code();
+
+ public:
 #endif
 
   // GC support
@@ -696,6 +713,8 @@ public:
   void print_calls(outputStream* st)              PRODUCT_RETURN;
   void print_handler_table()                      PRODUCT_RETURN;
   void print_nul_chk_table()                      PRODUCT_RETURN;
+  void print_recorded_oops()                      PRODUCT_RETURN;
+  void print_recorded_metadata()                  PRODUCT_RETURN;
   void print_nmethod(bool print_code);
 
   // need to re-define this from CodeBlob else the overload hides it

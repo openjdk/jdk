@@ -38,6 +38,7 @@
 #include "jvm_aix.h"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
+#include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -197,9 +198,13 @@ int       os::Aix::_page_size = -1;
 // -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
 int       os::Aix::_on_pase = -1;
 
-// -1 = uninitialized, otherwise os version in the form 0xMMmm - MM:major, mm:minor
-//  E.g. 0x0601 for  AIX 6.1 or 0x0504 for OS/400 V5R4
-int       os::Aix::_os_version = -1;
+// 0 = uninitialized, otherwise 32 bit number:
+//  0xVVRRTTSS
+//  VV - major version
+//  RR - minor version
+//  TT - tech level, if known, 0 otherwise
+//  SS - service pack, if known, 0 otherwise
+uint32_t  os::Aix::_os_version = 0;
 
 int       os::Aix::_stack_page_size = -1;
 
@@ -358,7 +363,7 @@ static char cpu_arch[] = "ppc64";
 
 // Wrap the function "vmgetinfo" which is not available on older OS releases.
 static int checked_vmgetinfo(void *out, int command, int arg) {
-  if (os::Aix::on_pase() && os::Aix::os_version() < 0x0601) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
     guarantee(false, "cannot call vmgetinfo on AS/400 older than V6R1");
   }
   return ::vmgetinfo(out, command, arg);
@@ -367,7 +372,7 @@ static int checked_vmgetinfo(void *out, int command, int arg) {
 // Given an address, returns the size of the page backing that address.
 size_t os::Aix::query_pagesize(void* addr) {
 
-  if (os::Aix::on_pase() && os::Aix::os_version() < 0x0601) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
     // AS/400 older than V6R1: no vmgetinfo here, default to 4K
     return SIZE_4K;
   }
@@ -840,7 +845,7 @@ static void *java_start(Thread *thread) {
   trcVerbose("newborn Thread : pthread-id %u, ktid " UINT64_FORMAT
     ", stack %p ... %p, stacksize 0x%IX (%IB)",
     pthread_id, kernel_thread_id,
-    thread->stack_base() - thread->stack_size(),
+    thread->stack_end(),
     thread->stack_base(),
     thread->stack_size(),
     thread->stack_size());
@@ -1009,7 +1014,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   trcVerbose("attaching Thread : pthread-id %u, ktid " UINT64_FORMAT ", stack %p ... %p, stacksize 0x%IX (%IB)",
     pthread_id, kernel_thread_id,
-    thread->stack_base() - thread->stack_size(),
+    thread->stack_end(),
     thread->stack_base(),
     thread->stack_size(),
     thread->stack_size());
@@ -1211,7 +1216,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1491,6 +1496,10 @@ void os::print_os_info(outputStream* st) {
   st->print(name.machine);
   st->cr();
 
+  uint32_t ver = os::Aix::os_version();
+  st->print_cr("AIX kernel version %u.%u.%u.%u",
+               (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
+
   // rlimit
   st->print("rlimit:");
   struct rlimit rlim;
@@ -1634,12 +1643,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->print("total %d", os::processor_count());
   // It's not safe to query number of active processors after crash.
   // st->print("(active %d)", os::active_processor_count());
-  st->print(" %s", VM_Version::cpu_features());
-  st->cr();
-}
-
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  os::Posix::print_siginfo_brief(st, (const siginfo_t*) siginfo);
+  st->print(" %s", VM_Version::features());
   st->cr();
 }
 
@@ -2871,10 +2875,6 @@ static int SR_initialize() {
   act.sa_handler = (void (*)(int)) SR_handler;
 
   // SR_signum is blocked by default.
-  // 4528190 - We also need to block pthread restart signal (32 on all
-  // supported Linux platforms). Note that LinuxThreads need to block
-  // this signal for all threads to work properly. So we don't have
-  // to use hard-coded signal number when setting up the mask.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
 
   if (sigaction(SR_signum, &act, 0) == -1) {
@@ -3570,15 +3570,6 @@ void os::init(void) {
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
-
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages. The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > (int)Aix::vm_default_page_size()) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-    StackShadowPages = round_to((StackShadowPages*Aix::vm_default_page_size()), vm_page_size()) / vm_page_size();
-  }
 }
 
 // This is called _after_ the global arguments have been parsed.
@@ -3684,8 +3675,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Aix::min_stack_allowed = MAX2(os::Aix::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Aix::page_size() +
-                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
+                                    JavaThread::stack_guard_zone_size() +
+                                    JavaThread::stack_shadow_zone_size() +
+                                    (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
 
   os::Aix::min_stack_allowed = align_size_up(os::Aix::min_stack_allowed, os::Aix::page_size());
 
@@ -3806,7 +3798,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Aix::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Aix::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread.
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");
@@ -4255,7 +4247,7 @@ bool os::Aix::is_primordial_thread() {
 // one of Aix::on_pase(), Aix::os_version() static
 void os::Aix::initialize_os_info() {
 
-  assert(_on_pase == -1 && _os_version == -1, "already called.");
+  assert(_on_pase == -1 && _os_version == 0, "already called.");
 
   struct utsname uts;
   memset(&uts, 0, sizeof(uts));
@@ -4271,28 +4263,34 @@ void os::Aix::initialize_os_info() {
     assert(major > 0, "invalid OS version");
     const int minor = atoi(uts.release);
     assert(minor > 0, "invalid OS release");
-    _os_version = (major << 8) | minor;
+    _os_version = (major << 24) | (minor << 16);
+    char ver_str[20] = {0};
+    char *name_str = "unknown OS";
     if (strcmp(uts.sysname, "OS400") == 0) {
       // We run on AS/400 PASE. We do not support versions older than V5R4M0.
       _on_pase = 1;
-      if (_os_version < 0x0504) {
+      if (os_version_short() < 0x0504) {
         trcVerbose("OS/400 releases older than V5R4M0 not supported.");
         assert(false, "OS/400 release too old.");
-      } else {
-        trcVerbose("We run on OS/400 (pase) V%dR%d", major, minor);
       }
+      name_str = "OS/400 (pase)";
+      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u", major, minor);
     } else if (strcmp(uts.sysname, "AIX") == 0) {
       // We run on AIX. We do not support versions older than AIX 5.3.
       _on_pase = 0;
-      if (_os_version < 0x0503) {
+      // Determine detailed AIX version: Version, Release, Modification, Fix Level.
+      odmWrapper::determine_os_kernel_version(&_os_version);
+      if (os_version_short() < 0x0503) {
         trcVerbose("AIX release older than AIX 5.3 not supported.");
         assert(false, "AIX release too old.");
-      } else {
-        trcVerbose("We run on AIX %d.%d", major, minor);
       }
+      name_str = "AIX";
+      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u.%u.%u",
+                   major, minor, (_os_version >> 8) & 0xFF, _os_version & 0xFF);
     } else {
-      assert(false, "unknown OS");
+      assert(false, name_str);
     }
+    trcVerbose("We run on %s %s", name_str, ver_str);
   }
 
   guarantee(_on_pase != -1 && _os_version, "Could not determine AIX/OS400 release");
@@ -4357,7 +4355,7 @@ void os::Aix::scan_environment() {
 
   p = ::getenv("LDR_CNTRL");
   trcVerbose("LDR_CNTRL=%s.", p ? p : "<unset>");
-  if (os::Aix::on_pase() && os::Aix::os_version() == 0x0701) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() == 0x0701) {
     if (p && ::strstr(p, "TEXTPSIZE")) {
       trcVerbose("*** WARNING - LDR_CNTRL contains TEXTPSIZE. "
         "you may experience hangs or crashes on OS/400 V7R1.");
@@ -4487,62 +4485,6 @@ size_t os::current_stack_size() {
 }
 
 // Refer to the comments in os_solaris.cpp park-unpark.
-//
-// Beware -- Some versions of NPTL embody a flaw where pthread_cond_timedwait() can
-// hang indefinitely. For instance NPTL 0.60 on 2.4.21-4ELsmp is vulnerable.
-// For specifics regarding the bug see GLIBC BUGID 261237 :
-//    http://www.mail-archive.com/debian-glibc@lists.debian.org/msg10837.html.
-// Briefly, pthread_cond_timedwait() calls with an expiry time that's not in the future
-// will either hang or corrupt the condvar, resulting in subsequent hangs if the condvar
-// is used. (The simple C test-case provided in the GLIBC bug report manifests the
-// hang). The JVM is vulernable via sleep(), Object.wait(timo), LockSupport.parkNanos()
-// and monitorenter when we're using 1-0 locking. All those operations may result in
-// calls to pthread_cond_timedwait(). Using LD_ASSUME_KERNEL to use an older version
-// of libpthread avoids the problem, but isn't practical.
-//
-// Possible remedies:
-//
-// 1.   Establish a minimum relative wait time. 50 to 100 msecs seems to work.
-//      This is palliative and probabilistic, however. If the thread is preempted
-//      between the call to compute_abstime() and pthread_cond_timedwait(), more
-//      than the minimum period may have passed, and the abstime may be stale (in the
-//      past) resultin in a hang. Using this technique reduces the odds of a hang
-//      but the JVM is still vulnerable, particularly on heavily loaded systems.
-//
-// 2.   Modify park-unpark to use per-thread (per ParkEvent) pipe-pairs instead
-//      of the usual flag-condvar-mutex idiom. The write side of the pipe is set
-//      NDELAY. unpark() reduces to write(), park() reduces to read() and park(timo)
-//      reduces to poll()+read(). This works well, but consumes 2 FDs per extant
-//      thread.
-//
-// 3.   Embargo pthread_cond_timedwait() and implement a native "chron" thread
-//      that manages timeouts. We'd emulate pthread_cond_timedwait() by enqueuing
-//      a timeout request to the chron thread and then blocking via pthread_cond_wait().
-//      This also works well. In fact it avoids kernel-level scalability impediments
-//      on certain platforms that don't handle lots of active pthread_cond_timedwait()
-//      timers in a graceful fashion.
-//
-// 4.   When the abstime value is in the past it appears that control returns
-//      correctly from pthread_cond_timedwait(), but the condvar is left corrupt.
-//      Subsequent timedwait/wait calls may hang indefinitely. Given that, we
-//      can avoid the problem by reinitializing the condvar -- by cond_destroy()
-//      followed by cond_init() -- after all calls to pthread_cond_timedwait().
-//      It may be possible to avoid reinitialization by checking the return
-//      value from pthread_cond_timedwait(). In addition to reinitializing the
-//      condvar we must establish the invariant that cond_signal() is only called
-//      within critical sections protected by the adjunct mutex. This prevents
-//      cond_signal() from "seeing" a condvar that's in the midst of being
-//      reinitialized or that is corrupt. Sadly, this invariant obviates the
-//      desirable signal-after-unlock optimization that avoids futile context switching.
-//
-//      I'm also concerned that some versions of NTPL might allocate an auxilliary
-//      structure when a condvar is used or initialized. cond_destroy() would
-//      release the helper structure. Our reinitialize-after-timedwait fix
-//      put excessive stress on malloc/free and locks protecting the c-heap.
-//
-// We currently use (4). See the WorkAroundNTPLTimedWaitHang flag.
-// It may be possible to refine (4) by checking the kernel and NTPL verisons
-// and only enabling the work-around for vulnerable environments.
 
 // utility to compute the abstime argument to timedwait:
 // millis is the relative timeout time
@@ -4846,10 +4788,6 @@ void Parker::park(bool isAbsolute, jlong time) {
     status = pthread_cond_wait (_cond, _mutex);
   } else {
     status = pthread_cond_timedwait (_cond, _mutex, &absTime);
-    if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy (_cond);
-      pthread_cond_init    (_cond, NULL);
-    }
   }
   assert_status(status == 0 || status == EINTR ||
                 status == ETIME || status == ETIMEDOUT,
@@ -4877,17 +4815,10 @@ void Parker::unpark() {
   s = _counter;
   _counter = 1;
   if (s < 1) {
-    if (WorkAroundNPTLTimedWaitHang) {
-      status = pthread_cond_signal (_cond);
-      assert (status == 0, "invariant");
-      status = pthread_mutex_unlock(_mutex);
-      assert (status == 0, "invariant");
-    } else {
-      status = pthread_mutex_unlock(_mutex);
-      assert (status == 0, "invariant");
-      status = pthread_cond_signal (_cond);
-      assert (status == 0, "invariant");
-    }
+    status = pthread_mutex_unlock(_mutex);
+    assert (status == 0, "invariant");
+    status = pthread_cond_signal (_cond);
+    assert (status == 0, "invariant");
   } else {
     pthread_mutex_unlock(_mutex);
     assert (status == 0, "invariant");
@@ -5016,7 +4947,7 @@ void TestReserveMemorySpecial_test() {
 }
 #endif
 
-bool os::start_debugging(char *buf, int buflen) {
+bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];
 

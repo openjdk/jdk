@@ -57,6 +57,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -254,8 +255,10 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
        ((ybits.i & float_sign_mask) == float_infinity) ) {
     return x;
   }
-#endif
+  return ((jfloat)fmod_winx64((double)x, (double)y));
+#else
   return ((jfloat)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 
@@ -269,8 +272,10 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
        ((ybits.l & double_sign_mask) == double_infinity) ) {
     return x;
   }
-#endif
+  return ((jdouble)fmod_winx64((double)x, (double)y));
+#else
   return ((jdouble)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 #ifdef __SOFTFP__
@@ -483,8 +488,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
       // crash.
-      bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+      bool guard_pages_enabled = thread->stack_guards_enabled();
       if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+      if (thread->reserved_stack_activation() != thread->stack_base()) {
+        thread->set_reserved_stack_activation(thread->stack_base());
+      }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
@@ -757,10 +765,23 @@ JRT_ENTRY(void, SharedRuntime::throw_NullPointerException_at_call(JavaThread* th
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, false);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, true);
+JRT_END
+
+void SharedRuntime::throw_StackOverflowError_common(JavaThread* thread, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
+  Thread* THREAD = thread;
   Klass* k = SystemDictionary::StackOverflowError_klass();
   oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
+  if (delayed) {
+    java_lang_Throwable::set_message(exception_oop,
+                                     Universe::delayed_stack_overflow_error_message());
+  }
   Handle exception (thread, exception_oop);
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
@@ -768,7 +789,7 @@ JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(thread, exception);
-JRT_END
+}
 
 #if INCLUDE_JVMCI
 address SharedRuntime::deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason) {
@@ -1070,6 +1091,18 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
   return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
 }
 
+methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
+  nmethod* caller_nm = vfst.nm();
+
+  nmethodLocker caller_lock(caller_nm);
+
+  address pc = vfst.frame_pc();
+  { // Get call instruction under lock because another thread may be busy patching it.
+    MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
+    return caller_nm->attached_method_before_pc(pc);
+  }
+  return NULL;
+}
 
 // Finds receiver, CallInfo (i.e. receiver method), and calling bytecode
 // for a call current in progress, i.e., arguments has been pushed on stack
@@ -1087,15 +1120,37 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   methodHandle caller(THREAD, vfst.method());
   int          bci   = vfst.bci();
 
-  // Find bytecode
   Bytecode_invoke bytecode(caller, bci);
-  bc = bytecode.invoke_code();
   int bytecode_index = bytecode.index();
 
+  methodHandle attached_method = extract_attached_method(vfst);
+  if (attached_method.not_null()) {
+    methodHandle callee = bytecode.static_target(CHECK_NH);
+    vmIntrinsics::ID id = callee->intrinsic_id();
+    // When VM replaces MH.invokeBasic/linkTo* call with a direct/virtual call,
+    // it attaches statically resolved method to the call site.
+    if (MethodHandles::is_signature_polymorphic(id) &&
+        MethodHandles::is_signature_polymorphic_intrinsic(id)) {
+      bc = MethodHandles::signature_polymorphic_intrinsic_bytecode(id);
+
+      // Need to adjust invokehandle since inlining through signature-polymorphic
+      // method happened.
+      if (bc == Bytecodes::_invokehandle &&
+          !MethodHandles::is_signature_polymorphic_method(attached_method())) {
+        bc = attached_method->is_static() ? Bytecodes::_invokestatic
+                                          : Bytecodes::_invokevirtual;
+      }
+    }
+  } else {
+    bc = bytecode.invoke_code();
+  }
+
+  bool has_receiver = bc != Bytecodes::_invokestatic &&
+                      bc != Bytecodes::_invokedynamic &&
+                      bc != Bytecodes::_invokehandle;
+
   // Find receiver for non-static call
-  if (bc != Bytecodes::_invokestatic &&
-      bc != Bytecodes::_invokedynamic &&
-      bc != Bytecodes::_invokehandle) {
+  if (has_receiver) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
     RegisterMap reg_map2(thread);
@@ -1103,10 +1158,13 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
 
-    methodHandle callee = bytecode.static_target(CHECK_(nullHandle));
-    if (callee.is_null()) {
-      THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
+    if (attached_method.is_null()) {
+      methodHandle callee = bytecode.static_target(CHECK_NH);
+      if (callee.is_null()) {
+        THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
+      }
     }
+
     // Retrieve from a compiled argument list
     receiver = Handle(THREAD, callerFrame.retrieve_receiver(&reg_map2));
 
@@ -1115,26 +1173,35 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     }
   }
 
-  // Resolve method. This is parameterized by bytecode.
-  constantPoolHandle constants(THREAD, caller->constants());
   assert(receiver.is_null() || receiver->is_oop(), "wrong receiver");
-  LinkResolver::resolve_invoke(callinfo, receiver, constants, bytecode_index, bc, CHECK_(nullHandle));
+
+  // Resolve method
+  if (attached_method.not_null()) {
+    // Parameterized by attached method.
+    LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+  } else {
+    // Parameterized by bytecode.
+    constantPoolHandle constants(THREAD, caller->constants());
+    LinkResolver::resolve_invoke(callinfo, receiver, constants, bytecode_index, bc, CHECK_NH);
+  }
 
 #ifdef ASSERT
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
-  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic && bc != Bytecodes::_invokehandle) {
+  if (has_receiver) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass(THREAD, receiver->klass());
-    Klass* rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
-                            // klass is already loaded
+    Klass* rk = NULL;
+    if (attached_method.not_null()) {
+      // In case there's resolved method attached, use its holder during the check.
+      rk = attached_method->method_holder();
+    } else {
+      // Klass is already loaded.
+      constantPoolHandle constants(THREAD, caller->constants());
+      rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
+    }
     KlassHandle static_receiver_klass(THREAD, rk);
-    // Method handle invokes might have been optimized to a direct call
-    // so don't check for the receiver class.
-    // FIXME this weakens the assert too much
     methodHandle callee = callinfo.selected_method();
-    assert(receiver_klass->is_subtype_of(static_receiver_klass()) ||
-           callee->is_method_handle_intrinsic() ||
-           callee->is_compiled_lambda_form(),
+    assert(receiver_klass->is_subtype_of(static_receiver_klass()),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->is_instance_klass()) {
       if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
@@ -1670,7 +1737,6 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
         inline_cache->set_to_clean();
       }
     }
-
   }
 
   methodHandle callee_method = find_callee_method(thread, CHECK_(methodHandle()));
@@ -2930,3 +2996,68 @@ void AdapterHandlerLibrary::print_statistics() {
 }
 
 #endif /* PRODUCT */
+
+JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
+  assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
+  thread->enable_stack_reserved_zone();
+  thread->set_reserved_stack_activation(thread->stack_base());
+JRT_END
+
+frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
+  frame activation;
+  int decode_offset = 0;
+  nmethod* nm = NULL;
+  frame prv_fr = fr;
+  int count = 1;
+
+  assert(fr.is_java_frame(), "Must start on Java frame");
+
+  while (!fr.is_first_frame()) {
+    Method* method = NULL;
+    // Compiled java method case.
+    if (decode_offset != 0) {
+      DebugInfoReadStream stream(nm, decode_offset);
+      decode_offset = stream.read_int();
+      method = (Method*)nm->metadata_at(stream.read_int());
+    } else {
+      if (fr.is_first_java_frame()) break;
+      address pc = fr.pc();
+      prv_fr = fr;
+      if (fr.is_interpreted_frame()) {
+        method = fr.interpreter_frame_method();
+        fr = fr.java_sender();
+      } else {
+        CodeBlob* cb = fr.cb();
+        fr = fr.java_sender();
+        if (cb == NULL || !cb->is_nmethod()) {
+          continue;
+        }
+        nm = (nmethod*)cb;
+        if (nm->method()->is_native()) {
+          method = nm->method();
+        } else {
+          PcDesc* pd = nm->pc_desc_at(pc);
+          assert(pd != NULL, "PcDesc must not be NULL");
+          decode_offset = pd->scope_decode_offset();
+          // if decode_offset is not equal to 0, it will execute the
+          // "compiled java method case" at the beginning of the loop.
+          continue;
+        }
+      }
+    }
+    if (method->has_reserved_stack_access()) {
+      ResourceMark rm(thread);
+      activation = prv_fr;
+      warning("Potentially dangerous stack overflow in "
+              "ReservedStackAccess annotated method %s [%d]",
+              method->name_and_sig_as_C_string(), count++);
+      EventReservedStackActivation event;
+      if (event.should_commit()) {
+        event.set_method(method);
+        event.commit();
+      }
+    }
+  }
+  return activation;
+}
+

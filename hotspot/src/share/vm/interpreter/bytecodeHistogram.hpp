@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ class BytecodeHistogram: AllStatic {
   NOT_PRODUCT(static int _counters[Bytecodes::number_of_codes];)   // a counter for each bytecode
 
   friend class TemplateInterpreterGenerator;
-  friend class         InterpreterGenerator;
   friend class         BytecodeInterpreter;
 
  public:
@@ -87,7 +86,6 @@ class BytecodePairHistogram: AllStatic {
   NOT_PRODUCT(static int  _counters[number_of_pairs];)  // a counter for each pair
 
   friend class TemplateInterpreterGenerator;
-  friend class         InterpreterGenerator;
 
  public:
   // Initialization

@@ -30,9 +30,6 @@ import java.io.*;
 import java.nio.channels.*;
 import java.lang.reflect.*;
 
-// dependency on Sun implementation
-import sun.nio.ch.*;
-
 public class Util {
 
     private static Object get(String className, String fieldName, Object o) throws Exception {

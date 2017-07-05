@@ -50,7 +50,7 @@ import static java.security.AccessController.doPrivileged;
  * ProcessHandleImpl is the implementation of ProcessHandle.
  *
  * @see Process
- * @since 1.9
+ * @since 9
  */
 final class ProcessHandleImpl implements ProcessHandle {
     /**
@@ -338,7 +338,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      *
      * @return {@code true} if the process represented by this
      * {@code ProcessHandle} object has not yet terminated.
-     * @since 1.9
+     * @since 9
      */
     @Override
     public boolean isAlive() {

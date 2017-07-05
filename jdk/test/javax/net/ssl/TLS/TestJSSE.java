@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it under
@@ -111,8 +111,6 @@ public class TestJSSE {
         out.println(" Testing - https://" + LOCAL_IP + ":" + testPort);
         out.println(" Testing - Protocol : " + testProtocols);
         out.println(" Testing - Cipher : " + testCipher);
-        Provider p = new sun.security.ec.SunEC();
-        Security.insertProviderAt(p, 1);
         try {
             CipherTestUtils.main(new JSSEFactory(LOCAL_IP,
                     testPort, testProtocols,
@@ -132,8 +130,6 @@ public class TestJSSE {
         out.println(" Testing Protocol: " + testProtocol);
         out.println(" Testing Cipher: " + testCipher);
         out.println(" Testing Port: " + testPort);
-        Provider p = new sun.security.ec.SunEC();
-        Security.insertProviderAt(p, 1);
         try {
             CipherTestUtils.main(new JSSEFactory(null, testPort,
                     testProtocol, testCipher, "Server JSSE"),

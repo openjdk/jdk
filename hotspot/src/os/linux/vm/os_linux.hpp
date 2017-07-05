@@ -123,18 +123,20 @@ class Linux {
 
   static int vm_default_page_size(void)                             { return _vm_default_page_size; }
 
-  static address   ucontext_get_pc(ucontext_t* uc);
+  static address   ucontext_get_pc(const ucontext_t* uc);
   static void ucontext_set_pc(ucontext_t* uc, address pc);
-  static intptr_t* ucontext_get_sp(ucontext_t* uc);
-  static intptr_t* ucontext_get_fp(ucontext_t* uc);
+  static intptr_t* ucontext_get_sp(const ucontext_t* uc);
+  static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
   // For Analyzer Forte AsyncGetCallTrace profiling support:
   //
   // This interface should be declared in os_linux_i486.hpp, but
   // that file provides extensions to the os class and not the
   // Linux class.
-  static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
+  static ExtendedPC fetch_frame_from_ucontext(Thread* thread, const ucontext_t* uc,
                                               intptr_t** ret_sp, intptr_t** ret_fp);
+
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
 
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_linux_signal, harmlessly.

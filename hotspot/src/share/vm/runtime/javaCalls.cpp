@@ -371,9 +371,9 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-  // When we reenter Java, we need to reenable the yellow zone which
+  // When we reenter Java, we need to reenable the reserved/yellow zone which
   // might already be disabled when we are in VM.
-  if (thread->stack_yellow_zone_disabled()) {
+  if (!thread->stack_guards_enabled()) {
     thread->reguard_stack();
   }
 

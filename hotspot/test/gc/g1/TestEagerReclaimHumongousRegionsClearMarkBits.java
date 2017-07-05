@@ -120,7 +120,7 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
             "-Xmn2M",
             "-XX:G1HeapRegionSize=1M",
             "-XX:InitiatingHeapOccupancyPercent=0", // Want to have as much as possible initial marks.
-            "-XX:+PrintGC",
+            "-Xlog:gc",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+VerifyAfterGC",
             "-XX:ConcGCThreads=1", // Want to make marking as slow as possible.

@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
@@ -1487,7 +1488,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     private static final int LEFT_ARGS = FILL_ARRAYS_COUNT - 1;
-    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
+    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY + 1];
     /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
      *  fills a[L]..a[N-1] with corresponding arguments,
      *  and then returns a.  The value L is a global constant (LEFT_ARGS).

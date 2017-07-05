@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,11 +90,6 @@
 // G5_method is set to method to call, G5_inline_cache_klass may be set,
 // parameters are put in O registers, and also extra parameters
 // must be cleverly copied from the top of stack to the outgoing param area in the frame,
-// ------------------------------ C++ interpreter ----------------------------------------
-// Layout of C++ interpreter frame:
-//
-
-
 
 // All frames:
 
@@ -211,7 +206,6 @@
 
  public:
   // Asm interpreter
-#ifndef CC_INTERP
   enum interpreter_frame_vm_locals {
        // 2 words, also used to save float regs across  calls to C
        interpreter_frame_d_scratch_fp_offset          = -2,
@@ -228,18 +222,6 @@
 
        interpreter_frame_extra_outgoing_argument_words = 2
   };
-#else
-  enum interpreter_frame_vm_locals {
-       // 2 words, also used to save float regs across  calls to C
-       interpreter_state_ptr_offset                   = 0,  // Is in L0 (Lstate) in save area
-       interpreter_frame_mirror_offset                = 1,  // Is in L1 (Lmirror) in save area (for native calls only)
-
-       // interpreter frame set-up needs to save 2 extra words in outgoing param area
-       // for class and jnienv arguments for native stubs (see nativeStubGen_sparc.cpp_
-
-       interpreter_frame_extra_outgoing_argument_words = 2
-  };
-#endif /* CC_INTERP */
 
   enum compiler_frame_fixed_locals {
        compiler_frame_vm_locals_fp_offset          = -2
@@ -247,8 +229,6 @@
 
  private:
   ConstantPoolCache** interpreter_frame_cpoolcache_addr() const;
-
-#ifndef CC_INTERP
 
   // where Lmonitors is saved:
   inline BasicObjectLock** interpreter_frame_monitors_addr() const;
@@ -262,14 +242,6 @@
  private:
   BasicObjectLock* interpreter_frame_monitors() const;
   void interpreter_frame_set_monitors(BasicObjectLock* monitors);
-#else
- public:
-  inline interpreterState get_interpreterState() const {
-    return ((interpreterState)sp_at(interpreter_state_ptr_offset));
-  }
-
-#endif /* CC_INTERP */
-
  public:
 
 #endif // CPU_SPARC_VM_FRAME_SPARC_HPP

@@ -69,7 +69,7 @@ package java.sql;
  * }
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ShardingKey {
 

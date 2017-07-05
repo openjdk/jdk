@@ -25,7 +25,6 @@
 
 package java.util;
 
-import java.util.Map.Entry;
 import jdk.internal.misc.SharedSecrets;
 
 /**
@@ -124,8 +123,6 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     private V unmaskNull(Object value) {
         return (V)(value == NULL ? null : value);
     }
-
-    private static final Enum<?>[] ZERO_LENGTH_ENUM_ARRAY = new Enum<?>[0];
 
     /**
      * Creates an empty enum map with the specified key type.

@@ -235,6 +235,11 @@ public final class CPrinterJob extends RasterPrinterJob {
         // this will not work if the user clicks on the "Preview" button
         // However if the printer is a StreamPrintService, its the right path.
         PrintService psvc = getPrintService();
+
+        if (psvc == null) {
+            throw new PrinterException("No print service found.");
+        }
+
         if (psvc instanceof StreamPrintService) {
             spoolToService(psvc, attributes);
             return;

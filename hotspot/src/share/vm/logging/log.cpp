@@ -36,7 +36,6 @@ void Test_log_length() {
   remove("loglengthoutput.txt");
 
   // Write long message to output file
-  MutexLocker ml(LogConfiguration_lock);
   LogConfiguration::parse_log_arguments("loglengthoutput.txt", "logging=trace",
     NULL, NULL, NULL);
   ResourceMark rm;

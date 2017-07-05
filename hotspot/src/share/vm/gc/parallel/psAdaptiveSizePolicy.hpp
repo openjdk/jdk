@@ -395,7 +395,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                        size_t promoted);
 
   // Printing support
-  virtual bool print_adaptive_size_policy_on(outputStream* st) const;
+  virtual bool print() const;
 
   // Decay the supplemental growth additive.
   void decay_supplemental_growth(bool is_full_gc);

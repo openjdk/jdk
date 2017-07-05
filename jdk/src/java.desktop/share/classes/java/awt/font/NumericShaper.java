@@ -321,12 +321,12 @@ public final class NumericShaper implements java.io.Serializable {
         MEETEI_MAYEK    ('\uabf0', '\uabc0', '\uac00'),
         /**
          * The Sinhala range with the Sinhala digits.
-         * @since 1.9
+         * @since 9
          */
         SINHALA         ('\u0de6', '\u0d80', '\u0e00'),
         /**
          * The Myanmar Extended-B range with the Myanmar Tai Laing digits.
-         * @since 1.9
+         * @since 9
          */
         MYANMAR_TAI_LAING ('\ua9f0', '\ua9e0', '\uaa00');
 

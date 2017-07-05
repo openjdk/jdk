@@ -26,6 +26,7 @@
  * @bug 8008577 8138613
  * @summary Check whether CLDR locale provider adapter is enabled by default
  * @compile -XDignore.symbol.file Bug8008577.java
+ * @modules java.base/sun.util.locale.provider
  * @run main Bug8008577
  */
 

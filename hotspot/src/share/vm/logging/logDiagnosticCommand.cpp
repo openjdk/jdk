@@ -25,7 +25,6 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logDiagnosticCommand.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_allocated)
@@ -65,13 +64,11 @@ void LogDiagnosticCommand::registerCommand() {
 void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {
   bool any_command = false;
   if (_disable.has_value()) {
-    MutexLocker ml(LogConfiguration_lock);
     LogConfiguration::disable_logging();
     any_command = true;
   }
 
   if (_output.has_value() || _what.has_value() || _decorators.has_value()) {
-    MutexLocker ml(LogConfiguration_lock);
     if (!LogConfiguration::parse_log_arguments(_output.value(),
                                                _what.value(),
                                                _decorators.value(),
@@ -83,7 +80,6 @@ void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {
   }
 
   if (_list.has_value()) {
-    MutexLocker ml(LogConfiguration_lock);
     LogConfiguration::describe(output());
     any_command = true;
   }

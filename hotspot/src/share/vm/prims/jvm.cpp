@@ -206,9 +206,9 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
       const char * to = to_class->external_name();
       // print in a single call to reduce interleaving between threads
       if (source_file != NULL) {
-        tty->print("RESOLVE %s %s %s:%d (%s)\n", from, to, source_file, line_number, trace);
+        log_info(classresolve)("%s %s %s:%d (%s)", from, to, source_file, line_number, trace);
       } else {
-        tty->print("RESOLVE %s %s (%s)\n", from, to, trace);
+        log_info(classresolve)("%s %s (%s)", from, to, trace);
       }
     }
   }
@@ -835,7 +835,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     return NULL;
   }
 
-  if (TraceClassResolution) {
+  if (log_is_enabled(Info, classresolve)) {
     trace_class_resolution(k);
   }
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
@@ -872,7 +872,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, false, THREAD);
 
-  if (TraceClassResolution && result != NULL) {
+  if (log_is_enabled(Info, classresolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
@@ -902,7 +902,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, true, thread);
 
-  if (TraceClassResolution && result != NULL) {
+  if (log_is_enabled(Info, classresolve) && result != NULL) {
     // this function is generally only used for class loading during verification.
     ResourceMark rm;
     oop from_mirror = JNIHandles::resolve_non_null(from);
@@ -912,7 +912,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     oop mirror = JNIHandles::resolve_non_null(result);
     Klass* to_class = java_lang_Class::as_Klass(mirror);
     const char * to = to_class->external_name();
-    tty->print("RESOLVE %s %s (verification)\n", from_name, to);
+    log_info(classresolve)("%s %s (verification)", from_name, to);
   }
 
   return result;
@@ -980,7 +980,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                                                    &st,
                                                    CHECK_NULL);
 
-  if (TraceClassResolution && k != NULL) {
+  if (log_is_enabled(Info, classresolve) && k != NULL) {
     trace_class_resolution(k);
   }
 
@@ -3721,6 +3721,35 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // counter defined in runtimeService.cpp.
   info->is_attachable = AttachListener::is_attach_supported();
 }
+JVM_END
+
+// Returns an array of java.lang.String objects containing the input arguments to the VM.
+JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
+  ResourceMark rm(THREAD);
+
+  if (Arguments::num_jvm_args() == 0 && Arguments::num_jvm_flags() == 0) {
+    return NULL;
+  }
+
+  char** vm_flags = Arguments::jvm_flags_array();
+  char** vm_args = Arguments::jvm_args_array();
+  int num_flags = Arguments::num_jvm_flags();
+  int num_args = Arguments::num_jvm_args();
+
+  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
+  objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
+  objArrayHandle result_h(THREAD, r);
+
+  int index = 0;
+  for (int j = 0; j < num_flags; j++, index++) {
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
+    result_h->obj_at_put(index, h());
+  }
+  for (int i = 0; i < num_args; i++, index++) {
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_args[i], CHECK_NULL);
+    result_h->obj_at_put(index, h());
+  }
+  return (jobjectArray) JNIHandles::make_local(env, result_h());
 JVM_END
 
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))

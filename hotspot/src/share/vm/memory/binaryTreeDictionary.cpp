@@ -29,6 +29,7 @@
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
 #include "memory/metachunk.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -1189,27 +1190,29 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::end_sweep_dict_census(double spl
   // Does walking the tree 3 times hurt?
   set_tree_surplus(splitSurplusPercent);
   set_tree_hints();
-  if (PrintGC && Verbose) {
-    report_statistics();
+  LogHandle(gc, freelist, stats) log;
+  if (log.is_trace()) {
+    ResourceMark rm;
+    report_statistics(log.trace_stream());
   }
   clear_tree_census();
 }
 
 // Print summary statistics
 template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics() const {
+void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics(outputStream* st) const {
   FreeBlockDictionary<Chunk_t>::verify_par_locked();
-  gclog_or_tty->print("Statistics for BinaryTreeDictionary:\n"
-         "------------------------------------\n");
+  st->print_cr("Statistics for BinaryTreeDictionary:");
+  st->print_cr("------------------------------------");
   size_t total_size = total_chunk_size(debug_only(NULL));
-  size_t    free_blocks = num_free_blocks();
-  gclog_or_tty->print("Total Free Space: " SIZE_FORMAT "\n", total_size);
-  gclog_or_tty->print("Max   Chunk Size: " SIZE_FORMAT "\n", max_chunk_size());
-  gclog_or_tty->print("Number of Blocks: " SIZE_FORMAT "\n", free_blocks);
+  size_t free_blocks = num_free_blocks();
+  st->print_cr("Total Free Space: " SIZE_FORMAT, total_size);
+  st->print_cr("Max   Chunk Size: " SIZE_FORMAT, max_chunk_size());
+  st->print_cr("Number of Blocks: " SIZE_FORMAT, free_blocks);
   if (free_blocks > 0) {
-    gclog_or_tty->print("Av.  Block  Size: " SIZE_FORMAT "\n", total_size/free_blocks);
+    st->print_cr("Av.  Block  Size: " SIZE_FORMAT, total_size/free_blocks);
   }
-  gclog_or_tty->print("Tree      Height: " SIZE_FORMAT "\n", tree_height());
+  st->print_cr("Tree      Height: " SIZE_FORMAT, tree_height());
 }
 
 // Print census information - counts, births, deaths, etc.
@@ -1229,22 +1232,27 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
   FreeList_t* total() { return &_total; }
   size_t total_free() { return _total_free; }
   void do_list(FreeList<Chunk_t>* fl) {
+    LogHandle(gc, freelist, census) log;
+    outputStream* out = log.debug_stream();
     if (++_print_line >= 40) {
-      FreeList_t::print_labels_on(gclog_or_tty, "size");
+      ResourceMark rm;
+      FreeList_t::print_labels_on(out, "size");
       _print_line = 0;
     }
-    fl->print_on(gclog_or_tty);
-    _total_free +=            fl->count()            * fl->size()        ;
-    total()->set_count(      total()->count()       + fl->count()      );
+    fl->print_on(out);
+    _total_free += fl->count() * fl->size();
+    total()->set_count(total()->count() + fl->count());
   }
 
 #if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
+    LogHandle(gc, freelist, census) log;
+    outputStream* out = log.debug_stream();
     if (++_print_line >= 40) {
-      FreeList_t::print_labels_on(gclog_or_tty, "size");
+      FreeList_t::print_labels_on(out, "size");
       _print_line = 0;
     }
-    fl->print_on(gclog_or_tty);
+    fl->print_on(out);
     _total_free +=           fl->count()             * fl->size()        ;
     total()->set_count(      total()->count()        + fl->count()      );
     total()->set_bfr_surp(   total()->bfr_surp()     + fl->bfr_surp()    );
@@ -1261,38 +1269,36 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
 };
 
 template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::print_dict_census(void) const {
+void BinaryTreeDictionary<Chunk_t, FreeList_t>::print_dict_census(outputStream* st) const {
 
-  gclog_or_tty->print("\nBinaryTree\n");
-  FreeList_t::print_labels_on(gclog_or_tty, "size");
+  st->print("BinaryTree");
+  FreeList_t::print_labels_on(st, "size");
   PrintTreeCensusClosure<Chunk_t, FreeList_t> ptc;
   ptc.do_tree(root());
 
   FreeList_t* total = ptc.total();
-  FreeList_t::print_labels_on(gclog_or_tty, " ");
+  FreeList_t::print_labels_on(st, " ");
 }
 
 #if INCLUDE_ALL_GCS
 template <>
-void AFLBinaryTreeDictionary::print_dict_census(void) const {
+void AFLBinaryTreeDictionary::print_dict_census(outputStream* st) const {
 
-  gclog_or_tty->print("\nBinaryTree\n");
-  AdaptiveFreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
+  st->print_cr("BinaryTree");
+  AdaptiveFreeList<FreeChunk>::print_labels_on(st, "size");
   PrintTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > ptc;
   ptc.do_tree(root());
 
   AdaptiveFreeList<FreeChunk>* total = ptc.total();
-  AdaptiveFreeList<FreeChunk>::print_labels_on(gclog_or_tty, " ");
-  total->print_on(gclog_or_tty, "TOTAL\t");
-  gclog_or_tty->print(
-              "total_free(words): " SIZE_FORMAT_W(16)
-              " growth: %8.5f  deficit: %8.5f\n",
-              ptc.total_free(),
-              (double)(total->split_births() + total->coal_births()
-                     - total->split_deaths() - total->coal_deaths())
-              /(total->prev_sweep() != 0 ? (double)total->prev_sweep() : 1.0),
-             (double)(total->desired() - total->count())
-             /(total->desired() != 0 ? (double)total->desired() : 1.0));
+  AdaptiveFreeList<FreeChunk>::print_labels_on(st, " ");
+  total->print_on(st, "TOTAL\t");
+  st->print_cr("total_free(words): " SIZE_FORMAT_W(16) " growth: %8.5f  deficit: %8.5f",
+               ptc.total_free(),
+               (double)(total->split_births() + total->coal_births()
+                      - total->split_deaths() - total->coal_deaths())
+               /(total->prev_sweep() != 0 ? (double)total->prev_sweep() : 1.0),
+              (double)(total->desired() - total->count())
+              /(total->desired() != 0 ? (double)total->desired() : 1.0));
 }
 #endif // INCLUDE_ALL_GCS
 
@@ -1311,7 +1317,7 @@ class PrintFreeListsClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t
       FreeList_t::print_labels_on(_st, "size");
       _print_line = 0;
     }
-    fl->print_on(gclog_or_tty);
+    fl->print_on(_st);
     size_t sz = fl->size();
     for (Chunk_t* fc = fl->head(); fc != NULL;
          fc = fc->next()) {

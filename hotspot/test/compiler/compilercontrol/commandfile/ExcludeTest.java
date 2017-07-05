@@ -30,7 +30,7 @@
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.commands.ExcludeTest
+ * @run main/othervm compiler.compilercontrol.commandfile.ExcludeTest
  */
 
 package compiler.compilercontrol.commandfile;

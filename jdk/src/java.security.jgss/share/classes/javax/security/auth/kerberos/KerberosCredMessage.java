@@ -45,7 +45,7 @@ import java.util.Objects;
  *    }
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public final class KerberosCredMessage implements Destroyable {
 
