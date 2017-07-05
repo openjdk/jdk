@@ -2402,13 +2402,23 @@ public class BasicTreeUI extends TreeUI
         }
         leadRow = getRowForPath(tree, newPath);
 
-        if(repaint) {
-            if(bounds != null)
-                tree.repaint(bounds);
+        if (repaint) {
+            if (bounds != null) {
+                tree.repaint(getRepaintPathBounds(bounds));
+            }
             bounds = getPathBounds(tree, newPath);
-            if(bounds != null)
-                tree.repaint(bounds);
+            if (bounds != null) {
+                tree.repaint(getRepaintPathBounds(bounds));
+            }
         }
+    }
+
+    private Rectangle getRepaintPathBounds(Rectangle bounds) {
+        if (UIManager.getBoolean("Tree.repaintWholeRow")) {
+           bounds.x = 0;
+           bounds.width = tree.getWidth();
+        }
+        return bounds;
     }
 
     private TreePath getLeadSelectionPath() {
@@ -3641,14 +3651,6 @@ public class BasicTreeUI extends TreeUI
 
         public void focusLost(FocusEvent e) {
             focusGained(e);
-        }
-
-        private Rectangle getRepaintPathBounds(Rectangle bounds) {
-            if(UIManager.getBoolean("Tree.repaintWholeRow")) {
-               bounds.x = 0;
-               bounds.width = tree.getWidth();
-            }
-            return bounds;
         }
 
         //

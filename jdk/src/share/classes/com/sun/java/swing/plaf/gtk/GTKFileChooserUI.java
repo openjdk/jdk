@@ -134,6 +134,15 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         super(filechooser);
     }
 
+    protected ActionMap createActionMap() {
+        ActionMap map = new ActionMapUIResource();
+        map.put("approveSelection", getApproveSelectionAction());
+        map.put("cancelSelection", getCancelSelectionAction());
+        map.put("Go Up", getChangeToParentDirectoryAction());
+        map.put("fileNameCompletion", getFileNameCompletionAction());
+        return map;
+    }
+
     public String getFileName() {
         JFileChooser fc = getFileChooser();
         String typedInName = fileNameTextField != null ?

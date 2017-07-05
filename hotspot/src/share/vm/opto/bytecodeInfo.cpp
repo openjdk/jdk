@@ -321,7 +321,7 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
     // stricter than callee_holder->is_initialized()
     ciBytecodeStream iter(caller_method);
     iter.force_bci(caller_bci);
-    int index = iter.get_index_big();
+    int index = iter.get_index_int();
     if( !caller_method->is_klass_loaded(index, true) ) {
       return false;
     }

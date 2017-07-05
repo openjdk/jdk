@@ -572,8 +572,8 @@ class JavaValue {
 
 enum TosState {         // describes the tos cache contents
   btos = 0,             // byte, bool tos cached
-  ctos = 1,             // short, char tos cached
-  stos = 2,             // short, char tos cached
+  ctos = 1,             // char tos cached
+  stos = 2,             // short tos cached
   itos = 3,             // int tos cached
   ltos = 4,             // long tos cached
   ftos = 5,             // float tos cached
@@ -588,7 +588,7 @@ enum TosState {         // describes the tos cache contents
 inline TosState as_TosState(BasicType type) {
   switch (type) {
     case T_BYTE   : return btos;
-    case T_BOOLEAN: return btos;
+    case T_BOOLEAN: return btos; // FIXME: Add ztos
     case T_CHAR   : return ctos;
     case T_SHORT  : return stos;
     case T_INT    : return itos;
@@ -600,6 +600,22 @@ inline TosState as_TosState(BasicType type) {
     case T_OBJECT : return atos;
   }
   return ilgl;
+}
+
+inline BasicType as_BasicType(TosState state) {
+  switch (state) {
+    //case ztos: return T_BOOLEAN;//FIXME
+    case btos : return T_BYTE;
+    case ctos : return T_CHAR;
+    case stos : return T_SHORT;
+    case itos : return T_INT;
+    case ltos : return T_LONG;
+    case ftos : return T_FLOAT;
+    case dtos : return T_DOUBLE;
+    case atos : return T_OBJECT;
+    case vtos : return T_VOID;
+  }
+  return T_ILLEGAL;
 }
 
 

@@ -312,6 +312,7 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   if (cp->flags() != 0) {
     st->print(" - flags : 0x%x", cp->flags());
     if (cp->has_pseudo_string()) st->print(" has_pseudo_string");
+    if (cp->has_invokedynamic()) st->print(" has_invokedynamic");
     st->cr();
   }
 

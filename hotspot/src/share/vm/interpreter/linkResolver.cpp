@@ -947,6 +947,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHan
     case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokespecial  : resolve_invokespecial  (result,       pool, index, CHECK); break;
     case Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index, CHECK); break;
+    case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index, CHECK); break;
     case Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index, CHECK); break;
   }
   return;
@@ -1006,6 +1007,30 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, consta
   resolve_pool(resolved_klass, method_name,  method_signature, current_klass, pool, index, CHECK);
   KlassHandle recvrKlass (THREAD, recv.is_null() ? (klassOop)NULL : recv->klass());
   resolve_interface_call(result, recv, recvrKlass, resolved_klass, method_name, method_signature, current_klass, true, true, CHECK);
+}
+
+
+void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int raw_index, TRAPS) {
+  assert(EnableInvokeDynamic, "");
+
+  // This guy is reached from InterpreterRuntime::resolve_invokedynamic.
+
+  assert(constantPoolCacheOopDesc::is_secondary_index(raw_index), "must be secondary index");
+  int nt_index = pool->map_instruction_operand_to_index(raw_index);
+
+  // At this point, we only need the signature, and can ignore the name.
+  symbolHandle method_signature(THREAD, pool->nt_signature_ref_at(nt_index));
+  symbolHandle method_name = vmSymbolHandles::invoke_name();
+  KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
+
+  // JSR 292:  this must be an implicitly generated method MethodHandle.invoke(*...)
+  // The extra MH receiver will be inserted into the stack on every call.
+  methodHandle resolved_method;
+  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+  if (resolved_method.is_null()) {
+    THROW(vmSymbols::java_lang_InternalError());
+  }
+  result.set_virtual(resolved_klass, KlassHandle(), resolved_method, resolved_method, resolved_method->vtable_index(), CHECK);
 }
 
 //------------------------------------------------------------------------------------------------------------------------

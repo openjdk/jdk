@@ -34,9 +34,14 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 include FILES.gmk
 AUTO_FILES_JAVA_DIRS = javax/swing/plaf sun/swing com/sun/java/swing/plaf
+SUBDIRS = nimbus
+
+# Nimbus is handled in its own directory
+AUTO_JAVA_PRUNE = nimbus
+
 ifeq ($(PLATFORM), windows)
     # Don't build GTK L&F on Windows
-    AUTO_JAVA_PRUNE = gtk
+    AUTO_JAVA_PRUNE += gtk
 endif
 
 MISC_FILES = $(MISC_SWING_FILES)
@@ -68,8 +73,10 @@ endif
 # Process LOGO_ICONS and Motif Icons first.
 #
 build: $(LOGO_ICONS) $(MISC_SWING_FILES_MOTIF_GIF) $(MISC_SWING_FILES_MOTIF_PNG) other_files
+	$(SUBDIRS-loop)
 
-clean:: classes.clean
+clean clobber::
+	$(SUBDIRS-loop)
 
 #
 # Include

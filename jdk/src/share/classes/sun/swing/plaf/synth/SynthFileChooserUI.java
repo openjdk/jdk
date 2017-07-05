@@ -183,14 +183,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         }
     }
 
-    ActionMap createActionMap() {
-        ActionMap map = new ActionMapUIResource();
-        map.put("approveSelection", getApproveSelectionAction());
-        map.put("cancelSelection", getCancelSelectionAction());
-        map.put("Go Up", getChangeToParentDirectoryAction());
-        map.put("fileNameCompletion", getFileNameCompletionAction());
-        return map;
-    }
+    protected abstract ActionMap createActionMap();
 
 
     protected void installDefaults(JFileChooser fc) {

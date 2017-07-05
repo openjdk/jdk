@@ -53,6 +53,7 @@ class constantPoolOopDesc : public oopDesc {
   void release_tag_at_put(int which, jbyte t)  { tags()->release_byte_at_put(which, t); }
 
   enum FlagBit {
+    FB_has_invokedynamic = 1,
     FB_has_pseudo_string = 2
   };
 
@@ -96,7 +97,9 @@ class constantPoolOopDesc : public oopDesc {
   typeArrayOop tags() const                 { return _tags; }
 
   bool has_pseudo_string() const            { return flag_at(FB_has_pseudo_string); }
+  bool has_invokedynamic() const            { return flag_at(FB_has_invokedynamic); }
   void set_pseudo_string()                  {    set_flag_at(FB_has_pseudo_string); }
+  void set_invokedynamic()                  {    set_flag_at(FB_has_invokedynamic); }
 
   // Klass holding pool
   klassOop pool_holder() const              { return _pool_holder; }
@@ -338,24 +341,28 @@ class constantPoolOopDesc : public oopDesc {
     return *int_at_addr(which);
   }
 
-  // The following methods (klass_ref_at, klass_ref_at_noresolve, name_ref_at,
-  // signature_ref_at, klass_ref_index_at, name_and_type_ref_index_at,
-  // name_ref_index_at, signature_ref_index_at) all expect constant pool indices
+  // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
+  // name_and_type_ref_index_at) all expect constant pool indices
   // from the bytecodes to be passed in, which are actually potentially byte-swapped
-  // contstant pool cache indices. See field_or_method_at.
+  // or rewritten constant pool cache indices.  They all call map_instruction_operand_to_index.
+  int map_instruction_operand_to_index(int operand);
+
+  // There are also "uncached" versions which do not map the operand index; see below.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   klassOop klass_ref_at(int which, TRAPS);
   symbolOop klass_ref_at_noresolve(int which);
-  symbolOop name_ref_at(int which);
-  symbolOop signature_ref_at(int which);    // the type descriptor
+  symbolOop name_ref_at(int which)                { return impl_name_ref_at(which, false); }
+  symbolOop signature_ref_at(int which)           { return impl_signature_ref_at(which, false); }
 
-  int klass_ref_index_at(int which);
-  int name_and_type_ref_index_at(int which);
+  int klass_ref_index_at(int which)               { return impl_klass_ref_index_at(which, false); }
+  int name_and_type_ref_index_at(int which)       { return impl_name_and_type_ref_index_at(which, false); }
 
   // Lookup for entries consisting of (name_index, signature_index)
-  int name_ref_index_at(int which);
-  int signature_ref_index_at(int which);
+  int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
+  int signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
+  symbolOop nt_name_ref_at(int which_nt)          { return symbol_at(name_ref_index_at(which_nt)); }
+  symbolOop nt_signature_ref_at(int which_nt)     { return symbol_at(signature_ref_index_at(which_nt)); }
 
   BasicType basic_type_for_signature_at(int which);
 
@@ -397,10 +404,10 @@ class constantPoolOopDesc : public oopDesc {
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than possibly-byte-swapped
   // constant pool cache indices as do the peer methods above.
-  symbolOop uncached_name_ref_at(int which);
-  symbolOop uncached_signature_ref_at(int which);
-  int       uncached_klass_ref_index_at(int which);
-  int       uncached_name_and_type_ref_index_at(int which);
+  symbolOop uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
+  symbolOop uncached_signature_ref_at(int which)            { return impl_signature_ref_at(which, true); }
+  int       uncached_klass_ref_index_at(int which)          { return impl_klass_ref_index_at(which, true); }
+  int       uncached_name_and_type_ref_index_at(int which)  { return impl_name_and_type_ref_index_at(which, true); }
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -413,16 +420,19 @@ class constantPoolOopDesc : public oopDesc {
 
  private:
 
+  symbolOop impl_name_ref_at(int which, bool uncached);
+  symbolOop impl_signature_ref_at(int which, bool uncached);
+  int       impl_klass_ref_index_at(int which, bool uncached);
+  int       impl_name_and_type_ref_index_at(int which, bool uncached);
+
   // Takes either a constant pool cache index in possibly byte-swapped
   // byte order (which comes from the bytecodes after rewriting) or,
   // if "uncached" is true, a vanilla constant pool index
   jint field_or_method_at(int which, bool uncached) {
-    int i = -1;
-    if (uncached || cache() == NULL) {
-      i = which;
-    } else {
+    int i = which;
+    if (!uncached && cache() != NULL) {
       // change byte-ordering and go via cache
-      i = cache()->entry_at(Bytes::swap_u2(which))->constant_pool_index();
+      i = map_instruction_operand_to_index(which);
     }
     assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
     return *int_at_addr(i);
