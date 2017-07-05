@@ -455,25 +455,29 @@ bool CardTableModRefBS::mark_card_deferred(size_t card_index) {
   return true;
 }
 
-
 void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
                                                                  MemRegion mr,
-                                                                 DirtyCardToOopClosure* dcto_cl,
-                                                                 ClearNoncleanCardWrapper* cl) {
+                                                                 OopsInGenClosure* cl,
+                                                                 CardTableRS* ct) {
   if (!mr.is_empty()) {
     int n_threads = SharedHeap::heap()->n_par_threads();
     if (n_threads > 0) {
 #ifndef SERIALGC
-      non_clean_card_iterate_parallel_work(sp, mr, dcto_cl, cl, n_threads);
+      non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
 #else  // SERIALGC
       fatal("Parallel gc not supported here.");
 #endif // SERIALGC
     } else {
       // We do not call the non_clean_card_iterate_serial() version below because
       // we want to clear the cards (which non_clean_card_iterate_serial() does not
-      // do for us), and the ClearNoncleanCardWrapper closure itself does the work
-      // of finding contiguous dirty ranges of cards to process (and clear).
-      cl->do_MemRegion(mr);
+      // do for us): clear_cl here does the work of finding contiguous dirty ranges
+      // of cards to process and clear.
+
+      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(),
+                                                       cl->gen_boundary());
+      ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
+
+      clear_cl.do_MemRegion(mr);
     }
   }
 }

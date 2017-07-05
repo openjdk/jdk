@@ -77,7 +77,23 @@ inline void ParScanClosure::do_oop_work(T* p,
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if ((HeapWord*)obj < _boundary) {
-      assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
+#ifndef PRODUCT
+      if (_g->to()->is_in_reserved(obj)) {
+        tty->print_cr("Scanning field (" PTR_FORMAT ") twice?", p);
+        GenCollectedHeap* gch =  (GenCollectedHeap*)Universe::heap();
+        Space* sp = gch->space_containing(p);
+        oop obj = oop(sp->block_start(p));
+        assert((HeapWord*)obj < (HeapWord*)p, "Error");
+        tty->print_cr("Object: " PTR_FORMAT, obj);
+        tty->print_cr("-------");
+        obj->print();
+        tty->print_cr("-----");
+        tty->print_cr("Heap:");
+        tty->print_cr("-----");
+        gch->print();
+        ShouldNotReachHere();
+      }
+#endif
       // OK, we need to ensure that it is copied.
       // We read the klass and mark in this order, so that we can reliably
       // get the size of the object: if the mark we read is not a
