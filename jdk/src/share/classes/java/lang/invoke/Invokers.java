@@ -87,6 +87,7 @@ class Invokers {
             lform = invokeForm(mtype, true, MethodTypeForm.LF_EX_INVOKER);
             invoker = SimpleMethodHandle.make(invokerType, lform);
         }
+        invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke("invokeExact", mtype));
         assert(checkInvoker(invoker));
         exactInvoker = invoker;
         return invoker;
@@ -110,6 +111,7 @@ class Invokers {
             lform = invokeForm(mtype, true, MethodTypeForm.LF_GEN_INVOKER);
             invoker = SimpleMethodHandle.make(invokerType, lform);
         }
+        invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke("invoke", mtype));
         assert(checkInvoker(invoker));
         generalInvoker = invoker;
         return invoker;

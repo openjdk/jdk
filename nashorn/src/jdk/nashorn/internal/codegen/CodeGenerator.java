@@ -1361,6 +1361,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<Expression> values  = new ArrayList<>();
 
         boolean hasGettersSetters = false;
+        Expression protoNode = null;
 
         for (PropertyNode propertyNode: elements) {
             final Expression   value        = propertyNode.getValue();
@@ -1369,6 +1370,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (value == null) {
                 hasGettersSetters = true;
+            } else if (key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+                protoNode = value;
+                continue;
             }
 
             keys.add(key);
@@ -1410,8 +1414,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         method.dup();
-        globalObjectPrototype();
-        method.invoke(ScriptObject.SET_PROTO);
+        if (protoNode != null) {
+            load(protoNode);
+            method.invoke(ScriptObject.SET_PROTO_CHECK);
+        } else {
+            globalObjectPrototype();
+            method.invoke(ScriptObject.SET_PROTO);
+        }
 
         if (hasGettersSetters) {
             for (final PropertyNode propertyNode : elements) {

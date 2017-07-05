@@ -30,6 +30,7 @@ import java.security.AccessController;
 
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Introspector;
+import java.util.Objects;
 
 
 /**
@@ -301,7 +302,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
        right and we needlessly hashed in the description and parameter
        array.  */
     public int hashCode() {
-        return getName().hashCode() ^ getType().hashCode();
+        return Objects.hash(getName(), getType());
     }
 
     private static boolean isIs(Method getter) {

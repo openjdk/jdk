@@ -40,6 +40,8 @@ package com.sun.nio.sctp;
 public interface Notification {
     /**
      * Returns the association that this notification is applicable to.
+     *
+     * @return  The association
      */
     public Association association();
 }

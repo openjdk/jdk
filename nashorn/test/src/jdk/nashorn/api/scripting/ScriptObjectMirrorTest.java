@@ -140,8 +140,8 @@ public class ScriptObjectMirrorTest {
                 fail("obj[1] != 'world'");
             }
 
-            if (!obj.call("func", new Object[0]).equals("hello")) {
-                fail("obj.call('func') != 'hello'");
+            if (!obj.callMember("func", new Object[0]).equals("hello")) {
+                fail("obj.func() != 'hello'");
             }
 
             // try setting properties
@@ -210,8 +210,8 @@ public class ScriptObjectMirrorTest {
 
         e.eval("function func() {}");
         e2.put("foo", e.get("func"));
-        final Object e2global = e2.eval("this");
-        final Object newObj = ((ScriptObjectMirror) e2global).newObject("foo");
+        final ScriptObjectMirror e2global = (ScriptObjectMirror)e2.eval("this");
+        final Object newObj = ((ScriptObjectMirror)e2global.getMember("foo")).newObject();
         assertTrue(newObj instanceof ScriptObjectMirror);
     }
 
@@ -223,8 +223,8 @@ public class ScriptObjectMirrorTest {
 
         e.eval("function func() {}");
         e2.put("func", e.get("func"));
-        final Object e2obj = e2.eval("({ foo: func })");
-        final Object newObj = ((ScriptObjectMirror) e2obj).newObject("foo");
+        final ScriptObjectMirror e2obj = (ScriptObjectMirror)e2.eval("({ foo: func })");
+        final Object newObj = ((ScriptObjectMirror)e2obj.getMember("foo")).newObject();
         assertTrue(newObj instanceof ScriptObjectMirror);
     }
 }

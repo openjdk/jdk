@@ -21,11 +21,17 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4931274
  * @summary closeInbound does not signal when a close_notify has not
  *              been received.
+ * @run main/othervm CloseInboundException
  * @author Brad Wetmore
  */
 

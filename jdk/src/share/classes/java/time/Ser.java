@@ -72,14 +72,14 @@ import java.io.StreamCorruptedException;
  * byte flag would be used in order to specify an alternative version of the type format.
  * For example {@code LOCAL_DATE_TYPE_VERSION_2 = 21}.
  * <p>
- * In order to serialise the object it writes its byte and then calls back to the appropriate class where
- * the serialisation is performed.  In order to deserialise the object it read in the type byte, switching
+ * In order to serialize the object it writes its byte and then calls back to the appropriate class where
+ * the serialization is performed.  In order to deserialize the object it read in the type byte, switching
  * in order to select which class to call back into.
  * <p>
- * The serialisation format is determined on a per class basis.  In the case of field based classes each
+ * The serialization format is determined on a per class basis.  In the case of field based classes each
  * of the fields is written out with an appropriate size format in descending order of the field's size.  For
  * example in the case of {@link LocalDate} year is written before month.  Composite classes, such as
- * {@link LocalDateTime} are serialised as one object.
+ * {@link LocalDateTime} are serialized as one object.
  * <p>
  * This class is mutable and should be created once per serialization.
  *
@@ -133,6 +133,27 @@ final class Ser implements Externalizable {
     //-----------------------------------------------------------------------
     /**
      * Implements the {@code Externalizable} interface to write the object.
+     * @serialData
+     *
+     * Each serializable class is mapped to a type that is the first byte
+     * in the stream.  Refer to each class {@code writeReplace}
+     * serialized form for the value of the type and sequence of values for the type.
+     * <ul>
+     * <li><a href="../../serialized-form.html#java.time.Duration">Duration.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.Instant">Instant.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.LocalDate">LocalDate.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.LocalDateTime">LocalDateTime.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.LocalTime">LocalTime.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.MonthDay">MonthDay.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.OffsetTime">OffsetTime.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.OffsetDateTime">OffsetDateTime.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.Period">Period.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.Year">Year.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.YearMonth">YearMonth.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.ZoneId">ZoneId.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.ZoneOffset">ZoneOffset.writeReplace</a>
+     * <li><a href="../../serialized-form.html#java.time.ZonedDateTime">ZonedDateTime.writeReplace</a>
+     * </ul>
      *
      * @param out  the data stream to write to, not null
      */
@@ -194,6 +215,29 @@ final class Ser implements Externalizable {
     //-----------------------------------------------------------------------
     /**
      * Implements the {@code Externalizable} interface to read the object.
+     * @serialData
+     *
+     * The streamed type and parameters defined by the type's {@code writeReplace}
+     * method are read and passed to the corresponding static factory for the type
+     * to create a new instance.  That instance is returned as the de-serialized
+     * {@code Ser} object.
+     *
+     * <ul>
+     * <li><a href="../../serialized-form.html#java.time.Duration">Duration</a> - {@code Duration.ofSeconds(seconds, nanos);}
+     * <li><a href="../../serialized-form.html#java.time.Instant">Instant</a> - {@code Instant.ofEpochSecond(seconds, nanos);}
+     * <li><a href="../../serialized-form.html#java.time.LocalDate">LocalDate</a> - {@code LocalDate.of(year, month, day);}
+     * <li><a href="../../serialized-form.html#java.time.LocalDateTime">LocalDateTime</a> - {@code LocalDateTime.of(date, time);}
+     * <li><a href="../../serialized-form.html#java.time.LocalTime">LocalTime</a> - {@code LocalTime.of(hour, minute, second, nano);}
+     * <li><a href="../../serialized-form.html#java.time.MonthDay">MonthDay</a> - {@code MonthDay.of(month, day);}
+     * <li><a href="../../serialized-form.html#java.time.OffsetTime">OffsetTime</a> - {@code OffsetTime.of(time, offset);}
+     * <li><a href="../../serialized-form.html#java.time.OffsetDateTime">OffsetDateTime</a> - {@code OffsetDateTime.of(dateTime, offset);}
+     * <li><a href="../../serialized-form.html#java.time.Period">Period</a> - {@code Period.of(years, months, days);}
+     * <li><a href="../../serialized-form.html#java.time.Year">Year</a> - {@code Year.of(year);}
+     * <li><a href="../../serialized-form.html#java.time.YearMonth">YearMonth</a> - {@code YearMonth.of(year, month);}
+     * <li><a href="../../serialized-form.html#java.time.ZonedDateTime">ZonedDateTime</a> - {@code ZonedDateTime.ofLenient(dateTime, offset, zone);}
+     * <li><a href="../../serialized-form.html#java.time.ZoneId">ZoneId</a> - {@code ZoneId.of(id);}
+     * <li><a href="../../serialized-form.html#java.time.ZoneOffset">ZoneOffset</a> - {@code (offsetByte == 127 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(offsetByte * 900));}
+     * </ul>
      *
      * @param in  the data to read, not null
      */

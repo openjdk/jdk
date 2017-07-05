@@ -41,6 +41,10 @@ import static org.testng.Assert.fail;
  */
 public class CollectionAsserts {
 
+    private CollectionAsserts() {
+        // no instances
+    }
+
     public static void assertCountSum(Iterable<? super Integer> it, int count, int sum) {
         assertCountSum(it.iterator(), count, sum);
     }
@@ -117,10 +121,18 @@ public class CollectionAsserts {
     }
 
     public static<T> void assertContents(Iterable<T> actual, Iterable<T> expected) {
-        assertContents(actual.iterator(), expected.iterator());
+        assertContents(actual, expected, null);
+    }
+
+    public static<T> void assertContents(Iterable<T> actual, Iterable<T> expected, String msg) {
+        assertContents(actual.iterator(), expected.iterator(), msg);
     }
 
     public static<T> void assertContents(Iterator<T> actual, Iterator<T> expected) {
+        assertContents(actual, expected, null);
+    }
+
+    public static<T> void assertContents(Iterator<T> actual, Iterator<T> expected, String msg) {
         List<T> history = new ArrayList<>();
 
         while (expected.hasNext()) {
@@ -128,20 +140,23 @@ public class CollectionAsserts {
                 List<T> expectedData = new ArrayList<>(history);
                 while (expected.hasNext())
                     expectedData.add(expected.next());
-                fail(String.format("Premature end of data; expected=%s, found=%s", expectedData, history));
+                fail(String.format("%s Premature end of data; expected=%s, found=%s",
+                    (msg == null ? "" : msg), expectedData, history));
             }
             T a = actual.next();
             T e = expected.next();
             history.add(a);
 
             if (!Objects.equals(a, e))
-                fail(String.format("Data mismatch; preceding=%s, nextExpected=%s, nextFound=%s", history, e, a));
+                fail(String.format("%s Data mismatch; preceding=%s, nextExpected=%s, nextFound=%s",
+                    (msg == null ? "" : msg), history, e, a));
         }
         if (actual.hasNext()) {
             List<T> rest = new ArrayList<>();
             while (actual.hasNext())
                 rest.add(actual.next());
-            fail(String.format("Unexpected data %s after %s", rest, history));
+            fail(String.format("%s Unexpected data %s after %s",
+                (msg == null ? "" : msg), rest, history));
         }
     }
 
@@ -151,30 +166,21 @@ public class CollectionAsserts {
         assertContents(actual, Arrays.asList(expected).iterator());
     }
 
-    public static <T> boolean equalsContentsUnordered(Iterable<T> a, Iterable<T> b) {
-        Set<T> sa = new HashSet<>();
-        for (T t : a) {
-            sa.add(t);
-        }
-
-        Set<T> sb = new HashSet<>();
-        for (T t : b) {
-            sb.add(t);
-        }
-
-        return Objects.equals(sa, sb);
+    public static<T extends Comparable<? super T>> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected) {
+        assertContentsUnordered(actual, expected, null);
     }
 
-    public static<T extends Comparable<? super T>> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected) {
-        ArrayList<T> one = new ArrayList<>();
-        for (T t : actual)
-            one.add(t);
-        ArrayList<T> two = new ArrayList<>();
-        for (T t : expected)
-            two.add(t);
-        Collections.sort(one);
-        Collections.sort(two);
-        assertContents(one, two);
+    public static<T extends Comparable<? super T>> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected, String msg) {
+        List<T> allExpected = new ArrayList<>();
+        for (T t : expected) {
+            allExpected.add(t);
+        }
+
+        for (T t : actual) {
+            assertTrue(allExpected.remove(t), msg + " element '" + String.valueOf(t) + "' not found");
+        }
+
+        assertTrue(allExpected.isEmpty(), msg + "expected contained additional elements");
     }
 
     static <T> void assertSplitContents(Iterable<Iterable<T>> splits, Iterable<T> list) {

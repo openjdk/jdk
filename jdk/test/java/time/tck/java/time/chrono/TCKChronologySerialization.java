@@ -97,7 +97,9 @@ public class TCKChronologySerialization {
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(chrono);
         out.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        byte[] bytes = baos.toByteArray();
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 
         ObjectInputStream in = new ObjectInputStream(bais);
         @SuppressWarnings("unchecked")
