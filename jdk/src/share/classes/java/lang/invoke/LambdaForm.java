@@ -457,7 +457,7 @@ class LambdaForm {
             isCompiled = true;
             return vmentry;
         } catch (Error | Exception ex) {
-            throw new InternalError(this.toString(), ex);
+            throw newInternalError(this.toString(), ex);
         }
     }
 
@@ -1547,7 +1547,7 @@ class LambdaForm {
             try {
                 zmem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, zmem, null, NoSuchMethodException.class);
             } catch (IllegalAccessException|NoSuchMethodException ex) {
-                throw new InternalError(ex);
+                throw newInternalError(ex);
             }
             NamedFunction zcon = new NamedFunction(zmem);
             Name n = new Name(zcon).newIndex(0);

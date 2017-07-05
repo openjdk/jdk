@@ -91,6 +91,15 @@ define OptFullPath
 $(shell if [ "$1" != "" -a -d "$1" ]; then $(CYGPATH_CMD) "$1"; else echo "$1"; fi)
 endef
 else
+ifdef USING_MSYS
+DOSPATH_CMD:=$(shell cd $(JDK_TOPDIR) 2> $(DEV_NULL) && pwd)/make/tools/msys_build_scripts/dospath.sh
+define FullPath
+$(subst \,/,$(shell $(DOSPATH_CMD) $1))
+endef
+define OptFullPath
+$(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
+endef
+else
 # Temporary until we upgrade to MKS 8.7, MKS pwd returns mixed mode path
 define FullPath
 $(shell cd $1 2> $(DEV_NULL) && pwd)
@@ -98,6 +107,7 @@ endef
 define OptFullPath
 $(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
 endef
+endif
 endif
 
 # System drive
@@ -112,14 +122,21 @@ _system_drive:=$(call CheckValue,_system_drive,C:)
 
 # UNIXCOMMAND_PATH: path to where the most common Unix commands are.
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifndef UNIXCOMMAND_PATH
-  ifdef ALT_UNIXCOMMAND_PATH
+#        With cygwin, use this as is; don't use FullPath on it.
+ifdef ALT_UNIXCOMMAND_PATH
+  ifdef USING_CYGWIN
+    UNIXCOMMAND_PATH       :=$(call PrefixPath,$(ALT_UNIXCOMMAND_PATH))
+  else
     xALT_UNIXCOMMAND_PATH  :="$(subst \,/,$(ALT_UNIXCOMMAND_PATH))"
     fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
     UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
+  endif
+else
+  ifdef USING_CYGWIN
+    UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
   else
-    ifdef USING_CYGWIN
-      UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
+    ifdef USING_MSYS
+      UNIXCOMMAND_PATH :=$(call PrefixPath,/bin)
     else
       ifdef ROOTDIR
         xROOTDIR :="$(subst \,/,$(ROOTDIR))"
@@ -131,41 +148,35 @@ ifndef UNIXCOMMAND_PATH
       ifneq ($(_rootdir),)
         UNIXCOMMAND_PATH :=$(call PrefixPath,$(_rootdir)/mksnt)
       endif
-    endif
-  endif
-  UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
-  export UNIXCOMMAND_PATH
+    endif # USING_MSYS
+  endif # USING_CYGWIN
 endif
+UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
+export UNIXCOMMAND_PATH
 
 # Get version of MKS or CYGWIN
-ifdef USING_CYGWIN
-  ifndef CYGWIN_VER
-    _CYGWIN_VER :=$(shell $(UNAME))
-    CYGWIN_VER  :=$(call GetVersion,$(_CYGWIN_VER))
-    export CYGWIN_VER
+ifdef USING_MKS
+  _MKS_VER :=$(shell $(MKSINFO) 2>&1 | $(GREP) Release | $(TAIL) -1 | $(SED) -e 's@.*\(Release.*\)@\1@')
+  MKS_VER  :=$(call GetVersion,$(_MKS_VER))
+  # At this point, we can re-define FullPath to use DOSNAME_CMD
+  CHECK_MKS87:=$(call CheckVersions,$(MKS_VER),8.7)
+  TRY_DOSNAME:=false
+  ifeq ($(CHECK_MKS87),same)
+    TRY_DOSNAME:=true
   endif
-else # MKS
-_MKS_VER :=$(shell $(MKSINFO) 2>&1 | $(GREP) Release | $(TAIL) -1 | $(SED) -e 's@.*\(Release.*\)@\1@')
-MKS_VER  :=$(call GetVersion,$(_MKS_VER))
-# At this point, we can re-define FullPath to use DOSNAME_CMD
-CHECK_MKS87:=$(call CheckVersions,$(MKS_VER),8.7)
-TRY_DOSNAME:=false
-ifeq ($(CHECK_MKS87),same)
-TRY_DOSNAME:=true
-endif
-# Newer should be ok
-ifeq ($(CHECK_MKS87),newer)
-TRY_DOSNAME:=true
-endif
-ifeq ($(TRY_DOSNAME),true)
-ifeq ($(shell $(UNIXCOMMAND_PATH)dosname -s $(_system_drive)/ 2> $(DEV_NULL)),$(_system_drive)/)
-_DOSNAME=$(UNIXCOMMAND_PATH)dosname
-DOSNAME_CMD:=$(_DOSNAME) -s
+  # Newer should be ok
+  ifeq ($(CHECK_MKS87),newer)
+    TRY_DOSNAME:=true
+  endif
+  ifeq ($(TRY_DOSNAME),true)
+    ifeq ($(shell $(UNIXCOMMAND_PATH)dosname -s $(_system_drive)/ 2> $(DEV_NULL)),$(_system_drive)/)
+      _DOSNAME=$(UNIXCOMMAND_PATH)dosname
+      DOSNAME_CMD:=$(_DOSNAME) -s
 define FullPath
 $(subst //,/,$(shell echo $1 | $(DOSNAME_CMD) 2> $(DEV_NULL)))
 endef
-endif # test dosname -s
-endif # TRY_DOSNAME
+    endif # test dosname -s
+  endif # TRY_DOSNAME
 endif # MKS
 
 # We try to get references to what we need via the default component
@@ -240,6 +251,8 @@ endif
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
 ifndef DEVTOOLS_PATH
+  # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
+  #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
   ifdef ALT_DEVTOOLS_PATH
     xALT_DEVTOOLS_PATH  :="$(subst \,/,$(ALT_DEVTOOLS_PATH))"
     fxALT_DEVTOOLS_PATH :=$(call FullPath,$(xALT_DEVTOOLS_PATH))
@@ -248,10 +261,14 @@ ifndef DEVTOOLS_PATH
     ifdef USING_CYGWIN
       DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
     else
-      xDEVTOOLS_PATH  :="$(_system_drive)/utils"
-      fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
-      DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
-    endif
+      ifdef USING_MSYS
+        DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
+      else
+        xDEVTOOLS_PATH  :="$(_system_drive)/utils"
+        fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
+        DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
+      endif # USING_MSYS
+    endif # USING_CYGWIN
   endif
   DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
   export DEVTOOLS_PATH

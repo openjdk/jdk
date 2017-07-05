@@ -475,7 +475,7 @@ public class ValueConversions {
                     .findStatic(THIS_CLASS, "fillNewTypedArray",
                           MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
-            throw new InternalError("uncaught exception", ex);
+            throw newInternalError("uncaught exception", ex);
         }
     }
 
@@ -489,7 +489,7 @@ public class ValueConversions {
                 COPY_AS_PRIMITIVE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsPrimitiveArray", MethodType.methodType(Object.class, Wrapper.class, Object[].class));
                 MAKE_LIST = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeList", MethodType.methodType(List.class, Object[].class));
             } catch (ReflectiveOperationException ex) {
-                throw new InternalError("uncaught exception", ex);
+                throw newInternalError("uncaught exception", ex);
             }
         }
     }
@@ -527,9 +527,8 @@ public class ValueConversions {
                     MethodHandle.class, int.class, MethodHandle.class);
             m.setAccessible(true);
             mh = IMPL_LOOKUP.unreflect(m);
-
         } catch (ReflectiveOperationException | SecurityException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
         COLLECT_ARGUMENTS = mh;
     }
@@ -1208,5 +1207,13 @@ public class ValueConversions {
     }
     private static MethodHandle buildVarargsList(int nargs) {
         return MethodHandles.filterReturnValue(varargsArray(nargs), LazyStatics.MAKE_LIST);
+    }
+
+    // handy shared exception makers (they simplify the common case code)
+    private static InternalError newInternalError(String message, Throwable cause) {
+        return new InternalError(message, cause);
+    }
+    private static InternalError newInternalError(Throwable cause) {
+        return new InternalError(cause);
     }
 }
