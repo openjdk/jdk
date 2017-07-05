@@ -231,8 +231,6 @@ public:
     if (obj->is_constMethod()) {
       mark_object(obj);
       mark_object(constMethodOop(obj)->stackmap_data());
-      // Exception tables are needed by ci code during compilation.
-      mark_object(constMethodOop(obj)->exception_table());
     }
 
     // Mark objects referenced by klass objects which are read-only.
@@ -513,7 +511,6 @@ public:
       for(i = 0; i < methods->length(); i++) {
         methodOop m = methodOop(methods->obj_at(i));
         mark_and_move_for_policy(OP_favor_startup, m->constMethod(), _move_ro);
-        mark_and_move_for_policy(OP_favor_runtime, m->constMethod()->exception_table(), _move_ro);
         mark_and_move_for_policy(OP_favor_runtime, m->constMethod()->stackmap_data(), _move_ro);
       }
 

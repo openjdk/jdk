@@ -3156,9 +3156,6 @@ bool ConcurrentMark::do_yield_check(uint worker_id) {
       _g1h->g1_policy()->record_concurrent_pause();
     }
     cmThread()->yield();
-    if (worker_id == 0) {
-      _g1h->g1_policy()->record_concurrent_pause_end();
-    }
     return true;
   } else {
     return false;

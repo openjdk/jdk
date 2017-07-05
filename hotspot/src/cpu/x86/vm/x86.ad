@@ -71,244 +71,244 @@ register %{
 //              XMM0-XMM3 might hold parameters
 
 reg_def XMM0 ( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg());
-reg_def XMM0b( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next());
-reg_def XMM0c( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next());
-reg_def XMM0d( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next());
-reg_def XMM0e( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next());
-reg_def XMM0f( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM0g( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM0h( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM0b( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(1));
+reg_def XMM0c( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(2));
+reg_def XMM0d( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(3));
+reg_def XMM0e( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(4));
+reg_def XMM0f( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(5));
+reg_def XMM0g( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(6));
+reg_def XMM0h( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next(7));
 
 reg_def XMM1 ( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg());
-reg_def XMM1b( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next());
-reg_def XMM1c( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next());
-reg_def XMM1d( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next());
-reg_def XMM1e( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next());
-reg_def XMM1f( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM1g( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM1h( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM1b( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(1));
+reg_def XMM1c( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(2));
+reg_def XMM1d( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(3));
+reg_def XMM1e( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(4));
+reg_def XMM1f( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(5));
+reg_def XMM1g( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(6));
+reg_def XMM1h( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next(7));
 
 reg_def XMM2 ( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg());
-reg_def XMM2b( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next());
-reg_def XMM2c( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next());
-reg_def XMM2d( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next());
-reg_def XMM2e( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next());
-reg_def XMM2f( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM2g( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM2h( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM2b( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(1));
+reg_def XMM2c( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(2));
+reg_def XMM2d( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(3));
+reg_def XMM2e( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(4));
+reg_def XMM2f( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(5));
+reg_def XMM2g( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(6));
+reg_def XMM2h( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next(7));
 
 reg_def XMM3 ( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg());
-reg_def XMM3b( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next());
-reg_def XMM3c( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next());
-reg_def XMM3d( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next());
-reg_def XMM3e( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next());
-reg_def XMM3f( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM3g( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM3h( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM3b( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(1));
+reg_def XMM3c( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(2));
+reg_def XMM3d( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(3));
+reg_def XMM3e( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(4));
+reg_def XMM3f( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(5));
+reg_def XMM3g( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(6));
+reg_def XMM3h( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next(7));
 
 reg_def XMM4 ( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg());
-reg_def XMM4b( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next());
-reg_def XMM4c( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next());
-reg_def XMM4d( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next());
-reg_def XMM4e( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next());
-reg_def XMM4f( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM4g( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM4h( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM4b( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(1));
+reg_def XMM4c( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(2));
+reg_def XMM4d( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(3));
+reg_def XMM4e( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(4));
+reg_def XMM4f( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(5));
+reg_def XMM4g( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(6));
+reg_def XMM4h( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next(7));
 
 reg_def XMM5 ( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg());
-reg_def XMM5b( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next());
-reg_def XMM5c( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next());
-reg_def XMM5d( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next());
-reg_def XMM5e( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next());
-reg_def XMM5f( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM5g( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM5h( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM5b( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(1));
+reg_def XMM5c( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(2));
+reg_def XMM5d( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(3));
+reg_def XMM5e( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(4));
+reg_def XMM5f( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(5));
+reg_def XMM5g( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(6));
+reg_def XMM5h( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next(7));
 
 #ifdef _WIN64
 
 reg_def XMM6 ( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg());
-reg_def XMM6b( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next());
-reg_def XMM6c( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next());
-reg_def XMM6d( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next());
-reg_def XMM6e( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next());
-reg_def XMM6f( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM6g( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM6h( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM6b( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(1));
+reg_def XMM6c( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(2));
+reg_def XMM6d( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(3));
+reg_def XMM6e( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(4));
+reg_def XMM6f( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(5));
+reg_def XMM6g( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(6));
+reg_def XMM6h( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next(7));
 
 reg_def XMM7 ( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg());
-reg_def XMM7b( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next());
-reg_def XMM7c( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next());
-reg_def XMM7d( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next());
-reg_def XMM7e( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next());
-reg_def XMM7f( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM7g( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM7h( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM7b( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(1));
+reg_def XMM7c( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(2));
+reg_def XMM7d( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(3));
+reg_def XMM7e( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(4));
+reg_def XMM7f( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(5));
+reg_def XMM7g( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(6));
+reg_def XMM7h( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next(7));
 
 reg_def XMM8 ( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg());
-reg_def XMM8b( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next());
-reg_def XMM8c( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next());
-reg_def XMM8d( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next());
-reg_def XMM8e( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next());
-reg_def XMM8f( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM8g( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM8h( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM8b( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(1));
+reg_def XMM8c( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(2));
+reg_def XMM8d( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(3));
+reg_def XMM8e( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(4));
+reg_def XMM8f( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(5));
+reg_def XMM8g( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(6));
+reg_def XMM8h( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next(7));
 
 reg_def XMM9 ( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg());
-reg_def XMM9b( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next());
-reg_def XMM9c( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next());
-reg_def XMM9d( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next());
-reg_def XMM9e( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next());
-reg_def XMM9f( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM9g( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM9h( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM9b( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(1));
+reg_def XMM9c( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(2));
+reg_def XMM9d( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(3));
+reg_def XMM9e( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(4));
+reg_def XMM9f( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(5));
+reg_def XMM9g( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(6));
+reg_def XMM9h( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next(7));
 
 reg_def XMM10 ( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg());
-reg_def XMM10b( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next());
-reg_def XMM10c( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next());
-reg_def XMM10d( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next());
-reg_def XMM10e( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next());
-reg_def XMM10f( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM10g( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM10h( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM10b( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(1));
+reg_def XMM10c( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(2));
+reg_def XMM10d( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(3));
+reg_def XMM10e( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(4));
+reg_def XMM10f( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(5));
+reg_def XMM10g( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(6));
+reg_def XMM10h( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next(7));
 
 reg_def XMM11 ( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg());
-reg_def XMM11b( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next());
-reg_def XMM11c( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next());
-reg_def XMM11d( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next());
-reg_def XMM11e( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next());
-reg_def XMM11f( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM11g( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM11h( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM11b( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(1));
+reg_def XMM11c( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(2));
+reg_def XMM11d( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(3));
+reg_def XMM11e( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(4));
+reg_def XMM11f( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(5));
+reg_def XMM11g( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(6));
+reg_def XMM11h( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next(7));
 
 reg_def XMM12 ( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg());
-reg_def XMM12b( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next());
-reg_def XMM12c( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next());
-reg_def XMM12d( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next());
-reg_def XMM12e( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next());
-reg_def XMM12f( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM12g( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM12h( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM12b( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(1));
+reg_def XMM12c( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(2));
+reg_def XMM12d( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(3));
+reg_def XMM12e( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(4));
+reg_def XMM12f( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(5));
+reg_def XMM12g( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(6));
+reg_def XMM12h( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next(7));
 
 reg_def XMM13 ( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg());
-reg_def XMM13b( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next());
-reg_def XMM13c( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next());
-reg_def XMM13d( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next());
-reg_def XMM13e( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next());
-reg_def XMM13f( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM13g( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM13h( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM13b( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(1));
+reg_def XMM13c( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(2));
+reg_def XMM13d( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(3));
+reg_def XMM13e( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(4));
+reg_def XMM13f( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(5));
+reg_def XMM13g( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(6));
+reg_def XMM13h( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next(7));
 
 reg_def XMM14 ( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg());
-reg_def XMM14b( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next());
-reg_def XMM14c( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next());
-reg_def XMM14d( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next());
-reg_def XMM14e( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next());
-reg_def XMM14f( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM14g( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM14h( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM14b( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(1));
+reg_def XMM14c( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(2));
+reg_def XMM14d( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(3));
+reg_def XMM14e( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(4));
+reg_def XMM14f( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(5));
+reg_def XMM14g( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(6));
+reg_def XMM14h( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next(7));
 
 reg_def XMM15 ( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg());
-reg_def XMM15b( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next());
-reg_def XMM15c( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next());
-reg_def XMM15d( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next());
-reg_def XMM15e( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next());
-reg_def XMM15f( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM15g( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM15h( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM15b( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(1));
+reg_def XMM15c( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(2));
+reg_def XMM15d( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(3));
+reg_def XMM15e( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(4));
+reg_def XMM15f( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(5));
+reg_def XMM15g( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(6));
+reg_def XMM15h( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next(7));
 
 #else // _WIN64
 
 reg_def XMM6 ( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg());
-reg_def XMM6b( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next());
-reg_def XMM6c( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next());
-reg_def XMM6d( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next());
-reg_def XMM6e( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next());
-reg_def XMM6f( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM6g( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM6h( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM6b( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(1));
+reg_def XMM6c( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(2));
+reg_def XMM6d( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(3));
+reg_def XMM6e( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(4));
+reg_def XMM6f( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(5));
+reg_def XMM6g( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(6));
+reg_def XMM6h( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next(7));
 
 reg_def XMM7 ( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg());
-reg_def XMM7b( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next());
-reg_def XMM7c( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next());
-reg_def XMM7d( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next());
-reg_def XMM7e( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next());
-reg_def XMM7f( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM7g( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM7h( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM7b( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(1));
+reg_def XMM7c( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(2));
+reg_def XMM7d( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(3));
+reg_def XMM7e( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(4));
+reg_def XMM7f( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(5));
+reg_def XMM7g( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(6));
+reg_def XMM7h( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next(7));
 
 #ifdef _LP64
 
 reg_def XMM8 ( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg());
-reg_def XMM8b( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next());
-reg_def XMM8c( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next());
-reg_def XMM8d( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next());
-reg_def XMM8e( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next());
-reg_def XMM8f( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM8g( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM8h( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM8b( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(1));
+reg_def XMM8c( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(2));
+reg_def XMM8d( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(3));
+reg_def XMM8e( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(4));
+reg_def XMM8f( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(5));
+reg_def XMM8g( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(6));
+reg_def XMM8h( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next(7));
 
 reg_def XMM9 ( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg());
-reg_def XMM9b( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next());
-reg_def XMM9c( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next());
-reg_def XMM9d( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next());
-reg_def XMM9e( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next());
-reg_def XMM9f( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM9g( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM9h( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM9b( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(1));
+reg_def XMM9c( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(2));
+reg_def XMM9d( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(3));
+reg_def XMM9e( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(4));
+reg_def XMM9f( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(5));
+reg_def XMM9g( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(6));
+reg_def XMM9h( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next(7));
 
 reg_def XMM10 ( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg());
-reg_def XMM10b( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next());
-reg_def XMM10c( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next());
-reg_def XMM10d( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next());
-reg_def XMM10e( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next());
-reg_def XMM10f( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM10g( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM10h( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM10b( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(1));
+reg_def XMM10c( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(2));
+reg_def XMM10d( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(3));
+reg_def XMM10e( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(4));
+reg_def XMM10f( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(5));
+reg_def XMM10g( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(6));
+reg_def XMM10h( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next(7));
 
 reg_def XMM11 ( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg());
-reg_def XMM11b( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next());
-reg_def XMM11c( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next());
-reg_def XMM11d( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next());
-reg_def XMM11e( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next());
-reg_def XMM11f( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM11g( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM11h( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM11b( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(1));
+reg_def XMM11c( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(2));
+reg_def XMM11d( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(3));
+reg_def XMM11e( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(4));
+reg_def XMM11f( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(5));
+reg_def XMM11g( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(6));
+reg_def XMM11h( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next(7));
 
 reg_def XMM12 ( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg());
-reg_def XMM12b( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next());
-reg_def XMM12c( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next());
-reg_def XMM12d( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next());
-reg_def XMM12e( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next());
-reg_def XMM12f( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM12g( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM12h( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM12b( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(1));
+reg_def XMM12c( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(2));
+reg_def XMM12d( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(3));
+reg_def XMM12e( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(4));
+reg_def XMM12f( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(5));
+reg_def XMM12g( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(6));
+reg_def XMM12h( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next(7));
 
 reg_def XMM13 ( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg());
-reg_def XMM13b( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next());
-reg_def XMM13c( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next());
-reg_def XMM13d( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next());
-reg_def XMM13e( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next());
-reg_def XMM13f( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM13g( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM13h( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM13b( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(1));
+reg_def XMM13c( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(2));
+reg_def XMM13d( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(3));
+reg_def XMM13e( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(4));
+reg_def XMM13f( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(5));
+reg_def XMM13g( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(6));
+reg_def XMM13h( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next(7));
 
 reg_def XMM14 ( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg());
-reg_def XMM14b( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next());
-reg_def XMM14c( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next());
-reg_def XMM14d( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next());
-reg_def XMM14e( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next());
-reg_def XMM14f( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM14g( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM14h( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM14b( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(1));
+reg_def XMM14c( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(2));
+reg_def XMM14d( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(3));
+reg_def XMM14e( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(4));
+reg_def XMM14f( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(5));
+reg_def XMM14g( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(6));
+reg_def XMM14h( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next(7));
 
 reg_def XMM15 ( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg());
-reg_def XMM15b( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next());
-reg_def XMM15c( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next());
-reg_def XMM15d( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next());
-reg_def XMM15e( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next());
-reg_def XMM15f( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next());
-reg_def XMM15g( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next());
-reg_def XMM15h( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+reg_def XMM15b( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(1));
+reg_def XMM15c( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(2));
+reg_def XMM15d( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(3));
+reg_def XMM15e( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(4));
+reg_def XMM15f( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(5));
+reg_def XMM15g( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(6));
+reg_def XMM15h( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next(7));
 
 #endif // _LP64
 
@@ -889,7 +889,7 @@ instruct addF_imm(regF dst, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddF_reg(regF dst, regF src1, regF src2) %{
+instruct addF_reg_reg(regF dst, regF src1, regF src2) %{
   predicate(UseAVX > 0);
   match(Set dst (AddF src1 src2));
 
@@ -901,7 +901,7 @@ instruct vaddF_reg(regF dst, regF src1, regF src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddF_mem(regF dst, regF src1, memory src2) %{
+instruct addF_reg_mem(regF dst, regF src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (AddF src1 (LoadF src2)));
 
@@ -913,7 +913,7 @@ instruct vaddF_mem(regF dst, regF src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddF_imm(regF dst, regF src, immF con) %{
+instruct addF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseAVX > 0);
   match(Set dst (AddF src con));
 
@@ -960,7 +960,7 @@ instruct addD_imm(regD dst, immD con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddD_reg(regD dst, regD src1, regD src2) %{
+instruct addD_reg_reg(regD dst, regD src1, regD src2) %{
   predicate(UseAVX > 0);
   match(Set dst (AddD src1 src2));
 
@@ -972,7 +972,7 @@ instruct vaddD_reg(regD dst, regD src1, regD src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddD_mem(regD dst, regD src1, memory src2) %{
+instruct addD_reg_mem(regD dst, regD src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (AddD src1 (LoadD src2)));
 
@@ -984,7 +984,7 @@ instruct vaddD_mem(regD dst, regD src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddD_imm(regD dst, regD src, immD con) %{
+instruct addD_reg_imm(regD dst, regD src, immD con) %{
   predicate(UseAVX > 0);
   match(Set dst (AddD src con));
 
@@ -1031,7 +1031,7 @@ instruct subF_imm(regF dst, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubF_reg(regF dst, regF src1, regF src2) %{
+instruct subF_reg_reg(regF dst, regF src1, regF src2) %{
   predicate(UseAVX > 0);
   match(Set dst (SubF src1 src2));
 
@@ -1043,7 +1043,7 @@ instruct vsubF_reg(regF dst, regF src1, regF src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubF_mem(regF dst, regF src1, memory src2) %{
+instruct subF_reg_mem(regF dst, regF src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (SubF src1 (LoadF src2)));
 
@@ -1055,7 +1055,7 @@ instruct vsubF_mem(regF dst, regF src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubF_imm(regF dst, regF src, immF con) %{
+instruct subF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseAVX > 0);
   match(Set dst (SubF src con));
 
@@ -1102,7 +1102,7 @@ instruct subD_imm(regD dst, immD con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubD_reg(regD dst, regD src1, regD src2) %{
+instruct subD_reg_reg(regD dst, regD src1, regD src2) %{
   predicate(UseAVX > 0);
   match(Set dst (SubD src1 src2));
 
@@ -1114,7 +1114,7 @@ instruct vsubD_reg(regD dst, regD src1, regD src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubD_mem(regD dst, regD src1, memory src2) %{
+instruct subD_reg_mem(regD dst, regD src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (SubD src1 (LoadD src2)));
 
@@ -1126,7 +1126,7 @@ instruct vsubD_mem(regD dst, regD src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubD_imm(regD dst, regD src, immD con) %{
+instruct subD_reg_imm(regD dst, regD src, immD con) %{
   predicate(UseAVX > 0);
   match(Set dst (SubD src con));
 
@@ -1173,7 +1173,7 @@ instruct mulF_imm(regF dst, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulF_reg(regF dst, regF src1, regF src2) %{
+instruct mulF_reg_reg(regF dst, regF src1, regF src2) %{
   predicate(UseAVX > 0);
   match(Set dst (MulF src1 src2));
 
@@ -1185,7 +1185,7 @@ instruct vmulF_reg(regF dst, regF src1, regF src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulF_mem(regF dst, regF src1, memory src2) %{
+instruct mulF_reg_mem(regF dst, regF src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (MulF src1 (LoadF src2)));
 
@@ -1197,7 +1197,7 @@ instruct vmulF_mem(regF dst, regF src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulF_imm(regF dst, regF src, immF con) %{
+instruct mulF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseAVX > 0);
   match(Set dst (MulF src con));
 
@@ -1244,7 +1244,7 @@ instruct mulD_imm(regD dst, immD con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulD_reg(regD dst, regD src1, regD src2) %{
+instruct mulD_reg_reg(regD dst, regD src1, regD src2) %{
   predicate(UseAVX > 0);
   match(Set dst (MulD src1 src2));
 
@@ -1256,7 +1256,7 @@ instruct vmulD_reg(regD dst, regD src1, regD src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulD_mem(regD dst, regD src1, memory src2) %{
+instruct mulD_reg_mem(regD dst, regD src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (MulD src1 (LoadD src2)));
 
@@ -1268,7 +1268,7 @@ instruct vmulD_mem(regD dst, regD src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulD_imm(regD dst, regD src, immD con) %{
+instruct mulD_reg_imm(regD dst, regD src, immD con) %{
   predicate(UseAVX > 0);
   match(Set dst (MulD src con));
 
@@ -1315,7 +1315,7 @@ instruct divF_imm(regF dst, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivF_reg(regF dst, regF src1, regF src2) %{
+instruct divF_reg_reg(regF dst, regF src1, regF src2) %{
   predicate(UseAVX > 0);
   match(Set dst (DivF src1 src2));
 
@@ -1327,7 +1327,7 @@ instruct vdivF_reg(regF dst, regF src1, regF src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivF_mem(regF dst, regF src1, memory src2) %{
+instruct divF_reg_mem(regF dst, regF src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (DivF src1 (LoadF src2)));
 
@@ -1339,7 +1339,7 @@ instruct vdivF_mem(regF dst, regF src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivF_imm(regF dst, regF src, immF con) %{
+instruct divF_reg_imm(regF dst, regF src, immF con) %{
   predicate(UseAVX > 0);
   match(Set dst (DivF src con));
 
@@ -1386,7 +1386,7 @@ instruct divD_imm(regD dst, immD con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivD_reg(regD dst, regD src1, regD src2) %{
+instruct divD_reg_reg(regD dst, regD src1, regD src2) %{
   predicate(UseAVX > 0);
   match(Set dst (DivD src1 src2));
 
@@ -1398,7 +1398,7 @@ instruct vdivD_reg(regD dst, regD src1, regD src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivD_mem(regD dst, regD src1, memory src2) %{
+instruct divD_reg_mem(regD dst, regD src1, memory src2) %{
   predicate(UseAVX > 0);
   match(Set dst (DivD src1 (LoadD src2)));
 
@@ -1410,7 +1410,7 @@ instruct vdivD_mem(regD dst, regD src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vdivD_imm(regD dst, regD src, immD con) %{
+instruct divD_reg_imm(regD dst, regD src, immD con) %{
   predicate(UseAVX > 0);
   match(Set dst (DivD src con));
 
@@ -1433,7 +1433,7 @@ instruct absF_reg(regF dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsF_reg(regF dst, regF src) %{
+instruct absF_reg_reg(regF dst, regF src) %{
   predicate(UseAVX > 0);
   match(Set dst (AbsF src));
   ins_cost(150);
@@ -1457,7 +1457,7 @@ instruct absD_reg(regD dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsD_reg(regD dst, regD src) %{
+instruct absD_reg_reg(regD dst, regD src) %{
   predicate(UseAVX > 0);
   match(Set dst (AbsD src));
   ins_cost(150);
@@ -1481,7 +1481,7 @@ instruct negF_reg(regF dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vnegF_reg(regF dst, regF src) %{
+instruct negF_reg_reg(regF dst, regF src) %{
   predicate(UseAVX > 0);
   match(Set dst (NegF src));
   ins_cost(150);
@@ -1505,7 +1505,7 @@ instruct negD_reg(regD dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vnegD_reg(regD dst, regD src) %{
+instruct negD_reg_reg(regD dst, regD src) %{
   predicate(UseAVX > 0);
   match(Set dst (NegD src));
   ins_cost(150);
@@ -1719,12 +1719,12 @@ instruct Repl16B(vecX dst, rRegI src) %{
   format %{ "movd    $dst,$src\n\t"
             "punpcklbw $dst,$dst\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
-            "movlhps $dst,$dst\t! replicate16B" %}
+            "punpcklqdq $dst,$dst\t! replicate16B" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1735,14 +1735,14 @@ instruct Repl32B(vecY dst, rRegI src) %{
   format %{ "movd    $dst,$src\n\t"
             "punpcklbw $dst,$dst\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate32B" %}
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1751,9 +1751,9 @@ instruct Repl32B(vecY dst, rRegI src) %{
 instruct Repl4B_imm(vecS dst, immI con) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateB con));
-  format %{ "movss   $dst,[$constantaddress]\t! replicate4B($con)" %}
+  format %{ "movdl   $dst,[$constantaddress]\t! replicate4B($con)" %}
   ins_encode %{
-    __ movflt($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 1)));
+    __ movdl($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 1)));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1761,9 +1761,9 @@ instruct Repl4B_imm(vecS dst, immI con) %{
 instruct Repl8B_imm(vecD dst, immI con) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateB con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate8B($con)" %}
+  format %{ "movq    $dst,[$constantaddress]\t! replicate8B($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1771,11 +1771,11 @@ instruct Repl8B_imm(vecD dst, immI con) %{
 instruct Repl16B_imm(vecX dst, immI con) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (ReplicateB con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate16B($con)\n\t"
-            "movlhps $dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\t! replicate16B($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1783,13 +1783,13 @@ instruct Repl16B_imm(vecX dst, immI con) %{
 instruct Repl32B_imm(vecY dst, immI con) %{
   predicate(n->as_Vector()->length() == 32);
   match(Set dst (ReplicateB con));
-  format %{ "movsd   $dst,[$constantaddress]\t! lreplicate32B($con)\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! lreplicate32B($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1828,11 +1828,11 @@ instruct Repl16B_zero(vecX dst, immI0 zero) %{
 instruct Repl32B_zero(vecY dst, immI0 zero) %{
   predicate(n->as_Vector()->length() == 32);
   match(Set dst (ReplicateB zero));
-  format %{ "vxorpd  $dst,$dst,$dst\t! replicate32B zero" %}
+  format %{ "vpxor   $dst,$dst,$dst\t! replicate32B zero" %}
   ins_encode %{
     // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
     bool vector256 = true;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -1867,11 +1867,11 @@ instruct Repl8S(vecX dst, rRegI src) %{
   match(Set dst (ReplicateS src));
   format %{ "movd    $dst,$src\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
-            "movlhps $dst,$dst\t! replicate8S" %}
+            "punpcklqdq $dst,$dst\t! replicate8S" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1881,13 +1881,13 @@ instruct Repl16S(vecY dst, rRegI src) %{
   match(Set dst (ReplicateS src));
   format %{ "movd    $dst,$src\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate16S" %}
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1896,9 +1896,9 @@ instruct Repl16S(vecY dst, rRegI src) %{
 instruct Repl2S_imm(vecS dst, immI con) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateS con));
-  format %{ "movss   $dst,[$constantaddress]\t! replicate2S($con)" %}
+  format %{ "movdl   $dst,[$constantaddress]\t! replicate2S($con)" %}
   ins_encode %{
-    __ movflt($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 2)));
+    __ movdl($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 2)));
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -1906,9 +1906,9 @@ instruct Repl2S_imm(vecS dst, immI con) %{
 instruct Repl4S_imm(vecD dst, immI con) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateS con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate4S($con)" %}
+  format %{ "movq    $dst,[$constantaddress]\t! replicate4S($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -1916,11 +1916,11 @@ instruct Repl4S_imm(vecD dst, immI con) %{
 instruct Repl8S_imm(vecX dst, immI con) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateS con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate8S($con)\n\t"
-            "movlhps $dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\t! replicate8S($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1928,13 +1928,13 @@ instruct Repl8S_imm(vecX dst, immI con) %{
 instruct Repl16S_imm(vecY dst, immI con) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (ReplicateS con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate16S($con)\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate16S($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -1973,11 +1973,11 @@ instruct Repl8S_zero(vecX dst, immI0 zero) %{
 instruct Repl16S_zero(vecY dst, immI0 zero) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (ReplicateS zero));
-  format %{ "vxorpd  $dst,$dst,$dst\t! replicate16S zero" %}
+  format %{ "vpxor   $dst,$dst,$dst\t! replicate16S zero" %}
   ins_encode %{
     // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
     bool vector256 = true;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -2012,11 +2012,11 @@ instruct Repl8I(vecY dst, rRegI src) %{
   match(Set dst (ReplicateI src));
   format %{ "movd    $dst,$src\n\t"
             "pshufd  $dst,$dst,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate8I" %}
+            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2025,9 +2025,9 @@ instruct Repl8I(vecY dst, rRegI src) %{
 instruct Repl2I_imm(vecD dst, immI con) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateI con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate2I($con)" %}
+  format %{ "movq    $dst,[$constantaddress]\t! replicate2I($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -2035,11 +2035,11 @@ instruct Repl2I_imm(vecD dst, immI con) %{
 instruct Repl4I_imm(vecX dst, immI con) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateI con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate4I($con)\n\t"
-            "movlhps $dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\t! replicate4I($con)\n\t"
+            "punpcklqdq $dst,$dst" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2047,13 +2047,13 @@ instruct Repl4I_imm(vecX dst, immI con) %{
 instruct Repl8I_imm(vecY dst, immI con) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateI con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate8I($con)\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2061,7 +2061,7 @@ instruct Repl8I_imm(vecY dst, immI con) %{
 // Integer could be loaded into xmm register directly from memory.
 instruct Repl2I_mem(vecD dst, memory mem) %{
   predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI (LoadVector mem)));
+  match(Set dst (ReplicateI (LoadI mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\t! replicate2I" %}
   ins_encode %{
@@ -2073,7 +2073,7 @@ instruct Repl2I_mem(vecD dst, memory mem) %{
 
 instruct Repl4I_mem(vecX dst, memory mem) %{
   predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI (LoadVector mem)));
+  match(Set dst (ReplicateI (LoadI mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\t! replicate4I" %}
   ins_encode %{
@@ -2085,14 +2085,14 @@ instruct Repl4I_mem(vecX dst, memory mem) %{
 
 instruct Repl8I_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateI (LoadVector mem)));
+  match(Set dst (ReplicateI (LoadI mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate8I" %}
+            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $mem$$Address);
     __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2121,11 +2121,11 @@ instruct Repl4I_zero(vecX dst, immI0 zero) %{
 instruct Repl8I_zero(vecY dst, immI0 zero) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (ReplicateI zero));
-  format %{ "vxorpd  $dst,$dst,$dst\t! replicate8I zero" %}
+  format %{ "vpxor   $dst,$dst,$dst\t! replicate8I zero" %}
   ins_encode %{
     // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
     bool vector256 = true;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -2136,10 +2136,10 @@ instruct Repl2L(vecX dst, rRegL src) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateL src));
   format %{ "movdq   $dst,$src\n\t"
-            "movlhps $dst,$dst\t! replicate2L" %}
+            "punpcklqdq $dst,$dst\t! replicate2L" %}
   ins_encode %{
     __ movdq($dst$$XMMRegister, $src$$Register);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2148,12 +2148,12 @@ instruct Repl4L(vecY dst, rRegL src) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateL src));
   format %{ "movdq   $dst,$src\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movdq($dst$$XMMRegister, $src$$Register);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2165,12 +2165,12 @@ instruct Repl2L(vecX dst, eRegL src, regD tmp) %{
   format %{ "movdl   $dst,$src.lo\n\t"
             "movdl   $tmp,$src.hi\n\t"
             "punpckldq $dst,$tmp\n\t"
-            "movlhps $dst,$dst\t! replicate2L"%}
+            "punpcklqdq $dst,$dst\t! replicate2L"%}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
     __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2182,14 +2182,14 @@ instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
   format %{ "movdl   $dst,$src.lo\n\t"
             "movdl   $tmp,$src.hi\n\t"
             "punpckldq $dst,$tmp\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
     __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2199,11 +2199,11 @@ instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
 instruct Repl2L_imm(vecX dst, immL con) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateL con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate2L($con)\n\t"
-            "movlhps $dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\t! replicate2L($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress($con));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress($con));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2211,13 +2211,13 @@ instruct Repl2L_imm(vecX dst, immL con) %{
 instruct Repl4L_imm(vecY dst, immL con) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateL con));
-  format %{ "movsd   $dst,[$constantaddress]\t! replicate4L($con)\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst" %}
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L($con)" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $constantaddress($con));
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ movq($dst$$XMMRegister, $constantaddress($con));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2225,26 +2225,26 @@ instruct Repl4L_imm(vecY dst, immL con) %{
 // Long could be loaded into xmm register directly from memory.
 instruct Repl2L_mem(vecX dst, memory mem) %{
   predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateL (LoadVector mem)));
+  match(Set dst (ReplicateL (LoadL mem)));
   format %{ "movq    $dst,$mem\n\t"
-            "movlhps $dst,$dst\t! replicate2L" %}
+            "punpcklqdq $dst,$dst\t! replicate2L" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $mem$$Address);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct Repl4L_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL (LoadVector mem)));
+  match(Set dst (ReplicateL (LoadL mem)));
   format %{ "movq    $dst,$mem\n\t"
-            "movlhps $dst,$dst\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $mem$$Address);
-    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -2263,11 +2263,11 @@ instruct Repl2L_zero(vecX dst, immL0 zero) %{
 instruct Repl4L_zero(vecY dst, immL0 zero) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateL zero));
-  format %{ "vxorpd  $dst,$dst,$dst\t! replicate4L zero" %}
+  format %{ "vpxor   $dst,$dst,$dst\t! replicate4L zero" %}
   ins_encode %{
     // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
     bool vector256 = true;
-    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
 %}
