@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,33 +39,39 @@ import java.net.URI;
  *
  * @see DesktopPeer
  */
-public class WDesktopPeer implements DesktopPeer {
+final class WDesktopPeer implements DesktopPeer {
     /* Contants for the operation verbs */
     private static String ACTION_OPEN_VERB = "open";
     private static String ACTION_EDIT_VERB = "edit";
     private static String ACTION_PRINT_VERB = "print";
 
+    @Override
     public boolean isSupported(Action action) {
         // OPEN, EDIT, PRINT, MAIL, BROWSE all supported on windows.
         return true;
     }
 
+    @Override
     public void open(File file) throws IOException {
         this.ShellExecute(file, ACTION_OPEN_VERB);
     }
 
+    @Override
     public void edit(File file) throws IOException {
         this.ShellExecute(file, ACTION_EDIT_VERB);
     }
 
+    @Override
     public void print(File file) throws IOException {
         this.ShellExecute(file, ACTION_PRINT_VERB);
     }
 
+    @Override
     public void mail(URI uri) throws IOException {
         this.ShellExecute(uri, ACTION_OPEN_VERB);
     }
 
+    @Override
     public void browse(URI uri) throws IOException {
         this.ShellExecute(uri, ACTION_OPEN_VERB);
     }

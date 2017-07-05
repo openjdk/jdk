@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,25 @@
  * @bug 4993819
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @ignore run this by hand
- *
- *      java    -Djava.security.manager \
- *              -Djava.ext.dirs=./ExtDirsA:./ExtDirsB \
- *              -Djava.security.debug=parser \
- *              ExtDirsDefaultPolicy
+ * @run main/manual ExtDirsDefaultPolicy
+ */
+
+/*
+ * Run this test manually with:
+ * java    -Djava.security.manager \
+ *         -Djava.ext.dirs=./ExtDirsA:./ExtDirsB \
+ *         -Djava.security.debug=parser \
+ *         ExtDirsDefaultPolicy
  *
  * To test other varients of the ${{java.ext.dirs}} protocol, remove
  * the grant statement for java.ext.dirs in $JAVA_HOME/lib/security/java.policy
  * and then run against the 3 different policy files.
  *
- *      java    -Djava.security.manager \
- *              -Djava.ext.dirs=./ExtDirsA:./ExtDirsB \
- *              -Djava.security.debug=parser \
- *              -Djava.security.policy=ExtDirs{1,2,3}.policy \
- *              ExtDirsDefaultPolicy
+ * java    -Djava.security.manager \
+ *         -Djava.ext.dirs=./ExtDirsA:./ExtDirsB \
+ *         -Djava.security.debug=parser \
+ *         -Djava.security.policy=ExtDirs{1,2,3}.policy \
+ *         ExtDirsDefaultPolicy
  */
 
 public class ExtDirsDefaultPolicy {

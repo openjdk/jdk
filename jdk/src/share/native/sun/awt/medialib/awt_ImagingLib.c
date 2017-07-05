@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1106,6 +1106,7 @@ fprintf(stderr,"Flags   : %d\n",dst->flags);
     if (ddata == NULL) {
         /* Need to store it back into the array */
         if (storeRasterArray(env, srcRasterP, dstRasterP, dst) < 0) {
+            (*env)->ExceptionClear(env); // Could not store the array, try another way
             retStatus = awt_setPixels(env, dstRasterP, mlib_ImageGetData(dst));
         }
     }
@@ -2014,6 +2015,7 @@ cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
 
     jpixels = (*env)->NewIntArray(env, nbytes);
     if (JNU_IsNull(env, jpixels)) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }
@@ -2079,6 +2081,7 @@ cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
 
     jpixels = (*env)->NewIntArray(env, nbytes);
     if (JNU_IsNull(env, jpixels)) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }
@@ -2775,21 +2778,14 @@ static int expandICM(JNIEnv *env, BufImageS_t *imageP, unsigned int *mDataP)
 
     /* Need to grab the lookup tables.  Right now only bytes */
     rgb = (int *) (*env)->GetPrimitiveArrayCritical(env, cmP->jrgb, NULL);
+    CHECK_NULL_RETURN(rgb, -1);
 
     /* Interleaved with shared data */
     dataP = (void *) (*env)->GetPrimitiveArrayCritical(env,
                                                        rasterP->jdata, NULL);
-    if (rgb == NULL || dataP == NULL) {
+    if (dataP == NULL) {
         /* Release the lookup tables */
-        if (rgb) {
-            (*env)->ReleasePrimitiveArrayCritical(env, cmP->jrgb, rgb,
-                                                  JNI_ABORT);
-        }
-        if (dataP) {
-            (*env)->ReleasePrimitiveArrayCritical(env,
-                                                  rasterP->jdata, dataP,
-                                                  JNI_ABORT);
-        }
+        (*env)->ReleasePrimitiveArrayCritical(env, cmP->jrgb, rgb, JNI_ABORT);
         return -1;
     }
 

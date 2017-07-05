@@ -99,7 +99,7 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
         }
         if (value instanceof Type) {
             int sort = ((Type) value).getSort();
-            if (sort != Type.OBJECT && sort != Type.ARRAY) {
+            if (sort == Type.METHOD) {
                 throw new IllegalArgumentException("Invalid annotation value");
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package sun.lwawt.macosx;
 
 import java.awt.AWTKeyStroke;
 import java.awt.Toolkit;
 import java.lang.reflect.InvocationTargetException;
+
 import sun.awt.EmbeddedFrame;
-import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
+
 /*
  * The CViewEmbeddedFrame class is used in the SWT_AWT bridge.
  * This is a part of public API and should not be renamed or moved
@@ -48,7 +51,7 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
     @Override
     public void addNotify() {
         if (getPeer() == null) {
-            LWToolkit toolkit = (LWToolkit) Toolkit.getDefaultToolkit();
+            LWCToolkit toolkit = (LWCToolkit) Toolkit.getDefaultToolkit();
             setPeer(toolkit.createEmbeddedFrame(this));
         }
         super.addNotify();

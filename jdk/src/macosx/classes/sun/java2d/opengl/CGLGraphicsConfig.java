@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@ import java.awt.BufferCapabilities;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
@@ -80,23 +77,34 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     private ContextCapabilities oglCaps;
     private OGLContext context;
     private final Object disposerReferent = new Object();
+    private final int maxTextureSize;
+
     private static native boolean initCGL();
     private static native long getCGLConfigInfo(int displayID, int visualnum,
                                                 int swapInterval);
     private static native int getOGLCapabilities(long configInfo);
+
+    /**
+     * Returns GL_MAX_TEXTURE_SIZE from the shared opengl context. Must be
+     * called under OGLRQ lock, because this method change current context.
+     *
+     * @return GL_MAX_TEXTURE_SIZE
+     */
+    private static native int nativeGetMaxTextureSize();
 
     static {
         cglAvailable = initCGL();
     }
 
     private CGLGraphicsConfig(CGraphicsDevice device, int pixfmt,
-                                long configInfo, ContextCapabilities oglCaps)
-    {
+                              long configInfo, int maxTextureSize,
+                              ContextCapabilities oglCaps) {
         super(device);
 
         this.pixfmt = pixfmt;
         this.pConfigInfo = configInfo;
         this.oglCaps = oglCaps;
+        this.maxTextureSize = maxTextureSize;
         context = new OGLContext(OGLRenderQueue.getInstance(), this);
 
         // add a record to the Disposer so that we destroy the native
@@ -126,6 +134,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         }
 
         long cfginfo = 0;
+        int textureSize = 0;
         final String ids[] = new String[1];
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
@@ -138,11 +147,14 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
             cfginfo = getCGLConfigInfo(device.getCGDisplayID(), pixfmt,
                                        kOpenGLSwapInterval);
             if (cfginfo != 0L) {
+                textureSize = nativeGetMaxTextureSize();
+                // 7160609: GL still fails to create a square texture of this
+                // size. Half should be safe enough.
+                // Explicitly not support a texture more than 2^14, see 8010999.
+                textureSize = textureSize <= 16384 ? textureSize / 2 : 8192;
                 OGLContext.setScratchSurface(cfginfo);
-                rq.flushAndInvokeNow(new Runnable() {
-                    public void run() {
-                        ids[0] = OGLContext.getOGLIdString();
-                    }
+                rq.flushAndInvokeNow(() -> {
+                    ids[0] = OGLContext.getOGLIdString();
                 });
             }
         } finally {
@@ -154,8 +166,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
 
         int oglCaps = getOGLCapabilities(cfginfo);
         ContextCapabilities caps = new OGLContextCaps(oglCaps, ids[0]);
-
-        return new CGLGraphicsConfig(device, pixfmt, cfginfo, caps);
+        return new CGLGraphicsConfig(device, pixfmt, cfginfo, textureSize, caps);
     }
 
     public static boolean isCGLAvailable() {
@@ -246,8 +257,6 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         } finally {
             rq.unlock();
         }
-
-        updateTotalDisplayBounds();
     }
 
     @Override
@@ -421,57 +430,15 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         AccelDeviceEventNotifier.removeListener(l);
     }
 
-    private static final Rectangle totalDisplayBounds = new Rectangle();
-
-    private static void updateTotalDisplayBounds() {
-        synchronized (totalDisplayBounds) {
-            Rectangle virtualBounds = new Rectangle();
-            for (GraphicsDevice gd : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
-                for (GraphicsConfiguration gc : gd.getConfigurations()) {
-                    virtualBounds = virtualBounds.union(gc.getBounds());
-                }
-            }
-            totalDisplayBounds.setBounds(virtualBounds);
-        }
-    }
-
-    // 7160609: GL still fails to create a square texture of this size,
-    //          so we use this value to cap the total display bounds.
-    native private static int getMaxTextureSize();
-
     @Override
     public int getMaxTextureWidth() {
-        //Temporary disable this logic and use some magic constrain.
-        /*
-         int width;
-
-         synchronized (totalDisplayBounds) {
-         if (totalDisplayBounds.width == 0) {
-         updateTotalDisplayBounds();
-         }
-         width = totalDisplayBounds.width;
-         }
-
-         return Math.min(width, getMaxTextureSize());
-         */
-        return getMaxTextureSize() / (getDevice().getScaleFactor() * 2);
+        return Math.max(maxTextureSize / getDevice().getScaleFactor(),
+                        getBounds().width);
     }
 
     @Override
     public int getMaxTextureHeight() {
-        //Temporary disable this logic and use some magic constrain.
-        /*
-         int height;
-
-         synchronized (totalDisplayBounds) {
-         if (totalDisplayBounds.height == 0) {
-         updateTotalDisplayBounds();
-         }
-         height = totalDisplayBounds.height;
-         }
-
-         return Math.min(height, getMaxTextureSize());
-         */
-        return getMaxTextureSize() / (getDevice().getScaleFactor() * 2);
+        return Math.max(maxTextureSize / getDevice().getScaleFactor(),
+                        getBounds().height);
     }
 }

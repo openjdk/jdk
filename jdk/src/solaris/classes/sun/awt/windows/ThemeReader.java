@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package sun.awt.windows;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Point;
 
 
 /**
@@ -36,7 +39,8 @@ import java.awt.*;
  *
  * @author Leif Samuelsson
  */
-public class ThemeReader {
+public final class ThemeReader {
+
     public static boolean isThemed() {
         return false;
     }
@@ -84,16 +88,18 @@ public class ThemeReader {
     public static Dimension getPartSize(String widget, int part, int state) {
         return null;
     }
+
     public static long getThemeTransitionDuration(String widget, int part,
                                        int stateFrom, int stateTo, int propId) {
         return 0;
     }
+
     public static boolean isGetThemeTransitionDurationDefined() {
         return false;
     }
+
     public static Insets getThemeBackgroundContentMargins(String widget,
                     int part, int state, int boundingWidth, int boundingHeight) {
         return null;
     }
-
 }

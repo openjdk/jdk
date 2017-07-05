@@ -32,8 +32,6 @@ import java.security.*;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.*;
 
-import sun.security.action.GetPropertyAction;
-
 /**
  * A factory for CardTerminal objects.
  *
@@ -99,8 +97,8 @@ public final class TerminalFactory {
 
     static {
         // lookup up the user specified type, default to PC/SC
-        String type = AccessController.doPrivileged
-                            (new GetPropertyAction(PROP_NAME, "PC/SC")).trim();
+        String type = AccessController.doPrivileged(
+             (PrivilegedAction<String>) () -> System.getProperty(PROP_NAME, "PC/SC")).trim();
         TerminalFactory factory = null;
         try {
             factory = TerminalFactory.getInstance(type, null);

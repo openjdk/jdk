@@ -265,7 +265,7 @@ public class DerValue {
             if (tag != inbuf.read())
                 throw new IOException
                         ("Indefinite length encoding not supported");
-            length = DerInputStream.getLength(inbuf);
+            length = DerInputStream.getDefiniteLength(inbuf);
             buffer = inbuf.dup();
             buffer.truncate(length);
             data = new DerInputStream(buffer);
@@ -377,7 +377,7 @@ public class DerValue {
             if (tag != in.read())
                 throw new IOException
                         ("Indefinite length encoding not supported");
-            length = DerInputStream.getLength(in);
+            length = DerInputStream.getDefiniteLength(in);
         }
 
         if (fullyBuffered && in.available() != length)

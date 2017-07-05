@@ -37,7 +37,6 @@ import java.util.Map;
 import sun.misc.GC;
 import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
-import sun.security.action.GetLongAction;
 
 /**
  * Object table shared by all implementors of the Transport interface.
@@ -51,8 +50,8 @@ public final class ObjectTable {
 
     /** maximum interval between complete garbage collections of local heap */
     private final static long gcInterval =              // default 1 hour
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.dgc.server.gcInterval", 3600000));
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.dgc.server.gcInterval", 3600000));
 
     /**
      * lock guarding objTable and implTable.

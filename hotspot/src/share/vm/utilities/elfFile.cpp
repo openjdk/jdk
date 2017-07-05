@@ -140,7 +140,7 @@ bool ElfFile::load_tables() {
       }
     }
 
-#if defined(PPC64)
+#if defined(PPC64) && !defined(ABI_ELFv2)
     // Now read the .opd section wich contains the PPC64 function descriptor table.
     // The .opd section is only available on PPC64 (see for example:
     // http://refspecs.linuxfoundation.org/LSB_3.1.1/LSB-Core-PPC64/LSB-Core-PPC64/specialsections.html)

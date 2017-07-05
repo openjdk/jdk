@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.awt.windows;
 
-public class WPageDialogPeer extends WPrintDialogPeer {
+final class WPageDialogPeer extends WPrintDialogPeer {
 
     WPageDialogPeer(WPageDialog target) {
         super(target);
@@ -37,8 +37,10 @@ public class WPageDialogPeer extends WPrintDialogPeer {
      */
     private native boolean _show();
 
+    @Override
     public void show() {
         new Thread(new Runnable() {
+                @Override
                 public void run() {
                     // Call pageSetup even with no printer installed, this
                     // will display Windows error dialog and return false.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 #import <AppKit/AppKit.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "jni_util.h"
 
 #include "ThreadUtilities.h"
 
@@ -172,7 +173,9 @@ JNF_COCOA_ENTER(env);
         NSData *tiffImage = [imageRep TIFFRepresentation];
         jsize tiffSize = (jsize)[tiffImage length]; // #warning 64-bit: -length returns NSUInteger, but NewByteArray takes jsize
         returnValue = (*env)->NewByteArray(env, tiffSize);
+        CHECK_NULL_RETURN(returnValue, nil);
         jbyte *tiffData = (jbyte *)(*env)->GetPrimitiveArrayCritical(env, returnValue, 0);
+        CHECK_NULL_RETURN(tiffData, nil);
         [tiffImage getBytes:tiffData];
         (*env)->ReleasePrimitiveArrayCritical(env, returnValue, tiffData, 0); // Do not use JNI_COMMIT, as that will not free the buffer copy when +ProtectJavaHeap is on.
         [imageRep release];
@@ -184,12 +187,13 @@ JNF_COCOA_EXIT(env);
 
 static jobject getImageForByteStream(JNIEnv *env, jbyteArray sourceData)
 {
-    if (sourceData == NULL) return NULL;
+    CHECK_NULL_RETURN(sourceData, NULL);
 
     jsize sourceSize = (*env)->GetArrayLength(env, sourceData);
     if (sourceSize == 0) return NULL;
 
     jbyte *sourceBytes = (*env)->GetPrimitiveArrayCritical(env, sourceData, NULL);
+    CHECK_NULL_RETURN(sourceBytes, NULL);
     NSData *rawData = [NSData dataWithBytes:sourceBytes length:sourceSize];
 
     NSImage *newImage = [[NSImage alloc] initWithData:rawData];
@@ -197,8 +201,7 @@ static jobject getImageForByteStream(JNIEnv *env, jbyteArray sourceData)
     [newImage release];
 
     (*env)->ReleasePrimitiveArrayCritical(env, sourceData, sourceBytes, JNI_ABORT);
-
-    if (newImage == nil) return NULL;
+    CHECK_NULL_RETURN(newImage, NULL);
 
     // The ownership of the NSImage is passed to the new CImage jobject. No need to release it.
     static JNF_CLASS_CACHE(jc_CImage, "sun/lwawt/macosx/CImage");
@@ -231,7 +234,8 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
     if (filenameCount == 0) return nil;
 
     // Get the java.lang.String class object:
-    jclass stringClazz = (*env)->FindClass(env, "java/lang/String"); // can't be null
+    jclass stringClazz = (*env)->FindClass(env, "java/lang/String");
+    CHECK_NULL_RETURN(stringClazz, nil);
     jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL); // AWT_THREADING Safe (known object)
     if ((*env)->ExceptionOccurred(env)) {
         (*env)->ExceptionDescribe(env);

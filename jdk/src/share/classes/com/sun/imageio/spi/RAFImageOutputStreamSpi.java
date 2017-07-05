@@ -38,7 +38,7 @@ public class RAFImageOutputStreamSpi extends ImageOutputStreamSpi {
 
     private static final String version = "1.0";
 
-    private static final Class outputClass = RandomAccessFile.class;
+    private static final Class<?> outputClass = RandomAccessFile.class;
 
     public RAFImageOutputStreamSpi() {
         super(vendorName, version, outputClass);
