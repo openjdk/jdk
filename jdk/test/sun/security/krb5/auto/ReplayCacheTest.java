@@ -24,14 +24,6 @@
 /*
  * @test
  * @bug 7118809 8001326
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm ReplayCacheTest jvm
  * @run main/othervm ReplayCacheTest dfl
  * @summary rcache deadlock

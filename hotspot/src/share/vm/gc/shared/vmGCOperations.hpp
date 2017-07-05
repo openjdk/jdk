@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_VMGCOPERATIONS_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
@@ -193,14 +194,14 @@ class VM_GenCollectForAllocation : public VM_CollectForAllocation {
 // GenCollectedHeap heap.
 class VM_GenCollectFull: public VM_GC_Operation {
  private:
-  int _max_level;
+  GenCollectedHeap::GenerationType _max_generation;
  public:
   VM_GenCollectFull(uint gc_count_before,
                     uint full_gc_count_before,
                     GCCause::Cause gc_cause,
-                    int max_level)
+                    GenCollectedHeap::GenerationType max_generation)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */),
-      _max_level(max_level) { }
+      _max_generation(max_generation) { }
   ~VM_GenCollectFull() {}
   virtual VMOp_Type type() const { return VMOp_GenCollectFull; }
   virtual void doit();

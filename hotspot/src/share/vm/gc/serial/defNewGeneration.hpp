@@ -154,9 +154,9 @@ protected:
 
  public:  // was "protected" but caused compile error on win32
   class IsAliveClosure: public BoolObjectClosure {
-    Generation* _g;
+    Generation* _young_gen;
   public:
-    IsAliveClosure(Generation* g);
+    IsAliveClosure(Generation* young_gen);
     bool do_object_b(oop p);
   };
 
@@ -183,31 +183,28 @@ protected:
 
   class EvacuateFollowersClosure: public VoidClosure {
     GenCollectedHeap* _gch;
-    int _level;
     ScanClosure* _scan_cur_or_nonheap;
     ScanClosure* _scan_older;
   public:
-    EvacuateFollowersClosure(GenCollectedHeap* gch, int level,
+    EvacuateFollowersClosure(GenCollectedHeap* gch,
                              ScanClosure* cur, ScanClosure* older);
     void do_void();
   };
 
   class FastEvacuateFollowersClosure: public VoidClosure {
     GenCollectedHeap* _gch;
-    int _level;
     DefNewGeneration* _gen;
     FastScanClosure* _scan_cur_or_nonheap;
     FastScanClosure* _scan_older;
   public:
-    FastEvacuateFollowersClosure(GenCollectedHeap* gch, int level,
-                                 DefNewGeneration* gen,
+    FastEvacuateFollowersClosure(GenCollectedHeap* gch,
                                  FastScanClosure* cur,
                                  FastScanClosure* older);
     void do_void();
   };
 
  public:
-  DefNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level,
+  DefNewGeneration(ReservedSpace rs, size_t initial_byte_size,
                    const char* policy="Copy");
 
   virtual void ref_processor_init();

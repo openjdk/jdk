@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
   @bug 6960516
   @summary check if the ungrab event has the ID < AWTEvent.RESERVED_ID_MAX
   @author Andrei Dmitriev : area=awt.event
+  @modules java.desktop/sun.awt
   @run main UngrabID
 */
 

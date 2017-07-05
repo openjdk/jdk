@@ -263,6 +263,20 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
     }
   }
 
+  void visit(const G1HeapSummary* g1_heap_summary) const {
+    visit((GCHeapSummary*)g1_heap_summary);
+
+    EventG1HeapSummary e;
+    if (e.should_commit()) {
+      e.set_gcId(_gc_id.id());
+      e.set_when((u1)_when);
+      e.set_edenUsedSize(g1_heap_summary->edenUsed());
+      e.set_edenTotalSize(g1_heap_summary->edenCapacity());
+      e.set_survivorUsedSize(g1_heap_summary->survivorUsed());
+      e.commit();
+    }
+  }
+
   void visit(const PSHeapSummary* ps_heap_summary) const {
     visit((GCHeapSummary*)ps_heap_summary);
 

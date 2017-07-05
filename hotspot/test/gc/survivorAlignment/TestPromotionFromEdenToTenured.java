@@ -36,42 +36,42 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
  *                   TestPromotionFromEdenToTenured 10m 47 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m  -XX:MaxHeapSize=96m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=128m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromEdenToTenured 10m 87 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32M -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                   TestPromotionFromEdenToTenured 10m 9 TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=64m -XX:MaxNewSize=64m
  *                   -XX:OldSize=32m -XX:MaxHeapSize=96m -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                   TestPromotionFromEdenToTenured 10m 147 TENURED

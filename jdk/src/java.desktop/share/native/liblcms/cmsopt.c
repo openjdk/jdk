@@ -260,7 +260,9 @@ cmsBool _MultiplyMatrix(cmsPipeline* Lut)
                             cmsStage* Multmat = cmsStageAllocMatrix(Lut->ContextID, 3, 3, (const cmsFloat64Number*) &res, NULL);
 
                             // Recover the chain
-                            Multmat->Next = chain;
+                            if (Multmat != NULL) {
+                                Multmat->Next = chain;
+                            }
                             *pt1 = Multmat;
                      }
 

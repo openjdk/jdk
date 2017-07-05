@@ -47,6 +47,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
@@ -70,7 +71,8 @@ public class CipherTestUtils {
     public static final SecureRandom secureRandom = new SecureRandom();
     public static char[] PASSWORD = "passphrase".toCharArray();
     private static final List<TestParameters> TESTS = new ArrayList<>(3);
-    private static final List<Exception> EXCEPTIONS = new ArrayList<>(1);
+    private static final List<Exception> EXCEPTIONS
+            = Collections.synchronizedList(new ArrayList<>(1));
     private static final String CLIENT_PUBLIC_KEY
         = "-----BEGIN CERTIFICATE-----\n"
         + "MIICtTCCAh4CCQDkYJ46DMcGRjANBgkqhkiG9w0BAQUFADCBnDELMAkGA1UEBhMC\n"
