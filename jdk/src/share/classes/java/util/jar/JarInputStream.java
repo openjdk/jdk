@@ -28,6 +28,7 @@ package java.util.jar;
 import java.util.zip.*;
 import java.io.*;
 import sun.security.util.ManifestEntryVerifier;
+import sun.misc.JarIndex;
 
 /**
  * The <code>JarInputStream</code> class is used to read the contents of
@@ -47,7 +48,8 @@ class JarInputStream extends ZipInputStream {
     private JarEntry first;
     private JarVerifier jv;
     private ManifestEntryVerifier mev;
-
+    private final boolean doVerify;
+    private boolean tryManifest;
 
     /**
      * Creates a new <code>JarInputStream</code> and reads the optional
@@ -72,25 +74,33 @@ class JarInputStream extends ZipInputStream {
      */
     public JarInputStream(InputStream in, boolean verify) throws IOException {
         super(in);
-        JarEntry e = (JarEntry)super.getNextEntry();
+        this.doVerify = verify;
 
+        // This implementation assumes the META-INF/MANIFEST.MF entry
+        // should be either the first or the second entry (when preceded
+        // by the dir META-INF/). It skips the META-INF/ and then
+        // "consumes" the MANIFEST.MF to initialize the Manifest object.
+        JarEntry e = (JarEntry)super.getNextEntry();
         if (e != null && e.getName().equalsIgnoreCase("META-INF/"))
             e = (JarEntry)super.getNextEntry();
+        first = checkManifest(e);
+    }
 
+    private JarEntry checkManifest(JarEntry e)
+        throws IOException
+    {
         if (e != null && JarFile.MANIFEST_NAME.equalsIgnoreCase(e.getName())) {
             man = new Manifest();
             byte bytes[] = getBytes(new BufferedInputStream(this));
             man.read(new ByteArrayInputStream(bytes));
-            //man.read(new BufferedInputStream(this));
             closeEntry();
-            if (verify) {
+            if (doVerify) {
                 jv = new JarVerifier(bytes);
                 mev = new ManifestEntryVerifier(man);
             }
-            first = getNextJarEntry();
-        } else {
-            first = e;
+            return (JarEntry)super.getNextEntry();
         }
+        return e;
     }
 
     private byte[] getBytes(InputStream is)
@@ -98,10 +108,7 @@ class JarInputStream extends ZipInputStream {
     {
         byte[] buffer = new byte[8192];
         ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-
         int n;
-
-        baos.reset();
         while ((n = is.read(buffer, 0, buffer.length)) != -1) {
             baos.write(buffer, 0, n);
         }
@@ -133,8 +140,14 @@ class JarInputStream extends ZipInputStream {
         JarEntry e;
         if (first == null) {
             e = (JarEntry)super.getNextEntry();
+            if (tryManifest) {
+                e = checkManifest(e);
+                tryManifest = false;
+            }
         } else {
             e = first;
+            if (first.getName().equalsIgnoreCase(JarIndex.INDEX_NAME))
+                tryManifest = true;
             first = null;
         }
         if (jv != null && e != null) {

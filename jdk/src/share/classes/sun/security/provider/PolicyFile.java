@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,7 +653,7 @@ public class PolicyFile extends java.security.Policy {
             }
         } catch (PolicyParser.ParsingException pe) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                (POLICY + ": error parsing policy:\n\tmessage"));
+                (POLICY + ".error.parsing.policy.message"));
             Object[] source = {policy, pe.getLocalizedMessage()};
             System.err.println(form.format(source));
             if (debug != null)
@@ -895,7 +895,7 @@ public class PolicyFile extends java.security.Policy {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
                          (POLICY +
-                          ": error adding Permission, perm:\n\tmessage"));
+                          ".error.adding.Permission.perm.message"));
                     Object[] source = {pe.permission,
                                        ite.getTargetException().toString()};
                     System.err.println(form.format(source));
@@ -903,7 +903,7 @@ public class PolicyFile extends java.security.Policy {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
                          (POLICY +
-                          ": error adding Permission, perm:\n\tmessage"));
+                          ".error.adding.Permission.perm.message"));
                     Object[] source = {pe.permission,
                                        e.toString()};
                     System.err.println(form.format(source));
@@ -915,7 +915,7 @@ public class PolicyFile extends java.security.Policy {
         } catch (Exception e) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
                                          (POLICY
-                                         + ": error adding Entry:\n\tmessage"));
+                                         + ".error.adding.Entry.message"));
             Object[] source = {e.toString()};
             System.err.println(form.format(source));
         }
@@ -1950,7 +1950,7 @@ public class PolicyFile extends java.security.Policy {
                 if (colonIndex == -1) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("alias name not provided (pe.name)"));
+                        ("alias.name.not.provided.pe.name."));
                     Object[] source = {pe.name};
                     throw new Exception(form.format(source));
                 }
@@ -1958,7 +1958,7 @@ public class PolicyFile extends java.security.Policy {
                 if ((suffix = getDN(suffix, keystore)) == null) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("unable to perform substitution on alias, suffix"));
+                        ("unable.to.perform.substitution.on.alias.suffix"));
                     Object[] source = {value.substring(colonIndex+1)};
                     throw new Exception(form.format(source));
                 }
@@ -1968,7 +1968,7 @@ public class PolicyFile extends java.security.Policy {
             } else {
                 MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("substitution value, prefix, unsupported"));
+                        ("substitution.value.prefix.unsupported"));
                 Object[] source = {prefix};
                 throw new Exception(form.format(source));
             }
@@ -2127,18 +2127,18 @@ public class PolicyFile extends java.security.Policy {
 
         @Override public String toString(){
             StringBuilder sb = new StringBuilder();
-            sb.append(ResourcesMgr.getString("("));
+            sb.append(ResourcesMgr.getString("LPARAM"));
             sb.append(getCodeSource());
             sb.append("\n");
             for (int j = 0; j < permissions.size(); j++) {
                 Permission p = permissions.get(j);
-                sb.append(ResourcesMgr.getString(" "));
-                sb.append(ResourcesMgr.getString(" "));
+                sb.append(ResourcesMgr.getString("SPACE"));
+                sb.append(ResourcesMgr.getString("SPACE"));
                 sb.append(p);
-                sb.append(ResourcesMgr.getString("\n"));
+                sb.append(ResourcesMgr.getString("NEWLINE"));
             }
-            sb.append(ResourcesMgr.getString(")"));
-            sb.append(ResourcesMgr.getString("\n"));
+            sb.append(ResourcesMgr.getString("RPARAM"));
+            sb.append(ResourcesMgr.getString("NEWLINE"));
             return sb.toString();
         }
     }
@@ -2195,7 +2195,7 @@ public class PolicyFile extends java.security.Policy {
             super(type);
             if (type == null) {
                 throw new NullPointerException
-                    (ResourcesMgr.getString("type can't be null"));
+                    (ResourcesMgr.getString("type.can.t.be.null"));
             }
             this.type = type;
             this.name = name;

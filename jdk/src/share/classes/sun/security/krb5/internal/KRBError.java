@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ import sun.security.util.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import sun.security.krb5.internal.util.KerberosString;
 /**
  * Implements the ASN.1 KRBError type.
@@ -96,10 +98,8 @@ public class KRBError implements java.io.Serializable {
     private byte[] eData; //optional
     private Checksum eCksum; //optional
 
-    // pre-auth info
-    private int etype = 0;
-    private String salt = null;
-    private byte[] s2kparams = null;
+    private PAData[] pa;    // PA-DATA in eData
+    private int pa_eType;   // The 1st etype appeared in salt-related PAData
 
     private static boolean DEBUG = Krb5.DEBUG;
 
@@ -260,10 +260,12 @@ public class KRBError implements java.io.Serializable {
     private void parsePAData(byte[] data)
             throws IOException, Asn1Exception {
         DerValue derPA = new DerValue(data);
+        List<PAData> paList = new ArrayList<PAData>();
         while (derPA.data.available() > 0) {
             // read the PA-DATA
             DerValue tmp = derPA.data.getDerValue();
             PAData pa_data = new PAData(tmp);
+            paList.add(pa_data);
             int pa_type = pa_data.getType();
             byte[] pa_value = pa_data.getValue();
             if (DEBUG) {
@@ -280,24 +282,13 @@ public class KRBError implements java.io.Serializable {
                 case Krb5.PA_ETYPE_INFO:
                     if (pa_value != null) {
                         DerValue der = new DerValue(pa_value);
-                        DerValue value = der.data.getDerValue();
-                        ETypeInfo info = new ETypeInfo(value);
-                        etype = info.getEType();
-                        salt = info.getSalt();
-                        if (DEBUG) {
-                            System.out.println("\t PA-ETYPE-INFO etype = " + etype);
-                            System.out.println("\t PA-ETYPE-INFO salt = " + salt);
-                        }
                         while (der.data.available() > 0) {
-                            value = der.data.getDerValue();
-                            info = new ETypeInfo(value);
+                            DerValue value = der.data.getDerValue();
+                            ETypeInfo info = new ETypeInfo(value);
+                            if (pa_eType == 0) pa_eType = info.getEType();
                             if (DEBUG) {
-                                etype = info.getEType();
-                                System.out.println("\t salt for " + etype
-                                        + " is " + info.getSalt());
-                            }
-                            if (salt == null || salt.isEmpty()) {
-                                salt = info.getSalt();
+                                System.out.println("\t PA-ETYPE-INFO etype = " + info.getEType());
+                                System.out.println("\t PA-ETYPE-INFO salt = " + info.getSalt());
                             }
                         }
                     }
@@ -305,25 +296,13 @@ public class KRBError implements java.io.Serializable {
                 case Krb5.PA_ETYPE_INFO2:
                     if (pa_value != null) {
                         DerValue der = new DerValue(pa_value);
-                        DerValue value = der.data.getDerValue();
-                        ETypeInfo2 info2 = new ETypeInfo2(value);
-                        etype = info2.getEType();
-                        salt = info2.getSalt();
-                        s2kparams = info2.getParams();
-                        if (DEBUG) {
-                            System.out.println("\t PA-ETYPE-INFO2 etype = " + etype);
-                            System.out.println("\t PA-ETYPE-INFO salt = " + salt);
-                        }
                         while (der.data.available() > 0) {
-                            value = der.data.getDerValue();
-                            info2 = new ETypeInfo2(value);
+                            DerValue value = der.data.getDerValue();
+                            ETypeInfo2 info2 = new ETypeInfo2(value);
+                            if (pa_eType == 0) pa_eType = info2.getEType();
                             if (DEBUG) {
-                                etype = info2.getEType();
-                                System.out.println("\t salt for " + etype
-                                        + " is " + info2.getSalt());
-                            }
-                            if (salt == null || salt.isEmpty()) {
-                                salt = info2.getSalt();
+                                System.out.println("\t PA-ETYPE-INFO2 etype = " + info2.getEType());
+                                System.out.println("\t PA-ETYPE-INFO2 salt = " + info2.getSalt());
                             }
                         }
                     }
@@ -333,6 +312,7 @@ public class KRBError implements java.io.Serializable {
                     break;
             }
         }
+        pa = paList.toArray(new PAData[paList.size()]);
     }
 
     public final KerberosTime getServerTime() {
@@ -356,18 +336,12 @@ public class KRBError implements java.io.Serializable {
     }
 
     // access pre-auth info
+    public final PAData[] getPA() {
+        return pa;
+    }
+
     public final int getEType() {
-        return etype;
-    }
-
-    // access pre-auth info
-    public final String getSalt() {
-        return salt;
-    }
-
-    // access pre-auth info
-    public final byte[] getParams() {
-        return ((s2kparams == null) ? null : s2kparams.clone());
+        return pa_eType;
     }
 
     public final String getErrorString() {

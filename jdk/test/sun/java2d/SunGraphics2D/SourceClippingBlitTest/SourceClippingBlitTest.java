@@ -204,6 +204,9 @@ public class SourceClippingBlitTest extends Canvas {
         int w = getWidth();
         int h = getHeight();
         Toolkit.getDefaultToolkit().sync();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {}
         Point p = getLocationOnScreen();
         grabbedBI = robot.createScreenCapture(new Rectangle(p.x, p.y, w, h));
 

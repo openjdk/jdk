@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class SolarisNumericUserPrincipal implements
      */
     public SolarisNumericUserPrincipal(String name) {
         if (name == null)
-            throw new NullPointerException(rb.getString("provided null name"));
+            throw new NullPointerException(rb.getString("provided.null.name"));
 
         this.name = name;
     }
@@ -134,7 +134,7 @@ public class SolarisNumericUserPrincipal implements
      *          <code>SolarisNumericUserPrincipal</code>.
      */
     public String toString() {
-        return(rb.getString("SolarisNumericUserPrincipal: ") + name);
+        return(rb.getString("SolarisNumericUserPrincipal.") + name);
     }
 
     /**

@@ -42,3 +42,10 @@ DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 #
 include $(BUILDDIR)/common/Demo.gmk
 
+#EXTJAR = $(EXTDIR)/$(DEMONAME).jar
+#
+#all : build $(EXTJAR)
+#
+#$(EXTJAR) : $(DEMO_JAR)
+#	$(prep-target)
+#	$(CP) $(DEMO_JAR) $(EXTJAR)

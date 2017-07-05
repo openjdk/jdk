@@ -348,94 +348,6 @@ public class Credentials {
     }
 
     /**
-     * Returns a TGT for the given client principal via an AS-Exchange.
-     * This method causes pre-authentication data to be sent in the
-     * AS-REQ.
-     *
-     * @param princ the client principal. This value cannot be null.
-     * @param secretKey the secret key of the client principal.This value
-     * cannot be null.
-     * @returns the TGT credentials
-     */
-    public static Credentials acquireTGT(PrincipalName princ,
-                                         EncryptionKey[] secretKeys,
-                                         char[] password)
-        throws KrbException, IOException {
-
-        if (princ == null)
-            throw new IllegalArgumentException(
-                        "Cannot have null principal to do AS-Exchange");
-
-        if (secretKeys == null)
-            throw new IllegalArgumentException(
-                        "Cannot have null secretKey to do AS-Exchange");
-
-        KrbAsRep asRep = null;
-        try {
-            asRep = sendASRequest(princ, secretKeys, null);
-        } catch (KrbException ke) {
-            if ((ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) ||
-                (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED)) {
-                // process pre-auth info
-                if (DEBUG) {
-                    System.out.println("AcquireTGT: PREAUTH FAILED/REQUIRED," +
-                                " re-send AS-REQ");
-                }
-
-                KRBError error = ke.getError();
-                // update salt in PrincipalName
-                String newSalt = error.getSalt();
-                if (newSalt != null && newSalt.length() > 0) {
-                    princ.setSalt(newSalt);
-                }
-
-                // refresh keys
-                if (password != null) {
-                    secretKeys = EncryptionKey.acquireSecretKeys(password,
-                                princ.getSalt(), true,
-                                error.getEType(), error.getParams());
-                }
-                asRep = sendASRequest(princ, secretKeys, ke.getError());
-            } else {
-                throw ke;
-            }
-        }
-        return asRep.getCreds();
-    }
-
-    /**
-     * Sends the AS-REQ
-     */
-    private static KrbAsRep sendASRequest(PrincipalName princ,
-        EncryptionKey[] secretKeys, KRBError error)
-        throws KrbException, IOException {
-
-        // %%%
-        KrbAsReq asReq = null;
-        if (error == null) {
-            asReq = new KrbAsReq(princ, secretKeys);
-        } else {
-            asReq = new KrbAsReq(princ, secretKeys, true,
-                        error.getEType(), error.getSalt(), error.getParams());
-        }
-
-        String kdc = null;
-        KrbAsRep asRep  = null;
-        try {
-            kdc = asReq.send();
-            asRep =  asReq.getReply(secretKeys);
-        } catch (KrbException ke) {
-                if (ke.returnCode() == Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
-                    asReq.send(princ.getRealmString(), kdc, true);
-                    asRep =  asReq.getReply(secretKeys);
-                } else {
-                    throw ke;
-                }
-        }
-        return asRep;
-    }
-
-    /**
      * Acquires default credentials.
      * <br>The possible locations for default credentials cache is searched in
      * the following order:
@@ -527,29 +439,6 @@ public class Credentials {
                                                   Credentials ccreds)
         throws KrbException, IOException {
         return CredentialsUtil.acquireServiceCreds(service, ccreds);
-    }
-
-
-    /*
-     * This method does the real job to request the service credential.
-     */
-
-    private static Credentials serviceCreds(ServiceName service,
-                                            Credentials ccreds)
-        throws KrbException, IOException {
-        return new KrbTgsReq(
-                new KDCOptions(),
-                ccreds,
-                service,
-                null, // KerberosTime from
-                null, // KerberosTime till
-                null, // KerberosTime rtime
-                null, // int[] eTypes
-                null, // HostAddresses addresses
-                null, // AuthorizationData
-                null, // Ticket[] additionalTickets
-                null  // EncryptionKey subSessionKey
-                ).sendAndGetCreds();
     }
 
     public CredentialsCache getCache() {
