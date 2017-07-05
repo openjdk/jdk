@@ -1161,12 +1161,6 @@ void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
 }
 
-
-void MacroAssembler::safepoint() {
-  relocate(breakpoint_Relocation::spec(breakpoint_Relocation::safepoint));
-}
-
-
 void RegistersForDebugging::print(outputStream* s) {
   FlagSetting fs(Debugging, true);
   int j;

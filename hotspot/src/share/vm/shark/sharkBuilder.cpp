@@ -471,7 +471,7 @@ Value* SharkBuilder::CreateInlineOop(jobject object, const char* name) {
 
 Value* SharkBuilder::CreateInlineMetadata(Metadata* metadata, llvm::PointerType* type, const char* name) {
   assert(metadata != NULL, "inlined metadata must not be NULL");
-  assert(metadata->is_metadata(), "sanity check");
+  assert(metadata->is_metaspace_object(), "sanity check");
   return CreateLoad(
     CreateIntToPtr(
       code_buffer_address(code_buffer()->inline_Metadata(metadata)),
