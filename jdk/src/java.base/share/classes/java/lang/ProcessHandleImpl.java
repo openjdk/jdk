@@ -42,8 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import sun.misc.InnocuousThread;
-
 import static java.security.AccessController.doPrivileged;
 
 /**

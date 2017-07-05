@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,7 @@ class IntType extends BitwiseType {
         if(programPoint == INVALID_PROGRAM_POINT) {
             method.visitInsn(IADD);
         } else {
-            ldc(method, programPoint);
-            JSType.ADD_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }
@@ -215,8 +214,7 @@ class IntType extends BitwiseType {
         if(programPoint == INVALID_PROGRAM_POINT) {
             method.visitInsn(ISUB);
         } else {
-            ldc(method, programPoint);
-            JSType.SUB_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("isub", "(II)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }
@@ -226,8 +224,7 @@ class IntType extends BitwiseType {
         if(programPoint == INVALID_PROGRAM_POINT) {
             method.visitInsn(IMUL);
         } else {
-            ldc(method, programPoint);
-            JSType.MUL_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("imul", "(II)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }
@@ -237,8 +234,7 @@ class IntType extends BitwiseType {
         if (programPoint == INVALID_PROGRAM_POINT) {
             JSType.DIV_ZERO.invoke(method);
         } else {
-            ldc(method, programPoint);
-            JSType.DIV_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("idiv", "(II)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }
@@ -248,8 +244,7 @@ class IntType extends BitwiseType {
         if (programPoint == INVALID_PROGRAM_POINT) {
             JSType.REM_ZERO.invoke(method);
         } else {
-            ldc(method, programPoint);
-            JSType.REM_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("irem", "(II)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }
@@ -259,8 +254,7 @@ class IntType extends BitwiseType {
         if(programPoint == INVALID_PROGRAM_POINT) {
             method.visitInsn(INEG);
         } else {
-            ldc(method, programPoint);
-            JSType.NEGATE_EXACT.invoke(method);
+            method.visitInvokeDynamicInsn("ineg", "(I)I", MATHBOOTSTRAP, programPoint);
         }
         return INT;
     }

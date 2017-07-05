@@ -319,6 +319,7 @@ else # HAS_SPEC=true
 	$(call PrepareCompareBuild)
 
     post-compare-build:
+	$(call WaitForSmartJavacFinish)
 	$(call CleanupCompareBuild)
 	$(call CompareBuildDoComparison)
 
