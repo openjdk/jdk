@@ -131,7 +131,7 @@ JLINK_TOOL := $(JLINK) --module-path $(IMAGES_OUTPUTDIR)/jmods \
     $(JLINK_JLI_CLASSES) \
     #
 
-JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files
+JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
