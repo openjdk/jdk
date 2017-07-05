@@ -42,7 +42,7 @@ public class Bug8075548 {
             { "LLL",  "MMM" }
         };
         Locale[] LOCALES = {
-            Locale.ENGLISH, Locale.FRENCH, Locale.GERMAN, Locale.JAPANESE
+            Locale.ENGLISH, Locale.JAPANESE
         };
 
         for (Locale locale : LOCALES) {

@@ -42,12 +42,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateCrtKey;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Implementation of key store for Windows using the Microsoft Crypto API.
@@ -141,7 +136,7 @@ abstract class KeyStore extends KeyStoreSpi {
                 key.getPrimeExponentQ().toByteArray(),
                 key.getCrtCoefficient().toByteArray());
 
-            privateKey = storePrivateKey(keyBlob,
+            privateKey = storePrivateKey(Objects.requireNonNull(keyBlob),
                 "{" + UUID.randomUUID().toString() + "}", keyBitLength);
         }
 

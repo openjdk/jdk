@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!--
+Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<supplementalData>
+    <version number="$Revision: 9732 $"/>
+    <generation date="$Date: 2014-02-13 11:57:02 -0600 (Thu, 13 Feb 2014) $"/>
+    <numberingSystems>
+        <numberingSystem id="arab" type="numeric" digits="٠١٢٣٤٥٦٧٨٩"/>
+        <numberingSystem id="arabext" type="numeric" digits="۰۱۲۳۴۵۶۷۸۹"/>
+        <numberingSystem id="armn" type="algorithmic" rules="armenian-upper"/>
+        <numberingSystem id="armnlow" type="algorithmic" rules="armenian-lower"/>
+        <numberingSystem id="bali" type="numeric" digits="᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙"/>
+        <numberingSystem id="beng" type="numeric" digits="০১২৩৪৫৬৭৮৯"/>
+        <numberingSystem id="brah" type="numeric" digits="𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯" draft="provisional"/>
+        <numberingSystem id="cakm" type="numeric" digits="𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿" draft="provisional"/>
+        <numberingSystem id="cham" type="numeric" digits="꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙"/>
+        <numberingSystem id="deva" type="numeric" digits="०१२३४५६७८९"/>
+        <numberingSystem id="ethi" type="algorithmic" rules="ethiopic"/>
+        <numberingSystem id="fullwide" type="numeric" digits="０１２３４５６７８９"/>
+        <numberingSystem id="geor" type="algorithmic" rules="georgian"/>
+        <numberingSystem id="grek" type="algorithmic" rules="greek-upper"/>
+        <numberingSystem id="greklow" type="algorithmic" rules="greek-lower"/>
+        <numberingSystem id="gujr" type="numeric" digits="૦૧૨૩૪૫૬૭૮૯"/>
+        <numberingSystem id="guru" type="numeric" digits="੦੧੨੩੪੫੬੭੮੯"/>
+        <numberingSystem id="hanidays" type="algorithmic" rules="zh/SpelloutRules/spellout-numbering-days"/>
+        <numberingSystem id="hanidec" type="numeric" digits="〇一二三四五六七八九"/>
+        <numberingSystem id="hans" type="algorithmic" rules="zh/SpelloutRules/spellout-cardinal"/>
+        <numberingSystem id="hansfin" type="algorithmic" rules="zh/SpelloutRules/spellout-cardinal-financial"/>
+        <numberingSystem id="hant" type="algorithmic" rules="zh_Hant/SpelloutRules/spellout-cardinal"/>
+        <numberingSystem id="hantfin" type="algorithmic" rules="zh_Hant/SpelloutRules/spellout-cardinal-financial"/>
+        <numberingSystem id="hebr" type="algorithmic" rules="hebrew"/>
+        <numberingSystem id="java" type="numeric" digits="꧐꧑꧒꧓꧔꧕꧖꧗꧘꧙"/>
+        <numberingSystem id="jpan" type="algorithmic" rules="ja/SpelloutRules/spellout-cardinal"/>
+        <numberingSystem id="jpanfin" type="algorithmic" rules="ja/SpelloutRules/spellout-cardinal-financial"/>
+        <numberingSystem id="kali" type="numeric" digits="꤀꤁꤂꤃꤄꤅꤆꤇꤈꤉"/>
+        <numberingSystem id="khmr" type="numeric" digits="០១២៣៤៥៦៧៨៩"/>
+        <numberingSystem id="knda" type="numeric" digits="೦೧೨೩೪೫೬೭೮೯"/>
+        <numberingSystem id="lana" type="numeric" digits="᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉"/>
+        <numberingSystem id="lanatham" type="numeric" digits="᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙"/>
+        <numberingSystem id="laoo" type="numeric" digits="໐໑໒໓໔໕໖໗໘໙"/>
+        <numberingSystem id="latn" type="numeric" digits="0123456789"/>
+        <numberingSystem id="lepc" type="numeric" digits="᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉"/>
+        <numberingSystem id="limb" type="numeric" digits="᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏"/>
+        <numberingSystem id="mlym" type="numeric" digits="൦൧൨൩൪൫൬൭൮൯"/>
+        <numberingSystem id="mong" type="numeric" digits="᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙"/>
+        <numberingSystem id="mtei" type="numeric" digits="꯰꯱꯲꯳꯴꯵꯶꯷꯸꯹"/>
+        <numberingSystem id="mymr" type="numeric" digits="၀၁၂၃၄၅၆၇၈၉"/>
+        <numberingSystem id="mymrshan" type="numeric" digits="႐႑႒႓႔႕႖႗႘႙"/>
+        <numberingSystem id="nkoo" type="numeric" digits="߀߁߂߃߄߅߆߇߈߉"/>
+        <numberingSystem id="olck" type="numeric" digits="᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙"/>
+        <numberingSystem id="orya" type="numeric" digits="୦୧୨୩୪୫୬୭୮୯"/>
+        <numberingSystem id="osma" type="numeric" digits="𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩" draft="provisional"/>
+        <numberingSystem id="roman" type="algorithmic" rules="roman-upper"/>
+        <numberingSystem id="romanlow" type="algorithmic" rules="roman-lower"/>
+        <numberingSystem id="saur" type="numeric" digits="꣐꣑꣒꣓꣔꣕꣖꣗꣘꣙"/>
+        <numberingSystem id="shrd" type="numeric" digits="𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙" draft="provisional"/>
+        <numberingSystem id="sora" type="numeric" digits="𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹" draft="provisional"/>
+        <numberingSystem id="sund" type="numeric" digits="᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹"/>
+        <numberingSystem id="takr" type="numeric" digits="𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉" draft="provisional"/>
+        <numberingSystem id="talu" type="numeric" digits="᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙"/>
+        <numberingSystem id="taml" type="algorithmic" rules="tamil"/>
+        <numberingSystem id="tamldec" type="numeric" digits="௦௧௨௩௪௫௬௭௮௯"/>
+        <numberingSystem id="telu" type="numeric" digits="౦౧౨౩౪౫౬౭౮౯"/>
+        <numberingSystem id="thai" type="numeric" digits="๐๑๒๓๔๕๖๗๘๙"/>
+        <numberingSystem id="tibt" type="numeric" digits="༠༡༢༣༤༥༦༧༨༩"/>
+        <numberingSystem id="vaii" type="numeric" digits="꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩"/>
+    </numberingSystems>
+</supplementalData>

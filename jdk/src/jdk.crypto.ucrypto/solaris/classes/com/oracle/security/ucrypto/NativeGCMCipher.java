@@ -48,20 +48,8 @@ class NativeGCMCipher extends NativeCipher {
         public AesGcmNoPadding() throws NoSuchAlgorithmException {
             super(-1);
         }
-    }
-    public static final class Aes128GcmNoPadding extends NativeGCMCipher {
-        public Aes128GcmNoPadding() throws NoSuchAlgorithmException {
-            super(16);
-        }
-    }
-    public static final class Aes192GcmNoPadding extends NativeGCMCipher {
-        public Aes192GcmNoPadding() throws NoSuchAlgorithmException {
-            super(24);
-        }
-    }
-    public static final class Aes256GcmNoPadding extends NativeGCMCipher {
-        public Aes256GcmNoPadding() throws NoSuchAlgorithmException {
-            super(32);
+        public AesGcmNoPadding(int keySize) throws NoSuchAlgorithmException {
+            super(keySize);
         }
     }
 

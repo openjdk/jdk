@@ -99,10 +99,10 @@ public final class DebugLogger {
                         final StringBuilder sb = new StringBuilder();
 
                         sb.append('[')
-                           .append(record.getLoggerName())
-                           .append("] ")
-                           .append(record.getMessage())
-                           .append('\n');
+                        .append(record.getLoggerName())
+                        .append("] ")
+                        .append(record.getMessage())
+                        .append('\n');
 
                         return sb.toString();
                     }
@@ -194,7 +194,7 @@ public final class DebugLogger {
      */
     public void indent(final int pos) {
         if (isEnabled) {
-           indent += pos * INDENT_SPACE;
+            indent += pos * INDENT_SPACE;
         }
     }
 
@@ -227,57 +227,14 @@ public final class DebugLogger {
     }
 
     /**
-     * Check if the logger is above the level of detail given
+     * Check if the event of given level will be logged.
      * @see java.util.logging.Level
      *
-     * The higher the level, the more severe the warning
-     *
      * @param level logging level
-     * @return true if level is above the given one
+     * @return true if event of given level will be logged.
      */
-    public boolean levelCoarserThan(final Level level) {
-        return getLevel().intValue() > level.intValue();
-    }
-
-    /**
-     * Check if the logger is above or equal to the level
-     * of detail given
-     * @see java.util.logging.Level
-     *
-     * The higher the level, the more severe the warning
-     *
-     * @param level logging level
-     * @return true if level is above the given one
-     */
-    public boolean levelCoarserThanOrEqual(final Level level) {
-        return getLevel().intValue() >= level.intValue();
-    }
-
-    /**
-     * Check if the logger is below the level of detail given
-     * @see java.util.logging.Level
-     *
-     * The higher the level, the more severe the warning
-     *
-     * @param level logging level
-     * @return true if level is above the given one
-     */
-    public boolean levelFinerThan(final Level level) {
-        return getLevel().intValue() < level.intValue();
-    }
-
-    /**
-     * Check if the logger is below or equal to the level
-     * of detail given
-     * @see java.util.logging.Level
-     *
-     * The higher the level, the more severe the warning
-     *
-     * @param level logging level
-     * @return true if level is above the given one
-     */
-    public boolean levelFinerThanOrEqual(final Level level) {
-        return getLevel().intValue() <= level.intValue();
+    public boolean isLoggable(final Level level) {
+        return logger.isLoggable(level);
     }
 
     /**
@@ -566,7 +523,7 @@ public final class DebugLogger {
      * @param str   string to log
      */
     public void log(final Level level, final String str) {
-        if (isEnabled && !isQuiet) {
+        if (isEnabled && !isQuiet && logger.isLoggable(level)) {
             final StringBuilder sb = new StringBuilder();
             for (int i = 0 ; i < indent ; i++) {
                 sb.append(' ');
@@ -584,7 +541,7 @@ public final class DebugLogger {
      * @param objs  objects for which to invoke toString and concatenate to log
      */
     public void log(final Level level, final Object... objs) {
-        if (isEnabled && !isQuiet) {
+        if (isEnabled && !isQuiet && logger.isLoggable(level)) {
             final StringBuilder sb = new StringBuilder();
             for (final Object obj : objs) {
                 sb.append(obj);

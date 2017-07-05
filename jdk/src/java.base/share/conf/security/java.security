@@ -66,7 +66,7 @@
 # List of providers and their preference orders (see above):
 #
 #ifdef solaris
-security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider ${java.home}/conf/security/ucrypto-solaris.cfg
+security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider
 security.provider.tbd=sun.security.pkcs11.SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
 #endif
 security.provider.tbd=sun.security.provider.Sun
@@ -79,12 +79,17 @@ security.provider.tbd=com.sun.security.sasl.Provider
 security.provider.tbd=org.jcp.xml.dsig.internal.dom.XMLDSigRI
 security.provider.tbd=sun.security.smartcardio.SunPCSC
 security.provider.tbd=sun.security.provider.certpath.ldap.JdkLDAP
+security.provider.tbd=com.sun.security.sasl.gsskerb.JdkSASL
 #ifdef windows
 security.provider.tbd=sun.security.mscapi.SunMSCAPI
 #endif
 #ifdef macosx
 security.provider.tbd=apple.security.AppleProvider
 #endif
+#ifndef solaris
+security.provider.tbd=sun.security.pkcs11.SunPKCS11
+#endif
+
 
 #
 # Sun Provider SecureRandom seed source.
