@@ -31,9 +31,6 @@ import static java.util.Locale.ENGLISH;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 
-import java.security.cert.CertStoreParameters;
-import javax.security.auth.login.Configuration;
-
 /**
  * This class represents a "provider" for the
  * Java Security API, where a provider implements some or all parts of
@@ -453,8 +450,8 @@ public abstract class Provider extends Properties {
      * Internal method to be called AFTER the security check has been
      * performed.
      */
-    private void implPutAll(Map t) {
-        for (Map.Entry e : ((Map<?,?>)t).entrySet()) {
+    private void implPutAll(Map<?,?> t) {
+        for (Map.Entry<?,?> e : t.entrySet()) {
             implPut(e.getKey(), e.getValue());
         }
     }
@@ -562,9 +559,9 @@ public abstract class Provider extends Properties {
      * occur if the legacy properties are inconsistent or incomplete.
      */
     private void removeInvalidServices(Map<ServiceKey,Service> map) {
-        for (Iterator t = map.entrySet().iterator(); t.hasNext(); ) {
-            Map.Entry entry = (Map.Entry)t.next();
-            Service s = (Service)entry.getValue();
+        for (Iterator<Map.Entry<ServiceKey, Service>> t =
+                map.entrySet().iterator(); t.hasNext(); ) {
+            Service s = t.next().getValue();
             if (s.isValid() == false) {
                 t.remove();
             }
@@ -918,15 +915,15 @@ public abstract class Provider extends Properties {
         final String name;
         final boolean supportsParameter;
         final String constructorParameterClassName;
-        private volatile Class constructorParameterClass;
+        private volatile Class<?> constructorParameterClass;
 
         EngineDescription(String name, boolean sp, String paramName) {
             this.name = name;
             this.supportsParameter = sp;
             this.constructorParameterClassName = paramName;
         }
-        Class getConstructorParameterClass() throws ClassNotFoundException {
-            Class clazz = constructorParameterClass;
+        Class<?> getConstructorParameterClass() throws ClassNotFoundException {
+            Class<?> clazz = constructorParameterClass;
             if (clazz == null) {
                 clazz = Class.forName(constructorParameterClassName);
                 constructorParameterClass = clazz;
@@ -1038,7 +1035,7 @@ public abstract class Provider extends Properties {
         private Map<UString,String> attributes;
 
         // Reference to the cached implementation Class object
-        private volatile Reference<Class> classRef;
+        private volatile Reference<Class<?>> classRef;
 
         // flag indicating whether this service has its attributes for
         // supportedKeyFormats or supportedKeyClasses set
@@ -1055,7 +1052,7 @@ public abstract class Provider extends Properties {
         // whether this service has been registered with the Provider
         private boolean registered;
 
-        private static final Class[] CLASS0 = new Class[0];
+        private static final Class<?>[] CLASS0 = new Class<?>[0];
 
         // this constructor and these methods are used for parsing
         // the legacy string properties.
@@ -1234,12 +1231,12 @@ public abstract class Provider extends Properties {
                             ("constructorParameter not used with " + type
                             + " engines");
                     }
-                    Class clazz = getImplClass();
+                    Class<?> clazz = getImplClass();
                     return clazz.newInstance();
                 } else {
-                    Class paramClass = cap.getConstructorParameterClass();
+                    Class<?> paramClass = cap.getConstructorParameterClass();
                     if (constructorParameter != null) {
-                        Class argClass = constructorParameter.getClass();
+                        Class<?> argClass = constructorParameter.getClass();
                         if (paramClass.isAssignableFrom(argClass) == false) {
                             throw new InvalidParameterException
                             ("constructorParameter must be instanceof "
@@ -1247,8 +1244,8 @@ public abstract class Provider extends Properties {
                             + " for engine type " + type);
                         }
                     }
-                    Class clazz = getImplClass();
-                    Constructor cons = clazz.getConstructor(paramClass);
+                    Class<?> clazz = getImplClass();
+                    Constructor<?> cons = clazz.getConstructor(paramClass);
                     return cons.newInstance(constructorParameter);
                 }
             } catch (NoSuchAlgorithmException e) {
@@ -1267,10 +1264,10 @@ public abstract class Provider extends Properties {
         }
 
         // return the implementation Class object for this service
-        private Class getImplClass() throws NoSuchAlgorithmException {
+        private Class<?> getImplClass() throws NoSuchAlgorithmException {
             try {
-                Reference<Class> ref = classRef;
-                Class clazz = (ref == null) ? null : ref.get();
+                Reference<Class<?>> ref = classRef;
+                Class<?> clazz = (ref == null) ? null : ref.get();
                 if (clazz == null) {
                     ClassLoader cl = provider.getClass().getClassLoader();
                     if (cl == null) {
@@ -1278,7 +1275,7 @@ public abstract class Provider extends Properties {
                     } else {
                         clazz = cl.loadClass(className);
                     }
-                    classRef = new WeakReference<Class>(clazz);
+                    classRef = new WeakReference<Class<?>>(clazz);
                 }
                 return clazz;
             } catch (ClassNotFoundException e) {
@@ -1295,18 +1292,18 @@ public abstract class Provider extends Properties {
          */
         private Object newInstanceGeneric(Object constructorParameter)
                 throws Exception {
-            Class clazz = getImplClass();
+            Class<?> clazz = getImplClass();
             if (constructorParameter == null) {
                 Object o = clazz.newInstance();
                 return o;
             }
-            Class argClass = constructorParameter.getClass();
+            Class<?> argClass = constructorParameter.getClass();
             Constructor[] cons = clazz.getConstructors();
             // find first public constructor that can take the
             // argument as parameter
             for (int i = 0; i < cons.length; i++) {
-                Constructor con = cons[i];
-                Class[] paramTypes = con.getParameterTypes();
+                Constructor<?> con = cons[i];
+                Class<?>[] paramTypes = con.getParameterTypes();
                 if (paramTypes.length != 1) {
                     continue;
                 }
@@ -1394,10 +1391,10 @@ public abstract class Provider extends Properties {
                     s = getAttribute("SupportedKeyClasses");
                     if (s != null) {
                         String[] classNames = s.split("\\|");
-                        List<Class> classList =
+                        List<Class<?>> classList =
                             new ArrayList<>(classNames.length);
                         for (String className : classNames) {
-                            Class clazz = getKeyClass(className);
+                            Class<?> clazz = getKeyClass(className);
                             if (clazz != null) {
                                 classList.add(clazz);
                             }
@@ -1414,7 +1411,7 @@ public abstract class Provider extends Properties {
         }
 
         // get the key class object of the specified name
-        private Class getKeyClass(String name) {
+        private Class<?> getKeyClass(String name) {
             try {
                 return Class.forName(name);
             } catch (ClassNotFoundException e) {
@@ -1451,8 +1448,8 @@ public abstract class Provider extends Properties {
             if (supportedClasses == null) {
                 return false;
             }
-            Class keyClass = key.getClass();
-            for (Class clazz : supportedClasses) {
+            Class<?> keyClass = key.getClass();
+            for (Class<?> clazz : supportedClasses) {
                 if (clazz.isAssignableFrom(keyClass)) {
                     return true;
                 }

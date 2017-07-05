@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ final class HmacCore implements Cloneable {
     private HmacCore(HmacCore other) throws CloneNotSupportedException {
         this.md = (MessageDigest)other.md.clone();
         this.blockLen = other.blockLen;
-        this.k_ipad = (byte[])other.k_ipad.clone();
-        this.k_opad = (byte[])other.k_opad.clone();
+        this.k_ipad = other.k_ipad.clone();
+        this.k_opad = other.k_opad.clone();
         this.first = other.first;
     }
 

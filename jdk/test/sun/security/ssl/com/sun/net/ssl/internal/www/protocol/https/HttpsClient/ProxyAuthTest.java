@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
  * @test
  * @bug 4323990 4413069
  * @summary HttpsURLConnection doesn't send Proxy-Authorization on CONNECT
- * Incorrect checking of proxy server response
+ *     Incorrect checking of proxy server response
+ * @run main/othervm ProxyAuthTest
+ *
+ *     No way to reserve and restore java.lang.Authenticator, need to run this
+ *     test in othervm mode.
  */
 
 import java.io.*;
@@ -77,8 +81,7 @@ public class ProxyAuthTest {
     /*
      * Main method to create the server and the client
      */
-    public static void main(String args[]) throws Exception
-    {
+    public static void main(String args[]) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
@@ -110,10 +113,9 @@ public class ProxyAuthTest {
         try {
             doClientSide();
         } catch (Exception e) {
-            System.out.println("Client side failed: " +
-                                e.getMessage());
+            System.out.println("Client side failed: " + e.getMessage());
             throw e;
-          }
+        }
     }
 
     private static ServerSocketFactory getServerSocketFactory

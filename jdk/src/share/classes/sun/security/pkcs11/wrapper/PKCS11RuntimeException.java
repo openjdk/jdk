@@ -57,6 +57,7 @@ package sun.security.pkcs11.wrapper;
  * @invariants
  */
 public class PKCS11RuntimeException extends RuntimeException {
+    private static final long serialVersionUID = 7889842162743590564L;
 
     /**
      * Empty constructor.

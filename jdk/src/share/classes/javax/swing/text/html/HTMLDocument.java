@@ -474,8 +474,8 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph (must be at least 0)
      * @param length the number of characters affected (must be at least 0)

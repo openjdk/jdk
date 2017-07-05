@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package com.sun.jndi.ldap;
 
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Enumeration;
 import java.util.EventObject;
 
 import javax.naming.*;
-import javax.naming.directory.*;
 import javax.naming.event.*;
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.UnsolicitedNotificationListener;
@@ -120,12 +118,13 @@ final class EventSupport {
     /**
      * NamingEventNotifiers; hashed by search arguments;
      */
-    private Hashtable notifiers = new Hashtable(11);
+    private Hashtable<NotifierArgs, NamingEventNotifier> notifiers =
+            new Hashtable<>(11);
 
     /**
      * List of unsolicited notification listeners.
      */
-    private Vector unsolicited = null;
+    private Vector<UnsolicitedNotificationListener> unsolicited = null;
 
     /**
      * Constructs EventSupport for ctx.
@@ -155,8 +154,7 @@ final class EventSupport {
             l instanceof NamespaceChangeListener) {
             NotifierArgs args = new NotifierArgs(nm, scope, l);
 
-            NamingEventNotifier notifier =
-                (NamingEventNotifier) notifiers.get(args);
+            NamingEventNotifier notifier = notifiers.get(args);
             if (notifier == null) {
                 notifier = new NamingEventNotifier(this, ctx, args, l);
                 notifiers.put(args, notifier);
@@ -167,10 +165,10 @@ final class EventSupport {
         if (l instanceof UnsolicitedNotificationListener) {
             // Add listener to this's list of unsolicited notifiers
             if (unsolicited == null) {
-                unsolicited = new Vector(3);
+                unsolicited = new Vector<>(3);
             }
 
-            unsolicited.addElement(l);
+            unsolicited.addElement((UnsolicitedNotificationListener)l);
         }
     }
 
@@ -185,8 +183,7 @@ final class EventSupport {
             l instanceof NamespaceChangeListener) {
             NotifierArgs args = new NotifierArgs(nm, filter, ctls, l);
 
-            NamingEventNotifier notifier =
-                (NamingEventNotifier) notifiers.get(args);
+            NamingEventNotifier notifier = notifiers.get(args);
             if (notifier == null) {
                 notifier = new NamingEventNotifier(this, ctx, args, l);
                 notifiers.put(args, notifier);
@@ -197,9 +194,9 @@ final class EventSupport {
         if (l instanceof UnsolicitedNotificationListener) {
             // Add listener to this's list of unsolicited notifiers
             if (unsolicited == null) {
-                unsolicited = new Vector(3);
+                unsolicited = new Vector<>(3);
             }
-            unsolicited.addElement(l);
+            unsolicited.addElement((UnsolicitedNotificationListener)l);
         }
     }
 
@@ -207,15 +204,11 @@ final class EventSupport {
      * Removes <tt>l</tt> from all notifiers in this context.
      */
     synchronized void removeNamingListener(NamingListener l) {
-        Enumeration allnotifiers = notifiers.elements();
-        NamingEventNotifier notifier;
-
         if (debug) System.err.println("EventSupport removing listener");
 
         // Go through list of notifiers, remove 'l' from each.
         // If 'l' is notifier's only listener, remove notifier too.
-        while (allnotifiers.hasMoreElements()) {
-            notifier = (NamingEventNotifier)allnotifiers.nextElement();
+        for (NamingEventNotifier notifier : notifiers.values()) {
             if (notifier != null) {
                 if (debug)
                     System.err.println("EventSupport removing listener from notifier");
@@ -305,8 +298,8 @@ final class EventSupport {
     synchronized void cleanup() {
         if (debug) System.err.println("EventSupport clean up");
         if (notifiers != null) {
-            for (Enumeration ns = notifiers.elements(); ns.hasMoreElements(); ) {
-                ((NamingEventNotifier) ns.nextElement()).stop();
+            for (NamingEventNotifier notifier : notifiers.values()) {
+                notifier.stop();
             }
             notifiers = null;
         }
@@ -328,7 +321,8 @@ final class EventSupport {
      * them to the registered listeners.
      * Package private; used by NamingEventNotifier to fire events
      */
-    synchronized void queueEvent(EventObject event, Vector vector) {
+    synchronized void queueEvent(EventObject event,
+                                 Vector<? extends NamingListener> vector) {
         if (eventQueue == null)
             eventQueue = new EventQueue();
 
@@ -340,7 +334,9 @@ final class EventSupport {
          * of this event will not take effect until after the event is
          * delivered.
          */
-        Vector v = (Vector)vector.clone();
+        @SuppressWarnings("unchecked") // clone()
+        Vector<NamingListener> v =
+                (Vector<NamingListener>)vector.clone();
         eventQueue.enqueue(event, v);
     }
 

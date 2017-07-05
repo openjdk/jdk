@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.naming.directory.*;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.Locale;
 
 /**
   * A class for parsing LDAP search filters (defined in RFC 1960, 2254)
@@ -203,11 +204,11 @@ public class SearchFilter implements AttrFilter {
      * A class for dealing with compound filters ("and" & "or" filters).
      */
     final class CompoundFilter implements StringFilter {
-        private Vector  subFilters;
+        private Vector<StringFilter>  subFilters;
         private boolean polarity;
 
         CompoundFilter(boolean polarity) {
-            subFilters = new Vector();
+            subFilters = new Vector<>();
             this.polarity = polarity;
         }
 
@@ -223,7 +224,7 @@ public class SearchFilter implements AttrFilter {
 
         public boolean check(Attributes targetAttrs) throws NamingException {
             for(int i = 0; i<subFilters.size(); i++) {
-                StringFilter filter = (StringFilter)subFilters.elementAt(i);
+                StringFilter filter = subFilters.elementAt(i);
                 if(filter.check(targetAttrs) != this.polarity) {
                     return !polarity;
                 }
@@ -330,7 +331,7 @@ public class SearchFilter implements AttrFilter {
         }
 
         public boolean check(Attributes targetAttrs) {
-            Enumeration candidates;
+            Enumeration<?> candidates;
 
             try {
                 Attribute attr = targetAttrs.get(attrID);
@@ -395,19 +396,21 @@ public class SearchFilter implements AttrFilter {
 
             // do we need to begin with the first token?
             if(proto.charAt(0) != WILDCARD_TOKEN &&
-               !value.toString().toLowerCase().startsWith(
-                      subStrs.nextToken().toLowerCase())) {
-                if(debug) {System.out.println("faild initial test");}
+                    !value.toString().toLowerCase(Locale.ENGLISH).startsWith(
+                        subStrs.nextToken().toLowerCase(Locale.ENGLISH))) {
+                if(debug) {
+                    System.out.println("faild initial test");
+                }
                 return false;
             }
-
 
             while(subStrs.hasMoreTokens()) {
                 String currentStr = subStrs.nextToken();
                 if (debug) {System.out.println("looking for \"" +
                                                currentStr +"\"");}
-                currentPos = value.toLowerCase().indexOf(
-                       currentStr.toLowerCase(), currentPos);
+                currentPos = value.toLowerCase(Locale.ENGLISH).indexOf(
+                       currentStr.toLowerCase(Locale.ENGLISH), currentPos);
+
                 if(currentPos == -1) {
                     return false;
                 }
@@ -441,15 +444,15 @@ public class SearchFilter implements AttrFilter {
         String answer;
         answer = "(& ";
         Attribute attr;
-        for (NamingEnumeration e = attrs.getAll(); e.hasMore(); ) {
-            attr = (Attribute)e.next();
+        for (NamingEnumeration<? extends Attribute> e = attrs.getAll();
+             e.hasMore(); ) {
+            attr = e.next();
             if (attr.size() == 0 || (attr.size() == 1 && attr.get() == null)) {
                 // only checking presence of attribute
                 answer += "(" + attr.getID() + "=" + "*)";
             } else {
-                for (NamingEnumeration ve = attr.getAll();
-                     ve.hasMore();
-                        ) {
+                for (NamingEnumeration<?> ve = attr.getAll();
+                     ve.hasMore(); ) {
                     String val = getEncodedStringRep(ve.next());
                     if (val != null) {
                         answer += "(" + attr.getID() + "=" + val + ")";

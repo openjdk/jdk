@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,12 +351,12 @@ public final class RSAKeyFactory extends KeyFactorySpi {
         if (key instanceof RSAPublicKey) {
             RSAPublicKey rsaKey = (RSAPublicKey)key;
             if (rsaPublicKeySpecClass.isAssignableFrom(keySpec)) {
-                return (T) new RSAPublicKeySpec(
+                return keySpec.cast(new RSAPublicKeySpec(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent()
-                );
+                ));
             } else if (x509KeySpecClass.isAssignableFrom(keySpec)) {
-                return (T) new X509EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be RSAPublicKeySpec or "
@@ -364,11 +364,11 @@ public final class RSAKeyFactory extends KeyFactorySpi {
             }
         } else if (key instanceof RSAPrivateKey) {
             if (pkcs8KeySpecClass.isAssignableFrom(keySpec)) {
-                return (T) new PKCS8EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
             } else if (rsaPrivateCrtKeySpecClass.isAssignableFrom(keySpec)) {
                 if (key instanceof RSAPrivateCrtKey) {
                     RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
-                    return (T) new RSAPrivateCrtKeySpec(
+                    return keySpec.cast(new RSAPrivateCrtKeySpec(
                         crtKey.getModulus(),
                         crtKey.getPublicExponent(),
                         crtKey.getPrivateExponent(),
@@ -377,17 +377,17 @@ public final class RSAKeyFactory extends KeyFactorySpi {
                         crtKey.getPrimeExponentP(),
                         crtKey.getPrimeExponentQ(),
                         crtKey.getCrtCoefficient()
-                    );
+                    ));
                 } else {
                     throw new InvalidKeySpecException
                     ("RSAPrivateCrtKeySpec can only be used with CRT keys");
                 }
             } else if (rsaPrivateKeySpecClass.isAssignableFrom(keySpec)) {
                 RSAPrivateKey rsaKey = (RSAPrivateKey)key;
-                return (T) new RSAPrivateKeySpec(
+                return keySpec.cast(new RSAPrivateKeySpec(
                     rsaKey.getModulus(),
                     rsaKey.getPrivateExponent()
-                );
+                ));
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be RSAPrivate(Crt)KeySpec or "

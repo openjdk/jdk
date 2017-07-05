@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ class SimpleClientId extends ClientId {
         } else if (passwd instanceof String) {
             this.passwd = passwd;
         } else if (passwd instanceof byte[]) {
-            this.passwd = (byte[]) ((byte[])passwd).clone();
+            this.passwd = ((byte[])passwd).clone();
         } else if (passwd instanceof char[]) {
-            this.passwd = (char[]) ((char[])passwd).clone();
+            this.passwd = ((char[])passwd).clone();
         } else {
             this.passwd = passwd;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,12 +147,18 @@ public class HttpsProtocols implements HostnameVerifier {
             Thread.sleep(50);
         }
 
-        HttpsURLConnection.setDefaultHostnameVerifier(this);
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
+        try {
+            HttpsURLConnection.setDefaultHostnameVerifier(this);
 
-        URL url = new URL("https://localhost:" + serverPort + "/");
-        HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+            URL url = new URL("https://localhost:" + serverPort + "/");
+            HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
 
-        System.out.println("response is " + urlc.getResponseCode());
+            System.out.println("response is " + urlc.getResponseCode());
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
+        }
     }
 
     public boolean verify(String hostname, SSLSession session) {

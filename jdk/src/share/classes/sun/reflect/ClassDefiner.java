@@ -51,8 +51,8 @@ class ClassDefiner {
       than would otherwise be possible, decreasing run-time
       footprint. </P>
     */
-    static Class defineClass(String name, byte[] bytes, int off, int len,
-                             final ClassLoader parentClassLoader)
+    static Class<?> defineClass(String name, byte[] bytes, int off, int len,
+                                final ClassLoader parentClassLoader)
     {
         ClassLoader newLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {

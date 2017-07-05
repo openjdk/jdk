@@ -43,8 +43,9 @@ public class IllegalURL {
     static void use(String f) throws Exception {
         System.out.println("Testing " + f  + "...");
         System.setProperty("java.security.auth.login.config", f);
-        try {
-            new FileInputStream(new URL(f).getFile().replace('/', File.separatorChar));
+        try (FileInputStream fis =
+                new FileInputStream(new URL(f).getFile().replace('/', File.separatorChar))) {
+            // do nothing
         } catch (Exception e) {
             System.out.println("Even old implementation does not support it. Ignored.");
             return;

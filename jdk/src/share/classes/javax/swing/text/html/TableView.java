@@ -242,7 +242,8 @@ import javax.swing.text.*;
             if (lv != null) {
                 cellSpacing = (int) lv.getValue();
             } else {
-                cellSpacing = 0;
+                // Default cell spacing equals 2
+                cellSpacing = 2;
             }
             lv = (CSS.LengthValue)
                     attr.getAttribute(CSS.Attribute.BORDER_TOP_WIDTH);
@@ -251,8 +252,7 @@ import javax.swing.text.*;
             } else {
                     borderWidth = 0;
             }
-
-                }
+        }
     }
 
     /**

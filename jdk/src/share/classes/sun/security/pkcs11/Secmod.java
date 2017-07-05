@@ -236,6 +236,7 @@ public final class Secmod {
             throw new IllegalStateException(e);
         }
         if (modules == null) {
+            @SuppressWarnings("unchecked")
             List<Module> modules = (List<Module>)nssGetModuleList(nssHandle,
                 nssLibDir);
             this.modules = Collections.unmodifiableList(modules);

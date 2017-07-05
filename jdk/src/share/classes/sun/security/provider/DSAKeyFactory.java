@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 
 package sun.security.provider;
 
-import java.util.*;
-import java.lang.*;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.KeyFactorySpi;
 import java.security.InvalidKeyException;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.interfaces.DSAParams;
 import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.DSAPrivateKeySpec;
@@ -194,13 +191,13 @@ public class DSAKeyFactory extends KeyFactorySpi {
                     java.security.interfaces.DSAPublicKey dsaPubKey
                         = (java.security.interfaces.DSAPublicKey)key;
                     params = dsaPubKey.getParams();
-                    return (T) new DSAPublicKeySpec(dsaPubKey.getY(),
-                                                    params.getP(),
-                                                    params.getQ(),
-                                                    params.getG());
+                    return keySpec.cast(new DSAPublicKeySpec(dsaPubKey.getY(),
+                                                             params.getP(),
+                                                             params.getQ(),
+                                                             params.getG()));
 
                 } else if (x509KeySpec.isAssignableFrom(keySpec)) {
-                    return (T) new X509EncodedKeySpec(key.getEncoded());
+                    return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
 
                 } else {
                     throw new InvalidKeySpecException
@@ -219,13 +216,13 @@ public class DSAKeyFactory extends KeyFactorySpi {
                     java.security.interfaces.DSAPrivateKey dsaPrivKey
                         = (java.security.interfaces.DSAPrivateKey)key;
                     params = dsaPrivKey.getParams();
-                    return (T) new DSAPrivateKeySpec(dsaPrivKey.getX(),
-                                                     params.getP(),
-                                                     params.getQ(),
-                                                     params.getG());
+                    return keySpec.cast(new DSAPrivateKeySpec(dsaPrivKey.getX(),
+                                                              params.getP(),
+                                                              params.getQ(),
+                                                              params.getG()));
 
                 } else if (pkcs8KeySpec.isAssignableFrom(keySpec)) {
-                    return (T) new PKCS8EncodedKeySpec(key.getEncoded());
+                    return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
 
                 } else {
                     throw new InvalidKeySpecException

@@ -436,7 +436,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      */
     public java.io.OutputStream setAsciiStream(long pos)
         throws SerialException, SQLException {
-         if (this.clob.setAsciiStream(pos) != null) {
+         if (this.clob != null) {
              return this.clob.setAsciiStream(pos);
          } else {
              throw new SerialException("Unsupported operation. SerialClob cannot " +
@@ -466,7 +466,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      */
     public java.io.Writer setCharacterStream(long pos)
         throws SerialException, SQLException {
-        if (this.clob.setCharacterStream(pos) != null) {
+        if (this.clob != null) {
             return this.clob.setCharacterStream(pos);
         } else {
             throw new SerialException("Unsupported operation. SerialClob cannot " +

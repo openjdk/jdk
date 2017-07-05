@@ -193,6 +193,8 @@ public class Krb5Util {
     // Each time new keys are read from KeyTab objects in the private
     // credentials set, old ones are removed and new ones added.
     public static class KeysFromKeyTab extends KerberosKey {
+        private static final long serialVersionUID = 8238092170252746927L;
+
         public KeysFromKeyTab(KerberosKey key) {
             super(key.getPrincipal(), key.getEncoded(),
                     key.getKeyType(), key.getVersionNumber());

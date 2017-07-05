@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,12 @@ import com.sun.jndi.toolkit.ctx.Continuation;
 final class NamingEventNotifier implements Runnable {
     private final static boolean debug = false;
 
-    private Vector namingListeners;
+    private Vector<NamingListener> namingListeners;
     private Thread worker;
     private LdapCtx context;
     private EventContext eventSrc;
     private EventSupport support;
-    private NamingEnumeration results;
+    private NamingEnumeration<SearchResult> results;
 
     // package private; used by EventSupport to remove it
     NotifierArgs info;
@@ -83,7 +83,7 @@ final class NamingEventNotifier implements Runnable {
         context = (LdapCtx)ctx.newInstance(new Control[]{psearch});
         eventSrc = ctx;
 
-        namingListeners = new Vector();
+        namingListeners = new Vector<>();
         namingListeners.addElement(firstListener);
 
         worker = Obj.helper.createThread(this);
@@ -124,7 +124,8 @@ final class NamingEventNotifier implements Runnable {
             // Change root of search results so that it will generate
             // names relative to the event context instead of that
             // named by nm
-            ((LdapSearchEnumeration)results).setStartName(context.currentParsedDN);
+            ((LdapSearchEnumeration)(NamingEnumeration)results)
+                    .setStartName(context.currentParsedDN);
 
             SearchResult si;
             Control[] respctls;
@@ -132,7 +133,7 @@ final class NamingEventNotifier implements Runnable {
             long changeNum;
 
             while (results.hasMore()) {
-                si = (SearchResult)results.next();
+                si = results.next();
                 respctls = (si instanceof HasControls) ?
                     ((HasControls) si).getControls() : null;
 
