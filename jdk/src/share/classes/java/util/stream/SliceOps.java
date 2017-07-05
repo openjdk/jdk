@@ -550,6 +550,7 @@ final class SliceOps {
      * @param <P_IN> Input element type to the stream pipeline
      * @param <P_OUT> Output element type from the stream pipeline
      */
+    @SuppressWarnings("serial")
     private static final class SliceTask<P_IN, P_OUT>
             extends AbstractShortCircuitTask<P_IN, P_OUT, Node<P_OUT>, SliceTask<P_IN, P_OUT>> {
         private final AbstractPipeline<P_OUT, P_OUT, ?> op;

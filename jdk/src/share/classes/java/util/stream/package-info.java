@@ -547,7 +547,7 @@
  *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
  *     Stream<String> sl = l.stream();
  *     l.add("three");
- *     String s = sl.collect(toStringJoiner(" ")).toString();
+ *     String s = sl.collect(joining(" "));
  * }</pre>
  * First a list is created consisting of two strings: "one"; and "two". Then a stream is created from that list.
  * Next the list is modified by adding a third string: "three".  Finally the elements of the stream are collected
@@ -557,7 +557,7 @@
  * <pre>{@code
  *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
  *     Stream<String> sl = l.stream();
- *     String s = sl.peek(s -> l.add("BAD LAMBDA")).collect(toStringJoiner(" ")).toString();
+ *     String s = sl.peek(s -> l.add("BAD LAMBDA")).collect(joining(" "));
  * }</pre>
  * then a {@code ConcurrentModificationException} will be thrown since the {@code peek} operation will attempt
  * to add the string "BAD LAMBDA" to the list after the terminal operation has commenced.

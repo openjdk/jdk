@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,13 +86,13 @@ import java.util.List;
  * To detect if a MidiDevice represents a hardware MIDI port, the
  * following programming technique can be used:
  *
- * <pre>
+ * <pre>{@code
  * MidiDevice device = ...;
  * if ( ! (device instanceof Sequencer) && ! (device instanceof Synthesizer)) {
  *   // we're now sure that device represents a MIDI port
  *   // ...
  * }
- * </pre>
+ * }</pre>
  *
  * <p>
  * A <code>MidiDevice</code> includes a <code>{@link MidiDevice.Info}</code> object

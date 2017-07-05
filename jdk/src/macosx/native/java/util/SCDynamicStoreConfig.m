@@ -103,7 +103,6 @@ NSDictionary *realmConfigsForRealms(SCDynamicStoreRef store, NSArray *realms) {
         CFTypeRef realmInfo = SCDynamicStoreCopyValue(store, (CFStringRef) [NSString stringWithFormat:@"Kerberos:%@", realm]);
 
         if (CFGetTypeID(realmInfo) != CFDictionaryGetTypeID()) {
-            NSLog(@"Unexpected CFType for realm Info: %lu", CFGetTypeID(realmInfo));
             return nil;
         }
 
@@ -140,7 +139,6 @@ JNF_COCOA_ENTER(env);
 
     SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
     if (store == NULL) {
-        NSLog(@"Unable to load SCDynamicStore to install NotificationCallback");
         return;
     }
 
@@ -171,19 +169,11 @@ JNF_COCOA_ENTER(env);
 
     SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
     if (store == NULL) {
-        NSLog(@"Unable to load SCDynamicStore");
-        return NULL;
-    }
-
-    // Create the store if it is NULL and set it.
-    if (store == NULL) {
-        NSLog(@"Invalid value for SCDynamicStore");
         return NULL;
     }
 
     CFTypeRef realms = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS);
     if (realms == NULL || CFGetTypeID(realms) != CFArrayGetTypeID()) {
-        NSLog(@"Unable to load realm info from SCDynamicStore");
         if (realms) CFRelease(realms);
         CFRelease(store);
         return NULL;
@@ -192,7 +182,6 @@ JNF_COCOA_ENTER(env);
     CFTypeRef realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
 
     if (realmMappings == NULL || CFGetTypeID(realmMappings) != CFArrayGetTypeID()) {
-        NSLog(@"Unable to load realm mapping info from SCDynamicStore");
         if (realmMappings) CFRelease(realmMappings);
         CFRelease(realms);
         CFRelease(store);

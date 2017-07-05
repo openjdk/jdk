@@ -159,22 +159,12 @@ queryMBeans.docString = "return MBeans using given ObjectName and optional query
 
 // wraps a script array as java.lang.Object[]
 function objectArray(array) {
-    var len = array.length;
-    var res = java.lang.reflect.Array.newInstance(java.lang.Object, len);
-    for (var i = 0; i < array.length; i++) {
-        res[i] = array[i];
-    }
-    return res;
+    return Java.to(array, "java.lang.Object[]");
 }
 
 // wraps a script (string) array as java.lang.String[]
 function stringArray(array) {
-    var len = array.length;
-    var res = java.lang.reflect.Array.newInstance(java.lang.String, len);
-    for (var i = 0; i < array.length; i++) {
-        res[i] = String(array[i]);
-    }
-    return res;
+    return Java.to(array, "java.lang.String[]");
 }
 
 // script array to Java List
@@ -284,26 +274,35 @@ function mbean(objName, async) {
         __get__: function (name) {
             if (isAttribute(name)) {
                 if (async) {
-                    return getMBeanAttribute.future(objName, name);
+                    return getMBeanAttribute.future(objName, name); 
                 } else {
-                    return getMBeanAttribute(objName, name);
+                    return getMBeanAttribute(objName, name); 
                 }
-            } else if (isOperation(name)) {
+            } else {
+                return undefined;
+            }
+        },
+        __call__: function(name) {
+            if (isOperation(name)) {
                 var oper = operMap[name];
-                return function() {
-                    var params = objectArray(arguments);
-                    var sigs = oper.signature;
-                    var sigNames = new Array(sigs.length);
-                    for (var index in sigs) {
-                        sigNames[index] = sigs[index].getType();
-                    }
-                    if (async) {
-                        return invokeMBean.future(objName, name,
-                                                  params, sigNames);
-                    } else {
-                        return invokeMBean(objName, name, params, sigNames);
-                    }
-                };
+
+                var params = [];
+                for (var j = 1; j < arguments.length; j++) {
+                    params[j-1]= arguments[j];
+                }
+
+                var sigs = oper.signature;
+
+                var sigNames = new Array(sigs.length);
+                for (var index in sigs) {
+                    sigNames[index] = sigs[index].getType();
+                }
+
+                if (async) {
+                    return invokeMBean.future(objName, name, params, sigNames);
+                } else {
+                    return invokeMBean(objName, name, params, sigNames);
+                }
             } else {
                 return undefined;
             }

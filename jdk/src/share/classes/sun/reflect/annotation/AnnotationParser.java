@@ -88,6 +88,7 @@ public class AnnotationParser {
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
     @SafeVarargs
+    @SuppressWarnings("varargs") // selectAnnotationClasses is used safely
     static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
                 byte[] rawAnnotations,
                 ConstantPool constPool,

@@ -1339,6 +1339,7 @@ public class IdentityHashMap<K,V>
         tab[i + 1] = value;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void forEach(BiConsumer<? super K, ? super V> action) {
         Objects.requireNonNull(action);
@@ -1357,6 +1358,7 @@ public class IdentityHashMap<K,V>
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Objects.requireNonNull(function);

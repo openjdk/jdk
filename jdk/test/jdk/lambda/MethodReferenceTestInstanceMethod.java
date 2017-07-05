@@ -47,7 +47,7 @@ public class MethodReferenceTestInstanceMethod {
     }
 
     public void testStringBuffer() {
-        String s = generate().collect(Collectors.toStringBuilder()).toString();
+        String s = generate().collect(Collectors.joining());
         assertEquals(s, "THREEFOURFIVE");
     }
 
