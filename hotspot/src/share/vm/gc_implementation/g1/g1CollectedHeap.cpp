@@ -6035,7 +6035,11 @@ void G1CollectedHeap::verify_dirty_region(HeapRegion* hr) {
   // is dirty.
   G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   MemRegion mr(hr->bottom(), hr->pre_dummy_top());
-  ct_bs->verify_dirty_region(mr);
+  if (hr->is_young()) {
+    ct_bs->verify_g1_young_region(mr);
+  } else {
+    ct_bs->verify_dirty_region(mr);
+  }
 }
 
 void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {

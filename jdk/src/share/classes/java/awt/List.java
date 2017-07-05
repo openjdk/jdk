@@ -61,7 +61,7 @@ import javax.accessibility.*;
  * scrolling list:
  * <p>
  * <img src="doc-files/List-1.gif"
- * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is selected." ALIGN=center HSPACE=10 VSPACE=7>
+ * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is selected." style="float:center; margin: 7px 10px;">
  * <p>
  * If the List allows multiple selections, then clicking on
  * an item that is already selected deselects it. In the preceding

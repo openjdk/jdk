@@ -121,46 +121,6 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(ZoneOffset.of("+01:30"));
-    }
-
-    @Test
-    public void test_serialization_format_quarterPositive() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(6);  // stored as quarter hours
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(1, 30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_quarterNegative() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(-10);  // stored as quarter hours
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(-2, -30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_full() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(127);
-            dos.writeInt(53265);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofTotalSeconds(53265), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
     @Test

@@ -41,11 +41,8 @@ package java.util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -867,6 +864,7 @@ public class GregorianCalendar extends Calendar {
      * <code>false</code> otherwise.
      * @see Calendar#compareTo(Calendar)
      */
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof GregorianCalendar &&
             super.equals(obj) &&
@@ -876,6 +874,7 @@ public class GregorianCalendar extends Calendar {
     /**
      * Generates the hash code for this <code>GregorianCalendar</code> object.
      */
+    @Override
     public int hashCode() {
         return super.hashCode() ^ (int)gregorianCutoverDate;
     }
@@ -908,6 +907,7 @@ public class GregorianCalendar extends Calendar {
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
      */
+    @Override
     public void add(int field, int amount) {
         // If amount == 0, do nothing even the given field is out of
         // range. This is tested by JCK.
@@ -1106,6 +1106,7 @@ public class GregorianCalendar extends Calendar {
      * @see #add(int,int)
      * @see #set(int,int)
      */
+    @Override
     public void roll(int field, boolean up) {
         roll(field, up ? +1 : -1);
     }
@@ -1154,6 +1155,7 @@ public class GregorianCalendar extends Calendar {
      * @see #set(int,int)
      * @since 1.2
      */
+    @Override
     public void roll(int field, int amount) {
         // If amount == 0, do nothing even the given field is out of
         // range. This is tested by JCK.
@@ -1272,25 +1274,44 @@ public class GregorianCalendar extends Calendar {
                 int woy = internalGet(WEEK_OF_YEAR);
                 int value = woy + amount;
                 if (!isCutoverYear(y)) {
-                    // If the new value is in between min and max
-                    // (exclusive), then we can use the value.
-                    if (value > min && value < max) {
-                        set(WEEK_OF_YEAR, value);
-                        return;
-                    }
-                    long fd = getCurrentFixedDate();
-                    // Make sure that the min week has the current DAY_OF_WEEK
-                    long day1 = fd - (7 * (woy - min));
-                    if (calsys.getYearFromFixedDate(day1) != y) {
-                        min++;
-                    }
+                    int weekYear = getWeekYear();
+                    if (weekYear == y) {
+                        // If the new value is in between min and max
+                        // (exclusive), then we can use the value.
+                        if (value > min && value < max) {
+                            set(WEEK_OF_YEAR, value);
+                            return;
+                        }
+                        long fd = getCurrentFixedDate();
+                        // Make sure that the min week has the current DAY_OF_WEEK
+                        // in the calendar year
+                        long day1 = fd - (7 * (woy - min));
+                        if (calsys.getYearFromFixedDate(day1) != y) {
+                            min++;
+                        }
 
-                    // Make sure the same thing for the max week
-                    fd += 7 * (max - internalGet(WEEK_OF_YEAR));
-                    if (calsys.getYearFromFixedDate(fd) != y) {
-                        max--;
+                        // Make sure the same thing for the max week
+                        fd += 7 * (max - internalGet(WEEK_OF_YEAR));
+                        if (calsys.getYearFromFixedDate(fd) != y) {
+                            max--;
+                        }
+                    } else {
+                        // When WEEK_OF_YEAR and YEAR are out of sync,
+                        // adjust woy and amount to stay in the calendar year.
+                        if (weekYear > y) {
+                            if (amount < 0) {
+                                amount++;
+                            }
+                            woy = max;
+                        } else {
+                            if (amount > 0) {
+                                amount -= woy - max;
+                            }
+                            woy = min;
+                        }
                     }
-                    break;
+                    set(field, getRolledValue(woy, amount, min, max));
+                    return;
                 }
 
                 // Handle cutover here.
@@ -1510,6 +1531,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
+    @Override
     public int getMinimum(int field) {
         return MIN_VALUES[field];
     }
@@ -1533,6 +1555,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
+    @Override
     public int getMaximum(int field) {
         switch (field) {
         case MONTH:
@@ -1581,6 +1604,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
+    @Override
     public int getGreatestMinimum(int field) {
         if (field == DAY_OF_MONTH) {
             BaseCalendar.Date d = getGregorianCutoverDate();
@@ -1610,6 +1634,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMinimum(int)
      * @see #getActualMaximum(int)
      */
+    @Override
     public int getLeastMaximum(int field) {
         switch (field) {
         case MONTH:
@@ -1659,6 +1684,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMaximum(int)
      * @since 1.2
      */
+    @Override
     public int getActualMinimum(int field) {
         if (field == DAY_OF_MONTH) {
             GregorianCalendar gc = getNormalizedCalendar();
@@ -1702,6 +1728,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMinimum(int)
      * @since 1.2
      */
+    @Override
     public int getActualMaximum(int field) {
         final int fieldsForFixedMax = ERA_MASK|DAY_OF_WEEK_MASK|HOUR_MASK|AM_PM_MASK|
             HOUR_OF_DAY_MASK|MINUTE_MASK|SECOND_MASK|MILLISECOND_MASK|
@@ -1970,6 +1997,7 @@ public class GregorianCalendar extends Calendar {
             (internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET));
     }
 
+    @Override
     public Object clone()
     {
         GregorianCalendar other = (GregorianCalendar) super.clone();
@@ -1987,6 +2015,7 @@ public class GregorianCalendar extends Calendar {
         return other;
     }
 
+    @Override
     public TimeZone getTimeZone() {
         TimeZone zone = super.getTimeZone();
         // To share the zone by CalendarDates
@@ -1997,6 +2026,7 @@ public class GregorianCalendar extends Calendar {
         return zone;
     }
 
+    @Override
     public void setTimeZone(TimeZone zone) {
         super.setTimeZone(zone);
         // To share the zone by CalendarDates
@@ -2227,6 +2257,7 @@ public class GregorianCalendar extends Calendar {
      * @see #getActualMaximum(int)
      * @since 1.7
      */
+    @Override
     public int getWeeksInWeekYear() {
         GregorianCalendar gc = getNormalizedCalendar();
         int weekYear = gc.getWeekYear();
@@ -2262,8 +2293,9 @@ public class GregorianCalendar extends Calendar {
      *
      * @see Calendar#complete
      */
+    @Override
     protected void computeFields() {
-        int mask = 0;
+        int mask;
         if (isPartiallyNormalized()) {
             // Determine which calendar fields need to be computed.
             mask = getSetStateFields();
@@ -2598,6 +2630,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @exception IllegalArgumentException if any calendar fields are invalid.
      */
+    @Override
     protected void computeTime() {
         // In non-lenient mode, perform brief checking of calendar
         // fields which have been set externally. Through this

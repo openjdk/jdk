@@ -28,22 +28,22 @@ INCLUDEDIR = $(JDK_OUTPUTDIR)/include
 OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/$(OPENJDK_TARGET_OS)
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-     OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/win32
+  OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/win32
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
-     OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/darwin
+  OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/darwin
 endif
 
 #
 # Copy exported header files to outputdir.
 #
-H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
-		$(INCLUDEDIR)/jni.h 			\
-		$(INCLUDEDIR)/jvmti.h			\
-		$(INCLUDEDIR)/jvmticmlr.h		\
-		$(INCLUDEDIR)/classfile_constants.h	\
-		$(INCLUDEDIR)/jawt.h			\
-		$(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h	\
-		$(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h
+H_TARGET_FILES = $(INCLUDEDIR)/jdwpTransport.h \
+    $(INCLUDEDIR)/jni.h \
+    $(INCLUDEDIR)/jvmti.h \
+    $(INCLUDEDIR)/jvmticmlr.h \
+    $(INCLUDEDIR)/classfile_constants.h \
+    $(INCLUDEDIR)/jawt.h \
+    $(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h \
+    $(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(call install-file)
@@ -56,22 +56,22 @@ COPY_FILES = $(H_TARGET_FILES)
 ##########################################################################################
 
 ifndef OPENJDK
-ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(OPENJDK_TARGET_OS), windows)
     COPY_FILES += $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCallbacks.h \
-		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.h \
-		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgePackages.h \
-		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.c \
-		  $(JDK_OUTPUTDIR)/lib/accessibility.properties
+        $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.h \
+        $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgePackages.h \
+        $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.c \
+        $(JDK_OUTPUTDIR)/lib/accessibility.properties
 
     $(OPENJDK_TARGET_OS_INCLUDE)/bridge/%: \
-		$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/%
-	$(install-file)
+        $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/%
+		$(install-file)
 
     $(JDK_OUTPUTDIR)/lib/accessibility.properties: \
-		$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/accessibility.properties
-	$(install-file)
+        $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/accessibility.properties
+		$(install-file)
 
-endif
+  endif
 endif
 
 ##########################################################################################
@@ -125,9 +125,9 @@ COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 # Copy flavormap.properties, cursor.properties and cursors gif files to LIBDIR
 #
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
+  OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 else
-OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
+  OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
 endif
 
 $(LIBDIR)/flavormap.properties: $(OPENJDK_TARGET_OS_LIB_SRC)/flavormap.properties
@@ -145,11 +145,11 @@ COPY_FILES += $(CURSORS_DEST_DIR)/cursors.properties
 
 CURSORS_LIB_SRC = $(JDK_TOPDIR)/src/share/lib/images/cursors
 ifeq ($(OPENJDK_TARGET_OS), windows)
-CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/win32_*.gif)
+  CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/win32_*.gif)
 else # OPENJDK_TARGET_OS
-CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/motif_*.gif)
+  CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/motif_*.gif)
 endif # OPENJDK_TARGET_OS
-CURSORS_TARGET_FILES =  $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
+CURSORS_TARGET_FILES = $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
 
 $(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
 	$(call install-file)
@@ -158,7 +158,7 @@ COPY_FILES += $(CURSORS_TARGET_FILES)
 
 ##########################################################################################
 
-CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
+CONTENT_TYPES_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
 $(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
 	$(call install-file)
@@ -183,14 +183,14 @@ COPY_FILES += $(LIBDIR)/hijrah-config-umalqura.properties
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS),windows)
+ifeq ($(OPENJDK_TARGET_OS), windows)
 
-TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
+  TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
-$(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
+  $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(call install-file)
 
-COPY_FILES += $(LIBDIR)/tzmappings
+  COPY_FILES += $(LIBDIR)/tzmappings
 
 endif
 
@@ -199,13 +199,13 @@ endif
 ICCPROFILE_DEST_DIR := $(LIBDIR)/cmm
 
 ifdef OPENJDK
-    ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/share/lib/cmm/lcms
+  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/share/lib/cmm/lcms
 else
-    ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/cmm/kcms
+  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/cmm/kcms
 endif
 
-ICCPROFILE_SRCS:=$(wildcard $(ICCPROFILE_SRC_DIR)/*.pf)
-ICCPROFILE_TARGET_FILES:=$(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(ICCPROFILE_SRCS))
+ICCPROFILE_SRCS := $(wildcard $(ICCPROFILE_SRC_DIR)/*.pf)
+ICCPROFILE_TARGET_FILES := $(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(ICCPROFILE_SRCS))
 
 $(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
 	$(call install-file)
@@ -215,60 +215,60 @@ COPY_FILES += $(ICCPROFILE_TARGET_FILES)
 
 ##########################################################################################
 
-#make sure freetype dll will be available at runtime as well as link time
+# make sure freetype dll will be available at runtime as well as link time
 #
-#NB: Default freetype build system uses -h linker option and
-#   result .so contains hardcoded library name that is later
-#   used for adding dependencies to other objects
-#   (e.g. libfontmanager.so).
+# NB: Default freetype build system uses -h linker option and
+# result .so contains hardcoded library name that is later
+# used for adding dependencies to other objects
+# (e.g. libfontmanager.so).
 #
-#   It is not obvious how to extract that hardcoded name (libfreetype.so.6)
-#   without overcomplicating logic here.
-#   To workaround this we hardcode .6 suffix for now.
+# It is not obvious how to extract that hardcoded name (libfreetype.so.6)
+# without overcomplicating logic here.
+# To workaround this we hardcode .6 suffix for now.
 #
-#   Note that .so.6 library will not be found by System.loadLibrary()
-#        but fortunately we need to load FreeType library explicitly
-#        on windows only
+# Note that .so.6 library will not be found by System.loadLibrary()
+# but fortunately we need to load FreeType library explicitly
+# on windows only
 #
 #TODO: rework this to avoid hardcoding library name in the makefile
 #
 ifdef OPENJDK
-    ifeq ($(OPENJDK_TARGET_OS), windows)
-        FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
-    else
-        ifeq ($(USING_SYSTEM_FT_LIB), false)
-            FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
-        endif
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
+  else
+    ifeq ($(USING_SYSTEM_FT_LIB), false)
+      FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
     endif
+  endif
 
-    $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
+  $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
 	$(CP) $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
-    ifeq ($(OPENJDK_BUILD_OS), windows)
-	$(CHMOD) +rx $@
-    endif
+        ifeq ($(OPENJDK_BUILD_OS), windows)
+	  $(CHMOD) +rx $@
+        endif
 
-    COPY_FILES += $(FREETYPE_LIB)
+  COPY_FILES += $(FREETYPE_LIB)
 endif
 
 ##########################################################################################
 
 # Copy msvcrXX.dll on windows
 
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    MSVCR_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCR_DLL))
-    # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
-    $(MSVCR_TARGET): $(MSVCR_DLL)
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  MSVCR_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCR_DLL))
+  # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
+  $(MSVCR_TARGET): $(MSVCR_DLL)
 	$(call install-file)
 	$(CHMOD) a+rx $@
 
-    COPY_FILES += $(MSVCR_TARGET)
+  COPY_FILES += $(MSVCR_TARGET)
 endif
 
 ##########################################################################################
 
-HPROF_SRC=$(JDK_TOPDIR)/src/share/demo/jvmti/hprof/jvm.hprof.txt
+HPROF_SRC = $(JDK_TOPDIR)/src/share/demo/jvmti/hprof/jvm.hprof.txt
 
-$(LIBDIR)/jvm.hprof.txt : $(HPROF_SRC)
+$(LIBDIR)/jvm.hprof.txt: $(HPROF_SRC)
 	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/jvm.hprof.txt
@@ -279,12 +279,12 @@ COPY_FILES += $(LIBDIR)/jvm.hprof.txt
 # How to install jvm.cfg.
 #
 ifeq ($(JVM_VARIANT_ZERO), true)
-    JVMCFG_ARCH := zero
+  JVMCFG_ARCH := zero
 else
-    JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
+  JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
 endif
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
   JVMCFG_SRC := $(JDK_TOPDIR)/src/macosx/bin/$(JVMCFG_ARCH)/jvm.cfg
 else
   JVMCFG_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/bin/$(JVMCFG_ARCH)/jvm.cfg
@@ -294,7 +294,7 @@ JVMCFG := $(JVMCFG_DIR)/jvm.cfg
 
 # To do: should this also support -zeroshark?
 
-ifeq ($(OPENJDK_TARGET_CPU_BITS),64)
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
   COPY_JVM_CFG_FILE := true
 else
   # On 32-bit machines we have three potential VMs: client, server and minimal.
@@ -305,7 +305,7 @@ else
   # The main problem is deciding whether to use aliases for the VMs that are not
   # present and the current position is that we add aliases for client and server, but
   # not for minimal.
-  CLIENT_AND_SERVER := $(and $(findstring true,$(JVM_VARIANT_SERVER)),$(findstring true,$(JVM_VARIANT_CLIENT)))
+  CLIENT_AND_SERVER := $(and $(findstring true, $(JVM_VARIANT_SERVER)), $(findstring true, $(JVM_VARIANT_CLIENT)))
   ifeq ($(CLIENT_AND_SERVER), true)
     COPY_JVM_CFG_FILE := true
   else
@@ -317,35 +317,34 @@ else
 endif
 
 ifeq ($(COPY_JVM_CFG_FILE), true)
-    $(JVMCFG): $(JVMCFG_SRC)
+  $(JVMCFG): $(JVMCFG_SRC)
 	$(call install-file)
 else
-    $(JVMCFG):
+  $(JVMCFG):
 	$(MKDIR) -p $(@D)
 	$(RM) $(@)
-
-    # Now check for other permutations
-    ifeq ($(JVM_VARIANT_SERVER), true)
-	$(PRINTF) "-server KNOWN\n">>$(@)
-	$(PRINTF) "-client ALIASED_TO -server\n">>$(@)
-        ifeq ($(JVM_VARIANT_MINIMAL1), true)
+        # Now check for other permutations
+        ifeq ($(JVM_VARIANT_SERVER), true)
+	  $(PRINTF) "-server KNOWN\n">>$(@)
+	  $(PRINTF) "-client ALIASED_TO -server\n">>$(@)
+          ifeq ($(JVM_VARIANT_MINIMAL1), true)
 	    $(PRINTF) "-minimal KNOWN\n">>$(@)
-        endif
-    else
-        ifeq ($(JVM_VARIANT_CLIENT), true)
+          endif
+        else
+          ifeq ($(JVM_VARIANT_CLIENT), true)
 	    $(PRINTF) "-client KNOWN\n">>$(@)
 	    $(PRINTF) "-server ALIASED_TO -client\n">>$(@)
             ifeq ($(JVM_VARIANT_MINIMAL1), true)
-	        $(PRINTF) "-minimal KNOWN\n">>$(@)
+	      $(PRINTF) "-minimal KNOWN\n">>$(@)
             endif
-        else
+          else
             ifeq ($(JVM_VARIANT_MINIMAL1), true)
-	        $(PRINTF) "-minimal KNOWN\n">>$(@)
-	        $(PRINTF) "-server ALIASED_TO -minimal\n">>$(@)
-	        $(PRINTF) "-client ALIASED_TO -minimal\n">>$(@)
+	      $(PRINTF) "-minimal KNOWN\n">>$(@)
+	      $(PRINTF) "-server ALIASED_TO -minimal\n">>$(@)
+	      $(PRINTF) "-client ALIASED_TO -minimal\n">>$(@)
             endif
+          endif
         endif
-    endif
 endif
 
 COPY_FILES += $(JVMCFG)
@@ -387,23 +386,23 @@ BLACKLISTED_CERTS_DST := $(JDK_OUTPUTDIR)/lib/security/blacklisted.certs
 
 ifndef OPENJDK
 
-BLACKLIST_SRC   := $(JDK_TOPDIR)/src/closed/share/lib/security/blacklist
-BLACKLIST_DST   := $(JDK_OUTPUTDIR)/lib/security/blacklist
+  BLACKLIST_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/blacklist
+  BLACKLIST_DST := $(JDK_OUTPUTDIR)/lib/security/blacklist
 
-BLACKLISTED_CERTS_SRC += $(wildcard $(JDK_TOPDIR)/src/closed/share/lib/security/blacklisted.certs)
+  BLACKLISTED_CERTS_SRC += $(wildcard $(JDK_TOPDIR)/src/closed/share/lib/security/blacklisted.certs)
 
-TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
-TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
+  TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
+  TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
 
-$(BLACKLIST_DST): $(BLACKLIST_SRC)
+  $(BLACKLIST_DST): $(BLACKLIST_SRC)
 	$(call install-file)
 
-COPY_FILES += $(BLACKLIST_DST)
+  COPY_FILES += $(BLACKLIST_DST)
 
-$(TRUSTEDLIBS_DST): $(TRUSTEDLIBS_SRC)
+  $(TRUSTEDLIBS_DST): $(TRUSTEDLIBS_SRC)
 	$(call install-file)
 
-COPY_FILES += $(TRUSTEDLIBS_DST)
+  COPY_FILES += $(TRUSTEDLIBS_DST)
 
 endif
 
@@ -425,98 +424,98 @@ COPY_FILES += $(BLACKLISTED_CERTS_DST)
 
 ifndef OPENJDK
 
-SHARED_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts
-SHARED_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/fonts
-SHARED_FONTS_FILES   := \
-	LucidaTypewriterRegular.ttf	\
-	LucidaTypewriterBold.ttf        \
-	LucidaBrightRegular.ttf         \
-	LucidaBrightDemiBold.ttf        \
-	LucidaBrightItalic.ttf          \
-	LucidaBrightDemiItalic.ttf	\
-	LucidaSansRegular.ttf       	\
-	LucidaSansDemiBold.ttf       	\
+  SHARED_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts
+  SHARED_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/fonts
+  SHARED_FONTS_FILES := \
+      LucidaTypewriterRegular.ttf \
+      LucidaTypewriterBold.ttf \
+      LucidaBrightRegular.ttf \
+      LucidaBrightDemiBold.ttf \
+      LucidaBrightItalic.ttf \
+      LucidaBrightDemiItalic.ttf \
+      LucidaSansRegular.ttf \
+      LucidaSansDemiBold.ttf \
 
-SHARED_FONTS_SRC := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_SRC_DIR)/$(F))
-SHARED_FONTS_DST := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_DST_DIR)/$(F))
+  SHARED_FONTS_SRC := $(foreach F, $(SHARED_FONTS_FILES), $(SHARED_FONTS_SRC_DIR)/$(F))
+  SHARED_FONTS_DST := $(foreach F, $(SHARED_FONTS_FILES), $(SHARED_FONTS_DST_DIR)/$(F))
 
-$(SHARED_FONTS_DST_DIR)/%.ttf : $(SHARED_FONTS_SRC_DIR)/%.ttf
+  $(SHARED_FONTS_DST_DIR)/%.ttf: $(SHARED_FONTS_SRC_DIR)/%.ttf
 	$(call install-file)
 
-$(SHARED_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.fonts.dir
+  $(SHARED_FONTS_DST_DIR)/fonts.dir: $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.fonts.dir
 	$(call install-file)
 
-COPY_FILES += $(SHARED_FONTS_DST)
+  COPY_FILES += $(SHARED_FONTS_DST)
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
+  ifneq ($(OPENJDK_TARGET_OS), windows)
     COPY_FILES += $(SHARED_FONTS_DST_DIR)/fonts.dir
-endif
+  endif
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(OPENJDK_TARGET_OS), linux)
 
-# The oblique fonts are only needed/wanted on Linux.
+  # The oblique fonts are only needed/wanted on Linux.
 
-OBL_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts/oblique
-OBL_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/oblique-fonts
-OBL_FONTS_FILES   := LucidaTypewriterOblique.ttf LucidaTypewriterBoldOblique.ttf \
-                    LucidaSansOblique.ttf LucidaSansDemiOblique.ttf
+    OBL_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts/oblique
+    OBL_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/oblique-fonts
+    OBL_FONTS_FILES := LucidaTypewriterOblique.ttf LucidaTypewriterBoldOblique.ttf \
+        LucidaSansOblique.ttf LucidaSansDemiOblique.ttf
 
-OBL_FONTS_SRC := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_SRC_DIR)/$(F))
-OBL_FONTS_DST := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_DST_DIR)/$(F))
+    OBL_FONTS_SRC := $(foreach F, $(OBL_FONTS_FILES), $(OBL_FONTS_SRC_DIR)/$(F))
+    OBL_FONTS_DST := $(foreach F, $(OBL_FONTS_FILES), $(OBL_FONTS_DST_DIR)/$(F))
 
-$(OBL_FONTS_DST_DIR)/%.ttf : $(OBL_FONTS_SRC_DIR)/%.ttf
+    $(OBL_FONTS_DST_DIR)/%.ttf: $(OBL_FONTS_SRC_DIR)/%.ttf
 	$(call install-file)
 
-$(OBL_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.oblique-fonts.dir
+    $(OBL_FONTS_DST_DIR)/fonts.dir: $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.oblique-fonts.dir
 	$(call install-file)
 
-COPY_FILES += $(OBL_FONTS_DST) $(OBL_FONTS_DST_DIR)/fonts.dir
+    COPY_FILES += $(OBL_FONTS_DST) $(OBL_FONTS_DST_DIR)/fonts.dir
 
-endif # linux
+  endif # linux
 endif # OPENJDK
 
 ##########################################################################################
 
 ifndef OPENJDK
 
-#
-# Solaris X11 Direct Graphics Access library
-#
+  #
+  # Solaris X11 Direct Graphics Access library
+  #
 
-_DGALIBS_sparc = \
-	libxinerama.so \
-	libjdgaSUNWcg6.so \
-	libjdgaSUNWffb.so \
-	libjdgaSUNWm64.so \
-	libjdgaSUNWafb.so
+  _DGALIBS_sparc = \
+      libxinerama.so \
+      libjdgaSUNWcg6.so \
+      libjdgaSUNWffb.so \
+      libjdgaSUNWm64.so \
+      libjdgaSUNWafb.so
 
-_DGALIBS_sparcv9 = \
-	libxinerama.so \
-	libjdgaSUNWcg6.so \
-	libjdgaSUNWffb.so \
-	libjdgaSUNWm64.so \
-	libjdgaSUNWafb.so
+  _DGALIBS_sparcv9 = \
+      libxinerama.so \
+      libjdgaSUNWcg6.so \
+      libjdgaSUNWffb.so \
+      libjdgaSUNWm64.so \
+      libjdgaSUNWafb.so
 
-_DGALIBS_i586 = 	# no i586 library yet
+  _DGALIBS_i586 = # no i586 library yet
 
-_DGALIBS_amd64 = 	# no amd64 library yet
+  _DGALIBS_amd64 = # no amd64 library yet
 
-DGALIBS = $(_DGALIBS_$(OPENJDK_TARGET_CPU_LEGACY):%=$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/%)
+  DGALIBS = $(_DGALIBS_$(OPENJDK_TARGET_CPU_LEGACY):%=$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/%)
 
-$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libxinerama.so
+  $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libxinerama.so
 	$(call install-file)
 	$(CHMOD) 755 $@
 
-$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libjdgaSUNW%.so
+  $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libjdgaSUNW%.so
 	$(call install-file)
 	$(CHMOD) 755 $@
 
-$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWffb.so
+  $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWffb.so
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s $(<F) $@
 
-COPY_FILES += $(DGALIBS)
+  COPY_FILES += $(DGALIBS)
 
 endif
 
@@ -524,35 +523,35 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
-SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
+  SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
+  SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
 
-$(SUNPKCS11_CFG_DST) : $(SUNPKCS11_CFG_SRC)
+  $(SUNPKCS11_CFG_DST): $(SUNPKCS11_CFG_SRC)
 	$(call install-file)
 
-COPY_FILES += $(SUNPKCS11_CFG_DST)
+  COPY_FILES += $(SUNPKCS11_CFG_DST)
 
 endif
 
 ##########################################################################################
 
 ifndef OPENJDK
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/ucrypto-solaris.cfg
-UCRYPTO_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/ucrypto-solaris.cfg
+    UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/ucrypto-solaris.cfg
+    UCRYPTO_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/ucrypto-solaris.cfg
 
-$(UCRYPTO_CFG_DST) : $(UCRYPTO_CFG_SRC)
+    $(UCRYPTO_CFG_DST): $(UCRYPTO_CFG_SRC)
 	$(call install-file)
 
-COPY_FILES += $(UCRYPTO_CFG_DST)
+    COPY_FILES += $(UCRYPTO_CFG_DST)
 
-endif
+  endif
 endif
 
 ##########################################################################################
 
-$(JDK_OUTPUTDIR)/lib/sound.properties : $(JDK_TOPDIR)/src/share/lib/sound.properties
+$(JDK_OUTPUTDIR)/lib/sound.properties: $(JDK_TOPDIR)/src/share/lib/sound.properties
 	$(call install-file)
 
 COPY_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties

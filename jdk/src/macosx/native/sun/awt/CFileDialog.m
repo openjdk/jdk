@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,14 @@ canChooseDirectories:(BOOL)inChooseDirectories
 - (void)safeSaveOrLoad {
     NSSavePanel *thePanel = nil;
 
+    /* 
+     * 8013553: turns off extension hiding for the native file dialog.
+     * This way is used because setExtensionHidden(NO) doesn't work
+     * as expected.
+     */
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setBool:NO forKey:@"NSNavLastUserSetHideExtensionButtonState"];
+
     if (fMode == java_awt_FileDialog_SAVE) {
         thePanel = [NSSavePanel savePanel];
         [thePanel setAllowsOtherFileTypes:YES];
@@ -110,7 +118,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
         if (fMode == java_awt_FileDialog_LOAD) {
             NSOpenPanel *openPanel = (NSOpenPanel *)thePanel;
             [openPanel setAllowsMultipleSelection:fMultipleMode];
-            [openPanel setCanChooseFiles:YES];
+            [openPanel setCanChooseFiles:!fChooseDirectories];
             [openPanel setCanChooseDirectories:fChooseDirectories];
             [openPanel setCanCreateDirectories:YES];
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.peer.*;
 
-class WLabelPeer extends WComponentPeer implements LabelPeer {
+final class WLabelPeer extends WComponentPeer implements LabelPeer {
 
     // ComponentPeer overrides
 
@@ -82,12 +82,4 @@ class WLabelPeer extends WComponentPeer implements LabelPeer {
 
         super.initialize();
     }
-
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize() {
-            return getMinimumSize();
-    }
-
 }

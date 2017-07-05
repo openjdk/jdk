@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,41 +64,20 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 
-class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
-    boolean editable;
+final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
-    AWTTextPane textPane;
-    AWTTextArea jtext;
+    private final AWTTextPane textPane;
+    private final AWTTextArea jtext;
+    private final boolean firstChangeSkipped;
 
-    boolean firstChangeSkipped;
-
-    private final JavaMouseEventHandler javaMouseEventHandler
-        = new JavaMouseEventHandler( this );
-
-    /* FIXME  */
-
-    public long filterEvents(long mask) {
-        Thread.dumpStack();
-        return 0;
-    }
-
-    /* FIXME   */
-    public Rectangle getCharacterBounds(int i) {
-        Thread.dumpStack();
-        return null;
-    }
-
-    public int getIndexAtPoint(int x, int y) {
-        Thread.dumpStack();
-        return 0;
-    }
-
+    private final JavaMouseEventHandler javaMouseEventHandler =
+            new JavaMouseEventHandler(this);
 
     /**
      * Create a Text area.
      */
     XTextAreaPeer(TextArea target) {
-        super( target  );
+        super(target);
 
         // some initializations require that target be set even
         // though init(target) has not been called
@@ -106,8 +85,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         //ComponentAccessor.enableEvents(target,AWTEvent.MOUSE_WHEEL_EVENT_MASK);
 
-        firstChangeSkipped = false;
-        String text = ((TextArea)target).getText();
+        String text = target.getText();
         jtext = new AWTTextArea(text, this);
         jtext.setWrapStyleWord(true);
         jtext.getDocument().addDocumentListener(jtext);
@@ -143,29 +121,27 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         setFont(font);
 
+        // set the text of this object to the text of its target
+        setTextImpl(target.getText());  //?? should this be setText
+
         int start = target.getSelectionStart();
         int end = target.getSelectionEnd();
-
-        if (end > start) {
-            select(start, end);
-        }
         // Fix for 5100200
         // Restoring Motif behaviour
         // Since the end position of the selected text can be greater then the length of the text,
         // so we should set caret to max position of the text
-        int caretPosition = Math.min(end, text.length());
-        setCaretPosition(caretPosition);
-
+        setCaretPosition(Math.min(end, text.length()));
+        if (end > start) {
+            // Should be called after setText() and setCaretPosition()
+            select(start, end);
+        }
         setEditable(target.isEditable());
-
         setScrollBarVisibility();
-        // set the text of this object to the text of its target
-        setTextImpl(target.getText());  //?? should this be setText
-
         // After this line we should not change the component's text
         firstChangeSkipped = true;
     }
 
+    @Override
     public void dispose() {
         XToolkit.specialPeerMap.remove(jtext);
         // visible caret has a timer thread which must be stopped
@@ -174,7 +150,6 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         textPane.removeNotify();
         super.dispose();
     }
-
 
     /*
      * The method overrides one from XComponentPeer
@@ -201,7 +176,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         javaMouseEventHandler.setCursor();
     }
 
-    void setScrollBarVisibility() {
+    private void setScrollBarVisibility() {
         int visibility = ((TextArea)target).getScrollbarVisibility();
         jtext.setLineWrap(false);
 
@@ -229,10 +204,12 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * Compute minimum size.
      */
+    @Override
     public Dimension getMinimumSize() {
         return getMinimumSize(10, 60);
     }
 
+    @Override
     public Dimension getPreferredSize(int rows, int cols) {
         return getMinimumSize(rows, cols);
     }
@@ -240,7 +217,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextAreaPeer
      */
-
+    @Override
     public Dimension getMinimumSize(int rows, int cols) {
         /*    Dimension d = null;
               if (jtext != null) {
@@ -269,10 +246,12 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
                              fm.getHeight() * rows + /*2*YMARGIN +*/ hsbheight);
     }
 
+    @Override
     public boolean isFocusable() {
         return true;
     }
 
+    @Override
     public void setVisible(boolean b) {
         super.setVisible(b);
         if (textPane != null)
@@ -283,27 +262,30 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         jtext.repaintNow();
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
         super.focusGained(e);
         jtext.forwardFocusGained(e);
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         super.focusLost(e);
         jtext.forwardFocusLost(e);
     }
 
-
     /**
      * Paint the component
      * this method is called when the repaint instruction has been used
      */
+    @Override
     public void repaint() {
         if (textPane  != null)  {
             //textPane.validate();
             textPane.repaint();
         }
     }
+
     @Override
     void paintPeer(final Graphics g) {
         if (textPane  != null)  {
@@ -311,6 +293,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         super.setBounds(x, y, width, height, op);
         if (textPane != null) {
@@ -337,21 +320,26 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         AWTAccessor.getComponentAccessor().processEvent(jtext,e);
     }
 
+    @Override
     public boolean handlesWheelScrolling() { return true; }
 
+    @Override
     void handleJavaMouseWheelEvent(MouseWheelEvent e) {
-        AWTAccessor.getComponentAccessor().processEvent(textPane,e);
+        AWTAccessor.getComponentAccessor().processEvent(textPane, e);
     }
 
+    @Override
     public void handleJavaMouseEvent( MouseEvent e ) {
         super.handleJavaMouseEvent( e );
         javaMouseEventHandler.handle( e );
     }
 
+    @Override
     void handleJavaInputMethodEvent(InputMethodEvent e) {
         if (jtext != null)
             jtext.processInputMethodEventPublic((InputMethodEvent)e);
@@ -360,13 +348,15 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void select(int s, int e) {
-        jtext.select(s,e);
+        jtext.select(s, e);
         // Fixed 5100806
         // We must take care that Swing components repainted correctly
         jtext.repaint();
     }
 
+    @Override
     public void setBackground(Color c) {
         super.setBackground(c);
 //          synchronized (getStateLock()) {
@@ -379,6 +369,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 //          repaintText();
     }
 
+    @Override
     public void setForeground(Color c) {
         super.setForeground(c);
 //          synchronized (getStateLock()) {
@@ -392,6 +383,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 //          repaintText();
     }
 
+    @Override
     public void setFont(Font f) {
         super.setFont(f);
 //          synchronized (getStateLock()) {
@@ -403,12 +395,11 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         textPane.validate();
     }
 
-
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void setEditable(boolean editable) {
-        this.editable = editable;
         if (jtext != null) jtext.setEditable(editable);
         repaintText();
     }
@@ -416,6 +407,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.ComponentPeer
      */
+    @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         if (jtext != null) {
@@ -427,6 +419,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public InputMethodRequests getInputMethodRequests() {
         if (jtext != null) return jtext.getInputMethodRequests();
         else  return null;
@@ -435,6 +428,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getSelectionStart() {
         return jtext.getSelectionStart();
     }
@@ -442,6 +436,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getSelectionEnd() {
         return jtext.getSelectionEnd();
     }
@@ -449,6 +444,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public String getText() {
         return jtext.getText();
     }
@@ -456,12 +452,13 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
-    public void setText(String txt) {
-        setTextImpl(txt);
+    @Override
+    public void setText(String text) {
+        setTextImpl(text);
         repaintText();
     }
 
-    protected boolean setTextImpl(String txt) {
+    private void setTextImpl(String txt) {
         if (jtext != null) {
             // JTextArea.setText() posts two different events (remove & insert).
             // Since we make no differences between text events,
@@ -474,13 +471,13 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
             jtext.getDocument().addDocumentListener(jtext);
         }
-        return true;
     }
 
     /**
      * insert the text "txt on position "pos" in the array lines
      * @see java.awt.peer.TextAreaPeer
      */
+    @Override
     public void insert(String txt, int p) {
         if (jtext != null) {
             boolean doScroll = (p >= jtext.getDocument().getLength() && jtext.getDocument().getLength() != 0);
@@ -499,6 +496,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * replace the text between the position "s" and "e" with "txt"
      * @see java.awt.peer.TextAreaPeer
      */
+    @Override
     public void replaceRange(String txt, int s, int e) {
         if (jtext != null) {
             // JTextArea.replaceRange() posts two different events.
@@ -516,6 +514,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * to be implemented.
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void setCaretPosition(int position) {
         jtext.setCaretPosition(position);
     }
@@ -524,54 +523,19 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * to be implemented.
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getCaretPosition() {
         return jtext.getCaretPosition();
     }
 
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextAreaPeer
-     */
-    public void insertText(String txt, int pos) {
-        insert(txt, pos);
-    }
+    final class AWTTextAreaUI extends MotifTextAreaUI {
 
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextAreaPeer
-     */
-    public void replaceText(String txt, int start, int end) {
-        replaceRange(txt, start, end);
-    }
+        private JTextArea jta;
 
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextAreaPeer
-     */
-    public Dimension minimumSize(int rows, int cols) {
-        return getMinimumSize(rows, cols);
-    }
-
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextAreaPeer
-     */
-    public Dimension preferredSize(int rows, int cols) {
-        return getPreferredSize(rows, cols);
-    }
-
-
-    class  AWTTextAreaUI extends MotifTextAreaUI {
-        /**
-         * Creates a UI for a JTextArea.
-         *
-         * @param c the text field
-         * @return the UI
-         */
-        JTextArea jta;
-
+        @Override
         protected String getPropertyPrefix() { return "TextArea"; }
 
+        @Override
         public void installUI(JComponent c) {
             super.installUI(c);
 
@@ -627,6 +591,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         protected void installKeyboardActions() {
             super.installKeyboardActions();
 
@@ -644,13 +609,15 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         protected Caret createCaret() {
             return new XAWTCaret();
         }
     }
 
 
-    static class XAWTCaret extends DefaultCaret {
+    static final class XAWTCaret extends DefaultCaret {
+        @Override
         public void focusGained(FocusEvent e) {
             super.focusGained(e);
             if (getComponent().isEnabled()){
@@ -660,6 +627,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             getComponent().repaint();
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             super.focusLost(e);
             getComponent().repaint();
@@ -668,6 +636,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         // Fix for 5100950: textarea.getSelectedText() returns the de-selected text, on XToolkit
         // Restoring Motif behaviour
         // If the text is unhighlighted then we should sets the selection range to zero
+        @Override
         public void setSelectionVisible(boolean vis) {
             if (vis){
                 super.setSelectionVisible(vis);
@@ -678,16 +647,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    final class XAWTScrollBarButton extends BasicArrowButton {
 
-    class XAWTScrollBarButton extends BasicArrowButton
-    {
-        UIDefaults uidefaults = XToolkit.getUIDefaults();
+        private UIDefaults uidefaults = XToolkit.getUIDefaults();
         private Color darkShadow = SystemColor.controlShadow;
         private Color lightShadow = SystemColor.controlLtHighlight;
         private Color buttonBack = uidefaults.getColor("ScrollBar.track");
 
-        public XAWTScrollBarButton(int direction)
-        {
+        XAWTScrollBarButton(int direction) {
             super(direction);
 
             switch (direction) {
@@ -707,6 +674,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             setForeground(uidefaults.getColor("ScrollBar.foreground"));
         }
 
+        @Override
         public Dimension getPreferredSize() {
             switch (direction) {
             case NORTH:
@@ -719,18 +687,22 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         public Dimension getMinimumSize() {
             return getPreferredSize();
         }
 
+        @Override
         public Dimension getMaximumSize() {
             return getPreferredSize();
         }
 
+        @Override
         public boolean isFocusTraversable() {
             return false;
         }
 
+        @Override
         public void paint(Graphics g)
         {
             int w = getWidth();
@@ -846,19 +818,16 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    final class XAWTScrollBarUI extends BasicScrollBarUI {
 
-    class XAWTScrollBarUI extends BasicScrollBarUI
-    {
-        public XAWTScrollBarUI() {
-            super();
-        }
-
+        @Override
         protected void installDefaults()
         {
             super.installDefaults();
             scrollbar.setBorder(new BevelBorder(false,SystemColor.controlDkShadow,SystemColor.controlLtHighlight) );
         }
 
+        @Override
         protected void configureScrollBarColors() {
             UIDefaults uidefaults = XToolkit.getUIDefaults();
             Color bg = scrollbar.getBackground();
@@ -881,12 +850,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         }
 
+        @Override
         protected JButton createDecreaseButton(int orientation) {
             JButton b = new XAWTScrollBarButton(orientation);
             return b;
 
         }
 
+        @Override
         protected JButton createIncreaseButton(int orientation) {
             JButton b = new XAWTScrollBarButton(orientation);
             return b;
@@ -900,12 +871,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return incrButton;
         }
 
+        @Override
         public void paint(Graphics g, JComponent c) {
             paintTrack(g, c, getTrackBounds());
             Rectangle thumbBounds = getThumbBounds();
             paintThumb(g, c, thumbBounds);
         }
 
+        @Override
         public void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds)
         {
             if(!scrollbar.isEnabled()) {
@@ -934,17 +907,18 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    final class AWTTextArea extends JTextArea implements DocumentListener {
 
-    class AWTTextArea extends JTextArea implements DocumentListener {
-        boolean isFocused = false;
-        XTextAreaPeer peer;
+        private boolean isFocused = false;
+        private final XTextAreaPeer peer;
 
-        public AWTTextArea(String text, XTextAreaPeer peer) {
+        AWTTextArea(String text, XTextAreaPeer peer) {
             super(text);
             setFocusable(false);
             this.peer = peer;
         }
 
+        @Override
         public void insertUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -952,6 +926,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -959,6 +934,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         public void changedUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -979,6 +955,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             super.processFocusEvent(fe);
         }
 
+        @Override
         public boolean hasFocus() {
             return isFocused;
         }
@@ -999,6 +976,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             processInputMethodEvent(e);
         }
 
+        @Override
         public void updateUI() {
             ComponentUI ui = new AWTTextAreaUI();
             setUI(ui);
@@ -1006,6 +984,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         // Fix for 4915454 - override the default implementation to avoid
         // loading SystemFlavorMap and associated classes.
+        @Override
         public void setTransferHandler(TransferHandler newHandler) {
             TransferHandler oldHandler = (TransferHandler)
                 getClientProperty(AWTAccessor.getClientPropertyKeyAccessor()
@@ -1018,9 +997,8 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    final class XAWTScrollPaneUI extends BasicScrollPaneUI {
 
-    class XAWTScrollPaneUI extends BasicScrollPaneUI
-    {
         private final Border vsbMarginBorderR = new EmptyBorder(0, 2, 0, 0);
         private final Border vsbMarginBorderL = new EmptyBorder(0, 0, 0, 2);
         private final Border hsbMarginBorder = new EmptyBorder(2, 0, 0, 0);
@@ -1030,12 +1008,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         private PropertyChangeListener propertyChangeHandler;
 
+        @Override
         protected void installListeners(JScrollPane scrollPane) {
             super.installListeners(scrollPane);
             propertyChangeHandler = createPropertyChangeHandler();
             scrollPane.addPropertyChangeListener(propertyChangeHandler);
         }
 
+        @Override
         public void paint(Graphics g, JComponent c) {
             Border vpBorder = scrollpane.getViewportBorder();
             if (vpBorder != null) {
@@ -1051,6 +1031,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         private PropertyChangeListener createPropertyChangeHandler() {
             return new PropertyChangeListener() {
+                    @Override
                     public void propertyChange(PropertyChangeEvent e) {
                         String propertyName = e.getPropertyName();
 
@@ -1075,7 +1056,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return c.getComponentOrientation().isLeftToRight();
         }
 
-
+        @Override
         protected void installDefaults(JScrollPane scrollpane) {
             Border b = scrollpane.getBorder();
             UIDefaults uidefaults = XToolkit.getUIDefaults();
@@ -1102,6 +1083,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         protected void uninstallDefaults(JScrollPane c) {
             super.uninstallDefaults(c);
 
@@ -1123,15 +1105,15 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
-
     private class AWTTextPane extends JScrollPane implements FocusListener {
-        JTextArea jtext;
-        XWindow xwin;
 
-        Color control = SystemColor.control;
-        Color focus = SystemColor.activeCaptionBorder;
+        private final JTextArea jtext;
+        private final XWindow xwin;
 
-        public AWTTextPane(JTextArea jt, XWindow xwin, Container parent) {
+        private final Color control = SystemColor.control;
+        private final Color focus = SystemColor.activeCaptionBorder;
+
+        AWTTextPane(JTextArea jt, XWindow xwin, Container parent) {
             super(jt);
             this.xwin = xwin;
             setDoubleBuffered(true);
@@ -1156,6 +1138,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
             Graphics g = getGraphics();
             Rectangle r = getViewportBorderBounds();
@@ -1164,6 +1147,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             g.dispose();
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             Graphics g = getGraphics();
             Rectangle r = getViewportBorderBounds();
@@ -1176,19 +1160,23 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return (Window) xwin.target;
         }
 
+        @Override
         public ComponentPeer getPeer() {
             return (ComponentPeer) (xwin);
         }
 
+        @Override
         public void updateUI() {
             ComponentUI ui = new XAWTScrollPaneUI();
             setUI(ui);
         }
 
+        @Override
         public JScrollBar createVerticalScrollBar() {
             return new XAWTScrollBar(JScrollBar.VERTICAL);
         }
 
+        @Override
         public JScrollBar createHorizontalScrollBar() {
             return new XAWTScrollBar(JScrollBar.HORIZONTAL);
         }
@@ -1197,18 +1185,19 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return this.jtext;
         }
 
+        @Override
         public Graphics getGraphics() {
             return xwin.getGraphics();
         }
 
+        final class XAWTScrollBar extends ScrollBar {
 
-        class XAWTScrollBar extends ScrollBar {
-
-            public XAWTScrollBar(int i) {
+            XAWTScrollBar(int i) {
                 super(i);
                 setFocusable(false);
             }
 
+            @Override
             public void updateUI() {
                 ComponentUI ui = new XAWTScrollBarUI();
                 setUI(ui);
@@ -1222,12 +1211,13 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         private Color control = SystemColor.controlShadow;
         private boolean isRaised;
 
-        public BevelBorder(boolean isRaised, Color darkShadow, Color lightShadow) {
+        BevelBorder(boolean isRaised, Color darkShadow, Color lightShadow) {
             this.isRaised = isRaised;
             this.darkShadow = darkShadow;
             this.lightShadow = lightShadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             g.setColor((isRaised) ? lightShadow : darkShadow);
             g.drawLine(x, y, x+w-1, y);           // top
@@ -1246,10 +1236,12 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             g.drawLine(x+w-2, y+h-2, x+w-2, y+1); // right
         }
 
+        @Override
         public Insets getBorderInsets(Component c) {
             return getBorderInsets(c, new Insets(0,0,0,0));
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.top = insets.left = insets.bottom = insets.right = 2;
             return insets;

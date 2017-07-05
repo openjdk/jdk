@@ -96,7 +96,7 @@ import java.util.Objects;
  * @since 1.8
  */
 public final class MinguoDate
-        extends ChronoDateImpl<MinguoDate>
+        extends ChronoLocalDateImpl<MinguoDate>
         implements ChronoLocalDate, Serializable {
 
     /**
@@ -421,8 +421,9 @@ public final class MinguoDate
     }
 
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        return isoDate.until(endDate);
+    public ChronoPeriod until(ChronoLocalDate endDate) {
+        Period period = isoDate.until(endDate);
+        return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
     @Override  // override for performance

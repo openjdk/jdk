@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +222,17 @@ void LinkResolver::resolve_klass(KlassHandle& result, constantPoolHandle pool, i
 //
 // According to JVM spec. $5.4.3c & $5.4.3d
 
+// Look up method in klasses, including static methods
+// Then look up local default methods
 void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
   Method* result_oop = klass->uncached_lookup_method(name, signature);
+  if (result_oop == NULL) {
+    Array<Method*>* default_methods = InstanceKlass::cast(klass())->default_methods();
+    if (default_methods != NULL) {
+      result_oop = InstanceKlass::find_method(default_methods, name, signature);
+    }
+  }
+
   if (EnableInvokeDynamic && result_oop != NULL) {
     vmIntrinsics::ID iid = result_oop->intrinsic_id();
     if (MethodHandles::is_signature_polymorphic(iid)) {
@@ -234,6 +244,7 @@ void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle kl
 }
 
 // returns first instance method
+// Looks up method in classes, then looks up local default methods
 void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
   Method* result_oop = klass->uncached_lookup_method(name, signature);
   result = methodHandle(THREAD, result_oop);
@@ -241,13 +252,38 @@ void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, Klass
     klass = KlassHandle(THREAD, result->method_holder()->super());
     result = methodHandle(THREAD, klass->uncached_lookup_method(name, signature));
   }
+
+  if (result.is_null()) {
+    Array<Method*>* default_methods = InstanceKlass::cast(klass())->default_methods();
+    if (default_methods != NULL) {
+      result = methodHandle(InstanceKlass::find_method(default_methods, name, signature));
+      assert(result.is_null() || !result->is_static(), "static defaults not allowed");
+    }
+  }
 }
 
+int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
+                                          methodHandle resolved_method, TRAPS) {
 
-int LinkResolver::vtable_index_of_miranda_method(KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
-  ResourceMark rm(THREAD);
-  klassVtable *vt = InstanceKlass::cast(klass())->vtable();
-  return vt->index_of_miranda(name, signature);
+  int vtable_index = Method::invalid_vtable_index;
+  Symbol* name = resolved_method->name();
+  Symbol* signature = resolved_method->signature();
+
+  // First check in default method array
+  if (!resolved_method->is_abstract()  &&
+    (InstanceKlass::cast(klass())->default_methods() != NULL)) {
+    int index = InstanceKlass::find_method_index(InstanceKlass::cast(klass())->default_methods(), name, signature);
+    if (index >= 0 ) {
+      vtable_index = InstanceKlass::cast(klass())->default_vtable_indices()->at(index);
+    }
+  }
+  if (vtable_index == Method::invalid_vtable_index) {
+    // get vtable_index for miranda methods
+    ResourceMark rm(THREAD);
+    klassVtable *vt = InstanceKlass::cast(klass())->vtable();
+    vtable_index = vt->index_of_miranda(name, signature);
+  }
+  return vtable_index;
 }
 
 void LinkResolver::lookup_method_in_interfaces(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
@@ -625,6 +661,12 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
                    resolved_method->method_holder()->internal_name()
                   );
     resolved_method->access_flags().print_on(tty);
+    if (resolved_method->is_default_method()) {
+      tty->print("default");
+    }
+    if (resolved_method->is_overpass()) {
+      tty->print("overpass");
+    }
     tty->cr();
   }
 }
@@ -853,6 +895,7 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                                                          resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
+
   if (TraceItables && Verbose) {
     ResourceMark rm(THREAD);
     tty->print("invokespecial resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
@@ -864,8 +907,7 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                 resolved_method->method_holder()->internal_name()
                );
     resolved_method->access_flags().print_on(tty);
-    if (resolved_method->method_holder()->is_interface() &&
-        !resolved_method->is_abstract()) {
+    if (resolved_method->is_default_method()) {
       tty->print("default");
     }
     if (resolved_method->is_overpass()) {
@@ -945,9 +987,11 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
                  sel_method->method_holder()->internal_name()
                 );
     sel_method->access_flags().print_on(tty);
-    if (sel_method->method_holder()->is_interface() &&
-        !sel_method->is_abstract()) {
+    if (sel_method->is_default_method()) {
       tty->print("default");
+    }
+    if (sel_method->is_overpass()) {
+      tty->print("overpass");
     }
     tty->cr();
   }
@@ -996,26 +1040,25 @@ void LinkResolver::linktime_resolve_virtual_method(methodHandle &resolved_method
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
- if (PrintVtables && Verbose) {
-   ResourceMark rm(THREAD);
-   tty->print("invokevirtual resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
-                  (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()),
-                  (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
-                  Method::name_and_sig_as_C_string(resolved_klass(),
-                                                   resolved_method->name(),
-                                                   resolved_method->signature()),
-                  resolved_method->method_holder()->internal_name()
-                 );
-   resolved_method->access_flags().print_on(tty);
-   if (resolved_method->method_holder()->is_interface() &&
-       !resolved_method->is_abstract()) {
-     tty->print("default");
-   }
-   if (resolved_method->is_overpass()) {
-     tty->print("overpass");
-   }
-   tty->cr();
- }
+  if (PrintVtables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokevirtual resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+                   (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()),
+                   (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                   Method::name_and_sig_as_C_string(resolved_klass(),
+                                                    resolved_method->name(),
+                                                    resolved_method->signature()),
+                   resolved_method->method_holder()->internal_name()
+                  );
+    resolved_method->access_flags().print_on(tty);
+    if (resolved_method->is_default_method()) {
+      tty->print("default");
+    }
+    if (resolved_method->is_overpass()) {
+      tty->print("overpass");
+    }
+    tty->cr();
+  }
 }
 
 // throws runtime exceptions
@@ -1045,10 +1088,8 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
 
   // do lookup based on receiver klass using the vtable index
   if (resolved_method->method_holder()->is_interface()) { // miranda method
-    vtable_index = vtable_index_of_miranda_method(resolved_klass,
-                           resolved_method->name(),
-                           resolved_method->signature(), CHECK);
-
+    vtable_index = vtable_index_of_interface_method(resolved_klass,
+                           resolved_method, CHECK);
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
     InstanceKlass* inst = InstanceKlass::cast(recv_klass());
@@ -1104,11 +1145,10 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                    vtable_index
                   );
     selected_method->access_flags().print_on(tty);
-    if (selected_method->method_holder()->is_interface() &&
-        !selected_method->is_abstract()) {
+    if (selected_method->is_default_method()) {
       tty->print("default");
     }
-    if (resolved_method->is_overpass()) {
+    if (selected_method->is_overpass()) {
       tty->print("overpass");
     }
     tty->cr();
@@ -1191,7 +1231,6 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                                                sel_method->name(),
                                                sel_method->signature()));
   }
-
   // check if abstract
   if (check_null_and_abstract && sel_method->is_abstract()) {
     ResourceMark rm(THREAD);
@@ -1220,11 +1259,10 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                    sel_method->method_holder()->internal_name()
                   );
     sel_method->access_flags().print_on(tty);
-    if (sel_method->method_holder()->is_interface() &&
-        !sel_method->is_abstract()) {
+    if (sel_method->is_default_method()) {
       tty->print("default");
     }
-    if (resolved_method->is_overpass()) {
+    if (sel_method->is_overpass()) {
       tty->print("overpass");
     }
     tty->cr();

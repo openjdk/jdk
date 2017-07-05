@@ -502,51 +502,6 @@ public class ValueConversions {
         }
     }
 
-    static MethodHandle collectArguments(MethodHandle mh, int pos, MethodHandle collector) {
-        // FIXME: API needs public MHs.collectArguments.
-        // Should be:
-        //   return MethodHandles.collectArguments(mh, 0, collector);
-        // The rest of this code is a workaround for not having that API.
-        if (COLLECT_ARGUMENTS != null) {
-            try {
-                return (MethodHandle)
-                    COLLECT_ARGUMENTS.invokeExact(mh, pos, collector);
-            } catch (Throwable ex) {
-                if (ex instanceof RuntimeException)
-                    throw (RuntimeException) ex;
-                if (ex instanceof Error)
-                    throw (Error) ex;
-                throw new Error(ex.getMessage(), ex);
-            }
-        }
-        // Emulate MHs.collectArguments using fold + drop.
-        // This is slightly inefficient.
-        // More seriously, it can put a MH over the 255-argument limit.
-        mh = MethodHandles.dropArguments(mh, 1, collector.type().parameterList());
-        mh = MethodHandles.foldArguments(mh, collector);
-        return mh;
-    }
-    private static final MethodHandle COLLECT_ARGUMENTS;
-    static {
-        MethodHandle mh = null;
-        try {
-            final java.lang.reflect.Method m = MethodHandles.class
-                .getDeclaredMethod("collectArguments",
-                    MethodHandle.class, int.class, MethodHandle.class);
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        m.setAccessible(true);
-                        return null;
-                    }
-                });
-            mh = IMPL_LOOKUP.unreflect(m);
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
-        }
-        COLLECT_ARGUMENTS = mh;
-    }
-
     private static final EnumMap<Wrapper, MethodHandle>[] WRAPPER_CASTS
             = newWrapperCaches(1);
 
@@ -1050,12 +1005,12 @@ public class ValueConversions {
             if (mh == ARRAY_IDENTITY)
                 mh = rightFiller;
             else
-                mh = collectArguments(mh, 0, rightFiller);
+                mh = MethodHandles.collectArguments(mh, 0, rightFiller);
         }
         if (mh == ARRAY_IDENTITY)
             mh = leftCollector;
         else
-            mh = collectArguments(mh, 0, leftCollector);
+            mh = MethodHandles.collectArguments(mh, 0, leftCollector);
         return mh;
     }
 
@@ -1101,7 +1056,7 @@ public class ValueConversions {
         if (midLen == LEFT_ARGS)
             return rightFill;
         else
-            return collectArguments(rightFill, 0, midFill);
+            return MethodHandles.collectArguments(rightFill, 0, midFill);
     }
 
     // Type-polymorphic version of varargs maker.
