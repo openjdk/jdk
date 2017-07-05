@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public enum TokenType {
       EOT,            /* end of token */
       RAW_BYTE,

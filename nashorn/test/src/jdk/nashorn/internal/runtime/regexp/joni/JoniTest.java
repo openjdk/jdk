@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @run testng jdk.nashorn.internal.runtime.regexp.joni.JoniTest
  */
+@SuppressWarnings("javadoc")
 public class JoniTest {
 
     @Test

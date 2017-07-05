@@ -21,6 +21,7 @@ package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
 import jdk.nashorn.internal.runtime.regexp.joni.ScanEnvironment;
 
+@SuppressWarnings("javadoc")
 public final class BackRefNode extends StateNode {
     public final int backRef;
 

@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -42,6 +41,7 @@ import org.testng.annotations.Test;
 /**
  * Tests for trusted client usage of nashorn script engine factory extension API
  */
+@SuppressWarnings("javadoc")
 public class TrustedScriptEngineTest {
     @Test
     public void versionTest() {
@@ -64,7 +64,7 @@ public class TrustedScriptEngineTest {
         public boolean reached() {
             return reached[0];
         }
-    };
+    }
 
     // These are for "private" extension API of NashornScriptEngineFactory that
     // accepts a ClassLoader and/or command line options.
@@ -140,7 +140,8 @@ public class TrustedScriptEngineTest {
                     // try nashorn specific extension
                     e.eval("var f = funtion(x) 2*x;");
                     fail("should have thrown exception!");
-                } catch (final ScriptException se) {
+                } catch (final Exception ex) {
+                    //empty
                 }
                 return;
             }
@@ -276,7 +277,9 @@ public class TrustedScriptEngineTest {
         try {
             fac.getScriptEngine((ClassFilter)null);
             fail("should have thrown NPE");
-        } catch (NullPointerException npe) {}
+        } catch (final NullPointerException e) {
+            //empty
+        }
     }
 
     @Test
@@ -285,7 +288,9 @@ public class TrustedScriptEngineTest {
         try {
             fac.getScriptEngine(new String[0], null, null);
             fail("should have thrown NPE");
-        } catch (NullPointerException npe) {}
+        } catch (final NullPointerException e) {
+            //empty
+        }
     }
 
     @Test
@@ -294,7 +299,9 @@ public class TrustedScriptEngineTest {
         try {
             fac.getScriptEngine((String[])null);
             fail("should have thrown NPE");
-        } catch (NullPointerException npe) {}
+        } catch (final NullPointerException e) {
+            //empty
+        }
     }
 
     @Test
@@ -308,7 +315,9 @@ public class TrustedScriptEngineTest {
                 }
             });
             fail("should have thrown NPE");
-        } catch (NullPointerException npe) {}
+        } catch (final NullPointerException e) {
+            //empty
+        }
     }
 
     @Test

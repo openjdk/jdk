@@ -22,6 +22,7 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
+@SuppressWarnings("javadoc")
 public final class CodeRangeBuffer implements Cloneable {
     private static final int INIT_MULTI_BYTE_RANGE_SIZE = 5;
     private static final int ALL_MULTI_BYTE_RANGE = 0x7fffffff;
@@ -68,7 +69,9 @@ public final class CodeRangeBuffer implements Cloneable {
 
         for (int i=0; i<p[0]; i++) {
             buf.append("[").append(rangeNumToString(p[i * 2 + 1])).append("..").append(rangeNumToString(p[i * 2 + 2])).append("]");
-            if (i > 0 && i % 6 == 0) buf.append("\n          ");
+            if (i > 0 && i % 6 == 0) {
+                buf.append("\n          ");
+            }
         }
 
         return buf.toString();
@@ -97,9 +100,13 @@ public final class CodeRangeBuffer implements Cloneable {
     }
 
     private void moveRight(final int from, final int to, final int n) {
-        if (to + n > p.length) expand(to + n);
+        if (to + n > p.length) {
+            expand(to + n);
+        }
         System.arraycopy(p, from, p, to, n);
-        if (to + n > used) used = to + n;
+        if (to + n > used) {
+            used = to + n;
+        }
     }
 
     protected void moveLeft(final int from, final int to, final int n) {
@@ -113,9 +120,13 @@ public final class CodeRangeBuffer implements Cloneable {
 
     public void writeCodePoint(final int pos, final int b) {
         final int u = pos + 1;
-        if (p.length < u) expand(u);
+        if (p.length < u) {
+            expand(u);
+        }
         p[pos] = b;
-        if (used < u) used = u;
+        if (used < u) {
+            used = u;
+        }
     }
 
     @Override
@@ -125,14 +136,19 @@ public final class CodeRangeBuffer implements Cloneable {
 
     // ugly part: these methods should be made OO
     // add_code_range_to_buf
-    public static CodeRangeBuffer addCodeRangeToBuff(CodeRangeBuffer pbuf, int from, int to) {
+    public static CodeRangeBuffer addCodeRangeToBuff(final CodeRangeBuffer pbufp, final int fromp, final int top) {
+        int from = fromp, to = top;
+        CodeRangeBuffer pbuf = pbufp;
+
         if (from > to) {
             final int n = from;
             from = to;
             to = n;
         }
 
-        if (pbuf == null) pbuf = new CodeRangeBuffer(); // move to CClassNode
+        if (pbuf == null) {
+            pbuf = new CodeRangeBuffer(); // move to CClassNode
+        }
 
         final int[]p = pbuf.p;
         int n = p[0];
@@ -163,11 +179,17 @@ public final class CodeRangeBuffer implements Cloneable {
 
         final int incN = low + 1 - high;
 
-        if (n + incN > Config.MAX_MULTI_BYTE_RANGES_NUM) throw new ValueException(ErrorMessages.ERR_TOO_MANY_MULTI_BYTE_RANGES);
+        if (n + incN > Config.MAX_MULTI_BYTE_RANGES_NUM) {
+            throw new ValueException(ErrorMessages.ERR_TOO_MANY_MULTI_BYTE_RANGES);
+        }
 
         if (incN != 1) {
-            if (from > p[low * 2 + 1]) from = p[low * 2 + 1];
-            if (to < p[(high - 1) * 2 + 2]) to = p[(high - 1) * 2 + 2];
+            if (from > p[low * 2 + 1]) {
+                from = p[low * 2 + 1];
+            }
+            if (to < p[(high - 1) * 2 + 2]) {
+                to = p[(high - 1) * 2 + 2];
+            }
         }
 
         if (incN != 0 && high < n) {
@@ -197,9 +219,8 @@ public final class CodeRangeBuffer implements Cloneable {
         if (from > to) {
             if (env.syntax.allowEmptyRangeInCC()) {
                 return pbuf;
-            } else {
-                throw new ValueException(ErrorMessages.ERR_EMPTY_RANGE_IN_CHAR_CLASS);
             }
+            throw new ValueException(ErrorMessages.ERR_EMPTY_RANGE_IN_CHAR_CLASS);
         }
         return addCodeRangeToBuff(pbuf, from, to);
     }
@@ -218,12 +239,16 @@ public final class CodeRangeBuffer implements Cloneable {
     public static CodeRangeBuffer notCodeRangeBuff(final CodeRangeBuffer bbuf) {
         CodeRangeBuffer pbuf = null;
 
-        if (bbuf == null) return setAllMultiByteRange(pbuf);
+        if (bbuf == null) {
+            return setAllMultiByteRange(pbuf);
+        }
 
         final int[]p = bbuf.p;
         final int n = p[0];
 
-        if (n <= 0) return setAllMultiByteRange(pbuf);
+        if (n <= 0) {
+            return setAllMultiByteRange(pbuf);
+        }
 
         int pre = EncodingHelper.mbcodeStartPosition();
 
@@ -235,18 +260,26 @@ public final class CodeRangeBuffer implements Cloneable {
             if (pre <= from - 1) {
                 pbuf = addCodeRangeToBuff(pbuf, pre, from - 1);
             }
-            if (to == ALL_MULTI_BYTE_RANGE) break;
+            if (to == ALL_MULTI_BYTE_RANGE) {
+                break;
+            }
             pre = to + 1;
         }
 
-        if (to < ALL_MULTI_BYTE_RANGE) pbuf = addCodeRangeToBuff(pbuf, to + 1, ALL_MULTI_BYTE_RANGE);
+        if (to < ALL_MULTI_BYTE_RANGE) {
+            pbuf = addCodeRangeToBuff(pbuf, to + 1, ALL_MULTI_BYTE_RANGE);
+        }
         return pbuf;
     }
 
     // or_code_range_buf
-    public static CodeRangeBuffer orCodeRangeBuff(CodeRangeBuffer bbuf1, boolean not1,
-                                                  CodeRangeBuffer bbuf2, boolean not2) {
+    public static CodeRangeBuffer orCodeRangeBuff(final CodeRangeBuffer bbuf1p, final boolean not1p,
+                                                  final CodeRangeBuffer bbuf2p, final boolean not2p) {
         CodeRangeBuffer pbuf = null;
+        CodeRangeBuffer bbuf1 = bbuf1p;
+        CodeRangeBuffer bbuf2 = bbuf2p;
+        boolean not1 = not1p;
+        boolean not2 = not2p;
 
         if (bbuf1 == null && bbuf2 == null) {
             if (not1 || not2) {
@@ -266,13 +299,11 @@ public final class CodeRangeBuffer implements Cloneable {
         if (bbuf1 == null) {
             if (not1) {
                 return setAllMultiByteRange(pbuf);
-            } else {
-                if (!not2) {
-                    return bbuf2.clone();
-                } else {
-                    return notCodeRangeBuff(bbuf2);
-                }
             }
+            if (!not2) {
+                return bbuf2.clone();
+            }
+            return notCodeRangeBuff(bbuf2);
         }
 
         if (not1) {
@@ -302,16 +333,18 @@ public final class CodeRangeBuffer implements Cloneable {
     }
 
     // and_code_range1
-    public static CodeRangeBuffer andCodeRange1(CodeRangeBuffer pbuf, int from1, int to1, final int[]data, final int n) {
+    public static CodeRangeBuffer andCodeRange1(final CodeRangeBuffer pbufp, final int from1p, final int to1p, final int[]data, final int n) {
+        CodeRangeBuffer pbuf = pbufp;
+        int from1 = from1p, to1 = to1p;
+
         for (int i=0; i<n; i++) {
             final int from2 = data[i * 2 + 1];
             final int to2 = data[i * 2 + 2];
             if (from2 < from1) {
                 if (to2 < from1) {
                     continue;
-                } else {
-                    from1 = to2 + 1;
                 }
+                from1 = to2 + 1;
             } else if (from2 <= to1) {
                 if (to2 < to1) {
                     if (from1 <= from2 - 1) {
@@ -324,7 +357,9 @@ public final class CodeRangeBuffer implements Cloneable {
             } else {
                 from1 = from2;
             }
-            if (from1 > to1) break;
+            if (from1 > to1) {
+                break;
+            }
         }
 
         if (from1 <= to1) {
@@ -335,15 +370,22 @@ public final class CodeRangeBuffer implements Cloneable {
     }
 
     // and_code_range_buf
-    public static CodeRangeBuffer andCodeRangeBuff(CodeRangeBuffer bbuf1, boolean not1,
-                                                   CodeRangeBuffer bbuf2, boolean not2) {
+    public static CodeRangeBuffer andCodeRangeBuff(final CodeRangeBuffer bbuf1p, final boolean not1p,
+                                                   final CodeRangeBuffer bbuf2p, final boolean not2p) {
         CodeRangeBuffer pbuf = null;
+        CodeRangeBuffer bbuf1 = bbuf1p;
+        CodeRangeBuffer bbuf2 = bbuf2p;
+        boolean not1 = not1p, not2 = not2p;
 
         if (bbuf1 == null) {
-            if (not1 && bbuf2 != null) return bbuf2.clone(); /* not1 != 0 -> not2 == 0 */
+            if (not1 && bbuf2 != null) {
+                return bbuf2.clone(); /* not1 != 0 -> not2 == 0 */
+            }
             return null;
         } else if (bbuf2 == null) {
-            if (not2) return bbuf1.clone();
+            if (not2) {
+                return bbuf1.clone();
+            }
             return null;
         }
 
@@ -369,8 +411,12 @@ public final class CodeRangeBuffer implements Cloneable {
                     final int from2 = p2[j * 2 + 1];
                     final int to2 = p2[j * 2 + 2];
 
-                    if (from2 > to1) break;
-                    if (to2 < from1) continue;
+                    if (from2 > to1) {
+                        break;
+                    }
+                    if (to2 < from1) {
+                        continue;
+                    }
                     final int from = from1 > from2 ? from1 : from2;
                     final int to = to1 < to2 ? to1 : to2;
                     pbuf = addCodeRangeToBuff(pbuf, from, to);

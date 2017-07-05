@@ -22,7 +22,6 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsOnOff;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isDontCaptureGroup;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isIgnoreCase;
-
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnchorNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnyCharNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.BackRefNode;
@@ -77,7 +76,9 @@ class Parser extends Lexer {
                     restore();
                     return true;
                 }
-                if (c == syntax.metaCharTable.esc) inEsc = true;
+                if (c == syntax.metaCharTable.esc) {
+                    inEsc = true;
+                }
             }
         }
 
@@ -165,7 +166,9 @@ class Parser extends Lexer {
                     arg.vIsRaw = false;
                     fetchTokenInCC();
                     fetched = true;
-                    if (token.type == TokenType.CC_RANGE || andStart) env.ccEscWarn("-"); /* [--x] or [a&&-x] is warned. */
+                    if (token.type == TokenType.CC_RANGE || andStart) {
+                        env.ccEscWarn("-"); /* [--x] or [a&&-x] is warned. */
+                    }
                     parseCharClassValEntry(cc, arg); // goto val_entry
                     break;
                 } else if (arg.state == CCSTATE.RANGE) {
@@ -214,7 +217,9 @@ class Parser extends Lexer {
                     prevCC.and(cc);
                 } else {
                     prevCC = cc;
-                    if (workCC == null) workCC = new CClassNode();
+                    if (workCC == null) {
+                        workCC = new CClassNode();
+                    }
                     cc = workCC;
                 }
                 cc.clear();
@@ -227,7 +232,9 @@ class Parser extends Lexer {
                 throw new InternalException(ERR_PARSER_BUG);
             } // switch
 
-            if (!fetched) fetchTokenInCC();
+            if (!fetched) {
+                fetchTokenInCC();
+            }
 
         } // while
 
@@ -443,7 +450,10 @@ class Parser extends Lexer {
     }
 
     private Node parseExp(final TokenType term) {
-        if (token.type == term) return StringNode.EMPTY; // goto end_of_token
+        if (token.type == term)
+         {
+            return StringNode.EMPTY; // goto end_of_token
+        }
 
         Node node = null;
         boolean group = false;
@@ -474,9 +484,8 @@ class Parser extends Lexer {
             }
             if (token.escaped) {
                 return parseExpTkRawByte(group); // goto tk_raw_byte
-            } else {
-                return parseExpTkByte(group); // goto tk_byte
             }
+            return parseExpTkByte(group); // goto tk_byte
         case STRING:
             return parseExpTkByte(group); // tk_byte:
 
@@ -496,7 +505,9 @@ class Parser extends Lexer {
                 if (Config.NON_UNICODE_SDW) {
                     final CClassNode cc = new CClassNode();
                     cc.addCType(token.getPropCType(), false, env, this);
-                    if (token.getPropNot()) cc.setNot();
+                    if (token.getPropNot()) {
+                        cc.setNot();
+                    }
                     node = cc;
                 }
                 break;
@@ -507,7 +518,9 @@ class Parser extends Lexer {
                 // #ifdef USE_SHARED_CCLASS_TABLE ... #endif
                 final CClassNode ccn = new CClassNode();
                 ccn.addCType(token.getPropCType(), false, env, this);
-                if (token.getPropNot()) ccn.setNot();
+                if (token.getPropNot()) {
+                    ccn.setNot();
+                }
                 node = ccn;
                 break;
 
@@ -555,9 +568,8 @@ class Parser extends Lexer {
             if (syntax.contextIndepRepeatOps()) {
                 if (syntax.contextInvalidRepeatOps()) {
                     throw new SyntaxException(ERR_TARGET_OF_REPEAT_OPERATOR_NOT_SPECIFIED);
-                } else {
-                    node = StringNode.EMPTY; // node_new_empty
                 }
+                node = StringNode.EMPTY; // node_new_empty
             } else {
                 return parseExpTkByte(group); // goto tk_byte
             }
@@ -578,7 +590,9 @@ class Parser extends Lexer {
         final StringNode node = new StringNode(chars, token.backP, p); // tk_byte:
         while (true) {
             fetchToken();
-            if (token.type != TokenType.STRING) break;
+            if (token.type != TokenType.STRING) {
+                break;
+            }
 
             if (token.backP == node.end) {
                 node.end = p; // non escaped character, remain shared, just increase shared range
@@ -605,7 +619,8 @@ class Parser extends Lexer {
         return parseExpRepeat(node, group);
     }
 
-    private Node parseExpRepeat(Node target, final boolean group) {
+    private Node parseExpRepeat(final Node targetp, final boolean group) {
+        Node target = targetp;
         while (token.type == TokenType.OP_REPEAT || token.type == TokenType.INTERVAL) { // repeat:
             if (target.isInvalidQuantifier()) {
                 throw new SyntaxException(ERR_TARGET_OF_REPEAT_OPERATOR_INVALID);
@@ -674,24 +689,25 @@ class Parser extends Lexer {
 
         if (token.type == TokenType.EOT || token.type == term || token.type == TokenType.ALT) {
             return node;
-        } else {
-            final ConsAltNode top = ConsAltNode.newListNode(node, null);
-            ConsAltNode t = top;
-
-            while (token.type != TokenType.EOT && token.type != term && token.type != TokenType.ALT) {
-                node = parseExp(term);
-                if (node.getType() == NodeType.LIST) {
-                    t.setCdr((ConsAltNode)node);
-                    while (((ConsAltNode)node).cdr != null ) node = ((ConsAltNode)node).cdr;
-
-                    t = ((ConsAltNode)node);
-                } else {
-                    t.setCdr(ConsAltNode.newListNode(node, null));
-                    t = t.cdr;
-                }
-            }
-            return top;
         }
+        final ConsAltNode top = ConsAltNode.newListNode(node, null);
+        ConsAltNode t = top;
+
+        while (token.type != TokenType.EOT && token.type != term && token.type != TokenType.ALT) {
+            node = parseExp(term);
+            if (node.getType() == NodeType.LIST) {
+                t.setCdr((ConsAltNode)node);
+                while (((ConsAltNode)node).cdr != null ) {
+                    node = ((ConsAltNode)node).cdr;
+                }
+
+                t = ((ConsAltNode)node);
+            } else {
+                t.setCdr(ConsAltNode.newListNode(node, null));
+                t = t.cdr;
+            }
+        }
+        return top;
     }
 
     /* term_tok: TK_EOT or TK_SUBEXP_CLOSE */
@@ -711,7 +727,9 @@ class Parser extends Lexer {
                 t = t.cdr;
             }
 
-            if (token.type != term) parseSubExpError(term);
+            if (token.type != term) {
+                parseSubExpError(term);
+            }
             return top;
         } else {
             parseSubExpError(term);
@@ -719,12 +737,11 @@ class Parser extends Lexer {
         }
     }
 
-    private void parseSubExpError(final TokenType term) {
+    private static void parseSubExpError(final TokenType term) {
         if (term == TokenType.SUBEXP_CLOSE) {
             throw new SyntaxException(ERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS);
-        } else {
-            throw new InternalException(ERR_PARSER_BUG);
         }
+        throw new InternalException(ERR_PARSER_BUG);
     }
 
     private Node parseRegexp() {

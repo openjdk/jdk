@@ -28,7 +28,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -42,6 +41,7 @@ import org.testng.annotations.Test;
 /**
  * Tests for jsr223 Bindings "scope" (engine, global scopes)
  */
+@SuppressWarnings("javadoc")
 public class ScopeTest {
 
     @Test
@@ -655,6 +655,8 @@ public class ScopeTest {
 
     /**
      * Test "slow" scopes involving {@code with} and {@code eval} statements for shared script classes with multiple globals.
+     * @throws ScriptException
+     * @throws InterruptedException
      */
     @Test
     public static void testSlowScope() throws ScriptException, InterruptedException {

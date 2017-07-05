@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -777,7 +776,7 @@ final class CompiledFunction {
 
         // Compiler needs a call site type as its input, which always has a callee parameter, so we must add it if
         // this function doesn't have a callee parameter.
-        final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ?
+        final MethodType ct = type.parameterType(0) == ScriptFunction.class ?
                 type :
                 type.insertParameterTypes(0, ScriptFunction.class);
         final OptimismInfo currentOptInfo = optimismInfo;
@@ -788,29 +787,29 @@ final class CompiledFunction {
         final OptimismInfo effectiveOptInfo = currentOptInfo != null ? currentOptInfo : oldOptInfo;
         FunctionNode fn = effectiveOptInfo.reparse();
         final boolean serialized = effectiveOptInfo.isSerialized();
-        final Compiler compiler = effectiveOptInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
+        final Compiler compiler = effectiveOptInfo.getCompiler(fn, ct, re); //set to non rest-of
 
         if (!shouldRecompile) {
             // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
             // recompiled a deoptimized version for an inner invocation.
             // We still need to do the rest of from the beginning
-            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+            logRecompile("Rest-of compilation [STANDALONE] ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
             return restOfHandle(effectiveOptInfo, compiler.compile(fn, serialized ? CompilationPhases.COMPILE_SERIALIZED_RESTOF : CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
         }
 
-        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
         fn = compiler.compile(fn, serialized ? CompilationPhases.RECOMPILE_SERIALIZED_UPTO_BYTECODE : CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Reusable IR generated");
 
         // compile the rest of the function, and install it
         log.info("Generating and installing bytecode from reusable IR...");
-        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
         final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.GENERATE_BYTECODE_AND_INSTALL);
 
         if (effectiveOptInfo.data.usePersistentCodeCache()) {
             final RecompilableScriptFunctionData data = effectiveOptInfo.data;
             final int functionNodeId = data.getFunctionNodeId();
-            final TypeMap typeMap = data.typeMap(callSiteType);
+            final TypeMap typeMap = data.typeMap(ct);
             final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
             final String cacheKey = CodeStore.getCacheKey(functionNodeId, paramTypes);
             compiler.persistClassInfo(cacheKey, normalFn);
@@ -871,6 +870,7 @@ final class CompiledFunction {
         private SwitchPoint optimisticAssumptions;
         private final DebugLogger log;
 
+        @SuppressWarnings("unused")
         OptimismInfo(final RecompilableScriptFunctionData data, final Map<Integer, Type> invalidatedProgramPoints) {
             this.data = data;
             this.log  = data.getLogger();

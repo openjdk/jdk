@@ -28,7 +28,6 @@ package jdk.nashorn.api.javaaccess;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 import static org.testng.internal.junit.ArrayAsserts.assertArrayEquals;
-
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
@@ -45,6 +44,7 @@ import org.testng.annotations.Test;
  * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.MethodAccessTest
  * @run testng/othervm jdk.nashorn.api.javaaccess.MethodAccessTest
  */
+@SuppressWarnings("javadoc")
 public class MethodAccessTest {
 
     private static ScriptEngine e = null;

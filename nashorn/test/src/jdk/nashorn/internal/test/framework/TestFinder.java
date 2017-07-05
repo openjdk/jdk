@@ -42,7 +42,6 @@ import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_INCLUDES;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_LIST;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_ROOTS;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_UNCHECKED_DIR;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -76,6 +75,7 @@ import org.xml.sax.InputSource;
  * Utility class to find/parse script test files and to create 'test' instances.
  * Actual 'test' object type is decided by clients of this class.
  */
+@SuppressWarnings("javadoc")
 public final class TestFinder {
     private TestFinder() {}
 
@@ -299,6 +299,8 @@ public final class TestFinder {
                 case "@fork":
                     fork = true;
                     break;
+                default:
+                    break;
                 }
 
                 // negative tests are expected to fail at runtime only
@@ -377,7 +379,7 @@ public final class TestFinder {
      *
      * @args new argument list array
      */
-    public static String[] addExplicitOptimisticTypes(String[] args) {
+    public static String[] addExplicitOptimisticTypes(final String[] args) {
         if (hasOptimisticOverride()) {
             final List<String> newList = new ArrayList<>(Arrays.asList(args));
             newList.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
@@ -392,7 +394,7 @@ public final class TestFinder {
      *
      * @args argument list
      */
-    public static void addExplicitOptimisticTypes(List<String> args) {
+    public static void addExplicitOptimisticTypes(final List<String> args) {
         if (hasOptimisticOverride()) {
             args.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
         }

@@ -120,12 +120,10 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             case "getMethod":
                 if (c > 2) {
                     return findGetMethod(desc);
-                } else {
-                    // For indexed get, we want get GuardedInvocation beans linker and pass it.
-                    // JSObjectLinker.get uses this fallback getter for explicit signature method access.
-                    final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
-                    return findGetIndexMethod(beanInv);
                 }
+            // For indexed get, we want get GuardedInvocation beans linker and pass it.
+            // JSObjectLinker.get uses this fallback getter for explicit signature method access.
+            return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
             case "setProp":
             case "setElem":
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
@@ -192,9 +190,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             // get with method name and signature. delegate it to beans linker!
             if (name.indexOf('(') != -1) {
                 return fallback.invokeExact(jsobj, key);
-            } else {
-                return ((JSObject)jsobj).getMember(name);
             }
+            return ((JSObject)jsobj).getMember(name);
         }
         return null;
     }

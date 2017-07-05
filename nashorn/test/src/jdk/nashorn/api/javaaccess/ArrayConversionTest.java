@@ -29,7 +29,6 @@ import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertNull;
 import static org.testng.AssertJUnit.assertTrue;
-
 import java.util.Arrays;
 import java.util.List;
 import javax.script.ScriptContext;
@@ -41,6 +40,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("javadoc")
 public class ArrayConversionTest {
     private static ScriptEngine e = null;
 
@@ -49,7 +49,7 @@ public class ArrayConversionTest {
     }
 
     @BeforeClass
-    public static void setUpClass() throws ScriptException {
+    public static void setUpClass() {
         e = new ScriptEngineManager().getEngineByName("nashorn");
     }
 
@@ -205,7 +205,7 @@ public class ArrayConversionTest {
         assertEquals(Arrays.asList("apple", "orange"), array[1]);
     }
 
-    public static void assertVarArg_42_17(final Object... args) throws ScriptException {
+    public static void assertVarArg_42_17(final Object... args) {
         assertEquals(2, args.length);
         assertEquals(42, ((Number)args[0]).intValue());
         assertEquals(17, ((Number)args[1]).intValue());

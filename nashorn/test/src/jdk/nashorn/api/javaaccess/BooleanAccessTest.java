@@ -27,7 +27,6 @@ package jdk.nashorn.api.javaaccess;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
-
 import java.util.Arrays;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -42,6 +41,7 @@ import org.testng.annotations.Test;
  * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.BooleanAccessTest
  * @run testng/othervm jdk.nashorn.api.javaaccess.BooleanAccessTest
  */
+@SuppressWarnings("javadoc")
 public class BooleanAccessTest {
 
     private static ScriptEngine e = null;

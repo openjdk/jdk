@@ -25,6 +25,7 @@
 
 package jdk.nashorn.test.models;
 
+@SuppressWarnings("javadoc")
 public class DessertToppingFloorWaxDriver {
     public void decorateDessert(final DessertTopping dt) {
         dt.pourOnDessert();

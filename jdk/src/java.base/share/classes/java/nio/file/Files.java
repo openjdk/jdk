@@ -303,7 +303,7 @@ public final class Files {
      * is a {@link java.nio.channels.FileChannel}.
      *
      * <p> <b>Usage Examples:</b>
-     * <pre>
+     * <pre>{@code
      *     Path path = ...
      *
      *     // open file for reading
@@ -314,9 +314,10 @@ public final class Files {
      *     WritableByteChannel wbc = Files.newByteChannel(path, EnumSet.of(CREATE,APPEND));
      *
      *     // create file with initial permissions, opening it for both reading and writing
-     *     {@code FileAttribute<Set<PosixFilePermission>> perms = ...}
-     *     SeekableByteChannel sbc = Files.newByteChannel(path, EnumSet.of(CREATE_NEW,READ,WRITE), perms);
-     * </pre>
+     *     FileAttribute<Set<PosixFilePermission>> perms = ...
+     *     SeekableByteChannel sbc =
+     *         Files.newByteChannel(path, EnumSet.of(CREATE_NEW,READ,WRITE), perms);
+     * }</pre>
      *
      * @param   path
      *          the path to the file to open or create
@@ -1702,7 +1703,8 @@ public final class Files {
      * Alternatively, suppose we want to read file's POSIX attributes without
      * following symbolic links:
      * <pre>
-     *    PosixFileAttributes attrs = Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
+     *    PosixFileAttributes attrs =
+     *        Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
      * </pre>
      *
      * @param   <A>
@@ -2840,6 +2842,8 @@ public final class Files {
      * @return  a new buffered writer, with default buffer size, to write text
      *          to the file
      *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
@@ -2880,6 +2884,8 @@ public final class Files {
      * @return  a new buffered writer, with default buffer size, to write text
      *          to the file
      *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
@@ -2891,7 +2897,9 @@ public final class Files {
      *
      * @since 1.8
      */
-    public static BufferedWriter newBufferedWriter(Path path, OpenOption... options) throws IOException {
+    public static BufferedWriter newBufferedWriter(Path path, OpenOption... options)
+        throws IOException
+    {
         return newBufferedWriter(path, StandardCharsets.UTF_8, options);
     }
 
@@ -3273,6 +3281,8 @@ public final class Files {
      *
      * @return  the path
      *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs writing to or creating the file
      * @throws  UnsupportedOperationException
@@ -3330,6 +3340,8 @@ public final class Files {
      *
      * @return  the path
      *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs writing to or creating the file, or the
      *          text cannot be encoded using the specified charset
@@ -3376,6 +3388,8 @@ public final class Files {
      *
      * @return  the path
      *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs writing to or creating the file, or the
      *          text cannot be encoded as {@code UTF-8}
@@ -3452,7 +3466,7 @@ public final class Files {
             final Iterator<Path> delegate = ds.iterator();
 
             // Re-wrap DirectoryIteratorException to UncheckedIOException
-            Iterator<Path> it = new Iterator<Path>() {
+            Iterator<Path> iterator = new Iterator<Path>() {
                 @Override
                 public boolean hasNext() {
                     try {
@@ -3471,7 +3485,9 @@ public final class Files {
                 }
             };
 
-            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.DISTINCT), false)
+            Spliterator<Path> spliterator =
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT);
+            return StreamSupport.stream(spliterator, false)
                                 .onClose(asUncheckedRunnable(ds));
         } catch (Error|RuntimeException e) {
             try {
@@ -3572,7 +3588,9 @@ public final class Files {
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
         try {
-            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
+            Spliterator<FileTreeWalker.Event> spliterator =
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT);
+            return StreamSupport.stream(spliterator, false)
                                 .onClose(iterator::close)
                                 .map(entry -> entry.file());
         } catch (Error|RuntimeException e) {
@@ -3685,7 +3703,9 @@ public final class Files {
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
         try {
-            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
+            Spliterator<FileTreeWalker.Event> spliterator =
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT);
+            return StreamSupport.stream(spliterator, false)
                                 .onClose(iterator::close)
                                 .filter(entry -> matcher.test(entry.file(), entry.attributes()))
                                 .map(entry -> entry.file());

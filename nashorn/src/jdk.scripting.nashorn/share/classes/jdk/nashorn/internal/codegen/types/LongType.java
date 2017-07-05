@@ -170,19 +170,21 @@ class LongType extends BitwiseType {
 
     @Override
     public Type div(final MethodVisitor method, final int programPoint) {
-        // Never perform non-optimistic integer division in JavaScript.
-        assert programPoint != INVALID_PROGRAM_POINT;
-
-        method.visitInvokeDynamicInsn("ldiv", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        if (programPoint == INVALID_PROGRAM_POINT) {
+            JSType.DIV_ZERO_LONG.invoke(method);
+        } else {
+            method.visitInvokeDynamicInsn("ldiv", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
         return LONG;
     }
 
     @Override
     public Type rem(final MethodVisitor method, final int programPoint) {
-        // Never perform non-optimistic integer remainder in JavaScript.
-        assert programPoint != INVALID_PROGRAM_POINT;
-
-        method.visitInvokeDynamicInsn("lrem", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        if (programPoint == INVALID_PROGRAM_POINT) {
+            JSType.REM_ZERO_LONG.invoke(method);
+        } else {
+            method.visitInvokeDynamicInsn("lrem", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
         return LONG;
     }
 
