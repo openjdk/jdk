@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -676,9 +676,27 @@ void HRInto_G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i
   // We must complete this write before we do any of the reads below.
   OrderAccess::storeload();
   // And process it, being careful of unallocated portions of TLAB's.
+
+  // The region for the current card may be a young region. The
+  // current card may have been a card that was evicted from the
+  // card cache. When the card was inserted into the cache, we had
+  // determined that its region was non-young. While in the cache,
+  // the region may have been freed during a cleanup pause, reallocated
+  // and tagged as young.
+  //
+  // We wish to filter out cards for such a region but the current
+  // thread, if we're running conucrrently, may "see" the young type
+  // change at any time (so an earlier "is_young" check may pass or
+  // fail arbitrarily). We tell the iteration code to perform this
+  // filtering when it has been determined that there has been an actual
+  // allocation in this region and making it safe to check the young type.
+  bool filter_young = true;
+
   HeapWord* stop_point =
     r->oops_on_card_seq_iterate_careful(dirtyRegion,
-                                        &filter_then_update_rs_oop_cl);
+                                        &filter_then_update_rs_oop_cl,
+                                        filter_young);
+
   // If stop_point is non-null, then we encountered an unallocated region
   // (perhaps the unfilled portion of a TLAB.)  For now, we'll dirty the
   // card and re-enqueue: if we put off the card until a GC pause, then the
@@ -789,8 +807,14 @@ void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
       if (r == NULL) {
         assert(_g1->is_in_permanent(start), "Or else where?");
       } else {
-        guarantee(!r->is_young(), "It was evicted in the current minor cycle.");
-        // Process card pointer we get back from the hot card cache
+        // Checking whether the region we got back from the cache
+        // is young here is inappropriate. The region could have been
+        // freed, reallocated and tagged as young while in the cache.
+        // Hence we could see its young type change at any time.
+        //
+        // Process card pointer we get back from the hot card cache. This
+        // will check whether the region containing the card is young
+        // _after_ checking that the region has been allocated from.
         concurrentRefineOneCard_impl(res, worker_i);
       }
     }

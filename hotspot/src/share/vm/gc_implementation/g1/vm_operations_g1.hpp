@@ -31,13 +31,12 @@
 //   - VM_G1PopRegionCollectionPause
 
 class VM_G1CollectFull: public VM_GC_Operation {
- private:
  public:
-  VM_G1CollectFull(int gc_count_before,
-                   GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before)
-  {
-    _gc_cause = gc_cause;
+  VM_G1CollectFull(unsigned int gc_count_before,
+                   unsigned int full_gc_count_before,
+                   GCCause::Cause cause)
+    : VM_GC_Operation(gc_count_before, full_gc_count_before) {
+    _gc_cause = cause;
   }
   ~VM_G1CollectFull() {}
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
@@ -67,12 +66,28 @@ class VM_G1CollectForAllocation: public VM_GC_Operation {
 };
 
 class VM_G1IncCollectionPause: public VM_GC_Operation {
- public:
-  VM_G1IncCollectionPause(int gc_count_before,
-                          GCCause::Cause gc_cause = GCCause::_g1_inc_collection_pause) :
-    VM_GC_Operation(gc_count_before) { _gc_cause = gc_cause; }
+private:
+  bool _should_initiate_conc_mark;
+  double _target_pause_time_ms;
+  unsigned int _full_collections_completed_before;
+public:
+  VM_G1IncCollectionPause(unsigned int   gc_count_before,
+                          bool           should_initiate_conc_mark,
+                          double         target_pause_time_ms,
+                          GCCause::Cause cause)
+    : VM_GC_Operation(gc_count_before),
+      _full_collections_completed_before(0),
+      _should_initiate_conc_mark(should_initiate_conc_mark),
+      _target_pause_time_ms(target_pause_time_ms) {
+    guarantee(target_pause_time_ms > 0.0,
+              err_msg("target_pause_time_ms = %1.6lf should be positive",
+                      target_pause_time_ms));
+
+    _gc_cause = cause;
+  }
   virtual VMOp_Type type() const { return VMOp_G1IncCollectionPause; }
   virtual void doit();
+  virtual void doit_epilogue();
   virtual const char* name() const {
     return "garbage-first incremental collection pause";
   }

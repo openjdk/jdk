@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,9 +148,7 @@ void StealTask::do_it(GCTaskManager* manager, uint which) {
     while(true) {
       StarTask p;
       if (PSPromotionManager::steal_depth(which, &random_seed, p)) {
-#if PS_PM_STATS
-        pm->increment_steals(p);
-#endif // PS_PM_STATS
+        TASKQUEUE_STATS_ONLY(pm->record_steal(p));
         pm->process_popped_location_depth(p);
         pm->drain_stacks_depth(true);
       } else {
@@ -163,9 +161,6 @@ void StealTask::do_it(GCTaskManager* manager, uint which) {
     while(true) {
       oop obj;
       if (PSPromotionManager::steal_breadth(which, &random_seed, obj)) {
-#if PS_PM_STATS
-        pm->increment_steals();
-#endif // PS_PM_STATS
         obj->copy_contents(pm);
         pm->drain_stacks_breadth(true);
       } else {

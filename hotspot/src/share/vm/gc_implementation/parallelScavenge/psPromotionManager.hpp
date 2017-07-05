@@ -42,8 +42,6 @@ class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
 
-#define PS_PM_STATS         0
-
 class PSPromotionManager : public CHeapObj {
   friend class PSScavenge;
   friend class PSRefProcTaskExecutor;
@@ -54,22 +52,18 @@ class PSPromotionManager : public CHeapObj {
   static PSOldGen*                    _old_gen;
   static MutableSpace*                _young_space;
 
-#if PS_PM_STATS
-  uint                                _total_pushes;
-  uint                                _masked_pushes;
+#if TASKQUEUE_STATS
+  size_t                              _masked_pushes;
+  size_t                              _masked_steals;
+  size_t                              _arrays_chunked;
+  size_t                              _array_chunks_processed;
 
-  uint                                _overflow_pushes;
-  uint                                _max_overflow_length;
-
-  uint                                _arrays_chunked;
-  uint                                _array_chunks_processed;
-
-  uint                                _total_steals;
-  uint                                _masked_steals;
-
-  void print_stats(uint i);
+  void print_taskqueue_stats(uint i) const;
+  void print_local_stats(uint i) const;
   static void print_stats();
-#endif // PS_PM_STATS
+
+  void reset_stats();
+#endif // TASKQUEUE_STATS
 
   PSYoungPromotionLAB                 _young_lab;
   PSOldPromotionLAB                   _old_lab;
@@ -143,42 +137,12 @@ class PSPromotionManager : public CHeapObj {
 
   template <class T> void push_depth(T* p) {
     assert(depth_first(), "pre-condition");
-
-#if PS_PM_STATS
-    ++_total_pushes;
-    int stack_length = claimed_stack_depth()->overflow_stack()->length();
-#endif // PS_PM_STATS
-
     claimed_stack_depth()->push(p);
-
-#if PS_PM_STATS
-    if (claimed_stack_depth()->overflow_stack()->length() != stack_length) {
-      ++_overflow_pushes;
-      if ((uint)stack_length + 1 > _max_overflow_length) {
-        _max_overflow_length = (uint)stack_length + 1;
-      }
-    }
-#endif // PS_PM_STATS
   }
 
   void push_breadth(oop o) {
     assert(!depth_first(), "pre-condition");
-
-#if PS_PM_STATS
-    ++_total_pushes;
-    int stack_length = claimed_stack_breadth()->overflow_stack()->length();
-#endif // PS_PM_STATS
-
     claimed_stack_breadth()->push(o);
-
-#if PS_PM_STATS
-    if (claimed_stack_breadth()->overflow_stack()->length() != stack_length) {
-      ++_overflow_pushes;
-      if ((uint)stack_length + 1 > _max_overflow_length) {
-        _max_overflow_length = (uint)stack_length + 1;
-      }
-    }
-#endif // PS_PM_STATS
   }
 
  protected:
@@ -256,12 +220,5 @@ class PSPromotionManager : public CHeapObj {
   template <class T> inline void claim_or_forward_depth(T* p);
   template <class T> inline void claim_or_forward_breadth(T* p);
 
-#if PS_PM_STATS
-  void increment_steals(oop* p = NULL) {
-    _total_steals += 1;
-    if (p != NULL && is_oop_masked(p)) {
-      _masked_steals += 1;
-    }
-  }
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(inline void record_steal(StarTask& p);)
 };
