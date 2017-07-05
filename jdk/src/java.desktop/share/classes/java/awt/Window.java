@@ -347,7 +347,7 @@ public class Window extends Container implements Accessible {
      * @see #getOpacity()
      * @since 1.7
      */
-    private float opacity = 1.0f;
+    private volatile float opacity = 1.0f;
 
     /**
      * The shape assigned to this window. This field is set to {@code null} if
@@ -1040,9 +1040,7 @@ public class Window extends Container implements Accessible {
             closeSplashScreen();
             Dialog.checkShouldBeBlocked(this);
             super.show();
-            synchronized (getTreeLock()) {
-                this.locationByPlatform = false;
-            }
+            locationByPlatform = false;
             for (int i = 0; i < ownedWindowList.size(); i++) {
                 Window child = ownedWindowList.elementAt(i).get();
                 if ((child != null) && child.showWithParent) {
@@ -1115,9 +1113,7 @@ public class Window extends Container implements Accessible {
             modalBlocker.unblockWindow(this);
         }
         super.hide();
-        synchronized (getTreeLock()) {
-            this.locationByPlatform = false;
-        }
+        locationByPlatform = false;
     }
 
     final void clearMostRecentFocusOwnerOnHide() {
@@ -3411,7 +3407,7 @@ public class Window extends Container implements Accessible {
         return super.canContainFocusOwner(focusOwnerCandidate) && isFocusableWindow();
     }
 
-    private boolean locationByPlatform = locationByPlatformProp;
+    private volatile boolean locationByPlatform = locationByPlatformProp;
 
 
     /**
@@ -3482,9 +3478,7 @@ public class Window extends Container implements Accessible {
      * @since 1.5
      */
     public boolean isLocationByPlatform() {
-        synchronized (getTreeLock()) {
-            return locationByPlatform;
-        }
+        return locationByPlatform;
     }
 
     /**
@@ -3573,9 +3567,7 @@ public class Window extends Container implements Accessible {
      * @since 1.7
      */
     public float getOpacity() {
-        synchronized (getTreeLock()) {
-            return opacity;
-        }
+        return opacity;
     }
 
     /**

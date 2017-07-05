@@ -3365,7 +3365,7 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
 
 // negative filter: should callee NOT be inlined?  returns NULL, ok to inline, or rejection msg
 const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
-  if ( callee->should_not_inline())    return "disallowed by CompileCommand";
+  if ( compilation()->directive()->should_not_inline(callee)) return "disallowed by CompileCommand";
   if ( callee->dont_inline())          return "don't inline by annotation";
   return NULL;
 }
@@ -3494,8 +3494,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   {
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, callee->get_Method());
-    methodHandle ct(THREAD, method()->get_Method());
-    is_available = _compilation->compiler()->is_intrinsic_available(mh, ct);
+    is_available = _compilation->compiler()->is_intrinsic_available(mh, _compilation->directive());
   }
 
   if (!is_available) {
@@ -3690,13 +3689,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   }
 
   // now perform tests that are based on flag settings
-  if (callee->force_inline() || callee->should_inline()) {
+  bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
+  if (callee->force_inline() || inlinee_by_directive) {
     if (inline_level() > MaxForceInlineLevel                    ) INLINE_BAILOUT("MaxForceInlineLevel");
     if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
 
     const char* msg = "";
     if (callee->force_inline())  msg = "force inline by annotation";
-    if (callee->should_inline()) msg = "force inline by CompileCommand";
+    if (inlinee_by_directive)    msg = "force inline by CompileCommand";
     print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
@@ -4207,7 +4207,8 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
     event.commit();
   }
 #endif // INCLUDE_TRACE
-  if (!PrintInlining && !compilation()->method()->has_option("PrintInlining")) {
+
+  if (!compilation()->directive()->PrintInliningOption) {
     return;
   }
   CompileTask::print_inlining_tty(callee, scope()->level(), bci(), msg);

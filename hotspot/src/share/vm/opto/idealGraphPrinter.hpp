@@ -127,13 +127,14 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
 
   bool traverse_outs();
   void set_traverse_outs(bool b);
-  void print_inlining(Compile* compile);
-  void begin_method(Compile* compile);
+  void print_inlining();
+  void begin_method();
   void end_method();
-  void print_method(Compile* compile, const char *name, int level=1, bool clear_nodes = false);
-  void print(Compile* compile, const char *name, Node *root, int level=1, bool clear_nodes = false);
+  void print_method(const char *name, int level=1, bool clear_nodes = false);
+  void print(const char *name, Node *root, int level=1, bool clear_nodes = false);
   void print_xml(const char *name);
-  static bool should_print(ciMethod* method, int level = 1);
+  bool should_print(int level);
+  void set_compile(Compile* compile) {C = compile; }
 };
 
 #endif

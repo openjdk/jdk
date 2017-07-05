@@ -46,6 +46,13 @@ define CleanDir
 	@$(PRINTF) " done\n"
 endef
 
+define CleanSupportDir
+	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
 define CleanTest
 	@$(PRINTF) "Cleaning test $(strip $1) ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)

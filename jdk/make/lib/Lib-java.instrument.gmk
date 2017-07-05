@@ -68,10 +68,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS_macosx := -Xlinker -all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LDFLAGS_windows := -export:Agent_OnAttach, \
+    LIBS := $(JDKLIB_LIBS), \
     LIBS_unix := -ljava $(LIBZ), \
     LIBS_linux := -ljli $(LIBDL), \
-    LIBS_solaris := -ljli $(LIBDL) -lc, \
-    LIBS_aix := -ljli_static $(LIBDL),\
+    LIBS_solaris := -ljli $(LIBDL), \
+    LIBS_aix := -liconv -ljli_static $(LIBDL), \
     LIBS_macosx := -liconv -framework Cocoa -framework Security \
         -framework ApplicationServices, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib \

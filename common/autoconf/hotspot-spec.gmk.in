@@ -33,6 +33,7 @@ include $(BASE_SPEC)
 # Additional legacy variables defined for Hotspot
 
 @SET_OPENJDK@
+@HOTSPOT_SET_WARNINGS_AS_ERRORS@
 
 # Legacy defines controlled by the SUPPORT_HEADLESS and SUPPORT_HEADFUL options.
 @BUILD_HEADLESS@

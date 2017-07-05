@@ -26,6 +26,7 @@
 #import "AWT_debug.h"
 
 #import "jni_util.h"
+#import "ThreadUtilities.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -114,17 +115,20 @@ static void displaycb_handle
 {
     if (flags == kCGDisplayBeginConfigurationFlag) return;
 
-    JNFPerformEnvBlock(JNFThreadDetachImmediately, ^(JNIEnv *env) {
-        JNFWeakJObjectWrapper *wrapper = (JNFWeakJObjectWrapper *)userInfo;
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
 
-        jobject graphicsEnv = [wrapper jObjectWithEnv:env];
-        if (graphicsEnv == NULL) return; // ref already GC'd
-        static JNF_CLASS_CACHE(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
-        static JNF_MEMBER_CACHE(jm_displayReconfiguration, jc_CGraphicsEnvironment, "_displayReconfiguration", "(IZ)V");
-        JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
-                            (jint) display, 
-                            (jboolean) flags & kCGDisplayRemoveFlag);
-    });
+        JNFPerformEnvBlock(JNFThreadDetachImmediately, ^(JNIEnv *env) {
+            JNFWeakJObjectWrapper *wrapper = (JNFWeakJObjectWrapper *)userInfo;
+
+            jobject graphicsEnv = [wrapper jObjectWithEnv:env];
+            if (graphicsEnv == NULL) return; // ref already GC'd
+            static JNF_CLASS_CACHE(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
+            static JNF_MEMBER_CACHE(jm_displayReconfiguration,
+                    jc_CGraphicsEnvironment, "_displayReconfiguration","(IZ)V");
+            JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
+                    (jint) display, (jboolean) flags & kCGDisplayRemoveFlag);
+        });
+    }];
 }
 
 /*

@@ -26,6 +26,7 @@
 #define SHARE_VM_COMPILER_ABSTRACTCOMPILER_HPP
 
 #include "ci/compilerInterface.hpp"
+#include "compiler/compilerDirectives.hpp"
 
 typedef void (*initializer)(void);
 
@@ -114,36 +115,33 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
 
   // Determine if the current compiler provides an intrinsic
   // for method 'method'. An intrinsic is available if:
-  //  - the intrinsic is enabled (by using the appropriate command-line flag) and
+  //  - the intrinsic is enabled (by using the appropriate command-line flag,
+  //    the command-line compile ommand, or a compiler directive)
   //  - the platform on which the VM is running supports the intrinsic
   //    (i.e., the platform provides the instructions necessary for the compiler
   //    to generate the intrinsic code).
   //
-  // The second parameter, 'compilation_context', is needed to implement functionality
-  // related to the DisableIntrinsic command-line flag. The DisableIntrinsic flag can
-  // be used to prohibit the compilers to use an intrinsic. There are three ways to
-  // disable an intrinsic using the DisableIntrinsic flag:
+  // The directive provides the compilation context and includes pre-evaluated values
+  // dependent on VM flags, compile commands, and compiler directives.
   //
-  // (1) -XX:DisableIntrinsic=_hashCode,_getClass
-  //     Disables intrinsification of _hashCode and _getClass globally
-  //     (i.e., the intrinsified version the methods will not be used at all).
-  // (2) -XX:CompileCommand=option,aClass::aMethod,ccstr,DisableIntrinsic,_hashCode
-  //     Disables intrinsification of _hashCode if it is called from
-  //     aClass::aMethod (but not for any other call site of _hashCode)
-  // (3) -XX:CompileCommand=option,java.lang.ref.Reference::get,ccstr,DisableIntrinsic,_Reference_get
-  //     Some methods are not compiled by C2. Instead, the C2 compiler
-  //     returns directly the intrinsified version of these methods.
-  //     The command above forces C2 to compile _Reference_get, but
-  //     allows using the intrinsified version of _Reference_get at all
-  //     other call sites.
-  //
-  // From the modes above, (1) disable intrinsics globally, (2) and (3)
-  // disable intrinsics on a per-method basis. In cases (2) and (3) the
-  // compilation context is aClass::aMethod and java.lang.ref.Reference::get,
-  // respectively.
-  virtual bool is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
+  // Usually, the compilation context is the caller of the method 'method'.
+  // The only case when for a non-recursive method 'method' the compilation context
+  // is not the caller of the 'method' (but it is the method itself) is
+  // java.lang.ref.Referene::get.
+  // For java.lang.ref.Reference::get, the intrinsic version is used
+  // instead of the compiled version so that the value in the referent
+  // field can be registered by the G1 pre-barrier code. The intrinsified
+  // version of Reference::get also adds a memory barrier to prevent
+  // commoning reads from the referent field across safepoint since GC
+  // can change the referent field's value. See Compile::Compile()
+  // in src/share/vm/opto/compile.cpp or
+  // GraphBuilder::GraphBuilder() in src/share/vm/c1/c1_GraphBuilder.cpp
+  // for more details.
+
+  virtual bool is_intrinsic_available(methodHandle method, DirectiveSet* directive) {
     return is_intrinsic_supported(method) &&
-           !vmIntrinsics::is_disabled_by_flags(method, compilation_context);
+           !directive->is_intrinsic_disabled(method) &&
+           !vmIntrinsics::is_disabled_by_flags(method);
   }
 
   // Determines if an intrinsic is supported by the compiler, that is,
@@ -176,7 +174,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   void set_state     (int state);
   void set_shut_down ()           { set_state(shut_down); }
   // Compilation entry point for methods
-  virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
+  virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
     ShouldNotReachHere();
   }
 
