@@ -25,7 +25,6 @@
 
 # Cache all finds needed for this file. Only used on windows.
 $(eval $(call FillCacheFind,$(JDK_TOPDIR)/make/tools \
-    $(JDK_TOPDIR)/src/solaris/classes \
     $(JDK_TOPDIR)/makefiles/sun))
 
 TOOLS_SRC:=$(JDK_TOPDIR)/make/tools/src \

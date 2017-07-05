@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
       len = name->utf8_length();                    \
     }                                               \
     HS_DTRACE_PROBE4(hotspot, class__##type,        \
-      data, len, (clss)->class_loader(), (shared)); \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), (shared)); \
   }
 
 #else /* USDT2 */
@@ -202,7 +202,7 @@ bool ClassLoadingService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
 
   // verbose will be set to the previous value
-  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassLoading", &verbose, MANAGEMENT);
+  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassLoading", &verbose, Flag::MANAGEMENT);
   assert(succeed, "Setting TraceClassLoading flag fails");
   reset_trace_class_unloading();
 
@@ -213,7 +213,7 @@ bool ClassLoadingService::set_verbose(bool verbose) {
 void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
-  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassUnloading", &value, MANAGEMENT);
+  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassUnloading", &value, Flag::MANAGEMENT);
   assert(succeed, "Setting TraceClassUnLoading flag fails");
 }
 
