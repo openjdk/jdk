@@ -3395,12 +3395,16 @@ Interface *ADLParser::cond_interface_parse(void) {
   char *greater_equal;
   char *less_equal;
   char *greater;
+  char *overflow;
+  char *no_overflow;
   const char *equal_format = "eq";
   const char *not_equal_format = "ne";
   const char *less_format = "lt";
   const char *greater_equal_format = "ge";
   const char *less_equal_format = "le";
   const char *greater_format = "gt";
+  const char *overflow_format = "o";
+  const char *no_overflow_format = "no";
 
   if (_curchar != '%') {
     parse_err(SYNERR, "Missing '%%{' for 'cond_interface' block.\n");
@@ -3437,6 +3441,12 @@ Interface *ADLParser::cond_interface_parse(void) {
     else if ( strcmp(field,"greater") == 0 ) {
       greater = interface_field_parse(&greater_format);
     }
+    else if ( strcmp(field,"overflow") == 0 ) {
+      overflow = interface_field_parse(&overflow_format);
+    }
+    else if ( strcmp(field,"no_overflow") == 0 ) {
+      no_overflow = interface_field_parse(&no_overflow_format);
+    }
     else {
       parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%%}' ending interface.\n");
       return NULL;
@@ -3455,7 +3465,9 @@ Interface *ADLParser::cond_interface_parse(void) {
                                        less,          less_format,
                                        greater_equal, greater_equal_format,
                                        less_equal,    less_equal_format,
-                                       greater,       greater_format);
+                                       greater,       greater_format,
+                                       overflow,      overflow_format,
+                                       no_overflow,   no_overflow_format);
   return inter;
 }
 

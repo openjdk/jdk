@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,12 +91,12 @@ template <class T> inline bool has_partial_array_mask(T* ref) {
 }
 
 template <class T> inline T* set_partial_array_mask(T obj) {
-  assert(((uintptr_t)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
-  return (T*) ((uintptr_t)obj | G1_PARTIAL_ARRAY_MASK);
+  assert(((uintptr_t)(void *)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
+  return (T*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
 }
 
 template <class T> inline oop clear_partial_array_mask(T* ref) {
-  return oop((intptr_t)ref & ~G1_PARTIAL_ARRAY_MASK);
+  return cast_to_oop((intptr_t)ref & ~G1_PARTIAL_ARRAY_MASK);
 }
 
 class G1ParScanPartialArrayClosure : public G1ParClosureSuper {
