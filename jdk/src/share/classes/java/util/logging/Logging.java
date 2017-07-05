@@ -87,7 +87,7 @@ class Logging implements LoggingMXBean {
         Logger logger = logManager.getLogger(loggerName);
         if (logger == null) {
             throw new IllegalArgumentException("Logger " + loggerName +
-                "does not exist");
+                " does not exist");
         }
 
         Level level = null;

@@ -249,13 +249,10 @@ int GamutSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
     cmsFloat64Number dE1, dE2, ErrorRatio;
 
     // Assume in-gamut by default.
-    dE1 = 0.;
-    dE2 = 0;
     ErrorRatio = 1.0;
 
     // Convert input to Lab
-    if (t -> hInput != NULL)
-        cmsDoTransform(t -> hInput, In, &LabIn1, 1);
+    cmsDoTransform(t -> hInput, In, &LabIn1, 1);
 
     // converts from PCS to colorant. This always
     // does return in-gamut values,
@@ -267,7 +264,7 @@ int GamutSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
     memmove(&LabIn2, &LabOut1, sizeof(cmsCIELab));
 
     // Try again, but this time taking Check as input
-    cmsDoTransform(t -> hForward, &LabOut1, Proof2,  1);
+    cmsDoTransform(t -> hForward, &LabOut1, Proof2, 1);
     cmsDoTransform(t -> hReverse, Proof2, &LabOut2, 1);
 
     // Take difference of direct value
@@ -374,7 +371,7 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
     ProfileList[nGamutPCSposition] = hLab;
     BPCList[nGamutPCSposition] = 0;
     AdaptationList[nGamutPCSposition] = 1.0;
-    Intents[nGamutPCSposition] = INTENT_RELATIVE_COLORIMETRIC;
+    IntentList[nGamutPCSposition] = INTENT_RELATIVE_COLORIMETRIC;
 
 
     ColorSpace  = cmsGetColorSpace(hGamut);
@@ -385,45 +382,48 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
     // 16 bits to Lab double
     Chain.hInput = cmsCreateExtendedTransform(ContextID,
-                                              nGamutPCSposition + 1,
-                                              ProfileList,
-                                              BPCList,
-                                              Intents,
-                                              AdaptationList,
-                                              NULL, 0,
-                                              dwFormat, TYPE_Lab_DBL,
-                                              cmsFLAGS_NOCACHE);
+        nGamutPCSposition + 1,
+        ProfileList,
+        BPCList,
+        IntentList,
+        AdaptationList,
+        NULL, 0,
+        dwFormat, TYPE_Lab_DBL,
+        cmsFLAGS_NOCACHE);
 
 
     // Does create the forward step. Lab double to device
     dwFormat    = (CHANNELS_SH(nChannels)|BYTES_SH(2));
     Chain.hForward = cmsCreateTransformTHR(ContextID,
-                                           hLab, TYPE_Lab_DBL,
-                                           hGamut, dwFormat,
-                                           INTENT_RELATIVE_COLORIMETRIC,
-                                           cmsFLAGS_NOCACHE);
+        hLab, TYPE_Lab_DBL,
+        hGamut, dwFormat,
+        INTENT_RELATIVE_COLORIMETRIC,
+        cmsFLAGS_NOCACHE);
 
     // Does create the backwards step
     Chain.hReverse = cmsCreateTransformTHR(ContextID, hGamut, dwFormat,
-                                           hLab, TYPE_Lab_DBL,
-                                           INTENT_RELATIVE_COLORIMETRIC,
-                                           cmsFLAGS_NOCACHE);
+        hLab, TYPE_Lab_DBL,
+        INTENT_RELATIVE_COLORIMETRIC,
+        cmsFLAGS_NOCACHE);
 
 
     // All ok?
-    if (Chain.hForward && Chain.hReverse) {
+    if (Chain.hInput && Chain.hForward && Chain.hReverse) {
 
         // Go on, try to compute gamut LUT from PCS. This consist on a single channel containing
         // dE when doing a transform back and forth on the colorimetric intent.
 
         Gamut = cmsPipelineAlloc(ContextID, 3, 1);
-
         if (Gamut != NULL) {
 
-          CLUT = cmsStageAllocCLut16bit(ContextID, nGridpoints, nChannels, 1, NULL);
-          cmsPipelineInsertStage(Gamut, cmsAT_BEGIN, CLUT);
-
-          cmsStageSampleCLut16bit(CLUT, GamutSampler, (void*) &Chain, 0);
+            CLUT = cmsStageAllocCLut16bit(ContextID, nGridpoints, nChannels, 1, NULL);
+            if (!cmsPipelineInsertStage(Gamut, cmsAT_BEGIN, CLUT)) {
+                cmsPipelineFree(Gamut);
+                Gamut = NULL;
+            }
+            else {
+                cmsStageSampleCLut16bit(CLUT, GamutSampler, (void*) &Chain, 0);
+            }
         }
     }
     else

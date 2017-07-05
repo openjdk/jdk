@@ -130,6 +130,18 @@ class Invoker {
 
         // clear interrupt
         Thread.interrupted();
+
+        // clear thread locals when in default thread pool
+        if (System.getSecurityManager() != null) {
+            Thread me = Thread.currentThread();
+            if (me instanceof sun.misc.InnocuousThread) {
+                GroupAndInvokeCount thisGroupAndInvokeCount = myGroupAndInvokeCount.get();
+                ((sun.misc.InnocuousThread)me).eraseThreadLocals();
+                if (thisGroupAndInvokeCount != null) {
+                    myGroupAndInvokeCount.set(thisGroupAndInvokeCount);
+                }
+            }
+        }
     }
 
     /**

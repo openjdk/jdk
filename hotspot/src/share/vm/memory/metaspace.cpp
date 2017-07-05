@@ -1447,7 +1447,7 @@ void MetaspaceGC::compute_new_size() {
   uint current_shrink_factor = _shrink_factor;
   _shrink_factor = 0;
 
-  const size_t used_after_gc = MetaspaceAux::allocated_capacity_bytes();
+  const size_t used_after_gc = MetaspaceAux::capacity_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
@@ -2538,8 +2538,8 @@ void SpaceManager::mangle_freed_chunks() {
 // MetaspaceAux
 
 
-size_t MetaspaceAux::_allocated_capacity_words[] = {0, 0};
-size_t MetaspaceAux::_allocated_used_words[] = {0, 0};
+size_t MetaspaceAux::_capacity_words[] = {0, 0};
+size_t MetaspaceAux::_used_words[] = {0, 0};
 
 size_t MetaspaceAux::free_bytes(Metaspace::MetadataType mdtype) {
   VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
@@ -2552,38 +2552,38 @@ size_t MetaspaceAux::free_bytes() {
 
 void MetaspaceAux::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {
   assert_lock_strong(SpaceManager::expand_lock());
-  assert(words <= allocated_capacity_words(mdtype),
+  assert(words <= capacity_words(mdtype),
     err_msg("About to decrement below 0: words " SIZE_FORMAT
-            " is greater than _allocated_capacity_words[%u] " SIZE_FORMAT,
-            words, mdtype, allocated_capacity_words(mdtype)));
-  _allocated_capacity_words[mdtype] -= words;
+            " is greater than _capacity_words[%u] " SIZE_FORMAT,
+            words, mdtype, capacity_words(mdtype)));
+  _capacity_words[mdtype] -= words;
 }
 
 void MetaspaceAux::inc_capacity(Metaspace::MetadataType mdtype, size_t words) {
   assert_lock_strong(SpaceManager::expand_lock());
   // Needs to be atomic
-  _allocated_capacity_words[mdtype] += words;
+  _capacity_words[mdtype] += words;
 }
 
 void MetaspaceAux::dec_used(Metaspace::MetadataType mdtype, size_t words) {
-  assert(words <= allocated_used_words(mdtype),
+  assert(words <= used_words(mdtype),
     err_msg("About to decrement below 0: words " SIZE_FORMAT
-            " is greater than _allocated_used_words[%u] " SIZE_FORMAT,
-            words, mdtype, allocated_used_words(mdtype)));
+            " is greater than _used_words[%u] " SIZE_FORMAT,
+            words, mdtype, used_words(mdtype)));
   // For CMS deallocation of the Metaspaces occurs during the
   // sweep which is a concurrent phase.  Protection by the expand_lock()
   // is not enough since allocation is on a per Metaspace basis
   // and protected by the Metaspace lock.
   jlong minus_words = (jlong) - (jlong) words;
-  Atomic::add_ptr(minus_words, &_allocated_used_words[mdtype]);
+  Atomic::add_ptr(minus_words, &_used_words[mdtype]);
 }
 
 void MetaspaceAux::inc_used(Metaspace::MetadataType mdtype, size_t words) {
-  // _allocated_used_words tracks allocations for
+  // _used_words tracks allocations for
   // each piece of metadata.  Those allocations are
   // generally done concurrently by different application
   // threads so must be done atomically.
-  Atomic::add_ptr(words, &_allocated_used_words[mdtype]);
+  Atomic::add_ptr(words, &_used_words[mdtype]);
 }
 
 size_t MetaspaceAux::used_bytes_slow(Metaspace::MetadataType mdtype) {
@@ -2630,16 +2630,16 @@ size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
 
 size_t MetaspaceAux::capacity_bytes_slow() {
 #ifdef PRODUCT
-  // Use allocated_capacity_bytes() in PRODUCT instead of this function.
+  // Use capacity_bytes() in PRODUCT instead of this function.
   guarantee(false, "Should not call capacity_bytes_slow() in the PRODUCT");
 #endif
   size_t class_capacity = capacity_bytes_slow(Metaspace::ClassType);
   size_t non_class_capacity = capacity_bytes_slow(Metaspace::NonClassType);
-  assert(allocated_capacity_bytes() == class_capacity + non_class_capacity,
-      err_msg("bad accounting: allocated_capacity_bytes() " SIZE_FORMAT
+  assert(capacity_bytes() == class_capacity + non_class_capacity,
+      err_msg("bad accounting: capacity_bytes() " SIZE_FORMAT
         " class_capacity + non_class_capacity " SIZE_FORMAT
         " class_capacity " SIZE_FORMAT " non_class_capacity " SIZE_FORMAT,
-        allocated_capacity_bytes(), class_capacity + non_class_capacity,
+        capacity_bytes(), class_capacity + non_class_capacity,
         class_capacity, non_class_capacity));
 
   return class_capacity + non_class_capacity;
@@ -2699,14 +2699,14 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
                         "->" SIZE_FORMAT
                         "("  SIZE_FORMAT ")",
                         prev_metadata_used,
-                        allocated_used_bytes(),
+                        used_bytes(),
                         reserved_bytes());
   } else {
     gclog_or_tty->print(" "  SIZE_FORMAT "K"
                         "->" SIZE_FORMAT "K"
                         "("  SIZE_FORMAT "K)",
                         prev_metadata_used/K,
-                        allocated_used_bytes()/K,
+                        used_bytes()/K,
                         reserved_bytes()/K);
   }
 
@@ -2722,8 +2722,8 @@ void MetaspaceAux::print_on(outputStream* out) {
                 "capacity "  SIZE_FORMAT "K, "
                 "committed " SIZE_FORMAT "K, "
                 "reserved "  SIZE_FORMAT "K",
-                allocated_used_bytes()/K,
-                allocated_capacity_bytes()/K,
+                used_bytes()/K,
+                capacity_bytes()/K,
                 committed_bytes()/K,
                 reserved_bytes()/K);
 
@@ -2734,8 +2734,8 @@ void MetaspaceAux::print_on(outputStream* out) {
                   "capacity "  SIZE_FORMAT "K, "
                   "committed " SIZE_FORMAT "K, "
                   "reserved "  SIZE_FORMAT "K",
-                  allocated_used_bytes(ct)/K,
-                  allocated_capacity_bytes(ct)/K,
+                  used_bytes(ct)/K,
+                  capacity_bytes(ct)/K,
                   committed_bytes(ct)/K,
                   reserved_bytes(ct)/K);
   }
@@ -2837,42 +2837,42 @@ void MetaspaceAux::verify_free_chunks() {
 
 void MetaspaceAux::verify_capacity() {
 #ifdef ASSERT
-  size_t running_sum_capacity_bytes = allocated_capacity_bytes();
+  size_t running_sum_capacity_bytes = capacity_bytes();
   // For purposes of the running sum of capacity, verify against capacity
   size_t capacity_in_use_bytes = capacity_bytes_slow();
   assert(running_sum_capacity_bytes == capacity_in_use_bytes,
-    err_msg("allocated_capacity_words() * BytesPerWord " SIZE_FORMAT
+    err_msg("capacity_words() * BytesPerWord " SIZE_FORMAT
             " capacity_bytes_slow()" SIZE_FORMAT,
             running_sum_capacity_bytes, capacity_in_use_bytes));
   for (Metaspace::MetadataType i = Metaspace::ClassType;
        i < Metaspace:: MetadataTypeCount;
        i = (Metaspace::MetadataType)(i + 1)) {
     size_t capacity_in_use_bytes = capacity_bytes_slow(i);
-    assert(allocated_capacity_bytes(i) == capacity_in_use_bytes,
-      err_msg("allocated_capacity_bytes(%u) " SIZE_FORMAT
+    assert(capacity_bytes(i) == capacity_in_use_bytes,
+      err_msg("capacity_bytes(%u) " SIZE_FORMAT
               " capacity_bytes_slow(%u)" SIZE_FORMAT,
-              i, allocated_capacity_bytes(i), i, capacity_in_use_bytes));
+              i, capacity_bytes(i), i, capacity_in_use_bytes));
   }
 #endif
 }
 
 void MetaspaceAux::verify_used() {
 #ifdef ASSERT
-  size_t running_sum_used_bytes = allocated_used_bytes();
+  size_t running_sum_used_bytes = used_bytes();
   // For purposes of the running sum of used, verify against used
   size_t used_in_use_bytes = used_bytes_slow();
-  assert(allocated_used_bytes() == used_in_use_bytes,
-    err_msg("allocated_used_bytes() " SIZE_FORMAT
+  assert(used_bytes() == used_in_use_bytes,
+    err_msg("used_bytes() " SIZE_FORMAT
             " used_bytes_slow()" SIZE_FORMAT,
-            allocated_used_bytes(), used_in_use_bytes));
+            used_bytes(), used_in_use_bytes));
   for (Metaspace::MetadataType i = Metaspace::ClassType;
        i < Metaspace:: MetadataTypeCount;
        i = (Metaspace::MetadataType)(i + 1)) {
     size_t used_in_use_bytes = used_bytes_slow(i);
-    assert(allocated_used_bytes(i) == used_in_use_bytes,
-      err_msg("allocated_used_bytes(%u) " SIZE_FORMAT
+    assert(used_bytes(i) == used_in_use_bytes,
+      err_msg("used_bytes(%u) " SIZE_FORMAT
               " used_bytes_slow(%u)" SIZE_FORMAT,
-              i, allocated_used_bytes(i), i, used_in_use_bytes));
+              i, used_bytes(i), i, used_in_use_bytes));
   }
 #endif
 }

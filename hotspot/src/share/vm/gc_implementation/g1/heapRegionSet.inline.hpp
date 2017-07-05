@@ -30,7 +30,7 @@
 inline void HeapRegionSetBase::add(HeapRegion* hr) {
   check_mt_safety();
   assert(hr->containing_set() == NULL, hrs_ext_msg(this, "should not already have a containing set %u"));
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should not already be linked"));
+  assert(hr->next() == NULL && hr->prev() == NULL, hrs_ext_msg(this, "should not already be linked"));
 
   _count.increment(1u, hr->capacity());
   hr->set_containing_set(this);
@@ -40,7 +40,7 @@ inline void HeapRegionSetBase::add(HeapRegion* hr) {
 inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   check_mt_safety();
   verify_region(hr);
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should already be unlinked"));
+  assert(hr->next() == NULL && hr->prev() == NULL, hrs_ext_msg(this, "should already be unlinked"));
 
   hr->set_containing_set(NULL);
   assert(_count.length() > 0, hrs_ext_msg(this, "pre-condition"));

@@ -339,7 +339,7 @@ abstract class UnixFileSystem
             };
     }
 
-    // Override if the platform has different path match requrement, such as
+    // Override if the platform has different path match requirement, such as
     // case insensitive or Unicode canonical equal on MacOSX
     Pattern compilePathMatchPattern(String expr) {
         return Pattern.compile(expr);

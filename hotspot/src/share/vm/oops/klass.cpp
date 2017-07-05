@@ -475,12 +475,8 @@ void Klass::oops_do(OopClosure* cl) {
 }
 
 void Klass::remove_unshareable_info() {
-  if (!DumpSharedSpaces) {
-    // Clean up after OOM during class loading
-    if (class_loader_data() != NULL) {
-      class_loader_data()->remove_class(this);
-    }
-  }
+  assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
+
   set_subklass(NULL);
   set_next_sibling(NULL);
   // Clear the java mirror
@@ -492,17 +488,26 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(TRAPS) {
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  // Restore class_loader_data to the null class loader data
-  set_class_loader_data(loader_data);
+  // If an exception happened during CDS restore, some of these fields may already be
+  // set.  We leave the class on the CLD list, even if incomplete so that we don't
+  // modify the CLD list outside a safepoint.
+  if (class_loader_data() == NULL) {
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+    // Restore class_loader_data to the null class loader data
+    set_class_loader_data(loader_data);
 
-  // Add to null class loader list first before creating the mirror
-  // (same order as class file parsing)
-  loader_data->add_class(this);
+    // Add to null class loader list first before creating the mirror
+    // (same order as class file parsing)
+    loader_data->add_class(this);
+  }
 
   // Recreate the class mirror.  The protection_domain is always null for
   // boot loader, for now.
-  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
+  // Only recreate it if not present.  A previous attempt to restore may have
+  // gotten an OOM later but keep the mirror if it was created.
+  if (java_mirror() == NULL) {
+    java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
+  }
 }
 
 Klass* Klass::array_klass_or_null(int rank) {

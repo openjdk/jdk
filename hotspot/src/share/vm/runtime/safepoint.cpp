@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ void SafepointSynchronize::begin() {
       if (steps < DeferThrSuspendLoopCount) {
         os::NakedYield() ;
       } else {
-        os::yield_all(steps) ;
+        os::yield_all() ;
         // Alternately, the VM thread could transiently depress its scheduling priority or
         // transiently increase the priority of the tardy mutator(s).
       }

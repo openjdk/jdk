@@ -67,6 +67,7 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
 
     LEPoint markAnchor;
     LEReferenceTo<MarkArray> markArray(base, success,  (const MarkArray *) ((char *) this + SWAPW(markArrayOffset)));
+    if(LE_FAILURE(success)) return 0;
     le_int32 markClass = markArray->getMarkClass(markArray, markGlyph, markCoverage, fontInstance, markAnchor, success);
     le_uint16 mcCount = SWAPW(classCount);
 

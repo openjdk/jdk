@@ -307,6 +307,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
 #endif // PRODUCT
   { "UseVMInterruptibleIO",          JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseBoundThreads",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "DefaultThreadPriority",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "NoYieldsInMicrolock",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -2077,17 +2080,6 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
-
-  // Allow both -XX:-UseStackBanging and -XX:-UseBoundThreads in non-product
-  // builds so the cost of stack banging can be measured.
-#if (defined(PRODUCT) && defined(SOLARIS))
-  if (!UseBoundThreads && !UseStackBanging) {
-    jio_fprintf(defaultStream::error_stream(),
-                "-UseStackBanging conflicts with -UseBoundThreads\n");
-
-     status = false;
-  }
-#endif
 
   if (TLABRefillWasteFraction == 0) {
     jio_fprintf(defaultStream::error_stream(),
