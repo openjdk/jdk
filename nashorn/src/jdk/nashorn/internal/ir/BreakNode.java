@@ -64,8 +64,8 @@ public class BreakNode extends LabeledNode {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            return visitor.leave(this);
+        if (visitor.enterBreakNode(this) != null) {
+            return visitor.leaveBreakNode(this);
         }
 
         return this;

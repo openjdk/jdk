@@ -27,7 +27,9 @@
  * @bug 8005936
  * @summary Make sure PrintNMTStatistics works on normal JVM exit
  * @library /testlibrary /testlibrary/whitebox
- * @run compile PrintNMTStatistics.java
+ * @build PrintNMTStatistics
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main PrintNMTStatistics
  */
 
 import com.oracle.java.testlibrary.*;
@@ -52,13 +54,15 @@ public class PrintNMTStatistics {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
+        "-Xbootclasspath/a:.",
+        "-XX:+WhiteBoxAPI",
         "-XX:NativeMemoryTracking=summary",
-        "+XX:+PrintNMTStatistics",
+        "-XX:+PrintNMTStatistics",
         "PrintNMTStatistics",
         "test");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Java Heap  (reserved=");
+    output.shouldContain("Java Heap (reserved=");
     output.shouldNotContain("error");
     output.shouldNotContain("warning");
     output.shouldHaveExitValue(0);

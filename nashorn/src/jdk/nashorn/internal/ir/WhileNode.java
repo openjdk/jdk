@@ -88,11 +88,11 @@ public class WhileNode extends BreakableNode {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterWhileNode(this) != null) {
             test = test.accept(visitor);
             body = (Block)body.accept(visitor);
 
-            return visitor.leave(this);
+            return visitor.leaveWhileNode(this);
         }
         return this;
     }

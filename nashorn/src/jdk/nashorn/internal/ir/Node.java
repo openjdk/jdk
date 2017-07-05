@@ -165,9 +165,16 @@ public abstract class Node extends Location {
             return true;
         }
 
-        setIsResolved();
+        setIsResolved(true);
 
         return false;
+    }
+
+    /**
+     * Reset the resolved flag.
+     */
+    public void resetResolved() {
+        setIsResolved(false);
     }
 
     /**
@@ -234,8 +241,7 @@ public abstract class Node extends Location {
      *
      * @return Deep copy of the  Node.
      */
-    @Override
-    public final Node clone() {
+    public final Node copy() {
         return copy(new CopyState());
     }
 
@@ -349,10 +355,10 @@ public abstract class Node extends Location {
     }
 
     /**
-     * Flag this node as resolved, i.e. code has been generated for it
+     * Flag this node as resolved or not, i.e. code has been generated for it
      */
-    public void setIsResolved() {
-        this.isResolved = true;
+    private void setIsResolved(boolean isResolved) {
+        this.isResolved = isResolved;
     }
 
     /**

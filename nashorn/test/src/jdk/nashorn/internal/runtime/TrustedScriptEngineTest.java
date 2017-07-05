@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.runtime;
 
-
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -40,6 +40,13 @@ import org.testng.annotations.Test;
  * Tests for trusted client usage of nashorn script engine factory extension API
  */
 public class TrustedScriptEngineTest {
+    @Test
+    public void versionTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        assertEquals(e.getFactory().getEngineVersion(), Version.version());
+    }
+
     private static class MyClassLoader extends ClassLoader {
         // to check if script engine uses the specified class loader
         private final boolean[] reached = new boolean[1];
@@ -110,6 +117,28 @@ public class TrustedScriptEngineTest {
                     assertTrue(se.getMessage().contains("SyntaxError"));
                 }
 
+                return;
+            }
+        }
+
+        fail("Cannot find nashorn factory!");
+    }
+
+    @Test
+    public void factoryOptionsTest() {
+        final ScriptEngineManager sm = new ScriptEngineManager();
+        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+            if (fac instanceof NashornScriptEngineFactory) {
+                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
+                // specify --no-syntax-extensions flag
+                final String[] options = new String[] { "--no-syntax-extensions" };
+                final ScriptEngine e = nfac.getScriptEngine(options);
+                try {
+                    // try nashorn specific extension
+                    e.eval("var f = funtion(x) 2*x;");
+                    fail("should have thrown exception!");
+                } catch (final ScriptException se) {
+                }
                 return;
             }
         }

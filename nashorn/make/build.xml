@@ -124,7 +124,7 @@
     <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
-  <target name="jar" depends="compile, run-nasgen" description="Creates nashorn.jar">
+  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
       <fileset dir="${build.classes.dir}"/>
       <manifest>
@@ -191,12 +191,12 @@
 
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
-      <fileset dir="${build.test.classes.dir}" excludes="**/api/*"/>
+      <fileset dir="${build.test.classes.dir}" excludes="**/api/**"/>
     </jar>
 
     <!-- tests that check nashorn script engine (jsr-223) API -->
     <jar jarfile="${nashorn.api.tests.jar}">
-      <fileset dir="${build.test.classes.dir}" includes="**/api/*"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/api/**"/>
     </jar>
 
   </target>

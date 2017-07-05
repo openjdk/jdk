@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4849277
+ * @bug 4849277 7183800
  * @summary Test DatagramChannel send while connected
  * @author Mike McCloskey
  */
@@ -46,14 +46,18 @@ public class ConnectedSend {
 
         DatagramChannel sndChannel = DatagramChannel.open();
         sndChannel.socket().bind(null);
+        InetAddress address = InetAddress.getLocalHost();
+        if (address.isLoopbackAddress()) {
+            address = InetAddress.getLoopbackAddress();
+        }
         InetSocketAddress sender = new InetSocketAddress(
-            InetAddress.getLocalHost(),
+            address,
             sndChannel.socket().getLocalPort());
 
         DatagramChannel rcvChannel = DatagramChannel.open();
         rcvChannel.socket().bind(null);
         InetSocketAddress receiver = new InetSocketAddress(
-            InetAddress.getLocalHost(),
+            address,
             rcvChannel.socket().getLocalPort());
 
         rcvChannel.connect(sender);
@@ -80,14 +84,18 @@ public class ConnectedSend {
     private static void test2() throws Exception {
         DatagramChannel sndChannel = DatagramChannel.open();
         sndChannel.socket().bind(null);
+        InetAddress address = InetAddress.getLocalHost();
+        if (address.isLoopbackAddress()) {
+            address = InetAddress.getLoopbackAddress();
+        }
         InetSocketAddress sender = new InetSocketAddress(
-            InetAddress.getLocalHost(),
+            address,
             sndChannel.socket().getLocalPort());
 
         DatagramChannel rcvChannel = DatagramChannel.open();
         rcvChannel.socket().bind(null);
         InetSocketAddress receiver = new InetSocketAddress(
-            InetAddress.getLocalHost(),
+            address,
             rcvChannel.socket().getLocalPort());
 
         rcvChannel.connect(sender);

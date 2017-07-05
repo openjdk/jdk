@@ -605,7 +605,7 @@ public final class NativeArray extends ScriptObject {
             final boolean strict    = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
-                return ((NativeArray)sobj).getArray().pop();
+                return sobj.getArray().pop();
             }
 
             final long len = JSType.toUint32(sobj.getLength());
@@ -725,7 +725,7 @@ public final class NativeArray extends ScriptObject {
             first = sobj.get(0);
 
             if (bulkable(sobj)) {
-                ((NativeArray) sobj).getArray().shiftLeft(1);
+                sobj.getArray().shiftLeft(1);
             } else {
                 for (long k = 1; k < len; k++) {
                     sobj.set(k - 1, sobj.get(k), strict);

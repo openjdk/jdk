@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -384,9 +384,7 @@ OTHER_INCLUDES += \
 ifeq ($(PLATFORM),windows)
   OTHER_LDLIBS += $(JVMLIB) ws2_32.lib \
      -libpath:$(LIBDIR) java.lib \
-     $(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib \
-     $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/io_util.obj \
-     $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
+     $(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib
 endif
 ifeq ($(PLATFORM), linux)
 OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread $(LIBDL)
