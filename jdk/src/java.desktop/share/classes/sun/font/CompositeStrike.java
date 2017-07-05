@@ -71,7 +71,9 @@ public final class CompositeStrike extends FontStrike {
     }
 
     PhysicalStrike getStrikeForSlot(int slot) {
-
+        if (slot >= strikes.length) {
+            slot = 0;
+        }
         PhysicalStrike strike = strikes[slot];
         if (strike == null) {
             strike =

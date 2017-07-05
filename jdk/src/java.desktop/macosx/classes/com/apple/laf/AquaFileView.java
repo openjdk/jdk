@@ -75,7 +75,7 @@ class AquaFileView extends FileView {
     private static native int getNativeLSInfo(final byte[] pathBytes, final boolean isDirectory);
     private static native String getNativePathForResolvedAlias(final byte[] absolutePath, final boolean isDirectory);
 
-    static final RecyclableSingleton<String> machineName = new RecyclableSingleton<String>() {
+    private static final RecyclableSingleton<String> machineName = new RecyclableSingleton<String>() {
         @Override
         protected String getInstance() {
             return getNativeMachineName();

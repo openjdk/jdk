@@ -26,7 +26,7 @@
  * @bug 6229396
  * @summary Test null/empty key/values in ObjectName constructors.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean NullEmptyKeyValueTest
  * @run build NullEmptyKeyValueTest
  * @run main NullEmptyKeyValueTest
