@@ -63,7 +63,15 @@ $KT -alias a -gencrl -id 3:3 -id 4:4 -file crl2
 $KT -alias b -dname CN=b -keyalg rsa -genkey -validity 300
 $KT -alias b -gencrl -id 5:1 -id 6:2 -file crl3
 
-$TESTJAVA${FS}bin${FS}jrunscript -e 'println(new File("crl1").toURI())' > uri
+cat > ToURI.java <<EOF
+class ToURI {
+    public static void main(String[] args) throws Exception {
+        System.out.println(new java.io.File("crl1").toURI());
+    }
+}
+EOF
+$TESTJAVA${FS}bin${FS}javac ToURI.java
+$TESTJAVA${FS}bin${FS}java ToURI > uri
 $KT -alias c -dname CN=c -keyalg rsa -genkey -validity 300 \
     -ext crl=uri:`cat uri`
 

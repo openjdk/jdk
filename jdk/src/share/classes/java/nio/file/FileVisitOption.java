@@ -37,9 +37,5 @@ public enum FileVisitOption {
     /**
      * Follow symbolic links.
      */
-    FOLLOW_LINKS,
-    /**
-     * Detect cycles in the file tree.
-     */
-    DETECT_CYCLES;
+    FOLLOW_LINKS;
 }

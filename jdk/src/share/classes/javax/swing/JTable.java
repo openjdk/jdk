@@ -4574,9 +4574,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnMoved(TableColumnModelEvent e) {
-        // If I'm currently editing, then I should stop editing
-        if (isEditing()) {
-            removeEditor();
+        if (isEditing() && !getCellEditor().stopCellEditing()) {
+            getCellEditor().cancelCellEditing();
         }
         repaint();
     }
@@ -4593,8 +4592,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnMarginChanged(ChangeEvent e) {
-        if (isEditing()) {
-            removeEditor();
+        if (isEditing() && !getCellEditor().stopCellEditing()) {
+            getCellEditor().cancelCellEditing();
         }
         TableColumn resizingColumn = getResizingColumn();
         // Need to do this here, before the parent's

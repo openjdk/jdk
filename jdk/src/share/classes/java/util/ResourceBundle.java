@@ -293,16 +293,6 @@ public abstract class ResourceBundle {
         = new ConcurrentHashMap<CacheKey, BundleReference>(INITIAL_CACHE_SIZE);
 
     /**
-     * This ConcurrentMap is used to keep multiple threads from loading the
-     * same bundle concurrently.  The table entries are <CacheKey, Thread>
-     * where CacheKey is the key for the bundle that is under construction
-     * and Thread is the thread that is constructing the bundle.
-     * This list is manipulated in findBundleInCache and putBundleInCache.
-     */
-    private static final ConcurrentMap<CacheKey, Thread> underConstruction
-        = new ConcurrentHashMap<CacheKey, Thread>();
-
-    /**
      * Queue for reference objects referring to class loaders or bundles.
      */
     private static final ReferenceQueue referenceQueue = new ReferenceQueue();
@@ -1381,7 +1371,7 @@ public abstract class ResourceBundle {
         boolean expiredBundle = false;
 
         // First, look up the cache to see if it's in the cache, without
-        // declaring beginLoading.
+        // attempting to load bundle.
         cacheKey.setLocale(targetLocale);
         ResourceBundle bundle = findBundleInCache(cacheKey, control);
         if (isValidBundle(bundle)) {
@@ -1408,56 +1398,25 @@ public abstract class ResourceBundle {
             CacheKey constKey = (CacheKey) cacheKey.clone();
 
             try {
-                // Try declaring loading. If beginLoading() returns true,
-                // then we can proceed. Otherwise, we need to take a look
-                // at the cache again to see if someone else has loaded
-                // the bundle and put it in the cache while we've been
-                // waiting for other loading work to complete.
-                while (!beginLoading(constKey)) {
-                    bundle = findBundleInCache(cacheKey, control);
-                    if (bundle == null) {
-                        continue;
+                bundle = loadBundle(cacheKey, formats, control, expiredBundle);
+                if (bundle != null) {
+                    if (bundle.parent == null) {
+                        bundle.setParent(parent);
                     }
-                    if (bundle == NONEXISTENT_BUNDLE) {
-                        // If the bundle is NONEXISTENT_BUNDLE, the bundle doesn't exist.
-                        return parent;
-                    }
-                    expiredBundle = bundle.expired;
-                    if (!expiredBundle) {
-                        if (bundle.parent == parent) {
-                            return bundle;
-                        }
-                        BundleReference bundleRef = cacheList.get(cacheKey);
-                        if (bundleRef != null && bundleRef.get() == bundle) {
-                            cacheList.remove(cacheKey, bundleRef);
-                        }
-                    }
+                    bundle.locale = targetLocale;
+                    bundle = putBundleInCache(cacheKey, bundle, control);
+                    return bundle;
                 }
 
-                try {
-                    bundle = loadBundle(cacheKey, formats, control, expiredBundle);
-                    if (bundle != null) {
-                        if (bundle.parent == null) {
-                            bundle.setParent(parent);
-                        }
-                        bundle.locale = targetLocale;
-                        bundle = putBundleInCache(cacheKey, bundle, control);
-                        return bundle;
-                    }
-
-                    // Put NONEXISTENT_BUNDLE in the cache as a mark that there's no bundle
-                    // instance for the locale.
-                    putBundleInCache(cacheKey, NONEXISTENT_BUNDLE, control);
-                } finally {
-                    endLoading(constKey);
-                }
+                // Put NONEXISTENT_BUNDLE in the cache as a mark that there's no bundle
+                // instance for the locale.
+                putBundleInCache(cacheKey, NONEXISTENT_BUNDLE, control);
             } finally {
                 if (constKey.getCause() instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
-        assert underConstruction.get(cacheKey) != Thread.currentThread();
         return parent;
     }
 
@@ -1465,7 +1424,6 @@ public abstract class ResourceBundle {
                                                    List<String> formats,
                                                    Control control,
                                                    boolean reload) {
-        assert underConstruction.get(cacheKey) == Thread.currentThread();
 
         // Here we actually load the bundle in the order of formats
         // specified by the getFormats() value.
@@ -1498,7 +1456,6 @@ public abstract class ResourceBundle {
                 break;
             }
         }
-        assert underConstruction.get(cacheKey) == Thread.currentThread();
 
         return bundle;
     }
@@ -1527,57 +1484,6 @@ public abstract class ResourceBundle {
             bundle = bundle.parent;
         }
         return true;
-    }
-
-    /**
-     * Declares the beginning of actual resource bundle loading. This method
-     * returns true if the declaration is successful and the current thread has
-     * been put in underConstruction. If someone else has already begun
-     * loading, this method waits until that loading work is complete and
-     * returns false.
-     */
-    private static final boolean beginLoading(CacheKey constKey) {
-        Thread me = Thread.currentThread();
-        Thread worker;
-        // We need to declare by putting the current Thread (me) to
-        // underConstruction that we are working on loading the specified
-        // resource bundle. If we are already working the loading, it means
-        // that the resource loading requires a recursive call. In that case,
-        // we have to proceed. (4300693)
-        if (((worker = underConstruction.putIfAbsent(constKey, me)) == null)
-            || worker == me) {
-            return true;
-        }
-
-        // If someone else is working on the loading, wait until
-        // the Thread finishes the bundle loading.
-        synchronized (worker) {
-            while (underConstruction.get(constKey) == worker) {
-                try {
-                    worker.wait();
-                } catch (InterruptedException e) {
-                    // record the interruption
-                    constKey.setCause(e);
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Declares the end of the bundle loading. This method calls notifyAll
-     * for those who are waiting for this completion.
-     */
-    private static final void endLoading(CacheKey constKey) {
-        // Remove this Thread from the underConstruction map and wake up
-        // those who have been waiting for me to complete this bundle
-        // loading.
-        Thread me = Thread.currentThread();
-        assert (underConstruction.get(constKey) == me);
-        underConstruction.remove(constKey);
-        synchronized (me) {
-            me.notifyAll();
-        }
     }
 
     /**

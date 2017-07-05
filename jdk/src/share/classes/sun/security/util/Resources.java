@@ -116,11 +116,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"X.509 extension",
                 "X.509 extension"}, //-ext
         {"output file name",
-                "output file name"}, //-file
+                "output file name"}, //-file and -outfile
         {"input file name",
-                "input file name"}, //-file
-        {"input file name",
-                "input file name"}, //-infile
+                "input file name"}, //-file and -infile
         {"key algorithm name",
                 "key algorithm name"}, //-keyalg
         {"key password",
@@ -133,8 +131,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "new password"}, //-new
         {"do not prompt",
                 "do not prompt"}, //-noprompt
-        {"output file name",
-                "output file name"}, //-outfile
         {"password through protected mechanism",
                 "password through protected mechanism"}, //-protected
         {"provider argument",
@@ -151,8 +147,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "signature algorithm name"}, //-sigalg
         {"source alias",
                 "source alias"}, //-srcalias
-        {"source keystore password",
-                "source keystore password"}, //-srckeypass
+        {"source key password",
+                "source key password"}, //-srckeypass
         {"source keystore name",
                 "source keystore name"}, //-srckeystore
         {"source keystore password protected",
@@ -276,8 +272,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "Alias <{0}> has no certificate"},
         {"Key pair not generated, alias <alias> already exists",
                 "Key pair not generated, alias <{0}> already exists"},
-        {"Cannot derive signature algorithm",
-                "Cannot derive signature algorithm"},
         {"Generating keysize bit keyAlgName key pair and self-signed certificate (sigAlgName) with a validity of validality days\n\tfor: x500Name",
                 "Generating {0} bit {1} key pair and self-signed certificate ({2}) with a validity of {3} days\n\tfor: {4}"},
         {"Enter key password for <alias>", "Enter key password for <{0}>"},
@@ -321,8 +315,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"Failed to parse input", "Failed to parse input"},
         {"Empty input", "Empty input"},
         {"Not X.509 certificate", "Not X.509 certificate"},
-        {"Cannot derive signature algorithm",
-                "Cannot derive signature algorithm"},
         {"alias has no public key", "{0} has no public key"},
         {"alias has no X.509 certificate", "{0} has no X.509 certificate"},
         {"New certificate (self-signed):", "New certificate (self-signed):"},
@@ -552,7 +544,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"package name", "package name"},
         {"policy type", "policy type"},
         {"property name", "property name"},
-        {"provider name", "provider name"},
         {"Principal List", "Principal List"},
         {"Permission List", "Permission List"},
         {"Code Base", "Code Base"},

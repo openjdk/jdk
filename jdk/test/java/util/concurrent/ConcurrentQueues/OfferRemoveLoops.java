@@ -55,6 +55,7 @@ public class OfferRemoveLoops {
         testQueue(new LinkedBlockingDeque());
         testQueue(new ArrayBlockingQueue(10));
         testQueue(new PriorityBlockingQueue(10));
+        testQueue(new ConcurrentLinkedDeque());
         testQueue(new ConcurrentLinkedQueue());
         testQueue(new LinkedTransferQueue());
     }

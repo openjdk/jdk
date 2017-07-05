@@ -344,6 +344,11 @@ public final class AWTAccessor {
          * Removes the last focus request for the heavyweight from the queue.
          */
         void removeLastFocusRequest(Component heavyweight);
+
+        /*
+         * Sets the most recent focus owner in the window.
+         */
+        void setMostRecentFocusOwner(Window window, Component component);
     }
 
     /*

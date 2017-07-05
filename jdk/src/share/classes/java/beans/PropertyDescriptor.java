@@ -112,7 +112,8 @@ public class PropertyDescriptor extends FeatureDescriptor {
         // If this class or one of its base classes allow PropertyChangeListener,
         // then we assume that any properties we discover are "bound".
         // See Introspector.getTargetPropertyInfo() method.
-        this.bound = null != Introspector.findInstanceMethod(beanClass, "addPropertyChangeListener", PropertyChangeListener.class);
+        Class[] args = { PropertyChangeListener.class };
+        this.bound = null != Introspector.findMethod(beanClass, "addPropertyChangeListener", args.length, args);
     }
 
     /**
@@ -223,10 +224,10 @@ public class PropertyDescriptor extends FeatureDescriptor {
             // property type is.  For booleans, there can be "is" and "get"
             // methods.  If an "is" method exists, this is the official
             // reader method so look for this one first.
-            readMethod = Introspector.findInstanceMethod(cls, readMethodName);
+            readMethod = Introspector.findMethod(cls, readMethodName, 0);
             if (readMethod == null) {
                 readMethodName = Introspector.GET_PREFIX + getBaseName();
-                readMethod = Introspector.findInstanceMethod(cls, readMethodName);
+                readMethod = Introspector.findMethod(cls, readMethodName, 0);
             }
             try {
                 setReadMethod(readMethod);
@@ -291,7 +292,8 @@ public class PropertyDescriptor extends FeatureDescriptor {
                 writeMethodName = Introspector.SET_PREFIX + getBaseName();
             }
 
-            writeMethod = Introspector.findInstanceMethod(cls, writeMethodName, type);
+            Class[] args = (type == null) ? null : new Class[] { type };
+            writeMethod = Introspector.findMethod(cls, writeMethodName, 1, args);
             if (writeMethod != null) {
                 if (!writeMethod.getReturnType().equals(void.class)) {
                     writeMethod = null;
