@@ -874,7 +874,7 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
   // Adapter needs TOP_IJAVA_FRAME_ABI.
   const int adapter_size = frame::top_ijava_frame_abi_size +
-      align_up(total_args_passed * wordSize, frame::alignment_in_bytes);
+                           align_up(total_args_passed * wordSize, frame::alignment_in_bytes);
 
   // regular (verified) c2i entry point
   c2i_entrypoint = __ pc();
@@ -2204,8 +2204,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // disallows any pending_exception.
 
     // Save argument registers and leave room for C-compatible ABI_REG_ARGS.
-    int frame_size = frame::abi_reg_args_size +
-        align_up(total_c_args * wordSize, frame::alignment_in_bytes);
+    int frame_size = frame::abi_reg_args_size + align_up(total_c_args * wordSize, frame::alignment_in_bytes);
     __ mr(R11_scratch1, R1_SP);
     RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs, out_regs2);
 

@@ -288,6 +288,7 @@ static OopMapSet* generate_exception_throw_with_stack_parms(StubAssembler* sasm,
     __ ld(R5_ARG3, frame_size_in_bytes + padding + 8, R1_SP);
     case 1:
     __ ld(R4_ARG2, frame_size_in_bytes + padding + 0, R1_SP);
+    case 0:
     call_offset = __ call_RT(noreg, noreg, target);
     break;
     default: Unimplemented(); break;
@@ -338,6 +339,7 @@ static OopMapSet* stub_call_with_stack_parms(StubAssembler* sasm, Register resul
     __ ld(R5_ARG3, frame_size_in_bytes + padding + 8, R1_SP);
     case 1:
     __ ld(R4_ARG2, frame_size_in_bytes + padding + 0, R1_SP);
+    case 0:
     call_offset = __ call_RT(result, noreg, target);
     break;
     default: Unimplemented(); break;

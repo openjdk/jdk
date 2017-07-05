@@ -82,13 +82,7 @@
  public:
 
   // C frame layout
-
-  enum {
-    // stack alignment
-    alignment_in_bytes = 16,
-    // log_2(16*8 bits) = 7.
-    log_2_of_alignment_in_bits = 7
-  };
+  static const int alignment_in_bytes = 16;
 
   // ABI_MINFRAME:
   struct abi_minframe {
