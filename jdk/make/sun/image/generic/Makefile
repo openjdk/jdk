@@ -69,5 +69,8 @@ CPPFLAGS += \
             -I$(PLATFORM_SRC)/native/$(PKGDIR)/medialib 
 
 OTHER_CFLAGS += -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES
-OTHER_LDLIBS = $(LIBM) -ldl
+
+ifneq ($(PLATFORM), windows)
+	OTHER_LDLIBS = $(LIBM) -ldl
+endif
 

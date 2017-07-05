@@ -51,7 +51,7 @@ static const char szNetscape20ext[11] = "NETSCAPE2.0";
 #define NSEXT_LOOP      0x01    // Loop Count field code
 
 // convert libungif samples to our ones
-#define MAKE_QUAD_GIF(c,a) MAKE_QUAD((c).Red, (c).Green, (c).Blue, (a))
+#define MAKE_QUAD_GIF(c,a) MAKE_QUAD((c).Red, (c).Green, (c).Blue, (unsigned)(a))
 
 /* stdio FILE* and memory input functions for libungif */
 int
@@ -165,7 +165,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
                 {
                     int flag = pExtension[0];
 
-                    frameDelay = (pExtension[2] << 8) | pExtension[1];
+                    frameDelay = (((int)pExtension[2]) << 8) | pExtension[1];
                     if (frameDelay < 10)
                         frameDelay = 10;
                     if (flag & GIF_TRANSPARENT) {
@@ -191,7 +191,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
                         iSubCode = pExtension[0] & 0x07;
                         if (iSubCode == NSEXT_LOOP) {
                             splash->loopCount =
-                                (pExtension[1] | (pExtension[2] << 8)) - 1;
+                                (pExtension[1] | (((int)pExtension[2]) << 8)) - 1;
                         }
                     }
                     break;
@@ -277,7 +277,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
                 ImageRect dstRect;
                 rgbquad_t fillColor = 0;                        // 0 is transparent
 
-                if (transparentColor > 0) {
+                if (transparentColor < 0) {
                     fillColor= MAKE_QUAD_GIF(
                         colorMap->Colors[gif->SBackGroundColor], 0xff);
                 }

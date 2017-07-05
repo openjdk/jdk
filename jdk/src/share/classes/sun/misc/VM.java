@@ -170,34 +170,23 @@ public class VM {
     //
     private static long directMemory = 64 * 1024 * 1024;
 
-    // If this method is invoked during VM initialization, it initializes the
-    // maximum amount of allocatable direct buffer memory (in bytes) from the
-    // system property sun.nio.MaxDirectMemorySize.  The system property will
-    // be removed when it is accessed.
-    //
-    // If this method is invoked after the VM is booted, it returns the
-    // maximum amount of allocatable direct buffer memory.
+    // Returns the maximum amount of allocatable direct buffer memory.
+    // The directMemory variable is initialized during system initialization
+    // in the saveAndRemoveProperties method.
     //
     public static long maxDirectMemory() {
-        if (booted)
-            return directMemory;
-
-        Properties p = System.getProperties();
-        String s = (String)p.remove("sun.nio.MaxDirectMemorySize");
-        System.setProperties(p);
-
-        if (s != null) {
-            if (s.equals("-1")) {
-                // -XX:MaxDirectMemorySize not given, take default
-                directMemory = Runtime.getRuntime().maxMemory();
-            } else {
-                long l = Long.parseLong(s);
-                if (l > -1)
-                    directMemory = l;
-            }
-        }
-
         return directMemory;
+    }
+
+    // User-controllable flag that determines if direct buffers should be page
+    // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
+    // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
+    private static boolean pageAlignDirectMemory;
+
+    // Returns {@code true} if the direct buffers should be page aligned. This
+    // variable is initialized by saveAndRemoveProperties.
+    public static boolean isDirectMemoryPageAligned() {
+        return pageAlignDirectMemory;
     }
 
     // A user-settable boolean to determine whether ClassLoader.loadClass should
@@ -212,26 +201,87 @@ public class VM {
     private static boolean defaultAllowArraySyntax = false;
     private static boolean allowArraySyntax = defaultAllowArraySyntax;
 
-    // If this method is invoked during VM initialization, it initializes the
-    // allowArraySyntax boolean based on the value of the system property
+    // The allowArraySyntax boolean is initialized during system initialization
+    // in the saveAndRemoveProperties method.
+    //
+    // It is initialized based on the value of the system property
     // "sun.lang.ClassLoader.allowArraySyntax".  If the system property is not
     // provided, the default for 1.5 is "true".  In 1.6, the default will be
     // "false".  If the system property is provided, then the value of
     // allowArraySyntax will be equal to "true" if Boolean.parseBoolean()
     // returns "true".   Otherwise, the field will be set to "false".
     //
-    // If this method is invoked after the VM is booted, it returns the
-    // allowArraySyntax boolean set during initialization.
-    //
     public static boolean allowArraySyntax() {
-        if (!booted) {
-            String s
-                = System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
-            allowArraySyntax = (s == null
-                                ? defaultAllowArraySyntax
-                                : Boolean.parseBoolean(s));
-        }
         return allowArraySyntax;
+    }
+
+    /**
+     * Returns the system property of the specified key saved at
+     * system initialization time.  This method should only be used
+     * for the system properties that are not changed during runtime.
+     * It accesses a private copy of the system properties so
+     * that user's locking of the system properties object will not
+     * cause the library to deadlock.
+     *
+     * Note that the saved system properties do not include
+     * the ones set by sun.misc.Version.init().
+     *
+     */
+    public static String getSavedProperty(String key) {
+        if (savedProps.isEmpty())
+            throw new IllegalStateException("Should be non-empty if initialized");
+
+        return savedProps.getProperty(key);
+    }
+
+    private static final Properties savedProps = new Properties();
+
+    // Save a private copy of the system properties and remove
+    // the system properties that are not intended for public access.
+    //
+    // This method can only be invoked during system initialization.
+    public static void saveAndRemoveProperties(Properties props) {
+        if (booted)
+            throw new IllegalStateException("System initialization has completed");
+
+        savedProps.putAll(props);
+
+        // Set the maximum amount of direct memory.  This value is controlled
+        // by the vm option -XX:MaxDirectMemorySize=<size>.
+        // The maximum amount of allocatable direct buffer memory (in bytes)
+        // from the system property sun.nio.MaxDirectMemorySize set by the VM.
+        // The system property will be removed.
+        String s = (String)props.remove("sun.nio.MaxDirectMemorySize");
+        if (s != null) {
+            if (s.equals("-1")) {
+                // -XX:MaxDirectMemorySize not given, take default
+                directMemory = Runtime.getRuntime().maxMemory();
+            } else {
+                long l = Long.parseLong(s);
+                if (l > -1)
+                    directMemory = l;
+            }
+        }
+
+        // Check if direct buffers should be page aligned
+        s = (String)props.remove("sun.nio.PageAlignDirectMemory");
+        if ("true".equals(s))
+            pageAlignDirectMemory = true;
+
+        // Set a boolean to determine whether ClassLoader.loadClass accepts
+        // array syntax.  This value is controlled by the system property
+        // "sun.lang.ClassLoader.allowArraySyntax".
+        s = props.getProperty("sun.lang.ClassLoader.allowArraySyntax");
+        allowArraySyntax = (s == null
+                               ? defaultAllowArraySyntax
+                               : Boolean.parseBoolean(s));
+
+        // Remove other private system properties
+        // used by java.lang.Integer.IntegerCache
+        props.remove("java.lang.Integer.IntegerCache.high");
+
+        // used by java.util.zip.ZipFile
+        props.remove("sun.zip.disableMemoryMapping");
     }
 
     // Initialize any miscellenous operating system settings that need to be

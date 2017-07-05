@@ -454,7 +454,7 @@ public class XTrayIconPeer implements TrayIconPeer,
                 ActionEvent aev = new ActionEvent(xtiPeer.target, ActionEvent.ACTION_PERFORMED,
                                                   xtiPeer.target.getActionCommand(), e.getWhen(),
                                                   e.getModifiers());
-                Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(aev);
+                XToolkit.postEvent(XToolkit.targetToAppContext(aev.getSource()), aev);
             }
             if (xtiPeer.balloon.isVisible()) {
                 xtiPeer.balloon.hide();

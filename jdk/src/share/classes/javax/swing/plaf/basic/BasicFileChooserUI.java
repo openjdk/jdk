@@ -141,6 +141,22 @@ public class BasicFileChooserUI extends FileChooserUI {
     private JPanel accessoryPanel = null;
     private Handler handler;
 
+    /**
+     * Creates a {@code BasicFileChooserUI} implementation
+     * for the specified component. By default
+     * the {@code BasicLookAndFeel} class uses
+     * {@code createUI} methods of all basic UIs classes
+     * to instantiate UIs.
+     *
+     * @param c the {@code JFileChooser} which needs a UI
+     * @return the {@code BasicFileChooserUI} object
+     *
+     * @see UIDefaults#getUI(JComponent)
+     * @since 1.7
+     */
+    public static ComponentUI createUI(JComponent c) {
+        return new BasicFileChooserUI((JFileChooser) c);
+    }
 
     public BasicFileChooserUI(JFileChooser b) {
     }

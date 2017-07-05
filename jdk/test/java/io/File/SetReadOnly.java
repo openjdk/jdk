@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4091757 4939819
+   @bug 4091757 4939819 6728842
    @summary Basic test for setReadOnly method
  */
 
@@ -57,17 +57,8 @@ public class SetReadOnly {
         }
         if (!f.mkdir())
             throw new Exception(f + ": Cannot create directory");
-        if (!f.setReadOnly())
-            throw new Exception(f + ": Failed on directory");
-        // The readonly attribute on Windows does not make a folder read-only
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            if (!f.canWrite())
-                throw new Exception(f + ": Directory is not writeable");
-        } else {
-            if (f.canWrite())
-                throw new Exception(f + ": Directory is writeable");
-        }
-
+        if (f.setReadOnly() && f.canWrite())
+            throw new Exception(f + ": Directory is writeable");
         if (!f.delete())
             throw new Exception(f + ": Cannot delete directory");
 

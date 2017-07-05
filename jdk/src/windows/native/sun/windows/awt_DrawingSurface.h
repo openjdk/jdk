@@ -159,7 +159,8 @@ extern "C" {
     void JNICALL DSUnlockAWT(JNIEnv* env);
 
     _JNI_IMPORT_OR_EXPORT_
-    jobject JNICALL DSGetComponent(JNIEnv* env, void* platformInfo);
+    jobject JNICALL DSGetComponent(
+        JNIEnv* env, void* platformInfo);
 
 #ifdef __cplusplus
 } /* extern "C" */

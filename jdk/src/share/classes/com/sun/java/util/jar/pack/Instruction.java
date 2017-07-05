@@ -25,6 +25,8 @@
 
 package com.sun.java.util.jar.pack;
 
+import java.io.IOException;
+
 /**
  * A parsed bytecode instruction.
  * Provides accessors to various relevant bits.
@@ -626,6 +628,23 @@ class Instruction implements Constants {
                 assert(slot == 0   || index == 0);  // not both local & cp
                 BC_CON[w][bc]    = (byte) con;
             }
+        }
+    }
+
+    public static void opcodeChecker(byte[] code) throws FormatException {
+        Instruction i = at(code, 0);
+        while (i != null) {
+            int opcode = i.getBC();
+            if (opcode == _xxxunusedxxx || opcode < _nop || opcode > _jsr_w) {
+                String message = "illegal opcode: " + opcode + " " + i;
+                throw new FormatException(message);
+            }
+            i = i.next();
+        }
+    }
+    static class FormatException extends IOException {
+        FormatException(String message) {
+            super(message);
         }
     }
 }

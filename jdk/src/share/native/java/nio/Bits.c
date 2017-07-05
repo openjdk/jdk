@@ -72,7 +72,7 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
                                       jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jshort *srcShort, *dstShort, *endShort;
     jshort tmpShort;
 
@@ -83,7 +83,7 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, src);
 
@@ -107,7 +107,7 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
                                     jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jshort *srcShort, *dstShort, *endShort;
     jshort tmpShort;
 
@@ -118,7 +118,7 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, dst);
 
@@ -142,7 +142,7 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
                                     jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jint *srcInt, *dstInt, *endInt;
     jint tmpInt;
 
@@ -153,7 +153,7 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, src);
 
@@ -177,7 +177,7 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
                                   jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jint *srcInt, *dstInt, *endInt;
     jint tmpInt;
 
@@ -188,7 +188,7 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, dst);
 
@@ -212,7 +212,7 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
                                      jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jlong *srcLong, *dstLong, *endLong;
     jlong tmpLong;
 
@@ -223,7 +223,7 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, src);
 
@@ -247,7 +247,7 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
                                    jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
-    size_t i, size;
+    size_t size;
     jlong *srcLong, *dstLong, *endLong;
     jlong tmpLong;
 
@@ -258,7 +258,7 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
         if (length > MBYTE)
             size = MBYTE;
         else
-            size = length;
+            size = (size_t)length;
 
         GETCRITICAL(bytes, env, dst);
 
