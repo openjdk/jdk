@@ -39,6 +39,7 @@ import sun.awt.PeerEvent;
 import sun.awt.util.IdentityArrayList;
 import sun.awt.util.IdentityLinkedList;
 import sun.security.util.SecurityConstants;
+import java.security.AccessControlException;
 
 /**
  * A Dialog is a top-level window with a title and a border
@@ -127,6 +128,8 @@ public class Dialog extends Window {
      * @since 1.4
      */
     boolean undecorated = false;
+
+    private transient boolean initialized = false;
 
     /**
      * Modal dialogs block all input to some top-level windows.
@@ -671,6 +674,7 @@ public class Dialog extends Window {
         this.title = title;
         setModalityType(modalityType);
         SunToolkit.checkAndSetPolicy(this);
+        initialized = true;
     }
 
     /**
@@ -722,6 +726,7 @@ public class Dialog extends Window {
         this.title = title;
         setModalityType(modalityType);
         SunToolkit.checkAndSetPolicy(this);
+        initialized = true;
     }
 
     /**
@@ -851,12 +856,9 @@ public class Dialog extends Window {
         if (modalityType == type) {
             return;
         }
-        if (type == ModalityType.TOOLKIT_MODAL) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION);
-            }
-        }
+
+        checkModalityPermission(type);
+
         modalityType = type;
         modal = (modalityType != ModalityType.MODELESS);
     }
@@ -1025,6 +1027,11 @@ public class Dialog extends Window {
      */
     @Deprecated
     public void show() {
+        if (!initialized) {
+            throw new IllegalStateException("The dialog component " +
+                "has not been initialized properly");
+        }
+
         beforeFirstShow = false;
         if (!isModal()) {
             conditionalShow(null, null);
@@ -1600,18 +1607,51 @@ public class Dialog extends Window {
         }
     }
 
+    private void checkModalityPermission(ModalityType mt) {
+        if (mt == ModalityType.TOOLKIT_MODAL) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(
+                    SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION
+                );
+            }
+        }
+    }
+
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
         GraphicsEnvironment.checkHeadless();
-        s.defaultReadObject();
 
-        // in 1.5 or earlier modalityType was absent, so use "modal" instead
-        if (modalityType == null) {
-            setModal(modal);
+        java.io.ObjectInputStream.GetField fields =
+            s.readFields();
+
+        ModalityType localModalityType = (ModalityType)fields.get("modalityType", null);
+
+        try {
+            checkModalityPermission(localModalityType);
+        } catch (AccessControlException ace) {
+            localModalityType = DEFAULT_MODALITY_TYPE;
         }
 
+        // in 1.5 or earlier modalityType was absent, so use "modal" instead
+        if (localModalityType == null) {
+            this.modal = fields.get("modal", false);
+            setModal(modal);
+        } else {
+            this.modalityType = localModalityType;
+        }
+
+        this.resizable = fields.get("resizable", true);
+        this.undecorated = fields.get("undecorated", false);
+        this.title = (String)fields.get("title", "");
+
         blockedWindows = new IdentityArrayList<>();
+
+        SunToolkit.checkAndSetPolicy(this);
+
+        initialized = true;
+
     }
 
     /*

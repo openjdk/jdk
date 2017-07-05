@@ -2621,7 +2621,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter determines the Java type that must be used
      * in the {@code get} method to read the value of that parameter.
      * <p>
-     * This version of {@code  registrOutParameter} should be
+     * This version of {@code  registerOutParameter} should be
      * used when the parameter is of JDBC type {@code JDBCType.NUMERIC}
      * or {@code JDBCType.DECIMAL}.
      *<P>
@@ -2649,7 +2649,7 @@ public interface CallableStatement extends PreparedStatement {
     /**
      * Registers the designated output parameter.
      * This version of
-     * the method {@code  registrOutParameter}
+     * the method {@code  registerOutParameter}
      * should be used for a user-defined or {@code REF} output parameter.
      * Examples
      * of user-defined types include: {@code STRUCT}, {@code DISTINCT},
@@ -2717,7 +2717,7 @@ public interface CallableStatement extends PreparedStatement {
      * register the OUT Parameter.
      * If the parameter is of JDBC type {@code JDBCType.NUMERIC}
      * or {@code JDBCType.DECIMAL}, the version of
-     * {@code  registrOutParameter} that accepts a scale value
+     * {@code  registerOutParameter} that accepts a scale value
      * should be used.
      * @exception SQLException if parameterName does not correspond to a named
      * parameter; if a database access error occurs or
@@ -2745,7 +2745,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter determines the Java type that must be used
      * in the {@code get} method to read the value of that parameter.
      * <p>
-     * This version of {@code  registrOutParameter} should be
+     * This version of {@code  registerOutParameter} should be
      * used when the parameter is of JDBC type {@code JDBCType.NUMERIC}
      * or {@code JDBCType.DECIMAL}.
      *<P>
@@ -2774,7 +2774,7 @@ public interface CallableStatement extends PreparedStatement {
 
     /**
      * Registers the designated output parameter.  This version of
-     * the method {@code  registrOutParameter}
+     * the method {@code  registerOutParameter}
      * should be used for a user-named or REF output parameter.  Examples
      * of user-named types include: STRUCT, DISTINCT, JAVA_OBJECT, and
      * named array types.

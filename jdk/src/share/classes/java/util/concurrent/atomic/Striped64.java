@@ -253,7 +253,7 @@ abstract class Striped64 extends Number {
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
                 else if (a.cas(v = a.value, ((fn == null) ? v + x :
-                                             fn.operateAsLong(v, x))))
+                                             fn.applyAsLong(v, x))))
                     break;
                 else if (n >= NCPU || cells != as)
                     collide = false;            // At max size or stale
@@ -291,7 +291,7 @@ abstract class Striped64 extends Number {
                     break;
             }
             else if (casBase(v = base, ((fn == null) ? v + x :
-                                        fn.operateAsLong(v, x))))
+                                        fn.applyAsLong(v, x))))
                 break;                          // Fall back on using base
         }
     }
@@ -344,7 +344,7 @@ abstract class Striped64 extends Number {
                                 Double.doubleToRawLongBits
                                 (Double.longBitsToDouble(v) + x) :
                                 Double.doubleToRawLongBits
-                                (fn.operateAsDouble
+                                (fn.applyAsDouble
                                  (Double.longBitsToDouble(v), x)))))
                     break;
                 else if (n >= NCPU || cells != as)
@@ -387,7 +387,7 @@ abstract class Striped64 extends Number {
                               Double.doubleToRawLongBits
                               (Double.longBitsToDouble(v) + x) :
                               Double.doubleToRawLongBits
-                              (fn.operateAsDouble
+                              (fn.applyAsDouble
                                (Double.longBitsToDouble(v), x)))))
                 break;                          // Fall back on using base
         }

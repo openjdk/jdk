@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ import static sun.security.ssl.CipherSuite.*;
  * provide integrity protection for SSL messages.  The MAC is actually
  * one of several keyed hashes, as associated with the cipher suite and
  * protocol version.  (SSL v3.0 uses one construct, TLS uses another.)
- *
- * <P>NOTE: MAC computation is the only place in the SSL protocol that the
+ * <P>
+ * NOTE: MAC computation is the only place in the SSL protocol that the
  * sequence number is used.  It's also reset to zero with each change of
  * a cipher spec, so this is the only place this state is needed.
  *
@@ -57,6 +57,9 @@ final class MAC {
 
     // Value of the null MAC is fixed
     private static final byte nullMAC[] = new byte[0];
+
+    // internal identifier for the MAC algorithm
+    private final MacAlg        macAlg;
 
     // stuff defined by the kind of MAC algorithm
     private final int           macSize;
@@ -82,6 +85,7 @@ final class MAC {
 
     private MAC() {
         macSize = 0;
+        macAlg = M_NULL;
         mac = null;
         block = null;
     }
@@ -91,6 +95,7 @@ final class MAC {
      */
     MAC(MacAlg macAlg, ProtocolVersion protocolVersion, SecretKey key)
             throws NoSuchAlgorithmException, InvalidKeyException {
+        this.macAlg = macAlg;
         this.macSize = macAlg.size;
 
         String algorithm;
@@ -128,15 +133,31 @@ final class MAC {
     }
 
     /**
+     * Returns the hash function block length of the MAC alorithm.
+     */
+    int hashBlockLen() {
+        return macAlg.hashBlockSize;
+    }
+
+    /**
+     * Returns the hash function minimal padding length of the MAC alorithm.
+     */
+    int minimalPaddingLen() {
+        return macAlg.minimalPaddingSize;
+    }
+
+    /**
      * Computes and returns the MAC for the data in this byte array.
      *
      * @param type record type
      * @param buf compressed record on which the MAC is computed
      * @param offset start of compressed record data
      * @param len the size of the compressed record
+     * @param isSimulated if true, simulate the the MAC computation
      */
-    final byte[] compute(byte type, byte buf[], int offset, int len) {
-        return compute(type, null, buf, offset, len);
+    final byte[] compute(byte type, byte buf[],
+            int offset, int len, boolean isSimulated) {
+        return compute(type, null, buf, offset, len, isSimulated);
     }
 
     /**
@@ -149,9 +170,10 @@ final class MAC {
      * @param type record type
      * @param bb a ByteBuffer in which the position and limit
      *          demarcate the data to be MAC'd.
+     * @param isSimulated if true, simulate the the MAC computation
      */
-    final byte[] compute(byte type, ByteBuffer bb) {
-        return compute(type, bb, null, 0, bb.remaining());
+    final byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
+        return compute(type, bb, null, 0, bb.remaining(), isSimulated);
     }
 
     /**
@@ -204,18 +226,21 @@ final class MAC {
      * or buf/offset/len.
      */
     private byte[] compute(byte type, ByteBuffer bb, byte[] buf,
-            int offset, int len) {
+            int offset, int len, boolean isSimulated) {
 
         if (macSize == 0) {
             return nullMAC;
         }
 
-        block[BLOCK_OFFSET_TYPE] = type;
-        block[block.length - 2]  = (byte)(len >> 8);
-        block[block.length - 1]  = (byte)(len     );
+        // MUST NOT increase the sequence number for a simulated computation.
+        if (!isSimulated) {
+            block[BLOCK_OFFSET_TYPE] = type;
+            block[block.length - 2]  = (byte)(len >> 8);
+            block[block.length - 1]  = (byte)(len     );
 
-        mac.update(block);
-        incrementSequenceNumber();
+            mac.update(block);
+            incrementSequenceNumber();
+        }
 
         // content
         if (bb != null) {

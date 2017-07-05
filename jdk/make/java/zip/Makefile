@@ -68,6 +68,16 @@ ifeq ($(PLATFORM), solaris)
     FILES_reorder += reorder-$(ARCH)
   endif
 endif
+
+#
+# Use mapfile unconditionally (even with fastdebug).
+# JDK's internal zlib is incompatible with stock zlib, because the
+# size of struct z_stream has been changed, so internal zlib
+# implementation must not be allowed to leak outside of libzip.so,
+# else you get hard to debug failures with fastdebug jdk when user
+# native code includes stock zlib.
+#
+FILES_m = mapfile-vers
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 include $(BUILDDIR)/common/Library.gmk
 

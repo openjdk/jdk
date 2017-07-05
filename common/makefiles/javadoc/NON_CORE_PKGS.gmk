@@ -80,7 +80,8 @@ JCONSOLE_PKGS    = com.sun.tools.jconsole
 
 TREEAPI_PKGS 	 = com.sun.source.doctree \
 		   com.sun.source.tree \
-		   com.sun.source.util
+		   com.sun.source.util \
+		   jdk
 
 SMARTCARDIO_PKGS = javax.smartcardio
 
@@ -93,6 +94,8 @@ APPLE_EXT_PKGS   = com.apple.concurrent   \
                    com.apple.eio
 endif
 
+JDK_PKGS     = jdk
+
 # non-core packages in rt.jar
 NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(MGMT_PKGS) \
@@ -103,5 +106,5 @@ NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(HTTPSERVER_PKGS) \
                    $(SMARTCARDIO_PKGS) \
                    $(SCTPAPI_PKGS) \
-                   $(APPLE_EXT_PKGS)
-
+                   $(APPLE_EXT_PKGS) \
+                   $(JDK_PKGS)

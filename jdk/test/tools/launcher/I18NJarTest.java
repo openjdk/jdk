@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public class I18NJarTest extends TestHelper {
     private static final File cwd = new File(".");
     private static final File dir = new File("\uFF66\uFF67\uFF68\uFF69");
     private static final String encoding = System.getProperty("sun.jnu.encoding", "");
+    private static final String LANG = System.getenv("LANG");
+    private static final String LC_ALL = System.getenv("LC_ALL");
 
     public static void main(String... args) throws Exception {
         boolean localeAvailable = false;
@@ -63,7 +65,16 @@ public class I18NJarTest extends TestHelper {
         }
         if (!localeAvailable) {
             System.out.println("Warning: locale: " + Locale.JAPAN
-                    + " not found, test passes vacuosly");
+                    + " not found, test passes vacuously");
+            return;
+        }
+        if ("C".equals(LC_ALL) || "C".equals(LANG)) {
+            System.out.println("Warning: The LANG and/or LC_ALL env vars are " +
+              "set to \"C\":\n" +
+              "  LANG=" + LANG + "\n" +
+              "  LC_ALL=" + LC_ALL + "\n" +
+              "This test requires support for multi-byte filenames.\n" +
+              "Test passes vacuously.");
             return;
         }
         if (encoding.equals("MS932") || encoding.equals("UTF-8")) {
@@ -73,7 +84,7 @@ public class I18NJarTest extends TestHelper {
         } else {
             System.out.println("Warning: current encoding is " + encoding +
                     "this test requires MS932 <Ja> or UTF-8," +
-                    " test passes vacuosly");
+                    " test passes vacuously");
             return;
         }
         dir.mkdir();

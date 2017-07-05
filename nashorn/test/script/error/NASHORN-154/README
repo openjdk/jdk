@@ -1,0 +1,6 @@
+Section 16 of ECMAScript 5.1 spec details a set of "early errors". Early
+errors should be reported before running any line of the script containing
+such error(s). Examples include syntax error, errors in regexp literals etc.
+This directory contains tests to check early errors are reported as early
+errors. Each test starts with a print call -- the output from print should 
+not be seen in expected output. If seen, early errors are reported late.

@@ -356,7 +356,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
 // Verifies the calculated original PC of a deoptimization PC for the
 // given unextended SP.  The unextended SP might also be the saved SP
 // for MethodHandle call sites.
-#if ASSERT
+#ifdef ASSERT
 void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
   frame fr;
 

@@ -687,8 +687,8 @@ CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject 
     if ((*env)->ExceptionCheck(env)) {
         free(ckParam.RandomInfo.pClientRandom);
         free(ckParam.RandomInfo.pServerRandom);
-        free(ckParam.pReturnedKeyMaterial);
         free(ckParam.pReturnedKeyMaterial->pIVClient);
+        free(ckParam.pReturnedKeyMaterial);
         return ckParam;
     }
 

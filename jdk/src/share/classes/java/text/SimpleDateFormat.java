@@ -547,7 +547,8 @@ public class SimpleDateFormat extends DateFormat {
 
     /**
      * Constructs a <code>SimpleDateFormat</code> using the default pattern and
-     * date format symbols for the default locale.
+     * date format symbols for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * <b>Note:</b> This constructor may not support all locales.
      * For full coverage, use the factory methods in the {@link DateFormat}
      * class.
@@ -560,11 +561,17 @@ public class SimpleDateFormat extends DateFormat {
 
     /**
      * Constructs a <code>SimpleDateFormat</code> using the given pattern and
-     * the default date format symbols for the default locale.
+     * the default date format symbols for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * <b>Note:</b> This constructor may not support all locales.
      * For full coverage, use the factory methods in the {@link DateFormat}
      * class.
+     * <p>This is equivalent to calling
+     * {@link #SimpleDateFormat(String, Locale)
+     *     SimpleDateFormat(pattern, Locale.getDefault(Locale.Category.FORMAT))}.
      *
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @param pattern the pattern describing the date and time format
      * @exception NullPointerException if the given pattern is null
      * @exception IllegalArgumentException if the given pattern is invalid

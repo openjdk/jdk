@@ -109,6 +109,10 @@ class NativeUnpack {
         return (p200 == null)? null: p200._nunp;
     }
 
+    private synchronized long getUnpackerPtr() {
+        return unpackerPtr;
+    }
+
     // Callback from the unpacker engine to get more data.
     private long readInputFn(ByteBuffer pbuf, long minlen) throws IOException {
         if (in == null)  return 0;  // nothing is readable

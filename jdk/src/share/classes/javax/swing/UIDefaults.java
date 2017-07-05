@@ -677,6 +677,8 @@ public class UIDefaults extends Hashtable<Object,Object>
         try {
             String className = (String)get(uiClassID);
             if (className != null) {
+                ReflectUtil.checkPackageAccess(className);
+
                 Class cls = (Class)get(className);
                 if (cls == null) {
                     if (uiClassLoader == null) {

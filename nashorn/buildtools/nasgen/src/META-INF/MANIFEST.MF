@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: lib/ant-1.7.1.jar
+Main-Class: jdk.nashorn.internal.tools.nasgen.Main
+

@@ -25,11 +25,10 @@
 package java.util.function;
 
 /**
- * A supplier of {@code long} values.
+ * A supplier of {@code long} values. This is the {@code long}-providing
+ * primitive specialization of {@link Supplier}.
  *
- * <p/>This is the primitive type specialization of {@link Supplier} for
- * {@code long} and also may be used as a {@code Supplier<Long>}.
- *
+ * @see Supplier
  * @since 1.8
  */
 @FunctionalInterface
@@ -38,7 +37,7 @@ public interface LongSupplier {
     /**
      * Returns a {@code long} value.
      *
-     * @return a {@code long} value.
+     * @return a {@code long} value
      */
     public long getAsLong();
 }

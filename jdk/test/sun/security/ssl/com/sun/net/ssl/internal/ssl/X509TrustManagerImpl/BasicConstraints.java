@@ -44,7 +44,7 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
 
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 public class BasicConstraints {
 
@@ -400,11 +400,11 @@ public class BasicConstraints {
         PKCS8EncodedKeySpec priKeySpec = null;
         if (isServer) {
             priKeySpec = new PKCS8EncodedKeySpec(
-                            new BASE64Decoder().decodeBuffer(serverPrivateKey));
+                            Base64.getMimeDecoder().decode(serverPrivateKey));
             is = new ByteArrayInputStream(serverCertStr.getBytes());
         } else {
             priKeySpec = new PKCS8EncodedKeySpec(
-                            new BASE64Decoder().decodeBuffer(clientPrivateKey));
+                            Base64.getMimeDecoder().decode(clientPrivateKey));
             is = new ByteArrayInputStream(clientCertStr.getBytes());
         }
         KeyFactory kf = KeyFactory.getInstance("RSA");

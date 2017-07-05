@@ -27,8 +27,6 @@ package java.awt.peer;
 
 import java.awt.*;
 
-import java.awt.image.BufferedImage;
-
 /**
  * The peer interface for {@link Window}.
  *
