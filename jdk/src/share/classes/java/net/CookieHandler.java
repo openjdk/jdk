@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.util.SecurityConstants;
  * CookieHandler.getDefault().
  *
  * For more information on HTTP state management, see <a
- * href="http://www.ietf.org/rfc/rfc2965.txt""><i>RFC&nbsp;2965: HTTP
+ * href="http://www.ietf.org/rfc/rfc2965.txt"><i>RFC&nbsp;2965: HTTP
  * State Management Mechanism</i></a>
  *
  * @author Yingxian Wang
