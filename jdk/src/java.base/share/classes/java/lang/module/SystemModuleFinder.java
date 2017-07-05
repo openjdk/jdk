@@ -44,6 +44,8 @@ import java.util.function.Supplier;
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
+import jdk.internal.misc.JavaNetUriAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.module.SystemModules;
@@ -70,6 +72,8 @@ class SystemModuleFinder implements ModuleFinder {
         = PerfCounter.newPerfCounter("jdk.module.finder.jimage.exports");
     // ImageReader used to access all modules in the image
     private static final ImageReader imageReader;
+
+    private static final JavaNetUriAccess jnua = SharedSecrets.getJavaNetUriAccess();
 
     // the set of modules in the run-time image
     private static final Set<ModuleReference> modules;
@@ -166,7 +170,8 @@ class SystemModuleFinder implements ModuleFinder {
                                                      HashSupplier hash)
     {
         String mn = md.name();
-        URI uri = URI.create("jrt:/" + mn);
+
+        URI uri = jnua.create("jrt", "/".concat(mn));
 
         Supplier<ModuleReader> readerSupplier = new Supplier<>() {
             @Override
