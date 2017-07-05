@@ -165,7 +165,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
   static unsigned int hash(oop key, int size) {
     // shift right to get better distribution (as these bits will be zero
     // with aligned addresses)
-    unsigned int addr = (unsigned int)((intptr_t)key);
+    unsigned int addr = (unsigned int)(cast_from_oop<intptr_t>(key));
 #ifdef _LP64
     return (addr >> 3) % size;
 #else

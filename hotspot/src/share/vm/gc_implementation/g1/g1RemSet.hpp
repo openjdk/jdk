@@ -145,7 +145,7 @@ public:
   virtual void print_summary_info();
 
   // Print accumulated summary info from the last time called.
-  virtual void print_periodic_summary_info();
+  virtual void print_periodic_summary_info(const char* header);
 
   // Prepare remembered set for verification.
   virtual void prepare_for_verify();
