@@ -35,8 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.Utils;
 
@@ -62,20 +63,20 @@ public final class OrderResourcesPlugin implements Plugin {
     }
 
     static class SortWrapper {
-        private final ModuleEntry resource;
+        private final ResourcePoolEntry resource;
         private final int ordinal;
 
-        SortWrapper(ModuleEntry resource, int ordinal) {
+        SortWrapper(ResourcePoolEntry resource, int ordinal) {
             this.resource = resource;
             this.ordinal = ordinal;
         }
 
-        ModuleEntry getResource() {
+        ResourcePoolEntry getResource() {
             return resource;
         }
 
         String getPath() {
-            return resource.getPath();
+            return resource.path();
         }
 
         int getOrdinal() {
@@ -95,8 +96,8 @@ public final class OrderResourcesPlugin implements Plugin {
         return path;
     }
 
-    private int getOrdinal(ModuleEntry resource) {
-        String path = resource.getPath();
+    private int getOrdinal(ResourcePoolEntry resource) {
+        String path = resource.path();
 
         Integer value = orderedPaths.get(stripModule(path));
 
@@ -126,17 +127,19 @@ public final class OrderResourcesPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.entries()
-                .filter(resource -> resource.getType()
-                        .equals(ModuleEntry.Type.CLASS_OR_RESOURCE))
+                .filter(resource -> resource.type()
+                        .equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE))
                 .map((resource) -> new SortWrapper(resource, getOrdinal(resource)))
                 .sorted(OrderResourcesPlugin::compare)
                 .forEach((wrapper) -> out.add(wrapper.getResource()));
         in.entries()
-                .filter(other -> !other.getType()
-                        .equals(ModuleEntry.Type.CLASS_OR_RESOURCE))
+                .filter(other -> !other.type()
+                        .equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE))
                 .forEach((other) -> out.add(other));
+
+        return out.build();
     }
 
     @Override

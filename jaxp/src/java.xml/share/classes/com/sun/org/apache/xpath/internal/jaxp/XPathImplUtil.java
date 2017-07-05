@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.org.apache.xpath.internal.jaxp;
 
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
@@ -42,6 +41,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathNodes;
 import javax.xml.xpath.XPathVariableResolver;
+import jdk.xml.internal.JdkXmlFeatures;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.traversal.NodeIterator;
@@ -61,7 +61,7 @@ class XPathImplUtil {
     // Secure Processing Feature is set on XPathFactory then the invocation of
     // extensions function need to throw XPathFunctionException
     boolean featureSecureProcessing = false;
-    FeatureManager featureManager;
+    JdkXmlFeatures featureManager;
 
     /**
      * Evaluate an XPath context using the internal XPath engine

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,16 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XslElement.java,v 1.2.4.1 2005/09/12 11:39:55 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
-import com.sun.org.apache.bcel.internal.generic.ICONST;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
@@ -59,14 +55,6 @@ final class XslElement extends Instruction {
         indent(indent);
         Util.println("Element " + _name);
         displayContents(indent + IndentIncrement);
-    }
-
-    /**
-     * This method is now deprecated. The new implemation of this class
-     * never declares the default NS.
-     */
-    public boolean declaresDefaultNS() {
-        return false;
     }
 
     public void parseContents(Parser parser) {
@@ -211,7 +199,6 @@ final class XslElement extends Instruction {
      * on the handler (vii) evaluates the contents (viii) calls endElement().
      */
     public void translate(ClassGenerator classGen, MethodGenerator methodGen) {
-        LocalVariableGen local = null;
         final ConstantPoolGen cpg = classGen.getConstantPool();
         final InstructionList il = methodGen.getInstructionList();
 

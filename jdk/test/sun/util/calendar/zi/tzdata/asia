@@ -169,7 +169,7 @@ Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
 			3:00	-	BAKT	1957 Mar    # Baku Time
 			4:00 RussiaAsia BAK%sT	1991 Mar 31  2:00s
 			3:00	1:00	BAKST	1991 Aug 30 # independence
-			3:00 RussiaAsia	AZ%sT	1992 Sep lastSat 23:00
+			3:00 RussiaAsia	AZ%sT	1992 Sep lastSun  2:00s
 			4:00	-	AZT	1996     # Azerbaijan Time
 			4:00	EUAsia	AZ%sT	1997
 			4:00	Azer	AZ%sT

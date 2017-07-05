@@ -928,7 +928,24 @@ public final class DateTimeFormatterBuilder {
      * second if non-zero, no colon
      * <li>{@code +HH:mm:ss} - hour, with minute if non-zero or with minute and
      * second if non-zero, with colon
+     * <li>{@code +H} - hour only, ignoring minute and second
+     * <li>{@code +Hmm} - hour, with minute if non-zero, ignoring second, no colon
+     * <li>{@code +H:mm} - hour, with minute if non-zero, ignoring second, with colon
+     * <li>{@code +HMM} - hour and minute, ignoring second, no colon
+     * <li>{@code +H:MM} - hour and minute, ignoring second, with colon
+     * <li>{@code +HMMss} - hour and minute, with second if non-zero, no colon
+     * <li>{@code +H:MM:ss} - hour and minute, with second if non-zero, with colon
+     * <li>{@code +HMMSS} - hour, minute and second, no colon
+     * <li>{@code +H:MM:SS} - hour, minute and second, with colon
+     * <li>{@code +Hmmss} - hour, with minute if non-zero or with minute and
+     * second if non-zero, no colon
+     * <li>{@code +H:mm:ss} - hour, with minute if non-zero or with minute and
+     * second if non-zero, with colon
      * </ul>
+     * Patterns containing "HH" will format and parse a two digit hour,
+     * zero-padded if necessary. Patterns containing "H" will format with no
+     * zero-padding, and parse either one or two digits.
+     * In lenient mode, the parser will be greedy and parse the maximum digits possible.
      * The "no offset" text controls what text is printed when the total amount of
      * the offset fields to be output is zero.
      * Example values would be 'Z', '+00:00', 'UTC' or 'GMT'.
@@ -3475,13 +3492,15 @@ public final class DateTimeFormatterBuilder {
      */
     static final class OffsetIdPrinterParser implements DateTimePrinterParser {
         static final String[] PATTERNS = new String[] {
-            "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss", "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS", "+HHmmss", "+HH:mm:ss",
+                "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss", "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS", "+HHmmss", "+HH:mm:ss",
+                "+H",  "+Hmm",  "+H:mm",  "+HMM",  "+H:MM",  "+HMMss",  "+H:MM:ss",  "+HMMSS",  "+H:MM:SS",  "+Hmmss",  "+H:mm:ss",
         };  // order used in pattern builder
         static final OffsetIdPrinterParser INSTANCE_ID_Z = new OffsetIdPrinterParser("+HH:MM:ss", "Z");
         static final OffsetIdPrinterParser INSTANCE_ID_ZERO = new OffsetIdPrinterParser("+HH:MM:ss", "0");
 
         private final String noOffsetText;
         private final int type;
+        private final int style;
 
         /**
          * Constructor.
@@ -3493,6 +3512,7 @@ public final class DateTimeFormatterBuilder {
             Objects.requireNonNull(pattern, "pattern");
             Objects.requireNonNull(noOffsetText, "noOffsetText");
             this.type = checkPattern(pattern);
+            this.style = type % 11;
             this.noOffsetText = noOffsetText;
         }
 
@@ -3503,6 +3523,14 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             throw new IllegalArgumentException("Invalid zone offset pattern: " + pattern);
+        }
+
+        private boolean isPaddedHour() {
+            return type < 11;
+        }
+
+        private boolean isColon() {
+            return style > 0 && (style % 2) == 0;
         }
 
         @Override
@@ -3520,15 +3548,17 @@ public final class DateTimeFormatterBuilder {
                 int absSeconds = Math.abs(totalSecs % 60);
                 int bufPos = buf.length();
                 int output = absHours;
-                buf.append(totalSecs < 0 ? "-" : "+")
-                    .append((char) (absHours / 10 + '0')).append((char) (absHours % 10 + '0'));
-                if ((type >= 3 && type < 9) || (type >= 9 && absSeconds > 0) || (type >= 1 && absMinutes > 0)) {
-                    buf.append((type % 2) == 0 ? ":" : "")
-                        .append((char) (absMinutes / 10 + '0')).append((char) (absMinutes % 10 + '0'));
+                buf.append(totalSecs < 0 ? "-" : "+");
+                if (isPaddedHour() || absHours >= 10) {
+                    formatZeroPad(false, absHours, buf);
+                } else {
+                    buf.append((char) (absHours + '0'));
+                }
+                if ((style >= 3 && style <= 8) || (style >= 9 && absSeconds > 0) || (style >= 1 && absMinutes > 0)) {
+                    formatZeroPad(isColon(), absMinutes, buf);
                     output += absMinutes;
-                    if (type == 7  || type == 8 || (type >= 5 && absSeconds > 0)) {
-                        buf.append((type % 2) == 0 ? ":" : "")
-                            .append((char) (absSeconds / 10 + '0')).append((char) (absSeconds % 10 + '0'));
+                    if (style == 7 || style == 8 || (style >= 5 && absSeconds > 0)) {
+                        formatZeroPad(isColon(), absSeconds, buf);
                         output += absSeconds;
                     }
                 }
@@ -3540,19 +3570,16 @@ public final class DateTimeFormatterBuilder {
             return true;
         }
 
+        private void formatZeroPad(boolean colon, int value, StringBuilder buf) {
+            buf.append(colon ? ":" : "")
+                    .append((char) (value / 10 + '0'))
+                    .append((char) (value % 10 + '0'));
+        }
+
         @Override
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             int length = text.length();
             int noOffsetLen = noOffsetText.length();
-            int parseType = type;
-            if (context.isStrict() == false) {
-                if ((parseType > 0 && (parseType % 2) == 0) ||
-                    (parseType == 0 && length > position + 3 && text.charAt(position + 3) == ':')) {
-                    parseType = 10;
-                } else {
-                    parseType = 9;
-                }
-            }
             if (noOffsetLen == 0) {
                 if (position == length) {
                     return context.setParsedField(OFFSET_SECONDS, 0, position, position);
@@ -3571,12 +3598,87 @@ public final class DateTimeFormatterBuilder {
             if (sign == '+' || sign == '-') {
                 // starts
                 int negative = (sign == '-' ? -1 : 1);
+                boolean isColon = isColon();
+                boolean paddedHour = isPaddedHour();
                 int[] array = new int[4];
                 array[0] = position + 1;
-                if ((parseNumber(array, 1, text, true, parseType) ||
-                        parseNumber(array, 2, text, parseType >= 3 && parseType < 9, parseType) ||
-                        parseNumber(array, 3, text, parseType == 7 || parseType == 8, parseType)) == false) {
-                    // success
+                int parseType = type;
+                // select parse type when lenient
+                if (!context.isStrict()) {
+                    if (paddedHour) {
+                        if (isColon || (parseType == 0 && length > position + 3 && text.charAt(position + 3) == ':')) {
+                            isColon = true; // needed in cases like ("+HH", "+01:01")
+                            parseType = 10;
+                        } else {
+                            parseType = 9;
+                        }
+                    } else {
+                        if (isColon || (parseType == 11 && length > position + 3 && (text.charAt(position + 2) == ':' || text.charAt(position + 3) == ':'))) {
+                            isColon = true;
+                            parseType = 21;  // needed in cases like ("+H", "+1:01")
+                        } else {
+                            parseType = 20;
+                        }
+                    }
+                }
+                // parse according to the selected pattern
+                switch (parseType) {
+                    case 0: // +HH
+                    case 11: // +H
+                        parseHour(text, paddedHour, array);
+                        break;
+                    case 1: // +HHmm
+                    case 2: // +HH:mm
+                    case 13: // +H:mm
+                        parseHour(text, paddedHour, array);
+                        parseMinute(text, isColon, false, array);
+                        break;
+                    case 3: // +HHMM
+                    case 4: // +HH:MM
+                    case 15: // +H:MM
+                        parseHour(text, paddedHour, array);
+                        parseMinute(text, isColon, true, array);
+                        break;
+                    case 5: // +HHMMss
+                    case 6: // +HH:MM:ss
+                    case 17: // +H:MM:ss
+                        parseHour(text, paddedHour, array);
+                        parseMinute(text, isColon, true, array);
+                        parseSecond(text, isColon, false, array);
+                        break;
+                    case 7: // +HHMMSS
+                    case 8: // +HH:MM:SS
+                    case 19: // +H:MM:SS
+                        parseHour(text, paddedHour, array);
+                        parseMinute(text, isColon, true, array);
+                        parseSecond(text, isColon, true, array);
+                        break;
+                    case 9: // +HHmmss
+                    case 10: // +HH:mm:ss
+                    case 21: // +H:mm:ss
+                        parseHour(text, paddedHour, array);
+                        parseOptionalMinuteSecond(text, isColon, array);
+                        break;
+                    case 12: // +Hmm
+                        parseVariableWidthDigits(text, 1, 4, array);
+                        break;
+                    case 14: // +HMM
+                        parseVariableWidthDigits(text, 3, 4, array);
+                        break;
+                    case 16: // +HMMss
+                        parseVariableWidthDigits(text, 3, 6, array);
+                        break;
+                    case 18: // +HMMSS
+                        parseVariableWidthDigits(text, 5, 6, array);
+                        break;
+                    case 20: // +Hmmss
+                        parseVariableWidthDigits(text, 1, 6, array);
+                        break;
+                }
+                if (array[0] > 0) {
+                    if (array[1] > 23 || array[2] > 59 || array[3] > 59) {
+                        throw new DateTimeException("Value out of range: Hour[0-23], Minute[0-59], Second[0-59]");
+                    }
                     long offsetSecs = negative * (array[1] * 3600L + array[2] * 60L + array[3]);
                     return context.setParsedField(OFFSET_SECONDS, offsetSecs, position, array[0]);
                 }
@@ -3588,42 +3690,118 @@ public final class DateTimeFormatterBuilder {
             return ~position;
         }
 
-        /**
-         * Parse a two digit zero-prefixed number.
-         *
-         * @param array  the array of parsed data, 0=pos,1=hours,2=mins,3=secs, not null
-         * @param arrayIndex  the index to parse the value into
-         * @param parseText  the offset ID, not null
-         * @param required  whether this number is required
-         * @param parseType the offset pattern type
-         * @return true if an error occurred
-         */
-        private boolean parseNumber(int[] array, int arrayIndex, CharSequence parseText, boolean required, int parseType) {
-            if ((parseType + 3) / 2 < arrayIndex) {
-                return false;  // ignore seconds/minutes
+        private void parseHour(CharSequence parseText, boolean paddedHour, int[] array) {
+            if (paddedHour) {
+                // parse two digits
+                if (!parseDigits(parseText, false, 1, array)) {
+                    array[0] = ~array[0];
+                }
+            } else {
+                // parse one or two digits
+                parseVariableWidthDigits(parseText, 1, 2, array);
             }
+        }
+
+        private void parseMinute(CharSequence parseText, boolean isColon, boolean mandatory, int[] array) {
+            if (!parseDigits(parseText, isColon, 2, array)) {
+                if (mandatory) {
+                    array[0] = ~array[0];
+                }
+            }
+        }
+
+        private void parseSecond(CharSequence parseText, boolean isColon, boolean mandatory, int[] array) {
+            if (!parseDigits(parseText, isColon, 3, array)) {
+                if (mandatory) {
+                    array[0] = ~array[0];
+                }
+            }
+        }
+
+        private void parseOptionalMinuteSecond(CharSequence parseText, boolean isColon, int[] array) {
+            if (parseDigits(parseText, isColon, 2, array)) {
+                parseDigits(parseText, isColon, 3, array);
+            }
+        }
+
+        private boolean parseDigits(CharSequence parseText, boolean isColon, int arrayIndex, int[] array) {
             int pos = array[0];
-            if ((parseType % 2) == 0 && arrayIndex > 1) {
+            if (pos < 0) {
+                return true;
+            }
+            if (isColon && arrayIndex != 1) { //  ':' will precede only in case of minute/second
                 if (pos + 1 > parseText.length() || parseText.charAt(pos) != ':') {
-                    return required;
+                    return false;
                 }
                 pos++;
             }
             if (pos + 2 > parseText.length()) {
-                return required;
+                return false;
             }
             char ch1 = parseText.charAt(pos++);
             char ch2 = parseText.charAt(pos++);
             if (ch1 < '0' || ch1 > '9' || ch2 < '0' || ch2 > '9') {
-                return required;
+                return false;
             }
             int value = (ch1 - 48) * 10 + (ch2 - 48);
             if (value < 0 || value > 59) {
-                return required;
+                return false;
             }
             array[arrayIndex] = value;
             array[0] = pos;
-            return false;
+            return true;
+        }
+
+        private void parseVariableWidthDigits(CharSequence parseText, int minDigits, int maxDigits, int[] array) {
+            // scan the text to find the available number of digits up to maxDigits
+            // so long as the number available is minDigits or more, the input is valid
+            // then parse the number of available digits
+            int pos = array[0];
+            int available = 0;
+            char[] chars = new char[maxDigits];
+            for (int i = 0; i < maxDigits; i++) {
+                if (pos + 1  > parseText.length()) {
+                    break;
+                }
+                char ch = parseText.charAt(pos++);
+                if (ch < '0' || ch > '9') {
+                    pos--;
+                    break;
+                }
+                chars[i] = ch;
+                available++;
+            }
+            if (available < minDigits) {
+                array[0] = ~array[0];
+                return;
+            }
+            switch (available) {
+                case 1:
+                    array[1] = (chars[0] - 48);
+                    break;
+                case 2:
+                    array[1] = ((chars[0] - 48) * 10 + (chars[1] - 48));
+                    break;
+                case 3:
+                    array[1] = (chars[0] - 48);
+                    array[2] = ((chars[1] - 48) * 10 + (chars[2] - 48));
+                    break;
+                case 4:
+                    array[1] = ((chars[0] - 48) * 10 + (chars[1] - 48));
+                    array[2] = ((chars[2] - 48) * 10 + (chars[3] - 48));
+                    break;
+                case 5:
+                    array[1] = (chars[0] - 48);
+                    array[2] = ((chars[1] - 48) * 10 + (chars[2] - 48));
+                    array[3] = ((chars[3] - 48) * 10 + (chars[4] - 48));
+                    break;
+                case 6:
+                    array[1] = ((chars[0] - 48) * 10 + (chars[1] - 48));
+                    array[2] = ((chars[2] - 48) * 10 + (chars[3] - 48));
+                    array[3] = ((chars[4] - 48) * 10 + (chars[5] - 48));
+                    break;
+            }
+            array[0] = pos;
         }
 
         @Override

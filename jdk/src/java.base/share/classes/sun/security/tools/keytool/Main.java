@@ -129,6 +129,7 @@ public final class Main {
     private Set<Pair <String, String>> providerClasses = null;
     private String storetype = null;
     private boolean hasStoretypeOption = false;
+    private boolean hasSrcStoretypeOption = false;
     private String srcProviderName = null;
     private String providerName = null;
     private String pathlist = null;
@@ -492,7 +493,7 @@ public final class Main {
                 passwords.add(srcstorePass);
             } else if (collator.compare(flags, "-srcstoretype") == 0) {
                 srcstoretype = args[++i];
-                hasStoretypeOption = true;
+                hasSrcStoretypeOption = true;
             } else if (collator.compare(flags, "-srckeypass") == 0) {
                 srckeyPass = getPass(modifier, args[++i]);
                 passwords.add(srckeyPass);
@@ -1936,7 +1937,7 @@ public final class Main {
         try {
             // Probe for keystore type when filename is available
             if (srcksfile != null && is != null && srcProviderName == null &&
-                hasStoretypeOption == false) {
+                hasSrcStoretypeOption == false) {
                 store = KeyStore.getInstance(srcksfile, srcstorePass);
             } else {
                 if (srcProviderName == null) {

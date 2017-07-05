@@ -42,13 +42,15 @@ import java.util.stream.Collectors;
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
+import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public class PrevisitorTest {
 
@@ -67,13 +69,13 @@ public class PrevisitorTest {
         plugins.add(createPlugin(CustomPlugin.NAME));
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(new Jlink.PluginsConfiguration(plugins,
                 null, null));
-        ModulePoolImpl inResources = new ModulePoolImpl(ByteOrder.nativeOrder(), new CustomStringTable());
-        inResources.add(ModuleEntry.create("/aaa/bbb/res1.class", new byte[90]));
-        inResources.add(ModuleEntry.create("/aaa/bbb/res2.class", new byte[90]));
-        inResources.add(ModuleEntry.create("/aaa/bbb/res3.class", new byte[90]));
-        inResources.add(ModuleEntry.create("/aaa/ddd/res1.class", new byte[90]));
-        inResources.add(ModuleEntry.create("/aaa/res1.class", new byte[90]));
-        ModulePool outResources = stack.visitResources(inResources);
+        ResourcePoolManager inResources = new ResourcePoolManager(ByteOrder.nativeOrder(), new CustomStringTable());
+        inResources.add(ResourcePoolEntry.create("/aaa/bbb/res1.class", new byte[90]));
+        inResources.add(ResourcePoolEntry.create("/aaa/bbb/res2.class", new byte[90]));
+        inResources.add(ResourcePoolEntry.create("/aaa/bbb/res3.class", new byte[90]));
+        inResources.add(ResourcePoolEntry.create("/aaa/ddd/res1.class", new byte[90]));
+        inResources.add(ResourcePoolEntry.create("/aaa/res1.class", new byte[90]));
+        ResourcePool outResources = stack.visitResources(inResources);
         Collection<String> input = inResources.entries()
                 .map(Object::toString)
                 .collect(Collectors.toList());
@@ -113,19 +115,18 @@ public class PrevisitorTest {
         private boolean isPrevisitCalled = false;
 
         @Override
-        public void visit(ModulePool inResources, ModulePool outResources) {
+        public ResourcePool transform(ResourcePool inResources, ResourcePoolBuilder outResources) {
             if (!isPrevisitCalled) {
                 throw new AssertionError("Previsit was not called");
             }
-            CustomStringTable table = (CustomStringTable)
-                    ((ModulePoolImpl) inResources).getStringTable();
+            CustomStringTable table = (CustomStringTable)((ResourcePoolImpl)inResources).getStringTable();
             if (table.size() == 0) {
                 throw new AssertionError("Table is empty");
             }
             Map<String, Integer> count = new HashMap<>();
             for (int i = 0; i < table.size(); ++i) {
                 String s = table.getString(i);
-                Optional<ModuleEntry> e = inResources.findEntry(s);
+                Optional<ResourcePoolEntry> e = inResources.findEntry(s);
                 if (e.isPresent()) {
                     throw new AssertionError();
                 }
@@ -139,6 +140,8 @@ public class PrevisitorTest {
             inResources.entries().forEach(r -> {
                 outResources.add(r);
             });
+
+            return outResources.build();
         }
 
         @Override
@@ -147,10 +150,10 @@ public class PrevisitorTest {
         }
 
         @Override
-        public void previsit(ModulePool resources, StringTable strings) {
+        public void previsit(ResourcePool resources, StringTable strings) {
             isPrevisitCalled = true;
             resources.entries().forEach(r -> {
-                String s = r.getPath();
+                String s = r.path();
                 int lastIndexOf = s.lastIndexOf('/');
                 if (lastIndexOf >= 0) {
                     strings.addString(s.substring(0, lastIndexOf));

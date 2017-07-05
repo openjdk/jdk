@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 - (id)initWithParent:(NSObject*)parent withEnv:(JNIEnv *)env withAccessible:(jobject)accessible withIndex:(jint)index withView:(NSView *)view withJavaRole:(NSString *)javaRole;
 - (void)unregisterFromCocoaAXSystem;
 - (void)postValueChanged;
+- (void)postSelectedTextChanged;
 - (void)postSelectionChanged;
 - (BOOL)isEqual:(id)anObject;
 - (BOOL)isAccessibleWithEnv:(JNIEnv *)env forAccessible:(jobject)accessible;
@@ -71,6 +72,7 @@
 - (NSString *)javaRole;
 - (BOOL)isMenu;
 - (BOOL)isSelected:(JNIEnv *)env;
+- (BOOL)isSelectable:(JNIEnv *)env;
 - (BOOL)isVisible:(JNIEnv *)env;
 
 // attribute names
@@ -85,6 +87,8 @@
 - (NSArray *)accessibilityChildrenAttribute;
 - (BOOL)accessibilityIsChildrenAttributeSettable;
 - (NSUInteger)accessibilityIndexOfChild:(id)child;
+- (NSArray *)accessibilityArrayAttributeValues:(NSString *)attribute
+    index:(NSUInteger)index maxCount:(NSUInteger)maxCount;
 - (NSNumber *)accessibilityEnabledAttribute;
 - (BOOL)accessibilityIsEnabledAttributeSettable;
 - (NSNumber *)accessibilityFocusedAttribute;
@@ -92,6 +96,8 @@
 - (void)accessibilitySetFocusedAttribute:(id)value;
 - (NSString *)accessibilityHelpAttribute;
 - (BOOL)accessibilityIsHelpAttributeSettable;
+- (NSValue *)accessibilityIndexAttribute;
+- (BOOL)accessibilityIsIndexAttributeSettable;
 - (id)accessibilityMaxValueAttribute;
 - (BOOL)accessibilityIsMaxValueAttributeSettable;
 - (id)accessibilityMinValueAttribute;
@@ -108,6 +114,9 @@
 - (BOOL)accessibilityIsRoleDescriptionAttributeSettable;
 - (NSArray *)accessibilitySelectedChildrenAttribute;
 - (BOOL)accessibilityIsSelectedChildrenAttributeSettable;
+- (NSNumber *)accessibilitySelectedAttribute;
+- (BOOL)accessibilityIsSelectedAttributeSettable;
+- (void)accessibilitySetSelectedAttribute:(id)value;
 - (NSValue *)accessibilitySizeAttribute;
 - (BOOL)accessibilityIsSizeAttributeSettable;
 - (NSString *)accessibilitySubroleAttribute;

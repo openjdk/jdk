@@ -43,11 +43,10 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Provider.Service;
 import java.security.Security;
 import java.util.List;
 
-import sun.security.jca.*;
-import sun.security.jca.GetInstance.Instance;
 
 /**
  * A factory for creating {@link XMLSignature} objects from scratch or
@@ -198,17 +197,26 @@ public abstract class XMLSignatureFactory {
         if (mechanismType == null) {
             throw new NullPointerException("mechanismType cannot be null");
         }
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("XMLSignatureFactory", null, mechanismType);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Provider[] provs = Security.getProviders();
+        for (Provider p : provs) {
+            Service s = p.getService("XMLSignatureFactory", mechanismType);
+            if (s != null) {
+                Object obj = null;
+                try {
+                    obj = s.newInstance(null);
+                } catch (NoSuchAlgorithmException nsae) {
+                    throw new NoSuchMechanismException(nsae);
+                }
+                if (obj instanceof XMLSignatureFactory) {
+                    XMLSignatureFactory factory = (XMLSignatureFactory) obj;
+                    factory.mechanismType = mechanismType;
+                    factory.provider = p;
+                    return factory;
+                }
+            }
         }
-        XMLSignatureFactory factory = (XMLSignatureFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available");
     }
 
     /**
@@ -240,17 +248,25 @@ public abstract class XMLSignatureFactory {
             throw new NullPointerException("provider cannot be null");
         }
 
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("XMLSignatureFactory", null, mechanismType, provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Service s = provider.getService("XMLSignatureFactory", mechanismType);
+        if (s != null) {
+            Object obj = null;
+            try {
+                obj = s.newInstance(null);
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new NoSuchMechanismException(nsae);
+            }
+
+            if (obj instanceof XMLSignatureFactory) {
+                XMLSignatureFactory factory = (XMLSignatureFactory) obj;
+                factory.mechanismType = mechanismType;
+                factory.provider = provider;
+                return factory;
+            }
         }
-        XMLSignatureFactory factory = (XMLSignatureFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available from " +
+             provider.getName());
     }
 
     /**
@@ -288,17 +304,24 @@ public abstract class XMLSignatureFactory {
             throw new NoSuchProviderException();
         }
 
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("XMLSignatureFactory", null, mechanismType, provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Provider p = Security.getProvider(provider);
+        Service s = p.getService("XMLSignatureFactory", mechanismType);
+        if (s != null) {
+            Object obj = null;
+            try {
+                obj = s.newInstance(null);
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new NoSuchMechanismException(nsae);
+            }
+            if (obj instanceof XMLSignatureFactory) {
+                XMLSignatureFactory factory = (XMLSignatureFactory) obj;
+                factory.mechanismType = mechanismType;
+                factory.provider = p;
+                return factory;
+            }
         }
-        XMLSignatureFactory factory = (XMLSignatureFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available from " + provider);
     }
 
     /**

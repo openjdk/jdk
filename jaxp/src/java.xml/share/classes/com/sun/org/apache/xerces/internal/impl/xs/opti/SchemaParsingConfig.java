@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,7 +39,6 @@ import com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter;
 import com.sun.org.apache.xerces.internal.parsers.BasicParserConfiguration;
 import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
-import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.xni.XMLLocator;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -51,6 +50,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
+import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * @xerces.internal
@@ -301,7 +303,8 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             PARSER_SETTINGS, WARN_ON_DUPLICATE_ATTDEF,   WARN_ON_UNDECLARED_ELEMDEF,
             ALLOW_JAVA_ENCODINGS,       CONTINUE_AFTER_FATAL_ERROR,
             LOAD_EXTERNAL_DTD,          NOTIFY_BUILTIN_REFS,
-            NOTIFY_CHAR_REFS, GENERATE_SYNTHETIC_ANNOTATIONS
+            NOTIFY_CHAR_REFS, GENERATE_SYNTHETIC_ANNOTATIONS,
+            XMLConstants.USE_CATALOG
         };
         addRecognizedFeatures(recognizedFeatures);
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
@@ -315,6 +318,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
         fFeatures.put(NOTIFY_BUILTIN_REFS, Boolean.FALSE);
         fFeatures.put(NOTIFY_CHAR_REFS, Boolean.FALSE);
         fFeatures.put(GENERATE_SYNTHETIC_ANNOTATIONS, Boolean.FALSE);
+        fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {
@@ -328,7 +332,11 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             DATATYPE_VALIDATOR_FACTORY,
             VALIDATION_MANAGER,
             GENERATE_SYNTHETIC_ANNOTATIONS,
-            LOCALE
+            LOCALE,
+            JdkXmlUtils.CATALOG_DEFER,
+            JdkXmlUtils.CATALOG_FILES,
+            JdkXmlUtils.CATALOG_PREFER,
+            JdkXmlUtils.CATALOG_RESOLVE
         };
         addRecognizedProperties(recognizedProperties);
 
