@@ -333,7 +333,7 @@ class XPathFactoryFinder  {
                 providerClass.getDeclaredMethod(
                     "newXPathFactoryNoServiceLoader"
                 );
-                return creationMethod.invoke(null, null);
+                return creationMethod.invoke(null, (Object[])null);
             } catch (NoSuchMethodException exc) {
                 return null;
             } catch (Exception exc) {

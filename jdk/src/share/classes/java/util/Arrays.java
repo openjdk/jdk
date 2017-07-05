@@ -26,6 +26,7 @@
 package java.util;
 
 import java.lang.reflect.*;
+import static java.util.ArraysParallelSortHelpers.*;
 
 /**
  * This class contains various methods for manipulating arrays (such as
@@ -53,6 +54,13 @@ import java.lang.reflect.*;
  * @since  1.2
  */
 public class Arrays {
+
+    /**
+     * The minimum array length below which the sorting algorithm will not
+     * further partition the sorting task.
+     */
+    // reasonable default so that we don't overcreate tasks
+    private static final int MIN_ARRAY_SORT_GRAN = 256;
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}
@@ -787,6 +795,613 @@ public class Arrays {
         }
     }
 
+    /*
+     * Parallel sorting of primitive type arrays.
+     */
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(byte[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(byte[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(byte[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(byte[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJByte.Sorter task = new FJByte.Sorter(a, new byte[a.length], fromIndex,
+                                               nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(char[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(char[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(char[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(char[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJChar.Sorter task = new FJChar.Sorter(a, new char[a.length], fromIndex,
+                                               nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(short[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(short[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(short[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(short[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJShort.Sorter task = new FJShort.Sorter(a, new short[a.length], fromIndex,
+                                                 nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(int[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(int[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(int[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(int[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJInt.Sorter task = new FJInt.Sorter(a, new int[a.length], fromIndex,
+                                             nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(long[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(long[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(long[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(long[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJLong.Sorter task = new FJLong.Sorter(a, new long[a.length], fromIndex,
+                                               nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on all float
+     * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Float#compareTo}: {@code -0.0f} is treated as less than value
+     * {@code 0.0f} and {@code Float.NaN} is considered greater than any
+     * other value and all {@code Float.NaN} values are considered equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(float[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(float[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on all float
+     * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Float#compareTo}: {@code -0.0f} is treated as less than value
+     * {@code 0.0f} and {@code Float.NaN} is considered greater than any
+     * other value and all {@code Float.NaN} values are considered equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(float[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(float[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJFloat.Sorter task = new FJFloat.Sorter(a, new float[a.length], fromIndex,
+                                                 nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on all double
+     * values: {@code -0.0d == 0.0d} is {@code true} and a {@code Double.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Double#compareTo}: {@code -0.0d} is treated as less than value
+     * {@code 0.0d} and {@code Double.NaN} is considered greater than any
+     * other value and all {@code Double.NaN} values are considered equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(double[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(double[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on all double
+     * values: {@code -0.0d == 0.0d} is {@code true} and a {@code Double.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Double#compareTo}: {@code -0.0d} is treated as less than value
+     * {@code 0.0d} and {@code Double.NaN} is considered greater than any
+     * other value and all {@code Double.NaN} values are considered equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(double[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     *
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     *
+     * @since 1.8
+     */
+    public static void parallelSort(double[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        int gran = getSplitThreshold(nelements);
+        FJDouble.Sorter task = new FJDouble.Sorter(a, new double[a.length],
+                                                   fromIndex, nelements, gran);
+        task.invoke();
+    }
+
+    /*
+     * Parallel sorting of complex type arrays.
+     */
+
+    /**
+     * Sorts the specified array of objects into ascending order, according
+     * to the {@linkplain Comparable natural ordering} of its elements.
+     * All elements in the array must implement the {@link Comparable}
+     * interface.  Furthermore, all elements in the array must be
+     * <i>mutually comparable</i> (that is, {@code e1.compareTo(e2)} must
+     * not throw a {@code ClassCastException} for any elements {@code e1}
+     * and {@code e2} in the array).
+     *
+     * <p>This sort is not guaranteed to be <i>stable</i>:  equal elements
+     * may be reordered as a result of the sort.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(Object[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     *
+     * @throws ClassCastException if the array contains elements that are not
+     *         <i>mutually comparable</i> (for example, strings and integers)
+     * @throws IllegalArgumentException (optional) if the natural
+     *         ordering of the array elements is found to violate the
+     *         {@link Comparable} contract
+     *
+     * @since 1.8
+     */
+    public static <T extends Comparable<? super T>> void parallelSort(T[] a) {
+        parallelSort(a, 0, a.length);
+    }
+
+    /**
+     * Sorts the specified range of the specified array of objects into
+     * ascending order, according to the
+     * {@linkplain Comparable natural ordering} of its
+     * elements.  The range to be sorted extends from index
+     * {@code fromIndex}, inclusive, to index {@code toIndex}, exclusive.
+     * (If {@code fromIndex==toIndex}, the range to be sorted is empty.)  All
+     * elements in this range must implement the {@link Comparable}
+     * interface.  Furthermore, all elements in this range must be <i>mutually
+     * comparable</i> (that is, {@code e1.compareTo(e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and
+     * {@code e2} in the array).
+     *
+     * <p>This sort is not guaranteed to be <i>stable</i>:  equal elements
+     * may be reordered as a result of the sort.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(Object[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element (inclusive) to be
+     *        sorted
+     * @param toIndex the index of the last element (exclusive) to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex} or
+     *         (optional) if the natural ordering of the array elements is
+     *         found to violate the {@link Comparable} contract
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
+     * @throws ClassCastException if the array contains elements that are
+     *         not <i>mutually comparable</i> (for example, strings and
+     *         integers).
+     *
+     * @since 1.8
+     */
+    public static <T extends Comparable<? super T>>
+            void parallelSort(T[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        Class<?> tc = a.getClass().getComponentType();
+        @SuppressWarnings("unchecked")
+        T[] workspace = (T[])Array.newInstance(tc, a.length);
+        int gran = getSplitThreshold(nelements);
+        FJComparable.Sorter<T> task = new FJComparable.Sorter<>(a, workspace,
+                                                                fromIndex,
+                                                                nelements, gran);
+        task.invoke();
+    }
+
+    /**
+     * Sorts the specified array of objects according to the order induced by
+     * the specified comparator.  All elements in the array must be
+     * <i>mutually comparable</i> by the specified comparator (that is,
+     * {@code c.compare(e1, e2)} must not throw a {@code ClassCastException}
+     * for any elements {@code e1} and {@code e2} in the array).
+     *
+     * <p>This sort is not guaranteed to be <i>stable</i>:  equal elements
+     * may be reordered as a result of the sort.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(Object[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param c the comparator to determine the order of the array.  A
+     *        {@code null} value indicates that the elements'
+     *        {@linkplain Comparable natural ordering} should be used.
+     * @throws ClassCastException if the array contains elements that are
+     *         not <i>mutually comparable</i> using the specified comparator
+     * @throws IllegalArgumentException (optional) if the comparator is
+     *         found to violate the {@link java.util.Comparator} contract
+     *
+     * @since 1.8
+     */
+    public static <T> void parallelSort(T[] a, Comparator<? super T> c) {
+        parallelSort(a, 0, a.length, c);
+    }
+
+    /**
+     * Sorts the specified range of the specified array of objects according
+     * to the order induced by the specified comparator.  The range to be
+     * sorted extends from index {@code fromIndex}, inclusive, to index
+     * {@code toIndex}, exclusive.  (If {@code fromIndex==toIndex}, the
+     * range to be sorted is empty.)  All elements in the range must be
+     * <i>mutually comparable</i> by the specified comparator (that is,
+     * {@code c.compare(e1, e2)} must not throw a {@code ClassCastException}
+     * for any elements {@code e1} and {@code e2} in the range).
+     *
+     * <p>This sort is not guaranteed to be <i>stable</i>:  equal elements
+     * may be reordered as a result of the sort.
+     *
+     * <p>Implementation note: The sorting algorithm is a parallel sort-merge
+     * that breaks the array into sub-arrays that are themselves sorted and then
+     * merged. When the sub-array length reaches a minimum granularity, the
+     * sub-array is sorted using the appropriate {@link Arrays#sort(Object[])
+     * Arrays.sort} method. The algorithm requires a working space equal to the
+     * size of the original array. The {@link
+     * java.util.concurrent.ForkJoinPool#commonPool() ForkJoin common pool} is
+     * used to execute any parallel tasks.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element (inclusive) to be
+     *        sorted
+     * @param toIndex the index of the last element (exclusive) to be sorted
+     * @param c the comparator to determine the order of the array.  A
+     *        {@code null} value indicates that the elements'
+     *        {@linkplain Comparable natural ordering} should be used.
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex} or
+     *         (optional) if the natural ordering of the array elements is
+     *         found to violate the {@link Comparable} contract
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex > a.length}
+     * @throws ClassCastException if the array contains elements that are
+     *         not <i>mutually comparable</i> (for example, strings and
+     *         integers).
+     *
+     * @since 1.8
+     */
+    public static <T> void parallelSort(T[] a, int fromIndex, int toIndex,
+                                        Comparator<? super T> c) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        int nelements = toIndex - fromIndex;
+        Class<?> tc = a.getClass().getComponentType();
+        @SuppressWarnings("unchecked")
+        T[] workspace = (T[])Array.newInstance(tc, a.length);
+        int gran = getSplitThreshold(nelements);
+        FJComparator.Sorter<T> task = new FJComparator.Sorter<>(a, workspace,
+                                                                fromIndex,
+                                                                nelements, gran, c);
+        task.invoke();
+    }
+
+    /**
+     * Returns the size threshold for splitting into subtasks.
+     * By default, uses about 8 times as many tasks as threads
+     *
+     * @param n number of elements in the array to be processed
+     */
+    private static int getSplitThreshold(int n) {
+        int p = java.util.concurrent.ForkJoinPool.getCommonPoolParallelism();
+        int t = (p > 1) ? (1 + n / (p << 3)) : n;
+        return t < MIN_ARRAY_SORT_GRAN ? MIN_ARRAY_SORT_GRAN : t;
+    }
+
     /**
      * Checks that {@code fromIndex} and {@code toIndex} are in
      * the range and throws an appropriate exception, if they aren't.
@@ -1480,9 +2095,9 @@ public class Arrays {
         while (low <= high) {
             int mid = (low + high) >>> 1;
             @SuppressWarnings("rawtypes")
-                Comparable midVal = (Comparable)a[mid];
+            Comparable midVal = (Comparable)a[mid];
             @SuppressWarnings("unchecked")
-                int cmp = midVal.compareTo(key);
+            int cmp = midVal.compareTo(key);
 
             if (cmp < 0)
                 low = mid + 1;
@@ -2847,19 +3462,20 @@ public class Arrays {
         private final E[] a;
 
         ArrayList(E[] array) {
-            if (array==null)
-                throw new NullPointerException();
-            a = array;
+            a = Objects.requireNonNull(array);
         }
 
+        @Override
         public int size() {
             return a.length;
         }
 
+        @Override
         public Object[] toArray() {
             return a.clone();
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             int size = size();
@@ -2872,16 +3488,19 @@ public class Arrays {
             return a;
         }
 
+        @Override
         public E get(int index) {
             return a[index];
         }
 
+        @Override
         public E set(int index, E element) {
             E oldValue = a[index];
             a[index] = element;
             return oldValue;
         }
 
+        @Override
         public int indexOf(Object o) {
             if (o==null) {
                 for (int i=0; i<a.length; i++)
@@ -2895,6 +3514,7 @@ public class Arrays {
             return -1;
         }
 
+        @Override
         public boolean contains(Object o) {
             return indexOf(o) != -1;
         }
