@@ -157,6 +157,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_non_young_free_cset_time_ms;
 
   double _cur_fast_reclaim_humongous_time_ms;
+  double _cur_fast_reclaim_humongous_register_time_ms;
   size_t _cur_fast_reclaim_humongous_total;
   size_t _cur_fast_reclaim_humongous_candidates;
   size_t _cur_fast_reclaim_humongous_reclaimed;
@@ -283,7 +284,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_free_cset_time_ms = time_ms;
   }
 
-  void record_fast_reclaim_humongous_stats(size_t total, size_t candidates) {
+  void record_fast_reclaim_humongous_stats(double time_ms, size_t total, size_t candidates) {
+    _cur_fast_reclaim_humongous_register_time_ms = time_ms;
     _cur_fast_reclaim_humongous_total = total;
     _cur_fast_reclaim_humongous_candidates = candidates;
   }

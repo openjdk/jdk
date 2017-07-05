@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,6 @@ public class BufferedWriter extends Writer {
     private static int defaultCharBufferSize = 8192;
 
     /**
-     * Line separator string.  This is the value of the line.separator
-     * property at the moment that the stream was created.
-     */
-    private String lineSeparator;
-
-    /**
      * Creates a buffered character-output stream that uses a default-sized
      * output buffer.
      *
@@ -105,9 +99,6 @@ public class BufferedWriter extends Writer {
         cb = new char[sz];
         nChars = sz;
         nextChar = 0;
-
-        lineSeparator = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("line.separator"));
     }
 
     /** Checks to make sure that the stream has not been closed */
@@ -240,7 +231,7 @@ public class BufferedWriter extends Writer {
      * @exception  IOException  If an I/O error occurs
      */
     public void newLine() throws IOException {
-        write(lineSeparator);
+        write(System.lineSeparator());
     }
 
     /**
