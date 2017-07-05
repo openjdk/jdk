@@ -117,6 +117,8 @@ class PSPromotionManager;
 // The fields are volatile so that they are stored in the order written in the
 // source code.  The _indices field with the bytecode must be written last.
 
+class CallInfo;
+
 class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
   friend class constantPoolCacheKlass;
@@ -223,18 +225,12 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   void set_method_handle(
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
-    methodHandle method,                         // adapter for invokeExact, etc.
-    Handle appendix,                             // stored in refs[f2+0]; could be a java.lang.invoke.MethodType
-    Handle method_type,                          // stored in refs[f2+1]; is a java.lang.invoke.MethodType
-    objArrayHandle resolved_references
+    const CallInfo &call_info                    // Call link information
   );
 
   void set_dynamic_call(
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
-    methodHandle method,                         // adapter for this call site
-    Handle appendix,                             // stored in refs[f2+0]; could be a java.lang.invoke.CallSite
-    Handle method_type,                          // stored in refs[f2+1]; is a java.lang.invoke.MethodType
-    objArrayHandle resolved_references
+    const CallInfo &call_info                    // Call link information
   );
 
   // Common code for invokedynamic and MH invocations.
@@ -255,10 +251,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_method_handle_common(
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
     Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
-    methodHandle adapter,                        // invoker method (f1)
-    Handle appendix,                             // appendix such as CallSite, MethodType, etc. (refs[f2+0])
-    Handle method_type,                          // MethodType (refs[f2+1])
-    objArrayHandle resolved_references
+    const CallInfo &call_info                    // Call link information
   );
 
   // invokedynamic and invokehandle call sites have two entries in the

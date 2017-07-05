@@ -245,6 +245,10 @@ class InstanceKlass: public Klass {
   unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
   jint            _cached_class_file_len;         // JVMTI: length of above
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
+
+  // true if class, superclass, or implemented interfaces have default methods
+  bool            _has_default_methods;
+
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
   // Method array.
   Array<Method*>* _methods;
@@ -492,6 +496,13 @@ class InstanceKlass: public Klass {
   // (returns NULL if not found)
   Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature) const;
 
+  // Find method indices by name.  If a method with the specified name is
+  // found the index to the first method is returned, and 'end' is filled in
+  // with the index of first non-name-matching method.  If no method is found
+  // -1 is returned.
+  int find_method_by_name(Symbol* name, int* end);
+  static int find_method_by_name(Array<Method*>* methods, Symbol* name, int* end);
+
   // constant pool
   ConstantPool* constants() const        { return _constants; }
   void set_constants(ConstantPool* c)    { _constants = c; }
@@ -591,6 +602,9 @@ class InstanceKlass: public Klass {
   JvmtiCachedClassFieldMap* jvmti_cached_class_field_map() const {
     return _jvmti_cached_class_field_map;
   }
+
+  bool has_default_methods() const { return _has_default_methods; }
+  void set_has_default_methods(bool b) { _has_default_methods = b; }
 
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
@@ -728,7 +742,6 @@ class InstanceKlass: public Klass {
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
   bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
-  Klass* java_super() const              { return super(); }
   int oop_size(oop obj)  const             { return size_helper(); }
   bool oop_is_instance_slow() const        { return true; }
 
@@ -748,6 +761,10 @@ class InstanceKlass: public Klass {
     assert(k->is_klass(), "must be");
     assert(k->oop_is_instance(), "cast to InstanceKlass");
     return (InstanceKlass*) k;
+  }
+
+  InstanceKlass* java_super() const {
+    return (super() == NULL) ? NULL : cast(super());
   }
 
   // Sizing (in words)

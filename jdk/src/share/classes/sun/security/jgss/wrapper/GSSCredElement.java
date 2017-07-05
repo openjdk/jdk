@@ -28,6 +28,7 @@ import org.ietf.jgss.*;
 import java.security.Provider;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.spi.GSSCredentialSpi;
+import sun.security.jgss.spi.GSSNameSpi;
 
 /**
  * This class is essentially a wrapper class for the gss_cred_id_t
@@ -131,5 +132,11 @@ public class GSSCredElement implements GSSCredentialSpi {
 
     protected void finalize() throws Throwable {
         dispose();
+    }
+
+    @Override
+    public GSSCredentialSpi impersonate(GSSNameSpi name) throws GSSException {
+        throw new GSSException(GSSException.FAILURE, -1,
+                "Not supported yet");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @library ..
  */
 
+import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.net.*;
 import java.util.*;
 
 public class Connect {
@@ -37,21 +37,26 @@ public class Connect {
     private static final long INCREMENTAL_DELAY = 30L * 1000L;
 
     public static void main(String args[]) throws Exception {
-        test1(TestUtil.HOST);
+        try (TestServers.EchoServer echoServer
+                = TestServers.EchoServer.startNewServer(1000)) {
+            test1(echoServer);
+        }
         try {
-            test1(TestUtil.REFUSING_HOST);
+            TestServers.RefusingServer refusingServer
+                = TestServers.RefusingServer.startNewServer();
+            test1(refusingServer);
             throw new Exception("Refused connection throws no exception");
         } catch (ConnectException ce) {
             // Correct result
         }
     }
 
-    static void test1(String hostname) throws Exception {
+    static void test1(TestServers.AbstractServer server) throws Exception {
         Selector selector;
         SocketChannel sc;
         SelectionKey sk;
         InetSocketAddress isa = new InetSocketAddress(
-            InetAddress.getByName (hostname), 80);
+            server.getAddress(), server.getPort());
         sc = SocketChannel.open();
         sc.configureBlocking(false);
 

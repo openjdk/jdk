@@ -25,6 +25,7 @@
 
 package sun.security.jgss.krb5;
 
+import java.io.IOException;
 import org.ietf.jgss.*;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
@@ -176,5 +177,22 @@ public class Krb5AcceptCredential
      */
     public void destroy() throws DestroyFailedException {
         screds.destroy();
+    }
+
+    /**
+     * Impersonation is only available on the initiator side. The
+     * service must starts as an initiator to get an initial TGT to complete
+     * the S4U2self protocol.
+     */
+    @Override
+    public GSSCredentialSpi impersonate(GSSNameSpi name) throws GSSException {
+        Credentials cred = screds.getInitCred();
+        if (cred != null) {
+            return Krb5InitCredential.getInstance(this.name, cred)
+                    .impersonate(name);
+        } else {
+            throw new GSSException(GSSException.FAILURE, -1,
+                "Only an initiate credentials can impersonate");
+        }
     }
 }

@@ -27,7 +27,6 @@
 
 import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
 import java.util.Random;
 
@@ -36,9 +35,6 @@ public class TestUtil {
 
     // Test hosts used by the channels tests - change these when
     // executing in a different network.
-    public static final String HOST = "javaweb.sfbay.sun.com";
-    public static final String REFUSING_HOST = "jano1.sfbay.sun.com";
-    public static final String FAR_HOST = "irejano.ireland.sun.com";
     public static final String UNRESOLVABLE_HOST = "blah-blah.blah-blah.blah";
 
     private TestUtil() { }

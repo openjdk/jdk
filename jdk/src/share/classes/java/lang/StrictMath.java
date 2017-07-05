@@ -365,7 +365,7 @@ public final class StrictMath {
      * @param a the value to be floored or ceiled
      * @param negativeBoundary result for values in (-1, 0)
      * @param positiveBoundary result for values in (0, 1)
-     * @param sign the sign of the result
+     * @param increment value to add when the argument is non-integral
      */
     private static double floorOrCeil(double a,
                                       double negativeBoundary,
@@ -702,7 +702,7 @@ public final class StrictMath {
      * <p>This method is properly synchronized to allow correct use by
      * more than one thread. However, if many threads need to generate
      * pseudorandom numbers at a great rate, it may reduce contention
-     * for each thread to have its own pseudorandom number generator.
+     * for each thread to have its own pseudorandom-number generator.
      *
      * @return  a pseudorandom {@code double} greater than or equal
      * to {@code 0.0} and less than {@code 1.0}.
@@ -745,7 +745,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return the difference of the arguments,
+     * Returns the difference of the arguments,
      * throwing an exception if the result overflows an {@code int}.
      *
      * @param x the first value
@@ -760,7 +760,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return the difference of the arguments,
+     * Returns the difference of the arguments,
      * throwing an exception if the result overflows a {@code long}.
      *
      * @param x the first value
@@ -775,7 +775,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return the product of the arguments,
+     * Returns the product of the arguments,
      * throwing an exception if the result overflows an {@code int}.
      *
      * @param x the first value
@@ -790,7 +790,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return the product of the arguments,
+     * Returns the product of the arguments,
      * throwing an exception if the result overflows a {@code long}.
      *
      * @param x the first value
@@ -805,7 +805,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return the value of the {@code long} argument;
+     * Returns the value of the {@code long} argument;
      * throwing an exception if the value overflows an {@code int}.
      *
      * @param value the long value
@@ -816,6 +816,107 @@ public final class StrictMath {
      */
     public static int toIntExact(long value) {
         return Math.toIntExact(value);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * There is one special case, if the dividend is the
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to the {@code Integer.MIN_VALUE}.
+     * <p>
+     * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#floorDiv(int, int)
+     * @see Math#floor(double)
+     * @since 1.8
+     */
+    public static int floorDiv(int x, int y) {
+        return Math.floorDiv(x, y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * There is one special case, if the dividend is the
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to the {@code Long.MIN_VALUE}.
+     * <p>
+     * See {@link Math#floorDiv(int, int) Math.floorDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#floorDiv(long, long)
+     * @see Math#floor(double)
+     * @since 1.8
+     */
+    public static long floorDiv(long x, long y) {
+        return Math.floorDiv(x, y);
+    }
+
+    /**
+     * Returns the floor modulus of the {@code int} arguments.
+     * <p>
+     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y}, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     * <p>
+     * The relationship between {@code floorDiv} and {@code floorMod} is such that:
+     * <ul>
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     * </ul>
+     * <p>
+     * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the floor modulus {@code x - (floorDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#floorMod(int, int)
+     * @see StrictMath#floorDiv(int, int)
+     * @since 1.8
+     */
+    public static int floorMod(int x, int y) {
+        return Math.floorMod(x , y);
+    }
+    /**
+     * Returns the floor modulus of the {@code long} arguments.
+     * <p>
+     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y}, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     * <p>
+     * The relationship between {@code floorDiv} and {@code floorMod} is such that:
+     * <ul>
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     * </ul>
+     * <p>
+     * See {@link Math#floorMod(int, int) Math.floorMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the floor modulus {@code x - (floorDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#floorMod(long, long)
+     * @see StrictMath#floorDiv(long, long)
+     * @since 1.8
+     */
+    public static long floorMod(long x, long y) {
+        return Math.floorMod(x, y);
     }
 
     /**
@@ -1543,7 +1644,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return {@code d} &times;
+     * Returns {@code d} &times;
      * 2<sup>{@code scaleFactor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
      * member of the double value set.  See the Java
@@ -1577,7 +1678,7 @@ public final class StrictMath {
     }
 
     /**
-     * Return {@code f} &times;
+     * Returns {@code f} &times;
      * 2<sup>{@code scaleFactor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
      * member of the float value set.  See the Java

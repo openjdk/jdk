@@ -1,8 +1,8 @@
-# PropertyValueAliases-6.1.0.txt
-# Date: 2011-12-07, 23:40:57 GMT [MD]
+# PropertyValueAliases-6.2.0.txt
+# Date: 2012-08-14, 16:05:11 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2011 Unicode, Inc.
+# Copyright (c) 1991-2012 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
@@ -73,6 +73,7 @@ age; 5.1                              ; V5_1
 age; 5.2                              ; V5_2
 age; 6.0                              ; V6_0
 age; 6.1                              ; V6_1
+age; 6.2                              ; V6_2
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -382,7 +383,8 @@ ccc; 118; CCC118                     ; CCC118
 ccc; 122; CCC122                     ; CCC122
 ccc; 129; CCC129                     ; CCC129
 ccc; 130; CCC130                     ; CCC130
-ccc; 132; CCC133                     ; CCC133
+ccc; 132; CCC132                     ; CCC132
+ccc; 133; CCC133                     ; CCC133 # RESERVED
 ccc; 200; ATBL                       ; Attached_Below_Left
 ccc; 202; ATB                        ; Attached_Below
 ccc; 214; ATA                        ; Attached_Above
@@ -592,6 +594,7 @@ GCB; LF                               ; LF
 GCB; LV                               ; LV
 GCB; LVT                              ; LVT
 GCB; PP                               ; Prepend
+GCB; RI                               ; Regional_Indicator
 GCB; SM                               ; SpacingMark
 GCB; T                                ; T
 GCB; V                                ; V
@@ -862,6 +865,7 @@ lb ; OP                               ; Open_Punctuation
 lb ; PO                               ; Postfix_Numeric
 lb ; PR                               ; Prefix_Numeric
 lb ; QU                               ; Quotation
+lb ; RI                               ; Regional_Indicator
 lb ; SA                               ; Complex_Context
 lb ; SG                               ; Surrogate
 lb ; SP                               ; Space
@@ -879,10 +883,6 @@ LOE; Y                                ; Yes                              ; T    
 
 Lower; N                              ; No                               ; F                                ; False
 Lower; Y                              ; Yes                              ; T                                ; True
-
-# Lowercase_Mapping (lc)
-
-# @missing: 0000..10FFFF; Lowercase_Mapping; <code point>
 
 # Math (Math)
 
@@ -1159,10 +1159,6 @@ SD ; Y                                ; Yes                              ; T    
 Term; N                               ; No                               ; F                                ; False
 Term; Y                               ; Yes                              ; T                                ; True
 
-# Titlecase_Mapping (tc)
-
-# @missing: 0000..10FFFF; Titlecase_Mapping; <code point>
-
 # Unicode_1_Name (na1)
 
 # @missing: 0000..10FFFF; Unicode_1_Name; <none>
@@ -1176,10 +1172,6 @@ UIdeo; Y                              ; Yes                              ; T    
 
 Upper; N                              ; No                               ; F                                ; False
 Upper; Y                              ; Yes                              ; T                                ; True
-
-# Uppercase_Mapping (uc)
-
-# @missing: 0000..10FFFF; Uppercase_Mapping; <code point>
 
 # Variation_Selector (VS)
 
@@ -1205,6 +1197,7 @@ WB ; ML                               ; MidLetter
 WB ; MN                               ; MidNum
 WB ; NL                               ; Newline
 WB ; NU                               ; Numeric
+WB ; RI                               ; Regional_Indicator
 WB ; XX                               ; Other
 
 # XID_Continue (XIDC)

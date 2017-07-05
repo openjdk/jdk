@@ -96,12 +96,10 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     // x509.info.subject.dname
     public static final String SUBJECT_DN = NAME + DOT + INFO + DOT +
-                               X509CertInfo.SUBJECT + DOT +
-                               CertificateSubjectName.DN_NAME;
+                               X509CertInfo.SUBJECT + DOT + X509CertInfo.DN_NAME;
     // x509.info.issuer.dname
     public static final String ISSUER_DN = NAME + DOT + INFO + DOT +
-                               X509CertInfo.ISSUER + DOT +
-                               CertificateIssuerName.DN_NAME;
+                               X509CertInfo.ISSUER + DOT + X509CertInfo.DN_NAME;
     // x509.info.serialNumber.number
     public static final String SERIAL_ID = NAME + DOT + INFO + DOT +
                                X509CertInfo.SERIAL_NUMBER + DOT +
@@ -890,9 +888,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (info == null)
             return null;
         try {
-            Principal subject = (Principal)info.get(
-                                 CertificateSubjectName.NAME + DOT +
-                                 CertificateSubjectName.DN_NAME);
+            Principal subject = (Principal)info.get(X509CertInfo.SUBJECT + DOT +
+                                                    X509CertInfo.DN_NAME);
             return subject;
         } catch (Exception e) {
             return null;
@@ -910,8 +907,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         try {
             X500Principal subject = (X500Principal)info.get(
-                                CertificateSubjectName.NAME + DOT +
-                                CertificateSubjectName.DN_PRINCIPAL);
+                                            X509CertInfo.SUBJECT + DOT +
+                                            "x500principal");
             return subject;
         } catch (Exception e) {
             return null;
@@ -927,9 +924,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (info == null)
             return null;
         try {
-            Principal issuer = (Principal)info.get(
-                                CertificateIssuerName.NAME + DOT +
-                                CertificateIssuerName.DN_NAME);
+            Principal issuer = (Principal)info.get(X509CertInfo.ISSUER + DOT +
+                                                   X509CertInfo.DN_NAME);
             return issuer;
         } catch (Exception e) {
             return null;
@@ -947,8 +943,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         try {
             X500Principal issuer = (X500Principal)info.get(
-                                CertificateIssuerName.NAME + DOT +
-                                CertificateIssuerName.DN_PRINCIPAL);
+                                            X509CertInfo.ISSUER + DOT +
+                                            "x500principal");
             return issuer;
         } catch (Exception e) {
             return null;

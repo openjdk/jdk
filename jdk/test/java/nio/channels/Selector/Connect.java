@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@
  * @library ..
  */
 
-import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.util.*;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.*;
 
 public class Connect {
 
@@ -40,12 +39,18 @@ public class Connect {
     static int LIMIT = 100;
 
     public static void main(String[] args) throws Exception {
-        scaleTest();
+        try (TestServers.DayTimeServer daytimeServer
+                = TestServers.DayTimeServer.startNewServer(50)) {
+            scaleTest(daytimeServer);
+        }
     }
 
-    public static void scaleTest() throws Exception {
-        InetAddress myAddress=InetAddress.getByName(TestUtil.HOST);
-        InetSocketAddress isa = new InetSocketAddress(myAddress,13);
+    static void scaleTest(TestServers.DayTimeServer daytimeServer)
+        throws Exception
+    {
+        InetAddress myAddress = daytimeServer.getAddress();
+        InetSocketAddress isa
+            = new InetSocketAddress(myAddress, daytimeServer.getPort());
 
         for (int j=0; j<LIMIT; j++) {
             SocketChannel sc = SocketChannel.open();
