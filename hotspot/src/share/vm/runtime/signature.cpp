@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ Symbol* SignatureStream::as_symbol(TRAPS) {
   return name;
 }
 
-klassOop SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
+Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
                                    FailureMode failure_mode, TRAPS) {
   if (!is_object())  return NULL;
   Symbol* name = as_symbol(CHECK_NULL);
@@ -352,7 +352,7 @@ oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domai
                                     FailureMode failure_mode, TRAPS) {
   if (!is_object())
     return Universe::java_mirror(type());
-  klassOop klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
+  Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
   if (klass == NULL)  return NULL;
   return Klass::cast(klass)->java_mirror();
 }

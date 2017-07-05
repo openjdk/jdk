@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void compute_generation_free_space(size_t young_live,
                                      size_t eden_live,
                                      size_t old_live,
-                                     size_t perm_live,
                                      size_t cur_eden,  // current eden in bytes
                                      size_t max_old_gen_size,
                                      size_t max_eden_size,

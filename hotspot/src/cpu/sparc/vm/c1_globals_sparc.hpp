@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,7 @@ define_pd_global(bool, ResizeTLAB,                   true );
 define_pd_global(intx, ReservedCodeCacheSize,        32*M );
 define_pd_global(intx, CodeCacheExpansionSize,       32*K );
 define_pd_global(uintx,CodeCacheMinBlockLength,      1);
-define_pd_global(uintx,PermSize,                     12*M );
-define_pd_global(uintx,MaxPermSize,                  64*M );
+define_pd_global(uintx,MetaspaceSize,                     12*M );
 define_pd_global(bool, NeverActAsServerClassMachine, true );
 define_pd_global(intx, NewSizeThreadIncrease,        16*K );
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);

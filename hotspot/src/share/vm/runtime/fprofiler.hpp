@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,9 +154,9 @@ private:
 private:
   void record_interpreted_tick(JavaThread* thread, frame fr, TickPosition where, int* ticks);
   void record_compiled_tick   (JavaThread* thread, frame fr, TickPosition where);
-  void interpreted_update(methodOop method, TickPosition where);
-  void compiled_update   (methodOop method, TickPosition where);
-  void stub_update       (methodOop method, const char* name, TickPosition where);
+  void interpreted_update(Method* method, TickPosition where);
+  void compiled_update   (Method* method, TickPosition where);
+  void stub_update       (Method* method, const char* name, TickPosition where);
   void adapter_update    (TickPosition where);
 
   void runtime_stub_update(const CodeBlob* stub, const char* name, TickPosition where);

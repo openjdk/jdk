@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,14 +91,14 @@ class jfieldIDWorkaround: AllStatic {
     }
     return (intptr_t)result;
   }
-  static intptr_t encode_klass_hash(klassOop k, intptr_t offset);
-  static bool             klass_hash_ok(klassOop k, jfieldID id);
-  static void  verify_instance_jfieldID(klassOop k, jfieldID id);
+  static intptr_t encode_klass_hash(Klass* k, intptr_t offset);
+  static bool             klass_hash_ok(Klass* k, jfieldID id);
+  static void  verify_instance_jfieldID(Klass* k, jfieldID id);
 
  public:
-  static bool is_valid_jfieldID(klassOop k, jfieldID id);
+  static bool is_valid_jfieldID(Klass* k, jfieldID id);
 
-  static bool is_instance_jfieldID(klassOop k, jfieldID id) {
+  static bool is_instance_jfieldID(Klass* k, jfieldID id) {
     uintptr_t as_uint = (uintptr_t) id;
     return ((as_uint & instance_mask_in_place) != 0);
   }
@@ -107,7 +107,7 @@ class jfieldIDWorkaround: AllStatic {
     return ((as_uint & instance_mask_in_place) == 0);
   }
 
-  static jfieldID to_instance_jfieldID(klassOop k, int offset) {
+  static jfieldID to_instance_jfieldID(Klass* k, int offset) {
     intptr_t as_uint = ((offset & large_offset_mask) << offset_shift) | instance_mask_in_place;
     if (VerifyJNIFields) {
       as_uint |= encode_klass_hash(k, offset);
@@ -124,7 +124,7 @@ class jfieldIDWorkaround: AllStatic {
     return result;
   }
 
-  static intptr_t from_instance_jfieldID(klassOop k, jfieldID id) {
+  static intptr_t from_instance_jfieldID(Klass* k, jfieldID id) {
 #ifndef ASSERT
     // always verify in debug mode; switchable in anything else
     if (VerifyJNIFields)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ const char * JvmtiTrace::get_class_name(oop k_mirror) {
   if (java_lang_Class::is_primitive(k_mirror)) {
     return "primitive";
   }
-  klassOop k_oop = java_lang_Class::as_klassOop(k_mirror);
+  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
   if (k_oop == NULL) {
     return "INVALID";
   }

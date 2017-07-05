@@ -178,8 +178,8 @@ AWT_NS_WINDOW_IMPLEMENTATION
         [self.nsWindow setDocumentEdited:IS(bits, DOCUMENT_MODIFIED)];
     }
 
-    if ([self.nsWindow respondsToSelector:@selector(toggleFullScreen:)]) {
-        if (IS(mask, FULLSCREENABLE)) {
+    if (IS(mask, FULLSCREENABLE) && [self.nsWindow respondsToSelector:@selector(toggleFullScreen:)]) {
+        if (IS(bits, FULLSCREENABLE)) {
             [self.nsWindow setCollectionBehavior:(1 << 7) /*NSWindowCollectionBehaviorFullScreenPrimary*/];
         } else {
             [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];

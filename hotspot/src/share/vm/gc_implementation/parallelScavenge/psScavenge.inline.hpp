@@ -30,6 +30,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "memory/iterator.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -75,10 +76,22 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   oop new_obj = o->is_forwarded()
         ? o->forwardee()
         : pm->copy_to_survivor_space<promote_immediately>(o);
+
+#ifndef PRODUCT
+  // This code must come after the CAS test, or it will print incorrect
+  // information.
+  if (TraceScavenge &&  o->is_forwarded()) {
+    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+       "forwarding",
+       new_obj->klass()->internal_name(), o, new_obj, new_obj->size());
+  }
+#endif
+
   oopDesc::encode_store_heap_oop_not_null(p, new_obj);
 
   // We cannot mark without test, as some code passes us pointers
-  // that are outside the heap.
+  // that are outside the heap. These pointers are either from roots
+  // or from metadata.
   if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
       Universe::heap()->is_in_reserved(p)) {
     if (PSScavenge::is_obj_in_young((HeapWord*)new_obj)) {
@@ -107,5 +120,86 @@ class PSRootsClosure: public OopClosure {
 
 typedef PSRootsClosure</*promote_immediately=*/false> PSScavengeRootsClosure;
 typedef PSRootsClosure</*promote_immediately=*/true> PSPromoteRootsClosure;
+
+// Scavenges a single oop in a Klass.
+class PSScavengeFromKlassClosure: public OopClosure {
+ private:
+  PSPromotionManager* _pm;
+  // Used to redirty a scanned klass if it has oops
+  // pointing to the young generation after being scanned.
+  Klass*             _scanned_klass;
+ public:
+  PSScavengeFromKlassClosure(PSPromotionManager* pm) : _pm(pm), _scanned_klass(NULL) { }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  void do_oop(oop* p)       {
+    ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
+    assert(!psh->is_in_reserved(p), "GC barrier needed");
+    if (PSScavenge::should_scavenge(p)) {
+      assert(!Universe::heap()->is_in_reserved(p), "Not from meta-data?");
+      assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
+
+      oop o = *p;
+      oop new_obj;
+      if (o->is_forwarded()) {
+        new_obj = o->forwardee();
+      } else {
+        new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
+      }
+      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+
+      if (PSScavenge::is_obj_in_young((HeapWord*)new_obj)) {
+        do_klass_barrier();
+      }
+    }
+  }
+
+  void set_scanned_klass(Klass* klass) {
+    assert(_scanned_klass == NULL || klass == NULL, "Should always only handling one klass at a time");
+    _scanned_klass = klass;
+  }
+
+ private:
+  void do_klass_barrier() {
+    assert(_scanned_klass != NULL, "Should not be called without having a scanned klass");
+    _scanned_klass->record_modified_oops();
+  }
+
+};
+
+// Scavenges the oop in a Klass.
+class PSScavengeKlassClosure: public KlassClosure {
+ private:
+  PSScavengeFromKlassClosure _oop_closure;
+ protected:
+ public:
+  PSScavengeKlassClosure(PSPromotionManager* pm) : _oop_closure(pm) { }
+  void do_klass(Klass* klass) {
+    // If the klass has not been dirtied we know that there's
+    // no references into  the young gen and we can skip it.
+
+#ifndef PRODUCT
+    if (TraceScavenge) {
+      ResourceMark rm;
+      gclog_or_tty->print_cr("PSScavengeKlassClosure::do_klass %p, %s, dirty: %s",
+                             klass,
+                             klass->external_name(),
+                             klass->has_modified_oops() ? "true" : "false");
+    }
+#endif
+
+    if (klass->has_modified_oops()) {
+      // Clean the klass since we're going to scavenge all the metadata.
+      klass->clear_modified_oops();
+
+      // Setup the promotion manager to redirty this klass
+      // if references are left in the young gen.
+      _oop_closure.set_scanned_klass(klass);
+
+      klass->oops_do(&_oop_closure);
+
+      _oop_closure.set_scanned_klass(NULL);
+    }
+  }
+};
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSSCAVENGE_INLINE_HPP

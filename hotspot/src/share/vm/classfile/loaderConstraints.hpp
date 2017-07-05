@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
 #include "utilities/hashtable.hpp"
 
 class LoaderConstraintEntry;
+class Symbol;
 
-class LoaderConstraintTable : public Hashtable<klassOop, mtClass> {
+class LoaderConstraintTable : public Hashtable<Klass*, mtClass> {
   friend class VMStructs;
 private:
 
@@ -48,45 +49,45 @@ public:
   LoaderConstraintTable(int nof_buckets);
 
   LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
-                                   klassOop klass, int num_loaders,
+                                   Klass* klass, int num_loaders,
                                    int max_loaders);
   void free_entry(LoaderConstraintEntry *entry);
 
   LoaderConstraintEntry* bucket(int i) {
-    return (LoaderConstraintEntry*)Hashtable<klassOop, mtClass>::bucket(i);
+    return (LoaderConstraintEntry*)Hashtable<Klass*, mtClass>::bucket(i);
   }
 
   LoaderConstraintEntry** bucket_addr(int i) {
-    return (LoaderConstraintEntry**)Hashtable<klassOop, mtClass>::bucket_addr(i);
+    return (LoaderConstraintEntry**)Hashtable<Klass*, mtClass>::bucket_addr(i);
   }
 
-  // GC support
-  void oops_do(OopClosure* f);
+  // Enhanced Class Redefinition support
+  void classes_do(KlassClosure* f);
 
   // Check class loader constraints
-  bool add_entry(Symbol* name, klassOop klass1, Handle loader1,
-                                    klassOop klass2, Handle loader2);
+  bool add_entry(Symbol* name, Klass* klass1, Handle loader1,
+                                    Klass* klass2, Handle loader2);
 
   // Note:  The main entry point for this module is via SystemDictionary.
   // SystemDictionary::check_signature_loaders(Symbol* signature,
   //                                           Handle loader1, Handle loader2,
   //                                           bool is_method, TRAPS)
 
-  klassOop find_constrained_klass(Symbol* name, Handle loader);
+  Klass* find_constrained_klass(Symbol* name, Handle loader);
 
   // Class loader constraints
 
   void ensure_loader_constraint_capacity(LoaderConstraintEntry *p, int nfree);
   void extend_loader_constraint(LoaderConstraintEntry* p, Handle loader,
-                                klassOop klass);
+                                Klass* klass);
   void merge_loader_constraints(LoaderConstraintEntry** pp1,
-                                LoaderConstraintEntry** pp2, klassOop klass);
+                                LoaderConstraintEntry** pp2, Klass* klass);
 
   bool check_or_update(instanceKlassHandle k, Handle loader,
                               Symbol* name);
 
 
-  void purge_loader_constraints(BoolObjectClosure* is_alive);
+  void purge_loader_constraints();
 
   void verify(Dictionary* dictionary, PlaceholderTable* placeholders);
 #ifndef PRODUCT
@@ -94,29 +95,32 @@ public:
 #endif
 };
 
-class LoaderConstraintEntry : public HashtableEntry<klassOop, mtClass> {
+class LoaderConstraintEntry : public HashtableEntry<Klass*, mtClass> {
   friend class VMStructs;
 private:
   Symbol*                _name;                   // class name
   int                    _num_loaders;
   int                    _max_loaders;
-  oop*                   _loaders;                // initiating loaders
+  // Loader constraints enforce correct linking behavior.
+  // Thus, it really operates on ClassLoaderData which represents linking domain,
+  // not class loaders.
+  ClassLoaderData**              _loaders;                // initiating loaders
 
 public:
 
-  klassOop klass() { return literal(); }
-  klassOop* klass_addr() { return literal_addr(); }
-  void set_klass(klassOop k) { set_literal(k); }
+  Klass* klass() { return literal(); }
+  Klass** klass_addr() { return literal_addr(); }
+  void set_klass(Klass* k) { set_literal(k); }
 
   LoaderConstraintEntry* next() {
-    return (LoaderConstraintEntry*)HashtableEntry<klassOop, mtClass>::next();
+    return (LoaderConstraintEntry*)HashtableEntry<Klass*, mtClass>::next();
   }
 
   LoaderConstraintEntry** next_addr() {
-    return (LoaderConstraintEntry**)HashtableEntry<klassOop, mtClass>::next_addr();
+    return (LoaderConstraintEntry**)HashtableEntry<Klass*, mtClass>::next_addr();
   }
   void set_next(LoaderConstraintEntry* next) {
-    HashtableEntry<klassOop, mtClass>::set_next(next);
+    HashtableEntry<Klass*, mtClass>::set_next(next);
   }
 
   Symbol* name() { return _name; }
@@ -131,13 +135,13 @@ public:
   int max_loaders() { return _max_loaders; }
   void set_max_loaders(int i) { _max_loaders = i; }
 
-  oop* loaders() { return _loaders; }
-  void set_loaders(oop* loaders) { _loaders = loaders; }
+  ClassLoaderData** loaders() { return _loaders; }
+  void set_loaders(ClassLoaderData** loaders) { _loaders = loaders; }
 
-  oop loader(int i) { return _loaders[i]; }
-  oop* loader_addr(int i) { return &_loaders[i]; }
-  void set_loader(int i, oop p) { _loaders[i] = p; }
-
+  ClassLoaderData* loader_data(int i) { return _loaders[i]; }
+  void set_loader_data(int i, ClassLoaderData* p) { _loaders[i] = p; }
+  // convenience
+  void set_loader(int i, oop p);
 };
 
 #endif // SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP

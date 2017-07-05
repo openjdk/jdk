@@ -27,14 +27,13 @@
 
 #include "ci/ciConstantPoolCache.hpp"
 #include "ci/ciFlags.hpp"
-#include "ci/ciInstanceKlassKlass.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
 
 // ciInstanceKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
-// whose Klass part is an instanceKlass.  It may or may not
+// This class represents a Klass* in the HotSpot virtual machine
+// whose Klass part is an InstanceKlass.  It may or may not
 // be loaded.
 class ciInstanceKlass : public ciKlass {
   CI_PACKAGE_ACCESS
@@ -48,7 +47,7 @@ private:
   jobject                _loader;
   jobject                _protection_domain;
 
-  instanceKlass::ClassState _init_state;           // state of class
+  InstanceKlass::ClassState _init_state;           // state of class
   bool                   _is_shared;
   bool                   _has_finalizer;
   bool                   _has_subklass;
@@ -77,8 +76,8 @@ protected:
   ciInstanceKlass(KlassHandle h_k);
   ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
 
-  instanceKlass* get_instanceKlass() const {
-    return (instanceKlass*)get_Klass();
+  InstanceKlass* get_instanceKlass() const {
+    return (InstanceKlass*)get_Klass();
   }
 
   oop loader();
@@ -103,7 +102,7 @@ protected:
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
 
   // Update the init_state for shared klasses
-  void update_if_shared(instanceKlass::ClassState expected) {
+  void update_if_shared(InstanceKlass::ClassState expected) {
     if (_is_shared && _init_state != expected) {
       if (is_loaded()) compute_shared_init_state();
     }
@@ -112,18 +111,18 @@ protected:
 public:
   // Has this klass been initialized?
   bool                   is_initialized() {
-    update_if_shared(instanceKlass::fully_initialized);
-    return _init_state == instanceKlass::fully_initialized;
+    update_if_shared(InstanceKlass::fully_initialized);
+    return _init_state == InstanceKlass::fully_initialized;
   }
   // Is this klass being initialized?
   bool                   is_being_initialized() {
-    update_if_shared(instanceKlass::being_initialized);
-    return _init_state == instanceKlass::being_initialized;
+    update_if_shared(InstanceKlass::being_initialized);
+    return _init_state == InstanceKlass::being_initialized;
   }
   // Has this klass been linked?
   bool                   is_linked() {
-    update_if_shared(instanceKlass::linked);
-    return _init_state >= instanceKlass::linked;
+    update_if_shared(InstanceKlass::linked);
+    return _init_state >= InstanceKlass::linked;
   }
 
   // General klass information.
@@ -220,7 +219,7 @@ public:
   // Is the defining class loader of this class the default loader?
   bool uses_default_loader();
 
-  bool is_java_lang_Object();
+  bool is_java_lang_Object() const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {
@@ -229,8 +228,8 @@ public:
   bool is_in_package(const char* packagename, int len);
 
   // What kind of ciObject is this?
-  bool is_instance_klass() { return true; }
-  bool is_java_klass()     { return true; }
+  bool is_instance_klass() const { return true; }
+  bool is_java_klass() const     { return true; }
 };
 
 #endif // SHARE_VM_CI_CIINSTANCEKLASS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@
 #include "utilities/hashtable.hpp"
 
 class DictionaryEntry;
+class PSPromotionManager;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the system dictionary (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable<klassOop, mtClass> {
+class Dictionary : public TwoOopHashtable<Klass*, mtClass> {
   friend class VMStructs;
 private:
   // current iteration index.
@@ -45,78 +46,77 @@ private:
   static DictionaryEntry*       _current_class_entry;
 
   DictionaryEntry* get_entry(int index, unsigned int hash,
-                             Symbol* name, Handle loader);
+                             Symbol* name, ClassLoaderData* loader_data);
 
   DictionaryEntry* bucket(int i) {
-    return (DictionaryEntry*)Hashtable<klassOop, mtClass>::bucket(i);
+    return (DictionaryEntry*)Hashtable<Klass*, mtClass>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<klassOop, mtClass>::bucket_addr(i);
+    return (DictionaryEntry**)Hashtable<Klass*, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<klassOop, mtClass>::add_entry(index, (HashtableEntry<oop, mtClass>*)new_entry);
+    Hashtable<Klass*, mtClass>::add_entry(index, (HashtableEntry<Klass*, mtClass>*)new_entry);
   }
-
 
 public:
   Dictionary(int table_size);
   Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
 
-  DictionaryEntry* new_entry(unsigned int hash, klassOop klass, oop loader);
+  DictionaryEntry* new_entry(unsigned int hash, Klass* klass, ClassLoaderData* loader_data);
 
   DictionaryEntry* new_entry();
 
   void free_entry(DictionaryEntry* entry);
 
-  void add_klass(Symbol* class_name, Handle class_loader,KlassHandle obj);
+  void add_klass(Symbol* class_name, ClassLoaderData* loader_data,KlassHandle obj);
 
-  klassOop find_class(int index, unsigned int hash,
-                      Symbol* name, Handle loader);
+  Klass* find_class(int index, unsigned int hash,
+                      Symbol* name, ClassLoaderData* loader_data);
 
-  klassOop find_shared_class(int index, unsigned int hash, Symbol* name);
+  Klass* find_shared_class(int index, unsigned int hash, Symbol* name);
 
   // Compiler support
-  klassOop try_get_next_class();
+  Klass* try_get_next_class();
 
   // GC support
-
   void oops_do(OopClosure* f);
-  void always_strong_classes_do(OopClosure* blk);
-  void classes_do(void f(klassOop));
-  void classes_do(void f(klassOop, TRAPS), TRAPS);
-  void classes_do(void f(klassOop, oop));
-  void classes_do(void f(klassOop, oop, TRAPS), TRAPS);
+  void always_strong_oops_do(OopClosure* blk);
 
-  void methods_do(void f(methodOop));
+  void always_strong_classes_do(KlassClosure* closure);
+
+  void classes_do(void f(Klass*));
+  void classes_do(void f(Klass*, TRAPS), TRAPS);
+  void classes_do(void f(Klass*, ClassLoaderData*));
+  void classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS);
+
+  void methods_do(void f(Method*));
 
 
   // Classes loaded by the bootstrap loader are always strongly reachable.
   // If we're not doing class unloading, all classes are strongly reachable.
-  static bool is_strongly_reachable(oop class_loader, klassOop klass) {
+  static bool is_strongly_reachable(ClassLoaderData* loader_data, Klass* klass) {
     assert (klass != NULL, "should have non-null klass");
-    return (class_loader == NULL || !ClassUnloading);
+    return (loader_data->is_the_null_class_loader_data() || !ClassUnloading);
   }
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  bool do_unloading(BoolObjectClosure* is_alive);
+  bool do_unloading();
 
   // Protection domains
-  klassOop find(int index, unsigned int hash, Symbol* name,
-                Handle loader, Handle protection_domain, TRAPS);
+  Klass* find(int index, unsigned int hash, Symbol* name,
+                ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
   bool is_valid_protection_domain(int index, unsigned int hash,
-                                  Symbol* name, Handle class_loader,
+                                  Symbol* name, ClassLoaderData* loader_data,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
-                             instanceKlassHandle klass, Handle loader,
+                             instanceKlassHandle klass, ClassLoaderData* loader_data,
                              Handle protection_domain, TRAPS);
 
   // Sharing support
-  void dump(SerializeOopClosure* soc);
-  void restore(SerializeOopClosure* soc);
   void reorder_dictionary();
 
 
@@ -145,16 +145,15 @@ class ProtectionDomainEntry :public CHeapObj<mtClass> {
 };
 
 // An entry in the system dictionary, this describes a class as
-// { klassOop, loader, protection_domain }.
+// { Klass*, loader, protection_domain }.
 
-class DictionaryEntry : public HashtableEntry<klassOop, mtClass> {
+class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
   // this system dictionary entry.
   ProtectionDomainEntry* _pd_set;
-  oop                    _loader;
-
+  ClassLoaderData*       _loader_data;
 
  public:
   // Tells whether a protection is in the approved set.
@@ -162,20 +161,19 @@ class DictionaryEntry : public HashtableEntry<klassOop, mtClass> {
   // Adds a protection domain to the approved set.
   void add_protection_domain(oop protection_domain);
 
-  klassOop klass() const { return (klassOop)literal(); }
-  klassOop* klass_addr() { return (klassOop*)literal_addr(); }
+  Klass* klass() const { return (Klass*)literal(); }
+  Klass** klass_addr() { return (Klass**)literal_addr(); }
 
   DictionaryEntry* next() const {
-    return (DictionaryEntry*)HashtableEntry<klassOop, mtClass>::next();
+    return (DictionaryEntry*)HashtableEntry<Klass*, mtClass>::next();
   }
 
   DictionaryEntry** next_addr() {
-    return (DictionaryEntry**)HashtableEntry<klassOop, mtClass>::next_addr();
+    return (DictionaryEntry**)HashtableEntry<Klass*, mtClass>::next_addr();
   }
 
-  oop loader() const { return _loader; }
-  void set_loader(oop loader) { _loader = loader; }
-  oop* loader_addr() { return &_loader; }
+  ClassLoaderData* loader_data() const { return _loader_data; }
+  void set_loader_data(ClassLoaderData* loader_data) { _loader_data = loader_data; }
 
   ProtectionDomainEntry* pd_set() const { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
@@ -209,10 +207,10 @@ class DictionaryEntry : public HashtableEntry<klassOop, mtClass> {
     }
   }
 
-  bool equals(Symbol* class_name, oop class_loader) const {
-    klassOop klass = (klassOop)literal();
-    return (instanceKlass::cast(klass)->name() == class_name &&
-            _loader == class_loader);
+  bool equals(Symbol* class_name, ClassLoaderData* loader_data) const {
+    Klass* klass = (Klass*)literal();
+    return (InstanceKlass::cast(klass)->name() == class_name &&
+            _loader_data == loader_data);
   }
 
   void print() {
@@ -232,8 +230,8 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
   friend class VMStructs;
  private:
   intptr_t _symbol_mode;  // secondary key
-  oop     _property_oop;
-  address _property_data;
+  Method*   _method;
+  oop       _method_type;
 
  public:
   Symbol* symbol() const            { return literal(); }
@@ -241,11 +239,12 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
   intptr_t symbol_mode() const      { return _symbol_mode; }
   void set_symbol_mode(intptr_t m)  { _symbol_mode = m; }
 
-  oop      property_oop() const     { return _property_oop; }
-  void set_property_oop(oop p)      { _property_oop = p; }
+  Method*        method() const     { return _method; }
+  void set_method(Method* p)        { _method = p; }
 
-  address  property_data() const    { return _property_data; }
-  void set_property_data(address p) { _property_data = p; }
+  oop      method_type() const      { return _method_type; }
+  oop*     method_type_addr()       { return &_method_type; }
+  void set_method_type(oop p)       { _method_type = p; }
 
   SymbolPropertyEntry* next() const {
     return (SymbolPropertyEntry*)HashtableEntry<Symbol*, mtSymbol>::next();
@@ -255,20 +254,18 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
     return (SymbolPropertyEntry**)HashtableEntry<Symbol*, mtSymbol>::next_addr();
   }
 
-  oop* property_oop_addr()          { return &_property_oop; }
-
   void print_on(outputStream* st) const {
     symbol()->print_value_on(st);
     st->print("/mode="INTX_FORMAT, symbol_mode());
     st->print(" -> ");
     bool printed = false;
-    if (property_oop() != NULL) {
-      property_oop()->print_value_on(st);
+    if (method() != NULL) {
+      method()->print_value_on(st);
       printed = true;
     }
-    if (property_data() != NULL) {
+    if (method_type() != NULL) {
       if (printed)  st->print(" and ");
-      st->print(INTPTR_FORMAT, property_data());
+      st->print(INTPTR_FORMAT, method_type());
       printed = true;
     }
     st->print_cr(printed ? "" : "(empty)");
@@ -302,8 +299,8 @@ private:
     // Hashtable with Symbol* literal must increment and decrement refcount.
     symbol->increment_refcount();
     entry->set_symbol_mode(symbol_mode);
-    entry->set_property_oop(NULL);
-    entry->set_property_data(NULL);
+    entry->set_method(NULL);
+    entry->set_method_type(NULL);
     return entry;
   }
 
@@ -334,11 +331,10 @@ public:
 
   // GC support
   void oops_do(OopClosure* f);
-  void methods_do(void f(methodOop));
+
+  void methods_do(void f(Method*));
 
   // Sharing support
-  void dump(SerializeOopClosure* soc);
-  void restore(SerializeOopClosure* soc);
   void reorder_dictionary();
 
 #ifndef PRODUCT

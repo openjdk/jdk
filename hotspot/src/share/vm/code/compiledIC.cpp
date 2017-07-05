@@ -31,8 +31,9 @@
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/icache.hpp"
@@ -44,61 +45,79 @@
 // Every time a compiled IC is changed or its type is being accessed,
 // either the CompiledIC_lock must be set or we must be at a safe point.
 
+
+// Release the CompiledICHolder* associated with this call site is there is one.
+void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site) {
+  // This call site might have become stale so inspect it carefully.
+  NativeCall* call = nativeCall_at(call_site->addr());
+  if (is_icholder_entry(call->destination())) {
+    NativeMovConstReg* value = nativeMovConstReg_at(call_site->cached_value());
+    InlineCacheBuffer::queue_for_release((CompiledICHolder*)value->data());
+  }
+}
+
+
+bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
+  // This call site might have become stale so inspect it carefully.
+  NativeCall* call = nativeCall_at(call_site->addr());
+  return is_icholder_entry(call->destination());
+}
+
+
 //-----------------------------------------------------------------------------
 // Low-level access to an inline cache. Private, since they might not be
 // MT-safe to use.
 
-void CompiledIC::set_cached_oop(oop cache) {
+void* CompiledIC::cached_value() const {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
-  assert (!is_optimized(), "an optimized virtual call does not have a cached oop");
-  assert (cache == NULL || cache != badOop, "invalid oop");
-
-  if (TraceCompiledIC) {
-    tty->print("  ");
-    print_compiled_ic();
-    tty->print_cr(" changing oop to " INTPTR_FORMAT, (address)cache);
-  }
-
-  if (cache == NULL)  cache = (oop)Universe::non_oop_word();
-
-  *_oop_addr = cache;
-  // fix up the relocations
-  RelocIterator iter = _oops;
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type) {
-      oop_Relocation* r = iter.oop_reloc();
-      if (r->oop_addr() == _oop_addr)
-        r->fix_oop_relocation();
-    }
-  }
-  return;
-}
-
-
-oop CompiledIC::cached_oop() const {
-  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
-  assert (!is_optimized(), "an optimized virtual call does not have a cached oop");
+  assert (!is_optimized(), "an optimized virtual call does not have a cached metadata");
 
   if (!is_in_transition_state()) {
-    oop data = *_oop_addr;
-    // If we let the oop value here be initialized to zero...
+    void* data = (void*)_value->data();
+    // If we let the metadata value here be initialized to zero...
     assert(data != NULL || Universe::non_oop_word() == NULL,
-           "no raw nulls in CompiledIC oops, because of patching races");
-    return (data == (oop)Universe::non_oop_word()) ? (oop)NULL : data;
+           "no raw nulls in CompiledIC metadatas, because of patching races");
+    return (data == (void*)Universe::non_oop_word()) ? NULL : data;
   } else {
-    return InlineCacheBuffer::cached_oop_for((CompiledIC *)this);
+    return InlineCacheBuffer::cached_value_for((CompiledIC *)this);
   }
 }
 
 
-void CompiledIC::set_ic_destination(address entry_point) {
+void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub, void* cache, bool is_icholder) {
   assert(entry_point != NULL, "must set legal entry point");
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
+  assert (!is_optimized() || cache == NULL, "an optimized virtual call does not have a cached metadata");
+  assert (cache == NULL || cache != (Metadata*)badOopVal, "invalid metadata");
+
+  assert(!is_icholder || is_icholder_entry(entry_point), "must be");
+
+  // Don't use ic_destination for this test since that forwards
+  // through ICBuffer instead of returning the actual current state of
+  // the CompiledIC.
+  if (is_icholder_entry(_ic_call->destination())) {
+    // When patching for the ICStub case the cached value isn't
+    // overwritten until the ICStub copied into the CompiledIC during
+    // the next safepoint.  Make sure that the CompiledICHolder* is
+    // marked for release at this point since it won't be identifiable
+    // once the entry point is overwritten.
+    InlineCacheBuffer::queue_for_release((CompiledICHolder*)_value->data());
+  }
+
   if (TraceCompiledIC) {
     tty->print("  ");
     print_compiled_ic();
-    tty->print_cr(" changing destination to " INTPTR_FORMAT, entry_point);
+    tty->print(" changing destination to " INTPTR_FORMAT, entry_point);
+    if (!is_optimized()) {
+      tty->print(" changing cached %s to " INTPTR_FORMAT, is_icholder ? "icholder" : "metadata", (address)cache);
+    }
+    if (is_icstub) {
+      tty->print(" (icstub)");
+    }
+    tty->cr();
   }
+
+  {
   MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   CodeBlob* cb = CodeCache::find_blob_unsafe(_ic_call);
@@ -106,6 +125,25 @@ void CompiledIC::set_ic_destination(address entry_point) {
 #endif
   _ic_call->set_destination_mt_safe(entry_point);
 }
+
+  if (is_optimized() || is_icstub) {
+    // Optimized call sites don't have a cache value and ICStub call
+    // sites only change the entry point.  Changing the value in that
+    // case could lead to MT safety issues.
+    assert(cache == NULL, "must be null");
+    return;
+  }
+
+  if (cache == NULL)  cache = (void*)Universe::non_oop_word();
+
+  _value->set_data((intptr_t)cache);
+}
+
+
+void CompiledIC::set_ic_destination(ICStub* stub) {
+  internal_set_ic_destination(stub->code_begin(), true, NULL, false);
+}
+
 
 
 address CompiledIC::ic_destination() const {
@@ -124,6 +162,11 @@ bool CompiledIC::is_in_transition_state() const {
 }
 
 
+bool CompiledIC::is_icholder_call() const {
+  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
+  return !_is_optimized && is_icholder_entry(ic_destination());
+}
+
 // Returns native address of 'call' instruction in inline-cache. Used by
 // the InlineCacheBuffer when it needs to find the stub.
 address CompiledIC::stub_address() const {
@@ -140,7 +183,6 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
   methodHandle method = call_info->selected_method();
   bool is_invoke_interface = (bytecode == Bytecodes::_invokeinterface && !call_info->has_vtable_index());
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
-  assert(method->is_oop(), "cannot be NULL and must be oop");
   assert(!is_optimized(), "cannot set an optimized virtual call to megamorphic");
   assert(is_call_to_compiled() || is_call_to_interpreted(), "going directly to megamorphic?");
 
@@ -149,7 +191,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     int index = klassItable::compute_itable_index(call_info->resolved_method()());
     entry = VtableStubs::create_stub(false, index, method());
     assert(entry != NULL, "entry not computed");
-    klassOop k = call_info->resolved_method()->method_holder();
+    Klass* k = call_info->resolved_method()->method_holder();
     assert(Klass::cast(k)->is_interface(), "sanity check");
     InlineCacheBuffer::create_transition_stub(this, k, entry);
   } else {
@@ -180,7 +222,7 @@ bool CompiledIC::is_megamorphic() const {
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
   assert(!is_optimized(), "an optimized call cannot be megamorphic");
 
-  // Cannot rely on cached_oop. It is either an interface or a method.
+  // Cannot rely on cached_value. It is either an interface or a method.
   return VtableStubs::is_entry_point(ic_destination());
 }
 
@@ -192,24 +234,16 @@ bool CompiledIC::is_call_to_compiled() const {
   // has been cleaned up
   CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
   bool is_monomorphic = (cb != NULL && cb->is_nmethod());
-  // Check that the cached_oop is a klass for non-optimized monomorphic calls
+  // Check that the cached_value is a klass for non-optimized monomorphic calls
   // This assertion is invalid for compiler1: a call that does not look optimized (no static stub) can be used
-  // for calling directly to vep without using the inline cache (i.e., cached_oop == NULL)
+  // for calling directly to vep without using the inline cache (i.e., cached_value == NULL)
 #ifdef ASSERT
-#ifdef TIERED
   CodeBlob* caller = CodeCache::find_blob_unsafe(instruction_address());
   bool is_c1_method = caller->is_compiled_by_c1();
-#else
-#ifdef COMPILER1
-  bool is_c1_method = true;
-#else
-  bool is_c1_method = false;
-#endif // COMPILER1
-#endif // TIERED
   assert( is_c1_method ||
          !is_monomorphic ||
          is_optimized() ||
-         (cached_oop() != NULL && cached_oop()->is_klass()), "sanity check");
+         (cached_metadata() != NULL && cached_metadata()->is_klass()), "sanity check");
 #endif // ASSERT
   return is_monomorphic;
 }
@@ -226,7 +260,7 @@ bool CompiledIC::is_call_to_interpreted() const {
     // is to the interpreter.
     CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
     is_call_to_interpreted = (cb != NULL && cb->is_adapter_blob());
-    assert(!is_call_to_interpreted ||  (cached_oop() != NULL && cached_oop()->is_compiledICHolder()), "sanity check");
+    assert(!is_call_to_interpreted || (is_icholder_call() && cached_icholder() != NULL), "sanity check");
   } else {
     // Check if we are calling into our own codeblob (i.e., to a stub)
     CodeBlob* cb = CodeCache::find_blob(_ic_call->instruction_address());
@@ -257,18 +291,21 @@ void CompiledIC::set_to_clean() {
     entry = SharedRuntime::get_resolve_virtual_call_stub();
   }
 
-  // A zombie transition will always be safe, since the oop has already been set to NULL, so
+  // A zombie transition will always be safe, since the metadata has already been set to NULL, so
   // we only need to patch the destination
   bool safe_transition = is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
-    if (!is_optimized()) set_cached_oop(NULL);
     // Kill any leftover stub we might have too
     if (is_in_transition_state()) {
       ICStub* old_stub = ICStub_from_destination_address(stub_address());
       old_stub->clear();
     }
+    if (is_optimized()) {
     set_ic_destination(entry);
+  } else {
+      set_ic_destination_and_value(entry, (void*)NULL);
+    }
   } else {
     // Unsafe transition - create stub.
     InlineCacheBuffer::create_transition_stub(this, NULL, entry);
@@ -289,12 +326,12 @@ bool CompiledIC::is_clean() const {
   address dest = ic_destination();
   is_clean = dest == SharedRuntime::get_resolve_opt_virtual_call_stub() ||
              dest == SharedRuntime::get_resolve_virtual_call_stub();
-  assert(!is_clean || is_optimized() || cached_oop() == NULL, "sanity check");
+  assert(!is_clean || is_optimized() || cached_value() == NULL, "sanity check");
   return is_clean;
 }
 
 
-void CompiledIC::set_to_monomorphic(const CompiledICInfo& info) {
+void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
   // Updating a cache to the wrong entry can cause bugs that are very hard
   // to track down - if cache entry gets invalid - we just clean it. In
@@ -309,7 +346,7 @@ void CompiledIC::set_to_monomorphic(const CompiledICInfo& info) {
   // transitions are mt_safe
 
   Thread *thread = Thread::current();
-  if (info._to_interpreter) {
+  if (info.to_interpreter()) {
     // Call to interpreter
     if (info.is_optimized() && is_optimized()) {
        assert(is_clean(), "unsafe IC path");
@@ -318,9 +355,9 @@ void CompiledIC::set_to_monomorphic(const CompiledICInfo& info) {
       // (either because of CHA or the static target is final)
       // At code generation time, this call has been emitted as static call
       // Call via stub
-      assert(info.cached_oop().not_null() && info.cached_oop()->is_method(), "sanity check");
+      assert(info.cached_metadata() != NULL && info.cached_metadata()->is_method(), "sanity check");
       CompiledStaticCall* csc = compiledStaticCall_at(instruction_address());
-      methodHandle method (thread, (methodOop)info.cached_oop()());
+      methodHandle method (thread, (Method*)info.cached_metadata());
       csc->set_to_interpreted(method, info.entry());
       if (TraceICs) {
          ResourceMark rm(thread);
@@ -330,17 +367,15 @@ void CompiledIC::set_to_monomorphic(const CompiledICInfo& info) {
       }
     } else {
       // Call via method-klass-holder
-      assert(info.cached_oop().not_null(), "must be set");
-      InlineCacheBuffer::create_transition_stub(this, info.cached_oop()(), info.entry());
-
+      InlineCacheBuffer::create_transition_stub(this, info.claim_cached_icholder(), info.entry());
       if (TraceICs) {
          ResourceMark rm(thread);
-         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter via mkh", instruction_address());
+         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter via icholder ", instruction_address());
       }
     }
   } else {
     // Call to compiled code
-    bool static_bound = info.is_optimized() || (info.cached_oop().is_null());
+    bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
     assert (cb->is_nmethod(), "must be compiled!");
@@ -352,18 +387,21 @@ void CompiledIC::set_to_monomorphic(const CompiledICInfo& info) {
                 (!is_in_transition_state() && (info.is_optimized() || static_bound || is_clean()));
 
     if (!safe) {
-      InlineCacheBuffer::create_transition_stub(this, info.cached_oop()(), info.entry());
+      InlineCacheBuffer::create_transition_stub(this, info.cached_metadata(), info.entry());
     } else {
+      if (is_optimized()) {
       set_ic_destination(info.entry());
-      if (!is_optimized()) set_cached_oop(info.cached_oop()());
+      } else {
+        set_ic_destination_and_value(info.entry(), info.cached_metadata());
+      }
     }
 
     if (TraceICs) {
       ResourceMark rm(thread);
-      assert(info.cached_oop() == NULL || info.cached_oop()()->is_klass(), "must be");
+      assert(info.cached_metadata() == NULL || info.cached_metadata()->is_klass(), "must be");
       tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to compiled (rcvr klass) %s: %s",
         instruction_address(),
-        ((klassOop)info.cached_oop()())->print_value_string(),
+        ((Klass*)info.cached_metadata())->print_value_string(),
         (safe) ? "" : "via stub");
     }
   }
@@ -386,8 +424,6 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
                                            bool static_bound,
                                            CompiledICInfo& info,
                                            TRAPS) {
-  info._is_optimized = is_optimized;
-
   nmethod* method_code = method->code();
   address entry = NULL;
   if (method_code != NULL) {
@@ -400,18 +436,12 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
   }
   if (entry != NULL) {
     // Call to compiled code
-    info._entry      = entry;
-    if (static_bound || is_optimized) {
-      info._cached_oop = Handle(THREAD, (oop)NULL);
-    } else {
-      info._cached_oop = receiver_klass;
-    }
-    info._to_interpreter = false;
+    info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass(), is_optimized);
   } else {
     // Note: the following problem exists with Compiler1:
     //   - at compile time we may or may not know if the destination is final
     //   - if we know that the destination is final, we will emit an optimized
-    //     virtual call (no inline cache), and need a methodOop to make a call
+    //     virtual call (no inline cache), and need a Method* to make a call
     //     to the interpreter
     //   - if we do not know if the destination is final, we emit a standard
     //     virtual call, and use CompiledICHolder to call interpreted code
@@ -422,7 +452,6 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
     //     it look vanilla but is optimized. Code in is_call_to_interpreted
     //     is aware of this and weakens its asserts.
 
-    info._to_interpreter = true;
     // static_bound should imply is_optimized -- otherwise we have a
     // performance bug (statically-bindable method is called via
     // dynamically-dispatched call note: the reverse implication isn't
@@ -443,38 +472,46 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
 #endif // COMPILER2
     if (is_optimized) {
       // Use stub entry
-      info._entry      = method()->get_c2i_entry();
-      info._cached_oop = method;
+      info.set_interpreter_entry(method()->get_c2i_entry(), method());
     } else {
-      // Use mkh entry
-      oop holder = oopFactory::new_compiledICHolder(method, receiver_klass, CHECK);
-      info._cached_oop = Handle(THREAD, holder);
-      info._entry      = method()->get_c2i_unverified_entry();
+      // Use icholder entry
+      CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass());
+      info.set_icholder_entry(method()->get_c2i_unverified_entry(), holder);
     }
   }
+  assert(info.is_optimized() == is_optimized, "must agree");
 }
 
 
-inline static RelocIterator parse_ic(nmethod* nm, address ic_call, oop* &_oop_addr, bool *is_optimized) {
-   address  first_oop = NULL;
-   // Mergers please note: Sun SC5.x CC insists on an lvalue for a reference parameter.
-   nmethod* tmp_nm = nm;
-   return virtual_call_Relocation::parse_ic(tmp_nm, ic_call, first_oop, _oop_addr, is_optimized);
+bool CompiledIC::is_icholder_entry(address entry) {
+  CodeBlob* cb = CodeCache::find_blob_unsafe(entry);
+  return (cb != NULL && cb->is_adapter_blob());
 }
 
-CompiledIC::CompiledIC(NativeCall* ic_call)
-  : _ic_call(ic_call),
-    _oops(parse_ic(NULL, ic_call->instruction_address(), _oop_addr, &_is_optimized))
+
+CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
+  : _ic_call(call)
 {
+  address ic_call = call->instruction_address();
+
+  assert(ic_call != NULL, "ic_call address must be set");
+  assert(nm != NULL, "must pass nmethod");
+  assert(nm->contains(ic_call),   "must be in nmethod");
+
+  // search for the ic_call at the given address
+  RelocIterator iter(nm, ic_call, ic_call+1);
+  bool ret = iter.next();
+  assert(ret == true, "relocInfo must exist at this address");
+  assert(iter.addr() == ic_call, "must find ic_call");
+  if (iter.type() == relocInfo::virtual_call_type) {
+    virtual_call_Relocation* r = iter.virtual_call_reloc();
+    _is_optimized = false;
+    _value = nativeMovConstReg_at(r->cached_value());
+  } else {
+    assert(iter.type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
+    _is_optimized = true;
+    _value = NULL;
 }
-
-
-CompiledIC::CompiledIC(Relocation* ic_reloc)
-  : _ic_call(nativeCall_at(ic_reloc->addr())),
-    _oops(parse_ic(ic_reloc->code(), ic_reloc->addr(), _oop_addr, &_is_optimized))
-{
-  assert(ic_reloc->type() == relocInfo::virtual_call_type ||
-         ic_reloc->type() == relocInfo::opt_virtual_call_type, "wrong reloc. info");
 }
 
 
@@ -639,8 +676,8 @@ void CompiledIC::print() {
 
 
 void CompiledIC::print_compiled_ic() {
-  tty->print("Inline cache at " INTPTR_FORMAT ", calling %s " INTPTR_FORMAT,
-             instruction_address(), is_call_to_interpreted() ? "interpreted " : "", ic_destination());
+  tty->print("Inline cache at " INTPTR_FORMAT ", calling %s " INTPTR_FORMAT " cached_value " INTPTR_FORMAT,
+             instruction_address(), is_call_to_interpreted() ? "interpreted " : "", ic_destination(), is_optimized() ? NULL : cached_value());
 }
 
 

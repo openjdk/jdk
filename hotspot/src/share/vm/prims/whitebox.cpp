@@ -28,6 +28,7 @@
 #include "oops/oop.inline.hpp"
 
 #include "classfile/symbolTable.hpp"
+#include "classfile/classLoaderData.hpp"
 
 #include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
@@ -50,6 +51,38 @@ WB_END
 
 WB_ENTRY(jint, WB_GetHeapOopSize(JNIEnv* env, jobject o))
   return heapOopSize;
+WB_END
+
+
+class WBIsKlassAliveClosure : public KlassClosure {
+    Symbol* _name;
+    bool _found;
+public:
+    WBIsKlassAliveClosure(Symbol* name) : _name(name), _found(false) {}
+
+    void do_klass(Klass* k) {
+      if (_found) return;
+      Symbol* ksym = k->name();
+      if (ksym->fast_compare(_name) == 0) {
+        _found = true;
+      }
+    }
+
+    bool found() const {
+        return _found;
+    }
+};
+
+WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
+  Handle h_name = JNIHandles::resolve(name);
+  if (h_name.is_null()) return false;
+  Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_false);
+  TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
+
+  WBIsKlassAliveClosure closure(sym);
+  ClassLoaderDataGraph::classes_do(&closure);
+
+  return closure.found();
 WB_END
 
 #ifndef SERIALGC
@@ -84,9 +117,9 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   Thread* THREAD = Thread::current();
 
   //Get the class of our object
-  klassOop arg_klass = object->klass();
+  Klass* arg_klass = object->klass();
   //Turn it into an instance-klass
-  instanceKlass* ik = instanceKlass::cast(arg_klass);
+  InstanceKlass* ik = InstanceKlass::cast(arg_klass);
 
   //Create symbols to look for in the class
   TempNewSymbol name_symbol = SymbolTable::lookup(field_name, (int) strlen(field_name),
@@ -95,7 +128,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   //To be filled in with an offset of the field we're looking for
   fieldDescriptor fd;
 
-  klassOop res = ik->find_field(name_symbol, signature_symbol, &fd);
+  Klass* res = ik->find_field(name_symbol, signature_symbol, &fd);
   if (res == NULL) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
@@ -133,6 +166,7 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 static JNINativeMethod methods[] = {
   {CC"getObjectAddress",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
+  {CC"isClassAlive0",       CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC "parseCommandLine",
       CC "(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine

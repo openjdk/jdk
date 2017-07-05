@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 class compiledVFrame: public javaVFrame {
  public:
   // JVM state
-  methodOop                    method()             const;
+  Method*                      method()             const;
   int                          bci()                const;
   bool                         should_reexecute()   const;
   StackValueCollection*        locals()             const;
@@ -92,14 +92,14 @@ class jvmtiDeferredLocalVariable;
 class jvmtiDeferredLocalVariableSet : public CHeapObj<mtCompiler> {
 private:
 
-  methodOop _method;           // must be GC'd
+  Method* _method;
   int       _bci;
   intptr_t* _id;
   GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
 
  public:
   // JVM state
-  methodOop                         method()         const  { return _method; }
+  Method*                           method()         const  { return _method; }
   int                               bci()            const  { return _bci; }
   intptr_t*                         id()             const  { return _id; }
   GrowableArray<jvmtiDeferredLocalVariable*>* locals()         const  { return _locals; }
@@ -111,7 +111,7 @@ private:
   void                              oops_do(OopClosure* f);
 
   // constructor
-  jvmtiDeferredLocalVariableSet(methodOop method, int bci, intptr_t* id);
+  jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id);
 
   // destructor
   ~jvmtiDeferredLocalVariableSet();

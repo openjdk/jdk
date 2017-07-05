@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,14 +85,21 @@ LIR_Opr LIR_OprFact::illegalOpr = LIR_OprFact::illegal();
 LIR_Opr LIR_OprFact::value_type(ValueType* type) {
   ValueTag tag = type->tag();
   switch (tag) {
-  case objectTag : {
+  case metaDataTag : {
     ClassConstant* c = type->as_ClassConstant();
     if (c != NULL && !c->value()->is_loaded()) {
-      return LIR_OprFact::oopConst(NULL);
+      return LIR_OprFact::metadataConst(NULL);
+    } else if (c != NULL) {
+      return LIR_OprFact::metadataConst(c->value()->constant_encoding());
     } else {
-      return LIR_OprFact::oopConst(type->as_ObjectType()->encoding());
+      MethodConstant* m = type->as_MethodConstant();
+      assert (m != NULL, "not a class or a method?");
+      return LIR_OprFact::metadataConst(m->value()->constant_encoding());
     }
   }
+  case objectTag : {
+      return LIR_OprFact::oopConst(type->as_ObjectType()->encoding());
+    }
   case addressTag: return LIR_OprFact::addressConst(type->as_AddressConstant()->value());
   case intTag    : return LIR_OprFact::intConst(type->as_IntConstant()->value());
   case floatTag  : return LIR_OprFact::floatConst(type->as_FloatConstant()->value());
@@ -148,12 +155,12 @@ void LIR_Address::verify() const {
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_LONG,
+  assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
 #else
   assert(base()->is_single_cpu(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_single_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_INT,
+  assert(base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
          "wrong type for addresses");
 #endif
 }
@@ -176,6 +183,7 @@ char LIR_OprDesc::type_char(BasicType t) {
     case T_LONG:
     case T_OBJECT:
     case T_ADDRESS:
+    case T_METADATA:
     case T_VOID:
       return ::type2char(t);
 
@@ -219,6 +227,7 @@ void LIR_OprDesc::validate_type() const {
     case T_INT:
     case T_ADDRESS:
     case T_OBJECT:
+    case T_METADATA:
     case T_ARRAY:
       assert((kind_field() == cpu_register || kind_field() == stack_value) &&
              size_field() == single_size, "must match");
@@ -1161,9 +1170,14 @@ void LIR_List::append(LIR_InsertionBuffer* buffer) {
 
 
 void LIR_List::oop2reg_patch(jobject o, LIR_Opr reg, CodeEmitInfo* info) {
+  assert(reg->type() == T_OBJECT, "bad reg");
   append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),  reg, T_OBJECT, lir_patch_normal, info));
 }
 
+void LIR_List::klass2reg_patch(Metadata* o, LIR_Opr reg, CodeEmitInfo* info) {
+  assert(reg->type() == T_METADATA, "bad reg");
+  append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg, T_METADATA, lir_patch_normal, info));
+}
 
 void LIR_List::load(LIR_Address* addr, LIR_Opr src, CodeEmitInfo* info, LIR_PatchCode patch_code) {
   append(new LIR_Op1(
@@ -1543,6 +1557,7 @@ void LIR_Const::print_value_on(outputStream* out) const {
     case T_FLOAT:  out->print("flt:%f",   as_jfloat());         break;
     case T_DOUBLE: out->print("dbl:%f",   as_jdouble());        break;
     case T_OBJECT: out->print("obj:0x%x", as_jobject());        break;
+    case T_METADATA: out->print("metadata:0x%x", as_metadata());break;
     default:       out->print("%3d:0x%x",type(), as_jdouble()); break;
   }
 }

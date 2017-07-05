@@ -59,7 +59,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
 
         int len = monitorInfoItemNames.length;
         Object[] values = new Object[len];
-        CompositeData li = LockDataConverter.toLockInfoCompositeData(lock);
+        CompositeData li = LockInfoCompositeData.toCompositeData(lock);
 
         for (int i = 0; i < len; i++) {
             String item = monitorInfoItemNames[i];

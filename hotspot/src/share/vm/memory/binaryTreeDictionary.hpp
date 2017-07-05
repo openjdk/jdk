@@ -164,10 +164,10 @@ template <class Chunk>
 class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
   friend class VMStructs;
   bool       _splay;
+  bool       _adaptive_freelists;
   size_t     _total_size;
   size_t     _total_free_blocks;
   TreeList<Chunk>* _root;
-  bool       _adaptive_freelists;
 
   // private accessors
   bool splay() const { return _splay; }

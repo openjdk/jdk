@@ -246,7 +246,8 @@ public final class PropertyPermission extends BasicPermission {
             return mask;
         }
 
-        // Check against use of constants (used heavily within the JDK)
+        // Use object identity comparison against known-interned strings for
+        // performance benefit (these values are used heavily within the JDK).
         if (actions == SecurityConstants.PROPERTY_READ_ACTION) {
             return READ;
         } if (actions == SecurityConstants.PROPERTY_WRITE_ACTION) {

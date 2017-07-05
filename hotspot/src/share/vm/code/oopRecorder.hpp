@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #ifndef SHARE_VM_CODE_OOPRECORDER_HPP
 #define SHARE_VM_CODE_OOPRECORDER_HPP
 
+#include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 
-// Recording and retrieval of oop relocations in compiled code.
+// Recording and retrieval of either oop relocations or metadata in compiled code.
 
 class CodeBlob;
 
-class OopRecorder : public ResourceObj {
+template <class T> class ValueRecorder : public StackObj {
  public:
   // A two-way mapping from positive indexes to oop handles.
   // The zero index is reserved for a constant (sharable) null.
@@ -40,20 +41,21 @@ class OopRecorder : public ResourceObj {
 
   // Use the given arena to manage storage, if not NULL.
   // By default, uses the current ResourceArea.
-  OopRecorder(Arena* arena = NULL);
+  ValueRecorder(Arena* arena = NULL);
 
-  // Generate a new index on which CodeBlob::oop_addr_at will work.
+  // Generate a new index on which nmethod::oop_addr_at will work.
   // allocate_index and find_index never return the same index,
   // and allocate_index never returns the same index twice.
   // In fact, two successive calls to allocate_index return successive ints.
-  int allocate_index(jobject h) {
+  int allocate_index(T h) {
     return add_handle(h, false);
   }
 
-  // For a given jobject, this will return the same index repeatedly.
-  // The index can later be given to oop_at to retrieve the oop.
-  // However, the oop must not be changed via CodeBlob::oop_addr_at.
-  int find_index(jobject h) {
+  // For a given jobject or Metadata*, this will return the same index
+  // repeatedly. The index can later be given to nmethod::oop_at or
+  // metadata_at to retrieve the oop.
+  // However, the oop must not be changed via nmethod::oop_addr_at.
+  int find_index(T h) {
     int index = maybe_find_index(h);
     if (index < 0) {  // previously unallocated
       index = add_handle(h, true);
@@ -61,23 +63,26 @@ class OopRecorder : public ResourceObj {
     return index;
   }
 
-  // variant of find_index which does not allocate if not found (yields -1)
-  int maybe_find_index(jobject h);
+  // returns the size of the generated oop/metadata table, for sizing the
+  // CodeBlob. Must be called after all oops are allocated!
+  int size();
 
-  // returns the size of the generated oop table, for sizing the CodeBlob.
-  // must be called after all oops are allocated!
-  int oop_size();
+  // Retrieve the value at a given index.
+  T at(int index);
 
-  // Retrieve the oop handle at a given index.
-  jobject handle_at(int index);
-
-  int element_count() {
+  int count() {
+    if (_handles == NULL) return 0;
     // there is always a NULL virtually present as first object
     return _handles->length() + first_index;
   }
 
-  // copy the generated oop table to nmethod
-  void copy_to(nmethod* nm);  // => nm->copy_oops(_handles)
+  // Helper function; returns false for NULL or Universe::non_oop_word().
+  bool is_real(T h) {
+    return h != NULL && h != (T)Universe::non_oop_word();
+  }
+
+  // copy the generated table to nmethod
+  void copy_values_to(nmethod* nm);
 
   bool is_unused() { return _handles == NULL && !_complete; }
 #ifdef ASSERT
@@ -85,10 +90,13 @@ class OopRecorder : public ResourceObj {
 #endif
 
  private:
+  // variant of find_index which does not allocate if not found (yields -1)
+  int maybe_find_index(T h);
+
   // leaky hash table of handle => index, to help detect duplicate insertion
-  class IndexCache: public ResourceObj {
-    // This class is only used by the OopRecorder class.
-    friend class OopRecorder;
+  template <class X> class IndexCache : public ResourceObj {
+    // This class is only used by the ValueRecorder class.
+    friend class ValueRecorder;
     enum {
       _log_cache_size = 9,
       _cache_size = (1<<_log_cache_size),
@@ -98,13 +106,13 @@ class OopRecorder : public ResourceObj {
       _index_shift = _collision_bit_shift+1
     };
     int _cache[_cache_size];
-    static juint cache_index(jobject handle) {
+    static juint cache_index(X handle) {
       juint ci = (int) (intptr_t) handle;
       ci ^= ci >> (BitsPerByte*2);
       ci += ci >> (BitsPerByte*1);
       return ci & (_cache_size-1);
     }
-    int* cache_location(jobject handle) {
+    int* cache_location(X handle) {
       return &_cache[ cache_index(handle) ];
     }
     static bool cache_location_collision(int* cloc) {
@@ -122,17 +130,14 @@ class OopRecorder : public ResourceObj {
     IndexCache();
   };
 
-  // Helper function; returns false for NULL or Universe::non_oop_word().
-  inline bool is_real_jobject(jobject h);
-
   void maybe_initialize();
-  int add_handle(jobject h, bool make_findable);
+  int add_handle(T h, bool make_findable);
 
   enum { null_index = 0, first_index = 1, index_cache_threshold = 20 };
 
-  GrowableArray<jobject>*   _handles;  // ordered list (first is always NULL)
+  GrowableArray<T>*        _handles;  // ordered list (first is always NULL)
   GrowableArray<int>*       _no_finds; // all unfindable indexes; usually empty
-  IndexCache*               _indexes;  // map: jobject -> its probable index
+  IndexCache<T>*           _indexes;  // map: handle -> its probable index
   Arena*                    _arena;
   bool                      _complete;
 
@@ -140,5 +145,77 @@ class OopRecorder : public ResourceObj {
   static int _find_index_calls, _hit_indexes, _missed_indexes;
 #endif
 };
+
+class OopRecorder : public ResourceObj {
+ private:
+  ValueRecorder<jobject>      _oops;
+  ValueRecorder<Metadata*>    _metadata;
+ public:
+  OopRecorder(Arena* arena = NULL): _oops(arena), _metadata(arena) {}
+
+  int allocate_oop_index(jobject h) {
+    return _oops.allocate_index(h);
+  }
+  int find_index(jobject h) {
+    return _oops.find_index(h);
+  }
+  jobject oop_at(int index) {
+    return _oops.at(index);
+  }
+  int oop_size() {
+    return _oops.size();
+  }
+  int oop_count() {
+    return _oops.count();
+  }
+  bool is_real(jobject h) {
+    return _oops.is_real(h);
+  }
+
+  int allocate_metadata_index(Metadata* oop) {
+    return _metadata.allocate_index(oop);
+  }
+  int find_index(Metadata* h) {
+    return _metadata.find_index(h);
+  }
+  Metadata* metadata_at(int index) {
+    return _metadata.at(index);
+  }
+  int metadata_size() {
+    return _metadata.size();
+  }
+  int metadata_count() {
+    return _metadata.count();
+  }
+  bool is_real(Metadata* h) {
+    return _metadata.is_real(h);
+  }
+
+  bool is_unused() {
+    return _oops.is_unused() && _metadata.is_unused();
+  }
+
+  void freeze() {
+    _oops.size();
+    _metadata.size();
+  }
+
+  void copy_values_to(nmethod* nm) {
+    if (!_oops.is_unused()) {
+      _oops.copy_values_to(nm);
+    }
+    if (!_metadata.is_unused()) {
+      _metadata.copy_values_to(nm);
+    }
+  }
+
+#ifdef ASSERT
+  bool is_complete() {
+    assert(_oops.is_complete() == _metadata.is_complete(), "must agree");
+    return _oops.is_complete();
+  }
+#endif
+};
+
 
 #endif // SHARE_VM_CODE_OOPRECORDER_HPP

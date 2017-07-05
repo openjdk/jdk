@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,19 +43,11 @@ void PSMarkSweepDecorator::set_destination_decorator_tenured() {
   _destination_decorator = heap->old_gen()->object_mark_sweep();
 }
 
-void PSMarkSweepDecorator::set_destination_decorator_perm_gen() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
-  _destination_decorator = heap->perm_gen()->object_mark_sweep();
-}
-
 void PSMarkSweepDecorator::advance_destination_decorator() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   assert(_destination_decorator != NULL, "Sanity");
-  guarantee(_destination_decorator != heap->perm_gen()->object_mark_sweep(), "Cannot advance perm gen decorator");
 
   PSMarkSweepDecorator* first = heap->old_gen()->object_mark_sweep();
   PSMarkSweepDecorator* second = heap->young_gen()->eden_mark_sweep();

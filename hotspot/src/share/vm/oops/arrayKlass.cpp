@@ -31,27 +31,27 @@
 #include "memory/gcLocker.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/arrayKlass.hpp"
-#include "oops/arrayKlassKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
-int arrayKlass::object_size(int header_size) const {
+int arrayKlass::static_size(int header_size) {
   // size of an array klass object
-  assert(header_size <= instanceKlass::header_size(), "bad header size");
+  assert(header_size <= InstanceKlass::header_size(), "bad header size");
   // If this assert fails, see comments in base_create_array_klass.
-  header_size = instanceKlass::header_size();
+  header_size = InstanceKlass::header_size();
+  int vtable_len = Universe::base_vtable_size();
 #ifdef _LP64
-  int size = header_size + align_object_offset(vtable_length());
+  int size = header_size + align_object_offset(vtable_len);
 #else
-  int size = header_size + vtable_length();
+  int size = header_size + vtable_len;
 #endif
   return align_object_size(size);
 }
 
 
-klassOop arrayKlass::java_super() const {
+Klass* arrayKlass::java_super() const {
   if (super() == NULL)  return NULL;  // bootstrap case
   // Array klasses have primary supertypes which are not reported to Java.
   // Example super chain:  String[][] -> Object[][] -> Object[] -> Object
@@ -64,70 +64,48 @@ oop arrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   return NULL;
 }
 
-methodOop arrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
+Method* arrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
   return Klass::cast(super())->uncached_lookup_method(name, signature);
 }
 
+arrayKlass::arrayKlass(Symbol* name) {
+  set_alloc_size(0);
+  set_name(name);
 
-arrayKlassHandle arrayKlass::base_create_array_klass(
-const Klass_vtbl& cplusplus_vtbl, int header_size, KlassHandle klass, TRAPS) {
-  // Allocation
-  // Note: because the Java vtable must start at the same offset in all klasses,
-  // we must insert filler fields into arrayKlass to make it the same size as instanceKlass.
-  // If this assert fails, add filler to instanceKlass to make it bigger.
-  assert(header_size <= instanceKlass::header_size(),
-         "array klasses must be same size as instanceKlass");
-  header_size = instanceKlass::header_size();
+  set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
+  set_layout_helper(Klass::_lh_neutral_value);
+  set_dimension(1);
+  set_higher_dimension(NULL);
+  set_lower_dimension(NULL);
+  set_component_mirror(NULL);
   // Arrays don't add any new methods, so their vtable is the same size as
   // the vtable of klass Object.
   int vtable_size = Universe::base_vtable_size();
-  arrayKlassHandle k;
-  KlassHandle base_klass = Klass::base_create_klass(klass,
-                                                 header_size + vtable_size,
-                                                 cplusplus_vtbl, CHECK_(k));
-
-  // No safepoint should be possible until the handle's
-  // target below becomes parsable
-  No_Safepoint_Verifier no_safepoint;
-  k = arrayKlassHandle(THREAD, base_klass());
-
-  assert(!k()->is_parsable(), "not expecting parsability yet.");
-  k->set_super(Universe::is_bootstrapping() ? (klassOop)NULL : SystemDictionary::Object_klass());
-  k->set_layout_helper(Klass::_lh_neutral_value);
-  k->set_dimension(1);
-  k->set_higher_dimension(NULL);
-  k->set_lower_dimension(NULL);
-  k->set_component_mirror(NULL);
-  k->set_vtable_length(vtable_size);
-  k->set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
-
-  assert(k()->is_parsable(), "should be parsable here.");
-  // Make sure size calculation is right
-  assert(k()->size() == align_object_size(header_size + vtable_size), "wrong size for object");
-
-  return k;
+  set_vtable_length(vtable_size);
+  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
 }
 
 
 // Initialization of vtables and mirror object is done separatly from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the arrayKlass must be setup.
-void arrayKlass::complete_create_array_klass(arrayKlassHandle k, KlassHandle super_klass, TRAPS) {
+void arrayKlass::complete_create_array_klass(arrayKlass* k, KlassHandle super_klass, TRAPS) {
   ResourceMark rm(THREAD);
   k->initialize_supers(super_klass(), CHECK);
   k->vtable()->initialize_vtable(false, CHECK);
   java_lang_Class::create_mirror(k, CHECK);
 }
 
-objArrayOop arrayKlass::compute_secondary_supers(int num_extra_slots, TRAPS) {
+GrowableArray<Klass*>* arrayKlass::compute_secondary_supers(int num_extra_slots) {
   // interfaces = { cloneable_klass, serializable_klass };
   assert(num_extra_slots == 0, "sanity of primitive array type");
   // Must share this for correct bootstrapping!
-  return Universe::the_array_interfaces_array();
+  set_secondary_supers(Universe::the_array_interfaces_array());
+  return NULL;
 }
 
-bool arrayKlass::compute_is_subtype_of(klassOop k) {
+bool arrayKlass::compute_is_subtype_of(Klass* k) {
   // An array is a subtype of Serializable, Clonable, and Object
   return    k == SystemDictionary::Object_klass()
          || k == SystemDictionary::Cloneable_klass()
@@ -136,13 +114,13 @@ bool arrayKlass::compute_is_subtype_of(klassOop k) {
 
 
 inline intptr_t* arrayKlass::start_of_vtable() const {
-  // all vtables start at the same place, that's why we use instanceKlass::header_size here
-  return ((intptr_t*)as_klassOop()) + instanceKlass::header_size();
+  // all vtables start at the same place, that's why we use InstanceKlass::header_size here
+  return ((intptr_t*)this) + InstanceKlass::header_size();
 }
 
 
 klassVtable* arrayKlass::vtable() const {
-  KlassHandle kh(Thread::current(), as_klassOop());
+  KlassHandle kh(Thread::current(), this);
   return new klassVtable(kh, start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
@@ -157,17 +135,25 @@ objArrayOop arrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
     THROW_OOP_0(Universe::out_of_memory_error_array_size());
   }
   int size = objArrayOopDesc::object_size(length);
-  klassOop k = array_klass(n+dimension(), CHECK_0);
-  arrayKlassHandle ak (THREAD, k);
+  Klass* k = array_klass(n+dimension(), CHECK_0);
+  arrayKlass* ak = arrayKlass::cast(k);
   objArrayOop o =
     (objArrayOop)CollectedHeap::array_allocate(ak, size, length, CHECK_0);
   // initialization to NULL not necessary, area already cleared
   return o;
 }
 
+void arrayKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
+  Klass* k = this;
+  // Iterate over this array klass and all higher dimensions
+  while (k != NULL) {
+    f(k, CHECK);
+    k = arrayKlass::cast(k)->higher_dimension();
+  }
+}
 
-void arrayKlass::array_klasses_do(void f(klassOop k)) {
-  klassOop k = as_klassOop();
+void arrayKlass::array_klasses_do(void f(Klass* k)) {
+  Klass* k = this;
   // Iterate over this array klass and all higher dimensions
   while (k != NULL) {
     f(k);
@@ -176,8 +162,17 @@ void arrayKlass::array_klasses_do(void f(klassOop k)) {
 }
 
 
-void arrayKlass::with_array_klasses_do(void f(klassOop k)) {
+void arrayKlass::with_array_klasses_do(void f(Klass* k)) {
   array_klasses_do(f);
+}
+
+
+// GC support
+
+void arrayKlass::oops_do(OopClosure* cl) {
+  Klass::oops_do(cl);
+
+  cl->do_oop(adr_component_mirror());
 }
 
 // JVM support
@@ -192,7 +187,30 @@ jint arrayKlass::jvmti_class_status() const {
   return JVMTI_CLASS_STATUS_ARRAY;
 }
 
+void arrayKlass::remove_unshareable_info() {
+  Klass::remove_unshareable_info();
+  // Clear the java mirror
+  set_component_mirror(NULL);
+}
+
+void arrayKlass::restore_unshareable_info(TRAPS) {
+  Klass::restore_unshareable_info(CHECK);
+  // Klass recreates the component mirror also
+}
+
 // Printing
+
+void arrayKlass::print_on(outputStream* st) const {
+  assert(is_klass(), "must be klass");
+  Klass::print_on(st);
+}
+
+void arrayKlass::print_value_on(outputStream* st) const {
+  assert(is_klass(), "must be klass");
+  for(int index = 0; index < dimension(); index++) {
+    st->print("[]");
+  }
+}
 
 void arrayKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_array(), "must be array");
@@ -200,7 +218,16 @@ void arrayKlass::oop_print_on(oop obj, outputStream* st) {
   st->print_cr(" - length: %d", arrayOop(obj)->length());
 }
 
+
 // Verification
+
+void arrayKlass::verify_on(outputStream* st) {
+  Klass::verify_on(st);
+
+  if (component_mirror() != NULL) {
+    guarantee(component_mirror()->klass() != NULL, "should have a class");
+  }
+}
 
 void arrayKlass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_array(), "must be array");
