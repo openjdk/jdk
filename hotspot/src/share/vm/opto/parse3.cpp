@@ -125,7 +125,25 @@ void Parse::do_field_access(bool is_get, bool is_field) {
 
 void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
-  if (field->is_constant() && push_constant(field->constant_value()))  return;
+  if (field->is_constant()) {
+    if (field->is_static()) {
+      // final static field
+      if (push_constant(field->constant_value()))
+        return;
+    }
+    else {
+      // final non-static field of a trusted class ({java,sun}.dyn
+      // classes).
+      if (obj->is_Con()) {
+        const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
+        ciObject* constant_oop = oop_ptr->const_oop();
+        ciConstant constant = field->constant_value_of(constant_oop);
+
+        if (push_constant(constant, true))
+          return;
+      }
+    }
+  }
 
   ciType* field_klass = field->type();
   bool is_vol = field->is_volatile();
@@ -145,7 +163,7 @@ void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
     if (!field->type()->is_loaded()) {
       type = TypeInstPtr::BOTTOM;
       must_assert_null = true;
-    } else if (field->is_constant()) {
+    } else if (field->is_constant() && field->is_static()) {
       // This can happen if the constant oop is non-perm.
       ciObject* con = field->constant_value().as_object();
       // Do not "join" in the previous type; it doesn't add value,

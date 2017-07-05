@@ -430,7 +430,7 @@ void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Hand
   case JVM_CONSTANT_UnresolvedClass :
     // Patching a class means pre-resolving it.
     // The name in the constant pool is ignored.
-    if (patch->klass() == SystemDictionary::class_klass()) { // %%% java_lang_Class::is_instance
+    if (patch->klass() == SystemDictionary::Class_klass()) { // %%% java_lang_Class::is_instance
       guarantee_property(!java_lang_Class::is_primitive(patch()),
                          "Illegal class patch at %d in class file %s",
                          index, CHECK);
@@ -643,7 +643,7 @@ void ClassFileParser::verify_constantvalue(int constantvalue_index, int signatur
       guarantee_property(value_type.is_int(), "Inconsistent constant value type in class file %s", CHECK);
       break;
     case T_OBJECT:
-      guarantee_property((cp->symbol_at(signature_index)->equals("Ljava/lang/String;", 18)
+      guarantee_property((cp->symbol_at(signature_index)->equals("Ljava/lang/String;")
                          && (value_type.is_string() || value_type.is_unresolved_string())),
                          "Bad string initial value in class file %s", CHECK);
       break;
@@ -1718,9 +1718,7 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
   m->set_exception_table(exception_handlers());
 
   // Copy byte codes
-  if (code_length > 0) {
-    memcpy(m->code_base(), code_start, code_length);
-  }
+  m->set_code(code_start);
 
   // Copy line number table
   if (linenumber_table != NULL) {
@@ -3471,8 +3469,8 @@ void ClassFileParser::set_precomputed_flags(instanceKlassHandle k) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (SystemDictionary::cloneable_klass_loaded()) {
-    if (k->is_subtype_of(SystemDictionary::cloneable_klass())) {
+  if (SystemDictionary::Cloneable_klass_loaded()) {
+    if (k->is_subtype_of(SystemDictionary::Cloneable_klass())) {
       k->set_is_cloneable();
     }
   }
@@ -4178,7 +4176,7 @@ char* ClassFileParser::skip_over_field_name(char* name, bool slash_ok, unsigned 
       // Check if ch is Java identifier start or is Java identifier part
       // 4672820: call java.lang.Character methods directly without generating separate tables.
       EXCEPTION_MARK;
-      instanceKlassHandle klass (THREAD, SystemDictionary::char_klass());
+      instanceKlassHandle klass (THREAD, SystemDictionary::Character_klass());
 
       // return value
       JavaValue result(T_BOOLEAN);

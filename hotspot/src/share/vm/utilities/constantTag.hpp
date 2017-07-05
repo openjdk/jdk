@@ -36,7 +36,8 @@ enum {
   JVM_CONSTANT_UnresolvedString         = 102,  // Temporary tag until actual use
   JVM_CONSTANT_StringIndex              = 103,  // Temporary tag while constructing constant pool
   JVM_CONSTANT_UnresolvedClassInError   = 104,  // Error tag due to resolution error
-  JVM_CONSTANT_InternalMax              = 104   // Last implementation tag
+  JVM_CONSTANT_Object                   = 105,  // Required for BoundMethodHandle arguments.
+  JVM_CONSTANT_InternalMax              = 105   // Last implementation tag
 };
 
 
@@ -69,6 +70,8 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_klass_index() const       { return _tag == JVM_CONSTANT_ClassIndex; }
   bool is_unresolved_string() const { return _tag == JVM_CONSTANT_UnresolvedString; }
   bool is_string_index() const      { return _tag == JVM_CONSTANT_StringIndex; }
+
+  bool is_object() const            { return _tag == JVM_CONSTANT_Object; }
 
   bool is_klass_reference() const   { return is_klass_index() || is_unresolved_klass(); }
   bool is_klass_or_reference() const{ return is_klass() || is_klass_reference(); }

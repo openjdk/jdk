@@ -83,8 +83,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                      "\u4e2d\u592e\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "CDT"};
         String CTT[] = new String[] {"\u4e2d\u570b\u6a19\u6e96\u6642\u9593", "CST",
                                      "\u4e2d\u570b\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "CDT"};
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"\u53e4\u5df4\u6a19\u6e96\u6642\u9593", "CST",
+                                      "\u53e4\u5df4\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "CDT"};
         String DARWIN[] = new String[] {"\u4e2d\u90e8\u6a19\u6e96\u6642\u9593 (\u5317\u90e8\u5404\u5730\u5340)", "CST",
                                         "\u4e2d\u90e8\u590f\u4ee4\u6642\u9593 (\u5317\u90e8\u5404\u5730\u5340)", "CST"};
         String DUBLIN[] = new String[] {"\u683c\u6797\u5a01\u6cbb\u5e73\u5747\u6642\u9593", "GMT",
@@ -173,8 +173,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                       "\u7279\u9b6f\u514b\u590f\u4ee4\u6642\u9593", "TRUST"};
         String ULAT[]= new String[] {"\u5eab\u502b\u6642\u9593", "ULAT",
                                      "\u5eab\u502b\u590f\u4ee4\u6642\u9593", "ULAST"};
-          String WART[] = new String[] {"\u963f\u6839\u5ef7\u6642\u9593", "WART",
-                                      "\u963f\u6839\u5ef7\u590f\u4ee4\u6642\u9593", "WARST"};
+          String WART[] = new String[] {"\u897f\u963f\u6839\u5ef7\u6642\u9593", "WART",
+                                      "\u897f\u963f\u6839\u5ef7\u590f\u4ee4\u6642\u9593", "WARST"};
         String WAT[] = new String[] {"\u897f\u975e\u6642\u9593", "WAT",
                                      "\u897f\u975e\u590f\u4ee4\u6642\u9593", "WAST"};
         String WET[] = new String[] {"\u897f\u6b50\u6642\u9593", "WET",
@@ -551,7 +551,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Asia/Samarkand", UZT},
             {"Asia/Seoul", KST},
             {"Asia/Singapore", SGT},
-            {"Asia/Taipei", CTT},
+            {"Asia/Taipei", new String[] {"\u53f0\u7063\u6a19\u6e96\u6642\u9593", "TST",
+                                          "\u53f0\u7063\u590f\u4ee4\u6642\u9593", "TDT"}},
             {"Asia/Tel_Aviv", ISRAEL},
             {"Asia/Tashkent", UZT},
             {"Asia/Tbilisi", new String[] {"\u55ac\u6cbb\u4e9e\u6642\u9593", "GET",
@@ -594,8 +595,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"\u4e2d\u897f\u90e8\u6a19\u6e96\u6642\u9593 (\u6fb3\u5927\u5229\u4e9e)", "CWST",
+                                              "\u4e2d\u897f\u90e8\u65e5\u5149\u7bc0\u7d04\u6642\u9593 (\u6fb3\u5927\u5229\u4e9e)", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},

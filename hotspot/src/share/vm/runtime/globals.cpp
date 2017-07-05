@@ -468,6 +468,8 @@ void CommandLineFlags::verify() {
   assert(Arguments::check_vm_args_consistency(), "Some flag settings conflict");
 }
 
+#endif // PRODUCT
+
 void CommandLineFlags::printFlags() {
   // Print the flags sorted by name
   // note: this method is called before the thread structure is in place
@@ -493,5 +495,3 @@ void CommandLineFlags::printFlags() {
   }
   FREE_C_HEAP_ARRAY(Flag*, array);
 }
-
-#endif
