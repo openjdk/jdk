@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2716,7 +2716,9 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   }
   oop java_thread = JNIHandles::resolve_non_null(jthread);
   JavaThread* receiver = java_lang_Thread::thread(java_thread);
-  Events::log("JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]", receiver, (address)java_thread, throwable);
+  Events::log_exception(JavaThread::current(),
+                        "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
+                        receiver, (address)java_thread, throwable);
   // First check if thread is alive
   if (receiver != NULL) {
     // Check if exception is getting thrown at self (use oop equality, since the

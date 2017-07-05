@@ -158,9 +158,7 @@ klassOop Klass::base_create_klass_oop(KlassHandle& klass, int size,
   kl->set_next_sibling(NULL);
   kl->set_alloc_count(0);
   kl->set_alloc_size(0);
-#ifdef TRACE_SET_KLASS_TRACE_ID
   TRACE_SET_KLASS_TRACE_ID(kl, 0);
-#endif
 
   kl->set_prototype_header(markOopDesc::prototype());
   kl->set_biased_lock_revocation_count(0);
