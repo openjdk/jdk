@@ -285,15 +285,15 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     @Override
     public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
         if(sourceType == NativeArray.class) {
-            // Prefer lists, as they're less costly to create than arrays.
-            if(isList(targetType1)) {
-                if(!isList(targetType2)) {
+            // Prefer those types we can convert to with just a wrapper (cheaper than Java array creation).
+            if(isArrayPreferredTarget(targetType1)) {
+                if(!isArrayPreferredTarget(targetType2)) {
                     return Comparison.TYPE_1_BETTER;
                 }
-            } else if(isList(targetType2)) {
+            } else if(isArrayPreferredTarget(targetType2)) {
                 return Comparison.TYPE_2_BETTER;
             }
-            // Then prefer arrays
+            // Then prefer Java arrays
             if(targetType1.isArray()) {
                 if(!targetType2.isArray()) {
                     return Comparison.TYPE_1_BETTER;
@@ -315,8 +315,8 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return Comparison.INDETERMINATE;
     }
 
-    private static boolean isList(final Class<?> clazz) {
-        return clazz == List.class || clazz == Deque.class;
+    private static boolean isArrayPreferredTarget(final Class<?> clazz) {
+        return clazz == List.class || clazz == Collection.class || clazz == Queue.class || clazz == Deque.class;
     }
 
     private static final MethodHandle IS_SCRIPT_OBJECT = Guards.isInstance(ScriptObject.class, MH.type(Boolean.TYPE, Object.class));

@@ -39,10 +39,6 @@
 #include <dlfcn.h>
 #include <limits.h>
 
-#if defined(__solaris__) && !defined(NAME_MAX)
-#define NAME_MAX MAXNAMLEN
-#endif
-
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
@@ -52,13 +48,26 @@
 #include "java_io_FileSystem.h"
 #include "java_io_UnixFileSystem.h"
 
-#if defined(_ALLBSD_SOURCE)
-#define dirent64 dirent
-#define readdir64_r readdir_r
-#define stat64 stat
-#ifndef MACOSX
-#define statvfs64 statvfs
+#if defined(_AIX)
+  #if !defined(NAME_MAX)
+    #define NAME_MAX MAXNAMLEN
+  #endif
+  #define DIR DIR64
+  #define opendir opendir64
+  #define closedir closedir64
 #endif
+
+#if defined(__solaris__) && !defined(NAME_MAX)
+  #define NAME_MAX MAXNAMLEN
+#endif
+
+#if defined(_ALLBSD_SOURCE)
+  #define dirent64 dirent
+  #define readdir64_r readdir_r
+  #define stat64 stat
+  #ifndef MACOSX
+    #define statvfs64 statvfs
+  #endif
 #endif
 
 /* -- Field IDs -- */

@@ -176,6 +176,13 @@ public class SSLSocketTemplate {
     }
 
     /*
+     * Configure the server side socket.
+     */
+    protected void configureServerSocket(SSLServerSocket socket) {
+
+    }
+
+    /*
      * =============================================
      * Define the client and server side operations.
      *
@@ -211,6 +218,7 @@ public class SSLSocketTemplate {
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         SSLServerSocket sslServerSocket =
                 (SSLServerSocket)sslssf.createServerSocket(serverPort);
+        configureServerSocket(sslServerSocket);
         serverPort = sslServerSocket.getLocalPort();
 
         // Signal the client, the server is ready to accept connection.

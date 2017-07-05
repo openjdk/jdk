@@ -576,8 +576,9 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void clear() {
         modCount++;
-        Arrays.fill(elementData, 0, size, null);
-        size = 0;
+        final Object[] es = elementData;
+        for (int to = size, i = size = 0; i < to; i++)
+            es[i] = null;
     }
 
     /**
@@ -665,10 +666,14 @@ public class ArrayList<E> extends AbstractList<E>
                     outOfBoundsMsg(fromIndex, toIndex));
         }
         modCount++;
-        final Object[] es = elementData;
-        final int oldSize = size;
-        System.arraycopy(es, toIndex, es, fromIndex, oldSize - toIndex);
-        Arrays.fill(es, size -= (toIndex - fromIndex), oldSize, null);
+        shiftTailOverGap(elementData, fromIndex, toIndex);
+    }
+
+    /** Erases the gap from lo to hi, by sliding down following elements. */
+    private void shiftTailOverGap(Object[] es, int lo, int hi) {
+        System.arraycopy(es, hi, es, lo, size - hi);
+        for (int to = size, i = (size -= hi - lo); i < to; i++)
+            es[i] = null;
     }
 
     /**
@@ -756,25 +761,25 @@ public class ArrayList<E> extends AbstractList<E>
                 w += end - r;
                 throw ex;
             } finally {
-                final int oldSize = size, deleted = end - w;
-                modCount += deleted;
-                System.arraycopy(es, end, es, w, oldSize - end);
-                Arrays.fill(es, size -= deleted, oldSize, null);
+                modCount += end - w;
+                shiftTailOverGap(es, w, end);
             }
         }
         return modified;
     }
 
     /**
-     * Save the state of the {@code ArrayList} instance to a stream (that
-     * is, serialize it).
+     * Saves the state of the {@code ArrayList} instance to a stream
+     * (that is, serializes it).
      *
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      * @serialData The length of the array backing the {@code ArrayList}
      *             instance is emitted (int), followed by all of its elements
      *             (each an {@code Object}) in the proper order.
      */
     private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException{
+        throws java.io.IOException {
         // Write out element count, and any hidden stuff
         int expectedModCount = modCount;
         s.defaultWriteObject();
@@ -793,8 +798,12 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Reconstitute the {@code ArrayList} instance from a stream (that is,
-     * deserialize it).
+     * Reconstitutes the {@code ArrayList} instance from a stream (that is,
+     * deserializes it).
+     * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -1285,9 +1294,8 @@ public class ArrayList<E> extends AbstractList<E>
         public Spliterator<E> spliterator() {
             checkForComodification();
 
-            // ArrayListSpliterator is not used because late-binding logic
-            // is different here
-            return new Spliterator<>() {
+            // ArrayListSpliterator not used here due to late-binding
+            return new Spliterator<E>() {
                 private int index = offset; // current index, modified on advance/split
                 private int fence = -1; // -1 until used; then one past last index
                 private int expectedModCount; // initialized when fence set
@@ -1301,12 +1309,11 @@ public class ArrayList<E> extends AbstractList<E>
                     return hi;
                 }
 
-                public ArrayListSpliterator<E> trySplit() {
+                public ArrayList<E>.ArrayListSpliterator trySplit() {
                     int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
-                    // ArrayListSpliterator could be used here as the source is already bound
+                    // ArrayListSpliterator can be used here as the source is already bound
                     return (lo >= mid) ? null : // divide range in half unless too small
-                        new ArrayListSpliterator<>(root, lo, index = mid,
-                                                   expectedModCount);
+                        root.new ArrayListSpliterator(lo, index = mid, expectedModCount);
                 }
 
                 public boolean tryAdvance(Consumer<? super E> action) {
@@ -1348,7 +1355,7 @@ public class ArrayList<E> extends AbstractList<E>
                 }
 
                 public long estimateSize() {
-                    return (long) (getFence() - index);
+                    return getFence() - index;
                 }
 
                 public int characteristics() {
@@ -1358,6 +1365,9 @@ public class ArrayList<E> extends AbstractList<E>
         }
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
     public void forEach(Consumer<? super E> action) {
         Objects.requireNonNull(action);
@@ -1385,11 +1395,11 @@ public class ArrayList<E> extends AbstractList<E>
      */
     @Override
     public Spliterator<E> spliterator() {
-        return new ArrayListSpliterator<>(this, 0, -1, 0);
+        return new ArrayListSpliterator(0, -1, 0);
     }
 
     /** Index-based split-by-two, lazily initialized Spliterator */
-    static final class ArrayListSpliterator<E> implements Spliterator<E> {
+    final class ArrayListSpliterator implements Spliterator<E> {
 
         /*
          * If ArrayLists were immutable, or structurally immutable (no
@@ -1423,15 +1433,12 @@ public class ArrayList<E> extends AbstractList<E>
          * these streamlinings.
          */
 
-        private final ArrayList<E> list;
         private int index; // current index, modified on advance/split
         private int fence; // -1 until used; then one past last index
         private int expectedModCount; // initialized when fence set
 
-        /** Create new spliterator covering the given range */
-        ArrayListSpliterator(ArrayList<E> list, int origin, int fence,
-                             int expectedModCount) {
-            this.list = list; // OK if null unless traversed
+        /** Creates new spliterator covering the given range. */
+        ArrayListSpliterator(int origin, int fence, int expectedModCount) {
             this.index = origin;
             this.fence = fence;
             this.expectedModCount = expectedModCount;
@@ -1439,23 +1446,17 @@ public class ArrayList<E> extends AbstractList<E>
 
         private int getFence() { // initialize fence to size on first use
             int hi; // (a specialized variant appears in method forEach)
-            ArrayList<E> lst;
             if ((hi = fence) < 0) {
-                if ((lst = list) == null)
-                    hi = fence = 0;
-                else {
-                    expectedModCount = lst.modCount;
-                    hi = fence = lst.size;
-                }
+                expectedModCount = modCount;
+                hi = fence = size;
             }
             return hi;
         }
 
-        public ArrayListSpliterator<E> trySplit() {
+        public ArrayListSpliterator trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null : // divide range in half unless too small
-                new ArrayListSpliterator<>(list, lo, index = mid,
-                                           expectedModCount);
+                new ArrayListSpliterator(lo, index = mid, expectedModCount);
         }
 
         public boolean tryAdvance(Consumer<? super E> action) {
@@ -1464,9 +1465,9 @@ public class ArrayList<E> extends AbstractList<E>
             int hi = getFence(), i = index;
             if (i < hi) {
                 index = i + 1;
-                @SuppressWarnings("unchecked") E e = (E)list.elementData[i];
+                @SuppressWarnings("unchecked") E e = (E)elementData[i];
                 action.accept(e);
-                if (list.modCount != expectedModCount)
+                if (modCount != expectedModCount)
                     throw new ConcurrentModificationException();
                 return true;
             }
@@ -1475,13 +1476,13 @@ public class ArrayList<E> extends AbstractList<E>
 
         public void forEachRemaining(Consumer<? super E> action) {
             int i, hi, mc; // hoist accesses and checks from loop
-            ArrayList<E> lst; Object[] a;
+            Object[] a;
             if (action == null)
                 throw new NullPointerException();
-            if ((lst = list) != null && (a = lst.elementData) != null) {
+            if ((a = elementData) != null) {
                 if ((hi = fence) < 0) {
-                    mc = lst.modCount;
-                    hi = lst.size;
+                    mc = modCount;
+                    hi = size;
                 }
                 else
                     mc = expectedModCount;
@@ -1490,7 +1491,7 @@ public class ArrayList<E> extends AbstractList<E>
                         @SuppressWarnings("unchecked") E e = (E) a[i];
                         action.accept(e);
                     }
-                    if (lst.modCount == mc)
+                    if (modCount == mc)
                         return;
                 }
             }
@@ -1498,7 +1499,7 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public long estimateSize() {
-            return (long) (getFence() - index);
+            return getFence() - index;
         }
 
         public int characteristics() {
@@ -1518,6 +1519,9 @@ public class ArrayList<E> extends AbstractList<E>
         return (bits[i >> 6] & (1L << i)) == 0;
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
         return removeIf(filter, 0, size);
@@ -1552,9 +1556,7 @@ public class ArrayList<E> extends AbstractList<E>
             for (i = beg; i < end; i++)
                 if (isClear(deathRow, i - beg))
                     es[w++] = es[i];
-            final int oldSize = size;
-            System.arraycopy(es, end, es, w, oldSize - end);
-            Arrays.fill(es, size -= (end - w), oldSize, null);
+            shiftTailOverGap(es, w, end);
             return true;
         } else {
             if (modCount != expectedModCount)

@@ -481,7 +481,7 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
     AC_MSG_RESULT([no, forced])
     BUILD_GTEST="false"
   elif test "x$enable_hotspot_gtest" = "x"; then
-    if test "x$GTEST_DIR_EXISTS" = "xtrue" && test "x$OPENJDK_TARGET_OS" != "xaix"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
       AC_MSG_RESULT([yes])
       BUILD_GTEST="true"
     else

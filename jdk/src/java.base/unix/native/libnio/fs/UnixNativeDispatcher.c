@@ -81,6 +81,12 @@
 
 #include "sun_nio_fs_UnixNativeDispatcher.h"
 
+#if defined(_AIX)
+  #define DIR DIR64
+  #define opendir opendir64
+  #define closedir closedir64
+#endif
+
 /**
  * Size of password or group entry when not available via sysconf
  */
@@ -264,7 +270,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
     my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
+#if defined(_AIX)
+    my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
+#else
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
+#endif
 
 #if defined(FSTATAT64_SYSCALL_AVAILABLE)
     /* fstatat64 missing from glibc */
