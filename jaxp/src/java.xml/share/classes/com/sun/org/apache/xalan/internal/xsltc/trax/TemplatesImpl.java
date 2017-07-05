@@ -24,27 +24,26 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.util.Properties;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.URIResolver;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.Translet;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Map;
+import java.util.Properties;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.URIResolver;
 
 /**
  * @author Morten Jorgensen
@@ -131,8 +130,30 @@ public final class TemplatesImpl implements Templates, Serializable {
     private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
 
     static final class TransletClassLoader extends ClassLoader {
+
+        private final Map<String,Class> _loadedExternalExtensionFunctions;
+
         TransletClassLoader(ClassLoader parent) {
             super(parent);
+            _loadedExternalExtensionFunctions = null;
+        }
+
+        TransletClassLoader(ClassLoader parent,Map<String, Class> mapEF) {
+            super(parent);
+            _loadedExternalExtensionFunctions = mapEF;
+        }
+
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            Class<?> ret = null;
+            // The _loadedExternalExtensionFunctions will be empty when the
+            // SecurityManager is not set and the FSP is turned off
+            if (_loadedExternalExtensionFunctions != null) {
+                ret = _loadedExternalExtensionFunctions.get(name);
+            }
+            if (ret == null) {
+                ret = super.loadClass(name);
+            }
+            return ret;
         }
 
         /**
@@ -330,7 +351,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         TransletClassLoader loader = (TransletClassLoader)
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    return new TransletClassLoader(ObjectFactory.findClassLoader());
+                    return new TransletClassLoader(ObjectFactory.findClassLoader(),_tfactory.getExternalExtensionsMap());
                 }
             });
 

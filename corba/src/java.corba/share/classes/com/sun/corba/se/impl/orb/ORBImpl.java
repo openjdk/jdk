@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,7 @@ import com.sun.corba.se.impl.util.Utility;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException;
 import com.sun.corba.se.impl.copyobject.CopierManagerImpl;
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl;
+import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /**
  * The JavaIDL ORB implementation.
@@ -691,7 +692,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
         for (int i = 0; i < req.length; i++) {
             AsynchInvoke invokeObject = new AsynchInvoke( this,
                 (com.sun.corba.se.impl.corba.RequestImpl)req[i], true);
-            new Thread(invokeObject).start();
+            new ManagedLocalsThread(invokeObject).start();
         }
     }
 

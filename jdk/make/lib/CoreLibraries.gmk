@@ -43,7 +43,6 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       STATIC_LIBRARY := fdlibm, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
       SRC := $(LIBFDLIBM_SRC), \
-      LANG := C, \
       OPTIMIZATION := $(BUILD_LIBFDLIBM_OPTIMIZATION), \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
       CFLAGS_windows_debug := -DLOGGING, \
@@ -62,7 +61,6 @@ else
       LIBRARY := fdlibm, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
       SRC := $(LIBFDLIBM_SRC), \
-      LANG := C, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
       LDFLAGS := -nostdlib -r -arch x86_64, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
@@ -93,7 +91,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     LIBRARY := verify, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(JDK_TOPDIR)/src/java.base/share/native/libverify, \
-    LANG := C, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_microsoft := 4244 4267, \
@@ -146,7 +143,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_SRC_DIRS), \
-    LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
@@ -206,7 +202,6 @@ endif
 $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     LIBRARY := zip, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     SRC := $(JDK_TOPDIR)/src/java.base/share/native/libzip, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
@@ -314,7 +309,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     SRC := $(LIBJLI_SRC_DIRS), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-    LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
     DISABLED_WARNINGS_solstudio := E_ASM_DISABLES_OPTIMIZATION, \
@@ -363,7 +357,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
       EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-      LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
       ARFLAGS := $(ARFLAGS), \
@@ -383,7 +376,6 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
       EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-      LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
       LDFLAGS := -nostdlib -r, \
@@ -403,7 +395,6 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
       EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-      LANG := C, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
       ARFLAGS := $(ARFLAGS), \

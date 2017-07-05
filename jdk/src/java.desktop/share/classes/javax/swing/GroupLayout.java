@@ -2190,7 +2190,7 @@ public class GroupLayout implements LayoutManager2 {
                     }
                 } else {
                     // Not a padding spring
-                    if (newLeading.size() > 0 && insert) {
+                    if (newLeading.size() > 0 && newLeadingPadding.isEmpty() && insert) {
                         // There's leading ComponentSprings, create an
                         // autopadding spring.
                         AutoPreferredGapSpring padding =

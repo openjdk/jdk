@@ -144,7 +144,7 @@ public abstract class SunClipboard extends Clipboard
      *         AppContext as it is currently retrieved or null otherwise
      * @since 1.5
      */
-    private synchronized Transferable getContextContents() {
+    protected synchronized Transferable getContextContents() {
         AppContext context = AppContext.getAppContext();
         return (context == contentsContext) ? contents : null;
     }
@@ -275,41 +275,40 @@ public abstract class SunClipboard extends Clipboard
             return;
         }
 
-        final Runnable runnable = new Runnable() {
-                public void run() {
-                    final SunClipboard sunClipboard = SunClipboard.this;
-                    ClipboardOwner owner = null;
-                    Transferable contents = null;
-
-                    synchronized (sunClipboard) {
-                        final AppContext context = sunClipboard.contentsContext;
-
-                        if (context == null) {
-                            return;
-                        }
-
-                        if (disposedContext == null || context == disposedContext) {
-                            owner = sunClipboard.owner;
-                            contents = sunClipboard.contents;
-                            sunClipboard.contentsContext = null;
-                            sunClipboard.owner = null;
-                            sunClipboard.contents = null;
-                            sunClipboard.clearNativeContext();
-                            context.removePropertyChangeListener
-                                (AppContext.DISPOSED_PROPERTY_NAME, sunClipboard);
-                        } else {
-                            return;
-                        }
-                    }
-                    if (owner != null) {
-                        owner.lostOwnership(sunClipboard, contents);
-                    }
-                }
-            };
-
-        SunToolkit.postEvent(context, new PeerEvent(this, runnable,
+        SunToolkit.postEvent(context, new PeerEvent(this, () -> lostOwnershipNow(disposedContext),
                                                     PeerEvent.PRIORITY_EVENT));
     }
+
+    protected void lostOwnershipNow(final AppContext disposedContext) {
+        final SunClipboard sunClipboard = SunClipboard.this;
+        ClipboardOwner owner = null;
+        Transferable contents = null;
+
+        synchronized (sunClipboard) {
+            final AppContext context = sunClipboard.contentsContext;
+
+            if (context == null) {
+                return;
+            }
+
+            if (disposedContext == null || context == disposedContext) {
+                owner = sunClipboard.owner;
+                contents = sunClipboard.contents;
+                sunClipboard.contentsContext = null;
+                sunClipboard.owner = null;
+                sunClipboard.contents = null;
+                sunClipboard.clearNativeContext();
+                context.removePropertyChangeListener
+                        (AppContext.DISPOSED_PROPERTY_NAME, sunClipboard);
+            } else {
+                return;
+            }
+        }
+        if (owner != null) {
+            owner.lostOwnership(sunClipboard, contents);
+        }
+    }
+
 
     protected abstract void clearNativeContext();
 

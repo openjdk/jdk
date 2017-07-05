@@ -662,13 +662,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_LEGACY],
     USE_CLANG=true
   fi
   AC_SUBST(USE_CLANG)
-
-  # LDEXE is the linker to use, when creating executables. Not really used.
-  # FIXME: These should just be removed!
-  LDEXE="$LD"
-  LDEXECXX="$LDCXX"
-  AC_SUBST(LDEXE)
-  AC_SUBST(LDEXECXX)
 ])
 
 # Do some additional checks on the detected tools.

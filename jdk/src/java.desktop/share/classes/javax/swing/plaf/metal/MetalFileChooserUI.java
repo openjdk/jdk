@@ -569,7 +569,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         return super.createListSelectionListener(fc);
     }
 
-    // Obsolete class, not used in this version.
+    /**
+     * Obsolete class, not used in this version.
+     */
     protected class SingleClickListener extends MouseAdapter {
         /**
          * Constructs an instance of {@code SingleClickListener}.
@@ -580,7 +582,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    // Obsolete class, not used in this version.
+    /**
+     * Obsolete class, not used in this version.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
     }

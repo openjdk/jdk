@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class StandardEmitterMBean extends StandardMBean
      * that will have no effect on this object's
      * {@code getNotificationInfo()}.</p>
      *
+     * @param <T> the implementation type of the MBean
      * @param implementation the implementation of the MBean interface.
      * @param mbeanInterface a Standard MBean interface.
      * @param emitter the object that will handle notifications.
@@ -129,6 +130,7 @@ public class StandardEmitterMBean extends StandardMBean
      * that will have no effect on this object's
      * {@code getNotificationInfo()}.</p>
      *
+     * @param <T> the implementation type of the MBean
      * @param implementation the implementation of the MBean interface.
      * @param mbeanInterface a Standard MBean interface.
      * @param isMXBean If true, the {@code mbeanInterface} parameter
