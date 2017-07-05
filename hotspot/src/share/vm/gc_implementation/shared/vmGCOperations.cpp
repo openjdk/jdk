@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,28 +197,29 @@ void VM_GenCollectFull::doit() {
 
 bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 #if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC || UseG1GC) {
-    if (UseConcMarkSweepGC && CMSClassUnloadingEnabled) {
-      MetaspaceGC::set_should_concurrent_collect(true);
-    } else if (UseG1GC) {
-      G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      g1h->g1_policy()->set_initiate_conc_mark_if_possible();
+  if (UseConcMarkSweepGC && CMSClassUnloadingEnabled) {
+    MetaspaceGC::set_should_concurrent_collect(true);
+    return true;
+  }
 
-      GCCauseSetter x(g1h, _gc_cause);
+  if (UseG1GC) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    g1h->g1_policy()->set_initiate_conc_mark_if_possible();
 
-      // At this point we are supposed to start a concurrent cycle. We
-      // will do so if one is not already in progress.
-      bool should_start = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+    GCCauseSetter x(g1h, _gc_cause);
 
-      if (should_start) {
-        double pause_target = g1h->g1_policy()->max_pause_time_ms();
-        g1h->do_collection_pause_at_safepoint(pause_target);
-      }
+    // At this point we are supposed to start a concurrent cycle. We
+    // will do so if one is not already in progress.
+    bool should_start = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+
+    if (should_start) {
+      double pause_target = g1h->g1_policy()->max_pause_time_ms();
+      g1h->do_collection_pause_at_safepoint(pause_target);
     }
-
     return true;
   }
 #endif
+
   return false;
 }
 

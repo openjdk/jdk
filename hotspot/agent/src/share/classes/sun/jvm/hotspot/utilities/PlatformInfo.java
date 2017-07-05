@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class PlatformInfo {
       return "x86";
     } else if (cpu.equals("sparc") || cpu.equals("sparcv9")) {
       return "sparc";
-    } else if (cpu.equals("ia64") || cpu.equals("amd64") || cpu.equals("x86_64")) {
+    } else if (cpu.equals("ia64") || cpu.equals("amd64") || cpu.equals("x86_64") || cpu.equals("ppc64")) {
       return cpu;
     } else {
       try {

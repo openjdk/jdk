@@ -185,6 +185,9 @@ static void NativeReportJNIWarning(JavaThread* thr, const char *msg) {
  * throw an ArrayIndexOutOfBoundsException or ArrayStoreException.
  *
  * In all other cases, a non-error return value guarantees that no exceptions have been thrown.
+ *
+ * Programmers often defend against ArrayIndexOutOfBoundsException, so warning
+ * for these functions would be pedantic.
  */
 static inline void
 check_pending_exception(JavaThread* thr) {
@@ -199,6 +202,16 @@ check_pending_exception(JavaThread* thr) {
     )
     thr->clear_pending_jni_exception_check(); // Just complain once
   }
+}
+
+/**
+ * Add to the planned number of handles. I.e. plus current live & warning threshold
+ */
+static inline void
+add_planned_handle_capacity(JNIHandleBlock* handles, size_t capacity) {
+  handles->set_planned_capacity(capacity +
+                                handles->get_number_of_live_handles() +
+                                CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
 }
 
 
@@ -243,7 +256,7 @@ functionExit(JavaThread* thr)
       thr->print_stack();
     )
     // Complain just the once, reset to current + warn threshold
-    handles->set_planned_capacity(live_handles + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+    add_planned_handle_capacity(handles, 0);
   }
 }
 
@@ -720,7 +733,7 @@ JNI_ENTRY_CHECKED(jint,
       NativeReportJNIFatalError(thr, "negative capacity");
     jint result = UNCHECKED()->PushLocalFrame(env, capacity);
     if (result == JNI_OK) {
-      thr->active_handles()->set_planned_capacity(capacity + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+      add_planned_handle_capacity(thr->active_handles(), capacity);
     }
     functionExit(thr);
     return result;
@@ -824,7 +837,7 @@ JNI_ENTRY_CHECKED(jint,
     }
     jint result = UNCHECKED()->EnsureLocalCapacity(env, capacity);
     if (result == JNI_OK) {
-      thr->active_handles()->set_planned_capacity(capacity + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+      add_planned_handle_capacity(thr->active_handles(), capacity);
     }
     functionExit(thr);
     return result;
@@ -1628,7 +1641,6 @@ JNI_ENTRY_CHECKED(jobject,
       check_is_obj_array(thr, array);
     )
     jobject result = UNCHECKED()->GetObjectArrayElement(env,array,index);
-    thr->set_pending_jni_exception_check("GetObjectArrayElement");
     functionExit(thr);
     return result;
 JNI_END
@@ -1643,7 +1655,6 @@ JNI_ENTRY_CHECKED(void,
       check_is_obj_array(thr, array);
     )
     UNCHECKED()->SetObjectArrayElement(env,array,index,val);
-    thr->set_pending_jni_exception_check("SetObjectArrayElement");
     functionExit(thr);
 JNI_END
 
@@ -1733,7 +1744,6 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
     ) \
     UNCHECKED()->Get##Result##ArrayRegion(env,array,start,len,buf); \
-    thr->set_pending_jni_exception_check("Get"#Result"ArrayRegion"); \
     functionExit(thr); \
 JNI_END
 
@@ -1758,7 +1768,6 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
     ) \
     UNCHECKED()->Set##Result##ArrayRegion(env,array,start,len,buf); \
-    thr->set_pending_jni_exception_check("Set"#Result"ArrayRegion"); \
     functionExit(thr); \
 JNI_END
 
@@ -1835,7 +1844,6 @@ JNI_ENTRY_CHECKED(void,
       checkString(thr, str);
     )
     UNCHECKED()->GetStringRegion(env, str, start, len, buf);
-    thr->set_pending_jni_exception_check("GetStringRegion");
     functionExit(thr);
 JNI_END
 
@@ -1850,7 +1858,6 @@ JNI_ENTRY_CHECKED(void,
       checkString(thr, str);
     )
     UNCHECKED()->GetStringUTFRegion(env, str, start, len, buf);
-    thr->set_pending_jni_exception_check("GetStringUTFRegion");
     functionExit(thr);
 JNI_END
 

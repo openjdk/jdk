@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,12 @@ final class TubelineAssemblyController {
     }
 
     private Collection<TubeCreator> initializeTubeCreators(TubeFactoryList tfl) {
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = tccl != null ? tccl : TubelineAssemblyController.class.getClassLoader();
 
         LinkedList<TubeCreator> tubeCreators = new LinkedList<TubeCreator>();
         for (TubeFactoryConfig tubeFactoryConfig : tfl.getTubeFactoryConfigs()) {
-            tubeCreators.addFirst(new TubeCreator(tubeFactoryConfig, contextClassLoader));
+            tubeCreators.addFirst(new TubeCreator(tubeFactoryConfig, classLoader));
         }
         return tubeCreators;
     }

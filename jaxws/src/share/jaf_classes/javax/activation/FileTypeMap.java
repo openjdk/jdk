@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,9 @@ public abstract class FileTypeMap {
                 // otherwise, we also allow it if this code and the
                 // factory come from the same (non-system) class loader (e.g.,
                 // the JAF classes were loaded with the applet classes).
-                if (FileTypeMap.class.getClassLoader() == null ||
-                    FileTypeMap.class.getClassLoader() !=
-                        fileTypeMap.getClass().getClassLoader())
+                ClassLoader cl = FileTypeMap.class.getClassLoader();
+                if (cl == null || cl.getParent() == null ||
+                    cl != fileTypeMap.getClass().getClassLoader())
                     throw ex;
             }
         }

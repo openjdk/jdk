@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # top.make is included in the Makefile in the build directories.
@@ -45,10 +45,10 @@ TOPDIR      = $(shell echo `pwd`)
 GENERATED   = $(TOPDIR)/../generated
 VM          = $(GAMMADIR)/src/share/vm
 Plat_File   = $(Platform_file)
-CDG         = cd $(GENERATED); 
+CDG         = cd $(GENERATED);
 
 ifneq ($(USE_PRECOMPILED_HEADER),0)
-UpdatePCH = $(MAKE) -f vm.make $(PRECOMPILED_HEADER) $(MFLAGS) 
+UpdatePCH = $(MAKE) -f vm.make $(PRECOMPILED_HEADER) $(MFLAGS)
 else
 UpdatePCH = \# precompiled header is not used
 endif
@@ -84,7 +84,7 @@ vm_build_preliminaries:  checks $(Cached_plat) $(AD_Files_If_Required) trace_stu
 	@# We need a null action here, so implicit rules don't get consulted.
 
 $(Cached_plat): $(Plat_File)
-	$(CDG) cp $(Plat_File) $(Cached_plat)
+	$(CDG) $(CP) $(Plat_File) $(Cached_plat)
 
 # make AD files as necessary
 ad_stuff: $(Cached_plat) $(adjust-mflags)
@@ -125,12 +125,12 @@ install gamma: the_vm
 # next rules support "make foo.[ois]"
 
 %.o %.i %.s:
-	$(UpdatePCH) 
+	$(UpdatePCH)
 	$(MAKE) -f vm.make $(MFLAGS) $@
 	#$(MAKE) -f vm.make $@
 
 # this should force everything to be rebuilt
-clean: 
+clean:
 	rm -f $(GENERATED)/*.class
 	$(MAKE) -f vm.make $(MFLAGS) clean
 

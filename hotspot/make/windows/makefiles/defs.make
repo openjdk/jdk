@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,9 @@ endif
 
 MAKE_ARGS += RM="$(RM)"
 MAKE_ARGS += ZIPEXE=$(ZIPEXE)
+MAKE_ARGS += CP="${CP}"
+MAKE_ARGS += MV="${MV}"
+
 
 # On 32 bit windows we build server and client, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)

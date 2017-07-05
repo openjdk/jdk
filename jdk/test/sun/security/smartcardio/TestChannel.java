@@ -31,10 +31,10 @@
 
 // This test requires special hardware.
 
-import java.io.*;
-import java.util.*;
-
-import javax.smartcardio.*;
+import javax.smartcardio.Card;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
 
 public class TestChannel extends Utils {
 
@@ -95,7 +95,7 @@ public class TestChannel extends Utils {
         }
 
         // disconnect
-        card.disconnect(false);
+        card.disconnect(true);
 
         System.out.println("OK.");
     }
