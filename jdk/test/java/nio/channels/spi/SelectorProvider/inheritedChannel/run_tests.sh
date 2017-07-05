@@ -109,7 +109,8 @@ failures=0
 
 go() {
     echo ''
-    sh -xc "$JAVA ${TESTVMOPTS} --add-exports java.base/sun.nio.ch=ALL-UNNAMED $DFLAG \
+    sh -xc "$JAVA ${TESTVMOPTS} --add-opens java.base/java.io=ALL-UNNAMED \
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED $DFLAG \
         $1 $2 $3 $4 $5 $6 $7 $8" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }

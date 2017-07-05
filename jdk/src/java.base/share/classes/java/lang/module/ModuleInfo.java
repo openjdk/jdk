@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,17 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.module.ModuleDescriptor.Requires.Modifier;
+import java.lang.module.ModuleDescriptor.Builder;
+import java.lang.module.ModuleDescriptor.Requires;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -56,14 +60,11 @@ import static jdk.internal.module.ClassFileConstants.*;
 
 final class ModuleInfo {
 
-    // supplies the set of packages when ConcealedPackages not present
+    // supplies the set of packages when ModulePackages attribute not present
     private final Supplier<Set<String>> packageFinder;
 
-    // indicates if the Hashes attribute should be parsed
+    // indicates if the ModuleHashes attribute should be parsed
     private final boolean parseHashes;
-
-    // the builder, created when parsing
-    private ModuleDescriptor.Builder builder;
 
     private ModuleInfo(Supplier<Set<String>> pf, boolean ph) {
         packageFinder = pf;
@@ -86,9 +87,8 @@ final class ModuleInfo {
     {
         try {
             return new ModuleInfo(pf).doRead(new DataInputStream(in));
-        } catch (IllegalArgumentException iae) {
-            // IllegalArgumentException means a malformed class
-            throw invalidModuleDescriptor(iae.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw invalidModuleDescriptor(e.getMessage());
         } catch (EOFException x) {
             throw truncatedModuleDescriptor();
         }
@@ -105,9 +105,8 @@ final class ModuleInfo {
     {
         try {
             return new ModuleInfo(pf).doRead(new DataInputWrapper(bb));
-        } catch (IllegalArgumentException iae) {
-            // IllegalArgumentException means a malformed class
-            throw invalidModuleDescriptor(iae.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw invalidModuleDescriptor(e.getMessage());
         } catch (EOFException x) {
             throw truncatedModuleDescriptor();
         } catch (IOException ioe) {
@@ -117,7 +116,7 @@ final class ModuleInfo {
 
     /**
      * Reads a {@code module-info.class} from the given byte buffer
-     * but ignore the {@code Hashes} attribute.
+     * but ignore the {@code ModuleHashes} attribute.
      *
      * @throws InvalidModuleDescriptorException
      * @throws UncheckedIOException
@@ -127,8 +126,8 @@ final class ModuleInfo {
     {
         try {
             return new ModuleInfo(pf, false).doRead(new DataInputWrapper(bb));
-        } catch (IllegalArgumentException iae) {
-            throw invalidModuleDescriptor(iae.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw invalidModuleDescriptor(e.getMessage());
         } catch (EOFException x) {
             throw truncatedModuleDescriptor();
         } catch (IOException ioe) {
@@ -164,12 +163,8 @@ final class ModuleInfo {
             throw invalidModuleDescriptor("access_flags should be ACC_MODULE");
 
         int this_class = in.readUnsignedShort();
-        String mn = cpool.getClassName(this_class);
-        int suffix = mn.indexOf("/module-info");
-        if (suffix < 1)
-            throw invalidModuleDescriptor("this_class not of form name/module-info");
-        mn = mn.substring(0, suffix).replace('/', '.');
-        builder = new ModuleDescriptor.Builder(mn);
+        if (this_class != 0)
+            throw invalidModuleDescriptor("this_class must be 0");
 
         int super_class = in.readUnsignedShort();
         if (super_class > 0)
@@ -192,6 +187,13 @@ final class ModuleInfo {
         // the names of the attributes found in the class file
         Set<String> attributes = new HashSet<>();
 
+        Builder builder = null;
+        Set<String> packages = null;
+        String version = null;
+        String mainClass = null;
+        String[] osValues = null;
+        ModuleHashes hashes = null;
+
         for (int i = 0; i < attributes_count ; i++) {
             int name_index = in.readUnsignedShort();
             String attribute_name = cpool.getUtf8(name_index);
@@ -206,28 +208,28 @@ final class ModuleInfo {
             switch (attribute_name) {
 
                 case MODULE :
-                    readModuleAttribute(mn, in, cpool);
+                    builder = readModuleAttribute(in, cpool);
                     break;
 
-                case CONCEALED_PACKAGES :
-                    readConcealedPackagesAttribute(in, cpool);
+                case MODULE_PACKAGES :
+                    packages = readModulePackagesAttribute(in, cpool);
                     break;
 
-                case VERSION :
-                    readVersionAttribute(in, cpool);
+                case MODULE_VERSION :
+                    version = readModuleVersionAttribute(in, cpool);
                     break;
 
-                case MAIN_CLASS :
-                    readMainClassAttribute(in, cpool);
+                case MODULE_MAIN_CLASS :
+                    mainClass = readModuleMainClassAttribute(in, cpool);
                     break;
 
-                case TARGET_PLATFORM :
-                    readTargetPlatformAttribute(in, cpool);
+                case MODULE_TARGET :
+                    osValues = readModuleTargetAttribute(in, cpool);
                     break;
 
-                case HASHES :
+                case MODULE_HASHES :
                     if (parseHashes) {
-                        readHashesAttribute(in, cpool);
+                        hashes = readModuleHashesAttribute(in, cpool);
                     } else {
                         in.skipBytes(length);
                     }
@@ -245,53 +247,91 @@ final class ModuleInfo {
         }
 
         // the Module attribute is required
-        if (!attributes.contains(MODULE)) {
+        if (builder == null) {
             throw invalidModuleDescriptor(MODULE + " attribute not found");
         }
 
-        // If the ConcealedPackages attribute is not present then the
-        // packageFinder is used to to find any non-exported packages.
-        if (!attributes.contains(CONCEALED_PACKAGES) && packageFinder != null) {
-            Set<String> pkgs;
+        // If the ModulePackages attribute is not present then the packageFinder
+        // is used to find the set of packages
+        boolean usedPackageFinder = false;
+        if (packages == null && packageFinder != null) {
             try {
-                pkgs = new HashSet<>(packageFinder.get());
+                packages = new HashSet<>(packageFinder.get());
             } catch (UncheckedIOException x) {
                 throw x.getCause();
             }
-            pkgs.removeAll(builder.exportedPackages());
-            builder.conceals(pkgs);
+            usedPackageFinder = true;
+        }
+        if (packages != null) {
+            for (String pn : builder.exportedAndOpenPackages()) {
+                if (!packages.contains(pn)) {
+                    String tail;
+                    if (usedPackageFinder) {
+                        tail = " not found by package finder";
+                    } else {
+                        tail = " missing from ModulePackages attribute";
+                    }
+                    throw invalidModuleDescriptor("Package " + pn + tail);
+                }
+                packages.remove(pn);
+            }
+            builder.contains(packages);
         }
 
-        // Was the Synthetic attribute present?
-        if (attributes.contains(SYNTHETIC))
-            builder.synthetic(true);
+        if (version != null)
+            builder.version(version);
+        if (mainClass != null)
+            builder.mainClass(mainClass);
+        if (osValues != null) {
+            if (osValues[0] != null) builder.osName(osValues[0]);
+            if (osValues[1] != null) builder.osArch(osValues[1]);
+            if (osValues[2] != null) builder.osVersion(osValues[2]);
+        }
+        if (hashes != null)
+            builder.hashes(hashes);
 
         return builder.build();
     }
 
     /**
-     * Reads the Module attribute.
+     * Reads the Module attribute, returning the ModuleDescriptor.Builder to
+     * build the corresponding ModuleDescriptor.
      */
-    private void readModuleAttribute(String mn, DataInput in, ConstantPool cpool)
+    private Builder readModuleAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
+        // module_name
+        int module_name_index = in.readUnsignedShort();
+        String mn = cpool.getUtf8AsBinaryName(module_name_index);
+
+        Builder builder = new ModuleDescriptor.Builder(mn, /*strict*/ false);
+
+        int module_flags = in.readUnsignedShort();
+        boolean open = ((module_flags & ACC_OPEN) != 0);
+        if (open)
+            builder.open(true);
+        if ((module_flags & ACC_SYNTHETIC) != 0)
+            builder.synthetic(true);
+
         int requires_count = in.readUnsignedShort();
         boolean requiresJavaBase = false;
         for (int i=0; i<requires_count; i++) {
             int index = in.readUnsignedShort();
             int flags = in.readUnsignedShort();
-            String dn = cpool.getUtf8(index);
-            Set<Modifier> mods;
+            String dn = cpool.getUtf8AsBinaryName(index);
+            Set<Requires.Modifier> mods;
             if (flags == 0) {
                 mods = Collections.emptySet();
             } else {
                 mods = new HashSet<>();
-                if ((flags & ACC_PUBLIC) != 0)
-                    mods.add(Modifier.PUBLIC);
+                if ((flags & ACC_TRANSITIVE) != 0)
+                    mods.add(Requires.Modifier.TRANSITIVE);
+                if ((flags & ACC_STATIC_PHASE) != 0)
+                    mods.add(Requires.Modifier.STATIC);
                 if ((flags & ACC_SYNTHETIC) != 0)
-                    mods.add(Modifier.SYNTHETIC);
+                    mods.add(Requires.Modifier.SYNTHETIC);
                 if ((flags & ACC_MANDATED) != 0)
-                    mods.add(Modifier.MANDATED);
+                    mods.add(Requires.Modifier.MANDATED);
             }
             builder.requires(mods, dn);
             if (dn.equals("java.base"))
@@ -311,17 +351,66 @@ final class ModuleInfo {
         if (exports_count > 0) {
             for (int i=0; i<exports_count; i++) {
                 int index = in.readUnsignedShort();
-                String pkg = cpool.getUtf8(index).replace('/', '.');
+                String pkg = cpool.getUtf8AsBinaryName(index);
+
+                Set<Exports.Modifier> mods;
+                int flags = in.readUnsignedShort();
+                if (flags == 0) {
+                    mods = Collections.emptySet();
+                } else {
+                    mods = new HashSet<>();
+                    if ((flags & ACC_SYNTHETIC) != 0)
+                        mods.add(Exports.Modifier.SYNTHETIC);
+                    if ((flags & ACC_MANDATED) != 0)
+                        mods.add(Exports.Modifier.MANDATED);
+                }
+
                 int exports_to_count = in.readUnsignedShort();
                 if (exports_to_count > 0) {
                     Set<String> targets = new HashSet<>(exports_to_count);
                     for (int j=0; j<exports_to_count; j++) {
                         int exports_to_index = in.readUnsignedShort();
-                        targets.add(cpool.getUtf8(exports_to_index));
+                        targets.add(cpool.getUtf8AsBinaryName(exports_to_index));
                     }
-                    builder.exports(pkg, targets);
+                    builder.exports(mods, pkg, targets);
                 } else {
-                    builder.exports(pkg);
+                    builder.exports(mods, pkg);
+                }
+            }
+        }
+
+        int opens_count = in.readUnsignedShort();
+        if (opens_count > 0) {
+            if (open) {
+                throw invalidModuleDescriptor("The opens table for an open"
+                                              + " module must be 0 length");
+            }
+            for (int i=0; i<opens_count; i++) {
+                int index = in.readUnsignedShort();
+                String pkg = cpool.getUtf8AsBinaryName(index);
+
+                Set<Opens.Modifier> mods;
+                int flags = in.readUnsignedShort();
+                if (flags == 0) {
+                    mods = Collections.emptySet();
+                } else {
+                    mods = new HashSet<>();
+                    if ((flags & ACC_SYNTHETIC) != 0)
+                        mods.add(Opens.Modifier.SYNTHETIC);
+                    if ((flags & ACC_MANDATED) != 0)
+                        mods.add(Opens.Modifier.MANDATED);
+                }
+
+                int open_to_count = in.readUnsignedShort();
+                if (open_to_count > 0) {
+                    Set<String> targets = new HashSet<>(open_to_count);
+                    for (int j=0; j<open_to_count; j++) {
+                        int opens_to_index = in.readUnsignedShort();
+                        targets.add(cpool.getUtf8AsBinaryName(opens_to_index));
+                    }
+                    builder.opens(mods, pkg, targets);
+                } else {
+                    builder.opens(mods, pkg);
                 }
             }
         }
@@ -330,111 +419,114 @@ final class ModuleInfo {
         if (uses_count > 0) {
             for (int i=0; i<uses_count; i++) {
                 int index = in.readUnsignedShort();
-                String sn = cpool.getClassName(index).replace('/', '.');
+                String sn = cpool.getClassNameAsBinaryName(index);
                 builder.uses(sn);
             }
         }
 
         int provides_count = in.readUnsignedShort();
         if (provides_count > 0) {
-            Map<String, Set<String>> pm = new HashMap<>();
             for (int i=0; i<provides_count; i++) {
                 int index = in.readUnsignedShort();
-                int with_index = in.readUnsignedShort();
-                String sn = cpool.getClassName(index).replace('/', '.');
-                String cn = cpool.getClassName(with_index).replace('/', '.');
-                // computeIfAbsent
-                Set<String> providers = pm.get(sn);
-                if (providers == null) {
-                    providers = new LinkedHashSet<>(); // preserve order
-                    pm.put(sn, providers);
+                String sn = cpool.getClassNameAsBinaryName(index);
+                int with_count = in.readUnsignedShort();
+                List<String> providers = new ArrayList<>(with_count);
+                for (int j=0; j<with_count; j++) {
+                    index = in.readUnsignedShort();
+                    String pn = cpool.getClassNameAsBinaryName(index);
+                    providers.add(pn);
                 }
-                providers.add(cn);
-            }
-            for (Map.Entry<String, Set<String>> e : pm.entrySet()) {
-                builder.provides(e.getKey(), e.getValue());
+                builder.provides(sn, providers);
             }
         }
+
+        return builder;
     }
 
     /**
-     * Reads the ConcealedPackages attribute
+     * Reads the ModulePackages attribute
      */
-    private void readConcealedPackagesAttribute(DataInput in, ConstantPool cpool)
+    private Set<String> readModulePackagesAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
         int package_count = in.readUnsignedShort();
+        Set<String> packages = new HashSet<>(package_count);
         for (int i=0; i<package_count; i++) {
             int index = in.readUnsignedShort();
-            String pn = cpool.getUtf8(index).replace('/', '.');
-            builder.conceals(pn);
+            String pn = cpool.getUtf8AsBinaryName(index);
+            packages.add(pn);
         }
+        return packages;
     }
 
     /**
-     * Reads the Version attribute
+     * Reads the ModuleVersion attribute
      */
-    private void readVersionAttribute(DataInput in, ConstantPool cpool)
+    private String readModuleVersionAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
         int index = in.readUnsignedShort();
-        builder.version(cpool.getUtf8(index));
+        return cpool.getUtf8(index);
     }
 
     /**
-     * Reads the MainClass attribute
+     * Reads the ModuleMainClass attribute
      */
-    private void readMainClassAttribute(DataInput in, ConstantPool cpool)
+    private String readModuleMainClassAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
         int index = in.readUnsignedShort();
-        builder.mainClass(cpool.getClassName(index).replace('/', '.'));
+        return cpool.getClassNameAsBinaryName(index);
     }
 
     /**
-     * Reads the TargetPlatform attribute
+     * Reads the ModuleTarget attribute
      */
-    private void readTargetPlatformAttribute(DataInput in, ConstantPool cpool)
+    private String[] readModuleTargetAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
+        String[] values = new String[3];
+
         int name_index = in.readUnsignedShort();
         if (name_index != 0)
-            builder.osName(cpool.getUtf8(name_index));
+            values[0] = cpool.getUtf8(name_index);
 
         int arch_index = in.readUnsignedShort();
         if (arch_index != 0)
-            builder.osArch(cpool.getUtf8(arch_index));
+            values[1] = cpool.getUtf8(arch_index);
 
         int version_index = in.readUnsignedShort();
         if (version_index != 0)
-            builder.osVersion(cpool.getUtf8(version_index));
+            values[2] = cpool.getUtf8(version_index);
+
+        return values;
     }
 
 
     /**
-     * Reads the Hashes attribute
-     *
-     * @apiNote For now the hash is stored in base64 as a UTF-8 string, this
-     * should be changed to be an array of u1.
+     * Reads the ModuleHashes attribute
      */
-    private void readHashesAttribute(DataInput in, ConstantPool cpool)
+    private ModuleHashes readModuleHashesAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
-        int index = in.readUnsignedShort();
-        String algorithm = cpool.getUtf8(index);
+        int algorithm_index = in.readUnsignedShort();
+        String algorithm = cpool.getUtf8(algorithm_index);
 
         int hash_count = in.readUnsignedShort();
-
-        Map<String, String> map = new HashMap<>(hash_count);
+        Map<String, byte[]> map = new HashMap<>(hash_count);
         for (int i=0; i<hash_count; i++) {
-            index = in.readUnsignedShort();
-            String dn = cpool.getUtf8(index);
-            index = in.readUnsignedShort();
-            String hash = cpool.getUtf8(index);
-            map.put(dn, hash);
+            int module_name_index = in.readUnsignedShort();
+            String mn = cpool.getUtf8AsBinaryName(module_name_index);
+            int hash_length = in.readUnsignedShort();
+            if (hash_length == 0) {
+                throw invalidModuleDescriptor("hash_length == 0");
+            }
+            byte[] hash = new byte[hash_length];
+            in.readFully(hash);
+            map.put(mn, hash);
         }
 
-        builder.hashes(new ModuleHashes(algorithm, map));
+        return new ModuleHashes(algorithm, map);
     }
 
 
@@ -447,11 +539,11 @@ final class ModuleInfo {
         if (name.equals(MODULE) ||
                 name.equals(SOURCE_FILE) ||
                 name.equals(SDE) ||
-                name.equals(CONCEALED_PACKAGES) ||
-                name.equals(VERSION) ||
-                name.equals(MAIN_CLASS) ||
-                name.equals(TARGET_PLATFORM) ||
-                name.equals(HASHES))
+                name.equals(MODULE_PACKAGES) ||
+                name.equals(MODULE_VERSION) ||
+                name.equals(MODULE_MAIN_CLASS) ||
+                name.equals(MODULE_TARGET) ||
+                name.equals(MODULE_HASHES))
             return true;
 
         return false;
@@ -461,8 +553,8 @@ final class ModuleInfo {
      * Return true if the given attribute name is the name of a pre-defined
      * attribute that is not allowed in the class file.
      *
-     * Except for Module, InnerClasses, Synthetic, SourceFile, SourceDebugExtension,
-     * and Deprecated, none of the pre-defined attributes in JVMS 4.7 may appear.
+     * Except for Module, InnerClasses, SourceFile, SourceDebugExtension, and
+     * Deprecated, none of the pre-defined attributes in JVMS 4.7 may appear.
      */
     private static boolean isAttributeDisallowed(String name) {
         Set<String> notAllowed = predefinedNotAllowed;
@@ -477,12 +569,11 @@ final class ModuleInfo {
                     "LineNumberTable",
                     "LocalVariableTable",
                     "LocalVariableTypeTable",
-                    "RuntimeVisibleAnnotations",
-                    "RuntimeInvisibleAnnotations",
                     "RuntimeVisibleParameterAnnotations",
                     "RuntimeInvisibleParameterAnnotations",
                     "RuntimeVisibleTypeAnnotations",
                     "RuntimeInvisibleTypeAnnotations",
+                    "Synthetic",
                     "AnnotationDefault",
                     "BootstrapMethods",
                     "MethodParameters");
@@ -493,7 +584,6 @@ final class ModuleInfo {
 
     // lazily created set the pre-defined attributes that are not allowed
     private static volatile Set<String> predefinedNotAllowed;
-
 
 
     /**
@@ -628,6 +718,11 @@ final class ModuleInfo {
             return getUtf8(((IndexEntry) e).index);
         }
 
+        String getClassNameAsBinaryName(int index) {
+            String value = getClassName(index);
+            return value.replace('/', '.');  // internal form -> binary name
+        }
+
         String getUtf8(int index) {
             checkIndex(index);
             Entry e = pool[index];
@@ -636,6 +731,11 @@ final class ModuleInfo {
                                               + index);
             }
             return (String) (((ValueEntry) e).value);
+        }
+
+        String getUtf8AsBinaryName(int index) {
+            String value = getUtf8(index);
+            return value.replace('/', '.');  // internal -> binary name
         }
 
         void checkIndex(int index) {

@@ -116,14 +116,25 @@ public class TestHttpServer {
         }
     }
 
-    /** Tell all threads in the server to exit within 5 seconds.
-     *  This is an abortive termination. Just prior to the thread exiting
-     *  all channels in that thread waiting to be closed are forceably closed.
+    /**
+     * Tell all threads in the server to exit within 5 seconds.
+     * This is an abortive termination. Just prior to the thread exiting
+     * all channels in that thread waiting to be closed are forceably closed.
+     * @throws InterruptedException
      */
 
     public void terminate () {
         for (int i=0; i<threads; i++) {
             servers[i].terminate ();
+        }
+
+        for (int i = 0; i < threads; i++) {
+            try {
+                servers[i].join();
+            } catch (InterruptedException e) {
+                System.err.println("Unexpected InterruptedException during terminating server");
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -147,7 +158,7 @@ public class TestHttpServer {
         int maxconn;
         int nconn;
         ClosedChannelList clist;
-        boolean shutdown;
+        volatile boolean shutdown;
 
         Server (HttpCallback cb, ServerSocketChannel schan, int maxconn) {
             this.schan = schan;
@@ -166,18 +177,18 @@ public class TestHttpServer {
         }
 
         /* Stop the thread as soon as possible */
-        public synchronized void terminate () {
+        public void terminate () {
             shutdown = true;
         }
 
         public void run ()  {
             try {
                 while (true) {
-                    selector.select (1000);
-                    Set selected = selector.selectedKeys();
-                    Iterator iter = selected.iterator();
+                    selector.select(1000);
+                    Set<SelectionKey> selected = selector.selectedKeys();
+                    Iterator<SelectionKey> iter = selected.iterator();
                     while (iter.hasNext()) {
-                        key = (SelectionKey)iter.next();
+                        key = iter.next();
                         if (key.equals (listenerKey)) {
                             SocketChannel sock = schan.accept ();
                             if (sock == null) {
@@ -200,7 +211,7 @@ public class TestHttpServer {
                                 SocketChannel chan = (SocketChannel) key.channel();
                                 System.out.println("SERVER: connection readable. chan[" + chan + "]");
                                 if (key.attachment() != null) {
-                                    System.out.println("Server: comsume");
+                                    System.out.println("Server: consume");
                                     closed = consume (chan);
                                 } else {
                                     closed = read (chan, key);
@@ -219,7 +230,16 @@ public class TestHttpServer {
                     }
                     clist.check();
                     if (shutdown) {
+                        System.out.println("Force to Shutdown");
+                        SelectionKey sKey = schan.keyFor(selector);
+                        if (sKey != null) {
+                            sKey.cancel();
+                        }
+
                         clist.terminate ();
+                        selector.close();
+                        schan.socket().close();
+                        schan.close();
                         return;
                     }
                 }
@@ -726,3 +746,4 @@ public class TestHttpServer {
         }
     }
 }
+

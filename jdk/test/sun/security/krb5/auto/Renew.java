@@ -27,8 +27,8 @@
  * @summary JAAS Krb5LoginModule has suspect ticket-renewal logic,
  *          relies on clockskew grace
  * @modules java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5:+open
+ *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.krb5.internal.ccache
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab

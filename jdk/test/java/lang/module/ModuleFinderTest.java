@@ -335,7 +335,7 @@ public class ModuleFinderTest {
 
         ModuleFinder finder = ModuleFinder.of(jar);
         Optional<ModuleReference> mref = finder.find("m");
-        assertTrue(mref.isPresent(), "m not found");
+        assertTrue(mref.isPresent(), "m1 not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
 
@@ -748,7 +748,7 @@ public class ModuleFinderTest {
             vs = mid.substring(i+1);
         }
         ModuleDescriptor.Builder builder
-            = new ModuleDescriptor.Builder(mn).requires("java.base");
+            = ModuleDescriptor.module(mn).requires("java.base");
         if (vs != null)
             builder.version(vs);
         return builder.build();

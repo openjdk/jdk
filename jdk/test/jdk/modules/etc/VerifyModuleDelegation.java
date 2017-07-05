@@ -50,15 +50,15 @@ public class VerifyModuleDelegation {
     private static final String JAVA_COMPACT2 = "java.compact2";
 
     private static final ModuleDescriptor BASE
-        = new ModuleDescriptor.Builder(JAVA_BASE).build();
+        = ModuleDescriptor.module(JAVA_BASE).build();
 
     private static final ModuleDescriptor COMPACT2
-        = new ModuleDescriptor.Builder(JAVA_COMPACT2)
+        = ModuleDescriptor.module(JAVA_COMPACT2)
             .requires(Set.of(MANDATED), JAVA_BASE)
-            .requires(Set.of(PUBLIC), JAVA_COMPACT1)
-            .requires(Set.of(PUBLIC), "java.rmi")
-            .requires(Set.of(PUBLIC), "java.sql")
-            .requires(Set.of(PUBLIC), "java.xml")
+            .requires(Set.of(TRANSITIVE), JAVA_COMPACT1)
+            .requires(Set.of(TRANSITIVE), "java.rmi")
+            .requires(Set.of(TRANSITIVE), "java.sql")
+            .requires(Set.of(TRANSITIVE), "java.xml")
             .build();
 
     private static final Set<ModuleDescriptor> MREFS

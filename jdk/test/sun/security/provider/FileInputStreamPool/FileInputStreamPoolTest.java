@@ -24,7 +24,8 @@
 /**
  * @test
  * @bug 8047769
- * @modules java.base/sun.security.provider
+ * @modules java.base/java.lang.ref:open
+ *          java.base/sun.security.provider:open
  * @summary SecureRandom should be more frugal with file descriptors
  */
 

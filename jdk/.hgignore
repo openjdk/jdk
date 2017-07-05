@@ -5,7 +5,6 @@
 /nbproject/private/
 ^make/netbeans/.*/build/
 ^make/netbeans/.*/dist/
-^.hgtip
 .DS_Store
 .*/JTreport/.*
 .*/JTwork/.*
