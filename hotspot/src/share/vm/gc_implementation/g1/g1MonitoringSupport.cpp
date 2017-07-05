@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,9 @@ G1YoungGenerationCounters::G1YoungGenerationCounters(G1MonitoringSupport* g1mm,
                G1MonitoringSupport::pad_capacity(0, 3) /* min_capacity */,
                G1MonitoringSupport::pad_capacity(g1mm->young_gen_max(), 3),
                G1MonitoringSupport::pad_capacity(0, 3) /* curr_capacity */) {
-  update_all();
+  if (UsePerfData) {
+    update_all();
+  }
 }
 
 G1OldGenerationCounters::G1OldGenerationCounters(G1MonitoringSupport* g1mm,
@@ -53,7 +55,9 @@ G1OldGenerationCounters::G1OldGenerationCounters(G1MonitoringSupport* g1mm,
                G1MonitoringSupport::pad_capacity(0) /* min_capacity */,
                G1MonitoringSupport::pad_capacity(g1mm->old_gen_max()),
                G1MonitoringSupport::pad_capacity(0) /* curr_capacity */) {
-  update_all();
+  if (UsePerfData) {
+    update_all();
+  }
 }
 
 void G1YoungGenerationCounters::update_all() {
@@ -149,10 +153,6 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
     pad_capacity(0) /* max_capacity */,
     pad_capacity(0) /* init_capacity */,
     _young_collection_counters);
-  // Given that this survivor space is not used, we update it here
-  // once to reflect that its used space is 0 so that we don't have to
-  // worry about updating it again later.
-  _from_counters->update_used(0);
 
   //  name "generation.0.space.2"
   // See _old_space_counters for additional counters
@@ -160,6 +160,13 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
     pad_capacity(overall_reserved()) /* max_capacity */,
     pad_capacity(survivor_space_committed()) /* init_capacity */,
     _young_collection_counters);
+
+  if (UsePerfData) {
+    // Given that this survivor space is not used, we update it here
+    // once to reflect that its used space is 0 so that we don't have to
+    // worry about updating it again later.
+    _from_counters->update_used(0);
+  }
 }
 
 void G1MonitoringSupport::recalculate_sizes() {
