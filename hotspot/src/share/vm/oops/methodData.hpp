@@ -2183,7 +2183,7 @@ private:
   uint _nof_overflow_traps;         // trap count, excluding _trap_hist
   union {
     intptr_t _align;
-    u1 _array[_trap_hist_limit];
+    u1 _array[JVMCI_ONLY(2 *) _trap_hist_limit];
   } _trap_hist;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.

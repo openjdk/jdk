@@ -28,7 +28,7 @@
  * @summary tests on constant folding of unsafe get operations from stable arrays
  * @library /test/lib
  *
- * @requires vm.flavor == "server"
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  *
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
@@ -332,8 +332,8 @@ public class UnsafeGetStableArrayElement {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isServer()) {
-            throw new Error("TESTBUG: Not server VM");
+        if (!Platform.isServer() || Platform.isEmulatedClient()) {
+            throw new Error("TESTBUG: Not server mode");
         }
         testUnsafeAccess();
         System.out.println("TEST PASSED");

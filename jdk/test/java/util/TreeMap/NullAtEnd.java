@@ -64,7 +64,7 @@ public class NullAtEnd {
     }
 
     private static final Comparator<String> NULL_AT_END
-        = new Comparator<String>() {
+        = new Comparator<>() {
             /**
              * Allows for nulls.  Null is greater than anything non-null.
              */
@@ -78,14 +78,13 @@ public class NullAtEnd {
 
     public static void main(String[] args) {
         try {
-            SortedMap<String,String> m1
-                = new TreeMap<String,String>(NULL_AT_END);
+            SortedMap<String,String> m1 = new TreeMap<>(NULL_AT_END);
             check(eq(m1.put("a", "a"), null));
             check(eq(m1.put("b", "b"), null));
             check(eq(m1.put("c", "c"), null));
             check(eq(m1.put(null, "d"), null));
 
-            SortedMap<String,String> m2 = new TreeMap<String,String>(m1);
+            SortedMap<String,String> m2 = new TreeMap<>(m1);
 
             check(eq(m1.lastKey(), null));
             check(eq(m1.get(m1.lastKey()), "d"));

@@ -148,8 +148,6 @@ java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
-com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8169575 generic-all
-
 ############################################################################
 
 # jdk_jmx

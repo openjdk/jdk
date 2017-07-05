@@ -68,8 +68,7 @@ public class MapLoops {
 
     static final ExecutorService pool = Executors.newCachedThreadPool();
 
-    static final List<Throwable> throwables
-        = new CopyOnWriteArrayList<Throwable>();
+    static final List<Throwable> throwables = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) throws Exception {
 

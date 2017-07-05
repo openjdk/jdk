@@ -27,13 +27,17 @@ package javax.management.remote;
 
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.ServiceLoader.Provider;
 import java.util.StringTokenizer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -332,25 +336,32 @@ public class JMXConnectorFactory {
 
         IOException exception = null;
         if (provider == null) {
+            Predicate<Provider<?>> systemProvider =
+                    JMXConnectorFactory::isSystemProvider;
             // Loader is null when context class loader is set to null
             // and no loader has been provided in map.
             // com.sun.jmx.remote.util.Service class extracted from j2se
             // provider search algorithm doesn't handle well null classloader.
+            JMXConnector connection = null;
             if (loader != null) {
                 try {
-                    JMXConnector connection =
-                        getConnectorAsService(loader, providerURL, envcopy);
-                    if (connection != null)
-                        return connection;
+                    connection = getConnectorAsService(loader,
+                                                       providerURL,
+                                                       envcopy,
+                                                       systemProvider.negate());
+                    if (connection != null) return connection;
                 } catch (JMXProviderException e) {
                     throw e;
                 } catch (IOException e) {
                     exception = e;
                 }
             }
-            provider = getProvider(protocol, PROTOCOL_PROVIDER_DEFAULT_PACKAGE,
-                            JMXConnectorFactory.class.getClassLoader(),
-                            providerClassName, targetInterface);
+            connection = getConnectorAsService(
+                             JMXConnectorFactory.class.getClassLoader(),
+                             providerURL,
+                             Collections.unmodifiableMap(envcopy),
+                             systemProvider);
+            if (connection != null) return connection;
         }
 
         if (provider == null) {
@@ -437,13 +448,6 @@ public class JMXConnectorFactory {
         return instance;
     }
 
-    static <T> Iterator<T> getProviderIterator(final Class<T> providerClass,
-                                               final ClassLoader loader) {
-       ServiceLoader<T> serviceLoader =
-                ServiceLoader.load(providerClass, loader);
-       return serviceLoader.iterator();
-    }
-
     private static ClassLoader wrap(final ClassLoader parent) {
         return parent != null ? AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override
@@ -459,44 +463,265 @@ public class JMXConnectorFactory {
         }) : null;
     }
 
+    /**
+     * Checks whether the given provider is our system provider for
+     * the RMI connector.
+     * If providers for additional protocols are added in the future
+     * then the name of their modules may need to be added here.
+     * System providers will be loaded only if no other provider is found.
+     * @param provider the provider to test.
+     * @return true if this provider is a default system provider.
+     */
+    static boolean isSystemProvider(Provider<?> provider) {
+        Module providerModule = provider.type().getModule();
+        return providerModule.isNamed()
+           && providerModule.getName().equals("java.management.rmi");
+    }
+
+    /**
+     * Creates a JMXConnector from the first JMXConnectorProvider service
+     * supporting the given url that can be loaded from the given loader.
+     * <p>
+     * Parses the list of JMXConnectorProvider services that can be loaded
+     * from the given loader, only retaining those that satisfy the given filter.
+     * Then for each provider, attempts to create a new JMXConnector.
+     * The first JMXConnector successfully created is returned.
+     * <p>
+     * The filter predicate is usually used to either exclude system providers
+     * or only retain system providers (see isSystemProvider(...) above).
+     *
+     * @param loader The ClassLoader to use when looking up an implementation
+     *        of the service. If null, then only installed services will be
+     *        considered.
+     *
+     * @param url The JMXServiceURL of the connector for which a provider is
+     *        requested.
+     *
+     * @param filter A filter used to exclude or return provider
+     *        implementations. Typically the filter will either exclude
+     *        system services (system default implementations) or only
+     *        retain those.
+     *        This can allow to first look for custom implementations (e.g.
+     *        deployed on the CLASSPATH with META-INF/services) and
+     *        then only default to system implementations.
+     *
+     * @throws IOException if no connector could not be instantiated, and
+     *         at least one provider threw an exception that wasn't a
+     *         {@code MalformedURLException} or a {@code JMProviderException}.
+     *
+     * @throws JMXProviderException if a provider for the protocol in
+     *         <code>url</code> was found, but couldn't create the connector
+     *         some reason.
+     *
+     * @return an instance of JMXConnector if a provider was found from
+     *         which one could be instantiated, {@code null} otherwise.
+     */
     private static JMXConnector getConnectorAsService(ClassLoader loader,
                                                       JMXServiceURL url,
-                                                      Map<String, ?> map)
+                                                      Map<String, ?> map,
+                                                      Predicate<Provider<?>> filter)
         throws IOException {
 
-        Iterator<JMXConnectorProvider> providers =
-                getProviderIterator(JMXConnectorProvider.class, loader);
-        JMXConnector connection;
-        IOException exception = null;
-        while (providers.hasNext()) {
-            JMXConnectorProvider provider = providers.next();
-            try {
-                connection = provider.newJMXConnector(url, map);
-                return connection;
-            } catch (JMXProviderException e) {
-                throw e;
-            } catch (Exception e) {
-                if (logger.traceOn())
-                    logger.trace("getConnectorAsService",
-                                 "URL[" + url +
-                                 "] Service provider exception: " + e);
-                if (!(e instanceof MalformedURLException)) {
-                    if (exception == null) {
-                        if (e instanceof IOException) {
-                            exception = (IOException) e;
-                        } else {
-                            exception = EnvHelp.initCause(
-                                new IOException(e.getMessage()), e);
+        final ConnectorFactory<JMXConnectorProvider, JMXConnector> factory =
+                (p) -> p.newJMXConnector(url, map);
+        return getConnectorAsService(JMXConnectorProvider.class, loader, url,
+                                     filter, factory);
+    }
+
+
+    /**
+     * A factory function that can create a connector from a provider.
+     * The pair (P,C) will be either one of:
+     * a. (JMXConnectorProvider, JMXConnector) or
+     * b. (JMXConnectorServerProvider, JMXConnectorServer)
+     */
+    @FunctionalInterface
+    static interface ConnectorFactory<P,C> {
+        public C apply(P provider) throws Exception;
+    }
+
+    /**
+     * An instance of ProviderFinder is used to traverse a
+     * {@code Stream<Provider<P>>} and find the first implementation of P
+     * that supports creating a connector C from the given JMXServiceURL.
+     * <p>
+     * The pair (P,C) will be either one of: <br>
+     * a. (JMXConnectorProvider, JMXConnector) or <br>
+     * b. (JMXConnectorServerProvider, JMXConnectorServer)
+     * <p>
+     * The first connector successfully created while traversing the stream
+     * is stored in the ProviderFinder instance. After that, the
+     * ProviderFinder::test method, if called, will always return false, skipping
+     * the remaining providers.
+     * <p>
+     * An instance of ProviderFinder is always expected to be used in conjunction
+     * with Stream::findFirst, so that the stream traversal is stopped as soon
+     * as a matching provider is found.
+     * <p>
+     * At the end of the stream traversal, the ProviderFinder::get method can be
+     * used to obtain the connector instance (an instance of C) that was created.
+     * If no connector could be created, and an exception was encountered while
+     * traversing the stream and attempting to create the connector, then that
+     * exception will be thrown by ProviderFinder::get, wrapped, if needed,
+     * inside an IOException.
+     * <p>
+     * If any JMXProviderException is encountered while traversing the stream and
+     * attempting to create the connector, that exception will be wrapped in an
+     * UncheckedIOException and thrown immediately within the stream, thus
+     * interrupting the traversal.
+     * <p>
+     * If no matching provider was found (no provider found or attempting
+     * factory.apply always returned null or threw a MalformedURLException,
+     * indicating the provider didn't support the protocol asked for by
+     * the JMXServiceURL), then ProviderFinder::get will simply return null.
+     */
+    private static final class ProviderFinder<P,C> implements Predicate<Provider<P>> {
+
+        final ConnectorFactory<P,C> factory;
+        final JMXServiceURL  url;
+        private IOException  exception = null;
+        private C connection = null;
+
+        ProviderFinder(ConnectorFactory<P,C> factory, JMXServiceURL url) {
+            this.factory = factory;
+            this.url = url;
+        }
+
+        /**
+         * Returns {@code true} for the first provider {@code sp} that can
+         * be used to obtain an instance of {@code C} from the given
+         * {@code factory}.
+         *
+         * @param sp a candidate provider for instantiating {@code C}.
+         *
+         * @throws UncheckedIOException if {@code sp} throws a
+         *         JMXProviderException. The JMXProviderException is set as the
+         *         root cause.
+         *
+         * @return {@code true} for the first provider {@code sp} for which
+         *         {@code C} could be instantiated, {@code false} otherwise.
+         */
+        public boolean test(Provider<P> sp) {
+            if (connection == null) {
+                P provider = sp.get();
+                try {
+                    connection = factory.apply(provider);
+                    return connection != null;
+                } catch (JMXProviderException e) {
+                    throw new UncheckedIOException(e);
+                } catch (Exception e) {
+                    if (logger.traceOn())
+                        logger.trace("getConnectorAsService",
+                             "URL[" + url +
+                             "] Service provider exception: " + e);
+                    if (!(e instanceof MalformedURLException)) {
+                        if (exception == null) {
+                            if (e instanceof IOException) {
+                                exception = (IOException) e;
+                            } else {
+                                exception = EnvHelp.initCause(
+                                    new IOException(e.getMessage()), e);
+                            }
                         }
                     }
                 }
-                continue;
+            }
+            return false;
+        }
+
+        /**
+         * Returns an instance of {@code C} if a provider was found from
+         * which {@code C} could be instantiated.
+         *
+         * @throws IOException if {@code C} could not be instantiated, and
+         *         at least one provider threw an exception that wasn't a
+         *         {@code MalformedURLException} or a {@code JMProviderException}.
+         *
+         * @return an instance of {@code C} if a provider was found from
+         *         which {@code C} could be instantiated, {@code null} otherwise.
+         */
+        C get() throws IOException {
+            if (connection != null) return connection;
+            else if (exception != null) throw exception;
+            else return null;
+        }
+    }
+
+    /**
+     * Creates a connector from a provider loaded from the ServiceLoader.
+     * <p>
+     * The pair (P,C) will be either one of: <br>
+     * a. (JMXConnectorProvider, JMXConnector) or <br>
+     * b. (JMXConnectorServerProvider, JMXConnectorServer)
+     *
+     * @param providerClass The service type for which an implementation
+     *        should be looked up from the {@code ServiceLoader}. This will
+     *        be either {@code JMXConnectorProvider.class} or
+     *        {@code JMXConnectorServerProvider.class}
+     *
+     * @param loader The ClassLoader to use when looking up an implementation
+     *        of the service. If null, then only installed services will be
+     *        considered.
+     *
+     * @param url The JMXServiceURL of the connector for which a provider is
+     *        requested.
+     *
+     * @param filter A filter used to exclude or return provider
+     *        implementations. Typically the filter will either exclude
+     *        system services (system default implementations) or only
+     *        retain those.
+     *        This can allow to first look for custom implementations (e.g.
+     *        deployed on the CLASSPATH with META-INF/services) and
+     *        then only default to system implementations.
+     *
+     * @param factory A functional factory that can attempt to create an
+     *        instance of connector {@code C} from a provider {@code P}.
+     *        Typically, this is a simple wrapper over {@code
+     *        JMXConnectorProvider::newJMXConnector} or {@code
+     *        JMXConnectorProviderServer::newJMXConnectorServer}.
+     *
+     * @throws IOException if {@code C} could not be instantiated, and
+     *         at least one provider {@code P} threw an exception that wasn't a
+     *         {@code MalformedURLException} or a {@code JMProviderException}.
+     *
+     * @throws JMXProviderException if a provider {@code P} for the protocol in
+     *         <code>url</code> was found, but couldn't create the connector
+     *         {@code C} for some reason.
+     *
+     * @return an instance of {@code C} if a provider {@code P} was found from
+     *         which one could be instantiated, {@code null} otherwise.
+     */
+    static <P,C> C getConnectorAsService(Class<P> providerClass,
+                                         ClassLoader loader,
+                                         JMXServiceURL url,
+                                         Predicate<Provider<?>> filter,
+                                         ConnectorFactory<P,C> factory)
+        throws IOException {
+
+        // sanity check
+        if (JMXConnectorProvider.class != providerClass
+            && JMXConnectorServerProvider.class != providerClass) {
+            // should never happen
+            throw new InternalError("Unsupported service interface: "
+                                    + providerClass.getName());
+        }
+
+        ServiceLoader<P> serviceLoader = loader == null
+                ? ServiceLoader.loadInstalled(providerClass)
+                : ServiceLoader.load(providerClass, loader);
+        Stream<Provider<P>> stream = serviceLoader.stream().filter(filter);
+        ProviderFinder<P,C> finder = new ProviderFinder<>(factory, url);
+
+        try {
+            stream.filter(finder).findFirst();
+            return finder.get();
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof JMXProviderException) {
+                throw (JMXProviderException) e.getCause();
+            } else {
+                throw e;
             }
         }
-        if (exception == null)
-            return null;
-        else
-            throw exception;
     }
 
     static <T> T getProvider(String protocol,

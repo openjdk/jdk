@@ -30,13 +30,16 @@ import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceLoader.Provider;
+import java.util.function.Predicate;
 
 import javax.management.MBeanServer;
+import javax.management.remote.JMXConnectorFactory.ConnectorFactory;
 
 /**
  * <p>Factory to create JMX API connector servers.  There
@@ -205,43 +208,15 @@ public class JMXConnectorServerFactory {
     }
 
     private static JMXConnectorServer
-        getConnectorServerAsService(ClassLoader loader,
-                                    JMXServiceURL url,
-                                    Map<String, ?> map,
-                                    MBeanServer mbs)
+        getConnectorServerAsService(ClassLoader loader, JMXServiceURL url,
+                                    Map<String, ?> map, MBeanServer mbs,
+                                    Predicate<Provider<?>> filter)
         throws IOException {
-        Iterator<JMXConnectorServerProvider> providers =
-                JMXConnectorFactory.
-                getProviderIterator(JMXConnectorServerProvider.class, loader);
-
-        IOException exception = null;
-        while (providers.hasNext()) {
-            try {
-                return providers.next().newJMXConnectorServer(url, map, mbs);
-            } catch (JMXProviderException e) {
-                throw e;
-            } catch (Exception e) {
-                if (logger.traceOn())
-                    logger.trace("getConnectorAsService",
-                                 "URL[" + url +
-                                 "] Service provider exception: " + e);
-                if (!(e instanceof MalformedURLException)) {
-                    if (exception == null) {
-                        if (e instanceof IOException) {
-                            exception = (IOException) e;
-                        } else {
-                            exception = EnvHelp.initCause(
-                                new IOException(e.getMessage()), e);
-                        }
-                    }
-                }
-                continue;
-            }
-        }
-        if (exception == null)
-            return null;
-        else
-            throw exception;
+        final ConnectorFactory<JMXConnectorServerProvider,JMXConnectorServer>
+              factory = (p) -> p.newJMXConnectorServer(url, map, mbs);
+        return JMXConnectorFactory.getConnectorAsService(
+                                     JMXConnectorServerProvider.class,
+                                     loader, url, filter, factory);
     }
 
     /**
@@ -309,18 +284,22 @@ public class JMXConnectorServerFactory {
                                             loader);
 
         IOException exception = null;
+        JMXConnectorServer connection = null;
         if (provider == null) {
+            Predicate<Provider<?>> systemProvider =
+                    JMXConnectorFactory::isSystemProvider;
             // Loader is null when context class loader is set to null
             // and no loader has been provided in map.
             // com.sun.jmx.remote.util.Service class extracted from j2se
             // provider search algorithm doesn't handle well null classloader.
             if (loader != null) {
                 try {
-                    JMXConnectorServer connection =
+                    connection =
                         getConnectorServerAsService(loader,
                                                     serviceURL,
                                                     envcopy,
-                                                    mbeanServer);
+                                                    mbeanServer,
+                                                    systemProvider.negate());
                     if (connection != null)
                         return connection;
                 } catch (JMXProviderException e) {
@@ -329,13 +308,13 @@ public class JMXConnectorServerFactory {
                     exception = e;
                 }
             }
-            provider =
-                JMXConnectorFactory.getProvider(
-                    protocol,
-                    PROTOCOL_PROVIDER_DEFAULT_PACKAGE,
-                    JMXConnectorFactory.class.getClassLoader(),
-                    providerClassName,
-                    targetInterface);
+            connection = getConnectorServerAsService(
+                            JMXConnectorFactory.class.getClassLoader(),
+                            serviceURL,
+                            Collections.unmodifiableMap(envcopy),
+                            mbeanServer,
+                            systemProvider);
+            if (connection != null) return connection;
         }
 
         if (provider == null) {

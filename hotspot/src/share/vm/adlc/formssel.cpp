@@ -650,6 +650,7 @@ bool InstructForm::is_wide_memory_kill(FormDict &globals) const {
   if( strcmp(_matrule->_opType,"MemBarReleaseLock") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarAcquireLock") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarStoreStore") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"MemBarVolatile") == 0 ) return true;
   if( strcmp(_matrule->_opType,"StoreFence") == 0 ) return true;
   if( strcmp(_matrule->_opType,"LoadFence") == 0 ) return true;
 

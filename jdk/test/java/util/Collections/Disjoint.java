@@ -42,7 +42,7 @@ public class Disjoint {
         int x = 0;
         for (int i = 0; i < N; i++) {
             int size = rnd.nextInt(10) + 2;
-            List<Integer> list = new ArrayList<Integer>(size);
+            List<Integer> list = new ArrayList<>(size);
             for (int j = 1; j < size; j++)
                 list.add(x++);
             list.add(x);

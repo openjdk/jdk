@@ -28,15 +28,17 @@
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management
- * @library /test/lib
+ * @library /test/lib /
  * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc TestDynShrinkHeap
  */
 import jdk.test.lib.DynamicVMOption;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
+import java.text.NumberFormat;
 import static jdk.test.lib.Asserts.assertLessThan;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import gc.testlibrary.Helpers;
 
 public class TestDynShrinkHeap {
 
@@ -101,24 +103,16 @@ public class TestDynShrinkHeap {
  */
 class MemoryUsagePrinter {
 
-    public static String humanReadableByteCount(long bytes, boolean si) {
-        int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
-            return bytes + " B";
-        }
-        int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-    }
+    public static final NumberFormat NF = Helpers.numberFormatter();
 
     public static void printMemoryUsage(String label) {
         MemoryUsage memusage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         float freeratio = 1f - (float) memusage.getUsed() / memusage.getCommitted();
         System.out.format("[%-24s] init: %-7s, used: %-7s, comm: %-7s, freeRatio ~= %.1f%%%n",
                 label,
-                humanReadableByteCount(memusage.getInit(), true),
-                humanReadableByteCount(memusage.getUsed(), true),
-                humanReadableByteCount(memusage.getCommitted(), true),
+                NF.format(memusage.getInit()),
+                NF.format(memusage.getUsed()),
+                NF.format(memusage.getCommitted()),
                 freeratio * 100
         );
     }

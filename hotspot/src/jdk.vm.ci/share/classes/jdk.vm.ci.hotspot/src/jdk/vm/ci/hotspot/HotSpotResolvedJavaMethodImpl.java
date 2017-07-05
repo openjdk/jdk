@@ -299,15 +299,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
-     * Returns true if this method has a {@code DontInline} annotation.
-     *
-     * @return true if DontInline annotation present, false otherwise
-     */
-    public boolean isDontInline() {
-        return (getFlags() & config().methodFlagsDontInline) != 0;
-    }
-
-    /**
      * Returns true if this method has a {@code ReservedStackAccess} annotation.
      *
      * @return true if ReservedStackAccess annotation present, false otherwise
@@ -582,10 +573,15 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean canBeInlined() {
-        if (isDontInline()) {
+        if (hasNeverInlineDirective()) {
             return false;
         }
-        return compilerToVM().canInlineMethod(this);
+        return compilerToVM().isCompilable(this);
+    }
+
+    @Override
+    public boolean hasNeverInlineDirective() {
+        return compilerToVM().hasNeverInlineDirective(this);
     }
 
     @Override

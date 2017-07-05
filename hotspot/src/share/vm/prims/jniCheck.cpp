@@ -238,8 +238,8 @@ functionExit(JavaThread* thr)
   size_t live_handles = handles->get_number_of_live_handles();
   if (live_handles > planned_capacity) {
     IN_VM(
-      tty->print_cr("WARNING: JNI local refs: %zu, exceeds capacity: %zu",
-          live_handles, planned_capacity);
+      tty->print_cr("WARNING: JNI local refs: " SIZE_FORMAT ", exceeds capacity: " SIZE_FORMAT,
+                    live_handles, planned_capacity);
       thr->print_stack();
     )
     // Complain just the once, reset to current + warn threshold

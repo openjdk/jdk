@@ -61,7 +61,7 @@ public class TreeSubSetTest extends JSR166TestCase {
      * Integers 0 ... n - 1.
      */
     private NavigableSet<Integer> populatedSet(int n) {
-        TreeSet<Integer> q = new TreeSet<Integer>();
+        TreeSet<Integer> q = new TreeSet<>();
         assertTrue(q.isEmpty());
 
         for (int i = n - 1; i >= 0; i -= 2)
