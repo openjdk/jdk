@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ public interface ClassConstants
     public static final int JVM_CONSTANT_UnresolvedClassInError   = 103;  // Error tag due to resolution error
     public static final int JVM_CONSTANT_MethodHandleInError      = 104;  // Error tag due to resolution error
     public static final int JVM_CONSTANT_MethodTypeInError        = 105;  // Error tag due to resolution error
-    public static final int JVM_CONSTANT_Object                   = 106;  // Required for BoundMethodHandle arguments.
 
     // 1.5 major/minor version numbers from JVM spec. 3rd edition
     public static final short MAJOR_VERSION = 49;

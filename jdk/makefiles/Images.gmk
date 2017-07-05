@@ -59,7 +59,7 @@ define process-doc-file
 	$(ECHO) $(LOG_INFO) Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(SED) 's/$$//g' $< > $@
+	LC_ALL=C $(SED) 's/$$//g' $< > $@
 	$(CHMOD) 444 $@
 endef
 

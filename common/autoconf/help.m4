@@ -174,7 +174,7 @@ printf "* C++ Compiler:   $CXX_VENDOR version $CXX_VERSION (at $CXX)\n"
 
 printf "\n"
 printf "Build performance summary:\n"
-printf "* Cores to use:   $NUM_CORES\n"
+printf "* Cores to use:   $JOBS\n"
 printf "* Memory limit:   $MEMORY_SIZE MB\n"
 printf "* ccache status:  $CCACHE_STATUS\n"
 printf "\n"

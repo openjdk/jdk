@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6852078
  * @summary Disable SuperWord optimization for unsafe read/write
  *
- * @run main/othervm Test6852078
+ * @run main Test6852078
  */
 
 import java.util.*;
@@ -50,7 +50,11 @@ public class Test6852078 {
     }
 
     public static void main(String [] args) {
+        long start = System.currentTimeMillis();
         for (int i=0; i<2000; i++) {
+            // To protect slow systems from test-too-long timeouts
+            if ((i > 100) && ((System.currentTimeMillis() - start) > 100000))
+               break;
             Test6852078 t = new Test6852078(args);
         }
     }

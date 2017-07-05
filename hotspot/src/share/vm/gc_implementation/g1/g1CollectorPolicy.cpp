@@ -267,7 +267,15 @@ G1CollectorPolicy::G1CollectorPolicy() :
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
   double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
-  _sigma = (double) G1ConfidencePercent / 100.0;
+
+  uintx confidence_perc = G1ConfidencePercent;
+  // Put an artificial ceiling on this so that it's not set to a silly value.
+  if (confidence_perc > 100) {
+    confidence_perc = 100;
+    warning("G1ConfidencePercent is set to a value that is too large, "
+            "it's been updated to %u", confidence_perc);
+  }
+  _sigma = (double) confidence_perc / 100.0;
 
   // start conservatively (around 50ms is about right)
   _concurrent_mark_remark_times_ms->add(0.05);
