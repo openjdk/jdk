@@ -26,11 +26,14 @@
 
 package com.sun.security.sasl.gsskerb;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import javax.security.sasl.*;
 import com.sun.security.sasl.util.AbstractSaslImpl;
 import org.ietf.jgss.*;
+import com.sun.security.jgss.ExtendedGSSContext;
+import com.sun.security.jgss.InquireType;
 
 abstract class GssKrb5Base extends AbstractSaslImpl {
 
@@ -59,6 +62,36 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
      */
     public String getMechanismName() {
         return "GSSAPI";
+    }
+
+    @Override
+    public Object getNegotiatedProperty(String propName) {
+        if (!completed) {
+            throw new IllegalStateException("Authentication incomplete");
+        }
+        String xprefix = "com.sun.security.jgss.inquiretype.";
+        if (propName.startsWith(xprefix)) {
+            String type = propName.substring(xprefix.length());
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.logp(Level.FINE, "GssKrb5Base",
+                        "getNegotiatedProperty", propName);
+            }
+            for (InquireType t: InquireType.values()) {
+                if (t.name().toLowerCase(Locale.US).equals(type)) {
+                    try {
+                        return ((ExtendedGSSContext)secCtx).inquireSecContext(t);
+                    } catch (GSSException e) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.WARNING, "inquireSecContext error", e);
+                        }
+                        return null;
+                    }
+                }
+            }
+            // No such InquireType. Although not likely to be defined
+            // as a property in a parent class, still try it.
+        }
+        return super.getNegotiatedProperty(propName);
     }
 
     public byte[] unwrap(byte[] incoming, int start, int len)

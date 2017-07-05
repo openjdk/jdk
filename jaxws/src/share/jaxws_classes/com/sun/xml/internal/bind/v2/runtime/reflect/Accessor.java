@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     public void receive(UnmarshallingContext.State state, Object o) throws SAXException {
         try {
-            set((BeanT) state.target, (ValueT) o);
+            set((BeanT) state.getTarget(), (ValueT) o);
         } catch (AccessorException e) {
             Loader.handleGenericException(e, true);
         } catch (IllegalAccessError iae) {

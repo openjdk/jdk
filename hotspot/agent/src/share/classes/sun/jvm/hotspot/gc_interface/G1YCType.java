@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009 Red Hat, Inc.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,24 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_BYTECODES_ZERO_HPP
-#define CPU_ZERO_VM_BYTECODES_ZERO_HPP
+package sun.jvm.hotspot.gc_interface;
 
-// This file is intentionally empty
+//These definitions should be kept in sync with the definitions in the HotSpot
+//code.
 
-#endif // CPU_ZERO_VM_BYTECODES_ZERO_HPP
+public enum G1YCType {
+  Normal ("Normal"),
+  InitialMark ("Initial Mark"),
+  DuringMark ("During Mark"),
+  Mixed ("Mixed"),
+  G1YCTypeEndSentinel ("Unknown");
+
+  private final String value;
+
+  G1YCType(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
+}

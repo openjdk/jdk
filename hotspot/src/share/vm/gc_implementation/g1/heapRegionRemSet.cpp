@@ -32,6 +32,7 @@
 #include "memory/padded.inline.hpp"
 #include "memory/space.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"

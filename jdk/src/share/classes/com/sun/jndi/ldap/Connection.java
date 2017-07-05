@@ -111,6 +111,7 @@ public final class Connection implements Runnable {
 
     private static final boolean debug = false;
     private static final int dump = 0; // > 0 r, > 1 rw
+    public static final long DEFAULT_READ_TIMEOUT_MILLIS = 15 * 1000; // 15 second timeout;
 
 
     final private Thread worker;    // Initialized in constructor
@@ -460,7 +461,7 @@ public final class Connection implements Runnable {
                             // available
                             ldr.wait(readTimeout);
                         } else {
-                            ldr.wait(15 * 1000); // 15 second timeout
+                            ldr.wait(DEFAULT_READ_TIMEOUT_MILLIS);
                         }
                         waited = true;
                     } else {

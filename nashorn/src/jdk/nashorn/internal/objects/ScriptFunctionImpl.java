@@ -184,6 +184,15 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return new AnonymousFunction();
     }
 
+    private static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs, final int flags) {
+        final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, flags);
+        func.setPrototype(UNDEFINED);
+        // Non-constructor built-in functions do not have "prototype" property
+        func.deleteOwnProperty(func.getMap().findProperty("prototype"));
+
+        return func;
+    }
+
     /**
      * Factory method for non-constructor built-in functions
      *
@@ -193,12 +202,18 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @return new ScriptFunction
      */
     static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs) {
-        final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, ScriptFunctionData.IS_BUILTIN);
-        func.setPrototype(UNDEFINED);
-        // Non-constructor built-in functions do not have "prototype" property
-        func.deleteOwnProperty(func.getMap().findProperty("prototype"));
+        return makeFunction(name, methodHandle, specs, ScriptFunctionData.IS_BUILTIN);
+    }
 
-        return func;
+    /**
+     * Factory method for non-constructor built-in, strict functions
+     *
+     * @param name   function name
+     * @param methodHandle handle for invocation
+     * @return new ScriptFunction
+     */
+    static ScriptFunction makeStrictFunction(final String name, final MethodHandle methodHandle) {
+        return makeFunction(name, methodHandle, null, ScriptFunctionData.IS_BUILTIN | ScriptFunctionData.IS_STRICT );
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ public final class DefaultValueLoaderDecorator extends Loader {
     @Override
     public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
         // install the default value, but don't override the one given by the parent loader
-        if(state.elementDefaultValue==null)
-            state.elementDefaultValue = defaultValue;
+        if(state.getElementDefaultValue() == null)
+            state.setElementDefaultValue(defaultValue);
 
-        state.loader = l;
+        state.setLoader(l);
         l.startElement(state,ea);
     }
 }
