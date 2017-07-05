@@ -40,17 +40,17 @@ public class FillableStringTest {
     }
 
     public void testStringBuilder() {
-        String s = generate().collect(Collectors.toStringBuilder()).toString();
+        String s = generate().collect(Collectors.joining());
         assertEquals(s, "THREEFOURFIVE");
     }
 
     public void testStringBuffer() {
-        String s = generate().collect(Collectors.toStringBuilder()).toString();
+        String s = generate().collect(Collectors.joining());
         assertEquals(s, "THREEFOURFIVE");
     }
 
     public void testStringJoiner() {
-        String s = generate().collect(Collectors.toStringJoiner("-")).toString();
+        String s = generate().collect(Collectors.joining("-"));
         assertEquals(s, "THREE-FOUR-FIVE");
     }
 }

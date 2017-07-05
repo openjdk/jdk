@@ -209,7 +209,7 @@ final class SortedOps {
         }
 
         @Override
-        public Sink<Long> opWrapSink(int flags, Sink sink) {
+        public Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
             Objects.requireNonNull(sink);
 
             if (StreamOpFlag.SORTED.isKnown(flags))
@@ -248,7 +248,7 @@ final class SortedOps {
         }
 
         @Override
-        public Sink<Double> opWrapSink(int flags, Sink sink) {
+        public Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
             Objects.requireNonNull(sink);
 
             if (StreamOpFlag.SORTED.isKnown(flags))
@@ -285,7 +285,7 @@ final class SortedOps {
         private T[] array;
         private int offset;
 
-        SizedRefSortingSink(Sink sink, Comparator<? super T> comparator) {
+        SizedRefSortingSink(Sink<T> sink, Comparator<? super T> comparator) {
             super(sink);
             this.comparator = comparator;
         }
@@ -324,7 +324,7 @@ final class SortedOps {
         private final Comparator<? super T> comparator;
         private ArrayList<T> list;
 
-        RefSortingSink(Sink sink, Comparator<? super T> comparator) {
+        RefSortingSink(Sink<T> sink, Comparator<? super T> comparator) {
             super(sink);
             this.comparator = comparator;
         }

@@ -274,6 +274,7 @@ final class MatchOps {
      * @param <P_IN> the type of source elements for the pipeline
      * @param <P_OUT> the type of output elements for the pipeline
      */
+    @SuppressWarnings("serial")
     private static final class MatchTask<P_IN, P_OUT>
             extends AbstractShortCircuitTask<P_IN, P_OUT, Boolean, MatchTask<P_IN, P_OUT>> {
         private final MatchOp<P_OUT> op;

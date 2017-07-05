@@ -39,8 +39,8 @@ package javax.print;
  * initialize services only when needed without any API dependencies
  * except in an environment in which they are used.
  * <p>
- * Swing UIs are preferred as they provide a more consistent L&F and
- * can support accessibility APIs.
+ * Swing UIs are preferred as they provide a more consistent {@literal L&F}
+ * and can support accessibility APIs.
  * <p>
  * Example usage:
  * <pre>

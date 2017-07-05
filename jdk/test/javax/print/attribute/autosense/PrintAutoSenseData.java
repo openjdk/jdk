@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4468109
+ * @bug 4468109 8021583
  * @summary Test for printing AUTOSENSE DocFlavor.  No exception should be thrown.
  * @run main PrintAutoSenseData
 */
