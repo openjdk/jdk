@@ -78,7 +78,6 @@ import com.sun.net.httpserver.HttpServer;
  * URLClassLoader. Each request to the HTTP server is recorded to ensure
  * only the correct amount of requests are being made.
  *
- * Note: Needs jdk/lib/tools.jar in the classpath to compile and run.
  */
 
 public class Basic {
@@ -160,14 +159,7 @@ public class Basic {
 
     static String jar;
     static {
-        String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            int index = javaHome.lastIndexOf(slash);
-            if (index != -1)
-                javaHome = javaHome.substring(0, index);
-        }
-
-        jar = javaHome + slash+  "bin" + slash + "jar";
+        jar = System.getProperty("java.home") + slash+  "bin" + slash + "jar";
     }
 
     /* create the index */

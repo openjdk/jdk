@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,7 @@ static final class ClientHello extends HandshakeMessage {
         protocolVersion = ProtocolVersion.valueOf(s.getInt8(), s.getInt8());
         clnt_random = new RandomCookie(s);
         sessionId = new SessionId(s.getBytes8());
+        sessionId.checkLength(protocolVersion);
         cipherSuites = new CipherSuiteList(s);
         compression_methods = s.getBytes8();
         if (messageLength() != messageLength) {
@@ -355,6 +356,7 @@ class ServerHello extends HandshakeMessage
                                                   input.getInt8());
         svr_random = new RandomCookie(input);
         sessionId = new SessionId(input.getBytes8());
+        sessionId.checkLength(protocolVersion);
         cipherSuite = CipherSuite.valueOf(input.getInt8(), input.getInt8());
         compression_method = (byte)input.getInt8();
         if (messageLength() != messageLength) {

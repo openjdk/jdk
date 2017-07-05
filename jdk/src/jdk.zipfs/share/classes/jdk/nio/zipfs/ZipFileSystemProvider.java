@@ -36,7 +36,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipError;
+import java.util.zip.ZipException;
 import java.util.concurrent.ExecutorService;
 
 /*
@@ -100,7 +100,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             ZipFileSystem zipfs = null;
             try {
                 zipfs = new ZipFileSystem(this, path, env);
-            } catch (ZipError ze) {
+            } catch (ZipException ze) {
                 String pname = path.toString();
                 if (pname.endsWith(".zip") || pname.endsWith(".jar"))
                     throw ze;
@@ -122,7 +122,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         ensureFile(path);
         try {
             return new ZipFileSystem(this, path, env);
-        } catch (ZipError ze) {
+        } catch (ZipException ze) {
             String pname = path.toString();
             if (pname.endsWith(".zip") || pname.endsWith(".jar"))
                 throw ze;

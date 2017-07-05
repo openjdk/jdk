@@ -113,15 +113,17 @@ public class SCDynamicStoreConfig {
 
     @SuppressWarnings("unchecked")
     private static Hashtable<String, Object> convertNativeConfig(
-            Hashtable<String, Object> stanzaTable) {
+            Hashtable<String, Object> stanzaTable) throws IOException {
         // convert SCDynamicStore realm structure to Java realm structure
         Hashtable<String, ?> realms =
                 (Hashtable<String, ?>) stanzaTable.get("realms");
-        if (realms != null) {
-            stanzaTable.remove("realms");
-            Hashtable<String, Object> realmsTable = convertRealmConfigs(realms);
-            stanzaTable.put("realms", realmsTable);
+        if (realms == null || realms.isEmpty()) {
+            throw new IOException(
+                    "SCDynamicStore contains an empty Kerberos setting");
         }
+        stanzaTable.remove("realms");
+        Hashtable<String, Object> realmsTable = convertRealmConfigs(realms);
+        stanzaTable.put("realms", realmsTable);
         WrapAllStringInVector(stanzaTable);
         if (DEBUG) System.out.println("stanzaTable : " + stanzaTable);
         return stanzaTable;
