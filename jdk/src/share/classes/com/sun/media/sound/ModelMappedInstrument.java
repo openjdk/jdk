@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import javax.sound.sampled.AudioFormat;
  *
  * @author Karl Helgason
  */
-public class ModelMappedInstrument extends ModelInstrument {
+public final class ModelMappedInstrument extends ModelInstrument {
 
-    private ModelInstrument ins;
+    private final ModelInstrument ins;
 
     public ModelMappedInstrument(ModelInstrument ins, Patch patch) {
         super(ins.getSoundbank(), patch, ins.getName(), ins.getDataClass());

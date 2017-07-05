@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,7 +431,7 @@ public abstract class Decoder implements FastInfosetParser {
         final int noOfItems = decodeNumberOfItemsOfSequence();
 
         for (int i = 0; i < noOfItems; i++) {
-            String URI = decodeNonEmptyOctetStringOnSecondBitAsUtf8String();
+            /*String URI = */decodeNonEmptyOctetStringOnSecondBitAsUtf8String();
 
             decodeNonEmptyOctetStringLengthOnSecondBit();
             ensureOctetBufferSize();
@@ -1817,7 +1817,7 @@ public abstract class Decoder implements FastInfosetParser {
             second.getChars(0, l2, _charBuffer, l1 + 1);
             return new String(_charBuffer, 0, total);
         } else {
-            StringBuffer b = new StringBuffer(new String(first));
+            StringBuilder b = new StringBuilder(new String(first));
             b.append(':');
             b.append(second);
             return b.toString();
@@ -1992,10 +1992,12 @@ public abstract class Decoder implements FastInfosetParser {
     static public boolean isFastInfosetDocument(InputStream s) throws IOException {
         // TODO
         // Check for <?xml declaration with 'finf' encoding
+        final int headerSize = 4;
 
-        final byte[] header = new byte[4];
-        s.read(header);
-        if (header[0] != EncodingConstants.BINARY_HEADER[0] ||
+        final byte[] header = new byte[headerSize];
+        final int readBytesCount = s.read(header);
+        if (readBytesCount < headerSize ||
+                header[0] != EncodingConstants.BINARY_HEADER[0] ||
                 header[1] != EncodingConstants.BINARY_HEADER[1] ||
                 header[2] != EncodingConstants.BINARY_HEADER[2] ||
                 header[3] != EncodingConstants.BINARY_HEADER[3]) {

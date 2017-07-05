@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ public class DOMDocumentParser extends Decoder {
         }
 
         if ((_b & EncodingConstants.DOCUMENT_CHARACTER_ENCODING_SCHEME) > 0) {
-            String version = decodeCharacterEncodingScheme();
+            /*String version = */decodeCharacterEncodingScheme();
             /*
              * TODO
              * how to report the character encoding scheme?
@@ -280,7 +280,7 @@ public class DOMDocumentParser extends Decoder {
         }
 
         if ((_b & EncodingConstants.DOCUMENT_STANDALONE_FLAG) > 0) {
-            boolean standalone = (read() > 0) ? true : false ;
+            /*boolean standalone = (*/read()/* > 0) ? true : false*/ ;
             /*
              * TODO
              * how to report the standalone flag?

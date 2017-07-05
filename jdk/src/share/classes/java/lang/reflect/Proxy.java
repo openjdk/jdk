@@ -751,25 +751,21 @@ public class Proxy implements java.io.Serializable {
     private static void checkNewProxyPermission(Class<?> caller, Class<?> proxyClass) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            String pcn = proxyClass.getName();
-            if (pcn.startsWith(ReflectUtil.PROXY_PACKAGE + ".")) {
-                // all proxy interfaces are public
-                return;
-            }
+            if (ReflectUtil.isNonPublicProxyClass(proxyClass)) {
+                ClassLoader ccl = caller.getClassLoader();
+                ClassLoader pcl = proxyClass.getClassLoader();
 
-            ClassLoader ccl = caller.getClassLoader();
-            ClassLoader pcl = proxyClass.getClassLoader();
+                // do permission check if the caller is in a different runtime package
+                // of the proxy class
+                int n = proxyClass.getName().lastIndexOf('.');
+                String pkg = (n == -1) ? "" : proxyClass.getName().substring(0, n);
 
-            // do permission check if the caller is in a different runtime package
-            // of the proxy class
-            int n = pcn.lastIndexOf('.');
-            String pkg = (n == -1) ? "" : pcn.substring(0, n);
+                n = caller.getName().lastIndexOf('.');
+                String callerPkg = (n == -1) ? "" : caller.getName().substring(0, n);
 
-            n = caller.getName().lastIndexOf('.');
-            String callerPkg = (n == -1) ? "" : caller.getName().substring(0, n);
-
-            if (pcl != ccl || !pkg.equals(callerPkg)) {
-                sm.checkPermission(new ReflectPermission("newProxyInPackage." + pkg));
+                if (pcl != ccl || !pkg.equals(callerPkg)) {
+                    sm.checkPermission(new ReflectPermission("newProxyInPackage." + pkg));
+                }
             }
         }
     }

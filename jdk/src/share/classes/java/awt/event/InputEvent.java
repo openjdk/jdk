@@ -353,7 +353,7 @@ public abstract class InputEvent extends ComponentEvent {
                     sm.checkSystemClipboardAccess();
                     b = true;
                 } catch (SecurityException se) {
-                    if (logger.isLoggable(PlatformLogger.FINE)) {
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                         logger.fine("InputEvent.canAccessSystemClipboard() got SecurityException ", se);
                     }
                 }

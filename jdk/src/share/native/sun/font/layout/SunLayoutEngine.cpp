@@ -203,16 +203,19 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
   getFloat(env, pt, x, y);
   jboolean rtl = (typo_flags & TYPO_RTL) != 0;
   int glyphCount = engine->layoutChars(chars, start - min, limit - start, len, rtl, x, y, success);
-  //   fprintf(stderr, "sle nl len %d -> gc: %d\n", len, glyphCount); fflush(stderr);
+    // fprintf(stderr, "sle nl len %d -> gc: %d\n", len, glyphCount); fflush(stderr);
 
   engine->getGlyphPosition(glyphCount, x, y, success);
 
-  //  fprintf(stderr, "layout glyphs: %d x: %g y: %g\n", glyphCount, x, y); fflush(stderr);
-
-  if (putGV(env, gmask, baseIndex, gvdata, engine, glyphCount)) {
-    // !!! hmmm, could use current value in positions array of GVData...
-    putFloat(env, pt, x, y);
-  }
+   // fprintf(stderr, "layout glyphs: %d x: %g y: %g\n", glyphCount, x, y); fflush(stderr);
+   if (LE_FAILURE(success)) {
+       env->SetIntField(gvdata, gvdCountFID, -1); // flag failure
+   } else {
+      if (putGV(env, gmask, baseIndex, gvdata, engine, glyphCount)) {
+        // !!! hmmm, could use current value in positions array of GVData...
+        putFloat(env, pt, x, y);
+      }
+   }
 
   if (chars != buffer) {
     free(chars);

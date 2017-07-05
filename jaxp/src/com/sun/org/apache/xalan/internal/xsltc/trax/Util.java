@@ -105,8 +105,6 @@ public final class Util {
                     if (reader == null) {
                        try {
                            reader= XMLReaderFactory.createXMLReader();
-                           reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
-                                   xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
                        } catch (Exception e ) {
                            try {
 
@@ -137,6 +135,14 @@ public final class Util {
                         ("http://xml.org/sax/features/namespaces",true);
                     reader.setFeature
                         ("http://xml.org/sax/features/namespace-prefixes",false);
+
+                    try {
+                        reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                                   xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
+                    } catch (SAXNotRecognizedException e) {
+                        System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                + e.getMessage());
+                    }
 
                     xsltc.setXMLReader(reader);
                 }catch (SAXNotRecognizedException snre ) {

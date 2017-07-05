@@ -48,7 +48,7 @@ public class IntNodeTest extends OpTestCase {
             List<Node<Integer>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toIntArray(l))));
             nodes.add(fill(array, Nodes.intBuilder(array.length)));
             nodes.add(fill(array, Nodes.intBuilder()));
@@ -122,12 +122,12 @@ public class IntNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(int[] array, Node.OfInt n) {
-        assertEquals(n.asIntArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(int[] array, Node.OfInt n) {
-        assertEquals(Nodes.flattenInt(n).asIntArray(), array);
+        assertEquals(Nodes.flattenInt(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")

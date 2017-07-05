@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,9 @@ import java.net.MalformedURLException ;
 import com.sun.corba.se.spi.logging.CORBALogDomains ;
 
 import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
-import com.sun.corba.se.impl.orbutil.ORBClassLoader ;
 import com.sun.corba.se.impl.orbutil.ObjectUtility ;
+
+import sun.corba.SharedSecrets;
 
 /** This is a static factory class for commonly used operations
 * for property parsing.  The following operations are supported:
@@ -247,7 +248,8 @@ public abstract class OperationFactory {
             String className = getString( value ) ;
 
             try {
-                Class result = ORBClassLoader.loadClass( className ) ;
+                Class<?> result =
+                    SharedSecrets.getJavaCorbaAccess().loadClass( className ) ;
                 return result ;
             } catch (Exception exc) {
                 ORBUtilSystemException wrapper = ORBUtilSystemException.get(

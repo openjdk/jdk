@@ -65,10 +65,10 @@ public class BitSetStreamTest {
         { "index 0", IntStream.of(0) },
         { "index 255", IntStream.of(255) },
         { "every bit", IntStream.range(0, 255) },
-        { "step 2", IntStream.range(0, 255, 2) },
-        { "step 3", IntStream.range(0, 255, 3) },
-        { "step 5", IntStream.range(0, 255, 5) },
-        { "step 7", IntStream.range(0, 255, 7) },
+        { "step 2", IntStream.range(0, 255).map(f -> f * 2) },
+        { "step 3", IntStream.range(0, 255).map(f -> f * 3) },
+        { "step 5", IntStream.range(0, 255).map(f -> f * 5) },
+        { "step 7", IntStream.range(0, 255).map(f -> f * 7) },
         { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000) },
         { "25 fibs", IntStream.generate(new Fibs()).limit(25) }
     };

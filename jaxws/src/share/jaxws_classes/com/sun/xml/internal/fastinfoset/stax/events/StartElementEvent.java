@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,14 +187,16 @@ public class StartElementEvent extends EventBase implements StartElement {
     }
 
     public String toString() {
-        String s = "<" + nameAsString();
+        final StringBuilder sb = new StringBuilder(64);
+
+        sb.append('<').append(nameAsString());
 
         if(_attributes != null){
             Iterator it = this.getAttributes();
             Attribute attr = null;
             while(it.hasNext()){
                 attr = (Attribute)it.next();
-                s = s + " " + attr.toString();
+                sb.append(' ').append(attr.toString());
             }
         }
 
@@ -203,11 +205,11 @@ public class StartElementEvent extends EventBase implements StartElement {
             Namespace attr = null;
             while(it.hasNext()){
                 attr = (Namespace)it.next();
-                s = s + " " + attr.toString();
+                sb.append(' ').append(attr.toString());
             }
         }
-        s = s + ">";
-        return s;
+        sb.append('>');
+        return sb.toString();
     }
 
     /** Return this event as String

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.sound.sampled.spi.AudioFileReader;
-import javax.sound.sampled.spi.AudioFileWriter;
-import javax.sound.sampled.spi.FormatConversionProvider;
-import javax.sound.sampled.spi.MixerProvider;
-
-import javax.sound.midi.spi.MidiFileReader;
-import javax.sound.midi.spi.MidiFileWriter;
-import javax.sound.midi.spi.SoundbankReader;
-import javax.sound.midi.spi.MidiDeviceProvider;
-
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
@@ -62,7 +52,7 @@ import javax.sound.sampled.TargetDataLine;
  *
  * @author Matthias Pfisterer
  */
-public class JDK13Services {
+public final class JDK13Services {
 
     /** The default for the length of the period to hold the cache.
         This value is given in milliseconds. It is equivalent to
@@ -80,7 +70,7 @@ public class JDK13Services {
         Class objects of the provider type (MixerProvider, MidiDeviceProvider
         ...) are used as keys. The values are instances of ProviderCache.
     */
-    private static Map providersCacheMap = new HashMap();
+    private static final Map providersCacheMap = new HashMap();
 
 
     /** The length of the period to hold the cache.

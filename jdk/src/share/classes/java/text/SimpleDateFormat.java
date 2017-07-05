@@ -1845,6 +1845,8 @@ public class SimpleDateFormat extends DateFormat {
             }
             ++pos.index;
         }
+        // Remember the actual start index
+        int actualStart = pos.index;
 
       parsing:
         {
@@ -1924,9 +1926,9 @@ public class SimpleDateFormat extends DateFormat {
                 // we made adjustments to place the 2-digit year in the proper
                 // century, for parsed strings from "00" to "99".  Any other string
                 // is treated literally:  "2250", "-1", "1", "002".
-                if (count <= 2 && (pos.index - start) == 2
-                    && Character.isDigit(text.charAt(start))
-                    && Character.isDigit(text.charAt(start+1))) {
+                if (count <= 2 && (pos.index - actualStart) == 2
+                    && Character.isDigit(text.charAt(actualStart))
+                    && Character.isDigit(text.charAt(actualStart + 1))) {
                     // Assume for example that the defaultCenturyStart is 6/18/1903.
                     // This means that two-digit years will be forced into the range
                     // 6/18/1903 to 6/17/2003.  As a result, years 00, 01, and 02

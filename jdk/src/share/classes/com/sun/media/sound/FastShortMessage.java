@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ import javax.sound.midi.*;
 final class FastShortMessage extends ShortMessage {
     private int packedMsg;
 
-    public FastShortMessage(int packedMsg) throws InvalidMidiDataException {
+    FastShortMessage(int packedMsg) throws InvalidMidiDataException {
         this.packedMsg = packedMsg;
         getDataLength(packedMsg & 0xFF); // to check for validity
     }
 
     /** Creates a FastShortMessage from this ShortMessage */
-    public FastShortMessage(ShortMessage msg) {
+    FastShortMessage(ShortMessage msg) {
         this.packedMsg = msg.getStatus()
             | (msg.getData1() << 8)
             | (msg.getData2() << 16);

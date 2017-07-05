@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SF2Modulator {
+public final class SF2Modulator {
 
     public final static int SOURCE_NONE = 0;
     public final static int SOURCE_NOTE_ON_VELOCITY = 2;
@@ -49,11 +49,11 @@ public class SF2Modulator {
     public final static int SOURCE_TYPE_SWITCH = 1024 * 3;
     public final static int TRANSFORM_LINEAR = 0;
     public final static int TRANSFORM_ABSOLUTE = 2;
-    protected int sourceOperator;
-    protected int destinationOperator;
-    protected short amount;
-    protected int amountSourceOperator;
-    protected int transportOperator;
+    int sourceOperator;
+    int destinationOperator;
+    short amount;
+    int amountSourceOperator;
+    int transportOperator;
 
     public short getAmount() {
         return amount;

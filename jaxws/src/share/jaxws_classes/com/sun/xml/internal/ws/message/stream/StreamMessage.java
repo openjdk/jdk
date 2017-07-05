@@ -104,7 +104,9 @@ public class StreamMessage extends AbstractMessageImpl {
      * If the creater of this object didn't care about those,
      * we use stock values.
      */
-    private @NotNull TagInfoset envelopeTag,headerTag,bodyTag;
+    private @NotNull TagInfoset envelopeTag;
+    private @NotNull TagInfoset headerTag;
+    private @NotNull TagInfoset bodyTag;
 
     /**
      * Used only for debugging. This records where the message was consumed.
@@ -203,8 +205,7 @@ public class StreamMessage extends AbstractMessageImpl {
             throw new IllegalArgumentException("BodyTag TagInfoset cannot be null");
         }
         this.envelopeTag = envelopeTag;
-        this.headerTag = headerTag!=null ? headerTag :
-            new TagInfoset(envelopeTag.nsUri,"Header",envelopeTag.prefix,EMPTY_ATTS);
+        this.headerTag = headerTag;
         this.bodyTag = bodyTag;
         this.bodyPrologue = bodyPrologue;
         this.bodyEpilogue = bodyEpilogue;
@@ -391,10 +392,13 @@ public class StreamMessage extends AbstractMessageImpl {
 
         //write headers
         MessageHeaders hl = getHeaders();
-        if(hl.hasHeaders()){
+        if (hl.hasHeaders() && headerTag == null) headerTag = new TagInfoset(envelopeTag.nsUri,"Header",envelopeTag.prefix,EMPTY_ATTS);
+        if (headerTag != null) {
             headerTag.writeStart(writer);
-            for(Header h : hl.asList()){
-                h.writeTo(writer);
+            if (hl.hasHeaders()){
+                for(Header h : hl.asList()){
+                    h.writeTo(writer);
+                }
             }
             writer.writeEndElement();
         }
@@ -527,15 +531,18 @@ public class StreamMessage extends AbstractMessageImpl {
         contentHandler.setDocumentLocator(NULL_LOCATOR);
         contentHandler.startDocument();
         envelopeTag.writeStart(contentHandler);
-        headerTag.writeStart(contentHandler);
-        if(hasHeaders()) {
-            MessageHeaders headers = getHeaders();
-            for (Header h : headers.asList()) {
-                // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
-                h.writeTo(contentHandler,errorHandler);
+        if (hasHeaders() && headerTag == null) headerTag = new TagInfoset(envelopeTag.nsUri,"Header",envelopeTag.prefix,EMPTY_ATTS);
+        if (headerTag != null) {
+            headerTag.writeStart(contentHandler);
+            if (hasHeaders()) {
+                MessageHeaders headers = getHeaders();
+                for (Header h : headers.asList()) {
+                    // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
+                    h.writeTo(contentHandler,errorHandler);
+                }
             }
+            headerTag.writeEnd(contentHandler);
         }
-        headerTag.writeEnd(contentHandler);
         bodyTag.writeStart(contentHandler);
         writePayloadTo(contentHandler,errorHandler, true);
         bodyTag.writeEnd(contentHandler);

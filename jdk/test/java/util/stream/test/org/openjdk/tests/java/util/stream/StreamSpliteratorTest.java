@@ -526,7 +526,7 @@ public class StreamSpliteratorTest extends OpTestCase {
                 for (boolean proxyEstimateSize : new boolean[]{false, true}) {
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
-                    Spliterator.OfDouble sp = intermediateOp.apply(DoubleStream.range(0, 1000)).spliterator();
+                    Spliterator.OfDouble sp = intermediateOp.apply(IntStream.range(0, 1000).asDoubleStream()).spliterator();
                     ProxyNoExactSizeSpliterator.OfDouble psp = new ProxyNoExactSizeSpliterator.OfDouble(sp, proxyEstimateSize);
                     DoubleStream s = StreamSupport.doubleParallelStream(psp);
                     terminalOp.accept(s);

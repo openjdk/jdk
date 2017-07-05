@@ -62,7 +62,11 @@ public class ColConvDCMTest extends ColConvTest {
         ColorSpace.CS_LINEAR_RGB,
     };
 
-    final static double ACCURACY = 2.5;
+    final static double [] ACCURACY = {
+        // Accuracy for color conversions
+        2.5, // sRGB
+        (isOpenProfile() ? 45.0 : 2.5), // LINEAR_RGB
+    };
 
     final static String [] gldImgNames = {
         "SRGB.png", "SRGB555.png", "SRGB565.png", "LRGB.png", "LRGB555.png",
@@ -142,7 +146,7 @@ public class ColConvDCMTest extends ColConvTest {
 
             if (!testImage(imgTypes[i][0], imgTypes[i][1], imgTypes[i][2],
                            imgTypes[i][3], cSpaces[imgTypes[i][4]], gldImage,
-                           ACCURACY))
+                           ACCURACY[imgTypes[i][4]]))
             {
                 throw new RuntimeException(
                     "Invalid result of the ColorConvertOp for " +
@@ -154,7 +158,8 @@ public class ColConvDCMTest extends ColConvTest {
 
             if (!testSubImage(SI_X, SI_Y, SI_W, SI_H, imgTypes[i][0],
                               imgTypes[i][1], imgTypes[i][2], imgTypes[i][3],
-                              cSpaces[imgTypes[i][4]], gldImage, ACCURACY))
+                              cSpaces[imgTypes[i][4]], gldImage,
+                              ACCURACY[imgTypes[i][4]]))
             {
                 throw new RuntimeException(
                     "Invalid result of the ColorConvertOp for " +

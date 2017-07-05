@@ -85,7 +85,7 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @param  in    the input stream from which bytes will be read.
      * @param  size  the size of the pushback buffer.
-     * @exception IllegalArgumentException if size is <= 0
+     * @exception IllegalArgumentException if {@code size <= 0}
      * @since  JDK1.1
      */
     public PushbackInputStream(InputStream in, int size) {

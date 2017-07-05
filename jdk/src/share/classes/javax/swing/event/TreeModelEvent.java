@@ -128,7 +128,7 @@ public class TreeModelEvent extends EventObject {
     public TreeModelEvent(Object source, Object[] path, int[] childIndices,
                           Object[] children)
     {
-        this(source, new TreePath(path), childIndices, children);
+        this(source, (path == null) ? null : new TreePath(path), childIndices, children);
     }
 
     /**
@@ -183,7 +183,7 @@ public class TreeModelEvent extends EventObject {
      */
     public TreeModelEvent(Object source, Object[] path)
     {
-        this(source, new TreePath(path));
+        this(source, (path == null) ? null : new TreePath(path));
     }
 
     /**

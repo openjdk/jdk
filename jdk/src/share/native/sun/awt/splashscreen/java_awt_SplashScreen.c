@@ -26,6 +26,7 @@
 #include "splashscreen_impl.h"
 #include <jni.h>
 #include <jlong_md.h>
+#include <sizecalc.h>
 
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM * vm, void *reserved)
@@ -57,7 +58,7 @@ Java_java_awt_SplashScreen__1update(JNIEnv * env, jclass thisClass,
     if (splash->overlayData) {
         free(splash->overlayData);
     }
-    splash->overlayData = malloc(dataSize * sizeof(rgbquad_t));
+    splash->overlayData = SAFE_SIZE_ARRAY_ALLOC(malloc, dataSize, sizeof(rgbquad_t));
     if (splash->overlayData) {
         /* we need a copy anyway, so we'll be using GetIntArrayRegion */
         (*env)->GetIntArrayRegion(env, data, 0, dataSize,

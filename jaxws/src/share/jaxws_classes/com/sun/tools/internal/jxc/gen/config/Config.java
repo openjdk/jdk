@@ -74,30 +74,15 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 1:
+        case 2:
             {
                 if(($__uri.equals("") && $__local.equals("schema"))) {
-                    NGCCHandler h = new Schema(this, super._source, $runtime, 31, baseDir);
+                    NGCCHandler h = new Schema(this, super._source, $runtime, 16, baseDir);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
-                    unexpectedEnterElement($__qname);
-                }
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
-        case 7:
-            {
-                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
-                    $runtime.consumeAttribute($ai);
+                    $_ngcc_current_state = 1;
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    unexpectedEnterElement($__qname);
                 }
             }
             break;
@@ -112,23 +97,38 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
-        case 2:
-            {
-                if(($__uri.equals("") && $__local.equals("schema"))) {
-                    NGCCHandler h = new Schema(this, super._source, $runtime, 32, baseDir);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 1;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
         case 4:
             {
                 if(($__uri.equals("") && $__local.equals("classes"))) {
-                    NGCCHandler h = new Classes(this, super._source, $runtime, 34);
+                    NGCCHandler h = new Classes(this, super._source, $runtime, 18);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    unexpectedEnterElement($__qname);
+                }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
+        case 1:
+            {
+                if(($__uri.equals("") && $__local.equals("schema"))) {
+                    NGCCHandler h = new Schema(this, super._source, $runtime, 15, baseDir);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    unexpectedEnterElement($__qname);
+                }
+            }
+            break;
+        case 7:
+            {
+                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -149,6 +149,17 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 1:
             {
                 if(($__uri.equals("") && $__local.equals("config"))) {
@@ -160,11 +171,6 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
-        case 0:
-            {
-                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 7:
             {
                 if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
@@ -174,12 +180,6 @@ public class Config extends NGCCHandler {
                 else {
                     unexpectedLeaveElement($__qname);
                 }
-            }
-            break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -196,6 +196,12 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 0:
             {
                 revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
@@ -209,12 +215,6 @@ public class Config extends NGCCHandler {
                 else {
                     unexpectedEnterAttribute($__qname);
                 }
-            }
-            break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -231,11 +231,6 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
-            {
-                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 2:
             {
                 $_ngcc_current_state = 1;
@@ -252,6 +247,11 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
+        case 0:
+            {
+                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         default:
             {
                 unexpectedLeaveAttribute($__qname);
@@ -263,9 +263,10 @@ public class Config extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromText(this, super._cookie, $value);
+                $_ngcc_current_state = 1;
+                $runtime.sendText(super._cookie, $value);
             }
             break;
         case 6:
@@ -273,6 +274,11 @@ public class Config extends NGCCHandler {
                 bd = $value;
                 $_ngcc_current_state = 5;
                 action1();
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromText(this, super._cookie, $value);
             }
             break;
         case 7:
@@ -283,31 +289,25 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendText(super._cookie, $value);
-            }
-            break;
         }
     }
 
     public void onChildCompleted(Object result, int cookie, boolean needAttCheck)throws SAXException {
         switch(cookie) {
-        case 31:
+        case 16:
             {
                 this._schema = ((Schema)result);
                 action0();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 34:
+        case 18:
             {
                 this.classes = ((Classes)result);
                 $_ngcc_current_state = 2;
             }
             break;
-        case 32:
+        case 15:
             {
                 this._schema = ((Schema)result);
                 action0();

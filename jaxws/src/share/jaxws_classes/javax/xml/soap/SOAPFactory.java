@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,9 @@ public abstract class SOAPFactory {
         "javax.xml.soap.SOAPFactory";
 
     /**
-     * A constant representing the name of the default <code>SOAPFactory</code>
-     * factory class to be used if another cannot be found.
-     * a <code>SOAPFactory</code> implementation class.
+     * Class name of default <code>SOAPFactory</code> implementation.
      */
-    static private final String DEFAULT_SOAP_FACTORY
+    static final String DEFAULT_SOAP_FACTORY
         = "com.sun.xml.internal.messaging.saaj.soap.ver1_1.SOAPFactory1_1Impl";
 
     /**
