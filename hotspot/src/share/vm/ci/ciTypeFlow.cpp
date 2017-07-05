@@ -643,9 +643,9 @@ void ciTypeFlow::StateVector::do_getstatic(ciBytecodeStream* str) {
 // ------------------------------------------------------------------
 // ciTypeFlow::StateVector::do_invoke
 void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
-                                        bool has_receiver) {
+                                        bool has_receiver_foo) {
   bool will_link;
-  ciMethod* method = str->get_method(will_link);
+  ciMethod* callee = str->get_method(will_link);
   if (!will_link) {
     // We weren't able to find the method.
     if (str->cur_bc() == Bytecodes::_invokedynamic) {
@@ -654,12 +654,24 @@ void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
            (Deoptimization::Reason_uninitialized,
             Deoptimization::Action_reinterpret));
     } else {
-      ciKlass* unloaded_holder = method->holder();
+      ciKlass* unloaded_holder = callee->holder();
       trap(str, unloaded_holder, str->get_method_holder_index());
     }
   } else {
-    ciSignature* signature = method->signature();
+    // TODO Use Bytecode_invoke after metadata changes.
+    //Bytecode_invoke inv(str->method(), str->cur_bci());
+    //const bool has_receiver = callee->is_loaded() ? !callee->is_static() : inv.has_receiver();
+    Bytecode inv(str);
+    Bytecodes::Code code = inv.invoke_code();
+    const bool has_receiver = callee->is_loaded() ? !callee->is_static() : code != Bytecodes::_invokestatic && code != Bytecodes::_invokedynamic;
+
+    ciSignature* signature = callee->signature();
     ciSignatureStream sigstr(signature);
+    // Push appendix argument, if one.
+    if (str->has_appendix()) {
+      ciObject* appendix = str->get_appendix();
+      push_object(appendix->klass());
+    }
     int arg_size = signature->size();
     int stack_base = stack_size() - arg_size;
     int i = 0;
@@ -677,6 +689,7 @@ void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
     for (int j = 0; j < arg_size; j++) {
       pop();
     }
+    assert(!callee->is_loaded() || has_receiver == !callee->is_static(), "mismatch");
     if (has_receiver) {
       // Check this?
       pop_object();

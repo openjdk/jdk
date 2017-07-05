@@ -47,7 +47,8 @@ public enum Wrapper {
     private final Object   zero;
     private final Object   emptyArray;
     private final int      format;
-    private final String   simpleName;
+    private final String   wrapperSimpleName;
+    private final String   primitiveSimpleName;
 
     private Wrapper(Class<?> wtype, Class<?> ptype, char tchar, Object zero, Object emptyArray, int format) {
         this.wrapperType = wtype;
@@ -56,12 +57,13 @@ public enum Wrapper {
         this.zero = zero;
         this.emptyArray = emptyArray;
         this.format = format;
-        this.simpleName = wtype.getSimpleName();
+        this.wrapperSimpleName = wtype.getSimpleName();
+        this.primitiveSimpleName = ptype.getSimpleName();
     }
 
     /** For debugging, give the details of this wrapper. */
     public String detailString() {
-        return simpleName+
+        return wrapperSimpleName+
                 java.util.Arrays.asList(wrapperType, primitiveType,
                 basicTypeChar, zero,
                 "0x"+Integer.toHexString(format));
@@ -418,7 +420,11 @@ public enum Wrapper {
 
     /** What is the simple name of the wrapper type?
      */
-    public String simpleName() { return simpleName; }
+    public String wrapperSimpleName() { return wrapperSimpleName; }
+
+    /** What is the simple name of the primitive type?
+     */
+    public String primitiveSimpleName() { return primitiveSimpleName; }
 
 //    /** Wrap a value in the given type, which may be either a primitive or wrapper type.
 //     *  Performs standard primitive conversions, including truncation and float conversions.
@@ -456,26 +462,31 @@ public enum Wrapper {
             // If the target type is an interface, perform no runtime check.
             // (This loophole is safe, and is allowed by the JVM verifier.)
             // If the target type is a primitive, change it to a wrapper.
+            assert(!type.isPrimitive());
+            if (!type.isInterface())
+                type.cast(x);
             @SuppressWarnings("unchecked")
             T result = (T) x;  // unchecked warning is expected here
             return result;
         }
         Class<T> wtype = wrapperType(type);
         if (wtype.isInstance(x)) {
-            @SuppressWarnings("unchecked")
-            T result = (T) x;  // unchecked warning is expected here
-            return result;
+            return wtype.cast(x);
         }
-        Class<?> sourceType = x.getClass();  // throw NPE if x is null
         if (!isCast) {
+            Class<?> sourceType = x.getClass();  // throw NPE if x is null
             Wrapper source = findWrapperType(sourceType);
             if (source == null || !this.isConvertibleFrom(source)) {
                 throw newClassCastException(wtype, sourceType);
             }
+        } else if (x == null) {
+            @SuppressWarnings("unchecked")
+            T z = (T) zero;
+            return z;
         }
         @SuppressWarnings("unchecked")
         T result = (T) wrap(x);  // unchecked warning is expected here
-        assert result.getClass() == wtype;
+        assert (result == null ? Void.class : result.getClass()) == wtype;
         return result;
     }
 
@@ -523,7 +534,7 @@ public enum Wrapper {
             case 'S': return Short.valueOf((short) xn.intValue());
             case 'B': return Byte.valueOf((byte) xn.intValue());
             case 'C': return Character.valueOf((char) xn.intValue());
-            case 'Z': return Boolean.valueOf(boolValue(xn.longValue()));
+            case 'Z': return Boolean.valueOf(boolValue(xn.byteValue()));
         }
         throw new InternalError("bad wrapper");
     }
@@ -546,70 +557,9 @@ public enum Wrapper {
             case 'S': return Short.valueOf((short) x);
             case 'B': return Byte.valueOf((byte) x);
             case 'C': return Character.valueOf((char) x);
-            case 'Z': return Boolean.valueOf(boolValue(x));
+            case 'Z': return Boolean.valueOf(boolValue((byte) x));
         }
         throw new InternalError("bad wrapper");
-    }
-
-    /** Wrap a value (a long or smaller value) in this wrapper's type.
-     * Does not perform floating point conversion.
-     * Produces a {@code Long} for {@code OBJECT}, although the exact type
-     * of the operand is not known.
-     * Returns null for {@code VOID}.
-     */
-    public Object wrapRaw(long x) {
-        switch (basicTypeChar) {
-            case 'F':  return Float.valueOf(Float.intBitsToFloat((int)x));
-            case 'D':  return Double.valueOf(Double.longBitsToDouble(x));
-            case 'L':  // same as 'J':
-            case 'J':  return (Long) x;
-        }
-        // Other wrapping operations are just the same, given that the
-        // operand is already promoted to an int.
-        return wrap((int)x);
-    }
-
-    /** Produce bitwise value which encodes the given wrapped value.
-     * Does not perform floating point conversion.
-     * Returns zero for {@code VOID}.
-     */
-    public long unwrapRaw(Object x) {
-        switch (basicTypeChar) {
-            case 'F':  return Float.floatToRawIntBits((Float) x);
-            case 'D':  return Double.doubleToRawLongBits((Double) x);
-
-            case 'L': throw newIllegalArgumentException("cannot unwrap from sobject type");
-            case 'V': return 0;
-            case 'I': return (int)(Integer) x;
-            case 'J': return (long)(Long) x;
-            case 'S': return (short)(Short) x;
-            case 'B': return (byte)(Byte) x;
-            case 'C': return (char)(Character) x;
-            case 'Z': return (boolean)(Boolean) x ? 1 : 0;
-        }
-        throw new InternalError("bad wrapper");
-    }
-
-    /** Report what primitive type holds this guy's raw value. */
-    public Class<?> rawPrimitiveType() {
-        return rawPrimitive().primitiveType();
-    }
-
-    /** Report, as a wrapper, what primitive type holds this guy's raw value.
-     *  Returns self for INT, LONG, OBJECT; returns LONG for DOUBLE,
-     *  else returns INT.
-     */
-    public Wrapper rawPrimitive() {
-        switch (basicTypeChar) {
-            case 'S': case 'B':
-            case 'C': case 'Z':
-            case 'V':
-            case 'F':
-                return INT;
-            case 'D':
-                return LONG;
-        }
-        return this;
     }
 
     private static Number numberValue(Object x) {
@@ -620,7 +570,10 @@ public enum Wrapper {
         return (Number)x;
     }
 
-    private static boolean boolValue(long bits) {
+    // Parameter type of boolValue must be byte, because
+    // MethodHandles.explicitCastArguments defines boolean
+    // conversion as first converting to byte.
+    private static boolean boolValue(byte bits) {
         bits &= 1;  // simple 31-bit zero extension
         return (bits != 0);
     }

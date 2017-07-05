@@ -103,7 +103,8 @@ inline void assert_different_registers(
 ) {
   assert(
     a != b,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d",
+            a, b)
   );
 }
 
@@ -116,7 +117,8 @@ inline void assert_different_registers(
   assert(
     a != b && a != c
            && b != c,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d",
+            a, b, c)
   );
 }
 
@@ -131,7 +133,8 @@ inline void assert_different_registers(
     a != b && a != c && a != d
            && b != c && b != d
                      && c != d,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d",
+            a, b, c, d)
   );
 }
 
@@ -148,7 +151,8 @@ inline void assert_different_registers(
            && b != c && b != d && b != e
                      && c != d && c != e
                                && d != e,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d, e=%d",
+            a, b, c, d, e)
   );
 }
 
@@ -167,7 +171,8 @@ inline void assert_different_registers(
                      && c != d && c != e && c != f
                                && d != e && d != f
                                          && e != f,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d, e=%d, f=%d",
+            a, b, c, d, e, f)
   );
 }
 
@@ -188,7 +193,8 @@ inline void assert_different_registers(
                                && d != e && d != f && d != g
                                          && e != f && e != g
                                                    && f != g,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d, e=%d, f=%d, g=%d",
+            a, b, c, d, e, f, g)
   );
 }
 
@@ -211,7 +217,34 @@ inline void assert_different_registers(
                                          && e != f && e != g && e != h
                                                    && f != g && f != h
                                                              && g != h,
-    "registers must be different"
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d, e=%d, f=%d, g=%d, h=%d",
+            a, b, c, d, e, f, g, h)
+  );
+}
+
+
+inline void assert_different_registers(
+  AbstractRegister a,
+  AbstractRegister b,
+  AbstractRegister c,
+  AbstractRegister d,
+  AbstractRegister e,
+  AbstractRegister f,
+  AbstractRegister g,
+  AbstractRegister h,
+  AbstractRegister i
+) {
+  assert(
+    a != b && a != c && a != d && a != e && a != f && a != g && a != h && a != i
+           && b != c && b != d && b != e && b != f && b != g && b != h && b != i
+                     && c != d && c != e && c != f && c != g && c != h && c != i
+                               && d != e && d != f && d != g && d != h && d != i
+                                         && e != f && e != g && e != h && e != i
+                                                   && f != g && f != h && f != i
+                                                             && g != h && g != i
+                                                                       && h != i,
+    err_msg("registers must be different: a=%d, b=%d, c=%d, d=%d, e=%d, f=%d, g=%d, h=%d, i=%d",
+            a, b, c, d, e, f, g, h, i)
   );
 }
 

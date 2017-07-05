@@ -38,13 +38,14 @@
 // bit number |31                0|
 // bit length |-8--|-8--|---16----|
 // --------------------------------
-// _indices   [ b2 | b1 |  index  ]
-// _f1        [  entry specific   ]
-// _f2        [  entry specific   ]
-// _flags     [t|f|vf|v|m|h|unused|field_index] (for field entries)
-// bit length |4|1|1 |1|1|0|---7--|----16-----]
-// _flags     [t|f|vf|v|m|h|unused|eidx|psze] (for method entries)
-// bit length |4|1|1 |1|1|1|---7--|-8--|-8--]
+// _indices   [ b2 | b1 |  index  ]  index = constant_pool_index (!= 0, normal entries only)
+// _indices   [  index  |  00000  ]  index = main_entry_index (secondary entries only)
+// _f1        [  entry specific   ]  method, klass, or oop (MethodType or CallSite)
+// _f2        [  entry specific   ]  vtable index or vfinal method
+// _flags     [tos|0|00|00|00|f|v|f2|unused|field_index] (for field entries)
+// bit length [ 4 |1|1 |1 | 1|1|1| 1|---5--|----16-----]
+// _flags     [tos|M|vf|fv|ea|f|0|f2|unused|00000|psize] (for method entries)
+// bit length [ 4 |1|1 |1 | 1|1|1| 1|---5--|--8--|--8--]
 
 // --------------------------------
 //
@@ -52,24 +53,23 @@
 // index  = original constant pool index
 // b1     = bytecode 1
 // b2     = bytecode 2
-// psze   = parameters size (method entries only)
-// eidx   = interpreter entry index (method entries only)
+// psize  = parameters size (method entries only)
 // field_index = index into field information in holder instanceKlass
 //          The index max is 0xffff (max number of fields in constant pool)
 //          and is multiplied by (instanceKlass::next_offset) when accessing.
 // t      = TosState (see below)
 // f      = field is marked final (see below)
-// vf     = virtual, final (method entries only : is_vfinal())
+// f2     = virtual but final (method entries only: is_vfinal())
 // v      = field is volatile (see below)
 // m      = invokeinterface used for method in class Object (see below)
 // h      = RedefineClasses/Hotswap bit (see below)
 //
 // The flags after TosState have the following interpretation:
-// bit 27: f flag  true if field is marked final
-// bit 26: vf flag true if virtual final method
-// bit 25: v flag true if field is volatile (only for fields)
-// bit 24: m flag true if invokeinterface used for method in class Object
-// bit 23: 0 for fields, 1 for methods
+// bit 27: 0 for fields, 1 for methods
+// f  flag true if field is marked final
+// v  flag true if field is volatile (only for fields)
+// f2 flag true if f2 contains an oop (e.g., virtual final method)
+// fv flag true if invokeinterface used for method in class Object
 //
 // The flags 31, 30, 29, 28 together build a 4 bit number 0 to 8 with the
 // following mapping to the TosState states:
@@ -86,25 +86,26 @@
 //
 // Entry specific: field entries:
 // _indices = get (b1 section) and put (b2 section) bytecodes, original constant pool index
-// _f1      = field holder
-// _f2      = field offset in words
-// _flags   = field type information, original field index in field holder
+// _f1      = field holder (as a java.lang.Class, not a klassOop)
+// _f2      = field offset in bytes
+// _flags   = field type information, original FieldInfo index in field holder
 //            (field_index section)
 //
 // Entry specific: method entries:
 // _indices = invoke code for f1 (b1 section), invoke code for f2 (b2 section),
 //            original constant pool index
-// _f1      = method for all but virtual calls, unused by virtual calls
-//            (note: for interface calls, which are essentially virtual,
-//             contains klassOop for the corresponding interface.
-//            for invokedynamic, f1 contains the CallSite object for the invocation
-// _f2      = method/vtable index for virtual calls only, unused by all other
-//            calls.  The vf flag indicates this is a method pointer not an
-//            index.
-// _flags   = field type info (f section),
-//            virtual final entry (vf),
-//            interpreter entry index (eidx section),
-//            parameter size (psze section)
+// _f1      = methodOop for non-virtual calls, unused by virtual calls.
+//            for interface calls, which are essentially virtual but need a klass,
+//            contains klassOop for the corresponding interface.
+//            for invokedynamic, f1 contains a site-specific CallSite object (as an appendix)
+//            for invokehandle, f1 contains a site-specific MethodType object (as an appendix)
+//            (upcoming metadata changes will move the appendix to a separate array)
+// _f2      = vtable/itable index (or final methodOop) for virtual calls only,
+//            unused by non-virtual.  The is_vfinal flag indicates this is a
+//            method pointer for a final method, not an index.
+// _flags   = method type info (t section),
+//            virtual final bit (vfinal),
+//            parameter size (psize section)
 //
 // Note: invokevirtual & invokespecial bytecodes can share the same constant
 //       pool entry and thus the same constant pool cache entry. All invoke
@@ -138,30 +139,61 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     assert(existing_f1 == NULL || existing_f1 == f1, "illegal field change");
     oop_store(&_f1, f1);
   }
-  void set_f1_if_null_atomic(oop f1);
-  void set_f2(intx f2)                           { assert(_f2 == 0    || _f2 == f2, "illegal field change"); _f2 = f2; }
-  int as_flags(TosState state, bool is_final, bool is_vfinal, bool is_volatile,
-               bool is_method_interface, bool is_method);
+  void release_set_f1(oop f1);
+  void set_f2(intx f2)                           { assert(_f2 == 0 || _f2 == f2,            "illegal field change"); _f2 = f2; }
+  void set_f2_as_vfinal_method(methodOop f2)     { assert(_f2 == 0 || _f2 == (intptr_t) f2, "illegal field change"); assert(is_vfinal(), "flags must be set"); _f2 = (intptr_t) f2; }
+  int make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
+  bool init_flags_atomic(intx flags);
+  void set_field_flags(TosState field_type, int option_bits, int field_index) {
+    assert((field_index & field_index_mask) == field_index, "field_index in range");
+    set_flags(make_flags(field_type, option_bits | (1 << is_field_entry_shift), field_index));
+  }
+  void set_method_flags(TosState return_type, int option_bits, int method_params) {
+    assert((method_params & parameter_size_mask) == method_params, "method_params in range");
+    set_flags(make_flags(return_type, option_bits, method_params));
+  }
+  bool init_method_flags_atomic(TosState return_type, int option_bits, int method_params) {
+    assert((method_params & parameter_size_mask) == method_params, "method_params in range");
+    return init_flags_atomic(make_flags(return_type, option_bits, method_params));
+  }
 
  public:
-  // specific bit values in flag field
-  // Note: the interpreter knows this layout!
-  enum FlagBitValues {
-    hotSwapBit    = 23,
-    methodInterface = 24,
-    volatileField = 25,
-    vfinalMethod  = 26,
-    finalField    = 27
+  // specific bit definitions for the flags field:
+  // (Note: the interpreter must use these definitions to access the CP cache.)
+  enum {
+    // high order bits are the TosState corresponding to field type or method return type
+    tos_state_bits             = 4,
+    tos_state_mask             = right_n_bits(tos_state_bits),
+    tos_state_shift            = BitsPerInt - tos_state_bits,  // see verify_tos_state_shift below
+    // misc. option bits; can be any bit position in [16..27]
+    is_vfinal_shift            = 21,
+    is_volatile_shift          = 22,
+    is_final_shift             = 23,
+    has_appendix_shift         = 24,
+    is_forced_virtual_shift    = 25,
+    is_field_entry_shift       = 26,
+    // low order bits give field index (for FieldInfo) or method parameter size:
+    field_index_bits           = 16,
+    field_index_mask           = right_n_bits(field_index_bits),
+    parameter_size_bits        = 8,  // subset of field_index_mask, range is 0..255
+    parameter_size_mask        = right_n_bits(parameter_size_bits),
+    option_bits_mask           = ~(((-1) << tos_state_shift) | (field_index_mask | parameter_size_mask))
   };
 
-  enum { field_index_mask = 0xFFFF };
-
-  // start of type bits in flags
-  // Note: the interpreter knows this layout!
-  enum FlagValues {
-    tosBits      = 28
+  // specific bit definitions for the indices field:
+  enum {
+    main_cp_index_bits         = 2*BitsPerByte,
+    main_cp_index_mask         = right_n_bits(main_cp_index_bits),
+    bytecode_1_shift           = main_cp_index_bits,
+    bytecode_1_mask            = right_n_bits(BitsPerByte), // == (u1)0xFF
+    bytecode_2_shift           = main_cp_index_bits + BitsPerByte,
+    bytecode_2_mask            = right_n_bits(BitsPerByte), // == (u1)0xFF
+    // the secondary cp index overlaps with bytecodes 1 and 2:
+    secondary_cp_index_shift   = bytecode_1_shift,
+    secondary_cp_index_bits    = BitsPerInt - main_cp_index_bits
   };
+
 
   // Initialization
   void initialize_entry(int original_index);     // initialize primary entry
@@ -189,30 +221,40 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     int index                                    // Method index into interface
   );
 
-  void set_dynamic_call(
-    Handle call_site,                            // Resolved java.lang.invoke.CallSite (f1)
-    methodHandle signature_invoker               // determines signature information
+  void set_method_handle(
+    methodHandle method,                         // adapter for invokeExact, etc.
+    Handle appendix                              // stored in f1; could be a java.lang.invoke.MethodType
   );
 
-  methodOop get_method_if_resolved(Bytecodes::Code invoke_code, constantPoolHandle cpool);
+  void set_dynamic_call(
+    methodHandle method,                         // adapter for this call site
+    Handle appendix                              // stored in f1; could be a java.lang.invoke.CallSite
+  );
 
-  // For JVM_CONSTANT_InvokeDynamic cache entries:
-  void initialize_bootstrap_method_index_in_cache(int bsm_cache_index);
-  int  bootstrap_method_index_in_cache();
+  // Common code for invokedynamic and MH invocations.
 
-  void set_parameter_size(int value) {
-    assert(parameter_size() == 0 || parameter_size() == value,
-           "size must not change");
-    // Setting the parameter size by itself is only safe if the
-    // current value of _flags is 0, otherwise another thread may have
-    // updated it and we don't want to overwrite that value.  Don't
-    // bother trying to update it once it's nonzero but always make
-    // sure that the final parameter size agrees with what was passed.
-    if (_flags == 0) {
-      Atomic::cmpxchg_ptr((value & 0xFF), &_flags, 0);
-    }
-    guarantee(parameter_size() == value, "size must not change");
-  }
+  // The "appendix" is an optional call-site-specific parameter which is
+  // pushed by the JVM at the end of the argument list.  This argument may
+  // be a MethodType for the MH.invokes and a CallSite for an invokedynamic
+  // instruction.  However, its exact type and use depends on the Java upcall,
+  // which simply returns a compiled LambdaForm along with any reference
+  // that LambdaForm needs to complete the call.  If the upcall returns a
+  // null appendix, the argument is not passed at all.
+  //
+  // The appendix is *not* represented in the signature of the symbolic
+  // reference for the call site, but (if present) it *is* represented in
+  // the methodOop bound to the site.  This means that static and dynamic
+  // resolution logic needs to make slightly different assessments about the
+  // number and types of arguments.
+  void set_method_handle_common(
+    Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
+    methodHandle adapter,                        // invoker method (f2)
+    Handle appendix                              // appendix such as CallSite, MethodType, etc. (f1)
+  );
+
+  methodOop method_if_resolved(constantPoolHandle cpool);
+
+  void set_parameter_size(int value);
 
   // Which bytecode number (1 or 2) in the index field is valid for this bytecode?
   // Returns -1 if neither is valid.
@@ -222,10 +264,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
       case Bytecodes::_getfield        :    // fall through
       case Bytecodes::_invokespecial   :    // fall through
       case Bytecodes::_invokestatic    :    // fall through
-      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokeinterface : return 1;
       case Bytecodes::_putstatic       :    // fall through
       case Bytecodes::_putfield        :    // fall through
+      case Bytecodes::_invokehandle    :    // fall through
+      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokevirtual   : return 2;
       default                          : break;
     }
@@ -242,31 +285,43 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   }
 
   // Accessors
-  bool is_secondary_entry() const                { return (_indices & 0xFFFF) == 0; }
-  int constant_pool_index() const                { assert((_indices & 0xFFFF) != 0, "must be main entry");
-                                                   return (_indices & 0xFFFF); }
-  int main_entry_index() const                   { assert((_indices & 0xFFFF) == 0, "must be secondary entry");
-                                                   return ((uintx)_indices >> 16); }
-  Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((_indices >> 16) & 0xFF); }
-  Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((_indices >> 24) & 0xFF); }
-  volatile oop  f1() const                       { return _f1; }
-  bool is_f1_null() const                        { return (oop)_f1 == NULL; }  // classifies a CPC entry as unbound
-  intx f2() const                                { return _f2; }
-  int  field_index() const;
-  int  parameter_size() const                    { return _flags & 0xFF; }
-  bool is_vfinal() const                         { return ((_flags & (1 << vfinalMethod)) == (1 << vfinalMethod)); }
-  bool is_volatile() const                       { return ((_flags & (1 << volatileField)) == (1 << volatileField)); }
-  bool is_methodInterface() const                { return ((_flags & (1 << methodInterface)) == (1 << methodInterface)); }
-  bool is_byte() const                           { return (((uintx) _flags >> tosBits) == btos); }
-  bool is_char() const                           { return (((uintx) _flags >> tosBits) == ctos); }
-  bool is_short() const                          { return (((uintx) _flags >> tosBits) == stos); }
-  bool is_int() const                            { return (((uintx) _flags >> tosBits) == itos); }
-  bool is_long() const                           { return (((uintx) _flags >> tosBits) == ltos); }
-  bool is_float() const                          { return (((uintx) _flags >> tosBits) == ftos); }
-  bool is_double() const                         { return (((uintx) _flags >> tosBits) == dtos); }
-  bool is_object() const                         { return (((uintx) _flags >> tosBits) == atos); }
-  TosState flag_state() const                    { assert( ( (_flags >> tosBits) & 0x0F ) < number_of_states, "Invalid state in as_flags");
-                                                   return (TosState)((_flags >> tosBits) & 0x0F); }
+  bool is_secondary_entry() const                { return (_indices & main_cp_index_mask) == 0; }
+  int main_entry_index() const                   { assert(is_secondary_entry(), "must be secondary entry");
+                                                   return ((uintx)_indices >> secondary_cp_index_shift); }
+  int primary_entry_indices() const              { assert(!is_secondary_entry(), "must be main entry");
+                                                   return _indices; }
+  int constant_pool_index() const                { return (primary_entry_indices() & main_cp_index_mask); }
+  Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((primary_entry_indices() >> bytecode_1_shift)
+                                                                          & bytecode_1_mask); }
+  Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((primary_entry_indices() >> bytecode_2_shift)
+                                                                          & bytecode_2_mask); }
+  methodOop f1_as_method() const                 { oop f1 = _f1; assert(f1 == NULL || f1->is_method(), ""); return methodOop(f1); }
+  klassOop  f1_as_klass() const                  { oop f1 = _f1; assert(f1 == NULL || f1->is_klass(), ""); return klassOop(f1); }
+  oop       f1_as_klass_mirror() const           { oop f1 = f1_as_instance(); return f1; }  // i.e., return a java_mirror
+  oop       f1_as_instance() const               { oop f1 = _f1; assert(f1 == NULL || f1->is_instance() || f1->is_array(), ""); return f1; }
+  oop       f1_appendix() const                  { assert(has_appendix(), ""); return f1_as_instance(); }
+  bool      is_f1_null() const                   { oop f1 = _f1; return f1 == NULL; }  // classifies a CPC entry as unbound
+  int       f2_as_index() const                  { assert(!is_vfinal(), ""); return (int) _f2; }
+  methodOop f2_as_vfinal_method() const          { assert(is_vfinal(), ""); return methodOop(_f2); }
+  int  field_index() const                       { assert(is_field_entry(),  ""); return (_flags & field_index_mask); }
+  int  parameter_size() const                    { assert(is_method_entry(), ""); return (_flags & parameter_size_mask); }
+  bool is_volatile() const                       { return (_flags & (1 << is_volatile_shift))       != 0; }
+  bool is_final() const                          { return (_flags & (1 << is_final_shift))          != 0; }
+  bool has_appendix() const                      { return (_flags & (1 << has_appendix_shift))     != 0; }
+  bool is_forced_virtual() const                 { return (_flags & (1 << is_forced_virtual_shift)) != 0; }
+  bool is_vfinal() const                         { return (_flags & (1 << is_vfinal_shift))         != 0; }
+  bool is_method_entry() const                   { return (_flags & (1 << is_field_entry_shift))    == 0; }
+  bool is_field_entry() const                    { return (_flags & (1 << is_field_entry_shift))    != 0; }
+  bool is_byte() const                           { return flag_state() == btos; }
+  bool is_char() const                           { return flag_state() == ctos; }
+  bool is_short() const                          { return flag_state() == stos; }
+  bool is_int() const                            { return flag_state() == itos; }
+  bool is_long() const                           { return flag_state() == ltos; }
+  bool is_float() const                          { return flag_state() == ftos; }
+  bool is_double() const                         { return flag_state() == dtos; }
+  bool is_object() const                         { return flag_state() == atos; }
+  TosState flag_state() const                    { assert((uint)number_of_states <= (uint)tos_state_mask+1, "");
+                                                   return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
 
   // Code generation support
   static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / HeapWordSize); }
@@ -299,15 +354,14 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool adjust_method_entry(methodOop old_method, methodOop new_method,
          bool * trace_name_printed);
   bool is_interesting_method_entry(klassOop k);
-  bool is_field_entry() const                    { return (_flags & (1 << hotSwapBit)) == 0; }
-  bool is_method_entry() const                   { return (_flags & (1 << hotSwapBit)) != 0; }
 
   // Debugging & Printing
   void print (outputStream* st, int index) const;
   void verify(outputStream* st) const;
 
-  static void verify_tosBits() {
-    assert(tosBits == 28, "interpreter now assumes tosBits is 28");
+  static void verify_tos_state_shift() {
+    // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
+    assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
 };
 

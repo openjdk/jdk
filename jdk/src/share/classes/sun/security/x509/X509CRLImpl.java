@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
@@ -396,6 +397,61 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         }
         verifiedPublicKey = key;
         verifiedProvider = sigProvider;
+    }
+
+    /**
+     * Verifies that this CRL was signed using the
+     * private key that corresponds to the given public key,
+     * and that the signature verification was computed by
+     * the given provider. Note that the specified Provider object
+     * does not have to be registered in the provider list.
+     *
+     * @param key the PublicKey used to carry out the verification.
+     * @param sigProvider the signature provider.
+     *
+     * @exception NoSuchAlgorithmException on unsupported signature
+     * algorithms.
+     * @exception InvalidKeyException on incorrect key.
+     * @exception SignatureException on signature errors.
+     * @exception CRLException on encoding errors.
+     */
+    public synchronized void verify(PublicKey key, Provider sigProvider)
+            throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
+            SignatureException {
+
+        if (signedCRL == null) {
+            throw new CRLException("Uninitialized CRL");
+        }
+        Signature sigVerf = null;
+        if (sigProvider == null) {
+            sigVerf = Signature.getInstance(sigAlgId.getName());
+        } else {
+            sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
+        }
+        sigVerf.initVerify(key);
+
+        if (tbsCertList == null) {
+            throw new CRLException("Uninitialized CRL");
+        }
+
+        sigVerf.update(tbsCertList, 0, tbsCertList.length);
+
+        if (!sigVerf.verify(signature)) {
+            throw new SignatureException("Signature does not match.");
+        }
+        verifiedPublicKey = key;
+    }
+
+    /**
+     * This static method is the default implementation of the
+     * verify(PublicKey key, Provider sigProvider) method in X509CRL.
+     * Called from java.security.cert.X509CRL.verify(PublicKey key,
+     * Provider sigProvider)
+     */
+    public static void verify(X509CRL crl, PublicKey key,
+            Provider sigProvider) throws CRLException,
+            NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        crl.verify(key, sigProvider);
     }
 
     /**

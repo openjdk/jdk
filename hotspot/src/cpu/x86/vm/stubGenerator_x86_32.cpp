@@ -2327,12 +2327,6 @@ class StubGenerator: public StubCodeGenerator {
                                                                                    CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
 
     // Build this early so it's available for the interpreter
-    StubRoutines::_throw_WrongMethodTypeException_entry =
-      generate_throw_exception("WrongMethodTypeException throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
-                               rax, rcx);
-
-    // Build this early so it's available for the interpreter
     StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
   }
 
