@@ -62,7 +62,7 @@ public class ExceptionsNotSerializable {
 
     @Test
     public void unwarrantedOptimismExceptionNotSerializable() {
-        tryToSerialize(new UnwarrantedOptimismException(new Double(1.0), 128));
+        tryToSerialize(new UnwarrantedOptimismException(1.0, 128));
     }
 
     private static void tryToSerialize(final Object obj) {

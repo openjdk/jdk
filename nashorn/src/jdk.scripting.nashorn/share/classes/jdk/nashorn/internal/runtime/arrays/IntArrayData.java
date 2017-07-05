@@ -138,7 +138,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
         final Object[] oarray = new Object[trim ? len : array.length];
 
         for (int index = 0; index < len; index++) {
-            oarray[index] = Integer.valueOf(array[index]);
+            oarray[index] = array[index];
         }
 
         return oarray;

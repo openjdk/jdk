@@ -994,7 +994,7 @@ public enum JSType {
      * @return a long
      */
     public static long toLong(final Object obj) {
-        return obj instanceof Long ? ((Long)obj).longValue() : toLong(toNumber(obj));
+        return obj instanceof Long ? ((Long)obj) : toLong(toNumber(obj));
     }
 
     /**
@@ -1056,7 +1056,7 @@ public enum JSType {
      */
     public static int toInt32Optimistic(final Object obj, final int programPoint) {
         if (obj != null && obj.getClass() == Integer.class) {
-            return ((Integer)obj).intValue();
+            return ((Integer)obj);
         }
         throw new UnwarrantedOptimismException(obj, programPoint);
     }
@@ -1954,11 +1954,11 @@ public enum JSType {
     public static MethodHandle unboxConstant(final Object o) {
         if (o != null) {
             if (o.getClass() == Integer.class) {
-                return MH.constant(int.class, ((Integer)o).intValue());
+                return MH.constant(int.class, ((Integer)o));
             } else if (o.getClass() == Long.class) {
-                return MH.constant(long.class, ((Long)o).longValue());
+                return MH.constant(long.class, ((Long)o));
             } else if (o.getClass() == Double.class) {
-                return MH.constant(double.class, ((Double)o).doubleValue());
+                return MH.constant(double.class, ((Double)o));
             }
         }
         return MH.constant(Object.class, o);
@@ -1983,7 +1983,7 @@ public enum JSType {
         }
     }
 
-    private static final List<MethodHandle> toUnmodifiableList(final MethodHandle... methodHandles) {
+    private static List<MethodHandle> toUnmodifiableList(final MethodHandle... methodHandles) {
         return Collections.unmodifiableList(Arrays.asList(methodHandles));
     }
 }

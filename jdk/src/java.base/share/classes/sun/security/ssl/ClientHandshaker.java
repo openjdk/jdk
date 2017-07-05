@@ -810,7 +810,7 @@ final class ClientHandshaker extends Handshaker {
             String alias = null;
             int keytypesTmpSize = keytypesTmp.size();
             if (keytypesTmpSize != 0) {
-                String keytypes[] =
+                String[] keytypes =
                         keytypesTmp.toArray(new String[keytypesTmpSize]);
 
                 if (conn != null) {

@@ -124,9 +124,9 @@ public final class CClassNode extends Node {
     @Override
     public String toString(final int level) {
         final StringBuilder value = new StringBuilder();
-        value.append("\n  flags: " + flagsToString());
-        value.append("\n  bs: " + pad(bs, level + 1));
-        value.append("\n  mbuf: " + pad(mbuf, level + 1));
+        value.append("\n  flags: ").append(flagsToString());
+        value.append("\n  bs: ").append(pad(bs, level + 1));
+        value.append("\n  mbuf: ").append(pad(mbuf, level + 1));
 
         return value.toString();
     }

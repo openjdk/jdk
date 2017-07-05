@@ -102,7 +102,7 @@ public class OIDMap {
     private static final String OCSPNOCHECK = ROOT + "." +
                                         OCSPNoCheckExtension.NAME;
 
-    private static final int NetscapeCertType_data[] =
+    private static final int[] NetscapeCertType_data =
         { 2, 16, 840, 1, 113730, 1, 1 };
 
     /** Map ObjectIdentifier(oid) -> OIDInfo(info) */
