@@ -28,10 +28,10 @@ import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.cdbg.basic.x86.*;
-import sun.jvm.hotspot.debugger.cdbg.basic.amd64.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
+import sun.jvm.hotspot.debugger.windows.x86.*;
+import sun.jvm.hotspot.debugger.windows.amd64.*;
 import sun.jvm.hotspot.utilities.AddressOps;
 
 class WindbgCDebugger implements CDebugger {
@@ -75,14 +75,14 @@ class WindbgCDebugger implements CDebugger {
       if (ebp == null) return null;
       Address pc  = context.getRegisterAsAddress(X86ThreadContext.EIP);
       if (pc == null) return null;
-      return new X86CFrame(this, ebp, pc);
+      return new WindowsX86CFrame(dbg, ebp, pc);
     } else if (dbg.getCPU().equals("amd64")) {
       AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
       Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
       if (rbp == null) return null;
       Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
       if (pc == null) return null;
-      return new AMD64CFrame(this, rbp, pc);
+      return new WindowsAMD64CFrame(dbg, rbp, pc);
     } else {
       // unsupported CPU!
       return null;
