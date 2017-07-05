@@ -253,6 +253,7 @@ public:
 
 template <class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
 class GenericTaskQueue: public TaskQueueSuper<N, F> {
+  ArrayAllocator<E, F> _array_allocator;
 protected:
   typedef typename TaskQueueSuper<N, F>::Age Age;
   typedef typename TaskQueueSuper<N, F>::idx_t idx_t;
@@ -314,7 +315,7 @@ GenericTaskQueue<E, F, N>::GenericTaskQueue() {
 
 template<class E, MEMFLAGS F, unsigned int N>
 void GenericTaskQueue<E, F, N>::initialize() {
-  _elems = NEW_C_HEAP_ARRAY(E, N, F);
+  _elems = _array_allocator.allocate(N);
 }
 
 template<class E, MEMFLAGS F, unsigned int N>

@@ -1163,6 +1163,8 @@ class PSParallelCompact : AllStatic {
   // Time since last full gc (in milliseconds).
   static jlong millis_since_last_gc();
 
+  static void print_on_error(outputStream* st);
+
 #ifndef PRODUCT
   // Debugging support.
   static const char* space_names[last_space_id];

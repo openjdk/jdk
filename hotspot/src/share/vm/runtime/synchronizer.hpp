@@ -121,7 +121,6 @@ class ObjectSynchronizer : AllStatic {
   static void oops_do(OopClosure* f);
 
   // debugging
-  static void trace_locking(Handle obj, bool is_compiled, bool is_method, bool is_locking) PRODUCT_RETURN;
   static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 

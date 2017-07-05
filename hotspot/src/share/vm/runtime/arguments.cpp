@@ -1754,11 +1754,15 @@ bool Arguments::verify_percentage(uintx value, const char* name) {
   return false;
 }
 
+#if !INCLUDE_ALL_GCS
+#ifdef ASSERT
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
         !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
           UseParallelGC || UseParallelOldGC));
 }
+#endif // ASSERT
+#endif // INCLUDE_ALL_GCS
 
 // check if do gclog rotation
 // +UseGCLogFileRotation is a must,
@@ -2006,11 +2010,12 @@ bool Arguments::check_vm_args_consistency() {
   // than just disable the lock verification. This will be fixed under
   // bug 4788986.
   if (UseConcMarkSweepGC && FLSVerifyAllHeapReferences) {
-    if (VerifyGCStartAt == 0) {
+    if (VerifyDuringStartup) {
       warning("Heap verification at start-up disabled "
               "(due to current incompatibility with FLSVerifyAllHeapReferences)");
-      VerifyGCStartAt = 1;      // Disable verification at start-up
+      VerifyDuringStartup = false; // Disable verification at start-up
     }
+
     if (VerifyBeforeExit) {
       warning("Heap verification at shutdown disabled "
               "(due to current incompatibility with FLSVerifyAllHeapReferences)");
@@ -3092,6 +3097,7 @@ do {                                                                  \
   }                                                                   \
 } while(0)
 
+#if !INCLUDE_ALL_GCS
 static void force_serial_gc() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
   FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
@@ -3101,6 +3107,7 @@ static void force_serial_gc() {
   UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
   UNSUPPORTED_GC_OPTION(UseParNewGC);
 }
+#endif // INCLUDE_ALL_GCS
 
 // Parse entry point called from JNI_CreateJavaVM
 
