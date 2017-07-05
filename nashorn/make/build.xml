@@ -49,8 +49,6 @@
     <condition property="git.executable" value="/usr/local/bin/git" else="git">
       <available file="/usr/local/bin/git"/>
     </condition>
-    <!-- check if JDK already has ASM classes -->
-    <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
     <!-- check if testng.jar is avaiable -->
     <available property="testng.available" file="${file.reference.testng.jar}"/>
     <!-- check if Jemmy ang testng.jar are avaiable -->
@@ -78,8 +76,31 @@
       <istrue value="${jfr}"/>
     </condition>
   </target>
+
+  <!-- check minimum ant version required to be 1.8.4 -->
+  <target name="check-ant-version">
+    <property name="ant.version.required" value="1.8.4"/>
+    <antversion property="ant.current.version" />
+    <fail message="The current ant version, ${ant.current.version}, is too old. Please use 1.8.4 or above.">
+        <condition>
+            <not>
+                <antversion atleast="${ant.version.required}"/>
+            </not>
+        </condition>
+    </fail>
+  </target>
+
+  <target name="check-java-version">
+    <!-- look for a Class that is available only in jdk1.8 or above -->
+    <!-- core/exposed API class is better than an implementation class -->
+    <available property="jdk1.8+" classname="java.util.stream.Stream"/>
+
+    <!-- need jdk1.8 or above -->
+    <fail message="Unsupported Java version: ${ant.java.version}. Please use Java version 1.8 or greater." unless="jdk1.8+">
+    </fail>
+  </target>
   
-  <target name="init" depends="init-conditions, init-cc">
+  <target name="init" depends="check-ant-version, check-java-version, init-conditions, init-cc">
     <!-- extends jvm args -->
     <property name="run.test.jvmargs" value="${run.test.jvmargs.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
     <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
@@ -107,19 +128,7 @@
     <delete dir="${dist.dir}"/>
   </target>
 
-  <!-- do it only if ASM is not available -->
-  <target name="compile-asm" depends="prepare" unless="asm.available">
-    <javac srcdir="${jdk.asm.src.dir}"
-           destdir="${build.classes.dir}"
-           excludes="**/optimizer/* **/xml/* **/attrs/*"
-           source="${javac.source}"
-           target="${javac.target}"
-           debug="${javac.debug}"
-           encoding="${javac.encoding}"
-           includeantruntime="false"/>
-  </target>
-
-  <target name="compile" depends="compile-asm" description="Compiles nashorn">
+  <target name="compile" depends="prepare" description="Compiles nashorn">
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
            classpath="${javac.classpath}"

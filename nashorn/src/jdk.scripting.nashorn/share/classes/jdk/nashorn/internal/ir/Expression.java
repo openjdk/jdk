@@ -35,6 +35,8 @@ import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
  *
  */
 public abstract class Expression extends Node {
+    private static final long serialVersionUID = 1L;
+
     static final String OPT_IDENTIFIER = "%";
 
     private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {

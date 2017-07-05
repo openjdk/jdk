@@ -34,6 +34,8 @@ import jdk.nashorn.internal.parser.Token;
  */
 @Immutable
 public final class VarNode extends Statement implements Assignment<IdentNode> {
+    private static final long serialVersionUID = 1L;
+
     /** Var name. */
     private final IdentNode name;
 

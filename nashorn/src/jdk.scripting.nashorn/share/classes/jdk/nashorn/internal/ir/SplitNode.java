@@ -25,13 +25,10 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import jdk.nashorn.internal.codegen.CompileUnit;
-import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -39,7 +36,9 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Node indicating code is split across classes.
  */
 @Immutable
-public class SplitNode extends LexicalContextStatement implements Labels, CompileUnitHolder {
+public class SplitNode extends LexicalContextStatement implements CompileUnitHolder {
+    private static final long serialVersionUID = 1L;
+
     /** Split node method name. */
     private final String name;
 
@@ -48,8 +47,6 @@ public class SplitNode extends LexicalContextStatement implements Labels, Compil
 
     /** Body of split code. */
     private final Block body;
-
-    private Map<Label, JoinPredecessor> jumps;
 
     /**
      * Constructor
@@ -65,19 +62,18 @@ public class SplitNode extends LexicalContextStatement implements Labels, Compil
         this.compileUnit = compileUnit;
     }
 
-    private SplitNode(final SplitNode splitNode, final Block body, final CompileUnit compileUnit, final Map<Label, JoinPredecessor> jumps) {
+    private SplitNode(final SplitNode splitNode, final Block body, final CompileUnit compileUnit) {
         super(splitNode);
         this.name        = splitNode.name;
         this.body        = body;
         this.compileUnit = compileUnit;
-        this.jumps       = jumps;
     }
 
     /**
      * Get the body for this split node - i.e. the actual code it encloses
      * @return body for split node
      */
-    public Node getBody() {
+    public Block getBody() {
         return body;
     }
 
@@ -85,7 +81,7 @@ public class SplitNode extends LexicalContextStatement implements Labels, Compil
         if (this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit, jumps));
+        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit));
     }
 
     @Override
@@ -131,33 +127,12 @@ public class SplitNode extends LexicalContextStatement implements Labels, Compil
         if (this.compileUnit == compileUnit) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit, jumps));
+        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit));
     }
 
-    /**
-     * Adds a jump that crosses this split node's boundary (it originates within the split node, and goes to a target
-     * outside of it).
-     * @param jumpOrigin the join predecessor that's the origin of the jump
-     * @param targetLabel the label that's the target of the jump.
-     */
-    public void addJump(final JoinPredecessor jumpOrigin, final Label targetLabel) {
-        if (jumps == null) {
-            jumps = new HashMap<>();
-        }
-        jumps.put(targetLabel, jumpOrigin);
-    }
-
-    /**
-     * Returns the jump origin within this split node for a target.
-     * @param targetLabel the target for which a jump origin is sought.
-     * @return the jump origin, or null.
-     */
-    public JoinPredecessor getJumpOrigin(final Label targetLabel) {
-        return jumps == null ? null : jumps.get(targetLabel);
-    }
-
-    @Override
-    public List<Label> getLabels() {
-        return Collections.unmodifiableList(new ArrayList<>(jumps.keySet()));
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+        // We are only serializing the AST after we run SplitIntoFunctions; no SplitNodes can remain for the
+        // serialization.
+        throw new NotSerializableException(getClass().getName());
     }
 }

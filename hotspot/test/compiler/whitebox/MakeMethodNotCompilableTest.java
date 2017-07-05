@@ -25,7 +25,6 @@
  * @test MakeMethodNotCompilableTest
  * @bug 8012322 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
- * @ignore 8046268
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -140,7 +139,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
         }
 
         compile();
-        checkNotCompiled();
+        checkNotOsrCompiled();
         if (isCompilable()) {
             throw new RuntimeException(method + " must be not compilable");
         }

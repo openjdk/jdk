@@ -320,6 +320,8 @@ struct Flag {
   bool is_writeable_ext() const;
   bool is_external_ext() const;
 
+  void unlock_diagnostic();
+
   void get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
 
@@ -454,7 +456,7 @@ class CommandLineFlags {
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, intx, uintx, ccstr.
+// bool, intx, uintx, ccstr, double, or uint64_t.
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
@@ -1533,8 +1535,11 @@ class CommandLineFlags {
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
                                                                             \
-  product(bool, ParallelGCVerbose, false,                                   \
-          "Verbose output for parallel gc")                                 \
+  product(bool, PrintTaskqueue, false,                                      \
+          "Print taskqueue statistics for parallel collectors")             \
+                                                                            \
+  product(bool, PrintTerminationStats, false,                               \
+          "Print termination statistics for parallel collectors")           \
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
@@ -3577,6 +3582,10 @@ class CommandLineFlags {
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
+                                                                            \
+  product(double, CompileThresholdScaling, 1.0,                             \
+          "Factor to control when first compilation happens "               \
+          "(both with and without tiered compilation)")                     \
                                                                             \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \

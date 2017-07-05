@@ -69,6 +69,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants;
  * The boolean type class
  */
 public final class BooleanType extends Type {
+    private static final long serialVersionUID = 1L;
 
     private static final CompilerConstants.Call VALUE_OF = staticCallNoLookup(Boolean.class, "valueOf", Boolean.class, boolean.class);
     private static final CompilerConstants.Call TO_STRING = staticCallNoLookup(Boolean.class, "toString", String.class, boolean.class);

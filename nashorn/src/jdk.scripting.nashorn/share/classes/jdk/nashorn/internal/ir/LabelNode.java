@@ -35,6 +35,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class LabelNode extends LexicalContextStatement implements JoinPredecessor {
+    private static final long serialVersionUID = 1L;
+
     /** Label ident. */
     private final String labelName;
 
