@@ -53,3 +53,9 @@ Java_sun_misc_VMSupport_initAgentProperties(JNIEnv *env, jclass cls, jobject pro
     }
     return (*InitAgentProperties_fp)(env, props);
 }
+
+JNIEXPORT jstring JNICALL
+Java_sun_misc_VMSupport_getVMTemporaryDirectory(JNIEnv *env, jclass cls)
+{
+    return JVM_GetTemporaryDirectory(env);
+}

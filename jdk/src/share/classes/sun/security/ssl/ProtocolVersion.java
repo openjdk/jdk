@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
         this.v = v;
         this.name = name;
         major = (byte)(v >>> 8);
-        minor = (byte)(v & 0xff);
+        minor = (byte)(v & 0xFF);
     }
 
     // private
@@ -117,8 +117,8 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
         } else if (v == SSL20Hello.v) {
             return SSL20Hello;
         } else {
-            int major = (v >>> 8) & 0xff;
-            int minor = v & 0xff;
+            int major = (v >>> 8) & 0xFF;
+            int minor = v & 0xFF;
             return new ProtocolVersion(v, "Unknown-" + major + "." + minor);
         }
     }
@@ -128,10 +128,7 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
      * numbers. Never throws exceptions.
      */
     public static ProtocolVersion valueOf(int major, int minor) {
-        major &= 0xff;
-        minor &= 0xff;
-        int v = (major << 8) | minor;
-        return valueOf(v);
+        return valueOf(((major & 0xFF) << 8) | (minor & 0xFF));
     }
 
     /**
