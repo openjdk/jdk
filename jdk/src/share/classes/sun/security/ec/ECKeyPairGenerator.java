@@ -46,20 +46,6 @@ import sun.security.jca.JCAUtil;
  */
 public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
 
-    // flag indicating whether the native ECC implementation is present
-    private static boolean implementationPresent = true;
-    static {
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sunecc");
-                    return null;
-                }
-            });
-        } catch (UnsatisfiedLinkError e) {
-            implementationPresent = false;
-        }
-    }
     private static final int KEY_SIZE_MIN = 112; // min bits (see ecc_impl.h)
     private static final int KEY_SIZE_MAX = 571; // max bits (see ecc_impl.h)
     private static final int KEY_SIZE_DEFAULT = 256;
@@ -75,13 +61,8 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
 
     /**
      * Constructs a new ECKeyPairGenerator.
-     *
-     * @exception ProviderException if the native ECC library is unavailable.
      */
     public ECKeyPairGenerator() {
-        if (!implementationPresent) {
-            throw new ProviderException("EC implementation is not available");
-        }
         // initialize to default in case the app does not call initialize()
         initialize(KEY_SIZE_DEFAULT, null);
     }
@@ -133,8 +114,8 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         byte[] encodedParams =
             ECParameters.encodeParameters((ECParameterSpec)params);
 
-        // seed is twice the key size (in bytes)
-        byte[] seed = new byte[2 * ((keySize + 7) >> 3)];
+        // seed is twice the key size (in bytes) plus 1
+        byte[] seed = new byte[(((keySize + 7) >> 3) + 1) * 2];
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }

@@ -100,7 +100,15 @@ public class ReadCertificates extends PKCS11Test {
             X509Certificate issuer = certs.get(cert.getIssuerX500Principal());
             System.out.println("Verifying " + cert.getSubjectX500Principal() + "...");
             PublicKey key = issuer.getPublicKey();
-            cert.verify(key, p.getName());
+            // First try the provider under test (if it does not support the
+            // necessary algorithm then try any registered provider).
+            try {
+                cert.verify(key, p.getName());
+            } catch (NoSuchAlgorithmException e) {
+                System.out.println("Warning: " + e.getMessage() +
+                ". Trying another provider...");
+                cert.verify(key);
+            }
         }
 
         // try some random invalid signatures to make sure we get the correct

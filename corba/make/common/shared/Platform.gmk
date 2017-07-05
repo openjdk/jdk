@@ -84,20 +84,13 @@ PLATFORM_SHARED=done
 #     REQUIRED_LINUX_VER          linux only: required version of linux
 #     REQUIRED_LINUX_FULLVER      linux only: required full version of linux
 
-SYSTEM_UNAME := $(shell uname)
+ifndef SYSTEM_UNAME
+  SYSTEM_UNAME := $(shell uname)
+  export SYSTEM_UNAME
+endif
 
 # Normal boot jdk is previous release, but a hard requirement is a 1.5 boot
 REQUIRED_BOOT_VER = 1.5
-
-#
-# Prune out all known SCM (Source Code Management) directories
-# so they will not be included when copying directory trees
-# or packaging up .jar files, etc.  This applies to all workspaces.
-#
-SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
-# When changing SCM_DIRs also change SCM_DIRS_rexp and SCM_DIRS_prune:
-SCM_DIRS_rexp = ".hg|.svn|CVS|RCS|SCCS|Codemgr_wsdata|deleted_files"
-SCM_DIRS_prune = \( -name .hg -o -name .svn -o -name CVS -o -name RCS -o -name SCCS -o -name Codemgr_wsdata -o -name deleted_files \) -prune
 
 # Don't define this unless it's not defined
 ifndef VARIANT
@@ -372,14 +365,17 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_FREE_SPACE=500000
   OS_VENDOR = Microsoft
   # How much RAM does this machine have:
-  MB_OF_MEMORY := $(shell \
-    if [ -f "C:/cygwin/bin/free.exe" ] ; then \
-      ( C:/cygwin/bin/bash.exe -c "C:/cygwin/bin/free.exe -m" ) | \
-	grep Mem: | \
-	sed -e 's@\ \ *@ @g' | cut -d' ' -f2 ; \
-    else \
-      echo "512"; \
-    fi)
+  ifndef MB_OF_MEMORY
+    MB_OF_MEMORY := $(shell \
+      if [ -f "C:/cygwin/bin/free.exe" ] ; then \
+        ( C:/cygwin/bin/bash.exe -c "C:/cygwin/bin/free.exe -m" ) | \
+	  grep Mem: | \
+	  sed -e 's@\ \ *@ @g' | cut -d' ' -f2 ; \
+      else \
+        echo "512"; \
+      fi)
+    export MB_OF_MEMORY
+  endif
 endif
 
 # Machines with 512Mb or less of real memory are considered low memory
@@ -387,30 +383,36 @@ endif
 #    system swapping during the build.
 #    If we don't know, assume 512. Subtract 128 from MB for VM MAX.
 #    Don't set VM max over 1024-128=896.
-ifneq ($(MB_OF_MEMORY),)
-  LOW_MEMORY_MACHINE := $(shell \
-    if [ $(MB_OF_MEMORY) -le 512 ] ; then \
-      echo "true"; \
-    else \
-      echo "false"; \
-    fi)
-  MAX_VM_MEMORY := $(shell \
-    if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
-      expr $(MB_OF_MEMORY) '-' 128 ; \
-    else \
-      echo "896"; \
-    fi)
-  MIN_VM_MEMORY := $(shell \
-    if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
-      expr $(MAX_VM_MEMORY) '-' 8 ; \
-    else \
-      echo "128"; \
-    fi)
-else
-  MB_OF_MEMORY       := unknown
-  LOW_MEMORY_MACHINE := true
-  MAX_VM_MEMORY      := 384
-  MIN_VM_MEMORY      := 128
+ifndef MAX_VM_MEMORY
+  ifneq ($(MB_OF_MEMORY),)
+    LOW_MEMORY_MACHINE := $(shell \
+      if [ $(MB_OF_MEMORY) -le 512 ] ; then \
+        echo "true"; \
+      else \
+        echo "false"; \
+      fi)
+    MAX_VM_MEMORY := $(shell \
+      if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
+        expr $(MB_OF_MEMORY) '-' 128 ; \
+      else \
+        echo "896"; \
+      fi)
+    MIN_VM_MEMORY := $(shell \
+      if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
+        expr $(MAX_VM_MEMORY) '-' 8 ; \
+      else \
+        echo "128"; \
+      fi)
+  else
+    MB_OF_MEMORY       := unknown
+    LOW_MEMORY_MACHINE := true
+    MAX_VM_MEMORY      := 384
+    MIN_VM_MEMORY      := 128
+  endif
+  export MAX_VM_MEMORY
+  export MIN_VM_MEMORY
+  export LOW_MEMORY_MACHINE
+  export MAX_VM_MEMORY
 endif
 
 REQUIRED_ZIP_VER = 2.2

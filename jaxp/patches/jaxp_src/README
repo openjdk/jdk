@@ -1,0 +1,5 @@
+
+This directory will hold any patches that need to be applied to the drop files.
+
+The patch order is defined in the ant build script properties.
+

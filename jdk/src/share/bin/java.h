@@ -187,9 +187,6 @@ void InitLauncher(jboolean javaw);
  *
  */
 typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
-                                                const char *name,
-                                                jboolean init,
-                                                jobject loader,
-                                                jboolean throwError));
+                                                  const char *name));
 jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 #endif /* _JAVA_H_ */

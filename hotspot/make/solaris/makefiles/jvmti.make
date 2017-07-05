@@ -69,10 +69,10 @@ all: $(JvmtiGeneratedFiles)
 both = $(JvmtiGenClass) $(JvmtiSrcDir)/jvmti.xml $(JvmtiSrcDir)/jvmtiLib.xsl
 
 $(JvmtiGenClass): $(JvmtiGenSource)
-	$(QUIETLY) $(COMPILE.JAVAC) -g -d $(JvmtiOutDir) $(JvmtiGenSource)
+	$(QUIETLY) $(COMPILE.JAVAC) -d $(JvmtiOutDir) $(JvmtiGenSource)
 
 $(JvmtiEnvFillClass): $(JvmtiEnvFillSource)
-	$(QUIETLY) $(COMPILE.JAVAC) -g -d $(JvmtiOutDir) $(JvmtiEnvFillSource)
+	$(QUIETLY) $(COMPILE.JAVAC) -d $(JvmtiOutDir) $(JvmtiEnvFillSource)
 
 $(JvmtiOutDir)/jvmtiEnter.cpp: $(both) $(JvmtiSrcDir)/jvmtiEnter.xsl
 	@echo Generating $@

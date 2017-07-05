@@ -1526,7 +1526,8 @@ void os::print_os_info(outputStream* st) {
     case 5000: st->print(" Windows 2000"); break;
     case 5001: st->print(" Windows XP"); break;
     case 5002:
-    case 6000: {
+    case 6000:
+    case 6001: {
       // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
       // find out whether we are running on 64 bit processor or not.
       SYSTEM_INFO si;
@@ -1549,11 +1550,25 @@ void os::print_os_info(outputStream* st) {
           st->print(" Windows XP x64 Edition");
         else
             st->print(" Windows Server 2003 family");
-      } else { // os_vers == 6000
+      } else if (os_vers == 6000) {
         if (osvi.wProductType == VER_NT_WORKSTATION)
             st->print(" Windows Vista");
         else
             st->print(" Windows Server 2008");
+        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            st->print(" , 64 bit");
+      } else if (os_vers == 6001) {
+        if (osvi.wProductType == VER_NT_WORKSTATION) {
+            st->print(" Windows 7");
+        } else {
+            // Unrecognized windows, print out its major and minor versions
+            st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+        }
+        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            st->print(" , 64 bit");
+      } else { // future os
+        // Unrecognized windows, print out its major and minor versions
+        st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
         if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
             st->print(" , 64 bit");
       }

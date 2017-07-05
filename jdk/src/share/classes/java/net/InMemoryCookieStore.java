@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package java.net;
 
 import java.net.URI;
 import java.net.CookieStore;
@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Edward Wang
  * @since 1.6
  */
-public class InMemoryCookieStore implements CookieStore {
+class InMemoryCookieStore implements CookieStore {
     // the in-memory representation of cookies
     private List<HttpCookie> cookieJar = null;
 
