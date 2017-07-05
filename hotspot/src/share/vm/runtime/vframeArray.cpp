@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -510,7 +511,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   //  in the above picture.
 
   // Find the skeletal interpreter frames to unpack into
-  RegisterMap map(JavaThread::current(), false);
+  JavaThread* THREAD = JavaThread::current();
+  RegisterMap map(THREAD, false);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
@@ -520,29 +522,37 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     me = me.sender(&map);
   }
 
-  frame caller_frame = me;
-
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
-
   // Unpack the frames from the oldest (frames() -1) to the youngest (0)
-
+  frame caller_frame = me;
   for (index = frames() - 1; index >= 0 ; index--) {
-    int callee_parameters = index == 0 ? 0 : element(index-1)->method()->size_of_parameters();
-    int callee_locals     = index == 0 ? 0 : element(index-1)->method()->max_locals();
-    element(index)->unpack_on_stack(caller_actual_parameters,
-                                    callee_parameters,
-                                    callee_locals,
-                                    &caller_frame,
-                                    index == 0,
-                                    exec_mode);
-    if (index == frames() - 1) {
-      Deoptimization::unwind_callee_save_values(element(index)->iframe(), this);
+    vframeArrayElement* elem = element(index);  // caller
+    int callee_parameters, callee_locals;
+    if (index == 0) {
+      callee_parameters = callee_locals = 0;
+    } else {
+      methodHandle caller = elem->method();
+      methodHandle callee = element(index - 1)->method();
+      Bytecode_invoke inv(caller, elem->bci());
+      // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
+      // NOTE:  Use machinery here that avoids resolving of any kind.
+      const bool has_member_arg =
+          !inv.is_invokedynamic() && MethodHandles::has_member_arg(inv.klass(), inv.name());
+      callee_parameters = callee->size_of_parameters() + (has_member_arg ? 1 : 0);
+      callee_locals     = callee->max_locals();
     }
-    caller_frame = *element(index)->iframe();
+    elem->unpack_on_stack(caller_actual_parameters,
+                          callee_parameters,
+                          callee_locals,
+                          &caller_frame,
+                          index == 0,
+                          exec_mode);
+    if (index == frames() - 1) {
+      Deoptimization::unwind_callee_save_values(elem->iframe(), this);
+    }
+    caller_frame = *elem->iframe();
     caller_actual_parameters = callee_parameters;
   }
-
-
   deallocate_monitor_chunks();
 }
 

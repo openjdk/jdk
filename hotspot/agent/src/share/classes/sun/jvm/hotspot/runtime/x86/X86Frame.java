@@ -269,7 +269,6 @@ public class X86Frame extends Frame {
 
     if (isEntryFrame())       return senderForEntryFrame(map);
     if (isInterpretedFrame()) return senderForInterpreterFrame(map);
-    if (isRicochetFrame())    return senderForRicochetFrame(map);
 
     if(cb == null) {
       cb = VM.getVM().getCodeCache().findBlob(getPC());
@@ -286,16 +285,6 @@ public class X86Frame extends Frame {
     // Must be native-compiled frame, i.e. the marshaling code for native
     // methods that exists in the core system.
     return new X86Frame(getSenderSP(), getLink(), getSenderPC());
-  }
-
-  private Frame senderForRicochetFrame(X86RegisterMap map) {
-    if (DEBUG) {
-      System.out.println("senderForRicochetFrame");
-    }
-    X86RicochetFrame f = X86RicochetFrame.fromFrame(this);
-    if (map.getUpdateMap())
-      updateMapWithSavedLink(map, f.senderLinkAddress());
-    return new X86Frame(f.extendedSenderSP(), f.exactSenderSP(), f.senderLink(), f.senderPC());
   }
 
   private Frame senderForEntryFrame(X86RegisterMap map) {

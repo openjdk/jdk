@@ -133,16 +133,20 @@ class ciMethod : public ciObject {
     return _signature->size() + (_flags.is_static() ? 0 : 1);
   }
   // Report the number of elements on stack when invoking this method.
-  // This is different than the regular arg_size because invokdynamic
+  // This is different than the regular arg_size because invokedynamic
   // has an implicit receiver.
   int invoke_arg_size(Bytecodes::Code code) const {
-    int arg_size = _signature->size();
-    // Add a receiver argument, maybe:
-    if (code != Bytecodes::_invokestatic &&
-        code != Bytecodes::_invokedynamic) {
-      arg_size++;
+    if (is_loaded()) {
+      return arg_size();
+    } else {
+      int arg_size = _signature->size();
+      // Add a receiver argument, maybe:
+      if (code != Bytecodes::_invokestatic &&
+          code != Bytecodes::_invokedynamic) {
+        arg_size++;
+      }
+      return arg_size;
     }
-    return arg_size;
   }
 
 
@@ -161,6 +165,7 @@ class ciMethod : public ciObject {
   int code_size_for_inlining();
 
   bool force_inline() { return get_methodOop()->force_inline(); }
+  bool dont_inline()  { return get_methodOop()->dont_inline();  }
 
   int comp_level();
   int highest_osr_comp_level();
@@ -258,9 +263,9 @@ class ciMethod : public ciObject {
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
   // JSR 292 support
-  bool is_method_handle_invoke()  const;
-  bool is_method_handle_adapter() const;
-  ciInstance* method_handle_type();
+  bool is_method_handle_intrinsic()  const;
+  bool is_compiled_lambda_form() const;
+  bool has_member_arg() const;
 
   // What kind of ciObject is this?
   bool is_method()                               { return true; }

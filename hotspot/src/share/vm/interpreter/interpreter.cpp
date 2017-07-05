@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -180,14 +181,21 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   // Abstract method?
   if (m->is_abstract()) return abstract;
 
-  // Invoker for method handles?
-  if (m->is_method_handle_invoke())  return method_handle;
+  // Method handle primitive?
+  if (m->is_method_handle_intrinsic()) {
+    vmIntrinsics::ID id = m->intrinsic_id();
+    assert(MethodHandles::is_signature_polymorphic(id), "must match an intrinsic");
+    MethodKind kind = (MethodKind)( method_handle_invoke_FIRST +
+                                    ((int)id - vmIntrinsics::FIRST_MH_SIG_POLY) );
+    assert(kind <= method_handle_invoke_LAST, "parallel enum ranges");
+    return kind;
+  }
 
   // Native method?
   // Note: This test must come _before_ the test for intrinsic
   //       methods. See also comments below.
   if (m->is_native()) {
-    assert(!m->is_method_handle_invoke(), "overlapping bits here, watch out");
+    assert(!m->is_method_handle_intrinsic(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
   }
 
@@ -239,6 +247,14 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
 }
 
 
+void AbstractInterpreter::set_entry_for_kind(AbstractInterpreter::MethodKind kind, address entry) {
+  assert(kind >= method_handle_invoke_FIRST &&
+         kind <= method_handle_invoke_LAST, "late initialization only for MH entry points");
+  assert(_entry_table[kind] == _entry_table[abstract], "previous value must be AME entry");
+  _entry_table[kind] = entry;
+}
+
+
 // Return true if the interpreter can prove that the given bytecode has
 // not yet been executed (in Java semantics, not in actual operation).
 bool AbstractInterpreter::is_not_reached(methodHandle method, int bci) {
@@ -270,7 +286,6 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case empty                  : tty->print("empty"                  ); break;
     case accessor               : tty->print("accessor"               ); break;
     case abstract               : tty->print("abstract"               ); break;
-    case method_handle          : tty->print("method_handle"          ); break;
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
@@ -278,7 +293,16 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
-    default                     : ShouldNotReachHere();
+    default:
+      if (kind >= method_handle_invoke_FIRST &&
+          kind <= method_handle_invoke_LAST) {
+        const char* kind_name = vmIntrinsics::name_at(method_handle_intrinsic(kind));
+        if (kind_name[0] == '_')  kind_name = &kind_name[1];  // '_invokeExact' => 'invokeExact'
+        tty->print("method_handle_%s", kind_name);
+        break;
+      }
+      ShouldNotReachHere();
+      break;
   }
 }
 #endif // PRODUCT

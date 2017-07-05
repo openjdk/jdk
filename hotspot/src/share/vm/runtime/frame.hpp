@@ -135,7 +135,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   bool is_interpreted_frame()    const;
   bool is_java_frame()           const;
   bool is_entry_frame()          const;             // Java frame called from C?
-  bool is_ricochet_frame()       const;
+  bool is_ignored_frame()        const;
   bool is_native_frame()         const;
   bool is_runtime_frame()        const;
   bool is_compiled_frame()       const;
@@ -176,7 +176,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // Helper methods for better factored code in frame::sender
   frame sender_for_compiled_frame(RegisterMap* map) const;
   frame sender_for_entry_frame(RegisterMap* map) const;
-  frame sender_for_ricochet_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
 
@@ -415,7 +414,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
   void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
-  void oops_ricochet_do(OopClosure* f, const RegisterMap* map);
 
  private:
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f);
