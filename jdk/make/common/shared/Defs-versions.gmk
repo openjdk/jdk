@@ -165,10 +165,10 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_DXSDK_VER          = 0x0900
   ifeq ($(CC_VERSION),msvc)
     ifeq ($(ARCH_DATA_MODEL), 32)
-      REQUIRED_COMPILER_NAME    = Visual Studio 9
-      REQUIRED_COMPILER_VERSION = VS2008
-      REQUIRED_CC_VER           = 15.00.21022.08
-      REQUIRED_LINK_VER         = 9.00.21022.08
+      REQUIRED_COMPILER_NAME    = Visual Studio 10
+      REQUIRED_COMPILER_VERSION = VS2010
+      REQUIRED_CC_VER           = 16.00.30319.01
+      REQUIRED_LINK_VER         = 10.00.30319.01
     else
       ifeq ($(ARCH), ia64)
         REQUIRED_COMPILER_NAME    = Microsoft Platform SDK - November 2001 Edition
@@ -177,10 +177,10 @@ ifeq ($(PLATFORM), windows)
         REQUIRED_LINK_VER         = 7.00.9337.7
       endif
       ifeq ($(ARCH), amd64)
-        REQUIRED_COMPILER_NAME    = Microsoft Windows SDK with Visual Studio 9 (6001.18000.367)
-        REQUIRED_COMPILER_VERSION = VS2008
-        REQUIRED_CC_VER           = 15.00.21022.08
-        REQUIRED_LINK_VER         = 9.00.21022.08
+        REQUIRED_COMPILER_NAME    = Visual Studio 10
+        REQUIRED_COMPILER_VERSION = VS2010
+        REQUIRED_CC_VER           = 16.00.30319.01
+        REQUIRED_LINK_VER         = 10.00.30319.01
       endif
     endif
   endif

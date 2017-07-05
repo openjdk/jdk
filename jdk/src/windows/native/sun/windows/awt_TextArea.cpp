@@ -758,7 +758,7 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
                     si.cbSize = sizeof(SCROLLINFO);
                     si.fMask = SIF_POS | SIF_RANGE | SIF_PAGE;
                     int actualScrollLines =
-                        abs(platfScrollLines * (*delta_accum / WHEEL_DELTA));
+                        abs((int)(platfScrollLines * (*delta_accum / WHEEL_DELTA)));
                     for (int i = 0; i < actualScrollLines; i++) {
                         if (::GetScrollInfo(hWnd, sb_type, &si)) {
                             if ((wm_msg == WM_VSCROLL)
