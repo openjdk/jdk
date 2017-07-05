@@ -122,8 +122,7 @@ public final class CompileUnit implements Comparable<CompileUnit>, Serializable 
      * @param clazz class with code for this compile unit
      */
     void setCode(final Class<?> clazz) {
-        Objects.requireNonNull(clazz);
-        this.clazz = clazz;
+        this.clazz = Objects.requireNonNull(clazz);
         // Revisit this - refactor to avoid null-ed out non-final fields
         // null out emitter
         this.classEmitter = null;

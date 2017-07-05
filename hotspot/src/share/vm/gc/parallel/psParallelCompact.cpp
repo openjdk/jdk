@@ -2053,7 +2053,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     marking_phase(vmthread_cm, maximum_heap_compaction, &_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
-      && gc_cause == GCCause::_java_lang_system_gc;
+      && GCCause::is_user_requested_gc(gc_cause);
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
 
     COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
@@ -2089,7 +2089,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       // Don't check if the size_policy is ready here.  Let
       // the size_policy check that internally.
       if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
-          ((gc_cause != GCCause::_java_lang_system_gc) ||
+          (!GCCause::is_user_requested_gc(gc_cause) ||
             UseAdaptiveSizePolicyWithSystemGC)) {
         // Swap the survivor spaces if from_space is empty. The
         // resize_young_gen() called below is normally used after

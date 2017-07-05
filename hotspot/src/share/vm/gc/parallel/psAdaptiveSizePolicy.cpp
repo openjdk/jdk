@@ -130,7 +130,7 @@ void PSAdaptiveSizePolicy::major_collection_end(size_t amount_live,
   // Update the pause time.
   _major_timer.stop();
 
-  if (gc_cause != GCCause::_java_lang_system_gc ||
+  if (!GCCause::is_user_requested_gc(gc_cause) ||
       UseAdaptiveSizePolicyWithSystemGC) {
     double major_pause_in_seconds = _major_timer.seconds();
     double major_pause_in_ms = major_pause_in_seconds * MILLIUNITS;

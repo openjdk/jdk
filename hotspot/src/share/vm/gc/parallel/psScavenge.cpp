@@ -290,7 +290,7 @@ bool PSScavenge::invoke_no_policy() {
 
   AdaptiveSizePolicyOutput(size_policy, heap->total_collections());
 
-  if ((gc_cause != GCCause::_java_lang_system_gc) ||
+  if (!GCCause::is_user_requested_gc(gc_cause) ||
        UseAdaptiveSizePolicyWithSystemGC) {
     // Gather the feedback data for eden occupancy.
     young_gen->eden_space()->accumulate_statistics();

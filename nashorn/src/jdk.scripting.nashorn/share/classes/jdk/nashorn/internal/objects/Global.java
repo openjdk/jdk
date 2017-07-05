@@ -1005,9 +1005,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the global singleton
      */
     public static Global instance() {
-        final Global global = Context.getGlobal();
-        Objects.requireNonNull(global);
-        return global;
+        return Objects.requireNonNull(Context.getGlobal());
     }
 
     private static Global instanceFrom(final Object self) {
@@ -2712,6 +2710,14 @@ public final class Global extends ScriptObject implements Scope {
             // Retrieve current state of ENV variables.
             final ScriptObject env = newObject();
             env.putAll(System.getenv(), scriptEnv._strict);
+
+            // Some platforms, e.g., Windows, do not define the PWD environment
+            // variable, so that the $ENV.PWD property needs to be explicitly
+            // set.
+            if (!env.containsKey(ScriptingFunctions.PWD_NAME)) {
+                env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
+            }
+
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
         } else {
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);

@@ -2631,7 +2631,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
   if (!is_store) {
     MemNode::MemOrd mo = is_volatile ? MemNode::acquire : MemNode::unordered;
-    Node* p = make_load(control(), adr, value_type, type, adr_type, mo, is_volatile);
+    // To be valid, unsafe loads may depend on other conditions than
+    // the one that guards them: pin the Load node
+    Node* p = make_load(control(), adr, value_type, type, adr_type, mo, LoadNode::Pinned, is_volatile);
     // load value
     switch (type) {
     case T_BOOLEAN:
@@ -5488,7 +5490,7 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   }
   // Build the load.
   MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
-  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, mo, is_vol);
+  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, mo, LoadNode::DependsOnlyOnTest, is_vol);
   // If reference is volatile, prevent following memory ops from
   // floating up past the volatile read.  Also prevents commoning
   // another volatile read.

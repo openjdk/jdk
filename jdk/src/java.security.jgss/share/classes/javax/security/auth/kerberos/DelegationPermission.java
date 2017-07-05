@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 
 package javax.security.auth.kerberos;
 
-import java.util.*;
-import java.security.Permission;
-import java.security.BasicPermission;
-import java.security.PermissionCollection;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.security.BasicPermission;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is used to restrict the usage of the Kerberos
@@ -137,6 +138,7 @@ public final class DelegationPermission extends BasicPermission
      * @return true if the specified permission is implied by this object,
      * false if not.
      */
+    @Override
     public boolean implies(Permission p) {
         if (!(p instanceof DelegationPermission))
             return false;
@@ -159,6 +161,7 @@ public final class DelegationPermission extends BasicPermission
      *  has the same subordinate and service principal as this.
      *  DelegationPermission object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -175,10 +178,10 @@ public final class DelegationPermission extends BasicPermission
      *
      * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
         return getName().hashCode();
     }
-
 
     /**
      * Returns a PermissionCollection object for storing
@@ -192,7 +195,7 @@ public final class DelegationPermission extends BasicPermission
      * @return a new PermissionCollection object suitable for storing
      * DelegationPermissions.
      */
-
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new KrbDelegationPermissionCollection();
     }
@@ -263,12 +266,11 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
     implements java.io.Serializable {
 
     // Not serialized; see serialization section at end of class.
-    private transient List<Permission> perms;
+    private transient ConcurrentHashMap<Permission, Boolean> perms;
 
     public KrbDelegationPermissionCollection() {
-        perms = new ArrayList<Permission>();
+        perms = new ConcurrentHashMap<>();
     }
-
 
     /**
      * Check and see if this collection of permissions implies the permissions
@@ -279,18 +281,13 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * @return true if "permission" is a proper subset of a permission in
      * the collection, false if not.
      */
+    @Override
     public boolean implies(Permission permission) {
         if (! (permission instanceof DelegationPermission))
-                return false;
+            return false;
 
-        synchronized (this) {
-            for (Permission x : perms) {
-                if (x.implies(permission))
-                    return true;
-            }
-        }
-        return false;
-
+        // if map contains key, then it automatically implies it
+        return perms.containsKey(permission);
     }
 
     /**
@@ -305,6 +302,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * @exception SecurityException - if this PermissionCollection object
      *                                has been marked readonly
      */
+    @Override
     public void add(Permission permission) {
         if (! (permission instanceof DelegationPermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -312,9 +310,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
 
-        synchronized (this) {
-            perms.add(0, permission);
-        }
+        perms.put(permission, Boolean.TRUE);
     }
 
     /**
@@ -323,11 +319,9 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the DelegationPermission objects.
      */
+    @Override
     public Enumeration<Permission> elements() {
-        // Convert Iterator into Enumeration
-        synchronized (this) {
-            return Collections.enumeration(perms);
-        }
+        return perms.keys();
     }
 
     private static final long serialVersionUID = -3383936936589966948L;
@@ -354,11 +348,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector<Permission> permissions = new Vector<>(perms.size());
-
-        synchronized (this) {
-            permissions.addAll(perms);
-        }
+        Vector<Permission> permissions = new Vector<>(perms.keySet());
 
         ObjectOutputStream.PutField pfields = out.putFields();
         pfields.put("permissions", permissions);
@@ -379,8 +369,10 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
 
         // Get the one we want
         Vector<Permission> permissions =
-                (Vector<Permission>)gfields.get("permissions", null);
-        perms = new ArrayList<Permission>(permissions.size());
-        perms.addAll(permissions);
+            (Vector<Permission>)gfields.get("permissions", null);
+        perms = new ConcurrentHashMap<>(permissions.size());
+        for (Permission perm : permissions) {
+            perms.put(perm, Boolean.TRUE);
+        }
     }
 }
