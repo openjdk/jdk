@@ -71,4 +71,3 @@ public class SupplementaryChars {
         return parser;
     }
 }
-

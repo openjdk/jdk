@@ -51,4 +51,3 @@ public class BugTest {
         Assert.assertEquals(XMLStreamConstants.START_DOCUMENT, r.getEventType());
     }
 }
-

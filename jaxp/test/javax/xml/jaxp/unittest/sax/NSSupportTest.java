@@ -232,4 +232,3 @@ public class NSSupportTest {
         Assert.assertNull(nssupport.getURI(""));
     }
 }
-

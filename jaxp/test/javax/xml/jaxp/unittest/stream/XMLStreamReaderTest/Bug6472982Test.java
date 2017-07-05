@@ -79,4 +79,3 @@ public class Bug6472982Test {
         return sbuffer.toString();
     }
 }
-

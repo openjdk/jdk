@@ -61,4 +61,3 @@ public class EntityChildTest {
         assertEquals(nl.getLength(), 3);
     }
 }
-

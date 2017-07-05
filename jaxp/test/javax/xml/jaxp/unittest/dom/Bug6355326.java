@@ -118,4 +118,3 @@ public class Bug6355326 {
         return p;
     }
 }
-

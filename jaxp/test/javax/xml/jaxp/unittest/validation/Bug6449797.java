@@ -46,4 +46,3 @@ public class Bug6449797 {
         SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(getClass().getResource("Bug6449797.xsd"));
     }
 }
-

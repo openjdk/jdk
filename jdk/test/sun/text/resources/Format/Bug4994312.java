@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 
 /*
- *@test
- *@bug 4994312 8008577
- *@summary verify the German locale will accept localized pattern chars 't' and 'u'.
+ * @test
+ * @bug 4994312 8008577
+ * @modules jdk.localedata
+ * @summary verify the German locale will accept localized pattern chars 't' and 'u'.
  * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4994312
  */
 

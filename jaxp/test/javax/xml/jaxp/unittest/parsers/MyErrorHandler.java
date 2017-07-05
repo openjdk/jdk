@@ -53,4 +53,3 @@ public class MyErrorHandler extends DefaultHandler {
         errorOccured = true;
     }
 }
-

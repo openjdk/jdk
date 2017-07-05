@@ -45,6 +45,9 @@ public class SecureDS {
             DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
             if (!(stream instanceof SecureDirectoryStream)) {
+                if (System.getProperty("os.name").equals("Linux"))
+                    throw new AssertionError(
+                            "SecureDirectoryStream not supported.");
                 System.out.println("SecureDirectoryStream not supported.");
                 return;
             }

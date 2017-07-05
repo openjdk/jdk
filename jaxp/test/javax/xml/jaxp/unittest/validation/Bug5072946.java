@@ -125,4 +125,3 @@ public class Bug5072946 {
         Assert.assertSame(r.getNode(), n);
     }
 }
-

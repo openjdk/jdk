@@ -54,4 +54,3 @@ public class SchemaTest {
         factory.newSchema(new File(getClass().getResource("Bug8149915.xsd").getFile()));
     }
 }
-

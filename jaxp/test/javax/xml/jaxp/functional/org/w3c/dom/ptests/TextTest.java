@@ -74,4 +74,3 @@ public class TextTest extends AbstractCharacterDataTest {
     }
 
 }
-

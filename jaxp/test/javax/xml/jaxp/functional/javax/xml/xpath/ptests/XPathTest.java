@@ -757,5 +757,3 @@ public class XPathTest {
         }
     }
 }
-
-

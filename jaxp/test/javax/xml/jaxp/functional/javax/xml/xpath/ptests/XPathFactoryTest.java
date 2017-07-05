@@ -218,5 +218,3 @@ public class XPathFactoryTest {
         assertNotNull(XPathFactory.newInstance(DOM_OBJECT_MODEL));
     }
 }
-
-

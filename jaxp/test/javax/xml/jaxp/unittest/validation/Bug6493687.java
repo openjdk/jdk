@@ -48,4 +48,3 @@ public class Bug6493687 {
         System.out.println("Got here3");
     }
 }
-

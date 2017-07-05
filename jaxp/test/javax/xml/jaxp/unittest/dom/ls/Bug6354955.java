@@ -142,4 +142,3 @@ public class Bug6354955 {
         return documentBuilder.newDocument();
     }
 }
-

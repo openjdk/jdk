@@ -187,4 +187,3 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
     }
 
 }
-

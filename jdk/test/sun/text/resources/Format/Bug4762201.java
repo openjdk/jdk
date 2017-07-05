@@ -22,15 +22,17 @@
  */
 
 /*
- *@test
- *@bug 4762201
- *@summary verify the zh_CN full time pattern (and other time patterns)
- *@run main/othervm -Djava.locale.providers=COMPAT,SPI Bug4762201
-*/
+ * @test
+ * @bug 4762201
+ * @modules jdk.localedata
+ * @summary verify the zh_CN full time pattern (and other time patterns)
+ * @run main/othervm -Djava.locale.providers=COMPAT,SPI Bug4762201
+ */
 
-import java.io.*;
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class Bug4762201
 {

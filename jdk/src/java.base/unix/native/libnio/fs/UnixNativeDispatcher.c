@@ -52,6 +52,10 @@
 #include <strings.h>
 #endif
 
+#ifdef __linux__
+#include <sys/syscall.h>
+#endif
+
 #if defined(__linux__) || defined(_AIX)
 #include <string.h>
 #endif
@@ -157,14 +161,11 @@ static int fstatat64_wrapper(int dfd, const char *path,
 }
 #endif
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(_LP64) && defined(__NR_newfstatat)
 #define FSTATAT64_SYSCALL_AVAILABLE
 static int fstatat64_wrapper(int dfd, const char *path,
                              struct stat64 *statbuf, int flag)
 {
-    #ifndef __NR_newfstatat
-    #define __NR_newfstatat  262
-    #endif
     return syscall(__NR_newfstatat, dfd, path, statbuf, flag);
 }
 #endif

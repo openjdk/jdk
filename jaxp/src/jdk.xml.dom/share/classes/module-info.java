@@ -30,4 +30,3 @@ module jdk.xml.dom {
     exports org.w3c.dom.stylesheets;
     exports org.w3c.dom.xpath;
 }
-

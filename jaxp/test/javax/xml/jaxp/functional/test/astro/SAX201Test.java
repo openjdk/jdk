@@ -48,4 +48,3 @@ public class SAX201Test {
         reader.setDTDHandler(null); // SAX 2.0.1 allows
     }
 }
-

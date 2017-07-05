@@ -178,4 +178,3 @@ public class Issue41Test {
         System.out.println(sw.toString());
     }
 }
-

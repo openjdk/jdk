@@ -116,4 +116,3 @@ public class Bug6555001 {
         }, new FilePermission("/tmp/this/does/not/exist/but/that/is/ok", "read"));
     }
 }
-

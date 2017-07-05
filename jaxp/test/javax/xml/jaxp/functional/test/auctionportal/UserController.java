@@ -304,5 +304,3 @@ public class UserController {
         assertTrue(compareDocumentWithGold(goldFile, resultFile));
     }
 }
-
-

@@ -31,7 +31,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import junit.framework.Test;

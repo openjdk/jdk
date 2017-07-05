@@ -671,5 +671,3 @@ class MyDeclHandler implements DeclHandler {
     public void internalEntityDecl(String name, String value) {
     }
 }
-
-

@@ -102,4 +102,3 @@ public class TCKEncodingTest {
         System.out.println("OK");
     }
 }
-

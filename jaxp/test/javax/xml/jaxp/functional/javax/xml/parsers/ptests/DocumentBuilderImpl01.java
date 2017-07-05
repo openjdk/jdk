@@ -157,5 +157,3 @@ public class DocumentBuilderImpl01 implements EntityResolver {
             return null;
     }
 }
-
-

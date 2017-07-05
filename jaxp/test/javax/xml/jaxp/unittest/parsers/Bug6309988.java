@@ -370,4 +370,3 @@ public class Bug6309988 {
         return System.getSecurityManager() != null;
     }
 }
-

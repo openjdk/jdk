@@ -164,4 +164,3 @@ public class Bug6675332Test extends BaseStAXUT {
     }
 
 }
-

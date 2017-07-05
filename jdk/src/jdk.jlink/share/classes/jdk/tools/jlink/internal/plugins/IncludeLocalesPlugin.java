@@ -264,8 +264,8 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
 
         // Add Thai BreakIterator related data files
         if (tag.equals("th")) {
-            files.add(".+sun/text/resources/thai_dict");
-            files.add(".+sun/text/resources/[^_]+BreakIteratorData_th");
+            files.add(".+sun/text/resources/ext/thai_dict");
+            files.add(".+sun/text/resources/ext/[^_]+BreakIteratorData_th");
         }
 
         // Add Taiwan resource bundles for Hong Kong
