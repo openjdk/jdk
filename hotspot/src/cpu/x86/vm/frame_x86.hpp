@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,21 +128,16 @@
     entry_frame_after_call_words                     =  28,
     entry_frame_call_wrapper_offset                  =  2,
 
-    arg_reg_save_area_bytes                          = 32, // Register argument save area
+    arg_reg_save_area_bytes                          = 32 // Register argument save area
 #else
     entry_frame_after_call_words                     = 13,
     entry_frame_call_wrapper_offset                  = -6,
 
-    arg_reg_save_area_bytes                          =  0,
+    arg_reg_save_area_bytes                          =  0
 #endif // _WIN64
 #else
-    entry_frame_call_wrapper_offset                  =  2,
+    entry_frame_call_wrapper_offset                  =  2
 #endif // AMD64
-
-    // Native frames
-
-    native_frame_initial_param_offset                =  2
-
   };
 
   intptr_t ptr_at(int offset) const {
@@ -194,9 +189,6 @@
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
-
-  // return address of param, zero origin index.
-  inline address* native_param_addr(int idx) const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;

@@ -124,7 +124,7 @@ GangWorker* AbstractWorkGang::gang_worker(uint i) const {
   // Array index bounds checking.
   GangWorker* result = NULL;
   assert(gang_workers() != NULL, "No workers for indexing");
-  assert(((i >= 0) && (i < total_workers())), "Worker index out of bounds");
+  assert(i < total_workers(), "Worker index out of bounds");
   result = _gang_workers[i];
   assert(result != NULL, "Indexing to null worker");
   return result;
@@ -463,7 +463,7 @@ void SubTasksDone::clear() {
 }
 
 bool SubTasksDone::is_task_claimed(uint t) {
-  assert(0 <= t && t < _n_tasks, "bad task id.");
+  assert(t < _n_tasks, "bad task id.");
   uint old = _tasks[t];
   if (old == 0) {
     old = Atomic::cmpxchg(1, &_tasks[t], 0);

@@ -417,7 +417,9 @@ public class LingeredApp {
                 setLastModified(theLockFileName, epoch());
                 Thread.sleep(spinDelay);
             }
-
+        } catch (NoSuchFileException ex) {
+            // Lock deleted while we are setting last modified time.
+            // Ignore error and lets the app exits
         } catch (Exception ex) {
             System.err.println("LingeredApp ERROR: " + ex);
             // Leave exit_code = 1 to Java launcher

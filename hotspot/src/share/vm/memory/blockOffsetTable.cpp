@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -792,6 +792,5 @@ void BlockOffsetArrayContigSpace::zero_bottom_entry() {
 }
 
 size_t BlockOffsetArrayContigSpace::last_active_index() const {
-  size_t result = _next_offset_index - 1;
-  return result >= 0 ? result : 0;
+  return _next_offset_index == 0 ? 0 : _next_offset_index - 1;
 }

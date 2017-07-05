@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class ComURLNulls {
             }
 
             try {
-                urlc.getServerCertificateChain();
+                urlc.getServerCertificates();
             } catch (IllegalStateException e) {
                 System.out.print("Caught proper exception: ");
                 System.out.println(e.getMessage());

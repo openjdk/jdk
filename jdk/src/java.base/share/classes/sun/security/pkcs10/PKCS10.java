@@ -290,8 +290,9 @@ public class PKCS10 {
             throw new SignatureException("Cert request was not signed");
 
 
+        byte[] CRLF = new byte[] {'\r', '\n'};
         out.println("-----BEGIN NEW CERTIFICATE REQUEST-----");
-        out.println(Base64.getMimeEncoder().encodeToString(encoded));
+        out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(encoded));
         out.println("-----END NEW CERTIFICATE REQUEST-----");
     }
 
