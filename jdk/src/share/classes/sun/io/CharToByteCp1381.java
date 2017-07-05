@@ -24,34 +24,16 @@
  */
 package sun.io;
 
-import sun.nio.cs.ext.IBM1381;
+import sun.nio.cs.ext.*;
 
-/**
-* Tables and data to convert Unicode to Cp1381
-*
-* @author Malcolm Ayres, assisted by UniMap program
-*/
-public class CharToByteCp1381
-        extends CharToByteDBCS_ASCII
+public class CharToByteCp1381 extends CharToByteDBCS_ASCII {
 
-{
+    // Return the character set id
+    public String getCharacterEncoding() {
+        return "Cp1381";
+    }
 
-        private final static IBM1381 nioCoder = new IBM1381();
-
-        // Return the character set id
-        public String getCharacterEncoding()
-        {
-                return "Cp1381";
-        }
-
-        public CharToByteCp1381()
-        {
-                super();
-                super.mask1 = 0xFFE0;
-                super.mask2 = 0x001F;
-                super.shift = 5;
-                super.index1 = nioCoder.getEncoderIndex1();
-                super.index2 = nioCoder.getEncoderIndex2();
-                super.index2a = nioCoder.getEncoderIndex2a();
-        }
+    public CharToByteCp1381() {
+        super((DoubleByte.Encoder)new IBM1381().newEncoder());
+    }
 }

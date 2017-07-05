@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.jgss;
 import java.lang.reflect.InvocationTargetException;
 import org.ietf.jgss.*;
 import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Enumeration;
 import java.util.Iterator;
-import javax.security.auth.Subject;
 import sun.security.jgss.spi.*;
 import sun.security.jgss.wrapper.NativeGSSFactory;
 import sun.security.jgss.wrapper.SunNativeProvider;
@@ -124,9 +121,9 @@ public final class ProviderList {
                         new HashMap<PreferencesEntry, MechanismFactory>(5);
     private HashSet<Oid> mechs = new HashSet<Oid>(5);
 
-    final private int caller;
+    final private GSSCaller caller;
 
-    public ProviderList(int caller, boolean useNative) {
+    public ProviderList(GSSCaller caller, boolean useNative) {
         this.caller = caller;
         Provider[] provList;
         if (useNative) {
@@ -274,7 +271,7 @@ public final class ProviderList {
     private static MechanismFactory getMechFactoryImpl(Provider p,
                                                        String className,
                                                        Oid mechOid,
-                                                       int caller)
+                                                       GSSCaller caller)
         throws GSSException {
 
         try {
@@ -301,7 +298,7 @@ public final class ProviderList {
             if (baseClass.isAssignableFrom(implClass)) {
 
                 java.lang.reflect.Constructor<?> c =
-                                implClass.getConstructor(Integer.TYPE);
+                                implClass.getConstructor(GSSCaller.class);
                 MechanismFactory mf = (MechanismFactory) (c.newInstance(caller));
 
                 if (mf instanceof NativeGSSFactory) {
