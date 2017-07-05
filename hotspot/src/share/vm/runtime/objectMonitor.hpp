@@ -101,7 +101,7 @@ class ObjectMonitor {
   static int Spinner_offset_in_bytes()     { return offset_of(ObjectMonitor, _Spinner);    }
 
  public:
-  // Eventaully we'll make provisions for multiple callbacks, but
+  // Eventually we'll make provisions for multiple callbacks, but
   // now one will suffice.
   static int (*SpinCallbackFunction)(intptr_t, int) ;
   static intptr_t SpinCallbackArgument ;
@@ -272,7 +272,7 @@ public:
   // type int, or int32_t but not intptr_t.  There's no reason
   // to use 64-bit fields for these variables on a 64-bit JVM.
 
-  volatile intptr_t  _count;        // reference count to prevent reclaimation/deflation
+  volatile intptr_t  _count;        // reference count to prevent reclamation/deflation
                                     // at stop-the-world time.  See deflate_idle_monitors().
                                     // _count is approximately |_WaitSet| + |_EntryList|
  protected:

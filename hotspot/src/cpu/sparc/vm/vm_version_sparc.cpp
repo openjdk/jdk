@@ -234,7 +234,7 @@ void VM_Version::initialize() {
   assert((OptoLoopAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v9() ? ", v9" : (has_v8() ? ", v8" : "")),
                (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", vis1" : ""),
@@ -242,6 +242,7 @@ void VM_Version::initialize() {
                (has_vis3() ? ", vis3" : ""),
                (has_blk_init() ? ", blk_init" : ""),
                (has_cbcond() ? ", cbcond" : ""),
+               (has_aes() ? ", aes" : ""),
                (is_ultra3() ? ", ultra3" : ""),
                (is_sun4v() ? ", sun4v" : ""),
                (is_niagara_plus() ? ", niagara_plus" : (is_niagara() ? ", niagara" : "")),
@@ -264,6 +265,41 @@ void VM_Version::initialize() {
     UseVIS = MIN2((intx)1,UseVIS);
   if (!has_vis1()) // Drop to 0 if no VIS1 support
     UseVIS = 0;
+
+  // T2 and above should have support for AES instructions
+  if (has_aes()) {
+    if (UseVIS > 0) { // AES intrinsics use FXOR instruction which is VIS1
+      if (FLAG_IS_DEFAULT(UseAES)) {
+        FLAG_SET_DEFAULT(UseAES, true);
+      }
+      if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+      }
+      // we disable both the AES flags if either of them is disabled on the command line
+      if (!UseAES || !UseAESIntrinsics) {
+        FLAG_SET_DEFAULT(UseAES, false);
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+    } else {
+        if (UseAES || UseAESIntrinsics) {
+          warning("SPARC AES intrinsics require VIS1 instruction support. Intrinsics will be disabled.");
+          if (UseAES) {
+            FLAG_SET_DEFAULT(UseAES, false);
+          }
+          if (UseAESIntrinsics) {
+            FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+          }
+        }
+    }
+  } else if (UseAES || UseAESIntrinsics) {
+    warning("AES instructions are not available on this CPU");
+    if (UseAES) {
+      FLAG_SET_DEFAULT(UseAES, false);
+    }
+    if (UseAESIntrinsics) {
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+  }
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
     (cache_line_size > ContendedPaddingWidth))

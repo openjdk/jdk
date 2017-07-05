@@ -69,7 +69,7 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
   // the available space and attempt to move the boundary if more space
   // is needed.  The growth is not guaranteed to occur.
   void adjust_boundary_for_old_gen_needs(size_t desired_change_in_bytes);
-  // Similary for a growth of the young generation.
+  // Similarly for a growth of the young generation.
   void adjust_boundary_for_young_gen_needs(size_t eden_size, size_t survivor_size);
 
   // Return the total byte size of the reserved space
