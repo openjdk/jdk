@@ -586,24 +586,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Cache to support the object identity semantics of autoboxing for values between
      * -128 and 127 (inclusive) as required by JLS.
      *
-     * The cache is initialized on first usage. During VM initialization the
-     * getAndRemoveCacheProperties method may be used to get and remove any system
-     * properites that configure the cache size. At this time, the size of the
-     * cache may be controlled by the -XX:AutoBoxCacheMax=<size> option.
+     * The cache is initialized on first usage.  The size of the cache
+     * may be controlled by the -XX:AutoBoxCacheMax=<size> option.
+     * During VM initialization, java.lang.Integer.IntegerCache.high property
+     * may be set and saved in the private system properties in the
+     * sun.misc.VM class.
      */
-
-    // value of java.lang.Integer.IntegerCache.high property (obtained during VM init)
-    private static String integerCacheHighPropValue;
-
-    static void getAndRemoveCacheProperties() {
-        if (!sun.misc.VM.isBooted()) {
-            Properties props = System.getProperties();
-            integerCacheHighPropValue =
-                (String)props.remove("java.lang.Integer.IntegerCache.high");
-            if (integerCacheHighPropValue != null)
-                System.setProperties(props);  // remove from system props
-        }
-    }
 
     private static class IntegerCache {
         static final int low = -128;
@@ -613,6 +601,8 @@ public final class Integer extends Number implements Comparable<Integer> {
         static {
             // high value may be configured by property
             int h = 127;
+            String integerCacheHighPropValue =
+                sun.misc.VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
             if (integerCacheHighPropValue != null) {
                 int i = parseInt(integerCacheHighPropValue);
                 i = Math.max(i, 127);

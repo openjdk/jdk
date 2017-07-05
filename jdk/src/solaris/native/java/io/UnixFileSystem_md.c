@@ -119,7 +119,7 @@ Java_java_io_UnixFileSystem_checkAccess(JNIEnv *env, jobject this,
                                         jobject file, jint a)
 {
     jboolean rv = JNI_FALSE;
-    int mode;
+    int mode = 0;
     switch (a) {
     case java_io_FileSystem_ACCESS_READ:
         mode = R_OK;
@@ -151,7 +151,8 @@ Java_java_io_UnixFileSystem_setPermission(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        int amode, mode;
+        int amode = 0;
+        int mode;
         switch (access) {
         case java_io_FileSystem_ACCESS_READ:
             if (owneronly)

@@ -35,7 +35,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import sun.security.krb5.*;
-import sun.security.jgss.HttpCaller;
 import sun.security.krb5.internal.Krb5;
 
 abstract class InitialToken extends Krb5Token {
@@ -217,6 +216,12 @@ abstract class InitialToken extends Krb5Token {
 
             int pos = 0;
 
+            if (checksum == null) {
+                GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                        "No cksum in AP_REQ's authenticator");
+                ge.initCause(new KrbException(Krb5.KRB_AP_ERR_INAPP_CKSUM));
+                throw ge;
+            }
             checksumBytes = checksum.getBytes();
 
             if ((checksumBytes[0] != CHECKSUM_FIRST_BYTES[0]) ||

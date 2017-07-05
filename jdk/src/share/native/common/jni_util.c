@@ -433,7 +433,7 @@ getString8859_1Chars(JNIEnv *env, jstring jstr)
     for (i=0; i<len; i++) {
         jchar unicode = str[i];
         if (unicode <= 0x00ff)
-            result[i] = unicode;
+            result[i] = (char)unicode;
         else
             result[i] = '?';
     }
@@ -498,7 +498,7 @@ getString646_USChars(JNIEnv *env, jstring jstr)
     for (i=0; i<len; i++) {
         jchar unicode = str[i];
         if (unicode <= 0x007f )
-            result[i] = unicode;
+            result[i] = (char)unicode;
         else
             result[i] = '?';
     }
@@ -569,7 +569,7 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr)
     for (i=0; i<len; i++) {
         jchar c = str[i];
         if (c < 256)
-            result[i] = c;
+            result[i] = (char)c;
         else switch(c) {
             case 0x20AC: result[i] = (char)0x80; break;
             case 0x201A: result[i] = (char)0x82; break;

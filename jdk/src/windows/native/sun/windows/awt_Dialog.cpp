@@ -304,7 +304,15 @@ void AwtDialog::PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND
     UINT flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE;
 
     if (isBlocked) {
-        ::SetWindowPos(dialog, blocker, 0, 0, 0, 0, flags);
+        // Fix for 6829546: if blocker is a top-most window, but window isn't, then
+        // calling ::SetWindowPos(dialog, blocker, ...) makes window top-most as well
+        BOOL isBlockerTopmost = (::GetWindowLong(blocker, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+        BOOL isDialogTopmost = (::GetWindowLong(dialog, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+        if (!isBlockerTopmost || isDialogTopmost) {
+            ::SetWindowPos(dialog, blocker, 0, 0, 0, 0, flags);
+        } else {
+            ::SetWindowPos(dialog, HWND_TOP, 0, 0, 0, 0, flags);
+        }
     } else {
         ::SetWindowPos(dialog, HWND_TOP, 0, 0, 0, 0, flags);
         // no beep/flash if the mouse was clicked in the taskbar menu

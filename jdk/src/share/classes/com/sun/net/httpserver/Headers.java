@@ -26,7 +26,6 @@
 package com.sun.net.httpserver;
 
 import java.util.*;
-import java.io.*;
 
 /**
  * HTTP request and response headers are represented by this class which implements
@@ -77,19 +76,16 @@ public class Headers implements Map<String,List<String>> {
             if (len == 0) {
                 return key;
             }
-            char[] b = new char [len];
-            String s = null;
-                b = key.toCharArray();
-                if (b[0] >= 'a' && b[0] <= 'z') {
-                    b[0] = (char)(b[0] - ('a' - 'A'));
+            char[] b = key.toCharArray();
+            if (b[0] >= 'a' && b[0] <= 'z') {
+                b[0] = (char)(b[0] - ('a' - 'A'));
+            }
+            for (int i=1; i<len; i++) {
+                if (b[i] >= 'A' && b[i] <= 'Z') {
+                    b[i] = (char) (b[i] + ('a' - 'A'));
                 }
-                for (int i=1; i<len; i++) {
-                    if (b[i] >= 'A' && b[i] <= 'Z') {
-                        b[i] = (char) (b[i] + ('a' - 'A'));
-                    }
-                }
-                s = new String (b);
-            return s;
+            }
+            return new String(b);
         }
 
         public int size() {return map.size();}

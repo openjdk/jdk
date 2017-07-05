@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,12 @@ final public class SSLEngineImpl extends SSLEngine {
     private CipherBox           readCipher, writeCipher;
     // NOTE: compression state would be saved here
 
+    /*
+     * security parameters for secure renegotiation.
+     */
+    private boolean             secureRenegotiation;
+    private byte[]              clientVerifyData;
+    private byte[]              serverVerifyData;
 
     /*
      * READ ME * READ ME * READ ME * READ ME * READ ME * READ ME *
@@ -356,6 +362,11 @@ final public class SSLEngineImpl extends SSLEngine {
         writeCipher = CipherBox.NULL;
         writeMAC = MAC.NULL;
 
+        // default security parameters for secure renegotiation
+        secureRenegotiation = false;
+        clientVerifyData = new byte[0];
+        serverVerifyData = new byte[0];
+
         enabledCipherSuites = CipherSuiteList.getDefault();
         enabledProtocols = ProtocolList.getDefault();
 
@@ -434,11 +445,14 @@ final public class SSLEngineImpl extends SSLEngine {
         }
         if (roleIsServer) {
             handshaker = new ServerHandshaker(this, sslContext,
-                        enabledProtocols, doClientAuth,
-                        connectionState == cs_RENEGOTIATE, protocolVersion);
+                    enabledProtocols, doClientAuth,
+                    protocolVersion, connectionState == cs_HANDSHAKE,
+                    secureRenegotiation, clientVerifyData, serverVerifyData);
         } else {
             handshaker = new ClientHandshaker(this, sslContext,
-                        enabledProtocols, protocolVersion);
+                    enabledProtocols,
+                    protocolVersion, connectionState == cs_HANDSHAKE,
+                    secureRenegotiation, clientVerifyData, serverVerifyData);
         }
         handshaker.enabledCipherSuites = enabledCipherSuites;
         handshaker.setEnableSessionCreation(enableSessionCreation);
@@ -640,8 +654,16 @@ final public class SSLEngineImpl extends SSLEngine {
             break;
 
         case cs_DATA:
-            if (!Handshaker.renegotiable) {
-                throw new SSLHandshakeException("renegotiation is not allowed");
+            if (!secureRenegotiation && !Handshaker.allowUnsafeRenegotiation) {
+                throw new SSLHandshakeException(
+                        "Insecure renegotiation is not allowed");
+            }
+
+            if (!secureRenegotiation) {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println(
+                        "Warning: Using insecure renegotiation");
+                }
             }
 
             // initialize the handshaker, move to cs_RENEGOTIATE
@@ -978,6 +1000,12 @@ final public class SSLEngineImpl extends SSLEngine {
                             connectionState = cs_DATA;
                         }
                     } else if (handshaker.isDone()) {
+                        // reset the parameters for secure renegotiation.
+                        secureRenegotiation =
+                                        handshaker.isSecureRenegotiation();
+                        clientVerifyData = handshaker.getClientVerifyData();
+                        serverVerifyData = handshaker.getServerVerifyData();
+
                         sess = handshaker.getSession();
                         if (!writer.hasOutboundData()) {
                             hsStatus = HandshakeStatus.FINISHED;

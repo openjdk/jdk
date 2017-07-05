@@ -49,7 +49,7 @@ public class BufImgSurfaceData extends SurfaceData {
     private BufferedImageGraphicsConfig graphicsConfig;
     RenderLoops solidloops;
 
-    private static native void initIDs(Class ICM);
+    private static native void initIDs(Class ICM, Class ICMColorData);
 
     private static final int DCM_RGBX_RED_MASK   = 0xff000000;
     private static final int DCM_RGBX_GREEN_MASK = 0x00ff0000;
@@ -67,7 +67,7 @@ public class BufImgSurfaceData extends SurfaceData {
     private static final int DCM_ARGBBM_BLUE_MASK  = 0x000000ff;
 
     static {
-        initIDs(IndexColorModel.class);
+        initIDs(IndexColorModel.class, ICMColorData.class);
     }
 
     public static SurfaceData createData(BufferedImage bufImg) {
@@ -403,12 +403,27 @@ public class BufImgSurfaceData extends SurfaceData {
         // their pixels are immediately retrievable anyway.
     }
 
-    public static native void freeNativeICMData(IndexColorModel icm);
+    private static native void freeNativeICMData(long pData);
 
     /**
      * Returns destination Image associated with this SurfaceData.
      */
     public Object getDestination() {
         return bufImg;
+    }
+
+    public static final class ICMColorData {
+        private long pData = 0L;
+
+        private ICMColorData(long pData) {
+            this.pData = pData;
+        }
+
+        public void finalize() {
+            if (pData != 0L) {
+                BufImgSurfaceData.freeNativeICMData(pData);
+                pData = 0L;
+            }
+        }
     }
 }

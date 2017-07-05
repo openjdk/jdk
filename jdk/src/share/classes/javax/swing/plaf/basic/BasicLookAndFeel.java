@@ -269,6 +269,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "InternalFrameUI", basicPackageName + "BasicInternalFrameUI",
               "DesktopPaneUI", basicPackageName + "BasicDesktopPaneUI",
               "DesktopIconUI", basicPackageName + "BasicDesktopIconUI",
+              "FileChooserUI", basicPackageName + "BasicFileChooserUI",
                "OptionPaneUI", basicPackageName + "BasicOptionPaneUI",
                     "PanelUI", basicPackageName + "BasicPanelUI",
                  "ViewportUI", basicPackageName + "BasicViewportUI",
