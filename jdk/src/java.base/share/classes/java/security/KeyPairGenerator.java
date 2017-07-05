@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.Provider.Service;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.util.Debug;
 
 /**
  * The KeyPairGenerator class is used to generate pairs of
@@ -126,6 +127,11 @@ import sun.security.jca.GetInstance.Instance;
 
 public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
 
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("keypairgenerator");
+
     private final String algorithm;
 
     // The provider
@@ -167,6 +173,12 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
             kpg = new Delegate(spi, algorithm);
         }
         kpg.provider = instance.provider;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyPairGenerator." + algorithm +
+                " algorithm from: " + kpg.provider.getName());
+        }
+
         return kpg;
     }
 
@@ -557,6 +569,11 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
             provider = instance.provider;
             this.serviceIterator = serviceIterator;
             initType = I_NONE;
+
+            if (!skipDebug && pdebug != null) {
+                pdebug.println("KeyPairGenerator." + algorithm +
+                    " algorithm from: " + provider.getName());
+            }
         }
 
         /**

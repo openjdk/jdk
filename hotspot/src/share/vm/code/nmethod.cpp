@@ -1364,8 +1364,6 @@ void nmethod::invalidate_osr_method() {
   // Remove from list of active nmethods
   if (method() != NULL)
     method()->method_holder()->remove_osr_nmethod(this);
-  // Set entry as invalid
-  _entry_bci = InvalidOSREntryBci;
 }
 
 void nmethod::log_state_change() const {

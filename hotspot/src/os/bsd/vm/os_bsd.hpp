@@ -30,8 +30,8 @@
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
-/* pthread_getattr_np comes with BsdThreads-0.9-7 on RedHat 7.1 */
-typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
+// pthread_getattr_np comes with BsdThreads-0.9-7 on RedHat 7.1
+typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
 
 #ifdef __APPLE__
 // Mac OS X doesn't support clock_gettime. Stub out the type, it is
@@ -108,7 +108,7 @@ class Bsd {
   // that file provides extensions to the os class and not the
   // Bsd class.
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
-    intptr_t** ret_sp, intptr_t** ret_fp);
+                                              intptr_t** ret_sp, intptr_t** ret_fp);
 
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_bsd_signal, harmlessly.
@@ -147,7 +147,7 @@ class Bsd {
   // BsdThreads work-around for 6292965
   static int safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime);
 
-private:
+ private:
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
   typedef int (*numa_max_node_func_t)(void);
@@ -170,7 +170,7 @@ private:
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
-public:
+ public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
     return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
@@ -190,55 +190,55 @@ public:
 
 
 class PlatformEvent : public CHeapObj<mtInternal> {
-  private:
-    double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
-    volatile int _Event;
-    volatile int _nParked;
-    pthread_mutex_t _mutex[1];
-    pthread_cond_t  _cond[1];
-    double PostPad[2];
-    Thread * _Assoc;
+ private:
+  double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
+  volatile int _Event;
+  volatile int _nParked;
+  pthread_mutex_t _mutex[1];
+  pthread_cond_t  _cond[1];
+  double PostPad[2];
+  Thread * _Assoc;
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee(0, "invariant"); }
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformEvent() { guarantee(0, "invariant"); }
 
-  public:
-    PlatformEvent() {
-      int status;
-      status = pthread_cond_init (_cond, NULL);
-      assert_status(status == 0, status, "cond_init");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-      _Event   = 0;
-      _nParked = 0;
-      _Assoc   = NULL;
-    }
+ public:
+  PlatformEvent() {
+    int status;
+    status = pthread_cond_init(_cond, NULL);
+    assert_status(status == 0, status, "cond_init");
+    status = pthread_mutex_init(_mutex, NULL);
+    assert_status(status == 0, status, "mutex_init");
+    _Event   = 0;
+    _nParked = 0;
+    _Assoc   = NULL;
+  }
 
-    // Use caution with reset() and fired() -- they may require MEMBARs
-    void reset() { _Event = 0; }
-    int  fired() { return _Event; }
-    void park();
-    void unpark();
-    int  park(jlong millis);
-    void SetAssociation(Thread * a) { _Assoc = a; }
+  // Use caution with reset() and fired() -- they may require MEMBARs
+  void reset() { _Event = 0; }
+  int  fired() { return _Event; }
+  void park();
+  void unpark();
+  int  park(jlong millis);
+  void SetAssociation(Thread * a) { _Assoc = a; }
 };
 
 class PlatformParker : public CHeapObj<mtInternal> {
-  protected:
-    pthread_mutex_t _mutex[1];
-    pthread_cond_t  _cond[1];
+ protected:
+  pthread_mutex_t _mutex[1];
+  pthread_cond_t  _cond[1];
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformParker() { guarantee(0, "invariant"); }
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformParker() { guarantee(0, "invariant"); }
 
-  public:
-    PlatformParker() {
-      int status;
-      status = pthread_cond_init (_cond, NULL);
-      assert_status(status == 0, status, "cond_init");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-    }
+ public:
+  PlatformParker() {
+    int status;
+    status = pthread_cond_init(_cond, NULL);
+    assert_status(status == 0, status, "cond_init");
+    status = pthread_mutex_init(_mutex, NULL);
+    assert_status(status == 0, status, "mutex_init");
+  }
 };
 
 #endif // OS_BSD_VM_OS_BSD_HPP

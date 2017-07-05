@@ -37,7 +37,7 @@ import java.awt.image.ColorModel;
  * takes an existing image and a filter object and uses them to produce
  * image data for a new filtered version of the original image.
  * Here is an example which filters an image by swapping the red and
- * blue compents:
+ * blue components:
  * <pre>
  *
  *      Image src = getImage("doc:///demo/images/duke/T1.gif");

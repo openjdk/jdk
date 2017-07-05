@@ -35,6 +35,8 @@ import java.io.ByteArrayInputStream;
 
 import java.nio.ByteBuffer;
 
+import sun.security.util.Debug;
+
 /**
  * This MessageDigest class provides applications the functionality of a
  * message digest algorithm, such as SHA-1 or SHA-256.
@@ -103,6 +105,11 @@ import java.nio.ByteBuffer;
 
 public abstract class MessageDigest extends MessageDigestSpi {
 
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("messagedigest");
+
     private String algorithm;
 
     // The state of this digest
@@ -156,18 +163,23 @@ public abstract class MessageDigest extends MessageDigestSpi {
     public static MessageDigest getInstance(String algorithm)
     throws NoSuchAlgorithmException {
         try {
+            MessageDigest md;
             Object[] objs = Security.getImpl(algorithm, "MessageDigest",
                                              (String)null);
             if (objs[0] instanceof MessageDigest) {
-                MessageDigest md = (MessageDigest)objs[0];
-                md.provider = (Provider)objs[1];
-                return md;
+                md = (MessageDigest)objs[0];
             } else {
-                MessageDigest delegate =
-                    new Delegate((MessageDigestSpi)objs[0], algorithm);
-                delegate.provider = (Provider)objs[1];
-                return delegate;
+                md = new Delegate((MessageDigestSpi)objs[0], algorithm);
             }
+            md.provider = (Provider)objs[1];
+
+            if (!skipDebug && pdebug != null) {
+                pdebug.println("MessageDigest." + algorithm +
+                    " algorithm from: " + md.provider.getName());
+            }
+
+            return md;
+
         } catch(NoSuchProviderException e) {
             throw new NoSuchAlgorithmException(algorithm + " not found");
         }

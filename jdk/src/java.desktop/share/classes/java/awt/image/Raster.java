@@ -393,7 +393,7 @@ public class Raster {
         }
         int banks = maxBank + 1;
         int size = maxBandOff +
-            scanlineStride * (h - 1) + // fisrt (h - 1) scans
+            scanlineStride * (h - 1) + // first (h - 1) scans
             w; // last scan
 
         switch(dataType) {

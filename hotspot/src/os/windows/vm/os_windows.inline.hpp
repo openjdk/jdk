@@ -100,6 +100,10 @@ inline bool os::supports_monotonic_clock() {
   return win32::_has_performance_count;
 }
 
+inline void os::exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+}
+
 #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) \
         os::win32::call_test_func_with_wrapper(f)
 

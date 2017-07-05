@@ -168,7 +168,7 @@ public interface RenderableImage {
     RenderedImage createScaledRendering(int w, int h, RenderingHints hints);
 
     /**
-     * Returnd a RenderedImage instance of this image with a default
+     * Returns a RenderedImage instance of this image with a default
      * width and height in pixels.  The RenderContext is built
      * automatically with an appropriate usr2dev transform and an area
      * of interest of the full image.  The rendering hints are
