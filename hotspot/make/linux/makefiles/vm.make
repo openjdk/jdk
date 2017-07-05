@@ -40,7 +40,11 @@ GENERATED     = ../generated
 include $(GENERATED)/Dependencies
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
-include $(MAKEFILES_DIR)/$(BUILDARCH).make
+ifeq ($(ZERO_BUILD), true)
+  include $(MAKEFILES_DIR)/zeroshark.make
+else
+  include $(MAKEFILES_DIR)/$(BUILDARCH).make
+endif
 
 # set VPATH so make knows where to look for source files
 # Src_Dirs is everything in src/share/vm/*, plus the right os/*/vm and cpu/*/vm
@@ -124,7 +128,11 @@ mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
 
-STATIC_CXX = true
+ifeq ($(ZERO_LIBARCH), ppc64)
+  STATIC_CXX = false
+else
+  STATIC_CXX = true
+endif
 
 ifeq ($(LINK_INTO),AOUT)
   LIBJVM.o                 =
@@ -147,6 +155,9 @@ else
   endif
 
   LIBS_VM                  += $(LIBS)
+endif
+ifeq ($(ZERO_BUILD), true)
+  LIBS_VM += $(LIBFFI_LIBS)
 endif
 
 LINK_VM = $(LINK_LIB.c)

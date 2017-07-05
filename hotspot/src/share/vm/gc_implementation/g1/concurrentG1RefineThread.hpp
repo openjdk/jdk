@@ -77,7 +77,8 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
                            int worker_id_offset, int worker_id);
 
   // Printing
-  void print();
+  void print() const;
+  void print_on(outputStream* st) const;
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }

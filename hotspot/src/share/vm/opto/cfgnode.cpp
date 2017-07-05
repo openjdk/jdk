@@ -1531,6 +1531,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;                // No change
 
   Node *top = phase->C->top();
+  bool new_phi = (outcnt() == 0); // transforming new Phi
+  assert(!can_reshape || !new_phi, "for igvn new phi should be hooked");
 
   // The are 2 situations when only one valid phi's input is left
   // (in addition to Region input).
@@ -1548,6 +1550,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         progress = this;        // Record progress
       }
     }
+  }
+
+  if (can_reshape && outcnt() == 0) {
+    // set_req() above may kill outputs if Phi is referenced
+    // only by itself on the dead (top) control path.
+    return top;
   }
 
   Node* uin = unique_input(phase);
@@ -1684,8 +1692,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // Equivalent code is in MemNode::Ideal_common
             Node *m  = phase->transform(n);
             if (outcnt() == 0) {  // Above transform() may kill us!
-              progress = phase->C->top();
-              break;
+              return top;
             }
             // If transformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice

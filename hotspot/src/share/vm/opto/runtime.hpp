@@ -133,8 +133,8 @@ class OptoRuntime : public AllStatic {
   // Allocate storage for a objArray or typeArray
   static void new_array_C(klassOopDesc* array_klass, int len, JavaThread *thread);
 
-  // Post-allocation step for implementing ReduceInitialCardMarks:
-  static void do_eager_card_mark(JavaThread* thread);
+  // Post-slow-path-allocation step for implementing ReduceInitialCardMarks:
+  static void maybe_defer_card_mark(JavaThread* thread);
 
   // Allocate storage for a multi-dimensional arrays
   // Note: needs to be fixed for arbitrary number of dimensions
