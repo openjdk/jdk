@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8025799
- * @summary sun.reflect.Reflection.getCallerClass(int)
- * @modules java.base/sun.reflect
- * @run main GetCallerClassWithDepth
+ * @bug 8137058
+ * @summary Basic test for the unsupported Reflection.getCallerClass(int)
+ * @modules jdk.unsupported
  */
+
+import sun.reflect.Reflection;
 
 public class GetCallerClassWithDepth {
     public static void main(String[] args) throws Exception {
@@ -38,7 +39,7 @@ public class GetCallerClassWithDepth {
         Test.selfTest();
 
         try {
-            sun.reflect.Reflection.getCallerClass(-1);
+            Reflection.getCallerClass(-1);
             throw new RuntimeException("getCallerClass(-1) should fail");
         } catch (Error e) {
             System.out.println("Expected: " + e.getMessage());
@@ -47,7 +48,7 @@ public class GetCallerClassWithDepth {
 
     public Class<?> getCallerClass() {
         // 0: Reflection 1: getCallerClass 2: Test.test 3: main
-        return sun.reflect.Reflection.getCallerClass(3);
+        return Reflection.getCallerClass(3);
     }
 
     static void assertEquals(Class<?> c, Class<?> expected) {
@@ -65,11 +66,11 @@ public class GetCallerClassWithDepth {
         // Returns the caller of this method
         public static Class<?> caller() {
             // 0: Reflection 1: Test.caller 2: main
-            return sun.reflect.Reflection.getCallerClass(2);
+            return Reflection.getCallerClass(2);
         }
         public static void selfTest() {
             // 0: Reflection 1: Test.selfTest
-            Class<?> c = sun.reflect.Reflection.getCallerClass(1);
+            Class<?> c = Reflection.getCallerClass(1);
             assertEquals(c, Test.class);
             Inner1.deep();
         }
@@ -84,7 +85,7 @@ public class GetCallerClassWithDepth {
             static class Inner2 {
                 static void deepest() {
                     // 0: Reflection 1: deepest 2: deeper 3: deep 4: Test.selfTest
-                    Class<?> c = sun.reflect.Reflection.getCallerClass(4);
+                    Class<?> c = Reflection.getCallerClass(4);
                     assertEquals(c, Test.class);
                 }
             }

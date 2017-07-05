@@ -47,6 +47,7 @@ void eventlog_init();
 void mutex_init();
 void chunkpool_init();
 void perfMemory_init();
+void SuspendibleThreadSet_init() NOT_ALL_GCS_RETURN;
 
 // Initialization done by Java thread in init_globals()
 void management_init();
@@ -93,6 +94,7 @@ void vm_init_globals() {
   mutex_init();
   chunkpool_init();
   perfMemory_init();
+  SuspendibleThreadSet_init();
 }
 
 

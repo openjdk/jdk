@@ -655,6 +655,8 @@ class InvokerBytecodeGenerator {
             mv.visitAnnotation(DONTINLINE_SIG, true);
         }
 
+        constantPlaceholder(lambdaForm); // keep LambdaForm instance & its compiled form lifetime tightly coupled.
+
         if (lambdaForm.customized != null) {
             // Since LambdaForm is customized for a particular MethodHandle, it's safe to substitute
             // receiver MethodHandle (at slot #0) with an embedded constant and use it instead.

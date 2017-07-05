@@ -98,7 +98,7 @@ public class HiddenFrames {
 
     void checkFrame(StackFrame frame) {
         String cn = frame.getClassName();
-        if (cn.startsWith("java.lang.reflect.") || cn.startsWith("sun.reflect.")) {
+        if (cn.startsWith("java.lang.reflect.") || cn.startsWith("jdk.internal.reflect.")) {
             reflects.add(frame);
         }
         if (cn.contains("$$Lambda$")) {

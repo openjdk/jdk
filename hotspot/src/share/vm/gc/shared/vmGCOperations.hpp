@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "memory/heapInspection.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
@@ -69,8 +70,10 @@
 //
 
 class VM_GC_Operation: public VM_Operation {
+ private:
+  ReferencePendingListLocker _pending_list_locker;
+
  protected:
-  BasicLock      _pending_list_basic_lock; // for refs pending list notification (PLL)
   uint           _gc_count_before;         // gc count before acquiring PLL
   uint           _full_gc_count_before;    // full gc count before acquiring PLL
   bool           _full;                    // whether a "full" collection

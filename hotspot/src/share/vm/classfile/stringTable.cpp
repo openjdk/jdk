@@ -32,6 +32,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -94,15 +95,27 @@ volatile int StringTable::_parallel_claimed_idx = 0;
 CompactHashtable<oop, char> StringTable::_shared_table;
 
 // Pick hashing algorithm
-template<typename T>
-unsigned int StringTable::hash_string(const T* s, int len) {
+unsigned int StringTable::hash_string(const jchar* s, int len) {
   return use_alternate_hashcode() ? AltHashing::murmur3_32(seed(), s, len) :
                                     java_lang_String::hash_code(s, len);
 }
 
-// Explicit instantiation for all supported types.
-template unsigned int StringTable::hash_string<jchar>(const jchar* s, int len);
-template unsigned int StringTable::hash_string<jbyte>(const jbyte* s, int len);
+unsigned int StringTable::hash_string(oop string) {
+  EXCEPTION_MARK;
+  if (string == NULL) {
+    return hash_string((jchar*)NULL, 0);
+  }
+  ResourceMark rm(THREAD);
+  // All String oops are hashed as unicode
+  int length;
+  jchar* chars = java_lang_String::as_unicode_string(string, length, THREAD);
+  if (chars != NULL) {
+    return hash_string(chars, length);
+  } else {
+    vm_exit_out_of_memory(length, OOM_MALLOC_ERROR, "unable to create Unicode string for verification");
+    return 0;
+  }
+}
 
 oop StringTable::lookup_shared(jchar* name, int len) {
   // java_lang_String::hash_code() was used to compute hash values in the shared table. Don't
@@ -398,7 +411,7 @@ void StringTable::verify() {
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
-      unsigned int h = java_lang_String::hash_string(s);
+      unsigned int h = hash_string(s);
       guarantee(p->hash() == h, "broken hash in string table entry");
       guarantee(the_table()->hash_to_index(h) == i,
                 "wrong index in string table");
@@ -498,7 +511,7 @@ StringTable::VerifyRetTypes StringTable::verify_entry(int bkt, int e_cnt,
     return _verify_fail_done;
   }
 
-  unsigned int h = java_lang_String::hash_string(str);
+  unsigned int h = hash_string(str);
   if (e_ptr->hash() != h) {
     if (mesg_mode == _verify_with_mesgs) {
       tty->print_cr("ERROR: broken hash value in entry @ bucket[%d][%d], "

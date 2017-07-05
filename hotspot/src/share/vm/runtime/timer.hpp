@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_RUNTIME_TIMER_HPP
 #define SHARE_VM_RUNTIME_TIMER_HPP
 
-#include "logging/logTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Timers for simple measurement.
@@ -71,43 +70,6 @@ class TimeStamp VALUE_OBJ_CLASS_SPEC {
   jlong ticks() const { return _counter; }
   // ticks elapsed since last update
   jlong ticks_since_update() const;
-};
-
-// TraceTime is used for tracing the execution time of a block
-// Usage:
-//  { TraceTime t("block time")
-//    some_code();
-//  }
-//
-
-class TraceTime: public StackObj {
- private:
-  bool          _active;    // do timing
-  bool          _verbose;   // report every timing
-  elapsedTimer  _t;         // timer
-  elapsedTimer* _accum;     // accumulator
-  const char*   _title;     // name of timer
-  LogTagType    _tag;       // stream to print to
-
- public:
-  // Constructors
-  TraceTime(const char* title,
-            bool doit = true,
-            LogTagType tag = LogTag::__NO_TAG);
-  TraceTime(const char* title,
-            elapsedTimer* accumulator,
-            bool doit = true,
-            bool verbose = false,
-            LogTagType tag = LogTag::__NO_TAG);
-  ~TraceTime();
-
-  // Accessors
-  void set_verbose(bool verbose)  { _verbose = verbose; }
-  bool verbose() const            { return _verbose;    }
-
-  // Activation
-  void suspend()  { if (_active) _t.stop();  }
-  void resume()   { if (_active) _t.start(); }
 };
 
 class TraceCPUTime: public StackObj {

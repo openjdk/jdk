@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,5 +239,12 @@ inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 #define THREAD_LOCAL_DECL __declspec( thread )
 #endif
+
+// Inlining support
+// MSVC has '__declspec(noinline)' but according to the official documentation
+// it only applies to member functions. There are reports though which pretend
+// that it also works for freestanding functions.
+#define NOINLINE     __declspec(noinline)
+#define ALWAYSINLINE __forceinline
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

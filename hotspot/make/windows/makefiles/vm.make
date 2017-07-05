@@ -118,6 +118,7 @@ LD_FLAGS=$(LD_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 $(EXP
 
 CXX_INCLUDE_DIRS=/I "..\generated"
 
+!ifndef OPENJDK
 !if exists($(ALTSRC)\share\vm)
 CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\share\vm"
 !endif
@@ -133,6 +134,7 @@ CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\os_cpu\windows_$(Platform_arc
 !if exists($(ALTSRC)\cpu\$(Platform_arch)\vm)
 CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\cpu\$(Platform_arch)\vm"
 !endif
+!endif # OPENJDK
 
 CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) \
   /I "$(COMMONSRC)\share\vm" \
@@ -187,10 +189,12 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/cpu/$(Platform_arch)/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/opto
 
+!ifndef OPENJDK
 !if exists($(ALTSRC)\share\vm\jfr)
 VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr
 VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/buffers
 !endif
+!endif # OPENJDK
 
 VM_PATH={$(VM_PATH)}
 
@@ -310,6 +314,7 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(COMMONSRC)\os_cpu\windows_$(Platform_arch)\vm}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
+!ifndef OPENJDK
 {$(ALTSRC)\share\vm\c1}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
@@ -392,6 +397,13 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(ALTSRC)\os_cpu\windows_$(Platform_arch)\vm}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
+{$(ALTSRC)\share\vm\jfr}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\jfr\buffers}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+!endif
+
 {..\generated\incls}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
@@ -402,12 +414,6 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {..\generated\tracefiles}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\jfr}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\jfr\buffers}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 default::

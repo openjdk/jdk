@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/ostream.hpp"
 
@@ -74,7 +75,7 @@ bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
 
 void SharedPathsMiscInfo::print_path(int type, const char* path) {
   ResourceMark rm;
-  outputStream* out = LogHandle(classpath)::info_stream();
+  outputStream* out = Log(classpath)::info_stream();
   switch (type) {
   case BOOT:
     out->print("Expecting BOOT path=%s", path);

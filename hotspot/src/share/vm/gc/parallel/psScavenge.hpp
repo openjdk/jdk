@@ -79,8 +79,6 @@ class PSScavenge: AllStatic {
   static HeapWord*            _young_generation_boundary;
   // Used to optimize compressed oops young gen boundary checking.
   static uintptr_t            _young_generation_boundary_compressed;
-  static Stack<markOop, mtGC> _preserved_mark_stack; // List of marks to be restored after failed promotion
-  static Stack<oop, mtGC>     _preserved_oop_stack;  // List of oops that need their mark restored.
   static CollectorCounters*   _counters;             // collector performance counters
 
   static void clean_up_failed_promotion();
@@ -126,9 +124,6 @@ class PSScavenge: AllStatic {
   static bool invoke();
   // Return true if a collection was done; false otherwise.
   static bool invoke_no_policy();
-
-  // If an attempt to promote fails, this method is invoked
-  static void oop_promotion_failed(oop obj, markOop obj_mark);
 
   template <class T> static inline bool should_scavenge(T* p);
 

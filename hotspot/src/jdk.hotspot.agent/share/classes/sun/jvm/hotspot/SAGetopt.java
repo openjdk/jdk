@@ -84,7 +84,11 @@ public class SAGetopt {
             }
             else {
                 // Mixed style options --file name
-                extractOptarg(ca[0]);
+                try {
+                    extractOptarg(ca[0]);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    throw new RuntimeException("Argument is expected for '" + ca[0] + "'");
+                }
             }
 
             return ca[0];

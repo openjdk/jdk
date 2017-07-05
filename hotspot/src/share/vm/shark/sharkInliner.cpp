@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "ci/ciStreams.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "shark/sharkBlock.hpp"
 #include "shark/sharkConstant.hpp"
 #include "shark/sharkInliner.hpp"

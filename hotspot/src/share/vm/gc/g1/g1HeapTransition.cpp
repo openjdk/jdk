@@ -82,8 +82,8 @@ public:
 void G1HeapTransition::print() {
   Data after(_g1_heap);
 
-  size_t eden_capacity_bytes_after_gc = _g1_heap->g1_policy()->young_list_target_length() - after._survivor_length;
-  size_t survivor_capacity_bytes_after_gc = _g1_heap->g1_policy()->max_survivor_regions();
+  size_t eden_capacity_length_after_gc = _g1_heap->g1_policy()->young_list_target_length() - after._survivor_length;
+  size_t survivor_capacity_length_after_gc = _g1_heap->g1_policy()->max_survivor_regions();
 
   DetailedUsage usage;
   if (log_is_enabled(Trace, gc, heap)) {
@@ -100,11 +100,11 @@ void G1HeapTransition::print() {
   }
 
   log_info(gc, heap)("Eden regions: " SIZE_FORMAT "->" SIZE_FORMAT "("  SIZE_FORMAT ")",
-                     _before._eden_length, after._eden_length, eden_capacity_bytes_after_gc);
+                     _before._eden_length, after._eden_length, eden_capacity_length_after_gc);
   log_trace(gc, heap)(" Used: 0K, Waste: 0K");
 
   log_info(gc, heap)("Survivor regions: " SIZE_FORMAT "->" SIZE_FORMAT "("  SIZE_FORMAT ")",
-                     _before._survivor_length, after._survivor_length, survivor_capacity_bytes_after_gc);
+                     _before._survivor_length, after._survivor_length, survivor_capacity_length_after_gc);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
       usage._survivor_used / K, ((after._survivor_length * HeapRegion::GrainBytes) - usage._survivor_used) / K);
 
