@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -460,27 +460,28 @@ else # $(HAS_SPEC)=true
   endef
 
   define PrintFailureReports
-	$(if $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*), \
-	  $(PRINTF) "=== Output from failing command(s) repeated here ===\n" $(NEWLINE) \
-	  $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*)), \
+	$(if $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log), \
+	  $(PRINTF) "\n=== Output from failing command(s) repeated here ===\n" $(NEWLINE) \
+	  $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log)), \
 	      $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" $(NEWLINE) \
 	      ($(GREP) -v -e "^Note: including file:" <  $(logfile) || true) | $(HEAD) -n 12 $(NEWLINE) \
 	      if test `$(WC) -l < $(logfile)` -gt 12; then \
 	        $(ECHO) "   ... (rest of output omitted)" ; \
 	      fi $(NEWLINE) \
 	  ) \
+	  $(PRINTF) "\n* All command lines available in $(MAKESUPPORT_OUTPUTDIR)/failure-logs.\n" $(NEWLINE) \
 	  $(PRINTF) "=== End of repeated output ===\n" \
 	)
   endef
 
   define PrintBuildLogFailures
 	if $(GREP) -q "recipe for target .* failed" $(BUILD_LOG) 2> /dev/null; then  \
-	  $(PRINTF) "=== Make failure sequence repeated here ===\n" ; \
+	  $(PRINTF) "\n=== Make failed targets repeated here ===\n" ; \
 	  $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
 	  $(PRINTF) "=== End of repeated output ===\n" ; \
-	  $(PRINTF) "Hint: Try searching the build log for the name of the first failed target.\n" ; \
+	  $(PRINTF) "\nHint: Try searching the build log for the name of the first failed target.\n" ; \
 	else \
-	  $(PRINTF) "No indication of failed target found.\n" ; \
+	  $(PRINTF) "\nNo indication of failed target found.\n" ; \
 	  $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
 	fi
   endef
