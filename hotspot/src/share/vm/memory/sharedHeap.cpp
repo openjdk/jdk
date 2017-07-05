@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   _perm_gen(NULL), _rem_set(NULL),
   _strong_roots_parity(0),
   _process_strong_tasks(new SubTasksDone(SH_PS_NumElements)),
-  _workers(NULL), _n_par_threads(0)
+  _n_par_threads(0),
+  _workers(NULL)
 {
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -60,11 +61,13 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
       (UseConcMarkSweepGC && CMSParallelRemarkEnabled) ||
        UseG1GC) &&
       ParallelGCThreads > 0) {
-    _workers = new WorkGang("Parallel GC Threads", ParallelGCThreads,
+    _workers = new FlexibleWorkGang("Parallel GC Threads", ParallelGCThreads,
                             /* are_GC_task_threads */true,
                             /* are_ConcurrentGC_threads */false);
     if (_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
+    } else {
+      _workers->initialize_workers();
     }
   }
 }
@@ -77,8 +80,9 @@ bool SharedHeap::heap_lock_held_for_gc() {
 }
 
 void SharedHeap::set_par_threads(int t) {
+  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
   _n_par_threads = t;
-  _process_strong_tasks->set_par_threads(t);
+  _process_strong_tasks->set_n_threads(t);
 }
 
 class AssertIsPermClosure: public OopClosure {

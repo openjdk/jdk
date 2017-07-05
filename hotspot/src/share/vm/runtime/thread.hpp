@@ -680,7 +680,7 @@ class JavaThread: public Thread {
 
   intptr_t*      _must_deopt_id;                 // id of frame that needs to be deopted once we
                                                  // transition out of native
-
+  nmethod*       _deopt_nmethod;                 // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Because deoptimization is lazy we must save jvmti requests to set locals
@@ -1098,6 +1098,9 @@ class JavaThread: public Thread {
   void     set_must_deopt_id(intptr_t* id)       { _must_deopt_id = id; }
   void     clear_must_deopt_id()                 { _must_deopt_id = NULL; }
 
+  void set_deopt_nmethod(nmethod* nm)            { _deopt_nmethod = nm;   }
+  nmethod* deopt_nmethod()                       { return _deopt_nmethod; }
+
   methodOop  callee_target() const               { return _callee_target; }
   void set_callee_target  (methodOop x)          { _callee_target   = x; }
 
@@ -1485,6 +1488,29 @@ public:
   static DirtyCardQueueSet& dirty_card_queue_set() {
     return _dirty_card_queue_set;
   }
+#endif // !SERIALGC
+
+  // This method initializes the SATB and dirty card queues before a
+  // JavaThread is added to the Java thread list. Right now, we don't
+  // have to do anything to the dirty card queue (it should have been
+  // activated when the thread was created), but we have to activate
+  // the SATB queue if the thread is created while a marking cycle is
+  // in progress. The activation / de-activation of the SATB queues at
+  // the beginning / end of a marking cycle is done during safepoints
+  // so we have to make sure this method is called outside one to be
+  // able to safely read the active field of the SATB queue set. Right
+  // now, it is called just before the thread is added to the Java
+  // thread list in the Threads::add() method. That method is holding
+  // the Threads_lock which ensures we are outside a safepoint. We
+  // cannot do the obvious and set the active field of the SATB queue
+  // when the thread is created given that, in some cases, safepoints
+  // might happen between the JavaThread constructor being called and the
+  // thread being added to the Java thread list (an example of this is
+  // when the structure for the DestroyJavaVM thread is created).
+#ifndef SERIALGC
+  void initialize_queues();
+#else // !SERIALGC
+  void initialize_queues() { }
 #endif // !SERIALGC
 
   // Machine dependent stuff

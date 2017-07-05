@@ -61,9 +61,10 @@ class PSScavenge: AllStatic {
   static HeapWord*           _young_generation_boundary; // The lowest address possible for the young_gen.
                                                          // This is used to decide if an oop should be scavenged,
                                                          // cards should be marked, etc.
-  static GrowableArray<markOop>* _preserved_mark_stack; // List of marks to be restored after failed promotion
-  static GrowableArray<oop>*     _preserved_oop_stack;  // List of oops that need their mark restored.
+  static Stack<markOop>          _preserved_mark_stack; // List of marks to be restored after failed promotion
+  static Stack<oop>              _preserved_oop_stack;  // List of oops that need their mark restored.
   static CollectorCounters*      _counters;         // collector performance counters
+  static bool                    _promotion_failed;
 
   static void clean_up_failed_promotion();
 
@@ -79,8 +80,7 @@ class PSScavenge: AllStatic {
   // Accessors
   static int              tenuring_threshold()  { return _tenuring_threshold; }
   static elapsedTimer*    accumulated_time()    { return &_accumulated_time; }
-  static bool             promotion_failed()
-    { return _preserved_mark_stack != NULL; }
+  static bool             promotion_failed()    { return _promotion_failed; }
   static int              consecutive_skipped_scavenges()
     { return _consecutive_skipped_scavenges; }
 

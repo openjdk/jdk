@@ -488,7 +488,9 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
-    __ movoop(Address(rsp, 0), method()->constant_encoding());
+    __ get_thread(rax);
+    __ movptr(Address(rsp, 0), rax);
+    __ movoop(Address(rsp, sizeof(void*)), method()->constant_encoding());
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
   }
 
@@ -1939,8 +1941,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
       __ cmpxchgptr(newval, Address(addr, 0));
     } else if (op->code() == lir_cas_int) {
       __ cmpxchgl(newval, Address(addr, 0));
-    } else {
-      LP64_ONLY(__ cmpxchgq(newval, Address(addr, 0)));
     }
 #ifdef _LP64
   } else if (op->code() == lir_cas_long) {

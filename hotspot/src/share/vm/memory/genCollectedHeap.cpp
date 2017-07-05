@@ -676,7 +676,7 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 
 void GenCollectedHeap::set_par_threads(int t) {
   SharedHeap::set_par_threads(t);
-  _gen_process_strong_tasks->set_par_threads(t);
+  _gen_process_strong_tasks->set_n_threads(t);
 }
 
 class AssertIsPermClosure: public OopClosure {

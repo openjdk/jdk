@@ -216,9 +216,6 @@
   develop(bool, DeoptC1, true,                                              \
           "Use deoptimization in C1")                                       \
                                                                             \
-  develop(bool, DeoptOnAsyncException, true,                                \
-          "Deoptimize upon Thread.stop(); improves precision of IR")        \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
