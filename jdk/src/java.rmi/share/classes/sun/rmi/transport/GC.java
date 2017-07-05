@@ -29,6 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import jdk.internal.misc.InnocuousThread;
 
 
 /**
@@ -90,8 +91,9 @@ class GC {
             }});
     }
 
-    private static class Daemon extends Thread {
+    private static class Daemon implements Runnable {
 
+        @Override
         public void run() {
             for (;;) {
                 long l;
@@ -129,23 +131,17 @@ class GC {
             }
         }
 
-        private Daemon(ThreadGroup tg) {
-            super(tg, null, "GC Daemon", 0L, false);
-        }
-
-        /* Create a new daemon thread in the root thread group */
+        /* Create a new daemon thread */
         public static void create() {
             PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
                 public Void run() {
-                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                    for (ThreadGroup tgn = tg;
-                         tgn != null;
-                         tg = tgn, tgn = tg.getParent());
-                    Daemon d = new Daemon(tg);
-                    d.setDaemon(true);
-                    d.setPriority(Thread.MIN_PRIORITY + 1);
-                    d.start();
-                    GC.daemon = d;
+                    Thread t = InnocuousThread.newSystemThread("RMI GC Daemon",
+                                                               new Daemon());
+                    assert t.getContextClassLoader() == null;
+                    t.setDaemon(true);
+                    t.setPriority(Thread.MIN_PRIORITY + 1);
+                    t.start();
+                    GC.daemon = t;
                     return null;
                 }};
             AccessController.doPrivileged(pa);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8036981 8038966 8051441
  * @summary the content of xs:any content:mixed should remain as is,
  *          no white space changes and no changes to namespace prefixes
+ * @modules java.xml.ws
  * @run shell compile-wsdl.sh
  * @compile -addmods java.xml.ws Test.java
  * @run main/othervm -addmods java.xml.ws Test

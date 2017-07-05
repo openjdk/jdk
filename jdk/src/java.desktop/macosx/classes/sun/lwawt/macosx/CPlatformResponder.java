@@ -135,6 +135,7 @@ final class CPlatformResponder {
         int jkeyCode = KeyEvent.VK_UNDEFINED;
         int jkeyLocation = KeyEvent.KEY_LOCATION_UNKNOWN;
         boolean postsTyped = false;
+        boolean spaceKeyTyped = false;
 
         char testChar = KeyEvent.CHAR_UNDEFINED;
         boolean isDeadChar = (chars!= null && chars.length() == 0);
@@ -151,6 +152,11 @@ final class CPlatformResponder {
         } else {
             if (chars != null && chars.length() > 0) {
                 testChar = chars.charAt(0);
+
+                //Check if String chars contains SPACE character.
+                if (chars.trim().isEmpty()) {
+                    spaceKeyTyped = true;
+                }
             }
 
             char testCharIgnoringModifiers = charsIgnoringModifiers != null && charsIgnoringModifiers.length() > 0 ?
@@ -187,7 +193,7 @@ final class CPlatformResponder {
                                            NSEvent.nsToJavaEventType(eventType);
         }
 
-        char javaChar = NSEvent.nsToJavaChar(testChar, modifierFlags);
+        char javaChar = NSEvent.nsToJavaChar(testChar, modifierFlags, spaceKeyTyped);
         // Some keys may generate a KEY_TYPED, but we can't determine
         // what that character is. That's likely a bug, but for now we
         // just check for CHAR_UNDEFINED.

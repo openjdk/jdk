@@ -20,9 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+ /*
  * @test
- * @bug 6966350
+ * @bug 6966350 8160882
  * @summary Verifies if Empty pages are printed on Lexmark E352dn PS3
  *           with "1200 IQ" setting
  * @run main/manual PrintTestLexmarkIQ
@@ -33,6 +33,8 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
@@ -145,6 +147,13 @@ public class PrintTestLexmarkIQ implements Printable {
         dialog.add(mainPanel);
         dialog.pack();
         dialog.setVisible(true);
+        dialog.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                System.out.println("main dialog closing");
+                testGeneratedInterrupt = false;
+                mainThread.interrupt();
+            }
+        });
     }
 
     public int print(Graphics g, PageFormat pf, int pi)

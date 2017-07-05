@@ -32,6 +32,7 @@ import java.security.KeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Provider.Service;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509CRL;
@@ -43,8 +44,6 @@ import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.*;
 
-import sun.security.jca.*;
-import sun.security.jca.GetInstance.Instance;
 
 /**
  * A factory for creating {@link KeyInfo} objects from scratch or for
@@ -153,17 +152,26 @@ public abstract class KeyInfoFactory {
         if (mechanismType == null) {
             throw new NullPointerException("mechanismType cannot be null");
         }
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("KeyInfoFactory", null, mechanismType);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Provider[] provs = Security.getProviders();
+        for (Provider p : provs) {
+            Service s = p.getService("KeyInfoFactory", mechanismType);
+            if (s != null) {
+                Object obj = null;
+                try {
+                    obj = s.newInstance(null);
+                } catch (NoSuchAlgorithmException nsae) {
+                    throw new NoSuchMechanismException(nsae);
+                }
+                if (obj instanceof KeyInfoFactory) {
+                    KeyInfoFactory factory = (KeyInfoFactory) obj;
+                    factory.mechanismType = mechanismType;
+                    factory.provider = p;
+                    return factory;
+                }
+            }
         }
-        KeyInfoFactory factory = (KeyInfoFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available");
     }
 
     /**
@@ -195,17 +203,24 @@ public abstract class KeyInfoFactory {
             throw new NullPointerException("provider cannot be null");
         }
 
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("KeyInfoFactory", null, mechanismType, provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Service s = provider.getService("KeyInfoFactory", mechanismType);
+        if (s != null) {
+            Object obj = null;
+            try {
+                obj = s.newInstance(null);
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new NoSuchMechanismException(nsae);
+            }
+
+            if (obj instanceof KeyInfoFactory) {
+                KeyInfoFactory factory = (KeyInfoFactory) obj;
+                factory.mechanismType = mechanismType;
+                factory.provider = provider;
+                return factory;
+            }
         }
-        KeyInfoFactory factory = (KeyInfoFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available from " + provider.getName());
     }
 
     /**
@@ -242,18 +257,24 @@ public abstract class KeyInfoFactory {
         } else if (provider.length() == 0) {
             throw new NoSuchProviderException();
         }
-
-        Instance instance;
-        try {
-            instance = GetInstance.getInstance
-                ("KeyInfoFactory", null, mechanismType, provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new NoSuchMechanismException(nsae);
+        Provider p = Security.getProvider(provider);
+        Service s = p.getService("KeyInfoFactory", mechanismType);
+        if (s != null) {
+            Object obj = null;
+            try {
+                obj = s.newInstance(null);
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new NoSuchMechanismException(nsae);
+            }
+            if (obj instanceof KeyInfoFactory) {
+                KeyInfoFactory factory = (KeyInfoFactory) obj;
+                factory.mechanismType = mechanismType;
+                factory.provider = p;
+                return factory;
+            }
         }
-        KeyInfoFactory factory = (KeyInfoFactory) instance.impl;
-        factory.mechanismType = mechanismType;
-        factory.provider = instance.provider;
-        return factory;
+        throw new NoSuchMechanismException
+            ("Mechanism " + mechanismType + " not available from " + provider);
     }
 
     /**

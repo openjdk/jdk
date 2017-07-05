@@ -168,6 +168,9 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     // Flag to ensure the we don't get multiple ActionEvents on item selection.
     private boolean selectingItem = false;
 
+    // Flag to indicate UI update is in progress
+    private transient boolean updateInProgress;
+
     /**
      * Creates a <code>JComboBox</code> that takes its items from an
      * existing <code>ComboBoxModel</code>.  Since the
@@ -268,11 +271,18 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @see JComponent#updateUI
      */
     public void updateUI() {
-        setUI((ComboBoxUI)UIManager.getUI(this));
+        if (!updateInProgress) {
+            updateInProgress = true;
+            try {
+                setUI((ComboBoxUI)UIManager.getUI(this));
 
-        ListCellRenderer<? super E> renderer = getRenderer();
-        if (renderer instanceof Component) {
-            SwingUtilities.updateComponentTreeUI((Component)renderer);
+                ListCellRenderer<? super E> renderer = getRenderer();
+                if (renderer instanceof Component) {
+                    SwingUtilities.updateComponentTreeUI((Component)renderer);
+                }
+            } finally {
+                updateInProgress = false;
+            }
         }
     }
 

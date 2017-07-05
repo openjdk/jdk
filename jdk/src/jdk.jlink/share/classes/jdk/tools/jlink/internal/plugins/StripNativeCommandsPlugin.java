@@ -24,8 +24,9 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.Plugin;
 
 /**
@@ -47,10 +48,12 @@ public final class StripNativeCommandsPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((file) -> {
-            return file.getType() == ModuleEntry.Type.NATIVE_CMD ? null : file;
+            return file.type() == ResourcePoolEntry.Type.NATIVE_CMD ? null : file;
         }, out);
+
+        return out.build();
     }
 
     @Override
