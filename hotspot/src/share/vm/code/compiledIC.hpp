@@ -216,6 +216,7 @@ class CompiledIC: public ResourceObj {
   //
   void set_to_clean();  // Can only be called during a safepoint operation
   void set_to_monomorphic(CompiledICInfo& info);
+  void clear_ic_stub();
 
   // Returns true if successful and false otherwise. The call can fail if memory
   // allocation in the code cache fails.

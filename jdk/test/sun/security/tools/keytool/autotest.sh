@@ -85,9 +85,7 @@ case "$OS" in
     fi
     ;;
   Darwin )
-    LIBNAME=`find_one \
-            "/Applications/Firefox.app/Contents/MacOS/libsoftokn3.dylib" \
-            "/Applications/Thunderbird.app//Contents/MacOS/libsoftokn3.dylib"`
+    LIBNAME="$TESTSRC/../../pkcs11/nss/lib/macosx-x86_64/libsoftokn3.dylib"
     ;;
   * )
     echo "Will not run test on: ${OS}"
@@ -101,10 +99,6 @@ if [ "$LIBNAME" = "" ]; then
 fi
 
 echo "Using NSS lib at $LIBNAME"
-
-if [ $OS = Darwin ]; then
-    export DYLD_LIBRARY_PATH=`dirname $LIBNAME`
-fi
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file \
         ${TESTSRC}${FS}KeyToolTest.java || exit 10

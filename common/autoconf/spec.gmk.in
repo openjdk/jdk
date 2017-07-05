@@ -256,7 +256,8 @@ NASHORN_DIST=$(NASHORN_OUTPUTDIR)/dist
 
 BUILD_HOTSPOT=@BUILD_HOTSPOT@
 
-# The boot jdk to use
+# The boot jdk to use. These are overridden in bootcycle-spec.gmk. Make sure to keep
+# them in sync.
 BOOT_JDK:=@BOOT_JDK@
 BOOT_RTJAR:=@BOOT_RTJAR@
 BOOT_TOOLSJAR=$(BOOT_JDK)/lib/tools.jar
@@ -453,22 +454,34 @@ JAVA_FLAGS:=@JAVA_FLAGS@
 JAVA_FLAGS_BIG:=@JAVA_FLAGS_BIG@
 JAVA_FLAGS_SMALL:=@JAVA_FLAGS_SMALL@
 JAVA_TOOL_FLAGS_SMALL:=@JAVA_TOOL_FLAGS_SMALL@
+SJAVAC_SERVER_JAVA_FLAGS:=@SJAVAC_SERVER_JAVA_FLAGS@
 
-JAVA=@FIXPATH@ @JAVA@ $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVA_SMALL=@FIXPATH@ @JAVA@ $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk 
+# for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
+# versions of the variables directly.
+JAVA_CMD:=@JAVA@
+JAVAC_CMD:=@JAVAC@
+JAVAH_CMD:=@JAVAH@
+JAR_CMD:=@JAR@
+NATIVE2ASCII_CMD:=@NATIVE2ASCII@
+JARSIGNER_CMD:=@JARSIGNER@
+SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
+# These variables are meant to be used. They are defined with = instead of := to make
+# it possible to override only the *_CMD variables.
+JAVA=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVAC=@FIXPATH@ $(JAVAC_CMD)
+JAVAH=@FIXPATH@ $(JAVAH_CMD)
+JAR=@FIXPATH@ $(JAR_CMD)
+NATIVE2ASCII=@FIXPATH@ $(NATIVE2ASCII_CMD) $(JAVA_TOOL_FLAGS_SMALL)
+JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
+# A specific java binary with specific options can be used to run
+# the long running background sjavac servers and other long running tasks.
+SJAVAC_SERVER_JAVA=@FIXPATH@ $(SJAVAC_SERVER_JAVA_CMD) $(SJAVAC_SERVER_JAVA_FLAGS)
 
-JAVAC:=@FIXPATH@ @JAVAC@
 # Hotspot sets this variable before reading the SPEC when compiling sa-jdi.jar. Avoid
 # overriding that value by using ?=.
 JAVAC_FLAGS?=@JAVAC_FLAGS@
-
-JAVAH:=@FIXPATH@ @JAVAH@
-
-JAR:=@FIXPATH@ @JAR@
-
-NATIVE2ASCII:=@FIXPATH@ @NATIVE2ASCII@ $(JAVA_TOOL_FLAGS_SMALL)
-
-JARSIGNER:=@FIXPATH@ @JARSIGNER@
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
 INTERIM_LANGTOOLS_JAR := $(LANGTOOLS_OUTPUTDIR)/dist/interim_langtools.jar
@@ -485,10 +498,6 @@ INTERIM_CORBA_JAR := $(CORBA_OUTPUTDIR)/dist/interim_corba.jar
 ifndef RC_FLAGS
   RC_FLAGS:=@RC_FLAGS@
 endif
-
-# A specific java binary with specific options can be used to run
-# the long running background sjavac servers and other long running tasks.
-SJAVAC_SERVER_JAVA:=@FIXPATH@ @SJAVAC_SERVER_JAVA@
 
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@

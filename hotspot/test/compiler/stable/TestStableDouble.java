@@ -53,44 +53,32 @@
  *           java/lang/invoke/TestStableDouble$DefaultStaticValue
  *           java/lang/invoke/TestStableDouble$ObjectArrayLowerDim2
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:-TieredCompilation
+ *                   -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableDouble
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:-TieredCompilation
+ *                   -XX:-TieredCompilation
  *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableDouble
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableDouble
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableDouble
  *
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -client -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableDouble
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -client -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableDouble
  */
 package java.lang.invoke;
 
