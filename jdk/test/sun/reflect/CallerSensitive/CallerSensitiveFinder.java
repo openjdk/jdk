@@ -47,7 +47,7 @@ import java.util.concurrent.FutureTask;
  * @summary Verify if CallerSensitive methods are annotated with
  *          sun.reflect.CallerSensitive annotation
  * @build CallerSensitiveFinder
- * @run main/othervm/timeout=900 -mx600m CallerSensitiveFinder
+ * @run main/othervm/timeout=900 CallerSensitiveFinder
  */
 public class CallerSensitiveFinder {
     private static int numThreads = 3;

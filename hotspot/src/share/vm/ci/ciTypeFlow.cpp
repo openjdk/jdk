@@ -730,7 +730,7 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
     if (obj->is_null_object()) {
       push_null();
     } else {
-      assert(obj->is_instance(), "must be java_mirror of klass");
+      assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
       push_object(obj->klass());
     }
   } else {

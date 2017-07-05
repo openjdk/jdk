@@ -97,10 +97,10 @@ class Compile : public Phase {
     AliasIdxRaw = 3   // hard-wired index for TypeRawPtr::BOTTOM
   };
 
-  // Variant of TraceTime(NULL, &_t_accumulator, TimeCompiler);
-  // Integrated with logging.  If logging is turned on, and dolog is true,
+  // Variant of TraceTime(NULL, &_t_accumulator, CITime);
+  // Integrated with logging.  If logging is turned on, and CITimeVerbose is true,
   // then brackets are put into the log, with time stamps and node counts.
-  // (The time collection itself is always conditionalized on TimeCompiler.)
+  // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
     Compile*    C;
@@ -108,7 +108,7 @@ class Compile : public Phase {
     const char* _phase_name;
     bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator, bool dolog);
+    TracePhase(const char* name, elapsedTimer* accumulator);
     ~TracePhase();
   };
 

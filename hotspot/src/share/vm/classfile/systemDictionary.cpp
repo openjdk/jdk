@@ -2273,12 +2273,14 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
     spe = NULL;
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     m = Method::make_method_handle_intrinsic(iid, signature, CHECK_(empty));
-    CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_highest_tier,
-                                  methodHandle(), CompileThreshold, "MH", CHECK_(empty));
-    // Check if we need to have compiled code but we don't.
-    if (!Arguments::is_interpreter_only() && !m->has_compiled_code()) {
-      THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
-                 "out of space in CodeCache for method handle intrinsic", empty);
+    if (!Arguments::is_interpreter_only()) {
+      // Generate a compiled form of the MH intrinsic.
+      AdapterHandlerLibrary::create_native_wrapper(m);
+      // Check if have the compiled code.
+      if (!m->has_compiled_code()) {
+        THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
+                   "out of space in CodeCache for method handle intrinsic", empty);
+      }
     }
     // Now grab the lock.  We might have to throw away the new method,
     // if a racing thread has managed to install one at the same time.

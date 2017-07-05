@@ -76,7 +76,7 @@ define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multip
 define_pd_global(intx, ReservedCodeCacheSize,        48*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      21*M);
 define_pd_global(intx, ProfiledCodeHeapSize,         22*M);
-define_pd_global(intx, NonMethodCodeHeapSize,        5*M );
+define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
@@ -87,7 +87,7 @@ define_pd_global(intx, InitialCodeCacheSize,         1536*K); // Integral multip
 define_pd_global(intx, ReservedCodeCacheSize,        32*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      13*M);
 define_pd_global(intx, ProfiledCodeHeapSize,         14*M);
-define_pd_global(intx, NonMethodCodeHeapSize,        5*M );
+define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
