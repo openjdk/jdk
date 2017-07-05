@@ -25,6 +25,10 @@
 # include "incls/_precompiled.incl"
 # include "incls/_vmThread.cpp.incl"
 
+HS_DTRACE_PROBE_DECL3(hotspot, vmops__request, char *, uintptr_t, int);
+HS_DTRACE_PROBE_DECL3(hotspot, vmops__begin, char *, uintptr_t, int);
+HS_DTRACE_PROBE_DECL3(hotspot, vmops__end, char *, uintptr_t, int);
+
 // Dummy VM operation to act as first element in our circular double-linked list
 class VM_Dummy: public VM_Operation {
   VMOp_Type type() const { return VMOp_Dummy; }
@@ -132,6 +136,10 @@ void VMOperationQueue::drain_list_oops_do(OopClosure* f) {
 //-----------------------------------------------------------------
 // High-level interface
 bool VMOperationQueue::add(VM_Operation *op) {
+
+  HS_DTRACE_PROBE3(hotspot, vmops__request, op->name(), strlen(op->name()),
+                   op->evaluation_mode());
+
   // Encapsulates VM queue policy. Currently, that
   // only involves putting them on the right list
   if (op->evaluate_at_safepoint()) {
@@ -325,7 +333,11 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
+    HS_DTRACE_PROBE3(hotspot, vmops__begin, op->name(), strlen(op->name()),
+                     op->evaluation_mode());
     op->evaluate();
+    HS_DTRACE_PROBE3(hotspot, vmops__end, op->name(), strlen(op->name()),
+                     op->evaluation_mode());
   }
 
   // Last access of info in _cur_vm_operation!
