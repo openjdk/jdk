@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@ package jdk.internal.misc;
 public interface JavaLangRefAccess {
 
     /**
-     * Help ReferenceHandler thread process next pending
-     * {@link java.lang.ref.Reference}
+     * Wait for progress in {@link java.lang.ref.Reference}
+     * processing.  If there aren't any pending {@link
+     * java.lang.ref.Reference}s, return immediately.
      *
-     * @return {@code true} if there was a pending reference and it
-     *         was enqueue-ed or {@code false} if there was no
-     *         pending reference
+     * @return {@code true} if there were any pending
+     * {@link java.lang.ref.Reference}s, {@code false} otherwise.
      */
-    boolean tryHandlePendingReference();
+    boolean waitForReferenceProcessing() throws InterruptedException;
 }

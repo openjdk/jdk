@@ -35,7 +35,11 @@
 #include <sys/poll.h>
 
 int NET_Timeout(int s, long timeout);
+int NET_Timeout0(int s, long timeout, long currentTime);
 int NET_Read(int s, void* buf, size_t len);
+int NET_NonBlockingRead(int s, void* buf, size_t len);
+int NET_TimeoutWithCurrentTime(int s, long timeout, long currentTime);
+long NET_GetCurrentTime();
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
                  struct sockaddr *from, socklen_t *fromlen);
 int NET_ReadV(int s, const struct iovec * vector, int count);

@@ -391,21 +391,8 @@ public class SynthButtonUI extends BasicButtonUI implements
     }
 
     private Icon getRolloverIcon(AbstractButton b, Icon defaultIcon) {
-        ButtonModel model = b.getModel();
-        Icon icon = null;
-        if (model.isSelected()) {
-            icon = getIcon(b, b.getRolloverSelectedIcon(), null,
-                    SynthConstants.MOUSE_OVER | SynthConstants.SELECTED);
-            if (icon == null) {
-                icon = getIcon(b, b.getSelectedIcon(), null,
-                        SynthConstants.SELECTED);
-            }
-        }
-        if (icon == null) {
-            icon = getIcon(b, b.getRolloverIcon(), defaultIcon,
-                    SynthConstants.MOUSE_OVER);
-        }
-        return icon;
+        return getSpecificIcon(b, b.getRolloverSelectedIcon(), b.getRolloverIcon(),
+                               defaultIcon, SynthConstants.MOUSE_OVER);
     }
 
     private Icon getPressedIcon(AbstractButton b, Icon defaultIcon) {
@@ -414,21 +401,44 @@ public class SynthButtonUI extends BasicButtonUI implements
     }
 
     private Icon getSynthDisabledIcon(AbstractButton b, Icon defaultIcon) {
-        ButtonModel model = b.getModel();
+        return getSpecificIcon(b, b.getDisabledSelectedIcon(), b.getDisabledIcon(),
+                               defaultIcon, SynthConstants.DISABLED);
+    }
+
+    private Icon getSpecificIcon(AbstractButton b, Icon specificSelectedIcon,
+                                 Icon specificIcon, Icon defaultIcon,
+                                 int state) {
+        boolean selected = b.getModel().isSelected();
         Icon icon = null;
-        if (model.isSelected()) {
-            icon = getIcon(b, b.getDisabledSelectedIcon(), null,
-                    SynthConstants.DISABLED | SynthConstants.SELECTED);
+
+        if (selected) {
+            icon = specificSelectedIcon;
             if (icon == null) {
-                icon = getIcon(b, b.getSelectedIcon(), null,
-                        SynthConstants.SELECTED);
+                icon = b.getSelectedIcon();
             }
         }
+
         if (icon == null) {
-            icon = getIcon(b, b.getDisabledIcon(), defaultIcon,
-                    SynthConstants.DISABLED);
+            icon = specificIcon;
         }
-        return icon;
+
+        if (icon != null) {
+            return icon;
+        }
+
+        if (defaultIcon == null || defaultIcon instanceof UIResource) {
+            if (selected) {
+                icon = getSynthIcon(b, state | SynthConstants.SELECTED);
+                if (icon == null) {
+                    icon = getSynthIcon(b, SynthConstants.SELECTED);
+                }
+            }
+            if (icon == null) {
+                icon = getSynthIcon(b, state);
+            }
+        }
+
+        return icon != null ? icon : defaultIcon;
     }
 
     /**

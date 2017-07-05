@@ -34,13 +34,13 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 
 public class CreateCoredumpOnCrash {
     private static class Crasher {
         public static void main(String[] args) {
-            Utils.getUnsafe().putInt(0L, 0);
+            UnsafeHelper.getUnsafe().putInt(0L, 0);
         }
     }
 

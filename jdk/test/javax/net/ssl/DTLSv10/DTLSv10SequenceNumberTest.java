@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,14 @@
  *          data exchange.
  * @key randomness
  * @library /sun/security/krb5/auto /lib/testlibrary /javax/net/ssl/TLSCommon /javax/net/ssl/DTLS
+ * @modules java.security.jgss
+ *          jdk.security.auth
+ *          java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.base/sun.security.util
  * @run main/othervm -Dtest.security.protocol=DTLSv1.0
  *      -Dtest.mode=norm DTLSv10SequenceNumberTest
  * @run main/othervm -Dtest.security.protocol=DTLSv1.0

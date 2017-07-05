@@ -88,11 +88,16 @@ void AwtDesktopProperties::GetWindowsParameters() {
 }
 
 void getInvScale(float &invScaleX, float &invScaleY) {
-    HWND hWnd = ::GetDesktopWindow();
-    HDC hDC = ::GetDC(hWnd);
-    int dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
-    int dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
-    ::ReleaseDC(hWnd, hDC);
+    static int dpiX = -1;
+    static int dpiY = -1;
+    if (dpiX == -1 || dpiY == -1) {
+        HWND hWnd = ::GetDesktopWindow();
+        HDC hDC = ::GetDC(hWnd);
+        dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
+        dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+        ::ReleaseDC(hWnd, hDC);
+    }
+
     invScaleX = (dpiX == 0.0f) ? 1.0f : 96.0f / dpiX;
     invScaleY = (dpiY == 0.0f) ? 1.0f : 96.0f / dpiY;
 }

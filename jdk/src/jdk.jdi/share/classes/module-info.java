@@ -25,6 +25,7 @@
 
 module jdk.jdi {
     requires jdk.attach;
+    requires jdk.jdwp.agent;
 
     exports com.sun.jdi;
     exports com.sun.jdi.connect;

@@ -1,12 +1,12 @@
 #
 #
-# Amendments up until ISO 4217 AMENDMENT NUMBER 160
-#   (As of 19 June 2015)
+# Amendments up until ISO 4217 AMENDMENT NUMBER 162
+#   (As of 30 Auguest 2016)
 #
 
 # Version
 FILEVERSION=3
-DATAVERSION=160
+DATAVERSION=162
 
 # ISO 4217 currency data
 AF	AFN	971	2
@@ -28,7 +28,7 @@ BS	BSD	44	2
 BH	BHD	48	3
 BD	BDT	50	2
 BB	BBD	52	2
-BY	BYR	974	0
+BY	BYN	933	2
 BE	EUR	978	2
 BZ	BZD	84	2
 BJ	XOF	952	0

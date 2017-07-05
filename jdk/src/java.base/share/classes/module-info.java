@@ -143,7 +143,8 @@ module java.base {
     exports jdk.internal.org.objectweb.asm.signature to
         jdk.scripting.nashorn;
     exports jdk.internal.loader to
-        java.instrument;
+        java.instrument,
+        java.logging;
     exports jdk.internal.math to
         java.desktop;
     exports jdk.internal.module to

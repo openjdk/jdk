@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
@@ -373,8 +374,8 @@ public final class OCSPResponse {
         }
     }
 
-    void verify(List<CertId> certIds, X509Certificate issuerCert,
-                X509Certificate responderCert, Date date, byte[] nonce)
+    void verify(List<CertId> certIds, IssuerInfo issuerInfo,
+            X509Certificate responderCert, Date date, byte[] nonce)
         throws CertPathValidatorException
     {
         switch (responseStatus) {
@@ -414,7 +415,9 @@ public final class OCSPResponse {
             // Add the Issuing CA cert and/or Trusted Responder cert to the list
             // of certs from the OCSP response
             try {
-                certs.add(X509CertImpl.toImpl(issuerCert));
+                if (issuerInfo.getCertificate() != null) {
+                    certs.add(X509CertImpl.toImpl(issuerInfo.getCertificate()));
+                }
                 if (responderCert != null) {
                     certs.add(X509CertImpl.toImpl(responderCert));
                 }
@@ -464,7 +467,10 @@ public final class OCSPResponse {
         // Check whether the signer cert returned by the responder is trusted
         if (signerCert != null) {
             // Check if the response is signed by the issuing CA
-            if (signerCert.equals(issuerCert)) {
+            if (signerCert.getSubjectX500Principal().equals(
+                    issuerInfo.getName()) &&
+                    signerCert.getPublicKey().equals(
+                            issuerInfo.getPublicKey())) {
                 if (debug != null) {
                     debug.println("OCSP response is signed by the target's " +
                         "Issuing CA");
@@ -481,7 +487,7 @@ public final class OCSPResponse {
 
             // Check if the response is signed by an authorized responder
             } else if (signerCert.getIssuerX500Principal().equals(
-                       issuerCert.getSubjectX500Principal())) {
+                    issuerInfo.getName())) {
 
                 // Check for the OCSPSigning key purpose
                 try {
@@ -502,7 +508,8 @@ public final class OCSPResponse {
                 // Check algorithm constraints specified in security property
                 // "jdk.certpath.disabledAlgorithms".
                 AlgorithmChecker algChecker = new AlgorithmChecker(
-                                    new TrustAnchor(issuerCert, null));
+                        new TrustAnchor(issuerInfo.getName(),
+                                issuerInfo.getPublicKey(), null));
                 algChecker.init(false);
                 algChecker.check(signerCert, Collections.<String>emptySet());
 
@@ -540,7 +547,7 @@ public final class OCSPResponse {
 
                 // verify the signature
                 try {
-                    signerCert.verify(issuerCert.getPublicKey());
+                    signerCert.verify(issuerInfo.getPublicKey());
                     if (debug != null) {
                         debug.println("OCSP response is signed by an " +
                             "Authorized Responder");
@@ -968,6 +975,88 @@ public final class OCSPResponse {
                 sb.append("singleExtension: ");
                 sb.append(ext.toString()).append("\n");
             }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Helper class that allows consumers to pass in issuer information.  This
+     * will always consist of the issuer's name and public key, but may also
+     * contain a certificate if the originating data is in that form.
+     */
+    static final class IssuerInfo {
+        private final X509Certificate certificate;
+        private final X500Principal name;
+        private final PublicKey pubKey;
+
+        IssuerInfo(X509Certificate issuerCert) {
+            certificate = Objects.requireNonNull(issuerCert,
+                    "Constructor requires non-null certificate");
+            name = certificate.getSubjectX500Principal();
+            pubKey = certificate.getPublicKey();
+        }
+
+        IssuerInfo(X500Principal subjectName, PublicKey key) {
+            certificate = null;
+            name = Objects.requireNonNull(subjectName,
+                    "Constructor requires non-null subject");
+            pubKey = Objects.requireNonNull(key,
+                    "Constructor requires non-null public key");
+        }
+
+        IssuerInfo(TrustAnchor anchor) {
+            certificate = anchor.getTrustedCert();
+            if (certificate != null) {
+                name = certificate.getSubjectX500Principal();
+                pubKey = certificate.getPublicKey();
+            } else {
+                name = anchor.getCA();
+                pubKey = anchor.getCAPublicKey();
+            }
+        }
+
+        /**
+         * Get the certificate in this IssuerInfo if present.
+         *
+         * @return the {@code X509Certificate} used to create this IssuerInfo
+         * object, or {@code null} if a certificate was not used in its
+         * creation.
+         */
+        X509Certificate getCertificate() {
+            return certificate;
+        }
+
+        /**
+         * Get the name of this issuer.
+         *
+         * @return an {@code X500Principal} corresponding to this issuer's
+         * name.  If derived from an issuer's {@code X509Certificate} this
+         * would be equivalent to the certificate subject name.
+         */
+        X500Principal getName() {
+            return name;
+        }
+
+        /**
+         * Get the public key for this issuer.
+         *
+         * @return a {@code PublicKey} for this issuer.
+         */
+        PublicKey getPublicKey() {
+            return pubKey;
+        }
+
+        /**
+         * Create a string representation of this IssuerInfo.
+         *
+         * @return a {@code String} form of this IssuerInfo object.
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Issuer Info:\n");
+            sb.append("Name: ").append(name.toString()).append("\n");
+            sb.append("Public Key:\n").append(pubKey.toString()).append("\n");
             return sb.toString();
         }
     }

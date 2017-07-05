@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 7162687 8015595
- * @key intermittent
  * @summary enhance KDC server availability detection
  * @compile -XDignore.symbol.file Unreachable.java
  * @run main/othervm Unreachable

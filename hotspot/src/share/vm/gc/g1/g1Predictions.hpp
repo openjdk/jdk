@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,6 @@ class G1Predictions VALUE_OBJ_CLASS_SPEC {
   double get_new_prediction(TruncatedSeq const* seq) const {
     return seq->davg() + _sigma * stddev_estimate(seq);
   }
-
-#ifndef PRODUCT
-  static void test();
-#endif
 };
 
 #endif // SHARE_VM_GC_G1_G1PREDICTIONS_HPP

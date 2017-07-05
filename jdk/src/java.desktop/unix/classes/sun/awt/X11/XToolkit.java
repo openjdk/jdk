@@ -1570,6 +1570,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                                   Integer.valueOf(getMultiClickTime()));
             desktopProperties.put("awt.mouse.numButtons",
                                   Integer.valueOf(getNumberOfButtons()));
+            if(SunGraphicsEnvironment.isUIScaleEnabled()) {
+                addPropertyChangeListener("gnome.Xft/DPI", evt ->
+                                                     localEnv.displayChanged());
+            }
         }
     }
 
