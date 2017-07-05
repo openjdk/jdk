@@ -345,7 +345,6 @@ TOOLS = \
 	sun/tools/jar		\
 	sun/tools/java		\
 	sun/tools/javac		\
-	sun/tools/javap		\
 	sun/tools/jps		\
 	sun/tools/jstat		\
 	sun/tools/jstatd	\
@@ -570,7 +569,6 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@
 	$(ECHO) "sun/tools/javac/" >> $@
-	$(ECHO) "sun/tools/javap/" >> $@
 	$(ECHO) "com/sun/tools/classfile/" >> $@
 	$(ECHO) "com/sun/tools/javap/" >> $@
 	$(ECHO) "sun/tools/jconsole/" >> $@

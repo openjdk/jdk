@@ -1,0 +1,16 @@
+#
+#clzName  csName     hisName  dbtype    pkg               ascii   b1min  b1max  b2min b2max
+#
+IBM1381	  x-IBM1381  Cp1381   basic     sun.nio.cs.ext    true    0x8c   0xf7   0xa1  0xfe
+IBM1383	  x-IBM1383  Cp1383   euc_sim   sun.nio.cs.ext    true    0xa1   0xfe   0xa1  0xfe
+IBM930	  x-IBM930   Cp930    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
+IBM933	  x-IBM933   Cp933    ebcdic    sun.nio.cs.ext    false   0x40   0xdd   0x40  0xfe
+IBM935	  x-IBM935   Cp935    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
+IBM937	  x-IBM937   Cp937    ebcdic    sun.nio.cs.ext    false   0x40   0xe2   0x40  0xfe
+IBM939	  x-IBM939   Cp939    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
+IBM942	  x-IBM942   Cp942    basic     sun.nio.cs.ext    false   0x81   0xfc   0x40  0xfc
+IBM943	  x-IBM943   Cp943    basic     sun.nio.cs.ext    false   0x81   0xfc   0x40  0xfc
+IBM948	  x-IBM948   Cp948    basic     sun.nio.cs.ext    true    0x81   0xfe   0x40  0xfc
+IBM949	  x-IBM949   Cp949    basic     sun.nio.cs.ext    false   0x8f   0xfe   0xa1  0xfe
+IBM950	  x-IBM950   Cp950    basic     sun.nio.cs.ext    true    0x81   0xfe   0x40  0xfe
+IBM970	  x-IBM970   Cp970    euc_sim   sun.nio.cs.ext    true    0xa1   0xfe   0xa1  0xfe

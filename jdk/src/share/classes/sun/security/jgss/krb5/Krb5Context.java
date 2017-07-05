@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.jgss.krb5;
 import org.ietf.jgss.*;
 import sun.misc.HexDumpEncoder;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import sun.security.jgss.TokenTracker;
 import sun.security.krb5.*;
@@ -37,8 +38,6 @@ import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.AccessControlContext;
-import java.security.GeneralSecurityException;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import javax.crypto.Cipher;
@@ -113,14 +112,14 @@ class Krb5Context implements GSSContextSpi {
     // stored elsewhere
     private Credentials serviceCreds;
     private KrbApReq apReq;
-    final private int caller;
+    final private GSSCaller caller;
     private static final boolean DEBUG = Krb5Util.DEBUG;
 
     /**
      * Constructor for Krb5Context to be called on the context initiator's
      * side.
      */
-    Krb5Context(int caller, Krb5NameElement peerName, Krb5CredElement myCred,
+    Krb5Context(GSSCaller caller, Krb5NameElement peerName, Krb5CredElement myCred,
                 int lifetime)
         throws GSSException {
 
@@ -138,7 +137,7 @@ class Krb5Context implements GSSContextSpi {
      * Constructor for Krb5Context to be called on the context acceptor's
      * side.
      */
-    Krb5Context(int caller, Krb5CredElement myCred)
+    Krb5Context(GSSCaller caller, Krb5CredElement myCred)
         throws GSSException {
         this.caller = caller;
         this.myCred = myCred;
@@ -148,7 +147,7 @@ class Krb5Context implements GSSContextSpi {
     /**
      * Constructor for Krb5Context to import a previously exported context.
      */
-    public Krb5Context(int caller, byte [] interProcessToken)
+    public Krb5Context(GSSCaller caller, byte [] interProcessToken)
         throws GSSException {
         throw new GSSException(GSSException.UNAVAILABLE,
                                -1, "GSS Import Context not available");
@@ -573,7 +572,7 @@ class Krb5Context implements GSSContextSpi {
                                     // SubjectComber.find
                                     // instead of Krb5Util.getTicket
                                     return Krb5Util.getTicket(
-                                        GSSUtil.CALLER_UNKNOWN,
+                                        GSSCaller.CALLER_UNKNOWN,
                                         // since it's useSubjectCredsOnly here,
                                         // don't worry about the null
                                         myName.getKrb5PrincipalName().getName(),
@@ -1280,7 +1279,7 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    int getCaller() {
+    GSSCaller getCaller() {
         // Currently used by InitialToken only
         return caller;
     }

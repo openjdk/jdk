@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,16 +353,32 @@ public class FileCredentialsCache extends CredentialsCache
      * Returns path name of the credentials cache file.
      * The path name is searched in the following order:
      *
-     * 1. /tmp/krb5cc_<uid> on unix systems
-     * 2. <user.home>/krb5cc_<user.name>
-     * 3. <user.home>/krb5cc (if can't get <user.name>)
+     * 1. KRB5CCNAME
+     * 2. /tmp/krb5cc_<uid> on unix systems
+     * 3. <user.home>/krb5cc_<user.name>
+     * 4. <user.home>/krb5cc (if can't get <user.name>)
      */
 
     public static String getDefaultCacheName() {
+
         String stdCacheNameComponent = "krb5cc";
         String name;
-        // get cache name from system.property
 
+        name = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                return System.getenv("KRB5CCNAME");
+            }
+        });
+        if (name != null) {
+            if (DEBUG) {
+                System.out.println(">>>KinitOptions cache name is " + name);
+            }
+            return name;
+        }
+
+        // get cache name from system.property
         String osname =
             java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("os.name"));

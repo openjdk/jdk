@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,12 +163,12 @@ public final class PKIXValidator extends Validator {
                 }
             }
 
-            // not self issued and apparently issued by trust anchor?
+            // apparently issued by trust anchor?
             X509Certificate last = chain[chain.length - 1];
             X500Principal issuer = last.getIssuerX500Principal();
             X500Principal subject = last.getSubjectX500Principal();
-            if (trustedSubjects.containsKey(issuer) && !issuer.equals(subject)
-                && isSignatureValid(trustedSubjects.get(issuer), last)) {
+            if (trustedSubjects.containsKey(issuer) &&
+                    isSignatureValid(trustedSubjects.get(issuer), last)) {
                 return doValidate(chain);
             }
 

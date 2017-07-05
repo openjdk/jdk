@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.ServicePermission;
 import sun.security.jgss.krb5.Krb5Util;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 
 import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
 
@@ -367,7 +367,7 @@ final class ServerHandshaker extends Handshaker {
                                 new PrivilegedExceptionAction<Subject>() {
                                 public Subject run() throws Exception {
                                     return Krb5Util.getSubject(
-                                        GSSUtil.CALLER_SSL_SERVER,
+                                        GSSCaller.CALLER_SSL_SERVER,
                                         getAccSE());
                             }});
                         } catch (PrivilegedActionException e) {
@@ -918,7 +918,7 @@ final class ServerHandshaker extends Handshaker {
                 public KerberosKey[] run() throws Exception {
                     // get kerberos key for the default principal
                     return Krb5Util.getKeys(
-                        GSSUtil.CALLER_SSL_SERVER, null, acc);
+                        GSSCaller.CALLER_SSL_SERVER, null, acc);
                         }});
 
             // check permission to access and use the secret key of the
