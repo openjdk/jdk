@@ -163,7 +163,13 @@ class MethodType implements java.io.Serializable {
     public static
     MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
-        return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
+        return makeImpl(rtype, listToArray(ptypes), notrust);
+    }
+
+    private static Class<?>[] listToArray(List<Class<?>> ptypes) {
+        // sanity check the size before the toArray call, since size might be huge
+        checkSlotCount(ptypes.size());
+        return ptypes.toArray(NO_PTYPES);
     }
 
     /**
@@ -228,7 +234,7 @@ class MethodType implements java.io.Serializable {
      */
     /*trusted*/ static
     MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
-        if (ptypes == null || ptypes.length == 0) {
+        if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
         MethodType mt1 = new MethodType(rtype, ptypes);
@@ -372,7 +378,7 @@ class MethodType implements java.io.Serializable {
      * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
     public MethodType insertParameterTypes(int num, List<Class<?>> ptypesToInsert) {
-        return insertParameterTypes(num, ptypesToInsert.toArray(NO_PTYPES));
+        return insertParameterTypes(num, listToArray(ptypesToInsert));
     }
 
     /**
@@ -641,7 +647,8 @@ class MethodType implements java.io.Serializable {
         }
         return true;
     }
-    private static boolean canConvert(Class<?> src, Class<?> dst) {
+    /*non-public*/
+    static boolean canConvert(Class<?> src, Class<?> dst) {
         if (src == dst || dst == void.class)  return true;
         if (src.isPrimitive() && dst.isPrimitive()) {
         if (!Wrapper.forPrimitiveType(dst)
@@ -739,9 +746,14 @@ class MethodType implements java.io.Serializable {
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
+        if (!descriptor.startsWith("(") ||  // also generates NPE if needed
+            descriptor.indexOf(')') < 0 ||
+            descriptor.indexOf('.') >= 0)
+            throw new IllegalArgumentException("not a method descriptor: "+descriptor);
         List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
-        Class<?>[] ptypes = types.toArray(NO_PTYPES);
+        checkSlotCount(types.size());
+        Class<?>[] ptypes = listToArray(types);
         return makeImpl(rtype, ptypes, true);
     }
 
