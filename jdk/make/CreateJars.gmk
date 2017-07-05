@@ -220,7 +220,6 @@ RT_JAR_EXCLUDES += \
     sun/tools/serialver \
     sun/tools/tree \
     sun/tools/util \
-    sun/util/cldr/CLDRLocaleDataMetaInfo.class \
     sun/util/resources/provider/NonEnLocaleDataMetaInfo.class \
     META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo \
     sun/util/resources/cldr \
@@ -452,11 +451,9 @@ $(CLDR_METAINF_SERVICES): $(JDK_TOPDIR)/src/jdk.localedata/META-INF/cldrdata-ser
 $(eval $(call SetupArchive,BUILD_CLDRDATA_JAR, \
     $(CLDR_METAINF_SERVICES), \
     SRCS := $(JDK_OUTPUTDIR)/modules/jdk.localedata \
-        $(JDK_OUTPUTDIR)/modules/java.base \
         $(CLDR_SERVICES_DIR), \
     SUFFIXES := .class, \
     INCLUDES := sun/text/resources/cldr \
-        sun/util/cldr/CLDRLocaleDataMetaInfo.class \
         sun/util/resources/cldr, \
     EXTRA_FILES := META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo, \
     JAR := $(CLDRDATA_JAR_DST), \

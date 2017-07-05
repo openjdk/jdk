@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around the <code>java.util.Date</code> class that allows the JDBC
@@ -38,6 +40,8 @@ import java.time.LocalTime;
  * value of January 1, 1970 and should not be accessed.
  */
 public class Time extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Time</code> object initialized with the
@@ -90,22 +94,19 @@ public class Time extends java.util.Date {
      * @return a corresponding <code>Time</code> object
      */
     public static Time valueOf(String s) {
+        if (s == null) throw new java.lang.IllegalArgumentException();
+
         int hour;
         int minute;
         int second;
-        int firstColon;
-        int secondColon;
-
-        if (s == null) throw new java.lang.IllegalArgumentException();
-
-        firstColon = s.indexOf(':');
-        secondColon = s.indexOf(':', firstColon+1);
-        if ((firstColon > 0) & (secondColon > 0) &
-            (secondColon < s.length()-1)) {
-            hour = Integer.parseInt(s.substring(0, firstColon));
-            minute =
-                Integer.parseInt(s.substring(firstColon+1, secondColon));
-            second = Integer.parseInt(s.substring(secondColon+1));
+        int firstColon = s.indexOf(':');
+        int secondColon = s.indexOf(':', firstColon + 1);
+        int len = s.length();
+        if (firstColon > 0 && secondColon > 0 &&
+                secondColon < len - 1) {
+            hour = Integer.parseInt(s, 0, firstColon, 10);
+            minute = Integer.parseInt(s, firstColon + 1, secondColon, 10);
+            second = Integer.parseInt(s, secondColon + 1, len, 10);
         } else {
             throw new java.lang.IllegalArgumentException();
         }
@@ -123,26 +124,15 @@ public class Time extends java.util.Date {
         int hour = super.getHours();
         int minute = super.getMinutes();
         int second = super.getSeconds();
-        String hourString;
-        String minuteString;
-        String secondString;
 
-        if (hour < 10) {
-            hourString = "0" + hour;
-        } else {
-            hourString = Integer.toString(hour);
-        }
-        if (minute < 10) {
-            minuteString = "0" + minute;
-        } else {
-            minuteString = Integer.toString(minute);
-        }
-        if (second < 10) {
-            secondString = "0" + second;
-        } else {
-            secondString = Integer.toString(second);
-        }
-        return (hourString + ":" + minuteString + ":" + secondString);
+        char[] buf = new char[8];
+        Date.formatDecimalInt(hour, buf, 0, 2);
+        buf[2] = ':';
+        Date.formatDecimalInt(minute, buf, 3, 2);
+        buf[5] = ':';
+        Date.formatDecimalInt(second, buf, 6, 2);
+
+        return jla.newStringUnsafe(buf);
     }
 
     // Override all the date operations inherited from java.util.Date;

@@ -470,3 +470,15 @@ void VM_Exit::wait_if_vm_exited() {
     ShouldNotReachHere();
   }
 }
+
+void VM_PrintCompileQueue::doit() {
+  CompileBroker::print_compile_queues(_out);
+}
+
+void VM_PrintCodeList::doit() {
+  CodeCache::print_codelist(_out);
+}
+
+void VM_PrintCodeCache::doit() {
+  CodeCache::print_layout(_out);
+}

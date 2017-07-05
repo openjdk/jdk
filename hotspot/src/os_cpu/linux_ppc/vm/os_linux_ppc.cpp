@@ -612,3 +612,8 @@ void os::verify_stack_alignment() {
   assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
 }
 #endif
+
+int os::extra_bang_size_in_bytes() {
+  // PPC does not require the additional stack bang.
+  return 0;
+}

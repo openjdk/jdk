@@ -137,15 +137,68 @@ static cmsIntentsList DefaultIntents[] = {
 
 
 // A pointer to the begining of the list
-static cmsIntentsList *Intents = DefaultIntents;
+_cmsIntentsPluginChunkType _cmsIntentsPluginChunk = { NULL };
+
+// Duplicates the zone of memory used by the plug-in in the new context
+static
+void DupPluginIntentsList(struct _cmsContext_struct* ctx,
+                                               const struct _cmsContext_struct* src)
+{
+   _cmsIntentsPluginChunkType newHead = { NULL };
+   cmsIntentsList*  entry;
+   cmsIntentsList*  Anterior = NULL;
+   _cmsIntentsPluginChunkType* head = (_cmsIntentsPluginChunkType*) src->chunks[IntentPlugin];
+
+    // Walk the list copying all nodes
+   for (entry = head->Intents;
+        entry != NULL;
+        entry = entry ->Next) {
+
+            cmsIntentsList *newEntry = ( cmsIntentsList *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(cmsIntentsList));
+
+            if (newEntry == NULL)
+                return;
+
+            // We want to keep the linked list order, so this is a little bit tricky
+            newEntry -> Next = NULL;
+            if (Anterior)
+                Anterior -> Next = newEntry;
+
+            Anterior = newEntry;
+
+            if (newHead.Intents == NULL)
+                newHead.Intents = newEntry;
+    }
+
+  ctx ->chunks[IntentPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsIntentsPluginChunkType));
+}
+
+void  _cmsAllocIntentsPluginChunk(struct _cmsContext_struct* ctx,
+                                         const struct _cmsContext_struct* src)
+{
+    if (src != NULL) {
+
+        // Copy all linked list
+        DupPluginIntentsList(ctx, src);
+    }
+    else {
+        static _cmsIntentsPluginChunkType IntentsPluginChunkType = { NULL };
+        ctx ->chunks[IntentPlugin] = _cmsSubAllocDup(ctx ->MemPool, &IntentsPluginChunkType, sizeof(_cmsIntentsPluginChunkType));
+    }
+}
+
 
 // Search the list for a suitable intent. Returns NULL if not found
 static
-cmsIntentsList* SearchIntent(cmsUInt32Number Intent)
+cmsIntentsList* SearchIntent(cmsContext ContextID, cmsUInt32Number Intent)
 {
+    _cmsIntentsPluginChunkType* ctx = ( _cmsIntentsPluginChunkType*) _cmsContextGetClientChunk(ContextID, IntentPlugin);
     cmsIntentsList* pt;
 
-    for (pt = Intents; pt != NULL; pt = pt -> Next)
+    for (pt = ctx -> Intents; pt != NULL; pt = pt -> Next)
+        if (pt ->Intent == Intent) return pt;
+
+    for (pt = DefaultIntents; pt != NULL; pt = pt -> Next)
         if (pt ->Intent == Intent) return pt;
 
     return NULL;
@@ -1031,7 +1084,7 @@ cmsPipeline* _cmsLinkProfiles(cmsContext     ContextID,
     // this case would present some issues if the custom intent tries to do things like
     // preserve primaries. This solution is not perfect, but works well on most cases.
 
-    Intent = SearchIntent(TheIntents[0]);
+    Intent = SearchIntent(ContextID, TheIntents[0]);
     if (Intent == NULL) {
         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported intent '%d'", TheIntents[0]);
         return NULL;
@@ -1046,12 +1099,14 @@ cmsPipeline* _cmsLinkProfiles(cmsContext     ContextID,
 // Get information about available intents. nMax is the maximum space for the supplied "Codes"
 // and "Descriptions" the function returns the total number of intents, which may be greater
 // than nMax, although the matrices are not populated beyond this level.
-cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
+cmsUInt32Number CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID, cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
 {
+    _cmsIntentsPluginChunkType* ctx = ( _cmsIntentsPluginChunkType*) _cmsContextGetClientChunk(ContextID, IntentPlugin);
     cmsIntentsList* pt;
     cmsUInt32Number nIntents;
 
-    for (nIntents=0, pt = Intents; pt != NULL; pt = pt -> Next)
+
+    for (nIntents=0, pt = ctx->Intents; pt != NULL; pt = pt -> Next)
     {
         if (nIntents < nMax) {
             if (Codes != NULL)
@@ -1064,37 +1119,52 @@ cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32
         nIntents++;
     }
 
+    for (nIntents=0, pt = DefaultIntents; pt != NULL; pt = pt -> Next)
+    {
+        if (nIntents < nMax) {
+            if (Codes != NULL)
+                Codes[nIntents] = pt ->Intent;
+
+            if (Descriptions != NULL)
+                Descriptions[nIntents] = pt ->Description;
+        }
+
+        nIntents++;
+    }
     return nIntents;
+}
+
+cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
+{
+    return cmsGetSupportedIntentsTHR(NULL, nMax, Codes, Descriptions);
 }
 
 // The plug-in registration. User can add new intents or override default routines
 cmsBool  _cmsRegisterRenderingIntentPlugin(cmsContext id, cmsPluginBase* Data)
 {
+    _cmsIntentsPluginChunkType* ctx = ( _cmsIntentsPluginChunkType*) _cmsContextGetClientChunk(id, IntentPlugin);
     cmsPluginRenderingIntent* Plugin = (cmsPluginRenderingIntent*) Data;
     cmsIntentsList* fl;
 
-    // Do we have to reset the intents?
+    // Do we have to reset the custom intents?
     if (Data == NULL) {
 
-       Intents = DefaultIntents;
-       return TRUE;
+        ctx->Intents = NULL;
+        return TRUE;
     }
 
-    fl = SearchIntent(Plugin ->Intent);
+    fl = (cmsIntentsList*) _cmsPluginMalloc(id, sizeof(cmsIntentsList));
+    if (fl == NULL) return FALSE;
 
-    if (fl == NULL) {
-        fl = (cmsIntentsList*) _cmsPluginMalloc(id, sizeof(cmsIntentsList));
-        if (fl == NULL) return FALSE;
-    }
 
     fl ->Intent  = Plugin ->Intent;
-    strncpy(fl ->Description, Plugin ->Description, 255);
-    fl ->Description[255] = 0;
+    strncpy(fl ->Description, Plugin ->Description, sizeof(fl ->Description)-1);
+    fl ->Description[sizeof(fl ->Description)-1] = 0;
 
     fl ->Link    = Plugin ->Link;
 
-    fl ->Next = Intents;
-    Intents = fl;
+    fl ->Next = ctx ->Intents;
+    ctx ->Intents = fl;
 
     return TRUE;
 }
