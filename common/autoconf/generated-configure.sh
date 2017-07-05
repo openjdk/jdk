@@ -918,6 +918,7 @@ COMPRESS_JARS
 INCLUDE_SA
 UNLIMITED_CRYPTO
 CACERTS_FILE
+ENABLE_FULL_DOCS
 ENABLE_HEADLESS_ONLY
 DEFAULT_MAKE_TARGET
 OS_VERSION_MICRO
@@ -936,6 +937,7 @@ FLOCK
 TIME
 STAT
 HG
+DOT
 READELF
 OTOOL
 LDD
@@ -994,9 +996,8 @@ OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
-REQUIRED_OS_VERSION
-REQUIRED_OS_ARCH
-REQUIRED_OS_NAME
+OPENJDK_MODULE_TARGET_OS_ARCH
+OPENJDK_MODULE_TARGET_OS_NAME
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
@@ -1139,6 +1140,7 @@ with_conf_name
 with_output_sync
 with_default_make_target
 enable_headless_only
+enable_full_docs
 with_cacerts_file
 enable_unlimited_crypto
 with_copyright_year
@@ -1291,6 +1293,7 @@ ZIPEXE
 LDD
 OTOOL
 READELF
+DOT
 HG
 STAT
 TIME
@@ -1972,6 +1975,8 @@ Optional Features:
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
   --enable-headless-only  only build headless (no GUI) support [disabled]
+  --enable-full-docs      build complete documentation [enabled if all tools
+                          found]
   --disable-unlimited-crypto
                           Disable unlimited crypto policy [enabled]
   --disable-keep-packaged-modules
@@ -2256,6 +2261,7 @@ Some influential environment variables:
   LDD         Override default value for LDD
   OTOOL       Override default value for OTOOL
   READELF     Override default value for READELF
+  DOT         Override default value for DOT
   HG          Override default value for HG
   STAT        Override default value for STAT
   TIME        Override default value for TIME
@@ -5177,7 +5183,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1490900744
+DATE_WHEN_GENERATED=1492975963
 
 ###############################################################################
 #
@@ -16025,32 +16031,17 @@ $as_echo_n "checking compilation type... " >&6; }
 $as_echo "$COMPILE_TYPE" >&6; }
 
 
-  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
-    REQUIRED_OS_NAME=SunOS
-    REQUIRED_OS_VERSION=5.10
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    OPENJDK_MODULE_TARGET_OS_NAME="macos"
+  else
+    OPENJDK_MODULE_TARGET_OS_NAME="$OPENJDK_TARGET_OS"
   fi
-  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    REQUIRED_OS_NAME=Linux
-    REQUIRED_OS_VERSION=2.6
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    REQUIRED_OS_NAME=Windows
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      REQUIRED_OS_VERSION=5.2
-    else
-      REQUIRED_OS_VERSION=5.1
-    fi
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    REQUIRED_OS_NAME="Mac OS X"
-    REQUIRED_OS_VERSION=11.2
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
-    REQUIRED_OS_NAME=AIX
-    REQUIRED_OS_VERSION=7.1
-  fi
-  REQUIRED_OS_ARCH=${OPENJDK_TARGET_CPU}
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_MODULE_TARGET_OS_ARCH="amd64"
+  else
+    OPENJDK_MODULE_TARGET_OS_ARCH="$OPENJDK_TARGET_CPU"
+  fi
 
 
 
@@ -22476,6 +22467,203 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
+  if [ -z "${DOT+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in dot
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DOT" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !DOT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DOT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDOT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DOT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DOT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in dot
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DOT" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$DOT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DOT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DOT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DOT" >&5
+$as_echo_n "checking for DOT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DOT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DOT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DOT=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$DOT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DOT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DOT=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DOT" >&5
+$as_echo_n "checking for DOT... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool DOT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
   if [ -z "${HG+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in hg
@@ -24719,6 +24907,101 @@ $as_echo "no" >&6; }
 $as_echo "no" >&6; }
   else
     as_fn_error $? "--enable-headless-only can only take yes or no" "$LINENO" 5
+  fi
+
+
+
+  # Should we build the complete docs, or just a lightweight version?
+  # Check whether --enable-full-docs was given.
+if test "${enable_full_docs+set}" = set; then :
+  enableval=$enable_full_docs;
+fi
+
+
+  # Verify dependencies
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for graphviz dot" >&5
+$as_echo_n "checking for graphviz dot... " >&6; }
+  if test "x$DOT" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cannot generate full docs" >&5
+$as_echo "no, cannot generate full docs" >&6; }
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pandoc" >&5
+$as_echo_n "checking for pandoc... " >&6; }
+  if test "x$PANDOC" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cannot generate full docs" >&5
+$as_echo "no, cannot generate full docs" >&6; }
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking full docs" >&5
+$as_echo_n "checking full docs... " >&6; }
+  if test "x$enable_full_docs" = xyes; then
+    if test "x$FULL_DOCS_DEP_MISSING" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # dot is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=dot
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      brew)
+        brew_help    $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Cannot enable full docs with missing dependencies. See above. $HELP_MSG" "$LINENO" 5
+    else
+      ENABLE_FULL_DOCS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    fi
+  elif test "x$enable_full_docs" = xno; then
+    ENABLE_FULL_DOCS=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+  elif test "x$enable_full_docs" = x; then
+    # Check for prerequisites
+    if test "x$FULL_DOCS_DEP_MISSING" = xtrue; then
+      ENABLE_FULL_DOCS=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+    else
+      ENABLE_FULL_DOCS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, dependencies present" >&5
+$as_echo "yes, dependencies present" >&6; }
+    fi
+  else
+    as_fn_error $? "--enable-full-docs can only take yes or no" "$LINENO" 5
   fi
 
 

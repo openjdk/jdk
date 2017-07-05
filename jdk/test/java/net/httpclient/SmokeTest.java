@@ -165,6 +165,7 @@ public class SmokeTest {
         client = HttpClient.newBuilder()
                            .sslContext(ctx)
                            .executor(e)
+                           .version(HttpClient.Version.HTTP_1_1)
                            .sslParameters(sslparams)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
                            .build();

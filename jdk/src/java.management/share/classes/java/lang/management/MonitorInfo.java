@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,10 +106,11 @@ public class MonitorInfo extends LockInfo {
      * <a href="LockInfo.html#MappedType">
      * mapped type</a> for the {@link LockInfo} class:
      * <blockquote>
-     * <table border summary="The attributes and their types the given CompositeData contains">
+     * <table border="1">
+     * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th style="text-align:left">Attribute Name</th>
+     *   <th style="text-align:left">Type</th>
      * </tr>
      * <tr>
      *   <td>lockedStackFrame</td>

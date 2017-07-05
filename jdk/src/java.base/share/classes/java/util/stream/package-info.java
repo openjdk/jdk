@@ -94,7 +94,7 @@
  * <p>Additional stream sources can be provided by third-party libraries using
  * <a href="package-summary.html#StreamSources">these techniques</a>.
  *
- * <h2><a name="StreamOps">Stream operations and pipelines</a></h2>
+ * <h2><a id="StreamOps">Stream operations and pipelines</a></h2>
  *
  * <p>Stream operations are divided into <em>intermediate</em> and
  * <em>terminal</em> operations, and are combined to form <em>stream
@@ -159,7 +159,7 @@
  * is a necessary, but not sufficient, condition for the processing of an infinite
  * stream to terminate normally in finite time.
  *
- * <h3><a name="Parallelism">Parallelism</a></h3>
+ * <h3><a id="Parallelism">Parallelism</a></h3>
  *
  * <p>Processing elements with an explicit {@code for-}loop is inherently serial.
  * Streams facilitate parallel execution by reframing the computation as a pipeline of
@@ -206,7 +206,7 @@
  * as {@link java.util.function.Function}, and are often lambda expressions or
  * method references.
  *
- * <h3><a name="NonInterference">Non-interference</a></h3>
+ * <h3><a id="NonInterference">Non-interference</a></h3>
  *
  * Streams enable you to execute possibly-parallel aggregate operations over a
  * variety of data sources, including even non-thread-safe collections such as
@@ -252,7 +252,7 @@
  * <a href="package-summary.html#StreamSources">Low-level stream
  * construction</a> for requirements for building well-behaved streams.
  *
- * <h3><a name="Statelessness">Stateless behaviors</a></h3>
+ * <h3><a id="Statelessness">Stateless behaviors</a></h3>
  *
  * Stream pipeline results may be nondeterministic or incorrect if the behavioral
  * parameters to the stream operations are <em>stateful</em>.  A stateful lambda
@@ -280,7 +280,7 @@
  * parameters to stream operations entirely; there is usually a way to
  * restructure the stream pipeline to avoid statefulness.
  *
- * <h3><a name="SideEffects">Side-effects</a></h3>
+ * <h3><a id="SideEffects">Side-effects</a></h3>
  *
  * Side-effects in behavioral parameters to stream operations are, in general,
  * discouraged, as they can often lead to unwitting violations of the
@@ -349,7 +349,7 @@
  *               .collect(Collectors.toList());  // No side-effects!
  * }</pre>
  *
- * <h3><a name="Ordering">Ordering</a></h3>
+ * <h3><a id="Ordering">Ordering</a></h3>
  *
  * <p>Streams may or may not have a defined <em>encounter order</em>.  Whether
  * or not a stream has an encounter order depends on the source and the
@@ -388,7 +388,7 @@
  * However, most stream pipelines, such as the "sum of weight of blocks" example
  * above, still parallelize efficiently even under ordering constraints.
  *
- * <h2><a name="Reduction">Reduction operations</a></h2>
+ * <h2><a id="Reduction">Reduction operations</a></h2>
  *
  * A <em>reduction</em> operation (also called a <em>fold</em>) takes a sequence
  * of input elements and combines them into a single summary result by repeated
@@ -493,7 +493,7 @@
  * significant work can be optimized away by combining mapping and reducing
  * into a single function.
  *
- * <h3><a name="MutableReduction">Mutable reduction</a></h3>
+ * <h3><a id="MutableReduction">Mutable reduction</a></h3>
  *
  * A <em>mutable reduction operation</em> accumulates input elements into a
  * mutable result container, such as a {@code Collection} or {@code StringBuilder},
@@ -620,7 +620,7 @@
  * but in some cases equivalence may be relaxed to account for differences in
  * order.
  *
- * <h3><a name="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
+ * <h3><a id="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
  *
  * With some complex reduction operations, for example a {@code collect()} that
  * produces a {@code Map}, such as:
@@ -675,7 +675,7 @@
  * We would then be constrained to implement either a sequential reduction or
  * a merge-based parallel reduction.
  *
- * <h3><a name="Associativity">Associativity</a></h3>
+ * <h3><a id="Associativity">Associativity</a></h3>
  *
  * An operator or function {@code op} is <em>associative</em> if the following
  * holds:
@@ -693,7 +693,7 @@
  * <p>Examples of associative operations include numeric addition, min, and
  * max, and string concatenation.
  *
- * <h2><a name="StreamSources">Low-level stream construction</a></h2>
+ * <h2><a id="StreamSources">Low-level stream construction</a></h2>
  *
  * So far, all the stream examples have used methods like
  * {@link java.util.Collection#stream()} or {@link java.util.Arrays#stream(Object[])}

@@ -69,6 +69,18 @@ class SSLConnection extends HttpConnection {
         delegate = new PlainHttpConnection(addr, client);
     }
 
+    /**
+     * Create an SSLConnection from an existing connected AsyncSSLConnection.
+     * Used when downgrading from HTTP/2 to HTTP/1.1
+     */
+    SSLConnection(AsyncSSLConnection c) {
+        super(c.address, c.client);
+        this.delegate = c.plainConnection;
+        AsyncSSLDelegate adel = c.sslDelegate;
+        this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client);
+        this.alpn = adel.alpn;
+    }
+
     @Override
     SSLParameters sslParameters() {
         return sslDelegate.getSSLParameters();

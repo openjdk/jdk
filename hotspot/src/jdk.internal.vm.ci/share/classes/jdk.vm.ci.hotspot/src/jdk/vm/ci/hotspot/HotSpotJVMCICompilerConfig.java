@@ -28,9 +28,9 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.services.JVMCIPermission;
-import jdk.vm.ci.services.Services;
+import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.services.internal.ReflectionAccessJDK;
 
 final class HotSpotJVMCICompilerConfig {
 
@@ -47,7 +47,7 @@ final class HotSpotJVMCICompilerConfig {
 
         @Override
         public String getCompilerName() {
-            return "<none>";
+            return "null";
         }
 
         @Override
@@ -73,19 +73,23 @@ final class HotSpotJVMCICompilerConfig {
             JVMCICompilerFactory factory = null;
             String compilerName = Option.Compiler.getString();
             if (compilerName != null) {
-                for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
-                    if (f.getCompilerName().equals(compilerName)) {
-                        factory = f;
+                if (compilerName.isEmpty() || compilerName.equals("null")) {
+                    factory = new DummyCompilerFactory();
+                } else {
+                    for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
+                        if (f.getCompilerName().equals(compilerName)) {
+                            factory = f;
+                        }
                     }
-                }
-                if (factory == null) {
-                    throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
+                    if (factory == null) {
+                        throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
+                    }
                 }
             } else {
                 // Auto select a single available compiler
                 for (JVMCICompilerFactory f : JVMCIServiceLocator.getProviders(JVMCICompilerFactory.class)) {
                     if (factory == null) {
-                        Services.exportJVMCITo(f.getClass());
+                        ReflectionAccessJDK.openJVMCITo(f.getClass());
                         factory = f;
                     } else {
                         // Multiple factories seen - cancel auto selection

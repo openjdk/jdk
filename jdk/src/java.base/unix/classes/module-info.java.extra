@@ -23,14 +23,5 @@
  * questions.
  */
 
-// jdk.internal.vm.compiler uses Unsafe and VM classes from jdk.internal.misc
-exports jdk.internal.misc to jdk.internal.vm.compiler;
-opens   jdk.internal.misc to jdk.internal.vm.compiler;
-
-// jdk.internal.vm.compiler uses com.sun.crypto.provider to generate crypto intrinsics
-opens com.sun.crypto.provider to jdk.internal.vm.compiler;
-
-exports jdk.internal.module to jdk.internal.vm.compiler;
-
 // AOT uses jdk.internal.misc.Unsafe
 exports jdk.internal.misc to jdk.aot;
