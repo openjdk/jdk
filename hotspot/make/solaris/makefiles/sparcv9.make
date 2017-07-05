@@ -26,7 +26,7 @@ Obj_Files += solaris_sparc.o
 ASFLAGS += $(AS_ARCHFLAG)
 
 ifeq ("${Platform_compiler}", "sparcWorks")
-ifeq ($(shell expr $(COMPILER_REV) \< 5.5), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \< 505), 1)
 # When optimized fully, stubGenerator_sparc.cpp 
 # has bogus code for the routine 
 # StubGenerator::generate_flush_callers_register_windows() 

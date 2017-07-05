@@ -83,8 +83,8 @@
  * javax.management.event.EventClientDelegateMBean EventClientDelegateMBean}
  * must be registered in the MBean Server, or the connector server must
  * be configured to simulate the existence of this MBean, for example
- * using {@link javax.management.event.EventClientDelegate#newForwarder()
- * EventClientDelegate.newForwarder()}. The standard RMI connector is so
+ * using {@link javax.management.event.EventClientDelegate#newForwarder
+ * EventClientDelegate.newForwarder}. The standard RMI connector is so
  * configured by default. The {@code EventClientDelegateMBean} documentation
  * has further details.</p>
  *

@@ -41,7 +41,7 @@ public class EventParams {
 
     @SuppressWarnings("cast") // cast for jdk 1.5
     public static long getLeaseTimeout() {
-        long timeout = EventClient.DEFAULT_LEASE_TIMEOUT;
+        long timeout = EventClient.DEFAULT_REQUESTED_LEASE_TIME;
         try {
             final GetPropertyAction act =
                   new GetPropertyAction(DEFAULT_LEASE_TIMEOUT);

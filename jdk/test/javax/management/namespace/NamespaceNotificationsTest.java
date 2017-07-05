@@ -206,18 +206,10 @@ public class NamespaceNotificationsTest {
             aconn.addNotificationListener(deep,listener,null,deep);
 
 
-            final JMXServiceURL urlx = new JMXServiceURL(url1.toString());
-            System.out.println("conn: "+urlx);
-            final JMXConnector jc2 = JMXNamespaces.narrowToNamespace(
-                    JMXConnectorFactory.connect(urlx),"server1//server1");
-            final JMXConnector jc3 = JMXNamespaces.narrowToNamespace(jc2,"server3");
-            jc3.connect();
-            System.out.println("JC#3: " +
-                    ((jc3 instanceof JMXAddressable)?
-                        ((JMXAddressable)jc3).getAddress():
-                        jc3.toString()));
-            final MBeanServerConnection bconn =
-                    jc3.getMBeanServerConnection();
+            MBeanServerConnection iconn =
+                    JMXNamespaces.narrowToNamespace(aconn, "server1//server1");
+            MBeanServerConnection bconn =
+                    JMXNamespaces.narrowToNamespace(aconn, "server3");
             final ObjectName shallow =
                     new ObjectName("bush:"+
                     deep.getKeyPropertyListString());
