@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,7 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() {
   while (arg != NULL) {
     array->append(new DCmdArgumentInfo(arg->name(), arg->description(),
                   arg->type(), arg->default_string(), arg->is_mandatory(),
-                  false, idx));
+                  false, arg->allow_multiple(), idx));
     idx++;
     arg = arg->next();
   }
@@ -367,32 +367,42 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() {
   while (arg != NULL) {
     array->append(new DCmdArgumentInfo(arg->name(), arg->description(),
                   arg->type(), arg->default_string(), arg->is_mandatory(),
-                  true));
+                  true, arg->allow_multiple()));
     arg = arg->next();
   }
   return array;
 }
 
 DCmdFactory* DCmdFactory::_DCmdFactoryList = NULL;
+bool DCmdFactory::_has_pending_jmx_notification = false;
 
-void DCmd::parse_and_execute(outputStream* out, const char* cmdline,
-                             char delim, TRAPS) {
+void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
+                             const char* cmdline, char delim, TRAPS) {
 
   if (cmdline == NULL) return; // Nothing to do!
   DCmdIter iter(cmdline, '\n');
 
+  int count = 0;
   while (iter.has_next()) {
+    if(source == DCmd_Source_MBean && count > 0) {
+      // When diagnostic commands are invoked via JMX, each command line
+      // must contains one and only one command because of the Permission
+      // checks performed by the DiagnosticCommandMBean
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Invalid syntax");
+    }
     CmdLine line = iter.next();
     if (line.is_stop()) {
       break;
     }
     if (line.is_executable()) {
-      DCmd* command = DCmdFactory::create_local_DCmd(line, out, CHECK);
+      DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
       assert(command != NULL, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
-      command->execute(CHECK);
+      command->execute(source, CHECK);
     }
+    count++;
   }
 }
 
@@ -420,15 +430,78 @@ GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() {
   return _dcmdparser.argument_info_array();
 }
 
-Mutex* DCmdFactory::_dcmdFactory_lock = new Mutex(Mutex::leaf, "DCmdFactory", true);
+void DCmdFactory::push_jmx_notification_request() {
+  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  _has_pending_jmx_notification = true;
+  Service_lock->notify_all();
+}
 
-DCmdFactory* DCmdFactory::factory(const char* name, size_t len) {
+void DCmdFactory::send_notification(TRAPS) {
+  DCmdFactory::send_notification_internal(THREAD);
+  // Clearing pending exception to avoid premature termination of
+  // the service thread
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
+void DCmdFactory::send_notification_internal(TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+  bool notif = false;
+  {
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    notif = _has_pending_jmx_notification;
+    _has_pending_jmx_notification = false;
+  }
+  if (notif) {
+
+    Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK);
+    instanceKlassHandle mgmt_factory_helper_klass(THREAD, k);
+
+    JavaValue result(T_OBJECT);
+    JavaCalls::call_static(&result,
+            mgmt_factory_helper_klass,
+            vmSymbols::getDiagnosticCommandMBean_name(),
+            vmSymbols::getDiagnosticCommandMBean_signature(),
+            CHECK);
+
+    instanceOop m = (instanceOop) result.get_jobject();
+    instanceHandle dcmd_mbean_h(THREAD, m);
+
+    Klass* k2 = Management::sun_management_DiagnosticCommandImpl_klass(CHECK);
+    instanceKlassHandle dcmd_mbean_klass(THREAD, k2);
+
+    if (!dcmd_mbean_h->is_a(k2)) {
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "ManagementFactory.getDiagnosticCommandMBean didn't return a DiagnosticCommandMBean instance");
+    }
+
+    JavaValue result2(T_VOID);
+    JavaCallArguments args2(dcmd_mbean_h);
+
+    JavaCalls::call_virtual(&result2,
+            dcmd_mbean_klass,
+            vmSymbols::createDiagnosticFrameworkNotification_name(),
+            vmSymbols::void_method_signature(),
+            &args2,
+            CHECK);
+  }
+}
+
+Mutex* DCmdFactory::_dcmdFactory_lock = new Mutex(Mutex::leaf, "DCmdFactory", true);
+bool DCmdFactory::_send_jmx_notification = false;
+
+DCmdFactory* DCmdFactory::factory(DCmdSource source, const char* name, size_t len) {
   MutexLockerEx ml(_dcmdFactory_lock, Mutex::_no_safepoint_check_flag);
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {
     if (strlen(factory->name()) == len &&
         strncmp(name, factory->name(), len) == 0) {
-      return factory;
+      if(factory->export_flags() & source) {
+        return factory;
+      } else {
+        return NULL;
+      }
     }
     factory = factory->_next;
   }
@@ -439,11 +512,16 @@ int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
   MutexLockerEx ml(_dcmdFactory_lock, Mutex::_no_safepoint_check_flag);
   factory->_next = _DCmdFactoryList;
   _DCmdFactoryList = factory;
+  if (_send_jmx_notification && !factory->_hidden
+      && (factory->_export_flags & DCmd_Source_MBean)) {
+    DCmdFactory::push_jmx_notification_request();
+  }
   return 0; // Actually, there's no checks for duplicates
 }
 
-DCmd* DCmdFactory::create_global_DCmd(CmdLine &line, outputStream* out, TRAPS) {
-  DCmdFactory* f = factory(line.cmd_addr(), line.cmd_len());
+DCmd* DCmdFactory::create_global_DCmd(DCmdSource source, CmdLine &line,
+                                      outputStream* out, TRAPS) {
+  DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
   if (f != NULL) {
     if (f->is_enabled()) {
       THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
@@ -455,8 +533,9 @@ DCmd* DCmdFactory::create_global_DCmd(CmdLine &line, outputStream* out, TRAPS) {
              "Unknown diagnostic command");
 }
 
-DCmd* DCmdFactory::create_local_DCmd(CmdLine &line, outputStream* out, TRAPS) {
-  DCmdFactory* f = factory(line.cmd_addr(), line.cmd_len());
+DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,
+                                     outputStream* out, TRAPS) {
+  DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
   if (f != NULL) {
     if (!f->is_enabled()) {
       THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
@@ -468,12 +547,12 @@ DCmd* DCmdFactory::create_local_DCmd(CmdLine &line, outputStream* out, TRAPS) {
              "Unknown diagnostic command");
 }
 
-GrowableArray<const char*>* DCmdFactory::DCmd_list() {
+GrowableArray<const char*>* DCmdFactory::DCmd_list(DCmdSource source) {
   MutexLockerEx ml(_dcmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<const char*>* array = new GrowableArray<const char*>();
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {
-    if (!factory->is_hidden()) {
+    if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(factory->name());
     }
     factory = factory->next();
@@ -481,15 +560,16 @@ GrowableArray<const char*>* DCmdFactory::DCmd_list() {
   return array;
 }
 
-GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list() {
+GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
   MutexLockerEx ml(_dcmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<DCmdInfo*>* array = new GrowableArray<DCmdInfo*>();
   DCmdFactory* factory = _DCmdFactoryList;
   while (factory != NULL) {
-    if (!factory->is_hidden()) {
+    if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->num_arguments(), factory->is_enabled()));
+                    factory->permission(), factory->num_arguments(),
+                    factory->is_enabled()));
     }
     factory = factory->next();
   }
