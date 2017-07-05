@@ -1607,8 +1607,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           emit_opcode(*cbuf, 0x0F);
           emit_opcode(*cbuf, 0x7E);
           emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+                  Matcher::_regEncode[src_first] & 7,
+                  Matcher::_regEncode[dst_first] & 7);
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdq   %s, %s\t# spill",
@@ -1637,8 +1637,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           emit_opcode(*cbuf, 0x0F);
           emit_opcode(*cbuf, 0x7E);
           emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+                  Matcher::_regEncode[src_first] & 7,
+                  Matcher::_regEncode[dst_first] & 7);
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdl   %s, %s\t# spill",

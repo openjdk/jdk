@@ -120,10 +120,6 @@ int compiledICHolderKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void compiledICHolderKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_compiledICHolder(), "must be compiledICHolder");
-}
-
 void compiledICHolderKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_compiledICHolder(), "must be compiledICHolder");
 }

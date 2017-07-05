@@ -1536,6 +1536,7 @@ public class Test {
         serial();
         urls();
         npes();
+        bugs();
     }
 
 
@@ -1571,6 +1572,19 @@ public class Test {
         }
     }
 
+
+    // miscellaneous bugs/rfes that don't fit in with the test framework
+
+    static void bugs() {
+        // 6339649 - include detail message from nested exception
+        try {
+            URI uri = URI.create("http://nowhere.net/should not be permitted");
+        } catch (IllegalArgumentException e) {
+            if ("".equals(e.getMessage()) || e.getMessage() == null) {
+                throw new RuntimeException ("No detail message");
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         switch (args.length) {

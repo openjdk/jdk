@@ -184,10 +184,6 @@ int methodKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void methodKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_method(), "should be method");
-}
-
 void methodKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_method(), "should be method");
 }

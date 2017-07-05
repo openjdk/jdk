@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,13 @@
 
 package com.sun.java.util.jar.pack;
 
+import com.sun.java.util.jar.pack.Attribute.Layout;
+import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
+import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
+import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
+import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
+import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
@@ -113,17 +120,46 @@ class Utils {
      */
     static final String PACK_ZIP_ARCHIVE_MARKER_COMMENT = "PACK200";
 
-   // Keep a TLS point to the current Packer or Unpacker.
-   // This makes it simpler to supply environmental options
+    // Keep a TLS point to the global data and environment.
+    // This makes it simpler to supply environmental options
     // to the engine code, especially the native code.
-    static final ThreadLocal currentInstance = new ThreadLocal();
+    static final ThreadLocal<TLGlobals> currentInstance = new ThreadLocal<>();
+
+    // convenience methods to access the TL globals
+    static TLGlobals getTLGlobals() {
+        return currentInstance.get();
+    }
+
+    static Map<String, Utf8Entry> getUtf8Entries() {
+        return getTLGlobals().getUtf8Entries();
+    }
+
+    static Map<String, ClassEntry> getClassEntries() {
+        return getTLGlobals().getClassEntries();
+    }
+
+    static Map<Object, LiteralEntry> getLiteralEntries() {
+        return getTLGlobals().getLiteralEntries();
+    }
+
+    static Map<String, DescriptorEntry> getDescriptorEntries() {
+         return getTLGlobals().getDescriptorEntries();
+    }
+
+    static Map<String, SignatureEntry> getSignatureEntries() {
+        return getTLGlobals().getSignatureEntries();
+    }
+
+    static Map<String, MemberEntry> getMemberEntries() {
+        return getTLGlobals().getMemberEntries();
+    }
 
     static PropMap currentPropMap() {
         Object obj = currentInstance.get();
         if (obj instanceof PackerImpl)
-            return ((PackerImpl)obj)._props;
+            return ((PackerImpl)obj).props;
         if (obj instanceof UnpackerImpl)
-            return ((UnpackerImpl)obj)._props;
+            return ((UnpackerImpl)obj).props;
         return null;
     }
 
