@@ -35,6 +35,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vm_operations.hpp"
 #include "runtime/vmThread.hpp"

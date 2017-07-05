@@ -150,6 +150,9 @@ class CompiledIC: public ResourceObj {
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
 
   CompiledIC(nmethod* nm, NativeCall* ic_call);
+  CompiledIC(RelocIterator* iter);
+
+  void initialize_from_iter(RelocIterator* iter);
 
   static bool is_icholder_entry(address entry);
 
@@ -183,6 +186,7 @@ class CompiledIC: public ResourceObj {
   friend CompiledIC* CompiledIC_before(nmethod* nm, address return_addr);
   friend CompiledIC* CompiledIC_at(nmethod* nm, address call_site);
   friend CompiledIC* CompiledIC_at(Relocation* call_site);
+  friend CompiledIC* CompiledIC_at(RelocIterator* reloc_iter);
 
   // This is used to release CompiledICHolder*s from nmethods that
   // are about to be freed.  The callsite might contain other stale
@@ -263,6 +267,13 @@ inline CompiledIC* CompiledIC_at(Relocation* call_site) {
   return c_ic;
 }
 
+inline CompiledIC* CompiledIC_at(RelocIterator* reloc_iter) {
+  assert(reloc_iter->type() == relocInfo::virtual_call_type ||
+      reloc_iter->type() == relocInfo::opt_virtual_call_type, "wrong reloc. info");
+  CompiledIC* c_ic = new CompiledIC(reloc_iter);
+  c_ic->verify();
+  return c_ic;
+}
 
 //-----------------------------------------------------------------------------
 // The CompiledStaticCall represents a call to a static method in the compiled

@@ -280,16 +280,7 @@ endif
 
 # optimization control flags (Used by fastdebug and release variants)
 OPT_CFLAGS/NOOPT=-O0
-ifeq ($(USE_CLANG), true)
-  # Clang does not support -Og
-  OPT_CFLAGS/DEBUG=-O0
-else ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
-  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
-  OPT_CFLAGS/DEBUG=-Og
-else
-  # Allow no optimizations.
- OPT_CFLAGS/DEBUG=-O0
-endif
+OPT_CFLAGS/DEBUG=-O0
 OPT_CFLAGS/SIZE=-Os
 OPT_CFLAGS/SPEED=-O3
 
@@ -457,16 +448,8 @@ ifeq ($(USE_CLANG), true)
   CFLAGS += -flimit-debug-info
 endif
 
-ifeq ($(USE_CLANG), true)
-  # Clang does not support -Og
-  DEBUG_CFLAGS=-O0
-else ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
-  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
-  DEBUG_CFLAGS=-Og
-else
-  # Allow no optimizations.
-  DEBUG_CFLAGS=-O0
-endif
+# Allow no optimizations.
+DEBUG_CFLAGS=-O0
 
 # DEBUG_BINARIES uses full -g debug information for all configs
 ifeq ($(DEBUG_BINARIES), true)

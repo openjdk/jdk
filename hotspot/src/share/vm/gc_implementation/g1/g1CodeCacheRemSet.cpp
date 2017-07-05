@@ -30,21 +30,50 @@
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
-G1CodeRootChunk::G1CodeRootChunk() : _top(NULL), _next(NULL), _prev(NULL) {
+G1CodeRootChunk::G1CodeRootChunk() : _top(NULL), _next(NULL), _prev(NULL), _free(NULL) {
   _top = bottom();
 }
 
 void G1CodeRootChunk::reset() {
   _next = _prev = NULL;
+  _free = NULL;
   _top = bottom();
 }
 
 void G1CodeRootChunk::nmethods_do(CodeBlobClosure* cl) {
-  nmethod** cur = bottom();
+  NmethodOrLink* cur = bottom();
   while (cur != _top) {
-    cl->do_code_blob(*cur);
+    if (is_nmethod(cur)) {
+      cl->do_code_blob(cur->_nmethod);
+    }
     cur++;
   }
+}
+
+bool G1CodeRootChunk::remove_lock_free(nmethod* method) {
+  NmethodOrLink* cur = bottom();
+
+  for (NmethodOrLink* cur = bottom(); cur != _top; cur++) {
+    if (cur->_nmethod == method) {
+      bool result = Atomic::cmpxchg_ptr(NULL, &cur->_nmethod, method) == method;
+
+      if (!result) {
+        // Someone else cleared out this entry.
+        return false;
+      }
+
+      // The method was cleared. Time to link it into the free list.
+      NmethodOrLink* prev_free;
+      do {
+        prev_free = (NmethodOrLink*)_free;
+        cur->_link = prev_free;
+      } while (Atomic::cmpxchg_ptr(cur, &_free, prev_free) != prev_free);
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 G1CodeRootChunkManager::G1CodeRootChunkManager() : _free_list(), _num_chunks_handed_out(0) {
@@ -140,34 +169,43 @@ G1CodeRootSet::~G1CodeRootSet() {
 
 void G1CodeRootSet::add(nmethod* method) {
   if (!contains(method)) {
-    // Try to add the nmethod. If there is not enough space, get a new chunk.
-    if (_list.head() == NULL || _list.head()->is_full()) {
-      G1CodeRootChunk* cur = new_chunk();
+    // Find the first chunk that isn't full.
+    G1CodeRootChunk* cur = _list.head();
+    while (cur != NULL) {
+      if (!cur->is_full()) {
+        break;
+      }
+      cur = cur->next();
+    }
+
+    // All chunks are full, get a new chunk.
+    if (cur == NULL) {
+      cur = new_chunk();
       _list.return_chunk_at_head(cur);
     }
-    bool result = _list.head()->add(method);
+
+    // Add the nmethod.
+    bool result = cur->add(method);
+
     guarantee(result, err_msg("Not able to add nmethod "PTR_FORMAT" to newly allocated chunk.", method));
+
     _length++;
   }
 }
 
-void G1CodeRootSet::remove(nmethod* method) {
+void G1CodeRootSet::remove_lock_free(nmethod* method) {
   G1CodeRootChunk* found = find(method);
   if (found != NULL) {
-    bool result = found->remove(method);
-    guarantee(result, err_msg("could not find nmethod "PTR_FORMAT" during removal although we previously found it", method));
-    // eventually free completely emptied chunk
-    if (found->is_empty()) {
-      _list.remove_chunk(found);
-      free(found);
+    bool result = found->remove_lock_free(method);
+    if (result) {
+      Atomic::dec_ptr((volatile intptr_t*)&_length);
     }
-    _length--;
   }
   assert(!contains(method), err_msg(PTR_FORMAT" still contains nmethod "PTR_FORMAT, this, method));
 }
 
 nmethod* G1CodeRootSet::pop() {
-  do {
+  while (true) {
     G1CodeRootChunk* cur = _list.head();
     if (cur == NULL) {
       assert(_length == 0, "when there are no chunks, there should be no elements");
@@ -180,7 +218,7 @@ nmethod* G1CodeRootSet::pop() {
     } else {
       free(_list.get_chunk_at_head());
     }
-  } while (true);
+  }
 }
 
 G1CodeRootChunk* G1CodeRootSet::find(nmethod* method) {

@@ -33,6 +33,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/os.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
