@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,11 +96,15 @@
 // TempNewSymbol (passed in as a parameter) so the reference count on its symbol
 // will be decremented when it goes out of scope.
 
-
 // This cannot be inherited from ResourceObj because it cannot have a vtable.
 // Since sometimes this is allocated from Metadata, pick a base allocation
 // type without virtual functions.
 class ClassLoaderData;
+
+// Set _refcount to PERM_REFCOUNT to prevent the Symbol from being GC'ed.
+#ifndef PERM_REFCOUNT
+#define PERM_REFCOUNT -1
+#endif
 
 // We separate the fields in SymbolBase from Symbol::_body so that
 // Symbol::size(int) can correctly calculate the space needed.
@@ -160,6 +164,13 @@ class Symbol : private SymbolBase {
   int refcount() const      { return _refcount; }
   void increment_refcount();
   void decrement_refcount();
+  // Set _refcount non zero to avoid being reclaimed by GC.
+  void set_permanent() {
+    assert(LogTouchedMethods, "Should not be called with LogTouchedMethods off");
+    if (_refcount != PERM_REFCOUNT) {
+      _refcount = PERM_REFCOUNT;
+    }
+  }
 
   int byte_at(int index) const {
     assert(index >=0 && index < _length, "symbol index overflow");

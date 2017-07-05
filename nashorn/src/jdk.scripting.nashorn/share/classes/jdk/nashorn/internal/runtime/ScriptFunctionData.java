@@ -359,30 +359,12 @@ public abstract class ScriptFunctionData implements Serializable {
      * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
      * @return the best function for the specified call site type.
      */
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
-        assert callSiteType.parameterCount() >= 2 : callSiteType; // Must have at least (callee, this)
-        assert callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class) : callSiteType; // Callee must be assignable from script function
+    abstract CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden);
 
-        if (isRecompilable()) {
-            final CompiledFunction candidate = pickFunction(callSiteType, false);
-            if (candidate != null) {
-                return candidate;
-            }
-            return pickFunction(callSiteType, true); //try vararg last
-        }
-
-        CompiledFunction best = null;
-        for (final CompiledFunction candidate: code) {
-            if (!forbidden.contains(candidate) && candidate.betterThanFinal(best, callSiteType)) {
-                best = candidate;
-            }
-        }
-
-        return best;
+    boolean isValidCallSite(final MethodType callSiteType) {
+        return callSiteType.parameterCount() >= 2  && // Must have at least (callee, this)
+               callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class); // Callee must be assignable from script function
     }
-
-
-    abstract boolean isRecompilable();
 
     CompiledFunction getGeneric(final ScriptObject runtimeScope) {
         return getBest(getGenericType(), runtimeScope, CompiledFunction.NO_FUNCTIONS);

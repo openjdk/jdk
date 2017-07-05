@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,12 @@
  * questions.
  */
 
+/* used by PrintTouchedMethods.java */
+public class TestLogTouchedMethods {
+  public static void main(String[] args) {
+    new TestLogTouchedMethods().methodA();
+  }
 
-/* @test
- * @bug 5097131 6299047
- * @summary Test jvmti hprof
- *
- * @compile -g HelloWorld.java DefineClass.java ../DemoRun.java
- * @build CpuTimesDefineClassTest
- * @run main CpuTimesDefineClassTest DefineClass
- *
- *
- */
-
-public class CpuTimesDefineClassTest {
-
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
-
-        /* Run JVMTI hprof agent with cpu=times */
-        hprof = new DemoRun("hprof", "cpu=times,file=cputimedefineclass.txt");
-        hprof.runit(args[0]);
-
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
-        }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
-    }
+  public void methodA() {} // called
+  public void methodB() {} // this should not be called
 }
