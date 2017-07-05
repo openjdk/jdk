@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,13 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+#ifdef ASSERT
+  if (gch->collector_policy()->should_clear_all_soft_refs()) {
+    assert(clear_all_softrefs, "Policy should have been checked earlier");
+  }
+#endif
+
   // hook up weak ref data so it can be used during Mark-Sweep
   assert(ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
@@ -44,7 +51,6 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   // Increment the invocation count for the permanent generation, since it is
   // implicitly collected whenever we do a full mark sweep collection.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->perm_gen()->stat_record()->invocations++;
 
   // Capture heap size before collection for printing.

@@ -1,5 +1,5 @@
 //
-// Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,10 @@ parMarkBitMap.cpp                       psParallelCompact.hpp
 parMarkBitMap.hpp			bitMap.inline.hpp
 parMarkBitMap.hpp			psVirtualspace.hpp
 
+psAdaptiveSizePolicy.cpp                collectorPolicy.hpp
 psAdaptiveSizePolicy.cpp                gcPolicyCounters.hpp
 psAdaptiveSizePolicy.cpp		gcCause.hpp
+psAdaptiveSizePolicy.cpp                generationSizer.hpp
 psAdaptiveSizePolicy.cpp                psAdaptiveSizePolicy.hpp
 psAdaptiveSizePolicy.cpp                psGCAdaptivePolicyCounters.hpp
 psAdaptiveSizePolicy.cpp                psScavenge.hpp
@@ -215,6 +217,7 @@ psMarkSweep.cpp                         events.hpp
 psMarkSweep.cpp                         fprofiler.hpp
 psMarkSweep.cpp                         gcCause.hpp
 psMarkSweep.cpp                         gcLocker.inline.hpp
+psMarkSweep.cpp                         generationSizer.hpp
 psMarkSweep.cpp                         isGCActiveMark.hpp
 psMarkSweep.cpp                         oop.inline.hpp
 psMarkSweep.cpp                         memoryService.hpp
@@ -256,6 +259,7 @@ psParallelCompact.cpp			fprofiler.hpp
 psParallelCompact.cpp			gcCause.hpp
 psParallelCompact.cpp			gcLocker.inline.hpp
 psParallelCompact.cpp                   gcTaskManager.hpp
+psParallelCompact.cpp                   generationSizer.hpp
 psParallelCompact.cpp			isGCActiveMark.hpp
 psParallelCompact.cpp			management.hpp
 psParallelCompact.cpp			memoryService.hpp
@@ -344,10 +348,12 @@ psPromotionLAB.hpp                      objectStartArray.hpp
 psScavenge.cpp                          psAdaptiveSizePolicy.hpp
 psScavenge.cpp                          biasedLocking.hpp
 psScavenge.cpp                          cardTableExtension.hpp
+psScavenge.cpp                          collectorPolicy.hpp
 psScavenge.cpp                          fprofiler.hpp
 psScavenge.cpp                          gcCause.hpp
 psScavenge.cpp                          gcLocker.inline.hpp
 psScavenge.cpp                          gcTaskManager.hpp
+psScavenge.cpp                          generationSizer.hpp
 psScavenge.cpp                          handles.inline.hpp
 psScavenge.cpp                          isGCActiveMark.hpp
 psScavenge.cpp                          oop.inline.hpp

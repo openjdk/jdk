@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2008 Red Hat, Inc.
+ * Copyright 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,8 @@ class InterpreterFrame : public ZeroFrame {
   };
 
  public:
-  static InterpreterFrame *build(ZeroStack*      stack,
-                                 const methodOop method,
-                                 JavaThread*     thread);
-  static InterpreterFrame *build(ZeroStack* stack, int size);
+  static InterpreterFrame *build(const methodOop method, TRAPS);
+  static InterpreterFrame *build(int size, TRAPS);
 
  public:
   interpreterState interpreter_state() const {
