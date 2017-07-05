@@ -1,0 +1,117 @@
+#
+# Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+MISC_SWING_FILES = \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Computer.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/DetailsView.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Directory.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Error.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/File.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/FloppyDrive.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/HardDrive.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/HomeFolder.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Inform.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/ListView.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/NewFolder.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Question.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/TreeClosed.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/TreeLeaf.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/TreeOpen.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/UpFolder.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/Warn.gif \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/image-delayed.png \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/image-failed.png \
+\
+        $(CLASSBINDIR)/javax/swing/plaf/basic/icons/image-delayed.png \
+        $(CLASSBINDIR)/javax/swing/plaf/basic/icons/image-failed.png \
+\
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/Error.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/Inform.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/Question.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/sortDown.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/sortUp.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/Warn.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/close.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/close-pressed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/collapsed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/collapsed-rtl.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/computer.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/directory.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/error.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/expanded.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/file.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/floppy.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/hardDrive.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/homeFolder.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/iconify.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/iconify-pressed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/info.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/maximize.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/maximize-pressed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/menu.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/minimize.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/minimize-pressed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/newFolder.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/paletteClose.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/paletteClose-pressed.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/question.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/upFolder.gif \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/icons/ocean/warning.png \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/FrameClose.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/FrameMaximize.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/FrameMinimize.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/FrameRestoreDown.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/FrameRestoreUp.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/MenuItemCommand.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/OptionPaneInformation.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/OptionPaneWarning.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/OptionPaneError.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/OptionPaneQuestion.wav \
+	$(CLASSBINDIR)/javax/swing/plaf/metal/sounds/PopupMenuPopup.wav
+
+MISC_SWING_FILES_MOTIF_GIF = \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/DesktopIcon.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/TreeClosed.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/TreeOpen.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/Inform.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/Question.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/Warn.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/Error.gif
+
+MISC_SWING_FILES_MOTIF_PNG = \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/image-delayed.png \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/motif/icons/image-failed.png
+
+MISC_SWING_FILES_UNIX = \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/gtk/icons/Directory.gif \
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/gtk/icons/File.gif \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/gtk/icons/image-delayed.png \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/gtk/icons/image-failed.png \
+        $(CLASSBINDIR)/com/sun/java/swing/plaf/gtk/resources/metacity/SwingFallbackTheme/metacity-1/metacity-theme-1.xml
+
+LOGO_ICONS=\
+	$(CLASSBINDIR)/com/sun/java/swing/plaf/windows/icons/JavaCup32.png \
+	$(CLASSBINDIR)/javax/swing/plaf/basic/icons/JavaCup16.png
+

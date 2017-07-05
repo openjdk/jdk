@@ -1,0 +1,279 @@
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# FILES_export definitions for Mac OS X
+
+FILES_export = \
+        com/apple/eawt/Application.java \
+        com/apple/eawt/_AppDockIconHandler.java \
+        com/apple/eawt/_AppEventHandler.java \
+        com/apple/eawt/_AppEventLegacyHandler.java \
+        com/apple/eawt/_AppMenuBarHandler.java \
+        com/apple/eawt/_AppMiscHandlers.java \
+        com/apple/eawt/event/GestureHandler.java \
+        com/apple/eawt/FullScreenAdapter.java \
+        com/apple/eawt/FullScreenHandler.java \
+        com/apple/eawt/FullScreenListener.java \
+        com/apple/eawt/FullScreenUtilities.java \
+        sun/font/FontManager.java \
+        sun/awt/image/ImageRepresentation.java \
+        sun/awt/image/GifImageDecoder.java \
+        sun/awt/image/NativeLibLoader.java \
+        sun/java2d/CRenderer.java \
+        sun/java2d/CompositeCRenderer.java \
+        sun/java2d/DataBufferNIOInt.java \
+        sun/java2d/IntegerNIORaster.java \
+        sun/java2d/OSXSurfaceData.java \
+        sun/java2d/OSXOffScreenSurfaceData.java \
+        sun/java2d/loops/Blit.java \
+        sun/java2d/loops/BlitBg.java \
+        sun/java2d/loops/ScaledBlit.java \
+        sun/java2d/loops/TransformBlit.java \
+        sun/java2d/loops/FillRect.java \
+        sun/java2d/loops/FillSpans.java \
+        sun/java2d/loops/FillParallelogram.java \
+        sun/java2d/loops/DrawParallelogram.java \
+        sun/java2d/loops/DrawGlyphList.java \
+        sun/java2d/loops/DrawGlyphListAA.java \
+        sun/java2d/loops/DrawGlyphListLCD.java \
+        sun/java2d/loops/DrawLine.java \
+        sun/java2d/loops/DrawRect.java \
+        sun/java2d/loops/DrawPolygons.java \
+        sun/java2d/loops/DrawPath.java \
+        sun/java2d/loops/FillPath.java \
+        sun/java2d/loops/MaskBlit.java \
+        sun/java2d/loops/MaskFill.java \
+        sun/java2d/loops/TransformHelper.java \
+        sun/java2d/loops/GraphicsPrimitiveMgr.java \
+        sun/java2d/loops/GraphicsPrimitive.java \
+        sun/java2d/pipe/hw/AccelSurface.java \
+        sun/java2d/pipe/hw/AccelDeviceEventNotifier.java \
+        sun/java2d/pipe/hw/ContextCapabilities.java \
+        sun/awt/image/ImagingLib.java \
+        sun/java2d/SurfaceData.java \
+        sun/java2d/SunGraphics2D.java \
+        sun/awt/KeyboardFocusManagerPeerImpl.java \
+        sun/awt/image/BufImgSurfaceData.java \
+        sun/awt/image/DataBufferNative.java \
+        \
+        sun/awt/CGraphicsConfig.java \
+        sun/awt/CGraphicsDevice.java \
+        sun/awt/CGraphicsEnvironment.java \
+        sun/font/CCharToGlyphMapper.java \
+        sun/font/CFont.java \
+        sun/font/CFontConfiguration.java \
+        sun/font/CFontManager.java \
+        sun/font/CStrike.java \
+        sun/font/CStrikeDisposer.java \
+        sun/java2d/BackBufferCapsProvider.java \
+        sun/java2d/MacosxSurfaceManagerFactory.java \
+        sun/lwawt/LWButtonPeer.java \
+        sun/lwawt/LWCanvasPeer.java \
+        sun/lwawt/LWCheckboxPeer.java \
+        sun/lwawt/LWChoicePeer.java \
+        sun/lwawt/LWComponentPeer.java \
+        sun/lwawt/LWContainerPeer.java \
+        sun/lwawt/LWCursorManager.java \
+        sun/lwawt/LWKeyboardFocusManagerPeer.java \
+        sun/lwawt/LWLabelPeer.java \
+        sun/lwawt/LWListPeer.java \
+        sun/lwawt/LWMouseInfoPeer.java \
+        sun/lwawt/LWPanelPeer.java \
+        sun/lwawt/LWRepaintArea.java \
+        sun/lwawt/LWScrollBarPeer.java \
+        sun/lwawt/LWScrollPanePeer.java \
+        sun/lwawt/LWTextComponentPeer.java \
+        sun/lwawt/LWTextFieldPeer.java \
+        sun/lwawt/LWToolkit.java \
+        sun/lwawt/LWWindowPeer.java \
+        sun/lwawt/PlatformWindow.java \
+        sun/lwawt/SelectionClearListener.java \
+        sun/lwawt/macosx/CPrinterDevice.java \
+        sun/lwawt/macosx/CPrinterDialog.java \
+        sun/lwawt/macosx/CPrinterDialogPeer.java \
+        sun/lwawt/macosx/CPrinterGraphics.java \
+        sun/lwawt/macosx/CPrinterGraphicsConfig.java \
+        sun/lwawt/macosx/CPrinterJob.java \
+        sun/lwawt/macosx/CPrinterJobDialog.java \
+        sun/lwawt/macosx/CPrinterPageDialog.java \
+        sun/lwawt/macosx/CPrinterSurfaceData.java \
+        sun/lwawt/macosx/CTextPipe.java \
+        sun/lwawt/macosx/CDesktopPeer.java \
+        sun/java2d/CRenderer.java \
+        sun/lwawt/macosx/EventDispatchAccess.java \
+        sun/lwawt/macosx/NSPrintInfo.java \
+        sun/lwawt/macosx/CAccessibility.java \
+        sun/lwawt/macosx/CAccessible.java \
+        sun/lwawt/macosx/CFRetainedResource.java \
+        sun/lwawt/macosx/CCheckboxMenuItem.java \
+        sun/lwawt/macosx/CClipboard.java \
+        sun/lwawt/macosx/CDataTransferer.java \
+        sun/lwawt/macosx/CDragSourceContextPeer.java \
+        sun/lwawt/macosx/CMouseDragGestureRecognizer.java \
+        sun/lwawt/macosx/CDropTarget.java \
+        sun/lwawt/macosx/CDropTargetContextPeer.java \
+        sun/lwawt/macosx/CCursorManager.java \
+        sun/lwawt/macosx/CFileDialog.java \
+        sun/lwawt/macosx/CImage.java \
+        sun/lwawt/macosx/CMenu.java \
+        sun/lwawt/macosx/CMenuBar.java \
+        sun/lwawt/macosx/CMenuComponent.java \
+        sun/lwawt/macosx/CMenuItem.java \
+        sun/lwawt/macosx/CMouseInfoPeer.java \
+        sun/lwawt/macosx/CPlatformView.java \
+        sun/lwawt/macosx/CPlatformWindow.java \
+        sun/lwawt/macosx/CPlatformComponent.java \
+        sun/lwawt/macosx/CEmbeddedFrame.java \
+        sun/lwawt/macosx/CPlatformEmbeddedFrame.java \
+        sun/lwawt/macosx/CPlatformResponder.java \
+        sun/lwawt/macosx/CPopupMenu.java \
+        sun/lwawt/macosx/CRobot.java \
+        sun/lwawt/macosx/CSystemTray.java \
+        sun/lwawt/macosx/CTrayIcon.java \
+        sun/lwawt/macosx/CWrapper.java \
+        sun/lwawt/macosx/CocoaConstants.java \
+        sun/lwawt/macosx/LWCToolkit.java \
+        sun/lwawt/macosx/CInputMethod.java \
+        sun/lwawt/macosx/CInputMethodDescriptor.java \
+        sun/lwawt/macosx/event/NSEvent.java \
+        \
+        sun/awt/DebugSettings.java \
+        sun/awt/EmbeddedFrame.java \
+        sun/awt/PlatformFont.java \
+        sun/awt/FontDescriptor.java \
+        sun/awt/NativeLibLoader.java \
+        sun/awt/CharsetString.java \
+        sun/awt/SunHints.java \
+        sun/java2d/pipe/BufferedContext.java \
+        sun/java2d/pipe/BufferedMaskBlit.java \
+        sun/java2d/pipe/BufferedOpCodes.java \
+        sun/java2d/pipe/BufferedMaskBlit.java \
+        sun/java2d/pipe/BufferedPaints.java \
+        sun/java2d/pipe/BufferedRenderPipe.java \
+        sun/java2d/pipe/BufferedTextPipe.java \
+        sun/java2d/pipe/RenderBuffer.java \
+        sun/java2d/pipe/ShapeSpanIterator.java \
+        sun/java2d/pipe/SpanClipRenderer.java \
+        sun/java2d/pipe/RegionIterator.java \
+        sun/awt/image/IntegerComponentRaster.java \
+        sun/java2d/cmm/CMSManager.java \
+        sun/java2d/cmm/PCMM.java \
+        sun/java2d/cmm/ColorTransform.java \
+        sun/awt/datatransfer/DataTransferer.java \
+        sun/awt/dnd/SunDragSourceContextPeer.java \
+        sun/java2d/opengl/OGLBlitLoops.java \
+        sun/java2d/opengl/OGLContext.java \
+        sun/java2d/opengl/OGLMaskFill.java \
+        sun/java2d/opengl/OGLPaints.java \
+        sun/java2d/opengl/OGLRenderer.java \
+        sun/java2d/opengl/OGLRenderQueue.java \
+        sun/java2d/opengl/OGLSurfaceData.java \
+        sun/java2d/opengl/OGLTextRenderer.java \
+        sun/java2d/opengl/CGLGraphicsConfig.java \
+        sun/java2d/opengl/CGLSurfaceData.java \
+        sun/java2d/opengl/CGLLayer.java \
+        sun/awt/ExtendedKeyCodes.java 
+
+FILES_export2 = \
+        java/awt/AlphaComposite.java \
+        java/awt/MouseInfo.java \
+        java/awt/Cursor.java \
+        java/awt/Graphics.java \
+        java/awt/Color.java \
+        java/awt/Image.java \
+        java/awt/Rectangle.java \
+        java/awt/Event.java \
+        java/awt/Font.java \
+        java/awt/Insets.java \
+        java/awt/Point.java \
+        java/awt/FontMetrics.java \
+        java/awt/Toolkit.java \
+        java/awt/Component.java \
+        java/awt/Container.java \
+        java/awt/Canvas.java \
+        java/awt/Button.java \
+        java/awt/List.java \
+        java/awt/Adjustable.java \
+        java/awt/Scrollbar.java \
+        java/awt/ScrollPane.java \
+        java/awt/ScrollPaneAdjustable.java \
+        java/awt/Window.java \
+        java/awt/TextField.java \
+        java/awt/Label.java \
+        java/awt/Choice.java \
+        java/awt/TextArea.java \
+        java/awt/MenuBar.java \
+        java/awt/Menu.java \
+        java/awt/MenuComponent.java \
+        java/awt/PopupMenu.java \
+        java/awt/Dialog.java \
+        java/awt/FileDialog.java \
+        java/awt/MenuItem.java \
+        java/awt/Checkbox.java \
+        java/awt/CheckboxMenuItem.java \
+        java/awt/CheckboxGroup.java \
+        java/awt/Frame.java \
+        java/awt/Transparency.java \
+        java/awt/AWTException.java \
+        java/awt/AWTEvent.java \
+        java/awt/AWTKeyStroke.java \
+        java/awt/KeyboardFocusManager.java \
+        java/awt/Dimension.java \
+        java/awt/SystemColor.java \
+        java/awt/TrayIcon.java \
+        java/awt/DisplayMode.java \
+        java/awt/color/ColorSpace.java \
+        java/awt/color/ICC_Profile.java \
+        java/awt/geom/PathIterator.java \
+        java/awt/image/AffineTransformOp.java \
+        java/awt/image/ImageConsumer.java \
+        java/awt/image/ImageObserver.java \
+        java/awt/image/BufferedImage.java \
+        java/awt/image/ColorModel.java \
+        java/awt/image/ConvolveOp.java \
+        java/awt/image/DirectColorModel.java \
+        java/awt/image/IndexColorModel.java \
+        java/awt/image/DataBuffer.java \
+        java/awt/datatransfer/Transferable.java \
+        java/awt/datatransfer/DataFlavor.java \
+        java/awt/datatransfer/UnsupportedFlavorException.java \
+        java/awt/datatransfer/Clipboard.java \
+        java/awt/datatransfer/ClipboardOwner.java \
+        java/awt/datatransfer/StringSelection.java \
+        java/awt/event/AdjustmentEvent.java \
+        java/awt/event/KeyEvent.java \
+        java/awt/event/MouseEvent.java \
+        java/awt/event/MouseWheelEvent.java \
+        java/awt/event/FocusEvent.java \
+        java/awt/event/InputEvent.java \
+        java/awt/event/WindowEvent.java \
+        java/awt/event/NativeLibLoader.java \
+        java/awt/peer/ComponentPeer.java \
+        java/awt/dnd/DnDConstants.java \
+        sun/awt/CausedFocusEvent.java \
+        java/awt/print/PageFormat.java \
+        java/awt/print/Pageable.java \
+        java/awt/print/Printable.java \
+        java/awt/BasicStroke.java

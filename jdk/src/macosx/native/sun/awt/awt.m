@@ -306,6 +306,18 @@ AWT_ASSERT_APPKIT_THREAD;
         // AWT gets here AFTER +[AWTStarter appKitIsRunning:] is called.
         if (verbose) AWT_DEBUG_LOG(@"got out of the AppKit startup mutex");
     }
+
+    // Don't set the delegate until the NSApplication has been created and
+    // its finishLaunching has initialized it.
+    //  ApplicationDelegate is the support code for com.apple.eawt.
+    void (^setDelegateBlock)() = ^(){
+        OSXAPP_SetApplicationDelegate([ApplicationDelegate sharedDelegate]);
+    };
+    if (onMainThread) {
+        setDelegateBlock();
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:setDelegateBlock];
+    }
 }
 
 - (void)starter:(NSArray*)args {
@@ -339,10 +351,6 @@ AWT_ASSERT_APPKIT_THREAD;
     //  and -[NSApplication isRunning] returns YES, AWT is embedded inside another
     //  AppKit Application.
     NSApplication *app = [NSApplicationAWT sharedApplication];
-
-    // Don't set the delegate until the NSApplication has been created.
-    //  ApplicationDelegate is the support code for com.apple.eawt.
-    OSXAPP_SetApplicationDelegate([ApplicationDelegate sharedDelegate]);
 
     // AWT gets to this point BEFORE NSApplicationDidFinishLaunchingNotification is sent.
     if (![app isRunning]) {

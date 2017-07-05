@@ -155,8 +155,10 @@ endif
 # GUI tools
 ifeq ($(GUI_TOOL),true)
   ifneq ($(PLATFORM), windows)
-    # Anything with a GUI needs X11 to be linked in.
-    OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11
+    ifneq ($(PLATFORM), macosx)
+      # Anything with a GUI needs X11 to be linked in.
+      OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11
+    endif
   endif
 endif
 

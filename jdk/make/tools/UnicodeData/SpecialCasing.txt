@@ -1,8 +1,8 @@
-# SpecialCasing-6.0.0.txt
-# Date: 2010-05-18, 00:49:39 GMT [MD]
+# SpecialCasing-6.1.0.txt
+# Date: 2011-11-27, 05:10:51 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2010 Unicode, Inc.
+# Copyright (c) 1991-2011 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
@@ -47,7 +47,9 @@
 #  * Additional contexts
 #  * Additional fields
 # ================================================================================
-# @missing 0000..10FFFF; <slc>; <stc>; <suc>
+
+# @missing: 0000..10FFFF; <slc>; <stc>; <suc>;
+
 # ================================================================================
 # Unconditional mappings
 # ================================================================================

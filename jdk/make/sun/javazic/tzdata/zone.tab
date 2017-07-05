@@ -153,6 +153,7 @@ CA	+5333-11328	America/Edmonton	Mountain Time - Alberta, east British Columbia &
 CA	+690650-1050310	America/Cambridge_Bay	Mountain Time - west Nunavut
 CA	+6227-11421	America/Yellowknife	Mountain Time - central Northwest Territories
 CA	+682059-1334300	America/Inuvik	Mountain Time - west Northwest Territories
+CA	+4906-11631	America/Creston	Mountain Standard Time - Creston, British Columbia
 CA	+5946-12014	America/Dawson_Creek	Mountain Standard Time - Dawson Creek & Fort Saint John, British Columbia
 CA	+4916-12307	America/Vancouver	Pacific Time - west British Columbia
 CA	+6043-13503	America/Whitehorse	Pacific Time - south Yukon
@@ -355,7 +356,7 @@ RS	+4450+02030	Europe/Belgrade
 RU	+5443+02030	Europe/Kaliningrad	Moscow-01 - Kaliningrad
 RU	+5545+03735	Europe/Moscow	Moscow+00 - west Russia
 RU	+4844+04425	Europe/Volgograd	Moscow+00 - Caspian Sea
-RU	+5312+05009	Europe/Samara	Moscow - Samara, Udmurtia
+RU	+5312+05009	Europe/Samara	Moscow+00 - Samara, Udmurtia
 RU	+5651+06036	Asia/Yekaterinburg	Moscow+02 - Urals
 RU	+5500+07324	Asia/Omsk	Moscow+03 - west Siberia
 RU	+5502+08255	Asia/Novosibirsk	Moscow+03 - Novosibirsk
