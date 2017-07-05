@@ -177,15 +177,5 @@ public final class ArrayIndex {
         return index & JSType.MAX_UINT;
     }
 
-    /**
-     * Check whether a key string represents a valid array index in JavaScript and is small enough
-     * to fit into a positive int.
-     *
-     * @param key the key
-     * @return true if key works as a valid int array index
-     */
-    public static boolean isIntArrayIndex(final String key) {
-        return getArrayIndex(key) >= 0;
-    }
 }
 

@@ -39,6 +39,11 @@ final class FrozenArrayFilter extends SealedArrayFilter {
     }
 
     @Override
+    public ArrayData copy() {
+        return this;
+    }
+
+    @Override
     public PropertyDescriptor getDescriptor(final GlobalObject global, final int index) {
         return global.newDataDescriptor(getObject(index), false, true, false);
     }

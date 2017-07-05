@@ -25,6 +25,7 @@
 package java.util.stream;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -80,6 +81,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(IntConsumer consumer) {
+            Objects.requireNonNull(consumer);
+
             final int i = from;
             if (i < upTo) {
                 from++;
@@ -96,6 +99,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(IntConsumer consumer) {
+            Objects.requireNonNull(consumer);
+
             int i = from;
             final int hUpTo = upTo;
             int hLast = last;
@@ -199,6 +204,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(LongConsumer consumer) {
+            Objects.requireNonNull(consumer);
+
             final long i = from;
             if (i < upTo) {
                 from++;
@@ -215,6 +222,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(LongConsumer consumer) {
+            Objects.requireNonNull(consumer);
+
             long i = from;
             final long hUpTo = upTo;
             int hLast = last;
@@ -388,6 +397,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -400,6 +411,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(Consumer<? super T> action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -475,6 +488,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(IntConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -487,6 +502,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(IntConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -562,6 +579,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(LongConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -574,6 +593,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(LongConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -649,6 +670,8 @@ final class Streams {
 
         @Override
         public boolean tryAdvance(DoubleConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;
@@ -661,6 +684,8 @@ final class Streams {
 
         @Override
         public void forEachRemaining(DoubleConsumer action) {
+            Objects.requireNonNull(action);
+
             if (count == -2) {
                 action.accept(first);
                 count = -1;

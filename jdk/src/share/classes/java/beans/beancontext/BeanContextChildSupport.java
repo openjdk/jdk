@@ -78,6 +78,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * construct a BeanContextChildSupport where the JavaBean component
      * itself implements BeanContextChild, and encapsulates this, delegating
      * that interface to this implementation
+     * @param bcc the underlying bean context child
      */
 
     public BeanContextChildSupport(BeanContextChild bcc) {
@@ -94,7 +95,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * this <code>BeanContextChildSupport</code>.
      * @param bc the new value to be assigned to the <code>BeanContext</code>
      * property
-     * @throws <code>PropertyVetoException</code> if the change is rejected
+     * @throws PropertyVetoException if the change is rejected
      */
     public synchronized void setBeanContext(BeanContext bc) throws PropertyVetoException {
         if (bc == beanContext) return;
@@ -361,6 +362,9 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
     */
     protected VetoableChangeSupport vcSupport;
 
+    /**
+     * The bean context.
+     */
     protected transient BeanContext           beanContext;
 
    /**

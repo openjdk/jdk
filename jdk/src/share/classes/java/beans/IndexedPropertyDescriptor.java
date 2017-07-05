@@ -207,6 +207,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * Sets the method that should be used to read an indexed property value.
      *
      * @param readMethod The new indexed read method.
+     * @throws IntrospectionException if an exception occurs during
+     * introspection.
      */
     public synchronized void setIndexedReadMethod(Method readMethod)
         throws IntrospectionException {
@@ -285,6 +287,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * Sets the method that should be used to write an indexed property value.
      *
      * @param writeMethod The new indexed write method.
+     * @throws IntrospectionException if an exception occurs during
+     * introspection.
      */
     public synchronized void setIndexedWriteMethod(Method writeMethod)
         throws IntrospectionException {

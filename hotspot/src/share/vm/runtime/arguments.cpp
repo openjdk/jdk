@@ -60,6 +60,28 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
+// Disable options not supported in this release, with a warning if they
+// were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION(opt, description)                    \
+do {                                                            \
+  if (opt) {                                                    \
+    if (FLAG_IS_CMDLINE(opt)) {                                 \
+      warning(description " is disabled in this release.");     \
+    }                                                           \
+    FLAG_SET_DEFAULT(opt, false);                               \
+  }                                                             \
+} while(0)
+
+#define UNSUPPORTED_GC_OPTION(gc)                                     \
+do {                                                                  \
+  if (gc) {                                                           \
+    if (FLAG_IS_CMDLINE(gc)) {                                        \
+      warning(#gc " is not supported in this VM.  Using Serial GC."); \
+    }                                                                 \
+    FLAG_SET_DEFAULT(gc, false);                                      \
+  }                                                                   \
+} while(0)
+
 char**  Arguments::_jvm_flags_array             = NULL;
 int     Arguments::_num_jvm_flags               = 0;
 char**  Arguments::_jvm_args_array              = NULL;
@@ -3128,12 +3150,15 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     FLAG_SET_DEFAULT(UseLargePages, false);
   }
 
-  // Tiered compilation is undefined with C1.
-  TieredCompilation = false;
 #else
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
   }
+#endif
+
+#ifndef TIERED
+  // Tiered compilation is undefined.
+  UNSUPPORTED_OPTION(TieredCompilation, "TieredCompilation");
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
@@ -3277,29 +3302,6 @@ void Arguments::set_shared_spaces_flags() {
     UseSharedSpaces = false;
   }
 }
-
-// Disable options not supported in this release, with a warning if they
-// were explicitly requested on the command-line
-#define UNSUPPORTED_OPTION(opt, description)                    \
-do {                                                            \
-  if (opt) {                                                    \
-    if (FLAG_IS_CMDLINE(opt)) {                                 \
-      warning(description " is disabled in this release.");     \
-    }                                                           \
-    FLAG_SET_DEFAULT(opt, false);                               \
-  }                                                             \
-} while(0)
-
-
-#define UNSUPPORTED_GC_OPTION(gc)                                     \
-do {                                                                  \
-  if (gc) {                                                           \
-    if (FLAG_IS_CMDLINE(gc)) {                                        \
-      warning(#gc " is not supported in this VM.  Using Serial GC."); \
-    }                                                                 \
-    FLAG_SET_DEFAULT(gc, false);                                      \
-  }                                                                   \
-} while(0)
 
 #if !INCLUDE_ALL_GCS
 static void force_serial_gc() {

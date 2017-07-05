@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.util.Map;
  * be used in implementations:
  *
  * <table border=1>
+ *  <caption>Audio File Format Property Keys</caption>
  *  <tr>
  *   <th>Property key</th>
  *   <th>Value type</th>

@@ -291,7 +291,8 @@ public class Main {
 
             String flags = args[n];
             String modifier = null;
-            if (flags.charAt(0) == '-') {
+
+            if (flags.startsWith("-")) {
                 int pos = flags.indexOf(':');
                 if (pos > 0) {
                     modifier = flags.substring(pos+1);
@@ -299,7 +300,14 @@ public class Main {
                 }
             }
 
-            if (collator.compare(flags, "-keystore") == 0) {
+            if (!flags.startsWith("-")) {
+                if (jarfile == null) {
+                    jarfile = flags;
+                } else {
+                    alias = flags;
+                    ckaliases.add(alias);
+                }
+            } else if (collator.compare(flags, "-keystore") == 0) {
                 if (++n == args.length) usageNoArg();
                 keystore = args[n];
             } else if (collator.compare(flags, "-storepass") ==0) {
@@ -380,18 +388,9 @@ public class Main {
                         collator.compare(flags, "-help") == 0) {
                 fullusage();
             } else {
-                if (!flags.startsWith("-")) {
-                    if (jarfile == null) {
-                        jarfile = flags;
-                    } else {
-                        alias = flags;
-                        ckaliases.add(alias);
-                    }
-                } else {
-                    System.err.println(
-                            rb.getString("Illegal.option.") + flags);
-                    usage();
-                }
+                System.err.println(
+                        rb.getString("Illegal.option.") + flags);
+                usage();
             }
         }
 

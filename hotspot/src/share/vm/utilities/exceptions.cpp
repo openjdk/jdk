@@ -125,13 +125,13 @@ void Exceptions::_throw_oop(Thread* thread, const char* file, int line, oop exce
 }
 
 void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exception, const char* message) {
+  ResourceMark rm;
   assert(h_exception() != NULL, "exception should not be NULL");
 
   // tracing (do this up front - so it works during boot strapping)
   if (TraceExceptions) {
     ttyLocker ttyl;
-    ResourceMark rm;
-    tty->print_cr("Exception <%s>%s%s (" INTPTR_FORMAT " ) \n"
+    tty->print_cr("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
                   "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
                   h_exception->print_value_string(),
                   message ? ": " : "", message ? message : "",
@@ -141,7 +141,9 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   NOT_PRODUCT(Exceptions::debug_check_abort(h_exception, message));
 
   // Check for special boot-strapping/vm-thread handling
-  if (special_exception(thread, file, line, h_exception)) return;
+  if (special_exception(thread, file, line, h_exception)) {
+    return;
+  }
 
   assert(h_exception->is_a(SystemDictionary::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
 
@@ -149,7 +151,9 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  Events::log_exception(thread, "Threw " INTPTR_FORMAT " at %s:%d", (address)h_exception(), file, line);
+  Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
+                        h_exception->print_value_string(), message ? ": " : "", message ? message : "",
+                        (address)h_exception(), file, line);
 }
 
 

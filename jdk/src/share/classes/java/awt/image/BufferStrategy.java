@@ -55,7 +55,7 @@ import java.awt.Image;
  * Alternatively, the contents of the back buffer can be copied, or
  * <i>blitted</i> forward in a chain instead of moving the video pointer.
  * <p>
- * <pre>
+ * <pre>{@code
  * Double buffering:
  *
  *                    ***********         ***********
@@ -72,7 +72,7 @@ import java.awt.Image;
  *          *         * <------ *         * <----- *         *
  *          ***********         ***********        ***********
  *
- * </pre>
+ * }</pre>
  * <p>
  * Here is an example of how buffer strategies can be created and used:
  * <pre><code>

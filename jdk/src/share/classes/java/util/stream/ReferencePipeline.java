@@ -170,9 +170,10 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         if (predicate.test(u))
-                            downstream.accept(u);
+                            downstream.accept((Object) u);
                     }
                 };
             }
@@ -180,6 +181,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
@@ -262,6 +264,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         Stream<? extends R> result = mapper.apply(u);
@@ -363,6 +366,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         tee.accept(u);
                         downstream.accept(u);
@@ -439,6 +443,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // The runtime type of U is never checked for equality with the component type of the runtime type of A[].
         // Runtime checking will be performed when an element is stored in A[], thus if A is not a
         // super type of U an ArrayStoreException will be thrown.
+        @SuppressWarnings("rawtypes")
         IntFunction rawGenerator = (IntFunction) generator;
         return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator)
                               .asArray(rawGenerator);
@@ -490,16 +495,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Collector<? super P_OUT, R> collector) {
+    public final <R, A> R collect(Collector<? super P_OUT, A, ? extends R> collector) {
+        A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
                 && (!isOrdered() || collector.characteristics().contains(Collector.Characteristics.UNORDERED))) {
-            R container = collector.resultSupplier().get();
-            BiFunction<R, ? super P_OUT, R> accumulator = collector.accumulator();
-            forEach(u -> accumulator.apply(container, u));
-            return container;
+            container = collector.supplier().get();
+            BiConsumer<A, ? super P_OUT> accumulator = collector.accumulator();
+            forEach(u -> accumulator.accept(container, u));
         }
-        return evaluate(ReduceOps.makeRef(collector));
+        else {
+            container = evaluate(ReduceOps.makeRef(collector));
+        }
+        return collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
+               ? (R) container
+               : collector.finisher().apply(container);
     }
 
     @Override

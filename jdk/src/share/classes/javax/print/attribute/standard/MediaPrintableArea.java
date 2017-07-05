@@ -62,7 +62,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * The (x,y) origin is positioned at the top-left of the paper in portrait
  * mode regardless of the orientation specified in the requesting context.
  * For example a printable area for A4 paper in portrait or landscape
- * orientation will have height > width.
+ * orientation will have height {@literal >} width.
  * <p>
  * A printable area attribute's values are stored
  * internally as integers in units of micrometers (&#181;m), where 1 micrometer
@@ -107,9 +107,9 @@ public final class MediaPrintableArea
       * @param units  in which the values are expressed.
       *
       * @exception  IllegalArgumentException
-      *     Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE> < 0
-      *     or <CODE>w</CODE> <= 0 or <CODE>h</CODE> <= 0 or
-      *     <CODE>units</CODE> < 1.
+      *     Thrown if {@code x < 0} or {@code y < 0}
+      *     or {@code w <= 0} or {@code h <= 0} or
+      *     {@code units < 1}.
       */
     public MediaPrintableArea(float x, float y, float w, float h, int units) {
         if ((x < 0.0) || (y < 0.0) || (w <= 0.0) || (h <= 0.0) ||
@@ -133,9 +133,9 @@ public final class MediaPrintableArea
       * @param units  in which the values are expressed.
       *
       * @exception  IllegalArgumentException
-      *     Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE> < 0
-      *     or <CODE>w</CODE> <= 0 or <CODE>h</CODE> <= 0 or
-      *     <CODE>units</CODE> < 1.
+      *     Thrown if {@code x < 0} or {@code y < 0}
+      *     or {@code w <= 0} or {@code h <= 0} or
+      *     {@code units < 1}.
       */
     public MediaPrintableArea(int x, int y, int w, int h, int units) {
         if ((x < 0) || (y < 0) || (w <= 0) || (h <= 0) ||
@@ -159,7 +159,7 @@ public final class MediaPrintableArea
      * @return printable area as array of x, y, w, h in the specified units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public float[] getPrintableArea(int units) {
         return new float[] { getX(units), getY(units),
@@ -177,7 +177,7 @@ public final class MediaPrintableArea
      * specified units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
      public float getX(int units) {
         return convertFromMicrometers(x, units);
@@ -194,7 +194,7 @@ public final class MediaPrintableArea
      * specified units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
      public float getY(int units) {
         return convertFromMicrometers(y, units);
@@ -209,7 +209,7 @@ public final class MediaPrintableArea
      * @return  width of the printable area in the specified units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
      public float getWidth(int units) {
         return convertFromMicrometers(w, units);
@@ -224,7 +224,7 @@ public final class MediaPrintableArea
      * @return  height of the printable area in the specified units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
      public float getHeight(int units) {
         return convertFromMicrometers(h, units);
@@ -301,7 +301,7 @@ public final class MediaPrintableArea
      * @return  String version of this two-dimensional size attribute.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public String toString(int units, String unitsName) {
         if (unitsName == null) {

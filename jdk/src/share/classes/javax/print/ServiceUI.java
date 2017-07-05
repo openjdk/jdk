@@ -118,7 +118,7 @@ public class ServiceUI {
      * any changes made by the user.
      *
      * A typical basic usage of this method may be :
-     * <pre>
+     * <pre>{@code
      * PrintService[] services = PrintServiceLookup.lookupPrintServices(
      *                            DocFlavor.INPUT_STREAM.JPEG, null);
      * PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
@@ -131,7 +131,7 @@ public class ServiceUI {
      *     ... print ...
      *    }
      * }
-     * </pre>
+     * }</pre>
      * <p>
 
      * @param gc used to select screen. null means primary or default screen.
