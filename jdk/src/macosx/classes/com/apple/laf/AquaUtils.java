@@ -48,7 +48,7 @@ import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
-import sun.awt.image.MultiResolutionBufferedImage;
+import sun.awt.image.MultiResolutionCachedImage;
 
 final class AquaUtils {
 
@@ -124,8 +124,8 @@ final class AquaUtils {
 
     static Image generateLightenedImage(final Image image, final int percent) {
         final GrayFilter filter = new GrayFilter(true, percent);
-        return (image instanceof MultiResolutionBufferedImage)
-                ? ((MultiResolutionBufferedImage) image).map(
+        return (image instanceof MultiResolutionCachedImage)
+                ? ((MultiResolutionCachedImage) image).map(
                         rv -> generateLightenedImage(rv, filter))
                 : generateLightenedImage(image, filter);
     }

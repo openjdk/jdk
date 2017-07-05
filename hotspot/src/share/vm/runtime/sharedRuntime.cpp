@@ -82,6 +82,8 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
 RuntimeStub*        SharedRuntime::_wrong_method_abstract_blob;

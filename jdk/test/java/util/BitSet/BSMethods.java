@@ -26,6 +26,7 @@
  *      4979017 4979028 4979031 5030267 6222207 8040806
  * @summary Test the operation of the methods of BitSet class
  * @author Mike McCloskey, Martin Buchholz
+ * @run main/othervm BSMethods
  */
 
 import java.util.*;
@@ -897,15 +898,20 @@ public class BSMethods {
     private static void testToString() {
         check(new BitSet().toString().equals("{}"));
         check(makeSet(2,3,42,43,234).toString().equals("{2, 3, 42, 43, 234}"));
-        try {
-            check(makeSet(Integer.MAX_VALUE-1).toString().equals(
-                    "{" + (Integer.MAX_VALUE-1) + "}"));
-            check(makeSet(Integer.MAX_VALUE).toString().equals(
-                    "{" + Integer.MAX_VALUE + "}"));
-            check(makeSet(0, 1, Integer.MAX_VALUE-1, Integer.MAX_VALUE).toString().equals(
-                    "{0, 1, " + (Integer.MAX_VALUE-1) + ", " + Integer.MAX_VALUE + "}"));
-        } catch (IndexOutOfBoundsException exc) {
-            fail("toString() with indices near MAX_VALUE");
+
+        final long MB = 1024*1024;
+        if (Runtime.getRuntime().maxMemory() >= 512*MB) {
+            // only run it if we have enough memory
+            try {
+                check(makeSet(Integer.MAX_VALUE-1).toString().equals(
+                        "{" + (Integer.MAX_VALUE-1) + "}"));
+                check(makeSet(Integer.MAX_VALUE).toString().equals(
+                        "{" + Integer.MAX_VALUE + "}"));
+                check(makeSet(0, 1, Integer.MAX_VALUE-1, Integer.MAX_VALUE).toString().equals(
+                        "{0, 1, " + (Integer.MAX_VALUE-1) + ", " + Integer.MAX_VALUE + "}"));
+            } catch (IndexOutOfBoundsException exc) {
+                fail("toString() with indices near MAX_VALUE");
+            }
         }
     }
 

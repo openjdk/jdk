@@ -182,7 +182,6 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
                 if (sortOrder != null) {
                      switch(sortOrder) {
                      case ASCENDING:
-                         /* falls through */
                      case DESCENDING:
                          switch (state) {
                          case NORMAL:
@@ -197,6 +196,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
                          default:
                              /* do nothing */
                          }
+                         break;
                      default :
                          /* do nothing */
                      }

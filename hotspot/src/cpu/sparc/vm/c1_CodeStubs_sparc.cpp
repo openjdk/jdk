@@ -414,6 +414,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  __ set(_trap_request, G4);
   __ call(Runtime1::entry_for(Runtime1::deoptimize_id), relocInfo::runtime_call_type);
   __ delayed()->nop();
   ce->add_call_info_here(_info);

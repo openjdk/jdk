@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
+import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedTypeConversion;
@@ -48,14 +49,23 @@ import jdk.nashorn.internal.runtime.JSType;
  * as ScriptObjects from other Nashorn contexts.
  */
 final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory {
+    private final NashornBeansLinker nashornBeansLinker;
+
+    JSObjectLinker(final NashornBeansLinker nashornBeansLinker) {
+        this.nashornBeansLinker = nashornBeansLinker;
+    }
+
     @Override
     public boolean canLinkType(final Class<?> type) {
         return canLinkTypeStatic(type);
     }
 
     static boolean canLinkTypeStatic(final Class<?> type) {
-        // can link JSObject
-        return JSObject.class.isAssignableFrom(type);
+        // can link JSObject also handles Map, Bindings to make
+        // sure those are not JSObjects.
+        return Map.class.isAssignableFrom(type) ||
+               Bindings.class.isAssignableFrom(type) ||
+               JSObject.class.isAssignableFrom(type);
     }
 
     @Override
@@ -72,6 +82,11 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
         final GuardedInvocation inv;
         if (self instanceof JSObject) {
             inv = lookup(desc);
+        } else if (self instanceof Map || self instanceof Bindings) {
+            // guard to make sure the Map or Bindings does not turn into JSObject later!
+            final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
+            inv = new GuardedInvocation(beanInv.getInvocation(),
+                NashornGuards.combineGuards(beanInv.getGuard(), NashornGuards.getNotJSObjectGuard()));
         } else {
             throw new AssertionError(); // Should never reach here.
         }

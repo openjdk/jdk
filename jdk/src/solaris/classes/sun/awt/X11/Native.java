@@ -43,13 +43,12 @@ class Native {
 
     static int dataModel;
     static {
-        String dataModelProp = (String)AccessController.
-            doPrivileged(
-                         new PrivilegedAction() {
-                                 public Object run() {
-                                     return System.getProperty("sun.arch.data.model");
-                                 }
-                             });
+        String dataModelProp = AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                public String run() {
+                    return System.getProperty("sun.arch.data.model");
+                }
+            });
         try {
             dataModel = Integer.parseInt(dataModelProp);
         } catch (Exception e) {
@@ -333,9 +332,9 @@ class Native {
      * Stores Java Vector of Longs into memory. Memory location is treated as array
      * of native <code>long</code>s
      */
-    static void putLong(long ptr, Vector arr) {
+    static void putLong(long ptr, Vector<Long> arr) {
         for (int i = 0; i < arr.size(); i ++, ptr += getLongSize()) {
-            putLong(ptr, ((Long)arr.elementAt(i)).longValue());
+            putLong(ptr, arr.elementAt(i).longValue());
         }
     }
 
@@ -343,9 +342,9 @@ class Native {
      * Stores Java Vector of Longs into memory. Memory location is treated as array
      * of native <code>long</code>s. Array is stored in reverse order
      */
-    static void putLongReverse(long ptr, Vector arr) {
+    static void putLongReverse(long ptr, Vector<Long> arr) {
         for (int i = arr.size()-1; i >= 0; i--, ptr += getLongSize()) {
-            putLong(ptr, ((Long)arr.elementAt(i)).longValue());
+            putLong(ptr, arr.elementAt(i).longValue());
         }
     }
     /**

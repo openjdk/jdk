@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,9 @@ public abstract class PrinterJob {
         if (security != null) {
             security.checkPrintJobAccess();
         }
-        return (PrinterJob) java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+        return java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<PrinterJob>() {
+            public PrinterJob run() {
                 String nm = System.getProperty("java.awt.printerjob", null);
                 try {
                     return (PrinterJob)Class.forName(nm).newInstance();

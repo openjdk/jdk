@@ -82,6 +82,9 @@ public class CompoundEdit extends AbstractUndoableEdit {
      * Returns the last <code>UndoableEdit</code> in
      * <code>edits</code>, or <code>null</code>
      * if <code>edits</code> is empty.
+     *
+     * @return the last {@code UndoableEdit} in {@code edits},
+     *         or {@code null} if {@code edits} is empty.
      */
     protected UndoableEdit lastEdit() {
         int count = edits.size();
@@ -182,6 +185,7 @@ public class CompoundEdit extends AbstractUndoableEdit {
      * received end. This generally means that edits are still being
      * added to it.
      *
+     * @return  whether this edit is in progress
      * @see     #end
      */
     public boolean isInProgress() {

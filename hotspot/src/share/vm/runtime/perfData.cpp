@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 PerfDataList*   PerfDataManager::_all = NULL;
 PerfDataList*   PerfDataManager::_sampled = NULL;

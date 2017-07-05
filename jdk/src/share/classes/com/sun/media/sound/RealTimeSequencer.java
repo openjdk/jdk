@@ -122,7 +122,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
     /**
      * List of tracks to which we're recording
      */
-    private final List recordingTracks = new ArrayList();
+    private final List<RecordingTrack> recordingTracks = new ArrayList<>();
 
 
     private long loopStart = 0;
@@ -133,13 +133,13 @@ final class RealTimeSequencer extends AbstractMidiDevice
     /**
      * Meta event listeners
      */
-    private final ArrayList metaEventListeners = new ArrayList();
+    private final ArrayList<Object> metaEventListeners = new ArrayList<>();
 
 
     /**
      * Control change listeners
      */
-    private final ArrayList controllerEventListeners = new ArrayList();
+    private final ArrayList<ControllerListElement> controllerEventListeners = new ArrayList<>();
 
 
     /** automatic connection support */
@@ -645,7 +645,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
             boolean flag = false;
             for(int i=0; i < controllerEventListeners.size(); i++) {
 
-                cve = (ControllerListElement) controllerEventListeners.get(i);
+                cve = controllerEventListeners.get(i);
 
                 if (cve.listener.equals(listener)) {
                     cve.addControllers(controllers);
@@ -669,7 +669,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
             ControllerListElement cve = null;
             boolean flag = false;
             for (int i=0; i < controllerEventListeners.size(); i++) {
-                cve = (ControllerListElement) controllerEventListeners.get(i);
+                cve = controllerEventListeners.get(i);
                 if (cve.listener.equals(listener)) {
                     cve.removeControllers(controllers);
                     flag = true;
@@ -940,9 +940,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
         ShortMessage msg = (ShortMessage) message;
         int controller = msg.getData1();
-        List sendToListeners = new ArrayList();
+        List<Object> sendToListeners = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            ControllerListElement cve = (ControllerListElement) controllerEventListeners.get(i);
+            ControllerListElement cve = controllerEventListeners.get(i);
             for(int j = 0; j < cve.controllers.length; j++) {
                 if (cve.controllers[j] == controller) {
                     sendToListeners.add(cve.listener);
@@ -1213,13 +1213,13 @@ final class RealTimeSequencer extends AbstractMidiDevice
             this.channel = channel;
         }
 
-        static RecordingTrack get(List recordingTracks, Track track) {
+        static RecordingTrack get(List<RecordingTrack> recordingTracks, Track track) {
 
             synchronized(recordingTracks) {
                 int size = recordingTracks.size();
 
                 for (int i = 0; i < size; i++) {
-                    RecordingTrack current = (RecordingTrack)recordingTracks.get(i);
+                    RecordingTrack current = recordingTracks.get(i);
                     if (current.track == track) {
                         return current;
                     }
@@ -1228,12 +1228,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
             return null;
         }
 
-        static Track get(List recordingTracks, int channel) {
+        static Track get(List<RecordingTrack> recordingTracks, int channel) {
 
             synchronized(recordingTracks) {
                 int size = recordingTracks.size();
                 for (int i = 0; i < size; i++) {
-                    RecordingTrack current = (RecordingTrack)recordingTracks.get(i);
+                    RecordingTrack current = recordingTracks.get(i);
                     if ((current.channel == channel) || (current.channel == -1)) {
                         return current.track;
                     }

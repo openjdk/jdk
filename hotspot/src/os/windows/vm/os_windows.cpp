@@ -5005,7 +5005,11 @@ bool os::check_heap(bool force) {
     // wrong; at these points, eax contains the address of the offending block (I think).
     // To get to the exlicit error message(s) below, just continue twice.
     HANDLE heap = GetProcessHeap();
-    { HeapLock(heap);
+
+    // If we fail to lock the heap, then gflags.exe has been used
+    // or some other special heap flag has been set that prevents
+    // locking. We don't try to walk a heap we can't lock.
+    if (HeapLock(heap) != 0) {
       PROCESS_HEAP_ENTRY phe;
       phe.lpData = NULL;
       while (HeapWalk(heap, &phe) != 0) {

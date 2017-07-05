@@ -164,7 +164,7 @@ public class XMenuWindow extends XBaseMenuWindow {
             this.menuPeer = menuPeer;
             this.target = menuPeer.getContainer().target;
             // Get menus from the target.
-            Vector targetItemVector = null;
+            Vector<MenuItem> targetItemVector = null;
             targetItemVector = getMenuTargetItems();
             reloadItems(targetItemVector);
         }
@@ -356,7 +356,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      * Reads vector of items from target
      * This function is overriden in XPopupMenuPeer
      */
-    Vector getMenuTargetItems() {
+    Vector<MenuItem> getMenuTargetItems() {
         return menuPeer.getTargetItems();
     }
 

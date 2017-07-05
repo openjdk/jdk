@@ -32,7 +32,7 @@ import java.lang.reflect.*;
 import sun.awt.AWTAccessor;
 
 public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatcher {
-    HashMap children = new HashMap();
+    HashMap<Long, java.awt.peer.ComponentPeer> children = new HashMap<>();
 
     XEmbeddingContainer() {
     }

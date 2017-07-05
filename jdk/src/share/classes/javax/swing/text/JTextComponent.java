@@ -4473,6 +4473,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     // composed(uncommitted) text is done here after all input
     // method listeners get called for stealing the events.
     //
+    @SuppressWarnings("fallthrough")
     protected void processInputMethodEvent(InputMethodEvent e) {
         // let listeners handle the events
         super.processInputMethodEvent(e);

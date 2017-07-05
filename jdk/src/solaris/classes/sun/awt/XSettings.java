@@ -52,7 +52,7 @@ public class XSettings {
      *     settings manager.
      * @return a <code>Map</code> of changed settings.
      */
-    public Map update(byte[] data) {
+    public Map<String, Object> update(byte[] data) {
         return (new Update(data)).update();
     }
 
@@ -79,7 +79,7 @@ public class XSettings {
         private int nsettings = 0;
         private boolean isValid;
 
-        private HashMap updatedSettings;
+        private HashMap<String, Object> updatedSettings;
 
 
         /**
@@ -113,7 +113,7 @@ public class XSettings {
             idx = 8;
             nsettings = getINT32();
 
-            updatedSettings = new HashMap();
+            updatedSettings = new HashMap<>();
 
             isValid = true;
         }
@@ -213,7 +213,7 @@ public class XSettings {
         /**
          * Update settings.
          */
-        public Map update() {
+        public Map<String, Object> update() {
             if (!isValid) {
                 return null;
             }

@@ -285,6 +285,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      *         this list
      * @throws NullPointerException if the specified array is null
      */
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         if (a.length < size)
             // Make a new array of a's runtime type, but my contents:
@@ -307,7 +308,9 @@ public class IdentityArrayList<E> extends AbstractList<E>
     public E get(int index) {
         rangeCheck(index);
 
-        return (E) elementData[index];
+        @SuppressWarnings("unchecked")
+        E rv = (E) elementData[index];
+        return rv;
     }
 
     /**
@@ -322,6 +325,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
     public E set(int index, E element) {
         rangeCheck(index);
 
+        @SuppressWarnings("unchecked")
         E oldValue = (E) elementData[index];
         elementData[index] = element;
         return oldValue;
@@ -371,6 +375,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
         rangeCheck(index);
 
         modCount++;
+        @SuppressWarnings("unchecked")
         E oldValue = (E) elementData[index];
 
         int numMoved = size - index - 1;

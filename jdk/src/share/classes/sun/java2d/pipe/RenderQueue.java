@@ -81,10 +81,10 @@ public abstract class RenderQueue {
      * A Set containing hard references to Objects that must stay alive until
      * the queue has been completely flushed.
      */
-    protected Set refSet;
+    protected Set<Object> refSet;
 
     protected RenderQueue() {
-        refSet = new HashSet();
+        refSet = new HashSet<>();
         buf = RenderBuffer.allocate(BUFFER_SIZE);
     }
 

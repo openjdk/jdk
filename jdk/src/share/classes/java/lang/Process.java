@@ -262,4 +262,18 @@ public abstract class Process {
             return true;
         }
     }
+
+    /**
+     * Returns the native process id of the subprocess.
+     * The native process id is an identification number that the operating
+     * system assigns to the process.
+     *
+     * @return the native process id of the subprocess
+     * @throws UnsupportedOperationException if the Process implementation
+     *     does not support this operation
+     * @since 1.9
+     */
+    public long getPid() {
+        throw new UnsupportedOperationException();
+    }
 }

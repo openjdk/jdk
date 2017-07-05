@@ -25,7 +25,7 @@
 
 package sun.java2d;
 
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;

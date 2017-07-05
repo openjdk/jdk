@@ -28,7 +28,7 @@
 #ifndef PRODUCT
 
 void constantTag::print_on(outputStream* st) const {
-  st->print(internal_name());
+  st->print("%s", internal_name());
 }
 
 #endif // PRODUCT

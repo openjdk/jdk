@@ -118,7 +118,7 @@ public final class JDK13Services {
         (the part before the hash sign), if available. If the property is
         not set or the value has no provider class name part, null is returned.
      */
-    public static synchronized String getDefaultProviderClassName(Class typeClass) {
+    public static synchronized String getDefaultProviderClassName(Class<?> typeClass) {
         String value = null;
         String defaultProviderSpec = getDefaultProvider(typeClass);
         if (defaultProviderSpec != null) {
@@ -144,7 +144,7 @@ public final class JDK13Services {
         part after the hash sign), if available. If the property is not set
         or the value has no instance name part, null is returned.
      */
-    public static synchronized String getDefaultInstanceName(Class typeClass) {
+    public static synchronized String getDefaultInstanceName(Class<?> typeClass) {
         String value = null;
         String defaultProviderSpec = getDefaultProvider(typeClass);
         if (defaultProviderSpec != null) {
@@ -165,7 +165,7 @@ public final class JDK13Services {
         @return The complete value of the property, if available.
         If the property is not set, null is returned.
      */
-    private static synchronized String getDefaultProvider(Class typeClass) {
+    private static synchronized String getDefaultProvider(Class<?> typeClass) {
         if (!SourceDataLine.class.equals(typeClass)
                 && !TargetDataLine.class.equals(typeClass)
                 && !Clip.class.equals(typeClass)

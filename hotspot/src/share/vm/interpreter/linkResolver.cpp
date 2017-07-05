@@ -950,7 +950,6 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
     // reflection implementation, not just those associated with
     // sun/reflect/SerializationConstructorAccessor.
     bool is_reflect = JDK_Version::is_gte_jdk14x_version() &&
-                      UseNewReflection &&
                       klass_to_check->is_subclass_of(
                         SystemDictionary::reflect_MagicAccessorImpl_klass());
 
@@ -1626,7 +1625,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                                      THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (TraceMethodHandles) {
-      tty->print_cr("invokedynamic throws BSME for "INTPTR_FORMAT, (void *)PENDING_EXCEPTION);
+      tty->print_cr("invokedynamic throws BSME for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
       PENDING_EXCEPTION->print();
     }
     if (PENDING_EXCEPTION->is_a(SystemDictionary::BootstrapMethodError_klass())) {

@@ -68,7 +68,7 @@ public class PNGImageDecoder extends ImageDecoder
     private int filterMethod;
     private int interlaceMethod;
     private int gamma = 100000;
-    private java.util.Hashtable properties;
+    private java.util.Hashtable<String, Object> properties;
   /* this is not needed
     ImageConsumer target;
     */
@@ -83,7 +83,7 @@ public class PNGImageDecoder extends ImageDecoder
 
     private void property(String key,Object value) {
         if(value==null) return;
-        if(properties==null) properties=new java.util.Hashtable();
+        if(properties==null) properties=new java.util.Hashtable<>();
         properties.put(key,value);
     }
     private void property(String key,float value) {

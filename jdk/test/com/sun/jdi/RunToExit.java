@@ -161,6 +161,9 @@ public class RunToExit {
         Connector.IntegerArgument port_arg =
             (Connector.IntegerArgument)conn_args.get("port");
         port_arg.setValue(port);
+
+        System.out.println("Connection arguments: " + conn_args);
+
         VirtualMachine vm = conn.attach(conn_args);
 
         // The first event is always a VMStartEvent, and it is always in

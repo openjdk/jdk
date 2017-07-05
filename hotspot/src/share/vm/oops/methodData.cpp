@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // ==================================================================
 // DataLayout
@@ -127,7 +129,7 @@ void ProfileData::print_shared(outputStream* st, const char* name, const char* e
     st->print("trap(%s) ", Deoptimization::format_trap_state(buf, sizeof(buf), trap));
   }
   if (extra != NULL) {
-    st->print(extra);
+    st->print("%s", extra);
   }
   int flags = data()->flags();
   if (flags != 0) {
@@ -635,7 +637,7 @@ bool ParametersTypeData::profiling_enabled() {
 }
 
 void ParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
-  st->print("parameter types", extra);
+  st->print("parameter types"); // FIXME extra ignored?
   _parameters.print_data_on(st);
 }
 
@@ -1128,6 +1130,7 @@ void MethodData::init() {
   _backedge_counter.init();
   _invocation_counter_start = 0;
   _backedge_counter_start = 0;
+  _tenure_traps = 0;
   _num_loops = 0;
   _num_blocks = 0;
   _highest_comp_level = 0;

@@ -129,6 +129,7 @@ ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
   constantPoolHandle cpool = h_m()->constants();
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = NULL;
+  _nmethod_age = h_m()->nmethod_age();
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || TieredCompilation) {
     int invcnt = h_m()->interpreter_invocation_count();
@@ -1275,6 +1276,14 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
   return false;
 }
 
+// ------------------------------------------------------------------
+// ciMethod::profile_aging
+//
+// Should the method be compiled with an age counter?
+bool ciMethod::profile_aging() const {
+  return UseCodeAging && (!MethodCounters::is_nmethod_hot(nmethod_age()) &&
+                          !MethodCounters::is_nmethod_age_unset(nmethod_age()));
+}
 // ------------------------------------------------------------------
 // ciMethod::print_codes
 //
