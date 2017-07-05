@@ -1904,12 +1904,12 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   assert(size > new_size, "Split from a smaller block?");
   assert(is_aligned(chunk), "alignment problem");
   assert(size == adjustObjectSize(size), "alignment problem");
-  size_t rem_size = size - new_size;
-  assert(rem_size == adjustObjectSize(rem_size), "alignment problem");
-  assert(rem_size >= MinChunkSize, "Free chunk smaller than minimum");
+  size_t rem_sz = size - new_size;
+  assert(rem_sz == adjustObjectSize(rem_sz), "alignment problem");
+  assert(rem_sz >= MinChunkSize, "Free chunk smaller than minimum");
   FreeChunk* ffc = (FreeChunk*)((HeapWord*)chunk + new_size);
   assert(is_aligned(ffc), "alignment problem");
-  ffc->set_size(rem_size);
+  ffc->set_size(rem_sz);
   ffc->link_next(NULL);
   ffc->link_prev(NULL); // Mark as a free block for other (parallel) GC threads.
   // Above must occur before BOT is updated below.
@@ -1917,18 +1917,18 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   OrderAccess::storestore();
   assert(chunk->is_free() && ffc->is_free(), "Error");
   _bt.split_block((HeapWord*)chunk, chunk->size(), new_size);
-  if (rem_size < SmallForDictionary) {
+  if (rem_sz < SmallForDictionary) {
     bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
-    if (is_par) _indexedFreeListParLocks[rem_size]->lock();
+    if (is_par) _indexedFreeListParLocks[rem_sz]->lock();
     assert(!is_par ||
            (SharedHeap::heap()->n_par_threads() ==
             SharedHeap::heap()->workers()->active_workers()), "Mismatch");
     returnChunkToFreeList(ffc);
-    split(size, rem_size);
-    if (is_par) _indexedFreeListParLocks[rem_size]->unlock();
+    split(size, rem_sz);
+    if (is_par) _indexedFreeListParLocks[rem_sz]->unlock();
   } else {
     returnChunkToDictionary(ffc);
-    split(size ,rem_size);
+    split(size, rem_sz);
   }
   chunk->set_size(new_size);
   return chunk;

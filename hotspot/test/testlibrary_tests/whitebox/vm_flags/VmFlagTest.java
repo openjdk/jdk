@@ -91,16 +91,20 @@ public final class VmFlagTest<T> {
     }
 
     private void testPositive(T value, T expected) {
-        Asserts.assertEQ(getVMOptionAsString(), asString(getValue()));
+        String oldValue = getVMOptionAsString();
+        Asserts.assertEQ(oldValue, asString(getValue()));
+        Asserts.assertEQ(oldValue, asString(WHITE_BOX.getVMFlag(flagName)));
         setNewValue(value);
         String newValue = getVMOptionAsString();
         Asserts.assertEQ(newValue, asString(expected));
-        Asserts.assertEQ(getVMOptionAsString(), asString(getValue()));
+        Asserts.assertEQ(newValue, asString(getValue()));
+        Asserts.assertEQ(newValue, asString(WHITE_BOX.getVMFlag(flagName)));
     }
 
     private void testNegative(T value, T expected) {
         String oldValue = getVMOptionAsString();
         Asserts.assertEQ(oldValue, asString(getValue()));
+        Asserts.assertEQ(oldValue, asString(WHITE_BOX.getVMFlag(flagName)));
         setNewValue(value);
         String newValue = getVMOptionAsString();
         Asserts.assertEQ(oldValue, newValue);

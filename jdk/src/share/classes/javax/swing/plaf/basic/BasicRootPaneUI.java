@@ -48,6 +48,12 @@ public class BasicRootPaneUI extends RootPaneUI implements
                   PropertyChangeListener {
     private static RootPaneUI rootPaneUI = new BasicRootPaneUI();
 
+    /**
+     * Returns a new instance of {@code BasicRootPaneUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicRootPaneUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return rootPaneUI;
     }
@@ -67,17 +73,37 @@ public class BasicRootPaneUI extends RootPaneUI implements
         uninstallKeyboardActions((JRootPane)c);
     }
 
+    /**
+     * Installs default properties.
+     *
+     * @param c an instance of {@code JRootPane}
+     */
     protected void installDefaults(JRootPane c){
         LookAndFeel.installProperty(c, "opaque", Boolean.FALSE);
     }
 
+    /**
+     * Installs components.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void installComponents(JRootPane root) {
     }
 
+    /**
+     * Registers listeners.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void installListeners(JRootPane root) {
         root.addPropertyChangeListener(this);
     }
 
+    /**
+     * Registers keyboard actions.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void installKeyboardActions(JRootPane root) {
         InputMap km = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW, root);
         SwingUtilities.replaceUIInputMap(root,
@@ -92,19 +118,39 @@ public class BasicRootPaneUI extends RootPaneUI implements
         updateDefaultButtonBindings(root);
     }
 
+    /**
+     * Uninstalls default properties.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void uninstallDefaults(JRootPane root) {
     }
 
+    /**
+     * Unregisters components.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void uninstallComponents(JRootPane root) {
     }
 
+    /**
+     * Unregisters listeners.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void uninstallListeners(JRootPane root) {
         root.removePropertyChangeListener(this);
     }
 
+    /**
+     * Unregisters keyboard actions.
+     *
+     * @param root an instance of {@code JRootPane}
+     */
     protected void uninstallKeyboardActions(JRootPane root) {
         SwingUtilities.replaceUIInputMap(root, JComponent.
-                                       WHEN_IN_FOCUSED_WINDOW, null);
+                WHEN_IN_FOCUSED_WINDOW, null);
         SwingUtilities.replaceUIActionMap(root, null);
     }
 

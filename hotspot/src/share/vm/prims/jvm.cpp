@@ -59,6 +59,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_operations.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"

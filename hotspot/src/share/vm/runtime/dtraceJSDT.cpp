@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/codeBlob.hpp"
+#include "code/nativeInst.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvm.h"
 #include "runtime/dtraceJSDT.hpp"

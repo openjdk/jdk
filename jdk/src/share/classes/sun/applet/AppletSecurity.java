@@ -80,7 +80,7 @@ class AppletSecurity extends AWTSecurityManager {
     }
 
     // Cache to store known restricted packages
-    private HashSet restrictedPackages = new HashSet();
+    private HashSet<String> restrictedPackages = new HashSet<>();
 
     /**
      * Reset from Properties
@@ -90,11 +90,11 @@ class AppletSecurity extends AWTSecurityManager {
         // Clear cache
         restrictedPackages.clear();
 
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run()
             {
                 // Enumerate system properties
-                Enumeration e = System.getProperties().propertyNames();
+                Enumeration<?> e = System.getProperties().propertyNames();
 
                 while (e.hasMoreElements())
                 {
@@ -130,7 +130,7 @@ class AppletSecurity extends AWTSecurityManager {
             return (AppletClassLoader)loader;
 
         // if that fails, get all the classes on the stack and check them.
-        Class[] context = getClassContext();
+        Class<?>[] context = getClassContext();
         for (int i = 0; i < context.length; i++) {
             loader = context[i].getClassLoader();
             if (loader instanceof AppletClassLoader)
@@ -148,37 +148,38 @@ class AppletSecurity extends AWTSecurityManager {
             final ClassLoader currentLoader = context[i].getClassLoader();
 
             if (currentLoader instanceof URLClassLoader) {
-                loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+                loader = AccessController.doPrivileged(
+                    new PrivilegedAction<ClassLoader>() {
+                        public ClassLoader run() {
 
-                        AccessControlContext acc = null;
-                        ProtectionDomain[] pds = null;
+                            AccessControlContext acc = null;
+                            ProtectionDomain[] pds = null;
 
-                        try {
-                            acc = (AccessControlContext) facc.get(currentLoader);
-                            if (acc == null) {
-                                return null;
+                            try {
+                                acc = (AccessControlContext) facc.get(currentLoader);
+                                if (acc == null) {
+                                    return null;
+                                }
+
+                                pds = (ProtectionDomain[]) fcontext.get(acc);
+                                if (pds == null) {
+                                    return null;
+                                }
+                            } catch (Exception e) {
+                                throw new UnsupportedOperationException(e);
                             }
 
-                            pds = (ProtectionDomain[]) fcontext.get(acc);
-                            if (pds == null) {
-                                return null;
+                            for (int i=0; i<pds.length; i++) {
+                                ClassLoader cl = pds[i].getClassLoader();
+
+                                if (cl instanceof AppletClassLoader) {
+                                        return cl;
+                                }
                             }
-                        } catch (Exception e) {
-                            throw new UnsupportedOperationException(e);
+
+                            return null;
                         }
-
-                        for (int i=0; i<pds.length; i++) {
-                            ClassLoader cl = pds[i].getClassLoader();
-
-                            if (cl instanceof AppletClassLoader) {
-                                    return cl;
-                            }
-                        }
-
-                        return null;
-                    }
-                });
+                    });
 
                 if (loader != null) {
                     return (AppletClassLoader) loader;
@@ -282,9 +283,9 @@ class AppletSecurity extends AWTSecurityManager {
         super.checkPackageAccess(pkgname);
 
         // now check the list of restricted packages
-        for (Iterator iter = restrictedPackages.iterator(); iter.hasNext();)
+        for (Iterator<String> iter = restrictedPackages.iterator(); iter.hasNext();)
         {
-            String pkg = (String) iter.next();
+            String pkg = iter.next();
 
             // Prevent matching "sun" and "sunir" even if they
             // starts with similar beginning characters

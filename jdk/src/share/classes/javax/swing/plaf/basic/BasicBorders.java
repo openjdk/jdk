@@ -45,6 +45,11 @@ import java.awt.Graphics;
 
 public class BasicBorders {
 
+    /**
+     * Returns a border instance for a {@code JButton}.
+     *
+     * @return a border instance for a {@code JButton}
+     */
     public static Border getButtonBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border buttonBorder = new BorderUIResource.CompoundBorderUIResource(
@@ -57,6 +62,11 @@ public class BasicBorders {
         return buttonBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JRadioButton}.
+     *
+     * @return a border instance for a {@code JRadioButton}
+     */
     public static Border getRadioButtonBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border radioButtonBorder = new BorderUIResource.CompoundBorderUIResource(
@@ -69,6 +79,11 @@ public class BasicBorders {
         return radioButtonBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JToggleButton}.
+     *
+     * @return a border instance for a {@code JToggleButton}
+     */
     public static Border getToggleButtonBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border toggleButtonBorder = new BorderUIResource.CompoundBorderUIResource(
@@ -81,6 +96,11 @@ public class BasicBorders {
         return toggleButtonBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JMenuBar}.
+     *
+     * @return a border instance for a {@code JMenuBar}
+     */
     public static Border getMenuBarBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border menuBarBorder = new BasicBorders.MenuBarBorder(
@@ -90,6 +110,11 @@ public class BasicBorders {
         return menuBarBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JSplitPane}.
+     *
+     * @return a border instance for a {@code JSplitPane}
+     */
     public static Border getSplitPaneBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border splitPaneBorder = new BasicBorders.SplitPaneBorder(
@@ -99,7 +124,9 @@ public class BasicBorders {
     }
 
     /**
-     * Returns a border instance for a JSplitPane divider
+     * Returns a border instance for a {@code JSplitPane} divider.
+     *
+     * @return a border instance for a {@code JSplitPane} divider
      * @since 1.3
      */
     public static Border getSplitPaneDividerBorder() {
@@ -110,6 +137,11 @@ public class BasicBorders {
         return splitPaneBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JTextField}.
+     *
+     * @return a border instance for a {@code JTextField}
+     */
     public static Border getTextFieldBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border textFieldBorder = new BasicBorders.FieldBorder(
@@ -120,12 +152,22 @@ public class BasicBorders {
         return textFieldBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JProgressBar}.
+     *
+     * @return a border instance for a {@code JProgressBar}
+     */
     public static Border getProgressBarBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border progressBarBorder = new BorderUIResource.LineBorderUIResource(Color.green, 2);
         return progressBarBorder;
     }
 
+    /**
+     * Returns a border instance for a {@code JInternalFrame}.
+     *
+     * @return a border instance for a {@code JInternalFrame}
+     */
     public static Border getInternalFrameBorder() {
         UIDefaults table = UIManager.getLookAndFeelDefaults();
         Border internalFrameBorder = new BorderUIResource.CompoundBorderUIResource(
@@ -147,6 +189,14 @@ public class BasicBorders {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RolloverButtonBorder extends ButtonBorder {
 
+        /**
+         * Constructs a new instance of a {@code RolloverButtonBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param darkShadow a color of dark shadow
+         * @param highlight a color of highlight
+         * @param lightHighlight a color of light highlight
+         */
         public RolloverButtonBorder(Color shadow, Color darkShadow,
                                   Color highlight, Color lightHighlight) {
             super(shadow, darkShadow, highlight, lightHighlight);
@@ -227,13 +277,36 @@ public class BasicBorders {
         }
     }
 
+    /**
+     * Draws a border around a button.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
    public static class ButtonBorder extends AbstractBorder implements UIResource {
+        /**
+         * The color of shadow.
+         */
         protected Color shadow;
+        /**
+         * The color of dark shadow.
+         */
         protected Color darkShadow;
+        /**
+         * The color of highlight.
+         */
         protected Color highlight;
+        /**
+         * The color of light highlight.
+         */
         protected Color lightHighlight;
 
+        /**
+         * Constructs a new instance of a {@code ButtonBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param darkShadow a color of dark shadow
+         * @param highlight a color of highlight
+         * @param lightHighlight a color of light highlight
+         */
         public ButtonBorder(Color shadow, Color darkShadow,
                             Color highlight, Color lightHighlight) {
             this.shadow = shadow;
@@ -270,9 +343,20 @@ public class BasicBorders {
 
     }
 
+    /**
+     * Draws the border around a toggle button.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToggleButtonBorder extends ButtonBorder {
 
+        /**
+         * Constructs a new instance of a {@code ToggleButtonBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param darkShadow a color of dark shadow
+         * @param highlight a color of highlight
+         * @param lightHighlight a color of light highlight
+         */
         public ToggleButtonBorder(Color shadow, Color darkShadow,
                                   Color highlight, Color lightHighlight) {
             super(shadow, darkShadow, highlight, lightHighlight);
@@ -292,9 +376,20 @@ public class BasicBorders {
         }
     }
 
+    /**
+     * Draws the border around a radio button.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RadioButtonBorder extends ButtonBorder {
 
+        /**
+         * Constructs a new instance of a {@code RadioButtonBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param darkShadow a color of dark shadow
+         * @param highlight a color of highlight
+         * @param lightHighlight a color of light highlight
+         */
         public RadioButtonBorder(Color shadow, Color darkShadow,
                                  Color highlight, Color lightHighlight) {
             super(shadow, darkShadow, highlight, lightHighlight);
@@ -329,11 +424,26 @@ public class BasicBorders {
         }
     }
 
+    /**
+     * Draws the border around a menu bar.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuBarBorder extends AbstractBorder implements UIResource {
+        /**
+         * The color of shadow.
+         */
         private Color shadow;
+        /**
+         * The color of highlight.
+         */
         private Color highlight;
 
+        /**
+         * Constructs a new instance of a {@code MenuBarBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param highlight a color of highlight
+         */
         public MenuBarBorder(Color shadow, Color highlight) {
             this.shadow = shadow;
             this.highlight = highlight;
@@ -356,6 +466,9 @@ public class BasicBorders {
         }
     }
 
+    /**
+     * Draws the border around components which support margins.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MarginBorder extends AbstractBorder implements UIResource {
         public Insets getBorderInsets(Component c, Insets insets)       {
@@ -384,13 +497,36 @@ public class BasicBorders {
         }
     }
 
+    /**
+     * Draws the border around a field.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class FieldBorder extends AbstractBorder implements UIResource {
+        /**
+         * The color of shadow.
+         */
         protected Color shadow;
+        /**
+         * The color of dark shadow.
+         */
         protected Color darkShadow;
+        /**
+         * The color of highlight.
+         */
         protected Color highlight;
+        /**
+         * The color of light highlight.
+         */
         protected Color lightHighlight;
 
+        /**
+         * Constructs a new instance of a {@code FieldBorder}.
+         *
+         * @param shadow a color of shadow
+         * @param darkShadow a color of dark shadow
+         * @param highlight a color of highlight
+         * @param lightHighlight a color of light highlight
+         */
         public FieldBorder(Color shadow, Color darkShadow,
                            Color highlight, Color lightHighlight) {
             this.shadow = shadow;
@@ -509,9 +645,21 @@ public class BasicBorders {
      * also install a border on the divider (property SplitPaneDivider.border).
      */
     public static class SplitPaneBorder implements Border, UIResource {
+        /**
+         * The color of highlight
+         */
         protected Color highlight;
+        /**
+         * The color of shadow
+         */
         protected Color shadow;
 
+        /**
+         * Constructs a new instance of a {@code SplitPaneBorder}.
+         *
+         * @param highlight a color of highlight
+         * @param shadow a color of shadow
+         */
         public SplitPaneBorder(Color highlight, Color shadow) {
             this.highlight = highlight;
             this.shadow = shadow;

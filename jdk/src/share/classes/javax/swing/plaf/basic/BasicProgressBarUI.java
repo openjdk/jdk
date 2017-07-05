@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,13 @@ public class BasicProgressBarUI extends ProgressBarUI {
 
     private Animator animator;
 
+    /**
+     * The instance of {@code JProgressBar}.
+     */
     protected JProgressBar progressBar;
+    /**
+     * The instance of {@code ChangeListener}.
+     */
     protected ChangeListener changeListener;
     private Handler handler;
 
@@ -127,7 +133,12 @@ public class BasicProgressBarUI extends ProgressBarUI {
 
     private int maxPosition = 0; //maximum X (horiz) or Y box location
 
-
+    /**
+     * Returns a new instance of {@code BasicProgressBarUI}.
+     *
+     * @param x a component
+     * @return a new instance of {@code BasicProgressBarUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicProgressBarUI();
     }
@@ -150,6 +161,9 @@ public class BasicProgressBarUI extends ProgressBarUI {
         progressBar = null;
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         LookAndFeel.installProperty(progressBar, "opaque", Boolean.TRUE);
         LookAndFeel.installBorder(progressBar,"ProgressBar.border");
@@ -164,10 +178,16 @@ public class BasicProgressBarUI extends ProgressBarUI {
         selectionBackground = UIManager.getColor("ProgressBar.selectionBackground");
     }
 
+    /**
+     * Unintalls default properties.
+     */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(progressBar);
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         //Listen for changes in the progress bar's data.
         changeListener = getHandler();
@@ -291,6 +311,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
     // protected void installKeyboardActions()
     // protected void uninstallKeyboardActions()
 
+    /**
+     * Returns preferred size of the horizontal {@code JProgressBar}.
+     *
+     * @return preferred size of the horizontal {@code JProgressBar}
+     */
     protected Dimension getPreferredInnerHorizontal() {
         Dimension horizDim = (Dimension)DefaultLookup.get(progressBar, this,
             "ProgressBar.horizontalSize");
@@ -300,6 +325,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
         return horizDim;
     }
 
+    /**
+     * Returns preferred size of the vertical {@code JProgressBar}.
+     *
+     * @return preferred size of the vertical {@code JProgressBar}
+     */
     protected Dimension getPreferredInnerVertical() {
         Dimension vertDim = (Dimension)DefaultLookup.get(progressBar, this,
             "ProgressBar.verticalSize");
@@ -312,6 +342,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
     /**
      * The "selectionForeground" is the color of the text when it is painted
      * over a filled area of the progress bar.
+     *
+     * @return the color of the selected foreground
      */
     protected Color getSelectionForeground() {
         return selectionForeground;
@@ -320,6 +352,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
     /**
      * The "selectionBackground" is the color of the text when it is painted
      * over an unfilled area of the progress bar.
+     *
+     * @return the color of the selected background
      */
     protected Color getSelectionBackground() {
         return selectionBackground;
@@ -352,6 +386,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
         }
     }
 
+    /**
+     * Sets the cell length.
+     *
+     * @param cellLen a new cell length
+     */
     protected void setCellLength(int cellLen) {
         this.cellLength = cellLen;
     }
@@ -374,6 +413,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
         }
     }
 
+    /**
+     * Sets the cell spacing.
+     *
+     * @param cellSpace a new cell spacing
+     */
     protected void setCellSpacing(int cellSpace) {
         this.cellSpacing = cellSpace;
     }
@@ -384,6 +428,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * operation so it was abstracted out. It assumes that your progress bar
      * is linear. That is, if you are making a circular progress indicator,
      * you will want to override this method.
+     *
+     * @param b insets
+     * @param width a width
+     * @param height a height
+     * @return the amount of the progress bar that should be filled
      */
     protected int getAmountFull(Insets b, int width, int height) {
         int amountFull = 0;
@@ -577,6 +626,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * Override this if you are making another kind of
      * progress bar.
      *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
      * @see #paintDeterminate
      *
      * @since 1.4
@@ -628,6 +679,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * Naturally, override this if you are making a circular or
      * semi-circular progress bar.
      *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
      * @see #paintIndeterminate
      *
      * @since 1.4
@@ -703,7 +756,18 @@ public class BasicProgressBarUI extends ProgressBarUI {
         }
     }
 
-
+    /**
+     * Paints the progress string.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x X location of bounding box
+     * @param y Y location of bounding box
+     * @param width width of bounding box
+     * @param height height of bounding box
+     * @param amountFull size of the fill region, either width or height
+     *        depending upon orientation.
+     * @param b Insets of the progress bar.
+     */
     protected void paintString(Graphics g, int x, int y,
                                int width, int height,
                                int amountFull, Insets b) {
@@ -793,6 +857,14 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * bar (in both x and y). Override this if you want to right,
      * left, top, or bottom align the progress string or if you need
      * to nudge it around for any reason.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param progressString a text
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param width a width
+     * @param height a height
+     * @return the place where the progress string will be painted
      */
     protected Point getStringPlacement(Graphics g, String progressString,
                                        int x,int y,int width,int height) {
@@ -894,6 +966,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
     /**
      * Gets the index of the current animation frame.
      *
+     * @return the index of the current animation frame
      * @since 1.4
      */
     protected int getAnimationIndex() {

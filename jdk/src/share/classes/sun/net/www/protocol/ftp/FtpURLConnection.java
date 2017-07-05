@@ -301,7 +301,7 @@ public class FtpURLConnection extends URLConnection {
             throw new IOException(fe);
         }
         try {
-            ftp.login(user, password.toCharArray());
+            ftp.login(user, password == null ? null : password.toCharArray());
         } catch (sun.net.ftp.FtpProtocolException e) {
             ftp.close();
             // Backward compatibility

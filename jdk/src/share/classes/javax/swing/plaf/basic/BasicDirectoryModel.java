@@ -55,6 +55,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
     private boolean busy = false;
 
+    /**
+     * Constructs a new instance of {@code BasicDirectoryModel}.
+     *
+     * @param filechooser an instance of {JFileChooser}
+     */
     public BasicDirectoryModel(JFileChooser filechooser) {
         this.filechooser = filechooser;
         validateFileCache();
@@ -93,6 +98,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
     }
 
+    /**
+     * Returns a list of directories.
+     *
+     * @return a list of directories
+     */
     public Vector<File> getDirectories() {
         synchronized(fileCache) {
             if (directories != null) {
@@ -103,6 +113,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
     }
 
+    /**
+     * Returns a list of files.
+     *
+     * @return a list of files
+     */
     public Vector<File> getFiles() {
         synchronized(fileCache) {
             if (files != null) {
@@ -126,6 +141,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
     }
 
+    /**
+     * Validates content of file cache.
+     */
     public void validateFileCache() {
         File currentDirectory = filechooser.getCurrentDirectory();
         if (currentDirectory == null) {
@@ -163,20 +181,34 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
     }
 
-
+    /**
+     * Invoked when a content is changed.
+     */
     public void fireContentsChanged() {
-        // System.out.println("BasicDirectoryModel: firecontentschanged");
-        fireContentsChanged(this, 0, getSize()-1);
+        fireContentsChanged(this, 0, getSize() - 1);
     }
 
     public int getSize() {
         return fileCache.size();
     }
 
+    /**
+     * Returns {@code true} if an element {@code o} is in file cache,
+     * otherwise, returns {@code false}.
+     *
+     * @param o an element
+     * @return {@code true} if an element {@code o} is in file cache
+     */
     public boolean contains(Object o) {
         return fileCache.contains(o);
     }
 
+    /**
+     * Returns an index of element {@code o} in file cache.
+     *
+     * @param o an element
+     * @return an index of element {@code o} in file cache
+     */
     public int indexOf(Object o) {
         return fileCache.indexOf(o);
     }
@@ -197,6 +229,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     public void intervalRemoved(ListDataEvent e) {
     }
 
+    /**
+     * Sorts a list of files.
+     *
+     * @param v a list of files
+     */
     protected void sort(Vector<? extends File> v){
         ShellFolder.sort(v);
     }

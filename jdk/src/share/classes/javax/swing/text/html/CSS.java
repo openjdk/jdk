@@ -1934,13 +1934,13 @@ public class CSS implements Serializable {
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Alignment) {
                 if (svalue.equals("right")) {
-                    return new Integer(StyleConstants.ALIGN_RIGHT);
+                    return StyleConstants.ALIGN_RIGHT;
                 } else if (svalue.equals("center")) {
-                    return new Integer(StyleConstants.ALIGN_CENTER);
+                    return StyleConstants.ALIGN_CENTER;
                 } else if  (svalue.equals("justify")) {
-                    return new Integer(StyleConstants.ALIGN_JUSTIFIED);
+                    return StyleConstants.ALIGN_JUSTIFIED;
                 }
-                return new Integer(StyleConstants.ALIGN_LEFT);
+                return StyleConstants.ALIGN_LEFT;
             } else if (key == StyleConstants.StrikeThrough) {
                 if (svalue.indexOf("line-through") >= 0) {
                     return Boolean.TRUE;

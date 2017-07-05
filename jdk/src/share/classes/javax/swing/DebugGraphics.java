@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,8 @@ public class DebugGraphics extends Graphics {
 
     /**
      * Sets the Color used to flash drawing operations.
+     *
+     * @param flashColor the Color used to flash drawing operations
      */
     public static void setFlashColor(Color flashColor) {
         info().flashColor = flashColor;
@@ -146,6 +148,8 @@ public class DebugGraphics extends Graphics {
 
     /**
      * Returns the Color used to flash drawing operations.
+     *
+     * @return the Color used to flash drawing operations
      * @see #setFlashColor
      */
     public static Color flashColor() {
@@ -154,6 +158,8 @@ public class DebugGraphics extends Graphics {
 
     /**
      * Sets the time delay of drawing operation flashing.
+     *
+     * @param flashTime the time delay of drawing operation flashing
      */
     public static void setFlashTime(int flashTime) {
         info().flashTime = flashTime;
@@ -161,6 +167,8 @@ public class DebugGraphics extends Graphics {
 
     /**
      * Returns the time delay of drawing operation flashing.
+     *
+     * @return the time delay of drawing operation flashing
      * @see #setFlashTime
      */
     public static int flashTime() {
@@ -169,27 +177,38 @@ public class DebugGraphics extends Graphics {
 
     /**
      * Sets the number of times that drawing operations will flash.
+     *
+     * @param flashCount number of times that drawing operations will flash
      */
     public static void setFlashCount(int flashCount) {
         info().flashCount = flashCount;
     }
 
-    /** Returns the number of times that drawing operations will flash.
-      * @see #setFlashCount
-      */
+    /**
+     * Returns the number of times that drawing operations will flash.
+     *
+     * @return the number of times that drawing operations will flash
+     * @see #setFlashCount
+     */
     public static int flashCount() {
         return info().flashCount;
     }
 
-    /** Sets the stream to which the DebugGraphics logs drawing operations.
-      */
+    /**
+     * Sets the stream to which the DebugGraphics logs drawing operations.
+     *
+     * @param stream the stream to which the DebugGraphics logs drawing operations
+     */
     public static void setLogStream(java.io.PrintStream stream) {
         info().stream = stream;
     }
 
-    /** Returns the stream to which the DebugGraphics logs drawing operations.
-      * @see #setLogStream
-      */
+    /**
+     * Returns the stream to which the DebugGraphics logs drawing operations.
+     *
+     * @return the stream to which the DebugGraphics logs drawing operations
+     * @see #setLogStream
+     */
     public static java.io.PrintStream logStream() {
         return info().stream;
     }
@@ -1337,6 +1356,8 @@ public class DebugGraphics extends Graphics {
       * creates a new Frame that shows each operation on an
       * offscreen buffer. The value of <b>options</b> is bitwise OR'd into
       * the current value. To disable debugging use NONE_OPTION.
+      *
+      * @param options indicates how diagnostic information should be displayed
       */
     public void setDebugOptions(int options) {
         if (options != 0) {
@@ -1356,9 +1377,12 @@ public class DebugGraphics extends Graphics {
         }
     }
 
-    /** Returns the current debugging options for this DebugGraphics.
-      * @see #setDebugOptions
-      */
+    /**
+     * Returns the current debugging options for this DebugGraphics.
+     *
+     * @return the current debugging options for this DebugGraphics
+     * @see #setDebugOptions
+     */
     public int getDebugOptions() {
         return debugOptions;
     }

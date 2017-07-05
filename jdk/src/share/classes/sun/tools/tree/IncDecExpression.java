@@ -49,7 +49,7 @@ class IncDecExpression extends UnaryExpression {
     /**
      * Check an increment or decrement expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = right.checkAssignOp(env, ctx, vset, exp, this);
         if (right.type.inMask(TM_NUMBER)) {
             type = right.type;
@@ -66,7 +66,7 @@ class IncDecExpression extends UnaryExpression {
     /**
      * Check void expression
      */
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         return checkValue(env, ctx, vset, exp);
     }
 

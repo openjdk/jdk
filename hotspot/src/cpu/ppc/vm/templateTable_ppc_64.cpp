@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.inline.hpp"

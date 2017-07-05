@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ final class DHCrypt {
      *         the same size as the Diffie-Hellman modulus.
      */
     SecretKey getAgreedSecret(BigInteger peerPublicValue,
-            boolean keyIsValidated) throws IOException {
+            boolean keyIsValidated) throws SSLHandshakeException {
         try {
             KeyFactory kf = JsseJce.getKeyFactory("DiffieHellman");
             DHPublicKeySpec spec =
@@ -211,7 +211,8 @@ final class DHCrypt {
             ka.doPhase(publicKey, true);
             return ka.generateSecret("TlsPremasterSecret");
         } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Could not generate secret", e);
+            throw (SSLHandshakeException) new SSLHandshakeException(
+                "Could not generate secret").initCause(e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,30 @@ import java.awt.event.InputEvent;
 import sun.swing.SwingUtilities2;
 
 
-/*
+/**
+ * Convenient util class.
+ *
  * @author Hans Muller
  */
-
 public class BasicGraphicsUtils
 {
 
     private static final Insets GROOVE_INSETS = new Insets(2, 2, 2, 2);
     private static final Insets ETCHED_INSETS = new Insets(2, 2, 2, 2);
 
+    /**
+     * Draws an etched rectangle.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param shadow a color of shadow
+     * @param darkShadow a color of dark shadow
+     * @param highlight a color highlighting
+     * @param lightHighlight a color of light highlighting
+     */
     public static void drawEtchedRect(Graphics g, int x, int y, int w, int h,
                                       Color shadow, Color darkShadow,
                                       Color highlight, Color lightHighlight)
@@ -89,6 +103,17 @@ public class BasicGraphicsUtils
     }
 
 
+    /**
+     * Draws a groove.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param shadow a color of shadow
+     * @param highlight a color highlighting
+     */
     public static void drawGroove(Graphics g, int x, int y, int w, int h,
                                   Color shadow, Color highlight)
     {
@@ -120,6 +145,21 @@ public class BasicGraphicsUtils
     }
 
 
+    /**
+     * Draws a bezel.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param isPressed is component pressed
+     * @param isDefault is default drawing
+     * @param shadow a color of shadow
+     * @param darkShadow a color of dark shadow
+     * @param highlight a color highlighting
+     * @param lightHighlight a color of light highlighting
+     */
     public static void drawBezel(Graphics g, int x, int y, int w, int h,
                                  boolean isPressed, boolean isDefault,
                                  Color shadow, Color darkShadow,
@@ -176,6 +216,19 @@ public class BasicGraphicsUtils
         g.setColor(oldColor);
     }
 
+    /**
+     * Draws a lowered bezel.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param shadow a color of shadow
+     * @param darkShadow a color of dark shadow
+     * @param highlight a color highlighting
+     * @param lightHighlight a color of light highlighting
+     */
     public static void drawLoweredBezel(Graphics g, int x, int y, int w, int h,
                                         Color shadow, Color darkShadow,
                                         Color highlight, Color lightHighlight)  {
@@ -197,11 +250,17 @@ public class BasicGraphicsUtils
      }
 
 
-    /** Draw a string with the graphics <code>g</code> at location (x,y)
-     *  just like <code>g.drawString</code> would.
-     *  The first occurrence of <code>underlineChar</code>
-     *  in text will be underlined. The matching algorithm is
-     *  not case sensitive.
+    /**
+     * Draw a string with the graphics {@code g} at location (x,y)
+     * just like {@code g.drawString} would. The first occurrence
+     * of {@code underlineChar} in text will be underlined.
+     * The matching algorithm is not case sensitive.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param text a text
+     * @param underlinedChar an underlined char
+     * @param x an X coordinate
+     * @param y an Y coordinate
      */
     public static void drawString(Graphics g,String text,int underlinedChar,int x,int y) {
         int index=-1;
@@ -244,9 +303,18 @@ public class BasicGraphicsUtils
     public static void drawStringUnderlineCharAt(Graphics g, String text,
                            int underlinedIndex, int x,int y) {
         SwingUtilities2.drawStringUnderlineCharAt(null, g, text,
-                                                  underlinedIndex, x, y);
+                underlinedIndex, x, y);
     }
 
+    /**
+     * Draws dashed rectangle.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param width a width of rectangle
+     * @param height a height of rectangle
+     */
     public static void drawDashedRect(Graphics g,int x,int y,int width,int height) {
         int vx,vy;
 
@@ -263,6 +331,13 @@ public class BasicGraphicsUtils
         }
     }
 
+    /**
+     * Returns the preferred size of the button.
+     *
+     * @param b an instance of {@code AbstractButton}
+     * @param textIconGap a gap between text and icon
+     * @return the preferred size of the button
+     */
     public static Dimension getPreferredButtonSize(AbstractButton b, int textIconGap)
     {
         if(b.getComponentCount() > 0) {

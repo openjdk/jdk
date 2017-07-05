@@ -881,8 +881,8 @@ public class HierMemDirCtx implements DirContext {
     }
 }
 
-    // CompundNames's HashCode() method isn't good enough for many string.
-    // The only prupose of this subclass is to have a more discerning
+    // CompoundNames's HashCode() method isn't good enough for many strings.
+    // The only purpose of this subclass is to have a more discerning
     // hash function. We'll make up for the performance hit by caching
     // the hash value.
 
