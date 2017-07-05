@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * Event sent when the app is asked to print a list of files.
  *
- * @see PrintFilesHandler#printFiles(AppEvent.PrintFilesEvent)
+ * @see PrintFilesHandler#printFiles(PrintFilesEvent)
  * @since 9
  */
 public final class PrintFilesEvent extends FilesEvent {

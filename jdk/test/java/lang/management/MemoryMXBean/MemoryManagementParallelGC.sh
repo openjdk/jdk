@@ -26,8 +26,9 @@
 # @bug     4530538
 # @summary Run MemoryManagement test with parallel GC
 # @author  Mandy Chung
+#
 # @requires vm.gc=="Parallel" | vm.gc=="null"
-# @modules java.management
+#
 # @run build MemoryManagement
 # @run shell/timeout=600 MemoryManagementParallelGC.sh
 #
@@ -42,7 +43,7 @@ else
 fi
 
 runOne()
-{ 
+{
    echo "runOne $@"
    $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@ || exit 2
 }
