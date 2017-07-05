@@ -35,6 +35,8 @@
 /*
  * @test
  * @bug 6236036 6264015
+ * @modules java.base/java.util.concurrent:open
+ *          java.base/java.util.concurrent.locks:open
  * @summary Checks for a memory leak when a sequence of aborted timed
  * waits occur without a signal.  Uses the strategy of detecting
  * changes in the size of the object graph retained by a root object.

@@ -1147,12 +1147,14 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         static
         MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
-            // Do not use this function to inject calls into system classes.
+            // Code in the the boot layer should now be careful while creating method handles or
+            // functional interface instances created from method references to @CallerSensitive  methods,
+            // it needs to be ensured the handles or interface instances are kept safe and are not passed
+            // from the boot layer to untrusted code.
             if (hostClass == null
                 ||    (hostClass.isArray() ||
                        hostClass.isPrimitive() ||
-                       hostClass.getName().startsWith("java.") ||
-                       hostClass.getName().startsWith("sun."))) {
+                       hostClass.getName().startsWith("java.lang.invoke."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
             // For simplicity, convert mh to a varargs-like method.

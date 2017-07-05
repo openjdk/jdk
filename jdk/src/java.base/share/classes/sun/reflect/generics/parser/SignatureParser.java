@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,21 @@ public class SignatureParser {
     // invalid, the parser should flag an error in accordance
     // with its logic.
 
-    private char[] input; // the input signature
-    private int index = 0; // index into the input
+    private String input; // the input signature
+    private int index;    // index into the input
+    private int mark;     // index of mark
     // used to mark end of input
     private static final char EOI = ':';
     private static final boolean DEBUG = false;
 
     // private constructor - enforces use of static factory
     private SignatureParser(){}
+
+    // prepares parser for new parsing session
+    private void init(String s) {
+        input = s;
+        mark = index = 0;
+    }
 
     // Utility methods.
 
@@ -80,39 +87,32 @@ public class SignatureParser {
     // This makes it easy to adapt the parser to operate on streams
     // of various kinds as well as strings.
 
-    // returns current element of the input and advances the input
-    private char getNext(){
-        assert(index <= input.length);
-        try {
-            return input[index++];
-        } catch (ArrayIndexOutOfBoundsException e) { return EOI;}
-    }
-
     // returns current element of the input
     private char current(){
-        assert(index <= input.length);
-        try {
-            return input[index];
-        } catch (ArrayIndexOutOfBoundsException e) { return EOI;}
+        assert(index <= input.length());
+        return index < input.length() ? input.charAt(index) : EOI;
     }
 
     // advance the input
     private void advance(){
-        assert(index <= input.length);
-        index++;
+        assert(index <= input.length());
+        if (index < input.length()) index++;
+    }
+
+    // mark current position
+    private void mark() {
+        mark = index;
     }
 
     // For debugging, prints current character to the end of the input.
     private String remainder() {
-        return new String(input, index, input.length-index);
+        return input.substring(index);
     }
 
-    // Match c against a "set" of characters
-    private boolean matches(char c, char... set) {
-        for (char e : set) {
-            if (c == e) return true;
-        }
-        return false;
+    // returns a substring of input from mark (inclusive)
+    // to current position (exclusive)
+    private String markToCurrent() {
+        return input.substring(mark, index);
     }
 
     // Error handling routine. Encapsulates error handling.
@@ -152,7 +152,7 @@ public class SignatureParser {
      */
     public ClassSignature parseClassSig(String s) {
         if (DEBUG) System.out.println("Parsing class sig:" + s);
-        input = s.toCharArray();
+        init(s);
         return parseClassSignature();
     }
 
@@ -167,7 +167,7 @@ public class SignatureParser {
      */
     public MethodTypeSignature parseMethodSig(String s) {
         if (DEBUG) System.out.println("Parsing method sig:" + s);
-        input = s.toCharArray();
+        init(s);
         return parseMethodTypeSignature();
     }
 
@@ -184,13 +184,13 @@ public class SignatureParser {
      */
     public TypeSignature parseTypeSig(String s) {
         if (DEBUG) System.out.println("Parsing type sig:" + s);
-        input = s.toCharArray();
+        init(s);
         return parseTypeSignature();
     }
 
     // Parsing routines.
     // As a rule, the parsing routines access the input using the
-    // utilities current(), getNext() and/or advance().
+    // utilities current() and advance().
     // The convention is that when a parsing routine is invoked
     // it expects the current input to be the first character it should parse
     // and when it completes parsing, it leaves the input at the first
@@ -251,28 +251,22 @@ public class SignatureParser {
         return FormalTypeParameter.make(id, bs);
     }
 
-    private String parseIdentifier(){
-        StringBuilder result = new StringBuilder();
-        while (!Character.isWhitespace(current())) {
-            char c = current();
-            switch(c) {
-            case ';':
-            case '.':
-            case '/':
-            case '[':
-            case ':':
-            case '>':
-            case '<':
-                return result.toString();
-            default:{
-                result.append(c);
-                advance();
-            }
-
-            }
-        }
-        return result.toString();
+    private String parseIdentifier() {
+        mark();
+        skipIdentifier();
+        return markToCurrent();
     }
+
+    private void skipIdentifier() {
+        char c = current();
+        while (c != ';' && c != '.' && c != '/' &&
+               c != '[' && c != ':' && c != '>' &&
+               c != '<' && !Character.isWhitespace(c)) {
+            advance();
+            c = current();
+        }
+    }
+
     /**
      * FieldTypeSignature:
      *     ClassTypeSignature
@@ -325,18 +319,13 @@ public class SignatureParser {
         // Parse both any optional leading PackageSpecifier as well as
         // the following SimpleClassTypeSignature.
 
-        String id = parseIdentifier();
-
-        if (current() == '/') { // package name
-            StringBuilder idBuild = new StringBuilder(id);
-
-            while(current() == '/') {
-                advance();
-                idBuild.append(".");
-                idBuild.append(parseIdentifier());
-            }
-            id = idBuild.toString();
+        mark();
+        skipIdentifier();
+        while (current() == '/') {
+            advance();
+            skipIdentifier();
         }
+        String id = markToCurrent().replace('/', '.');
 
         switch (current()) {
         case ';':
@@ -377,11 +366,6 @@ public class SignatureParser {
             advance();
             scts.add(parseSimpleClassTypeSignature(true));
         }
-    }
-
-    private TypeArgument[] parseTypeArgumentsOpt() {
-        if (current() == '<') {return parseTypeArguments();}
-        else {return new TypeArgument[0];}
     }
 
     /**

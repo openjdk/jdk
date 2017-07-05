@@ -37,10 +37,10 @@ package java.lang.annotation;
  * <em>type contexts</em> , where annotations apply to types used in
  * declarations and expressions.
  *
- * <p>The constants {@link #ANNOTATION_TYPE} , {@link #CONSTRUCTOR} , {@link
- * #FIELD} , {@link #LOCAL_VARIABLE} , {@link #METHOD} , {@link #PACKAGE} ,
- * {@link #PARAMETER} , {@link #TYPE} , and {@link #TYPE_PARAMETER} correspond
- * to the declaration contexts in JLS 9.6.4.1.
+ * <p>The constants {@link #ANNOTATION_TYPE}, {@link #CONSTRUCTOR}, {@link
+ * #FIELD}, {@link #LOCAL_VARIABLE}, {@link #METHOD}, {@link #PACKAGE}, {@link
+ * #MODULE}, {@link #PARAMETER}, {@link #TYPE}, and {@link #TYPE_PARAMETER}
+ * correspond to the declaration contexts in JLS 9.6.4.1.
  *
  * <p>For example, an annotation whose type is meta-annotated with
  * {@code @Target(ElementType.FIELD)} may only be written as a modifier for a
@@ -107,5 +107,12 @@ public enum ElementType {
      *
      * @since 1.8
      */
-    TYPE_USE
+    TYPE_USE,
+
+    /**
+     * Module declaration.
+     *
+     * @since 9
+     */
+    MODULE
 }

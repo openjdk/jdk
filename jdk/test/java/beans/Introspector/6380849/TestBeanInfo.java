@@ -25,6 +25,7 @@
  * @test
  * @bug 6380849
  * @summary Tests BeanInfo finder
+ * @modules java.desktop/java.beans:open
  * @author Sergey Malenkov
  */
 

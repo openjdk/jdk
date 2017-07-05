@@ -93,24 +93,6 @@ public:
   // module does not exist.
   static void add_reads_module(jobject from_module, jobject to_module, TRAPS);
 
-  // can_read_module returns TRUE if module asking_module can read module target_module,
-  // or if they are the same module, or if the asking_module is loose and target_module
-  // is null.
-  //
-  // Throws IllegalArgumentException if:
-  // * either asking_module or target_module is not a java.lang.reflect.Module
-  static jboolean can_read_module(jobject asking_module, jobject target_module, TRAPS);
-
-  // If package is valid then this returns TRUE if module from_module exports
-  // package to module to_module, if from_module and to_module are the same
-  // module, or if package is exported without qualification.
-  //
-  // IllegalArgumentException is throw if:
-  // * Either to_module or from_module does not exist
-  // * package is syntactically incorrect
-  // * package is not in from_module
-  static jboolean is_exported_to_module(jobject from_module, jstring package, jobject to_module, TRAPS);
-
   // Return the java.lang.reflect.Module object for this class object.
   static jobject get_module(jclass clazz, TRAPS);
 

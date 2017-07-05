@@ -25,7 +25,6 @@
 
 package jdk.internal.module;
 
-
 public final class Checks {
 
     private Checks() { }

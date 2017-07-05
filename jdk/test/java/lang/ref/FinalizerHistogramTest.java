@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 /*
  * @test
  * @summary Unit test for FinalizerHistogram
+ * @modules java.base/java.lang.ref:open
  * @run main FinalizerHistogramTest
  */
 

@@ -61,6 +61,7 @@ import java.util.stream.Stream;
  * @test
  * @bug 8033661
  * @summary tests LogManager.updateConfiguration(bin)
+ * @modules java.logging/java.util.logging:open
  * @run main/othervm UpdateConfigurationTest UNSECURE
  * @run main/othervm UpdateConfigurationTest SECURE
  * @author danielfuchs

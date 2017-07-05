@@ -216,19 +216,28 @@ public final class FilePermission extends Permission implements Serializable {
             GetPropertyAction.privilegedGetProperty("user.dir"));
 
     /**
-     * A private constructor like a clone, only npath2 is not touched.
+     * A private constructor that clones some and updates some,
+     * always with a different name.
      * @param input
      */
-    private FilePermission(String name, FilePermission input) {
+    private FilePermission(String name,
+                           FilePermission input,
+                           Path npath,
+                           Path npath2,
+                           int mask,
+                           String actions) {
         super(name);
-        this.npath = input.npath;
-        this.actions = input.actions;
+        // Customizables
+        this.npath = npath;
+        this.npath2 = npath2;
+        this.actions = actions;
+        this.mask = mask;
+        // Cloneds
         this.allFiles = input.allFiles;
         this.invalid = input.invalid;
         this.recursive = input.recursive;
         this.directory = input.directory;
         this.cpath = input.cpath;
-        this.mask = input.mask;
     }
 
     /**
@@ -261,10 +270,12 @@ public final class FilePermission extends Permission implements Serializable {
                             // different than the original so that when one is
                             // added to a FilePermissionCollection it will not
                             // be merged with the original one.
-                            FilePermission np = new FilePermission(
-                                    input.getName()+"#plus", input);
-                            np.npath2 = npath2;
-                            return np;
+                            return new FilePermission(input.getName() + "#plus",
+                                    input,
+                                    input.npath,
+                                    npath2,
+                                    input.mask,
+                                    input.actions);
                         }
                     }
                     return input;
@@ -274,10 +285,12 @@ public final class FilePermission extends Permission implements Serializable {
                         Path npath2 = altPath(input.npath);
                         if (npath2 != null) {
                             // New name, see above.
-                            FilePermission np = new FilePermission(
-                                    input.getName()+"#using", input);
-                            np.npath = npath2;
-                            return np;
+                            return new FilePermission(input.getName() + "#using",
+                                    input,
+                                    npath2,
+                                    null,
+                                    input.mask,
+                                    input.actions);
                         }
                     }
                     return null;
@@ -981,6 +994,20 @@ public final class FilePermission extends Permission implements Serializable {
         s.defaultReadObject();
         init(getMask(actions));
     }
+
+    /**
+     * Create a cloned FilePermission with a different actions.
+     * @param effective the new actions
+     * @return a new object
+     */
+    FilePermission withNewActions(int effective) {
+        return new FilePermission(this.getName(),
+                this,
+                this.npath,
+                this.npath2,
+                effective,
+                null);
+    }
 }
 
 /**
@@ -1048,8 +1075,7 @@ final class FilePermissionCollection extends PermissionCollection
         FilePermission fp = (FilePermission)permission;
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
+        // permission if applicable.
         perms.merge(fp.getName(), fp,
             new java.util.function.BiFunction<>() {
                 @Override
@@ -1063,7 +1089,8 @@ final class FilePermissionCollection extends PermissionCollection
                             return newVal;
                         }
                         if (effective != oldMask) {
-                            return new FilePermission(fp.getName(), effective);
+                            return ((FilePermission)newVal)
+                                    .withNewActions(effective);
                         }
                     }
                     return existingVal;

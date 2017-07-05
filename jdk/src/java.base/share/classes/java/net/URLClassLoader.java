@@ -72,6 +72,10 @@ import sun.security.util.SecurityConstants;
  * <p>
  * The classes that are loaded are by default granted permission only to
  * access the URLs specified when the URLClassLoader was created.
+ * <p>
+ * This class loader supports the loading of classes from the contents of a
+ * <a href="../util/jar/JarFile.html#multirelease">multi-release</a> JAR file
+ * that is referred to by a given URL.
  *
  * @author  David Connelly
  * @since   1.2

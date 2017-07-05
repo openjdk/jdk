@@ -26,9 +26,12 @@
 package java.lang.module;
 
 import java.io.PrintStream;
+import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
+import java.lang.reflect.Layer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
@@ -47,12 +50,15 @@ import jdk.internal.module.ModuleHashes;
 /**
  * The resolver used by {@link Configuration#resolveRequires} and
  * {@link Configuration#resolveRequiresAndUses}.
+ *
+ * @implNote The resolver is used at VM startup and so deliberately avoids
+ * using lambda and stream usages in code paths used during startup.
  */
 
 final class Resolver {
 
     private final ModuleFinder beforeFinder;
-    private final Configuration parent;
+    private final List<Configuration> parents;
     private final ModuleFinder afterFinder;
     private final PrintStream traceOutput;
 
@@ -61,11 +67,11 @@ final class Resolver {
 
 
     Resolver(ModuleFinder beforeFinder,
-             Configuration parent,
+             List<Configuration> parents,
              ModuleFinder afterFinder,
              PrintStream traceOutput) {
         this.beforeFinder = beforeFinder;
-        this.parent = parent;
+        this.parents = parents;
         this.afterFinder = afterFinder;
         this.traceOutput = traceOutput;
     }
@@ -85,10 +91,12 @@ final class Resolver {
             // find root module
             ModuleReference mref = findWithBeforeFinder(root);
             if (mref == null) {
-                if (parent.findModule(root).isPresent()) {
+
+                if (findInParent(root) != null) {
                     // in parent, nothing to do
                     continue;
                 }
+
                 mref = findWithAfterFinder(root);
                 if (mref == null) {
                     fail("Module %s not found", root);
@@ -125,13 +133,21 @@ final class Resolver {
 
             // process dependences
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
+
+                // only required at compile-time
+                if (requires.modifiers().contains(Modifier.STATIC))
+                    continue;
+
                 String dn = requires.name();
 
                 // find dependence
                 ModuleReference mref = findWithBeforeFinder(dn);
                 if (mref == null) {
-                    if (parent.findModule(dn).isPresent())
+
+                    if (findInParent(dn) != null) {
+                        // dependence is in parent
                         continue;
+                    }
 
                     mref = findWithAfterFinder(dn);
                     if (mref == null) {
@@ -174,7 +190,9 @@ final class Resolver {
             ModuleDescriptor descriptor = mref.descriptor();
             if (!descriptor.provides().isEmpty()) {
 
-                for (String sn : descriptor.provides().keySet()) {
+                for (Provides provides :  descriptor.provides()) {
+                    String sn = provides.service();
+
                     // computeIfAbsent
                     Set<ModuleReference> providers = availableProviders.get(sn);
                     if (providers == null) {
@@ -191,19 +209,23 @@ final class Resolver {
         Deque<ModuleDescriptor> q = new ArrayDeque<>();
 
         // the initial set of modules that may use services
-        Set<ModuleDescriptor> candidateConsumers = new HashSet<>();
-        Configuration p = parent;
-        while (p != null) {
-            candidateConsumers.addAll(p.descriptors());
-            p = p.parent().orElse(null);
+        Set<ModuleDescriptor> initialConsumers;
+        if (Layer.boot() == null) {
+            initialConsumers = new HashSet<>();
+        } else {
+            initialConsumers = parents.stream()
+                    .flatMap(Configuration::configurations)
+                    .distinct()
+                    .flatMap(c -> c.descriptors().stream())
+                    .collect(Collectors.toSet());
         }
         for (ModuleReference mref : nameToReference.values()) {
-            candidateConsumers.add(mref.descriptor());
+            initialConsumers.add(mref.descriptor());
         }
-
 
         // Where there is a consumer of a service then resolve all modules
         // that provide an implementation of that service
+        Set<ModuleDescriptor> candidateConsumers = initialConsumers;
         do {
             for (ModuleDescriptor descriptor : candidateConsumers) {
                 if (!descriptor.uses().isEmpty()) {
@@ -234,7 +256,6 @@ final class Resolver {
             }
 
             candidateConsumers = resolve(q);
-
         } while (!candidateConsumers.isEmpty());
 
         return this;
@@ -429,21 +450,21 @@ final class Resolver {
             for (String dn : hashes.names()) {
                 ModuleReference other = nameToReference.get(dn);
                 if (other == null) {
-                    other = parent.findModule(dn)
-                            .map(ResolvedModule::reference)
-                            .orElse(null);
+                    ResolvedModule resolvedModule = findInParent(dn);
+                    if (resolvedModule != null)
+                        other = resolvedModule.reference();
                 }
 
                 // skip checking the hash if the module has been patched
                 if (other != null && !other.isPatched()) {
-                    String recordedHash = hashes.hashFor(dn);
-                    String actualHash = other.computeHash(algorithm);
+                    byte[] recordedHash = hashes.hashFor(dn);
+                    byte[] actualHash = other.computeHash(algorithm);
                     if (actualHash == null)
                         fail("Unable to compute the hash of module %s", dn);
-                    if (!recordedHash.equals(actualHash)) {
+                    if (!Arrays.equals(recordedHash, actualHash)) {
                         fail("Hash of %s (%s) differs to expected hash (%s)" +
-                             " recorded in %s", dn, actualHash, recordedHash,
-                             descriptor.name());
+                             " recorded in %s", dn, toHexString(actualHash),
+                             toHexString(recordedHash), descriptor.name());
                     }
                 }
             }
@@ -451,52 +472,68 @@ final class Resolver {
         }
     }
 
+    private static String toHexString(byte[] ba) {
+        StringBuilder sb = new StringBuilder(ba.length * 2);
+        for (byte b: ba) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
+    }
+
 
     /**
      * Computes the readability graph for the modules in the given Configuration.
      *
      * The readability graph is created by propagating "requires" through the
-     * "public requires" edges of the module dependence graph. So if the module
-     * dependence graph has m1 requires m2 && m2 requires public m3 then the
-     * resulting readability graph will contain m1 reads m2, m1 reads m3, and
-     * m2 reads m3.
+     * "requires transitive" edges of the module dependence graph. So if the
+     * module dependence graph has m1 requires m2 && m2 requires transitive m3
+     * then the resulting readability graph will contain m1 reads m2, m1 reads m3,
+     * and m2 reads m3.
      */
     private Map<ResolvedModule, Set<ResolvedModule>> makeGraph(Configuration cf) {
 
+        // initial capacity of maps to avoid resizing
+        int capacity = 1 + (4 * nameToReference.size())/ 3;
+
         // the "reads" graph starts as a module dependence graph and
         // is iteratively updated to be the readability graph
-        Map<ResolvedModule, Set<ResolvedModule>> g1 = new HashMap<>();
+        Map<ResolvedModule, Set<ResolvedModule>> g1 = new HashMap<>(capacity);
 
-        // the "requires public" graph, contains requires public edges only
-        Map<ResolvedModule, Set<ResolvedModule>> g2 = new HashMap<>();
+        // the "requires transitive" graph, contains requires transitive edges only
+        Map<ResolvedModule, Set<ResolvedModule>> g2;
 
-
-        // need "requires public" from the modules in parent configurations as
-        // there may be selected modules that have a dependency on modules in
+        // need "requires transitive" from the modules in parent configurations
+        // as there may be selected modules that have a dependency on modules in
         // the parent configuration.
-
-        Configuration p = parent;
-        while (p != null) {
-            for (ModuleDescriptor descriptor : p.descriptors()) {
-                String name = descriptor.name();
-                ResolvedModule m1 = p.findModule(name)
-                    .orElseThrow(() -> new InternalError(name + " not found"));
-                for (ModuleDescriptor.Requires requires : descriptor.requires()) {
-                    if (requires.modifiers().contains(Modifier.PUBLIC)) {
-                        String dn = requires.name();
-                        ResolvedModule m2 = p.findModule(dn)
-                            .orElseThrow(() -> new InternalError(dn + " not found"));
-                        g2.computeIfAbsent(m1, k -> new HashSet<>()).add(m2);
-                    }
-                }
-            }
-
-            p = p.parent().orElse(null);
+        if (Layer.boot() == null) {
+            g2 = new HashMap<>(capacity);
+        } else {
+            g2 = parents.stream()
+                .flatMap(Configuration::configurations)
+                .distinct()
+                .flatMap(c ->
+                    c.modules().stream().flatMap(m1 ->
+                        m1.descriptor().requires().stream()
+                            .filter(r -> r.modifiers().contains(Modifier.TRANSITIVE))
+                            .flatMap(r -> {
+                                Optional<ResolvedModule> m2 = c.findModule(r.name());
+                                assert m2.isPresent()
+                                        || r.modifiers().contains(Modifier.STATIC);
+                                return m2.stream();
+                            })
+                            .map(m2 -> Map.entry(m1, m2))
+                    )
+                )
+                // stream of m1->m2
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        HashMap::new,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toSet())
+            ));
         }
 
         // populate g1 and g2 with the dependences from the selected modules
 
-        Map<String, ResolvedModule> nameToResolved = new HashMap<>();
+        Map<String, ResolvedModule> nameToResolved = new HashMap<>(capacity);
 
         for (ModuleReference mref : nameToReference.values()) {
             ModuleDescriptor descriptor = mref.descriptor();
@@ -505,20 +542,21 @@ final class Resolver {
             ResolvedModule m1 = computeIfAbsent(nameToResolved, name, cf, mref);
 
             Set<ResolvedModule> reads = new HashSet<>();
-            Set<ResolvedModule> requiresPublic = new HashSet<>();
+            Set<ResolvedModule> requiresTransitive = new HashSet<>();
 
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
                 String dn = requires.name();
 
-                ResolvedModule m2;
+                ResolvedModule m2 = null;
                 ModuleReference mref2 = nameToReference.get(dn);
                 if (mref2 != null) {
                     // same configuration
                     m2 = computeIfAbsent(nameToResolved, dn, cf, mref2);
                 } else {
                     // parent configuration
-                    m2 = parent.findModule(dn).orElse(null);
+                    m2 = findInParent(dn);
                     if (m2 == null) {
+                        assert requires.modifiers().contains(Modifier.STATIC);
                         continue;
                     }
                 }
@@ -526,9 +564,9 @@ final class Resolver {
                 // m1 requires m2 => m1 reads m2
                 reads.add(m2);
 
-                // m1 requires public m2
-                if (requires.modifiers().contains(Modifier.PUBLIC)) {
-                    requiresPublic.add(m2);
+                // m1 requires transitive m2
+                if (requires.modifiers().contains(Modifier.TRANSITIVE)) {
+                    requiresTransitive.add(m2);
                 }
 
             }
@@ -538,7 +576,7 @@ final class Resolver {
             if (descriptor.isAutomatic()) {
 
                 // reads all selected modules
-                // `requires public` all selected automatic modules
+                // `requires transitive` all selected automatic modules
                 for (ModuleReference mref2 : nameToReference.values()) {
                     ModuleDescriptor descriptor2 = mref2.descriptor();
                     String name2 = descriptor2.name();
@@ -548,40 +586,42 @@ final class Resolver {
                             = computeIfAbsent(nameToResolved, name2, cf, mref2);
                         reads.add(m2);
                         if (descriptor2.isAutomatic())
-                            requiresPublic.add(m2);
+                            requiresTransitive.add(m2);
                     }
                 }
 
                 // reads all modules in parent configurations
-                // `requires public` all automatic modules in parent configurations
-                p = parent;
-                while (p != null) {
-                    for (ResolvedModule m : p.modules()) {
-                        reads.add(m);
-                        if (m.reference().descriptor().isAutomatic())
-                            requiresPublic.add(m);
-                    }
-                    p = p.parent().orElse(null);
+                // `requires transitive` all automatic modules in parent
+                // configurations
+                for (Configuration parent : parents) {
+                    parent.configurations()
+                            .map(Configuration::modules)
+                            .flatMap(Set::stream)
+                            .forEach(m -> {
+                                reads.add(m);
+                                if (m.reference().descriptor().isAutomatic())
+                                    requiresTransitive.add(m);
+                            });
                 }
-
             }
 
             g1.put(m1, reads);
-            g2.put(m1, requiresPublic);
+            g2.put(m1, requiresTransitive);
         }
 
-        // Iteratively update g1 until there are no more requires public to propagate
+        // Iteratively update g1 until there are no more requires transitive
+        // to propagate
         boolean changed;
-        Set<ResolvedModule> toAdd = new HashSet<>();
+        List<ResolvedModule> toAdd = new ArrayList<>();
         do {
             changed = false;
             for (Set<ResolvedModule> m1Reads : g1.values()) {
                 for (ResolvedModule m2 : m1Reads) {
-                    Set<ResolvedModule> m2RequiresPublic = g2.get(m2);
-                    if (m2RequiresPublic != null) {
-                        for (ResolvedModule m3 : m2RequiresPublic) {
+                    Set<ResolvedModule> m2RequiresTransitive = g2.get(m2);
+                    if (m2RequiresTransitive != null) {
+                        for (ResolvedModule m3 : m2RequiresTransitive) {
                             if (!m1Reads.contains(m3)) {
-                                // m1 reads m2, m2 requires public m3
+                                // m1 reads m2, m2 requires transitive m3
                                 // => need to add m1 reads m3
                                 toAdd.add(m3);
                             }
@@ -655,7 +695,7 @@ final class Resolver {
                     // source is exported to descriptor2
                     String source = export.source();
                     ModuleDescriptor other
-                        = packageToExporter.put(source, descriptor2);
+                        = packageToExporter.putIfAbsent(source, descriptor2);
 
                     if (other != null && other != descriptor2) {
                         // package might be local to descriptor1
@@ -692,12 +732,8 @@ final class Resolver {
                 }
 
                 // provides S
-                for (Map.Entry<String, ModuleDescriptor.Provides> entry :
-                        descriptor1.provides().entrySet()) {
-                    String service = entry.getKey();
-                    ModuleDescriptor.Provides provides = entry.getValue();
-
-                    String pn = packageName(service);
+                for (ModuleDescriptor.Provides provides : descriptor1.provides()) {
+                    String pn = packageName(provides.service());
                     if (!packageToExporter.containsKey(pn)) {
                         fail("Module %s does not read a module that exports %s",
                              descriptor1.name(), pn);
@@ -715,6 +751,18 @@ final class Resolver {
 
         }
 
+    }
+
+    /**
+     * Find a module of the given name in the parent configurations
+     */
+    private ResolvedModule findInParent(String mn) {
+        for (Configuration parent : parents) {
+            Optional<ResolvedModule> om = parent.findModule(mn);
+            if (om.isPresent())
+                return om.get();
+        }
+        return null;
     }
 
 
@@ -755,15 +803,18 @@ final class Resolver {
             if (afterModules.isEmpty())
                 return beforeModules;
 
-            if (beforeModules.isEmpty() && parent == Configuration.empty())
+            if (beforeModules.isEmpty()
+                    && parents.size() == 1
+                    && parents.get(0) == Configuration.empty())
                 return afterModules;
 
             Set<ModuleReference> result = new HashSet<>(beforeModules);
             for (ModuleReference mref : afterModules) {
                 String name = mref.descriptor().name();
                 if (!beforeFinder.find(name).isPresent()
-                        && !parent.findModule(name).isPresent())
+                        && findInParent(name) == null) {
                     result.add(mref);
+                }
             }
 
             return result;
