@@ -42,7 +42,6 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import netscape.javascript.JSObject;
 
 /**
  * Mirror object that wraps a given ScriptObject instance. User can

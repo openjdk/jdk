@@ -30,7 +30,7 @@ package java.util.function;
  * {@link BiConsumer}. Unlike most other functional interfaces,
  * {@code ObjLongConsumer} is expected to operate via side-effects.
  *
- * @param <T> Type of reference argument to {@code accept()}.
+ * @param <T> Type of reference argument to {@code accept()}
  *
  * @see BiConsumer
  * @since 1.8
@@ -44,5 +44,5 @@ public interface ObjLongConsumer<T> {
      * @param t an input object
      * @param value an input value
      */
-    public void accept(T t, long value);
+    void accept(T t, long value);
 }

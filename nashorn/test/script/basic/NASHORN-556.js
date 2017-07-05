@@ -47,7 +47,7 @@ function f1() {
   // (NoTypeArrayData)
   var empty = {};
   empty.length = 10;
-  Java.toJavaArray(empty);
+  Java.to(empty);
   delete empty[0];
   Array.prototype.slice.call(empty, 0, 1);
   Array.prototype.pop.call(empty);
@@ -63,7 +63,7 @@ function f1() {
 function f2() {
   // DeletedArrayFilter
   var deleted = [,1,,2,,3,,4,,];
-  assertEq(2, Java.toJavaArray(deleted)[3]);
+  assertEq(2, Java.to(deleted)[3]);
   assertEq(undefined, deleted.pop());
   assertEq(4, deleted.pop());
   deleted.unshift(5);
@@ -78,7 +78,7 @@ function f2() {
 function f3() {
   // DeletedRangeArrayFilter
   var delrange = [1,2,3,,,,,,,,,,];
-  Java.toJavaArray(delrange);
+  Java.to(delrange);
   delrange.unshift(4);
   p.apply(null, delrange);
   print(delrange.slice(1,3), delrange.slice(2,6));
@@ -88,7 +88,7 @@ function f3() {
 function f4() {
   // NumberArrayData
   var num = [1.1,2.2,3.3,4.4,5.5];
-  Java.toJavaArray(num);
+  Java.to(num);
   assertEq(2, num[3] >>> 1);
   assertEq(5, num[4] | 0);
   assertEq(5.5, num.pop());
@@ -104,7 +104,7 @@ function f4() {
 function f5() {
   // ObjectArrayData
   var obj = [2,"two",3.14,"pi",14,"fourteen"];
-  Java.toJavaArray(obj);
+  Java.to(obj);
   assertEq(-12.86, obj[2] - 16);
   assertEq(7, obj[4] >>> 1);
   obj.unshift("one");
@@ -131,14 +131,14 @@ function f6() {
   sparse.length = 1024*1024;
   sparse.push(sparse.length);
   delete sparse[sparse.length-1];
-  //print(Java.toJavaArray(sparse).length);
+  //print(Java.to(sparse).length);
   (function(){}).apply(null, sparse);
 }
 
 function f7() {
   // UndefinedArrayFilter
   var undef = [1,2,3,4,5,undefined,7,8,9,19];
-  Java.toJavaArray(undef);
+  Java.to(undef);
   assertEq(4, undef[8] >>> 1);
   var tmp = undef[9] >>> 1;
   undef[8] = tmp;
@@ -154,8 +154,8 @@ function f7() {
 
 function f8() {
   // LongArrayData
-  var j = Java.toJavaScriptArray(Java.toJavaArray([23,37,42,86,47], "long"));
-  Java.toJavaArray(j);
+  var j = Java.from(Java.to([23,37,42,86,47], "long[]"));
+  Java.to(j);
   p.apply(null, j);
   assertEq(43, j[3] >>> 1);
   assertEq(36, j[4] - 11);
@@ -164,12 +164,12 @@ function f8() {
   assertEq(7, j.shift());
   assertEq(47, j.pop());
   j.push("asdf");
-  j = Java.toJavaScriptArray(Java.toJavaArray([23,37,42,86,47], "long"));
+  j = Java.from(Java.to([23,37,42,86,47], "long[]"));
   j.length = 3;
   j[0] = 13;
-  j = Java.toJavaScriptArray(Java.toJavaArray([23,37,42,86,47], "long"));
+  j = Java.from(Java.to([23,37,42,86,47], "long[]"));
   delete j[0];
-  j = Java.toJavaScriptArray(Java.toJavaArray([23,37,42,86,47], "long"));
+  j = Java.from(Java.to([23,37,42,86,47], "long[]"));
   j.length = 20;
   j[0] = 13.37;
 }

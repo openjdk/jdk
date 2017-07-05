@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation which accepts a single input argument and returns no result.
  * Unlike most other functional interfaces, {@code Consumer} is expected to
@@ -41,5 +43,25 @@ public interface Consumer<T> {
      *
      * @param t the input object
      */
-    public void accept(T t);
+    void accept(T t);
+
+    /**
+     * Returns a {@code Consumer} which performs, in sequence, the operation
+     * represented by this object followed by the operation represented by
+     * the other {@code Consumer}.
+     *
+     * <p>Any exceptions thrown by either {@code accept} method are relayed
+     * to the caller; if performing this operation throws an exception, the
+     * other operation will not be performed.
+     *
+     * @param other a Consumer which will be chained after this Consumer
+     * @return a Consumer which performs in sequence the {@code accept} method
+     * of this Consumer and the {@code accept} method of the specified Consumer
+     * operation
+     * @throws NullPointerException if other is null
+     */
+    default Consumer<T> chain(Consumer<? super T> other) {
+        Objects.requireNonNull(other);
+        return (T t) -> { accept(t); other.accept(t); };
+    }
 }

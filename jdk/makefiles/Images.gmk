@@ -50,8 +50,6 @@ images:: jre-image jdk-image
 overlay-images: jre-overlay-image jdk-overlay-image
 
 
--include $(CUSTOM_MAKE_DIR)/Images.gmk
-
 
 # Processing license files from source area to image area
 # These will be modified to have the platform specific EOL chars.
@@ -774,3 +772,5 @@ endif # Profile
 ################################################################################
 
 .PHONY: default images jre-image jdk-image
+
+-include $(CUSTOM_MAKE_DIR)/Images.gmk

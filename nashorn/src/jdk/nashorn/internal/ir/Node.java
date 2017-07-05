@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -153,6 +154,14 @@ public abstract class Node implements Cloneable {
     }
 
     /**
+     * Returns true if this node represents a comparison operator
+     * @return true if comparison
+     */
+    public boolean isComparison() {
+        return false;
+    }
+
+    /**
      * For reference copies - ensure that labels in the copy node are unique
      * using an appropriate copy constructor
      * @param lc lexical context
@@ -167,7 +176,7 @@ public abstract class Node implements Cloneable {
      * @param visitor Node visitor.
      * @return node the node or its replacement after visitation, null if no further visitations are required
      */
-    public abstract Node accept(NodeVisitor visitor);
+    public abstract Node accept(NodeVisitor<? extends LexicalContext> visitor);
 
     @Override
     public String toString() {
@@ -329,7 +338,7 @@ public abstract class Node implements Cloneable {
     }
 
     //on change, we have to replace the entire list, that's we can't simple do ListIterator.set
-    static <T extends Node> List<T> accept(final NodeVisitor visitor, final Class<T> clazz, final List<T> list) {
+    static <T extends Node> List<T> accept(final NodeVisitor<? extends LexicalContext> visitor, final Class<T> clazz, final List<T> list) {
         boolean changed = false;
         final List<T> newList = new ArrayList<>();
 

@@ -634,6 +634,8 @@ cmsFloat64Number ParseFloatNumber(const char *Buffer)
     cmsFloat64Number dnum = 0.0;
     int sign = 1;
 
+    if (Buffer == NULL) return 0.0;
+
     if (*Buffer == '-' || *Buffer == '+') {
 
          sign = (*Buffer == '-') ? -1 : 1;

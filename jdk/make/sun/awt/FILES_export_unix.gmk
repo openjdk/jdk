@@ -187,3 +187,14 @@ FILES_export2 = \
 	java/awt/dnd/DnDConstants.java \
 	sun/awt/CausedFocusEvent.java
 
+ifeq ($(PLATFORM), macosx)
+ifeq ($(HEADLESS), true)
+FILES_export += \
+	sun/awt/SunHints.java \
+	sun/font/CCharToGlyphMapper.java \
+	sun/font/CFont.java \
+	sun/font/CFontManager.java \
+	sun/font/CStrike.java \
+	sun/font/CStrikeDisposer.java
+endif # HEADLESS
+endif # PLATFORM

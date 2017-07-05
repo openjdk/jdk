@@ -67,11 +67,11 @@ public final class LabelNode extends LexicalContextNode {
     }
 
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterLabelNode(this)) {
             return visitor.leaveLabelNode(
-                setLabel(visitor.getLexicalContext(), (IdentNode)label.accept(visitor)).
-                setBody(visitor.getLexicalContext(), (Block)body.accept(visitor)));
+                setLabel(lc, (IdentNode)label.accept(visitor)).
+                setBody(lc, (Block)body.accept(visitor)));
         }
 
         return this;
