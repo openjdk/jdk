@@ -2559,6 +2559,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /**********************/                                                \
   /* frame              */                                                \
   /**********************/                                                \
+  NOT_ZERO(PPC64_ONLY(declare_constant(frame::abi_minframe_size)))        \
+  NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
   NOT_ZERO(X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset)))      \
   declare_constant(frame::pc_return_offset)                               \

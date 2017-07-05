@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,6 +433,13 @@ public:
   // NullCheck oop_reg
   //
   inline static bool gen_narrow_oop_implicit_null_checks() {
+    // Advice matcher to perform null checks on the narrow oop side.
+    // Implicit checks are not possible on the uncompressed oop side anyway
+    // (at least not for read accesses).
+    // Performs significantly better (especially on Power 6).
+    if (!os::zero_page_read_protected()) {
+      return true;
+    }
     return Universe::narrow_oop_use_implicit_null_checks() &&
            (narrow_oop_use_complex_address() ||
             Universe::narrow_oop_base() != NULL);
