@@ -57,7 +57,6 @@ public interface CommonDataSource {
      *        logging is disabled
      * @exception java.sql.SQLException if a database access error occurs
      * @see #setLogWriter
-     * @since 1.4
      */
     java.io.PrintWriter getLogWriter() throws SQLException;
 
@@ -79,7 +78,6 @@ public interface CommonDataSource {
      * @param out the new log writer; to disable logging, set to null
      * @exception SQLException if a database access error occurs
      * @see #getLogWriter
-     * @since 1.4
      */
     void setLogWriter(java.io.PrintWriter out) throws SQLException;
 
@@ -94,7 +92,6 @@ public interface CommonDataSource {
      * @param seconds the data source login time limit
      * @exception SQLException if a database access error occurs.
      * @see #getLoginTimeout
-     * @since 1.4
      */
     void setLoginTimeout(int seconds) throws SQLException;
 
@@ -109,7 +106,6 @@ public interface CommonDataSource {
      * @return the data source login time limit
      * @exception SQLException if a database access error occurs.
      * @see #setLoginTimeout
-     * @since 1.4
      */
     int getLoginTimeout() throws SQLException;
 

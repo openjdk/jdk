@@ -1745,6 +1745,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 return GenerateJLIClassesHelper
                         .generateBasicFormsClassBytes(className);
             }
+
+            @Override
+            public byte[] generateInvokersHolderClassBytes(final String className,
+                    MethodType[] methodTypes) {
+                return GenerateJLIClassesHelper
+                        .generateInvokersHolderClassBytes(className, methodTypes);
+            }
         });
     }
 

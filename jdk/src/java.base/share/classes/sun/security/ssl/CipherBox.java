@@ -493,7 +493,9 @@ final class CipherBox {
 
                 if (protocolVersion.useTLS11PlusSpec()) {
                     if (newLen < blockSize) {
-                        throw new BadPaddingException("invalid explicit IV");
+                        throw new BadPaddingException("The length after " +
+                        "padding removal (" + newLen + ") should be larger " +
+                        "than <" + blockSize + "> since explicit IV used");
                     }
                 }
             }
@@ -503,7 +505,6 @@ final class CipherBox {
             throw new ArrayIndexOutOfBoundsException(e.toString());
         }
     }
-
 
     /*
      * Decrypts a block of data, returning the size of the
@@ -575,7 +576,9 @@ final class CipherBox {
                 // check the explicit IV of TLS v1.1 or later
                 if (protocolVersion.useTLS11PlusSpec()) {
                     if (newLen < blockSize) {
-                        throw new BadPaddingException("invalid explicit IV");
+                        throw new BadPaddingException("The length after " +
+                        "padding removal (" + newLen + ") should be larger " +
+                        "than <" + blockSize + "> since explicit IV used");
                     }
 
                     // reset the position to the end of the decrypted data
@@ -756,7 +759,9 @@ final class CipherBox {
             // so accept that as well
             // v3 does not require any particular value for the other bytes
             if (padLen > blockSize) {
-                throw new BadPaddingException("Invalid SSLv3 padding");
+                throw new BadPaddingException("Padding length (" +
+                padLen + ") of SSLv3 message should not be bigger " +
+                "than the block size (" + blockSize + ")");
             }
         }
         return newLen;
@@ -802,7 +807,9 @@ final class CipherBox {
             // so accept that as well
             // v3 does not require any particular value for the other bytes
             if (padLen > blockSize) {
-                throw new BadPaddingException("Invalid SSLv3 padding");
+                throw new BadPaddingException("Padding length (" +
+                padLen + ") of SSLv3 message should not be bigger " +
+                "than the block size (" + blockSize + ")");
             }
         }
 
@@ -925,7 +932,10 @@ final class CipherBox {
             case AEAD_CIPHER:
                 if (bb.remaining() < (recordIvSize + tagSize)) {
                     throw new BadPaddingException(
-                                        "invalid AEAD cipher fragment");
+                        "Insufficient buffer remaining for AEAD cipher " +
+                        "fragment (" + bb.remaining() + "). Needs to be " +
+                        "more than or equal to IV size (" + recordIvSize +
+                         ") + tag size (" + tagSize + ")");
                 }
 
                 // initialize the AEAD cipher for the unique IV
