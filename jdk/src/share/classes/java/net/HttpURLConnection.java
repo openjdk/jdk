@@ -399,6 +399,8 @@ abstract public class HttpURLConnection extends URLConnection {
      * @param method the HTTP method
      * @exception ProtocolException if the method cannot be reset or if
      *              the requested method isn't valid for HTTP.
+     * @exception SecurityException if a security manager is set and the
+     *              "allowHttpTrace" NetPermission is not granted.
      * @see #getRequestMethod()
      */
     public void setRequestMethod(String method) throws ProtocolException {
@@ -412,6 +414,12 @@ abstract public class HttpURLConnection extends URLConnection {
 
         for (int i = 0; i < methods.length; i++) {
             if (methods[i].equals(method)) {
+                if (method.equals("TRACE")) {
+                    SecurityManager s = System.getSecurityManager();
+                    if (s != null) {
+                        s.checkPermission(new NetPermission("allowHttpTrace"));
+                    }
+                }
                 this.method = method;
                 return;
             }

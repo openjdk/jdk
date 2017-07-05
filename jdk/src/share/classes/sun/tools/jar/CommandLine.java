@@ -36,7 +36,7 @@ import java.util.ArrayList;
 /**
  * Various utility methods for processing Java tool command line arguments.
  *
- *  <p><b>This is NOT part of any API suppored by Sun Microsystems.  If
+ *  <p><b>This is NOT part of any API supported by Oracle.  If
  *  you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>

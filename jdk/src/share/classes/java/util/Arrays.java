@@ -97,7 +97,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -136,7 +137,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -175,7 +177,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(short[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -214,7 +217,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(char[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -253,7 +257,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(byte[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -308,7 +313,8 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(float[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
@@ -363,12 +369,12 @@ public class Arrays {
      *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(a, fromIndex, toIndex);
+        rangeCheck(a.length, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /*
      * Sorting of complex type arrays.
-     *
      */
 
     /**

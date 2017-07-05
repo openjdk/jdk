@@ -2940,7 +2940,7 @@ merge_into_successors(context_type *context, unsigned int inumber,
     if (verify_verbose) {
         jio_fprintf(stdout, " [");
         for (i = handler_info_length; --i >= 0; handler_info++)
-            if (handler_info->start <= inumber && handler_info->end > inumber)
+            if (handler_info->start <= (int)inumber && handler_info->end > (int)inumber)
                 jio_fprintf(stdout, "%d* ", handler_info->handler);
         for (i = 0; i < successors_count; i++)
             jio_fprintf(stdout, "%d ", successors[i]);
@@ -3011,7 +3011,8 @@ merge_into_one_successor(context_type *context,
     instruction_data_type *this_idata = &idata[to_inumber];
     register_info_type old_reg_info;
     stack_info_type old_stack_info;
-    flag_type old_and_flags, old_or_flags;
+    flag_type old_and_flags = 0;
+    flag_type old_or_flags = 0;
 #endif
 
 #ifdef DEBUG

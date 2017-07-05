@@ -335,9 +335,15 @@ public class RuleBasedCollator extends Collator{
      * collation rules.  Returns information about whether a string is less
      * than, greater than or equal to another string in a language.
      * This can be overriden in a subclass.
+     *
+     * @exception NullPointerException if <code>source</code> or <code>target</code> is null.
      */
     public synchronized int compare(String source, String target)
     {
+        if (source == null || target == null) {
+            throw new NullPointerException();
+        }
+
         // The basic algorithm here is that we use CollationElementIterators
         // to step through both the source and target strings.  We compare each
         // collation element in the source string against the corresponding one

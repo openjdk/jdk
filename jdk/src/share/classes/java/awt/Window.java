@@ -928,7 +928,10 @@ public class Window extends Container implements Accessible {
             return;
         }
         if (beforeFirstWindowShown.getAndSet(false)) {
+            // We don't use SplashScreen.getSplashScreen() to avoid instantiating
+            // the object if it hasn't been requested by user code explicitly
             SunToolkit.closeSplashScreen();
+            SplashScreen.markClosed();
         }
     }
 

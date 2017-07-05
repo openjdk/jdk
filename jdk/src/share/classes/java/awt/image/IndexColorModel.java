@@ -129,6 +129,8 @@ public class IndexColorModel extends ColorModel {
     private boolean allgrayopaque;
     private BigInteger validBits;
 
+    private sun.awt.image.BufImgSurfaceData.ICMColorData colorData = null;
+
     private static int[] opaqueBits = {8, 8, 8};
     private static int[] alphaBits = {8, 8, 8, 8};
 
@@ -1511,7 +1513,6 @@ public class IndexColorModel extends ColorModel {
      * longer referenced.
      */
     public void finalize() {
-        sun.awt.image.BufImgSurfaceData.freeNativeICMData(this);
     }
 
     /**

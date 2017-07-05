@@ -86,7 +86,9 @@ public final class NetworkInterface {
      * If there is a security manager, its <code>checkConnect</code>
      * method is called for each InetAddress. Only InetAddresses where
      * the <code>checkConnect</code> doesn't throw a SecurityException
-     * will be returned in the Enumeration.
+     * will be returned in the Enumeration. However, if the caller has the
+     * {@link NetPermission}("getNetworkInformation") permission, then all
+     * InetAddresses are returned.
      * @return an Enumeration object with all or a subset of the InetAddresses
      * bound to this network interface
      */
@@ -99,11 +101,19 @@ public final class NetworkInterface {
 
             checkedAddresses() {
                 local_addrs = new InetAddress[addrs.length];
+                boolean trusted = true;
 
                 SecurityManager sec = System.getSecurityManager();
+                if (sec != null) {
+                    try {
+                        sec.checkPermission(new NetPermission("getNetworkInformation"));
+                    } catch (SecurityException e) {
+                        trusted = false;
+                    }
+                }
                 for (int j=0; j<addrs.length; j++) {
                     try {
-                        if (sec != null) {
+                        if (sec != null && !trusted) {
                             sec.checkConnect(addrs[j].getHostAddress(), -1);
                         }
                         local_addrs[count++] = addrs[j];
@@ -402,13 +412,29 @@ public final class NetworkInterface {
     /**
      * Returns the hardware address (usually MAC) of the interface if it
      * has one and if it can be accessed given the current privileges.
+     * If a security manager is set, then the caller must have
+     * the permission {@link NetPermission}("getNetworkInformation").
      *
-     * @return  a byte array containing the address or <code>null</code> if
-     *          the address doesn't exist or is not accessible.
+     * @return  a byte array containing the address, or <code>null</code> if
+     *          the address doesn't exist, is not accessible or a security
+     *          manager is set and the caller does not have the permission
+     *          NetPermission("getNetworkInformation")
+     *
      * @exception       SocketException if an I/O error occurs.
      * @since 1.6
      */
     public byte[] getHardwareAddress() throws SocketException {
+        SecurityManager sec = System.getSecurityManager();
+        if (sec != null) {
+            try {
+                sec.checkPermission(new NetPermission("getNetworkInformation"));
+            } catch (SecurityException e) {
+                if (!getInetAddresses().hasMoreElements()) {
+                    // don't have connect permission to any local address
+                    return null;
+                }
+            }
+        }
         for (InetAddress addr : addrs) {
             if (addr instanceof Inet4Address) {
                 return getMacAddr0(((Inet4Address)addr).getAddress(), name, index);
@@ -523,11 +549,10 @@ public final class NetworkInterface {
     }
 
     public int hashCode() {
-        int count = 0;
-        if (addrs != null) {
-            for (int i = 0; i < addrs.length; i++) {
-                count += addrs[i].hashCode();
-            }
+        int count = name == null? 0: name.hashCode();
+        Enumeration<InetAddress> addrs = getInetAddresses();
+        while (addrs.hasMoreElements()) {
+            count += addrs.nextElement().hashCode();
         }
         return count;
     }
