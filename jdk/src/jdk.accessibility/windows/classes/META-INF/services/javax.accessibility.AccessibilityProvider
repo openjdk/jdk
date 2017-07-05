@@ -22,5 +22,5 @@
 # questions.
 
 
-com.sun.java.accessibility.ProviderImpl
+com.sun.java.accessibility.internal.ProviderImpl
 

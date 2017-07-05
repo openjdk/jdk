@@ -39,8 +39,8 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
  * Indicates an exceptional condition that occurred during the XML
  * marshalling or unmarshalling process.
  *
- * <p>A <code>MarshalException</code> can contain a cause: another
- * throwable that caused this <code>MarshalException</code> to get thrown.
+ * <p>A {@code MarshalException} can contain a cause: another
+ * throwable that caused this {@code MarshalException} to get thrown.
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -62,15 +62,15 @@ public class MarshalException extends Exception {
     private Throwable cause;
 
     /**
-     * Constructs a new <code>MarshalException</code> with
-     * <code>null</code> as its detail message.
+     * Constructs a new {@code MarshalException} with
+     * {@code null} as its detail message.
      */
     public MarshalException() {
         super();
     }
 
     /**
-     * Constructs a new <code>MarshalException</code> with the specified
+     * Constructs a new {@code MarshalException} with the specified
      * detail message.
      *
      * @param message the detail message
@@ -80,14 +80,14 @@ public class MarshalException extends Exception {
     }
 
     /**
-     * Constructs a new <code>MarshalException</code> with the
+     * Constructs a new {@code MarshalException} with the
      * specified detail message and cause.
      * <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this exception's detail message.
      *
      * @param message the detail message
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public MarshalException(String message, Throwable cause) {
@@ -96,12 +96,11 @@ public class MarshalException extends Exception {
     }
 
     /**
-     * Constructs a new <code>MarshalException</code> with the specified cause
-     * and a detail message of <code>(cause==null ? null : cause.toString())
-     * </code> (which typically contains the class and detail message of
-     * <code>cause</code>).
+     * Constructs a new {@code MarshalException} with the specified cause
+     * and a detail message of {@code (cause==null ? null : cause.toString())}
+     * (which typically contains the class and detail message of {@code cause}).
      *
-     * @param cause the cause (A <tt>null</tt> value is permitted, and
+     * @param cause the cause (A {@code null} value is permitted, and
      *        indicates that the cause is nonexistent or unknown.)
      */
     public MarshalException(Throwable cause) {
@@ -110,20 +109,20 @@ public class MarshalException extends Exception {
     }
 
     /**
-     * Returns the cause of this <code>MarshalException</code> or
-     * <code>null</code> if the cause is nonexistent or unknown.  (The
+     * Returns the cause of this {@code MarshalException} or
+     * {@code null} if the cause is nonexistent or unknown.  (The
      * cause is the throwable that caused this
-     * <code>MarshalException</code> to get thrown.)
+     * {@code MarshalException} to get thrown.)
      *
-     * @return the cause of this <code>MarshalException</code> or
-     *         <code>null</code> if the cause is nonexistent or unknown.
+     * @return the cause of this {@code MarshalException} or
+     *         {@code null} if the cause is nonexistent or unknown.
      */
     public Throwable getCause() {
         return cause;
     }
 
     /**
-     * Prints this <code>MarshalException</code>, its backtrace and
+     * Prints this {@code MarshalException}, its backtrace and
      * the cause's backtrace to the standard error stream.
      */
     public void printStackTrace() {
@@ -132,10 +131,10 @@ public class MarshalException extends Exception {
     }
 
     /**
-     * Prints this <code>MarshalException</code>, its backtrace and
+     * Prints this {@code MarshalException}, its backtrace and
      * the cause's backtrace to the specified print stream.
      *
-     * @param s <code>PrintStream</code> to use for output
+     * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
         super.printStackTrace(s);
@@ -143,10 +142,10 @@ public class MarshalException extends Exception {
     }
 
     /**
-     * Prints this <code>MarshalException</code>, its backtrace and
+     * Prints this {@code MarshalException}, its backtrace and
      * the cause's backtrace to the specified print writer.
      *
-     * @param s <code>PrintWriter</code> to use for output
+     * @param s {@code PrintWriter} to use for output
      */
     public void printStackTrace(PrintWriter s) {
         super.printStackTrace(s);

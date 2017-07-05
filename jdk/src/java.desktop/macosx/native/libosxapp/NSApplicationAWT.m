@@ -349,6 +349,7 @@ AWT_ASSERT_APPKIT_THREAD;
             && [event subtype] == NativeSyncQueueEvent) {
         [seenDummyEventLock lockWhenCondition:NO];
         [seenDummyEventLock unlockWithCondition:YES];
+
     } else if ([event type] == NSApplicationDefined && [event subtype] == ExecuteBlockEvent) {
         void (^block)() = (void (^)()) [event data1];
         block();
@@ -387,9 +388,7 @@ AWT_ASSERT_APPKIT_THREAD;
     [pool drain];
 }
 
-
-
-- (void)postDummyEvent {
+- (void)postDummyEvent:(bool)useCocoa {
     seenDummyEventLock = [[NSConditionLock alloc] initWithCondition:NO];
     dummyEventTimestamp = [NSProcessInfo processInfo].systemUptime;
 
@@ -403,19 +402,28 @@ AWT_ASSERT_APPKIT_THREAD;
                                          subtype: NativeSyncQueueEvent
                                            data1: 0
                                            data2: 0];
-    [NSApp postEvent: event atStart: NO];
+    if (useCocoa) {
+        [NSApp postEvent:event atStart:NO];
+    } else {
+        ProcessSerialNumber psn;
+        GetCurrentProcess(&psn);
+        CGEventPostToPSN(&psn, [event CGEvent]);
+    }
     [pool drain];
 }
 
-- (void)waitForDummyEvent:(long long) timeout {
+- (void)waitForDummyEvent:(double)timeout {
+    bool unlock = true;
     if (timeout >= 0) {
-        double sec = ((double) timeout)/1000;
-        [seenDummyEventLock lockWhenCondition:YES
+        double sec = timeout / 1000;
+        unlock = [seenDummyEventLock lockWhenCondition:YES
                                beforeDate:[NSDate dateWithTimeIntervalSinceNow:sec]];
     } else {
         [seenDummyEventLock lockWhenCondition:YES];
     }
-    [seenDummyEventLock unlock];
+    if (unlock) {
+        [seenDummyEventLock unlock];
+    }
     [seenDummyEventLock release];
 
     seenDummyEventLock = nil;

@@ -28,6 +28,7 @@ import javax.sound.midi.MidiSystem;
 /**
  * @test
  * @bug 8068412
+ * @key headful
  * @author Sergey Bylokhov
  */
 public final class InitializationHang {
