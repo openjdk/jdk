@@ -1,6 +1,6 @@
-s|X01|com|g
-s|X02|org|g
-s|X03|sun|g
+s|X01|share/classes|g
+s|X02|internal|g
+s|X03|com/sun/org|g
 s|X04|java|g
 s|X05|javax|g
 s|X06|sun/io|g
