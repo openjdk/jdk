@@ -32,13 +32,18 @@ final class CompilationUnitTreeImpl extends TreeImpl
     implements CompilationUnitTree {
     private final FunctionNode funcNode;
     private final List<? extends Tree> elements;
+    private final ModuleTree module;
 
     CompilationUnitTreeImpl(final FunctionNode node,
-            final List<? extends Tree> elements) {
+            final List<? extends Tree> elements,
+            final ModuleTree module) {
         super(node);
         this.funcNode = node;
-        assert funcNode.getKind() == FunctionNode.Kind.SCRIPT : "script function expected";
+        assert funcNode.getKind() == FunctionNode.Kind.SCRIPT ||
+                funcNode.getKind() == FunctionNode.Kind.MODULE :
+                "script or module function expected";
         this.elements = elements;
+        this.module = module;
     }
 
     @Override
@@ -64,6 +69,11 @@ final class CompilationUnitTreeImpl extends TreeImpl
     @Override
     public LineMap getLineMap() {
         return new LineMapImpl(funcNode.getSource());
+    }
+
+    @Override
+    public ModuleTree getModule() {
+        return module;
     }
 
     @Override

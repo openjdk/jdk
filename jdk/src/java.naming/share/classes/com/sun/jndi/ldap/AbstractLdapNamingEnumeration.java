@@ -300,7 +300,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         errEx = e;
     }
 
-    protected abstract AbstractLdapNamingEnumeration<T> getReferredResults(
+    protected abstract AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException;
 
     /*
@@ -360,7 +360,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      * Merge the entries and/or referrals from the supplied enumeration
      * with those of the current enumeration.
      */
-    protected void update(AbstractLdapNamingEnumeration<T> ne) {
+    protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
         // Cleanup previous context first
         homeCtx.decEnumCount();
 

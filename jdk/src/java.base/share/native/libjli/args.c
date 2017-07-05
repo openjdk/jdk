@@ -130,7 +130,7 @@ static void checkArg(const char *arg) {
         expectingNoDashArg = JNI_FALSE;
     }
     // only update on java mode and not yet found main class
-    if (firstAppArgIndex == -1 && idx != 0) {
+    if (firstAppArgIndex == NOT_FOUND && idx != 0) {
         firstAppArgIndex = (int) idx;
     }
 }

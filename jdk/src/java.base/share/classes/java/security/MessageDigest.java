@@ -439,7 +439,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
     /**
-     * Compares two digests for equality. Does a simple byte compare.
+     * Compares two digests for equality. Two digests are equal if they have
+     * the same length and all bytes at corresponding positions are equal.
+     *
+     * @implNote
+     * If the digests are the same length, all bytes are examined to
+     * determine equality.
      *
      * @param digesta one of the digests to compare.
      *

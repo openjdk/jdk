@@ -114,6 +114,7 @@
               "expression": {
                 "endPosition": "76",
                 "kind": "IDENTIFIER",
+                "this": "true",
                 "name": "this",
                 "startPosition": "72"
               },

@@ -89,7 +89,16 @@ public interface ModulePool {
      * @param path A data path
      * @return A ModuleEntry instance or null if the data is not found
      */
-   public Optional<ModuleEntry> findEntry(String path);
+    public Optional<ModuleEntry> findEntry(String path);
+
+    /**
+     * Get the ModuleEntry for the passed path restricted to supplied context.
+     *
+     * @param path A data path
+     * @param context A context of the search
+     * @return A ModuleEntry instance or null if the data is not found
+     */
+    public Optional<ModuleEntry> findEntryInContext(String path, ModuleEntry context);
 
     /**
      * Check if the ModulePool contains the given ModuleEntry.
