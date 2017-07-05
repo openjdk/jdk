@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.util.Arrays;
 import sun.invoke.empty.Empty;
+import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.LambdaForm.*;
@@ -128,9 +129,8 @@ class Invokers {
         try {
             //Lookup.findVirtual(MethodHandle.class, name, type);
             return IMPL_LOOKUP.resolveOrFail(REF_invokeVirtual, MethodHandle.class, name, type);
-
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError("JVM cannot find invoker for "+type, ex);
+            throw newInternalError("JVM cannot find invoker for "+type, ex);
         }
     }
 
@@ -176,7 +176,7 @@ class Invokers {
                     .findVirtual(MethodHandle.class, "asSpreader",
                         MethodType.methodType(MethodHandle.class, Class.class, int.class));
             } catch (ReflectiveOperationException ex) {
-                throw new InternalError(ex);
+                throw newInternalError(ex);
             }
             makeSpreader = MethodHandles.insertArguments(makeSpreader, 1, Object[].class, spreadArgCount);
             vaInvoker = MethodHandles.filterArgument(arrayInvoker, 0, makeSpreader);
@@ -215,7 +215,7 @@ class Invokers {
                     .findStatic(CallSite.class, "uninitializedCallSite",
                                 MethodType.methodType(Empty.class));
             } catch (ReflectiveOperationException ex) {
-                throw new InternalError(ex);
+                throw newInternalError(ex);
             }
         }
         invoker = MethodHandles.explicitCastArguments(invoker, MethodType.methodType(targetType.returnType()));
@@ -389,7 +389,7 @@ class Invokers {
             form.genericInvoker = gamh;
             return gamh;
         } catch (Exception ex) {
-            throw new InternalError("Exception while resolving inexact invoke", ex);
+            throw newInternalError("Exception while resolving inexact invoke", ex);
         }
     }
 
@@ -456,7 +456,7 @@ class Invokers {
             NF_getCallSiteTarget.resolve();
             // bound
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
     }
 

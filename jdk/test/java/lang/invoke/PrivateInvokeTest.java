@@ -145,21 +145,21 @@ public class PrivateInvokeTest {
             MH_DEBUG_STRING = DIRECT_INVOKER_LOOKUP
                     .findVirtual(MethodHandle.class, "debugString", methodType(String.class));
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw new Error(ex);
         }
     }
     private Object internalMemberName(MethodHandle mh) {
         try {
             return MH_INTERNAL_MEMBER_NAME.invokeExact(mh);
         } catch (Throwable ex) {
-            throw new InternalError(ex);
+            throw new Error(ex);
         }
     }
     private String debugString(MethodHandle mh) {
         try {
             return (String) MH_DEBUG_STRING.invokeExact(mh);
         } catch (Throwable ex) {
-            throw new InternalError(ex);
+            throw new Error(ex);
         }
     }
     private static MethodHandle directInvoker(int refKind, MethodType mtype) {
