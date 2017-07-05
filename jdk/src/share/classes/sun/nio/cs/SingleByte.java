@@ -107,7 +107,7 @@ public class SingleByte
                 return decodeBufferLoop(src, dst);
         }
 
-        private final char decode(int b) {
+        public final char decode(int b) {
             return b2c[b + 128];
         }
 
@@ -221,7 +221,7 @@ public class SingleByte
                 return encodeBufferLoop(src, dst);
         }
 
-        private final int encode(char ch) {
+        public final int encode(char ch) {
             char index = c2bIndex[ch >> 8];
             if (index == UNMAPPABLE_ENCODING)
                 return UNMAPPABLE_ENCODING;

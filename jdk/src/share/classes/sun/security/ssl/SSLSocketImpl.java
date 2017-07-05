@@ -1576,11 +1576,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         Throwable cachedThrowable = null;
         try {
             switch (state) {
-            /*
-             * java.net code sometimes closes sockets "early", when
-             * we can't actually do I/O on them.
-             */
             case cs_START:
+                // unconnected socket or handshaking has not been initialized
+                closeSocket(selfInitiated);
                 break;
 
             /*

@@ -191,9 +191,6 @@ com/sun/net/httpserver/Test9a.java                              generic-all
 # 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
 java/net/ipv6tests/UdpTest.java                                 linux-all
 
-# 7081476
-java/net/InetSocketAddress/B6469803.java                        generic-all
-
 # 7102670
 java/net/InetAddress/CheckJNI.java                              linux-all
 
@@ -270,9 +267,6 @@ java/rmi/registry/readTest/readTest.sh				windows-all
 ############################################################################
 
 # jdk_security
-
-# 7177556
-com/sun/crypto/provider/KeyFactory/TestProviderLeak.java        generic-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -389,9 +383,5 @@ java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
-
-# 7150557
-java/util/prefs/RemoveReadOnlyNode.java                         macosx-all
-java/util/prefs/RemoveUnregedListener.java                      macosx-all
 
 ############################################################################
