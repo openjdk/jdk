@@ -26,7 +26,6 @@
 # @summary Unit tests for appendToBootstrapClassLoaderSearch and
 #   appendToSystemClasLoaderSearch methods.
 #
-# @modules java.instrument
 # @build ClassUnloadTest
 # @run shell ClassUnloadTest.sh
 

@@ -70,18 +70,18 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBNIO_CFLAGS), \
     MAPFILE := $(BUILD_LIBNIO_MAPFILE), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(BUILD_LIBNIO_LDFLAGS) \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_linux := -ljava -lnet -lpthread $(LIBDL), \
-    LDFLAGS_SUFFIX_aix := -ljava -lnet $(LIBDL),\
-    LDFLAGS_SUFFIX_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
-        -lsendfile -ljava -lnet -lc, \
-    LDFLAGS_SUFFIX_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
+    LIBS_unix := -ljava -lnet, \
+    LIBS_linux := -lpthread $(LIBDL), \
+    LIBS_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
+        -lsendfile -lc, \
+    LIBS_aix := $(LIBDL), \
+    LIBS_macosx := \
+        -framework CoreFoundation -framework CoreServices, \
+    LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
         $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
         advapi32.lib, \
-    LDFLAGS_SUFFIX_macosx := -ljava -lnet -pthread \
-        -framework CoreFoundation -framework CoreServices, \
-    LDFLAGS_SUFFIX :=, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=nio.dll" \

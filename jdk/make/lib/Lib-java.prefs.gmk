@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_linux := -ljvm -ljava, \
-    LDFLAGS_SUFFIX_solaris := -ljvm -ljava -lc, \
-    LDFLAGS_SUFFIX_aix := -ljvm -ljava, \
-    LDFLAGS_SUFFIX_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation -framework Foundation, \
+    LIBS_unix := -ljvm, \
+    LIBS_linux := -ljava, \
+    LIBS_solaris := -ljava -lc, \
+    LIBS_aix := -ljava, \
+    LIBS_macosx := -framework CoreFoundation -framework Foundation, \
+    LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=prefs.dll" \
