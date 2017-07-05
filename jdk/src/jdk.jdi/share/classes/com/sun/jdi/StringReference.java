@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public interface StringReference extends ObjectReference {
+
     /**
      * Returns the StringReference as a String. The returned string
      * is the equivalent of the mirrored string, but is an entity in the

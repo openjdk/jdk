@@ -24,8 +24,9 @@
  */
 
 /**
- * RMI Java Naming provider.
+ * Provides the implementation of the RMI Java Naming provider.
  *
+ * @provides javax.naming.spi.InitialContextFactory
  * @moduleGraph
  * @since 9
  */
@@ -39,4 +40,3 @@ module jdk.naming.rmi {
     exports com.sun.jndi.url.rmi to java.naming;
     exports com.sun.jndi.rmi.registry to java.rmi;
 }
-

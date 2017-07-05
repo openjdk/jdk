@@ -24,9 +24,10 @@
  */
 
 /**
- * Contains the implementation of the javax.security.auth.* interfaces and
- * various authentication modules.
+ * Provides the implementation of the {@code javax.security.auth.*}
+ * interfaces and various authentication modules.
  *
+ * @provides javax.security.auth.spi.LoginModule
  * @moduleGraph
  * @since 9
  */
@@ -47,4 +48,3 @@ module jdk.security.auth {
         com.sun.security.auth.module.LdapLoginModule,
         com.sun.security.auth.module.NTLoginModule;
 }
-
