@@ -159,8 +159,10 @@ class ResourceBundleGenerator implements BundleGenerator {
             out.println(CopyrightHeaders.getOpenJDKCopyright());
 
             out.println("package sun.util.cldr;\n\n"
-                      + "import java.util.ListResourceBundle;\n");
-            out.printf("public class %s extends ListResourceBundle {\n", METAINFO_CLASS);
+                      + "import java.util.ListResourceBundle;\n"
+                      + "import sun.util.locale.provider.LocaleProviderAdapter;\n"
+                      + "import sun.util.locale.provider.LocaleDataMetaInfo;\n");
+            out.printf("public class %s extends ListResourceBundle implements LocaleDataMetaInfo {\n", METAINFO_CLASS);
             out.println("    @Override\n" +
                         "    protected final Object[][] getContents() {\n" +
                         "        final Object[][] data = new Object[][] {");
@@ -168,7 +170,15 @@ class ResourceBundleGenerator implements BundleGenerator {
                 out.printf("            { \"%s\",\n", key);
                 out.printf("              \"%s\" },\n", toLocaleList(metaInfo.get(key)));
             }
-            out.println("        };\n        return data;\n    }\n}");
+            out.println("        };\n        return data;\n    }\n\n");
+
+            out.println("    public LocaleProviderAdapter.Type getType() {\n" +
+                        "        return LocaleProviderAdapter.Type.CLDR;\n" +
+                        "    }\n\n");
+
+            out.println("    public String availableLanguageTags(String category) {\n" +
+                        "        return getString(category);\n" +
+                        "    };\n}");
         }
     }
 

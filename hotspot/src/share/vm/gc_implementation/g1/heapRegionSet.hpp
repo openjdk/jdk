@@ -238,14 +238,14 @@ public:
 
   // Add hr to the list. The region should not be a member of another set.
   // Assumes that the list is ordered and will preserve that order. The order
-  // is determined by hrs_index.
+  // is determined by hrm_index.
   inline void add_ordered(HeapRegion* hr);
 
   // Removes from head or tail based on the given argument.
   HeapRegion* remove_region(bool from_head);
 
   // Merge two ordered lists. The result is also ordered. The order is
-  // determined by hrs_index.
+  // determined by hrm_index.
   void add_ordered(FreeRegionList* from_list);
 
   // It empties the list by removing all regions from it.

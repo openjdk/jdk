@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.Policy;
 import java.sql.SQLException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -87,5 +88,12 @@ public class BaseTest {
             o1 = (T) ois.readObject();
         }
         return o1;
+    }
+
+    /*
+     * Utility Method used to set the current Policy
+     */
+    protected static void setPolicy(Policy p) {
+        Policy.setPolicy(p);
     }
 }
