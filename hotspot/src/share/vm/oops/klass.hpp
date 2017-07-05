@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,24 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_KLASS_HPP
+#define SHARE_VM_OOPS_KLASS_HPP
+
+#include "memory/genOopClosures.hpp"
+#include "memory/iterator.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/specialized_oop_closures.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/klassPS.hpp"
+#include "oops/oop.hpp"
+#include "runtime/orderAccess.hpp"
+#include "utilities/accessFlags.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
+#include "gc_implementation/g1/g1OopClosures.hpp"
+#include "gc_implementation/parNew/parOopClosures.hpp"
+#endif
 
 // A Klass is the part of the klassOop that provides:
 //  1: language level class object (method dictionary etc.)
@@ -792,3 +810,5 @@ class Klass : public Klass_vtbl {
   void verify_vtable_index(int index);
 #endif
 };
+
+#endif // SHARE_VM_OOPS_KLASS_HPP

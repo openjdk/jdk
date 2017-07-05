@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_HASHTABLE_INLINE_HPP
+#define SHARE_VM_UTILITIES_HASHTABLE_INLINE_HPP
+
+#include "memory/allocation.inline.hpp"
+#include "utilities/hashtable.hpp"
 
 // Inline function definitions for hashtable.hpp.
 
@@ -124,3 +130,5 @@ inline void BasicHashtable::free_entry(BasicHashtableEntry* entry) {
   _free_list = entry;
   --_number_of_entries;
 }
+
+#endif // SHARE_VM_UTILITIES_HASHTABLE_INLINE_HPP

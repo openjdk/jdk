@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_library_call.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileLog.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/idealKit.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class LibraryIntrinsic : public InlineCallGenerator {
   // Extend the set of intrinsics known to the runtime:

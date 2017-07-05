@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_MODREFBARRIERSET_HPP
+#define SHARE_VM_MEMORY_MODREFBARRIERSET_HPP
+
+#include "memory/barrierSet.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
@@ -111,3 +116,5 @@ public:
 #endif
 
 };
+
+#endif // SHARE_VM_MEMORY_MODREFBARRIERSET_HPP

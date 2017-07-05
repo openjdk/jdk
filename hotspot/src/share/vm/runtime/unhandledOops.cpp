@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_unhandledOops.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/unhandledOops.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #ifdef CHECK_UNHANDLED_OOPS
 const int free_list_size = 256;

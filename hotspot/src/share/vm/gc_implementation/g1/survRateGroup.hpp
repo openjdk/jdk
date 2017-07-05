@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_SURVRATEGROUP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_SURVRATEGROUP_HPP
+
+#include "utilities/numberSeq.hpp"
+
 class G1CollectorPolicy;
 
 class SurvRateGroup : public CHeapObj {
@@ -92,3 +97,5 @@ public:
   void print_surv_rate_summary();
 #endif // PRODUCT
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_SURVRATEGROUP_HPP

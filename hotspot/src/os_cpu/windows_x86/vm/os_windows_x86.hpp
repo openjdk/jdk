@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
 
   //
   // NOTE: we are back in class os here, not win32
@@ -56,3 +59,5 @@
   static bool supports_sse() { return true; }
 
   static bool      register_code_area(char *low, char *high);
+
+#endif // OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP

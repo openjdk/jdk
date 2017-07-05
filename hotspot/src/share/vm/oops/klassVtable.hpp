@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_KLASSVTABLE_HPP
+#define SHARE_VM_OOPS_KLASSVTABLE_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
 // A klassVtable abstracts the variable-length vtable that is embedded in instanceKlass
 // and arrayKlass.  klassVtable objects are used just as convenient transient accessors to the vtable,
@@ -319,3 +327,5 @@ class klassItable : public ResourceObj {
 
   static void update_stats(int size) PRODUCT_RETURN NOT_PRODUCT({ _total_classes++; _total_size += size; })
 };
+
+#endif // SHARE_VM_OOPS_KLASSVTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_C1_C1_LINEARSCAN_HPP
+#define SHARE_VM_C1_C1_LINEARSCAN_HPP
+
+#include "c1/c1_FpuStackSim.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 
 class DebugInfoCache;
 class FpuStackAllocator;
@@ -955,4 +965,12 @@ class LinearScanTimers : public StackObj {
 
 
 // Pick up platform-dependent implementation details
-# include "incls/_c1_LinearScan_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_LinearScan_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_LinearScan_sparc.hpp"
+#endif
+
+
+#endif // SHARE_VM_C1_C1_LINEARSCAN_HPP

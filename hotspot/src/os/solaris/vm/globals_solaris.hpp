@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP
+#define OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP
 
 //
 // Defines Solaris specific flags. They are not available on other platforms.
@@ -47,3 +50,5 @@ define_pd_global(bool, UseLargePages, true);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, false);
+
+#endif // OS_SOLARIS_VM_GLOBALS_SOLARIS_HPP

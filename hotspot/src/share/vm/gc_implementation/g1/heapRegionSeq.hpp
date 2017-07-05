@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
+
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "utilities/growableArray.hpp"
 
 class HeapRegion;
 class HeapRegionClosure;
@@ -108,3 +114,5 @@ class HeapRegionSeq: public CHeapObj {
   void print_empty_runs();
 
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP

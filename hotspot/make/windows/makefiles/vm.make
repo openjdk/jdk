@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 # Resource file containing VERSIONINFO
 Res_Files=.\version.res
+
+!include ..\generated\objfiles.make
 
 !ifdef RELEASE 
 !ifdef DEVELOP
@@ -69,10 +71,7 @@ CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
 
-CPP_FLAGS=$(CPP_FLAGS) /D "WIN32" /D "_WINDOWS" $(CPP_INCLUDE_DIRS)
-
-# Must specify this for sharedRuntimeTrig.cpp
-CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
+CPP_FLAGS=$(CPP_FLAGS) $(CPP_INCLUDE_DIRS)
 
 # Define that so jni.h is on correct side
 CPP_FLAGS=$(CPP_FLAGS) /D "_JNI_IMPLEMENTATION_"
@@ -94,6 +93,8 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 !endif
 !endif
 
+# If you modify exports below please do the corresponding changes in
+# src/share/tools/ProjectCreator/WinGammaPlatformVC7.java 
 LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JNI_GetDefaultJavaVMInitArgs       \
   /export:JNI_CreateJavaVM                   \
@@ -111,37 +112,24 @@ LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JVM_InitAgentProperties
 
 CPP_INCLUDE_DIRS=\
-  /I "..\generated"                          \
-  /I "..\generated\jvmtifiles"               \
-  /I "$(WorkSpace)\src\share\vm\c1"          \
-  /I "$(WorkSpace)\src\share\vm\compiler"    \
-  /I "$(WorkSpace)\src\share\vm\code"        \
-  /I "$(WorkSpace)\src\share\vm\interpreter" \
-  /I "$(WorkSpace)\src\share\vm\ci"          \
-  /I "$(WorkSpace)\src\share\vm\classfile"   \
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\parallelScavenge"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\shared"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\parNew"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\concurrentMarkSweep"\
-  /I "$(WorkSpace)\src\share\vm\gc_implementation\g1"\
-  /I "$(WorkSpace)\src\share\vm\gc_interface"\
-  /I "$(WorkSpace)\src\share\vm\asm"         \
-  /I "$(WorkSpace)\src\share\vm\memory"      \
-  /I "$(WorkSpace)\src\share\vm\oops"        \
-  /I "$(WorkSpace)\src\share\vm\prims"       \
-  /I "$(WorkSpace)\src\share\vm\runtime"     \
-  /I "$(WorkSpace)\src\share\vm\services"    \
-  /I "$(WorkSpace)\src\share\vm\utilities"   \
-  /I "$(WorkSpace)\src\share\vm\libadt"      \
-  /I "$(WorkSpace)\src\share\vm\opto"        \
-  /I "$(WorkSpace)\src\os\windows\vm"          \
+  /I "..\generated" \
+  /I "$(WorkSpace)\src\share\vm" \
+  /I "$(WorkSpace)\src\share\vm\prims" \
+  /I "$(WorkSpace)\src\os\windows\vm" \
   /I "$(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm" \
   /I "$(WorkSpace)\src\cpu\$(Platform_arch)\vm"
 
-CPP_USE_PCH=/Fp"vm.pch" /Yu"incls/_precompiled.incl"
+CPP_DONT_USE_PCH=/D DONT_USE_PRECOMPILED_HEADER
+
+!if "$(USE_PRECOMPILED_HEADER)" != "0"
+CPP_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
+!else
+CPP_USE_PCH=$(CPP_DONT_USE_PCH)
+!endif
 
 # Where to find the source code for the virtual machine
-VM_PATH=../generated/incls
+VM_PATH=../generated
+VM_PATH=$(VM_PATH);../generated/adfiles
 VM_PATH=$(VM_PATH);../generated/jvmtifiles
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/c1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/compiler
@@ -173,31 +161,31 @@ VM_PATH={$(VM_PATH)}
 # Special case files not using precompiled header files.
 
 c1_RInfo_$(Platform_arch).obj: $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp 
-	 $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
+	 $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
 
 os_windows.obj: $(WorkSpace)\src\os\windows\vm\os_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
 
 os_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
 
 osThread_windows.obj: $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
 
 conditionVar_windows.obj: $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
 
 getThread_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
 
 opcodes.obj: $(WorkSpace)\src\share\vm\opto\opcodes.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
 
 bytecodeInterpreter.obj: $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
-        $(CPP) $(CPP_FLAGS) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
 
 bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
-        $(CPP) $(CPP_FLAGS) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
+        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
 
 # Default rules for the Virtual Machine
 {$(WorkSpace)\src\share\vm\c1}.cpp.obj::
@@ -280,11 +268,14 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {..\generated\incls}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
+{..\generated\adfiles}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
 {..\generated\jvmtifiles}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 default::
 
 _build_pch_file.obj:
-        @echo #include "incls/_precompiled.incl" > ../generated/_build_pch_file.cpp
-        $(CPP) $(CPP_FLAGS) /Fp"vm.pch" /Yc"incls/_precompiled.incl" /c ../generated/_build_pch_file.cpp
+        @echo #include "precompiled.hpp" > ../generated/_build_pch_file.cpp
+        $(CPP) $(CPP_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp

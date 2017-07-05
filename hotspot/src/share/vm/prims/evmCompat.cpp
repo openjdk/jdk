@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "utilities/debug.hpp"
+
 // This file contains definitions for functions that exist
 // in the ExactVM, but not in HotSpot. They are stubbed out
 // here to prevent linker errors when attempting to use HotSpot
 // with the ExactVM jdk.
-
-# include "incls/_precompiled.incl"
-# include "incls/_evmCompat.cpp.incl"
 
 extern "C" void JVM_Process_DestroyProcess(void);
 extern "C" void JVM_Process_ForkAndExec(void);

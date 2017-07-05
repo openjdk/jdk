@@ -22,6 +22,35 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP
+#define SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP
+
+#include "code/stubs.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/top.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "interp_masm_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "interp_masm_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "interp_masm_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "interp_masm_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+
 // This file contains the platform-independent parts
 // of the abstract interpreter and the abstract interpreter generator.
 
@@ -256,3 +285,5 @@ class AbstractInterpreterGenerator: public StackObj {
  public:
   AbstractInterpreterGenerator(StubQueue* _code);
 };
+
+#endif // SHARE_VM_INTERPRETER_ABSTRACTINTERPRETER_HPP

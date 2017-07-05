@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_relocInfo_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
+#include "assembler_x86.inline.hpp"
+#include "code/relocInfo.hpp"
+#include "nativeInst_x86.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/safepoint.hpp"
 
 
 void Relocation::pd_set_data_value(address x, intptr_t o) {

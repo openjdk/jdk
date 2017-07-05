@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_intHisto.cpp.incl"
+#include "precompiled.hpp"
+#include "utilities/intHisto.hpp"
 
 IntHistogram::IntHistogram(int est, int max) : _max(max), _tot(0) {
   assert(0 <= est && est <= max, "Preconditions");

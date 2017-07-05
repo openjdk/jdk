@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_SERVICES_HEAPDUMPER_HPP
+#define SHARE_VM_SERVICES_HEAPDUMPER_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/oop.hpp"
+#include "runtime/os.hpp"
+
 // HeapDumper is used to dump the java heap to file in HPROF binary format:
 //
 //  { HeapDumper dumper(true /* full GC before heap dump */);
@@ -73,3 +81,5 @@ class HeapDumper : public StackObj {
 
   static void dump_heap_from_oome()    KERNEL_RETURN;
 };
+
+#endif // SHARE_VM_SERVICES_HEAPDUMPER_HPP

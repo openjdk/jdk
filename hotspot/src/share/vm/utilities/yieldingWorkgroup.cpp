@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_yieldingWorkgroup.cpp.incl"
+#include "precompiled.hpp"
+#ifndef SERIALGC
+#include "utilities/yieldingWorkgroup.hpp"
+#endif
 
 // Forward declaration of classes declared here.
 

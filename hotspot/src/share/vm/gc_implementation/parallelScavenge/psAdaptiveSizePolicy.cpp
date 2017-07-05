@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_psAdaptiveSizePolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
+#include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
+#include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/top.hpp"
 
 #include <math.h>
 

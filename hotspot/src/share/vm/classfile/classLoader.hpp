@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_CLASSLOADER_HPP
+#define SHARE_VM_CLASSFILE_CLASSLOADER_HPP
+
+#include "classfile/classFileParser.hpp"
+#include "runtime/perfData.hpp"
 
 // The VM class loader.
 #include <sys/stat.h>
@@ -456,3 +462,5 @@ class PerfClassTraceTime {
     }
 };
 
+
+#endif // SHARE_VM_CLASSFILE_CLASSLOADER_HPP

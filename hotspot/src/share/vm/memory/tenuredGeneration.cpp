@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_tenuredGeneration.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/space.hpp"
+#include "memory/tenuredGeneration.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size, int level,

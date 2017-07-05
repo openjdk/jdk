@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSYOUNGGEN_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSYOUNGGEN_HPP
+
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/psGenerationCounters.hpp"
+#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "gc_implementation/shared/spaceCounters.hpp"
 
 class PSMarkSweepDecorator;
 
@@ -188,3 +197,5 @@ class PSYoungGen : public CHeapObj {
 
   void record_spaces_top() PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSYOUNGGEN_HPP

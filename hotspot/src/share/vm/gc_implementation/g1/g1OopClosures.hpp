@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
 
 class HeapRegion;
 class G1CollectedHeap;
@@ -210,3 +213,5 @@ public:
   bool do_header() { return false; }
   int out_of_region() { return _out_of_region; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
