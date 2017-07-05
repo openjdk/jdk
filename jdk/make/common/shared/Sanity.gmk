@@ -1486,26 +1486,6 @@ endif
 ######################################################
 sane-gcc-compiler:
 ifndef OPENJDK
-  ifeq ($(PLATFORM), solaris)
-	@if [ -r $(GCC_COMPILER_PATH) ]; then \
-	  if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VER) ]; then \
-	    $(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VER). \n" \
-	      "      You are using the following compiler version: $(GCC_VER) \n" \
-	      "      The compiler was obtained from the following location: \n" \
-	      "          $(GCC_COMPILER_PATH) \n" \
-	      "      Please change your compiler. \n" \
-	      "" >> $(ERROR_FILE) ; \
-	fi \
-	else \
-	  $(ECHO) "ERROR: You do not have a valid GCC_COMPILER_PATH setting. \n" \
-	    "      Please check your access to \n" \
-	    "          $(GCC_COMPILER_PATH) \n" \
-	    "      and/or check your value of ALT_GCC_COMPILER_PATH. \n" \
-	    "      This will affect you if you build the plugin target. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-  endif
-
   ifeq ($(PLATFORM), linux)
     ifeq ($(ARCH_DATA_MODEL), 32)
     ifdef ALT_GCC29_COMPILER_PATH

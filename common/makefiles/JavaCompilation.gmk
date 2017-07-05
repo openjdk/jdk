@@ -42,8 +42,8 @@ endif
 FALSE_FIND_PATTERN:=-name FILE_NAME_THAT_DOESNT_EXIST
 
 define SetupJavaCompiler
-    # param 1 is for example BOOT_JAVAC or NEW_JAVAC
-    # This is the name later used to decide which java compiler to use.
+    # param 1 is for example GENERATE_OLD_BYTECODE or GENERATE_NEW_JDKBYTECODE
+    # This is the name of the compiler setup.
     # param 2-9 are named args.
     #   JVM:=The jvm used to run the javac/javah command
     #   JAVAC:=The javac jar and bootstrap classpath changes, or just bin/javac if JVM is left out
@@ -143,8 +143,8 @@ define SetupArchive
     ifneq (,$2)
         $1_DEPS:=$2
     else
-        $1_DEPS:=$$(filter $$(addprefix %,$$($1_FIND_PATTERNS)),\
-                    $$(call CacheFind $$($1_SRCS)))
+        $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)),\
+                    $$(call CacheFind,$$($1_SRCS)))
         ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
             $1_DEPS:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPS))
         endif
@@ -487,10 +487,10 @@ define SetupJavaCompilation
         # Using sjavac to compile. 
         $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/javac_state
 
-        # Create SJAVAC variable,
-        # expects $1_JAVAC to be "bootclasspathprepend -jar ...javac.jar"
-        # and it is rewritten into "bootclasspathprepend com.sun.tools.sjavac.Main"
-        $1_SJAVAC:=$$(word 1,$$($1_JAVAC)) -cp $$(word 3,$$($1_JAVAC)) com.sun.tools.sjavac.Main
+        # Create SJAVAC variable form JAVAC variable. Expects $1_JAVAC to be 
+        # "bootclasspathprepend -cp .../javac.jar com.sun.tools.javac.Main"
+        # and javac is simply replaced with sjavac.
+        $1_SJAVAC:=$$(subst com.sun.tools.javac.Main,com.sun.tools.sjavac.Main,$$($1_JAVAC))
 
         # Set the $1_REMOTE to spawn a background javac server.
         $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
