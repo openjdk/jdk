@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         PKIXCertPathBuilderResult result = buildCertPath(false, adjList);
         if (result == null) {
             if (debug != null) {
-                debug.println("SunCertPathBuilder.engineBuild: 2nd pass");
+                debug.println("SunCertPathBuilder.engineBuild: 2nd pass; " +
+                              "try building again searching all certstores");
             }
             // try again
             adjList.clear();

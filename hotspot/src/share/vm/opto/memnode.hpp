@@ -511,10 +511,16 @@ public:
   // Conservatively release stores of object references in order to
   // ensure visibility of object initialization.
   static inline MemOrd release_if_reference(const BasicType t) {
+#ifdef AARCH64
+    // AArch64 doesn't need a release store here because object
+    // initialization contains the necessary barriers.
+    return unordered;
+#else
     const MemOrd mo = (t == T_ARRAY ||
                        t == T_ADDRESS || // Might be the address of an object reference (`boxing').
                        t == T_OBJECT) ? release : unordered;
     return mo;
+#endif
   }
 
   // Polymorphic factory method

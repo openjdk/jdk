@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,12 +321,9 @@ public class SocketAdaptor
     }
 
     public void sendUrgentData(int data) throws IOException {
-        synchronized (sc.blockingLock()) {
-            if (!sc.isBlocking())
-                throw new IllegalBlockingModeException();
-            int n = sc.sendOutOfBandData((byte)data);
-            assert n == 1;
-        }
+        int n = sc.sendOutOfBandData((byte) data);
+        if (n == 0)
+            throw new IOException("Socket buffer full");
     }
 
     public void setOOBInline(boolean on) throws SocketException {

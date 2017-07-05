@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,17 @@
  */
 package java.awt;
 
-import java.io.File;
-import java.io.FileInputStream;
-
 import java.beans.ConstructorProperties;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import java.security.AccessController;
-
-import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A class to encapsulate the bitmap representation of the mouse cursor.
@@ -160,28 +159,19 @@ public class Cursor implements java.io.Serializable {
     public static final int     CUSTOM_CURSOR                   = -1;
 
     /*
-     * hashtable, filesystem dir prefix, filename, and properties for custom cursors support
+     * hashtable, resource prefix, filename, and properties for custom cursors
+     * support
      */
-
     private static final Hashtable<String,Cursor> systemCustomCursors = new Hashtable<>(1);
-    private static final String systemCustomCursorDirPrefix = initCursorDir();
-
-    private static String initCursorDir() {
-        String jhome = java.security.AccessController.doPrivileged(
-               new sun.security.action.GetPropertyAction("java.home"));
-        return jhome +
-            File.separator + "lib" + File.separator + "images" +
-            File.separator + "cursors" + File.separator;
-    }
-
-    private static final String     systemCustomCursorPropertiesFile = systemCustomCursorDirPrefix + "cursors.properties";
+    private static final String RESOURCE_PREFIX = "/sun/awt/resources/cursors/";
+    private static final String PROPERTIES_FILE = RESOURCE_PREFIX + "cursors.properties";
 
     private static       Properties systemCustomCursorProperties = null;
 
-    private static final String CursorDotPrefix  = "Cursor.";
-    private static final String DotFileSuffix    = ".File";
-    private static final String DotHotspotSuffix = ".HotSpot";
-    private static final String DotNameSuffix    = ".Name";
+    private static final String CURSOR_DOT_PREFIX = "Cursor.";
+    private static final String DOT_FILE_SUFFIX = ".File";
+    private static final String DOT_HOTSPOT_SUFFIX = ".HotSpot";
+    private static final String DOT_NAME_SUFFIX = ".Name";
 
     /*
      * JDK 1.1 serialVersionUID
@@ -307,8 +297,8 @@ public class Cursor implements java.io.Serializable {
                     loadSystemCustomCursorProperties();
             }
 
-            String prefix = CursorDotPrefix + name;
-            String key    = prefix + DotFileSuffix;
+            String prefix = CURSOR_DOT_PREFIX + name;
+            String key    = prefix + DOT_FILE_SUFFIX;
 
             if (!systemCustomCursorProperties.containsKey(key)) {
                 if (log.isLoggable(PlatformLogger.Level.FINER)) {
@@ -320,11 +310,10 @@ public class Cursor implements java.io.Serializable {
             final String fileName =
                 systemCustomCursorProperties.getProperty(key);
 
-            String localized = systemCustomCursorProperties.getProperty(prefix + DotNameSuffix);
+            final String localized = systemCustomCursorProperties.getProperty(
+                    prefix + DOT_NAME_SUFFIX, name);
 
-            if (localized == null) localized = name;
-
-            String hotspot = systemCustomCursorProperties.getProperty(prefix + DotHotspotSuffix);
+            String hotspot = systemCustomCursorProperties.getProperty(prefix + DOT_HOTSPOT_SUFFIX);
 
             if (hotspot == null)
                 throw new AWTException("no hotspot property defined for cursor: " + name);
@@ -334,31 +323,25 @@ public class Cursor implements java.io.Serializable {
             if (st.countTokens() != 2)
                 throw new AWTException("failed to parse hotspot property for cursor: " + name);
 
-            int x = 0;
-            int y = 0;
-
+            final Point hotPoint;
             try {
-                x = Integer.parseInt(st.nextToken());
-                y = Integer.parseInt(st.nextToken());
+                hotPoint = new Point(Integer.parseInt(st.nextToken()),
+                                     Integer.parseInt(st.nextToken()));
             } catch (NumberFormatException nfe) {
                 throw new AWTException("failed to parse hotspot property for cursor: " + name);
             }
 
             try {
-                final int fx = x;
-                final int fy = y;
-                final String flocalized = localized;
+                final Toolkit toolkit = Toolkit.getDefaultToolkit();
+                final String file = RESOURCE_PREFIX + fileName;
 
-                cursor = java.security.AccessController.<Cursor>doPrivileged(
-                    new java.security.PrivilegedExceptionAction<Cursor>() {
-                    public Cursor run() throws Exception {
-                        Toolkit toolkit = Toolkit.getDefaultToolkit();
-                        Image image = toolkit.getImage(
-                           systemCustomCursorDirPrefix + fileName);
-                        return toolkit.createCustomCursor(
-                                    image, new Point(fx,fy), flocalized);
-                    }
-                });
+                cursor = AccessController.doPrivileged(
+                        (PrivilegedExceptionAction<Cursor>) () -> {
+                            URL url = Cursor.class.getResource(file);
+                            Image image = toolkit.getImage(url);
+                            return toolkit.createCustomCursor(image, hotPoint,
+                                                              localized);
+                        });
             } catch (Exception e) {
                 throw new AWTException(
                     "Exception: " + e.getClass() + " " + e.getMessage() +
@@ -452,26 +435,19 @@ public class Cursor implements java.io.Serializable {
             systemCustomCursorProperties = new Properties();
 
             try {
-                AccessController.<Object>doPrivileged(
-                      new java.security.PrivilegedExceptionAction<Object>() {
-                    public Object run() throws Exception {
-                        FileInputStream fis = null;
-                        try {
-                            fis = new FileInputStream(
-                                           systemCustomCursorPropertiesFile);
-                            systemCustomCursorProperties.load(fis);
-                        } finally {
-                            if (fis != null)
-                                fis.close();
-                        }
-                        return null;
-                    }
-                });
+                AccessController.doPrivileged(
+                        (PrivilegedExceptionAction<Object>) () -> {
+                            try (InputStream is = Cursor.class
+                                    .getResourceAsStream(PROPERTIES_FILE)) {
+                                systemCustomCursorProperties.load(is);
+                            }
+                            return null;
+                        });
             } catch (Exception e) {
                 systemCustomCursorProperties = null;
                  throw new AWTException("Exception: " + e.getClass() + " " +
                    e.getMessage() + " occurred while loading: " +
-                                        systemCustomCursorPropertiesFile);
+                   PROPERTIES_FILE);
             }
         }
     }

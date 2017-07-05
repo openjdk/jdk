@@ -66,8 +66,11 @@ else
   PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources
 endif
 
+PROP_SRC_FILES := $(filter-out %cursors.properties, \
+    $(filter %.properties, $(call CacheFind, $(PROP_SRC_DIRS))))
+
 $(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(filter %.properties, $(call CacheFind, $(PROP_SRC_DIRS))), ListResourceBundle))
+    $(PROP_SRC_FILES), ListResourceBundle))
 
 GENSRC_JAVA_DESKTOP += $(COMPILE_PROPERTIES)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ Generation* Generation::next_gen() const {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   int next = level() + 1;
   if (next < gch->_n_gens) {
-    return gch->_gens[next];
+    return gch->get_gen(next);
   } else {
     return NULL;
   }

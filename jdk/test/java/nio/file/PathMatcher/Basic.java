@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6866397
+ * @bug 4313887 6866397 8073445
  * @summary Unit test for java.nio.file.PathMatcher
  */
 
@@ -171,6 +171,31 @@ public class Basic {
             failures++;
         } catch (UnsupportedOperationException e) {
             System.out.println(" OKAY");
+        }
+
+        // GLOB_SYNTAX case sensitivity of getPathMatcher: should not throw UOE
+        try {
+            FileSystems.getDefault().getPathMatcher("glob:java");
+            FileSystems.getDefault().getPathMatcher("Glob:java");
+            FileSystems.getDefault().getPathMatcher("GLOB:java");
+            System.out.println("Test GLOB_SYNTAX case sensitivity OKAY");
+        } catch (UnsupportedOperationException e) {
+            System.err.println("getPathMatcher GLOB_SYNTAX case sensitivity");
+            e.printStackTrace();
+            failures++;
+        }
+
+        // REGEX_SYNTAX case sensitivity of getPathMatcher: should not throw UOE
+        try {
+            FileSystems.getDefault().getPathMatcher("regex:java");
+            FileSystems.getDefault().getPathMatcher("Regex:java");
+            FileSystems.getDefault().getPathMatcher("RegEx:java");
+            FileSystems.getDefault().getPathMatcher("REGEX:java");
+            System.out.println("Test REGEX_SYNTAX case sensitivity OKAY");
+        } catch (UnsupportedOperationException e) {
+            System.err.println("getPathMatcher REGEX_SYNTAX case sensitivity");
+            e.printStackTrace();
+            failures++;
         }
 
         if (failures > 0)
