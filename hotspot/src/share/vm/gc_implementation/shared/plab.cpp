@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/shared/plab.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -39,7 +40,7 @@ size_t PLAB::max_size() {
 
 PLAB::PLAB(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
-  _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0)
+  _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0), _undo_wasted(0)
 {
   // ArrayOopDesc::header_size depends on command line initialization.
   AlignmentReserve = oopDesc::header_size() > MinObjAlignment ? align_object_size(arrayOopDesc::header_size(T_INT)) : 0;
@@ -62,13 +63,15 @@ void PLAB::flush_and_retire_stats(PLABStats* stats) {
   // Now flush the statistics.
   stats->add_allocated(_allocated);
   stats->add_wasted(_wasted);
+  stats->add_undo_wasted(_undo_wasted);
   stats->add_unused(unused);
 
   // Since we have flushed the stats we need to clear  the _allocated and _wasted
   // fields in case somebody retains an instance of this over GCs. Not doing so
   // will artifically inflate the values in the statistics.
-  _allocated = 0;
-  _wasted = 0;
+  _allocated   = 0;
+  _wasted      = 0;
+  _undo_wasted = 0;
 }
 
 void PLAB::retire() {
@@ -82,6 +85,28 @@ size_t PLAB::retire_internal() {
     result += invalidate();
   }
   return result;
+}
+
+void PLAB::add_undo_waste(HeapWord* obj, size_t word_sz) {
+  CollectedHeap::fill_with_object(obj, word_sz);
+  _undo_wasted += word_sz;
+}
+
+void PLAB::undo_last_allocation(HeapWord* obj, size_t word_sz) {
+  assert(pointer_delta(_top, _bottom) >= word_sz, "Bad undo");
+  assert(pointer_delta(_top, obj) == word_sz, "Bad undo");
+  _top = obj;
+}
+
+void PLAB::undo_allocation(HeapWord* obj, size_t word_sz) {
+  // Is the alloc in the current alloc buffer?
+  if (contains(obj)) {
+    assert(contains(obj + word_sz - 1),
+      "should contain whole object");
+    undo_last_allocation(obj, word_sz);
+  } else {
+    add_undo_waste(obj, word_sz);
+  }
 }
 
 // Compute desired plab size and latch result for later
@@ -98,8 +123,9 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
            err_msg("Inconsistency in PLAB stats: "
                    "_allocated: "SIZE_FORMAT", "
                    "_wasted: "SIZE_FORMAT", "
-                   "_unused: "SIZE_FORMAT,
-                   _allocated, _wasted, _unused));
+                   "_unused: "SIZE_FORMAT", "
+                   "_undo_wasted: "SIZE_FORMAT,
+                   _allocated, _wasted, _unused, _undo_wasted));
 
     _allocated = 1;
   }

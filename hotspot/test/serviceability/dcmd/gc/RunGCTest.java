@@ -29,9 +29,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 
 /*
  * @test
@@ -41,8 +41,8 @@ import com.oracle.java.testlibrary.dcmd.JMXExecutor;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng/othervm -XX:+PrintGCDetails -Xloggc:RunGC.gclog -XX:-ExplicitGCInvokesConcurrent RunGCTest
  */
 public class RunGCTest {

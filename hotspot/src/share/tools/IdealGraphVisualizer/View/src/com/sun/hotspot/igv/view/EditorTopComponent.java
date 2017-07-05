@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,62 +23,35 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.InputNode;
-import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.view.actions.EnableBlockLayoutAction;
-import com.sun.hotspot.igv.view.actions.ExpandPredecessorsAction;
-import com.sun.hotspot.igv.view.actions.ExpandSuccessorsAction;
-import com.sun.hotspot.igv.view.actions.ExtractAction;
-import com.sun.hotspot.igv.view.actions.HideAction;
-import com.sun.hotspot.igv.view.actions.NextDiagramAction;
-import com.sun.hotspot.igv.view.actions.NodeFindAction;
-import com.sun.hotspot.igv.view.actions.OverviewAction;
-import com.sun.hotspot.igv.view.actions.PredSuccAction;
-import com.sun.hotspot.igv.view.actions.PrevDiagramAction;
-import com.sun.hotspot.igv.view.actions.ShowAllAction;
-import com.sun.hotspot.igv.view.actions.ZoomInAction;
-import com.sun.hotspot.igv.view.actions.ZoomOutAction;
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
+import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.util.RangeSlider;
-import com.sun.hotspot.igv.util.RangeSliderModel;
+import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.svg.BatikSVG;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.view.actions.*;
+import java.awt.*;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.io.*;
 import java.util.List;
-import java.util.Set;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.JPanel;
-import javax.swing.JToggleButton;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import java.util.*;
+import javax.swing.*;
 import javax.swing.border.Border;
 import org.openide.DialogDisplayer;
-import org.openide.actions.FindAction;
+import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
 import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
@@ -86,40 +59,44 @@ import org.openide.awt.ToolbarPool;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.CallbackSystemAction;
-import org.openide.util.actions.SystemAction;
+import org.openide.util.Utilities;
+import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import org.openide.NotifyDescriptor;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class EditorTopComponent extends TopComponent implements ChangedListener<RangeSliderModel>, PropertyChangeListener {
+public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
-    private DiagramScene scene;
+    private DiagramViewer scene;
     private InstanceContent content;
-    private FindPanel findPanel;
+    private InstanceContent graphContent;
     private EnableBlockLayoutAction blockLayoutAction;
     private OverviewAction overviewAction;
+    private HideDuplicatesAction hideDuplicatesAction;
     private PredSuccAction predSuccAction;
+    private SelectionModeAction selectionModeAction;
+    private PanModeAction panModeAction;
     private boolean notFirstTime;
-    private ExtendedSatelliteComponent satelliteComponent;
+    private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
     private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
+    private JToggleButton hideDuplicatesButton;
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
     private DiagramViewModel rangeSliderModel;
     private ExportCookie exportCookie = new ExportCookie() {
 
+        @Override
         public void export(File f) {
 
             Graphics2D svgGenerator = BatikSVG.createGraphicsObject();
@@ -152,12 +129,32 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
         }
     };
 
+    private DiagramProvider diagramProvider = new DiagramProvider() {
+
+        @Override
+        public Diagram getDiagram() {
+            return getModel().getDiagramToView();
+        }
+
+        @Override
+        public ChangedEvent<DiagramProvider> getChangedEvent() {
+            return diagramChangedEvent;
+        }
+    };
+
+    private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
+
+
     private void updateDisplayName() {
         setDisplayName(getDiagram().getName());
+        setToolTipText(getDiagram().getGraph().getGroup().getName());
     }
 
     public EditorTopComponent(Diagram diagram) {
 
+        LookupHistory.init(InputGraphProvider.class);
+        LookupHistory.init(DiagramProvider.class);
+        this.setFocusable(true);
         FilterChain filterChain = null;
         FilterChain sequence = null;
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
@@ -182,15 +179,18 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             null,
             ZoomInAction.get(ZoomInAction.class),
             ZoomOutAction.get(ZoomOutAction.class),
+        };
+
+
+        Action[] actionsWithSelection = new Action[]{
+            ExtractAction.get(ExtractAction.class),
+            ShowAllAction.get(HideAction.class),
             null,
             ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
             ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
-
         initComponents();
-
-        ActionMap actionMap = getActionMap();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
@@ -202,24 +202,30 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
         container.add(BorderLayout.NORTH, toolBar);
 
         rangeSliderModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
-        rangeSliderModel.selectGraph(diagram.getGraph());
         rangeSlider = new RangeSlider();
         rangeSlider.setModel(rangeSliderModel);
-        rangeSliderModel.getChangedEvent().addListener(this);
-        container.add(BorderLayout.CENTER, rangeSlider);
+        JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        container.add(BorderLayout.CENTER, pane);
 
-        scene = new DiagramScene(actions, rangeSliderModel);
+        scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
         content = new InstanceContent();
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(content)}));
+        graphContent = new InstanceContent();
+        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
         content.add(exportCookie);
         content.add(rangeSliderModel);
+        content.add(diagramProvider);
+
+        rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
+        rangeSliderModel.selectGraph(diagram.getGraph());
+        rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
+                @Override
+                public void changed(DiagramViewModel source) {
+                    hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
+                    hideDuplicatesAction.setState(getModel().getHideDuplicates());
+                }
+            });
 
 
-        findPanel = new FindPanel(diagram.getFigures());
-        findPanel.setMaximumSize(new Dimension(200, 50));
-        toolBar.add(findPanel);
-        toolBar.add(NodeFindAction.get(NodeFindAction.class));
-        toolBar.addSeparator();
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.addSeparator();
@@ -232,7 +238,7 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
 
         blockLayoutAction = new EnableBlockLayoutAction();
         JToggleButton button = new JToggleButton(blockLayoutAction);
-        button.setSelected(true);
+        button.setSelected(false);
         toolBar.add(button);
         blockLayoutAction.addPropertyChangeListener(this);
 
@@ -248,59 +254,91 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
         toolBar.add(button);
         predSuccAction.addPropertyChangeListener(this);
 
+        hideDuplicatesAction = new HideDuplicatesAction();
+        hideDuplicatesButton = new JToggleButton(hideDuplicatesAction);
+        hideDuplicatesButton.setSelected(false);
+        toolBar.add(hideDuplicatesButton);
+        hideDuplicatesAction.addPropertyChangeListener(this);
+
         toolBar.addSeparator();
         toolBar.add(UndoAction.get(UndoAction.class));
         toolBar.add(RedoAction.get(RedoAction.class));
+
+        toolBar.addSeparator();
+        ButtonGroup interactionButtons = new ButtonGroup();
+
+        panModeAction = new PanModeAction();
+        panModeAction.setSelected(true);
+        button = new JToggleButton(panModeAction);
+        button.setSelected(true);
+        interactionButtons.add(button);
+        toolBar.add(button);
+        panModeAction.addPropertyChangeListener(this);
+
+        selectionModeAction = new SelectionModeAction();
+        button = new JToggleButton(selectionModeAction);
+        interactionButtons.add(button);
+        toolBar.add(button);
+        selectionModeAction.addPropertyChangeListener(this);
+
+        toolBar.add(Box.createHorizontalGlue());
+        Action action = Utilities.actionsForPath("QuickSearchShadow").get(0);
+        Component quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
+        try {
+            // (aw) workaround for disappearing search bar due to reparenting one shared component instance.
+            quicksearch = (Component) quicksearch.getClass().getConstructor(KeyStroke.class).newInstance(new Object[]{null});
+        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
+        }
+        quicksearch.setMinimumSize(quicksearch.getPreferredSize()); // necessary for GTK LAF
+        toolBar.add(quicksearch);
 
         centerPanel = new JPanel();
         this.add(centerPanel, BorderLayout.CENTER);
         cardLayout = new CardLayout();
         centerPanel.setLayout(cardLayout);
-        centerPanel.add(SCENE_STRING, scene.getScrollPane());
+        centerPanel.add(SCENE_STRING, scene.getComponent());
         centerPanel.setBackground(Color.WHITE);
-        satelliteComponent = new ExtendedSatelliteComponent(scene);
+        satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
 
-        CallbackSystemAction callFindAction = (CallbackSystemAction) SystemAction.get(FindAction.class);
-        NodeFindAction findAction = NodeFindAction.get(NodeFindAction.class);
-        Object key = callFindAction.getActionMapKey();
-        actionMap.put(key, findAction);
+        // TODO: Fix the hot key for entering the satellite view
+        this.addKeyListener(keyListener);
 
-        scene.getScrollPane().addKeyListener(keyListener);
-        scene.getView().addKeyListener(keyListener);
-        satelliteComponent.addKeyListener(keyListener);
+        scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
 
-        scene.getScrollPane().addHierarchyBoundsListener(new HierarchyBoundsListener() {
-
+            @Override
             public void ancestorMoved(HierarchyEvent e) {
             }
 
+            @Override
             public void ancestorResized(HierarchyEvent e) {
-                if (!notFirstTime && scene.getScrollPane().getBounds().width > 0) {
+                if (!notFirstTime && scene.getComponent().getBounds().width > 0) {
                     notFirstTime = true;
                     SwingUtilities.invokeLater(new Runnable() {
 
+                        @Override
                         public void run() {
-                            Figure f = EditorTopComponent.this.scene.getModel().getDiagramToView().getRootFigure();
-                            if (f != null) {
-                                scene.setUndoRedoEnabled(false);
-                                scene.gotoFigure(f);
-                                scene.setUndoRedoEnabled(true);
-                            }
+                            EditorTopComponent.this.scene.initialize();
                         }
                     });
                 }
             }
         });
 
+        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
+            rangeSlider.setVisible(false);
+        }
+
         updateDisplayName();
     }
     private KeyListener keyListener = new KeyListener() {
 
+        @Override
         public void keyTyped(KeyEvent e) {
         }
 
+        @Override
         public void keyPressed(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_S) {
                 EditorTopComponent.this.overviewButton.setSelected(true);
@@ -308,6 +346,7 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             }
         }
 
+        @Override
         public void keyReleased(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_S) {
                 EditorTopComponent.this.overviewButton.setSelected(false);
@@ -317,7 +356,7 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
     };
 
     public DiagramViewModel getDiagramModel() {
-        return scene.getModel();
+        return rangeSliderModel;
     }
 
     private void showSatellite() {
@@ -328,35 +367,15 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
 
     private void showScene() {
         cardLayout.show(centerPanel, SCENE_STRING);
-        scene.getView().requestFocus();
-    }
-
-    public void findNode() {
-        findPanel.find();
+        scene.getComponent().requestFocus();
     }
 
     public void zoomOut() {
-        double zoom = scene.getZoomFactor();
-        Point viewPosition = scene.getScrollPane().getViewport().getViewPosition();
-        double newZoom = zoom / DiagramScene.ZOOM_INCREMENT;
-        if (newZoom > DiagramScene.ZOOM_MIN_FACTOR) {
-            scene.setZoomFactor(newZoom);
-            scene.validate();
-            scene.getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x / DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y / DiagramScene.ZOOM_INCREMENT)));
-            this.satelliteComponent.update();
-        }
+        scene.zoomOut();
     }
 
     public void zoomIn() {
-        double zoom = scene.getZoomFactor();
-        Point viewPosition = scene.getScrollPane().getViewport().getViewPosition();
-        double newZoom = zoom * DiagramScene.ZOOM_INCREMENT;
-        if (newZoom < DiagramScene.ZOOM_MAX_FACTOR) {
-            scene.setZoomFactor(newZoom);
-            scene.validate();
-            scene.getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x * DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y * DiagramScene.ZOOM_INCREMENT)));
-            this.satelliteComponent.update();
-        }
+        scene.zoomIn();
     }
 
     public void showPrevDiagram() {
@@ -370,11 +389,11 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
     }
 
     public DiagramViewModel getModel() {
-        return scene.getModel();
+        return rangeSliderModel;
     }
 
     public FilterChain getFilterChain() {
-        return this.scene.getModel().getFilterChain();
+        return getModel().getFilterChain();
     }
 
     public static EditorTopComponent getActive() {
@@ -407,6 +426,7 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
         // Variables declaration - do not modify//GEN-BEGIN:variables
         private javax.swing.JCheckBox jCheckBox1;
         // End of variables declaration//GEN-END:variables
+
     @Override
     public int getPersistenceType() {
         return TopComponent.PERSISTENCE_NEVER;
@@ -418,6 +438,7 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
 
     @Override
     public void componentClosed() {
+        rangeSliderModel.close();
     }
 
     @Override
@@ -425,9 +446,18 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
         return PREFERRED_ID;
     }
 
-    public void changed(RangeSliderModel model) {
-        updateDisplayName();
-    }
+    private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
+
+        @Override
+        public void changed(DiagramViewModel source) {
+            updateDisplayName();
+            Collection<Object> list = new ArrayList<>();
+            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
+            graphContent.set(list, null);
+            diagramProvider.getChangedEvent().fire();
+        }
+
+    };
 
     public boolean showPredSucc() {
         return (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
@@ -435,24 +465,25 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
 
     public void setSelection(PropertyMatcher matcher) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(scene.getModel().getDiagramToView().getFigures());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getModel().getDiagramToView().getFigures());
         List<Figure> list = selector.selectMultiple(matcher);
-        boolean b = scene.getUndoRedoEnabled();
-        scene.setUndoRedoEnabled(false);
-        scene.gotoFigures(list);
-        scene.setUndoRedoEnabled(b);
+        setSelectedFigures(list);
+    }
+
+    public void setSelectedFigures(List<Figure> list) {
         scene.setSelection(list);
+        scene.centerFigures(list);
     }
 
     public void setSelectedNodes(Set<InputNode> nodes) {
 
-        List<Figure> list = new ArrayList<Figure>();
-        Set<Integer> ids = new HashSet<Integer>();
+        List<Figure> list = new ArrayList<>();
+        Set<Integer> ids = new HashSet<>();
         for (InputNode n : nodes) {
             ids.add(n.getId());
         }
 
-        for (Figure f : scene.getModel().getDiagramToView().getFigures()) {
+        for (Figure f : getModel().getDiagramToView().getFigures()) {
             for (InputNode n : f.getSource().getSourceNodes()) {
                 if (ids.contains(n.getId())) {
                     list.add(f);
@@ -461,10 +492,10 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             }
         }
 
-        scene.gotoFigures(list);
-        scene.setSelection(list);
+        setSelectedFigures(list);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == this.predSuccAction) {
             boolean b = (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
@@ -478,27 +509,35 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             }
         } else if (evt.getSource() == this.blockLayoutAction) {
             boolean b = (Boolean) blockLayoutAction.getValue(EnableBlockLayoutAction.STATE);
-            System.out.println("Showblocks = " + b);
             this.getModel().setShowBlocks(b);
+        } else if (evt.getSource() == this.hideDuplicatesAction) {
+            boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
+            this.getModel().setHideDuplicates(b);
+        } else if (evt.getSource() == this.selectionModeAction || evt.getSource() == this.panModeAction) {
+            if (panModeAction.isSelected()) {
+                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
+            } else if (selectionModeAction.isSelected()) {
+                scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
+            }
         } else {
             assert false : "Unknown event source";
         }
     }
 
     public void extract() {
-        scene.showOnly(scene.getSelectedNodes());
+        getModel().showOnly(getModel().getSelectedNodes());
     }
 
     public void hideNodes() {
-        Set<Integer> selectedNodes = this.scene.getSelectedNodes();
-        HashSet<Integer> nodes = new HashSet<Integer>(scene.getModel().getHiddenNodes());
+        Set<Integer> selectedNodes = this.getModel().getSelectedNodes();
+        HashSet<Integer> nodes = new HashSet<>(getModel().getHiddenNodes());
         nodes.addAll(selectedNodes);
-        this.scene.showNot(nodes);
+        this.getModel().showNot(nodes);
     }
 
     public void expandPredecessors() {
-        Set<Figure> oldSelection = scene.getSelectedFigures();
-        Set<Figure> figures = new HashSet<Figure>();
+        Set<Figure> oldSelection = getModel().getSelectedFigures();
+        Set<Figure> figures = new HashSet<>();
 
         for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
             boolean ok = false;
@@ -518,12 +557,12 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             }
         }
 
-        scene.showAll(figures);
+        getModel().showAll(figures);
     }
 
     public void expandSuccessors() {
-        Set<Figure> oldSelection = scene.getSelectedFigures();
-        Set<Figure> figures = new HashSet<Figure>();
+        Set<Figure> oldSelection = getModel().getSelectedFigures();
+        Set<Figure> figures = new HashSet<>();
 
         for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
             boolean ok = false;
@@ -543,11 +582,11 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
             }
         }
 
-        scene.showAll(figures);
+        getModel().showAll(figures);
     }
 
     public void showAll() {
-        scene.showNot(new HashSet<Integer>());
+        getModel().showNot(new HashSet<Integer>());
     }
 
     public Diagram getDiagram() {
@@ -555,23 +594,31 @@ public final class EditorTopComponent extends TopComponent implements ChangedLis
     }
 
     @Override
-    protected void componentActivated() {
+    protected void componentHidden() {
+        super.componentHidden();
+        scene.componentHidden();
+
     }
 
     @Override
-    public void requestFocus() {
-        super.requestFocus();
-        scene.getView().requestFocus();
+    protected void componentShowing() {
+        super.componentShowing();
+        scene.componentShowing();
     }
 
     @Override
-    public boolean requestFocusInWindow() {
-        super.requestFocusInWindow();
-        return scene.getView().requestFocusInWindow();
+    public void requestActive() {
+        super.requestActive();
+        scene.getComponent().requestFocus();
     }
 
     @Override
     public UndoRedo getUndoRedo() {
         return scene.getUndoRedo();
     }
+
+    @Override
+    protected Object writeReplace() throws ObjectStreamException {
+        throw new NotSerializableException();
+}
 }

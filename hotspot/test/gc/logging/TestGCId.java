@@ -31,8 +31,8 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 
 public class TestGCId {
   public static void main(String[] args) throws Exception {

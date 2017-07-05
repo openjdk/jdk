@@ -31,7 +31,7 @@
  * @bug 8032224
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.io.File;
 
 public class DefaultUseWithClient {

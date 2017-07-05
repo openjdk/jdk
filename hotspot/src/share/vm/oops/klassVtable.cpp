@@ -1054,7 +1054,7 @@ inline bool interface_method_needs_itable_index(Method* m) {
 
 int klassItable::assign_itable_indices_for_interface(Klass* klass) {
   // an interface does not have an itable, but its methods need to be numbered
-  if (TraceItables) tty->print_cr("%3d: Initializing itable for interface %s", ++initialize_count,
+  if (TraceItables) tty->print_cr("%3d: Initializing itable indices for interface %s", ++initialize_count,
                                   klass->name()->as_C_string());
   Array<Method*>* methods = InstanceKlass::cast(klass)->methods();
   int nof_methods = methods->length();
@@ -1068,7 +1068,7 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
         ResourceMark rm;
         const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
         if (m->has_vtable_index()) {
-          tty->print("itable index %d for method: %s, flags: ", m->vtable_index(), sig);
+          tty->print("vtable index %d for method: %s, flags: ", m->vtable_index(), sig);
         } else {
           tty->print("itable index %d for method: %s, flags: ", ime_num, sig);
         }
@@ -1100,22 +1100,25 @@ int klassItable::method_count_for_interface(Klass* interf) {
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = InstanceKlass::cast(interf)->methods();
   int nof_methods = methods->length();
+  int length = 0;
   while (nof_methods > 0) {
     Method* m = methods->at(nof_methods-1);
     if (m->has_itable_index()) {
-      int length = m->itable_index() + 1;
-#ifdef ASSERT
-      while (nof_methods = 0) {
-        m = methods->at(--nof_methods);
-        assert(!m->has_itable_index() || m->itable_index() < length, "");
-      }
-#endif //ASSERT
-      return length;  // return the rightmost itable index, plus one
+      length = m->itable_index() + 1;
+      break;
     }
     nof_methods -= 1;
   }
-  // no methods have itable indices
-  return 0;
+#ifdef ASSERT
+  int nof_methods_copy = nof_methods;
+  while (nof_methods_copy > 0) {
+    Method* mm = methods->at(--nof_methods_copy);
+    assert(!mm->has_itable_index() || mm->itable_index() < length, "");
+  }
+#endif //ASSERT
+  // return the rightmost itable index, plus one; or 0 if no methods have
+  // itable indices
+  return length;
 }
 
 

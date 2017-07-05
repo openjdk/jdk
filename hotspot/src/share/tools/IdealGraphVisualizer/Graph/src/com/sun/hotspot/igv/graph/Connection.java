@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import com.sun.hotspot.igv.data.Source;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
@@ -36,6 +37,11 @@ import java.util.List;
  */
 public class Connection implements Source.Provider, Link {
 
+    @Override
+    public boolean isVIP() {
+        return style == ConnectionStyle.BOLD;
+    }
+
     public enum ConnectionStyle {
 
         NORMAL,
@@ -48,13 +54,17 @@ public class Connection implements Source.Provider, Link {
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
+    private String label;
+    private String type;
 
-    protected Connection(InputSlot inputSlot, OutputSlot outputSlot) {
+    protected Connection(InputSlot inputSlot, OutputSlot outputSlot, String label, String type) {
         this.inputSlot = inputSlot;
         this.outputSlot = outputSlot;
+        this.label = label;
+        this.type = type;
         this.inputSlot.connections.add(this);
         this.outputSlot.connections.add(this);
-        controlPoints = new ArrayList<Point>();
+        controlPoints = new ArrayList<>();
         Figure sourceFigure = this.outputSlot.getFigure();
         Figure destFigure = this.inputSlot.getFigure();
         sourceFigure.addSuccessor(destFigure);
@@ -89,8 +99,17 @@ public class Connection implements Source.Provider, Link {
         style = s;
     }
 
+    @Override
     public Source getSource() {
         return source;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public void remove() {
@@ -100,24 +119,44 @@ public class Connection implements Source.Provider, Link {
         outputSlot.connections.remove(this);
     }
 
-    @Override
-    public String toString() {
-        return "Connection(" + getFrom().getVertex() + " to " + getTo().getVertex() + ")";
+    public String getToolTipText() {
+        StringBuilder builder = new StringBuilder();
+        if (label != null) {
+            builder.append(label).append(": ");
+        }
+        if (type != null) {
+            builder.append(type).append(" ");
+        }
+        builder.append("from ");
+        builder.append(getOutputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
+        builder.append(" to ");
+        builder.append(getInputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
+        return builder.toString();
     }
 
+    @Override
+    public String toString() {
+        return "Connection('" + label + "', " + getFrom().getVertex() + " to " + getTo().getVertex() + ")";
+    }
+
+    @Override
     public Port getFrom() {
         return outputSlot;
     }
 
+    @Override
     public Port getTo() {
         return inputSlot;
     }
 
+    @Override
     public List<Point> getControlPoints() {
         return controlPoints;
     }
 
+    @Override
     public void setControlPoints(List<Point> list) {
         controlPoints = list;
     }
 }
+

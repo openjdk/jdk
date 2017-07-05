@@ -41,6 +41,7 @@
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -1371,10 +1372,10 @@ void CodeCache::print() {
         if (cb->is_alive()) {
           number_of_blobs++;
           code_size += cb->code_size();
-          OopMapSet* set = cb->oop_maps();
+          ImmutableOopMapSet* set = cb->oop_maps();
           if (set != NULL) {
-            number_of_oop_maps += set->size();
-            map_size           += set->heap_size();
+            number_of_oop_maps += set->count();
+            map_size           += set->nr_of_bytes();
           }
         }
       }

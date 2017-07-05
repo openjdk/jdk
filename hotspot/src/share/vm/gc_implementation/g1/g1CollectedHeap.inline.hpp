@@ -210,7 +210,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   g1_barrier_set()->g1_mark_as_young(mr);
 }
 
-inline RefToScanQueue* G1CollectedHeap::task_queue(int i) const {
+inline RefToScanQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,9 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Connection;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
-import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
+import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,23 +42,25 @@ public class CombineFilter extends AbstractFilter {
 
     public CombineFilter(String name) {
         this.name = name;
-        rules = new ArrayList<CombineRule>();
+        rules = new ArrayList<>();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void apply(Diagram diagram) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(diagram.getFigures());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(diagram.getFigures());
         for (CombineRule r : rules) {
 
             List<Figure> list = selector.selectMultiple(r.getFirstMatcher());
-            Set<Figure> figuresToRemove = new HashSet<Figure>();
+            Set<Figure> figuresToRemove = new HashSet<>();
             for (Figure f : list) {
 
-                List<Figure> successors = new ArrayList<Figure>(f.getSuccessors());
+                List<Figure> successors = new ArrayList<>(f.getSuccessors());
                 if (r.isReversed()) {
                     if (successors.size() == 1) {
                         Figure succ = successors.get(0);
@@ -76,21 +74,30 @@ public class CombineFilter extends AbstractFilter {
                             }
                         }
 
-                        assert slot != null;
-                        slot.setName(f.getProperties().get("dump_spec"));
-                        if (f.getProperties().get("short_name") != null) {
-                            slot.setShortName(f.getProperties().get("short_name"));
-                        } else {
-                            String s = f.getProperties().get("dump_spec");
-                            if (s != null && s.length() <= 5) {
+                        slot.getSource().addSourceNodes(f.getSource());
+                        if (r.getShortProperty() != null) {
+                            String s = f.getProperties().get(r.getShortProperty());
+                            if (s != null && s.length() > 0) {
                                 slot.setShortName(s);
+                                slot.setText(s);
+                                slot.setColor(f.getColor());
                             }
-
+                        } else {
+                            assert slot != null;
+                            slot.setText(f.getProperties().get("dump_spec"));
+                            if (f.getProperties().get("short_name") != null) {
+                                slot.setShortName(f.getProperties().get("short_name"));
+                            } else {
+                                String s = f.getProperties().get("dump_spec");
+                                if (s != null && s.length() <= 5) {
+                                    slot.setShortName(s);
+                                }
+                            }
                         }
 
                         for (InputSlot s : f.getInputSlots()) {
                             for (Connection c : s.getConnections()) {
-                                Connection newConn = diagram.createConnection(slot, c.getOutputSlot());
+                                Connection newConn = diagram.createConnection(slot, c.getOutputSlot(), c.getLabel(), c.getType());
                                 newConn.setColor(c.getColor());
                                 newConn.setStyle(c.getStyle());
                             }
@@ -101,7 +108,7 @@ public class CombineFilter extends AbstractFilter {
                 } else {
 
                     for (Figure succ : successors) {
-                        if (succ.getPredecessors().size() == 1) {
+                        if (succ.getPredecessors().size() == 1 && succ.getInputSlots().size() == 1) {
                             if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() == 1) {
 
 
@@ -122,22 +129,32 @@ public class CombineFilter extends AbstractFilter {
                                     pos = Integer.parseInt(succ.getProperties().get("con"));
                                 }
                                 OutputSlot slot = f.createOutputSlot(pos);
-                                slot.setName(succ.getProperties().get("dump_spec"));
-                                if (succ.getProperties().get("short_name") != null) {
-                                    slot.setShortName(succ.getProperties().get("short_name"));
-                                } else {
-                                    String s = succ.getProperties().get("dump_spec");
-                                    if (s != null && s.length() <= 2) {
+                                slot.getSource().addSourceNodes(succ.getSource());
+                                if (r.getShortProperty() != null) {
+                                    String s = succ.getProperties().get(r.getShortProperty());
+                                    if (s != null && s.length() > 0) {
                                         slot.setShortName(s);
+                                        slot.setText(s);
+                                        slot.setColor(succ.getColor());
+                                    }
+                                } else {
+                                    slot.setText(succ.getProperties().get("dump_spec"));
+                                    if (succ.getProperties().get("short_name") != null) {
+                                        slot.setShortName(succ.getProperties().get("short_name"));
                                     } else {
-                                        String tmpName = succ.getProperties().get("name");
-                                        if (tmpName != null && tmpName.length() > 0) {
-                                            slot.setShortName(tmpName.substring(0, 1));
+                                        String s = succ.getProperties().get("dump_spec");
+                                        if (s != null && s.length() <= 2) {
+                                            slot.setShortName(s);
+                                        } else {
+                                            String tmpName = succ.getProperties().get("name");
+                                            if (tmpName != null && tmpName.length() > 0) {
+                                                slot.setShortName(tmpName.substring(0, 1));
+                                            }
                                         }
                                     }
                                 }
                                 for (Connection c : nextSlot.getConnections()) {
-                                    Connection newConn = diagram.createConnection(c.getInputSlot(), slot);
+                                    Connection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel(), c.getType());
                                     newConn.setColor(c.getColor());
                                     newConn.setStyle(c.getStyle());
                                 }
@@ -167,6 +184,7 @@ public class CombineFilter extends AbstractFilter {
         private PropertyMatcher first;
         private PropertyMatcher second;
         private boolean reversed;
+        private String shortProperty;
 
         public CombineRule(PropertyMatcher first, PropertyMatcher second) {
             this(first, second, false);
@@ -174,9 +192,14 @@ public class CombineFilter extends AbstractFilter {
         }
 
         public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed) {
+            this(first, second, reversed, null);
+        }
+
+        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed, String shortProperty) {
             this.first = first;
             this.second = second;
             this.reversed = reversed;
+            this.shortProperty = shortProperty;
         }
 
         public boolean isReversed() {
@@ -189,6 +212,10 @@ public class CombineFilter extends AbstractFilter {
 
         public PropertyMatcher getSecondMatcher() {
             return second;
+        }
+
+        public String getShortProperty() {
+            return shortProperty;
         }
     }
 }
