@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "debugLoop.h"
 #include "bag.h"
 #include "invoker.h"
+#include "sys.h"
 
 /* How the options get to OnLoad: */
 #define XDEBUG "-Xdebug"
@@ -201,6 +202,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     jint              jvmtiCompileTimeMajorVersion;
     jint              jvmtiCompileTimeMinorVersion;
     jint              jvmtiCompileTimeMicroVersion;
+    char              *boot_path = NULL;
+    char              npt_lib[MAXPATHLEN];
 
     /* See if it's already loaded */
     if ( gdata!=NULL && gdata->isLoaded==JNI_TRUE ) {
@@ -226,18 +229,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     gdata->jvm = vm;
     vmInitialized = JNI_FALSE;
     gdata->vmDead = JNI_FALSE;
-
-    /* Npt and Utf function init */
-    NPT_INITIALIZE(&(gdata->npt), NPT_VERSION, NULL);
-    if (gdata->npt == NULL) {
-        ERROR_MESSAGE(("JDWP: unable to initialize NPT library"));
-        return JNI_ERR;
-    }
-    gdata->npt->utf = (gdata->npt->utfInitialize)(NULL);
-    if (gdata->npt->utf == NULL) {
-        ERROR_MESSAGE(("JDWP: UTF function initialization failed"));
-        return JNI_ERR;
-    }
 
     /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */
     error = JVM_FUNC_PTR(vm,GetEnv)
@@ -275,6 +266,24 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 
         /* Do not let VM get a fatal error, we don't want a core dump here. */
         forceExit(1); /* Kill entire process, no core dump wanted */
+    }
+
+    JVMTI_FUNC_PTR(gdata->jvmti, GetSystemProperty)
+        (gdata->jvmti, (const char *)"sun.boot.library.path",
+         &boot_path);
+
+    dbgsysBuildLibName(npt_lib, sizeof(npt_lib), boot_path, NPT_LIBNAME);
+    /* Npt and Utf function init */
+    NPT_INITIALIZE(npt_lib, &(gdata->npt), NPT_VERSION, NULL);
+    jvmtiDeallocate(boot_path);
+    if (gdata->npt == NULL) {
+        ERROR_MESSAGE(("JDWP: unable to initialize NPT library"));
+        return JNI_ERR;
+    }
+    gdata->npt->utf = (gdata->npt->utfInitialize)(NULL);
+    if (gdata->npt->utf == NULL) {
+        ERROR_MESSAGE(("JDWP: UTF function initialization failed"));
+        return JNI_ERR;
     }
 
     /* Parse input options */

@@ -30,9 +30,6 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-#endif
 
 void OSThread::pd_initialize() {
   set_thread_handle(NULL);

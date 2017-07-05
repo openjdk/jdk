@@ -43,7 +43,6 @@ import javax.security.auth.Subject;
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
 import sun.security.ssl.SignatureAndHashAlgorithm.*;
-import static sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
 /**
@@ -144,6 +143,7 @@ final class ServerHandshaker extends Handshaker {
      * It updates the state machine as each message is processed, and writes
      * responses as needed using the connection in the constructor.
      */
+    @Override
     void processMessage(byte type, int message_len)
             throws IOException {
         //
@@ -526,6 +526,7 @@ final class ServerHandshaker extends Handshaker {
                         try {
                             subject = AccessController.doPrivileged(
                                 new PrivilegedExceptionAction<Subject>() {
+                                @Override
                                 public Subject run() throws Exception {
                                     return
                                         Krb5Helper.getServerSubject(getAccSE());
@@ -669,9 +670,6 @@ final class ServerHandshaker extends Handshaker {
         }
 
         if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-            if (resumingSession) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
             handshakeHash.setFinishedAlg(cipherSuite.prfAlg.getPRFHashAlg());
         }
 
@@ -881,7 +879,6 @@ final class ServerHandshaker extends Handshaker {
                     throw new SSLHandshakeException(
                             "No supported signature algorithm");
                 }
-                handshakeHash.restrictCertificateVerifyAlgs(localHashAlgs);
             }
 
             caCerts = sslContext.getX509TrustManager().getAcceptedIssuers();
@@ -892,10 +889,6 @@ final class ServerHandshaker extends Handshaker {
                 m4.print(System.out);
             }
             m4.write(output);
-        } else {
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
         }
 
         /*
@@ -1329,6 +1322,7 @@ final class ServerHandshaker extends Handshaker {
             kerberosKeys = AccessController.doPrivileged(
                 // Eliminate dependency on KerberosKey
                 new PrivilegedExceptionAction<SecretKey[]>() {
+                @Override
                 public SecretKey[] run() throws Exception {
                     // get kerberos key for the default principal
                     return Krb5Helper.getServerKeys(acc);
@@ -1454,8 +1448,6 @@ final class ServerHandshaker extends Handshaker {
                 throw new SSLHandshakeException(
                         "No supported hash algorithm");
             }
-
-            handshakeHash.setCertificateVerifyAlg(hashAlg);
         }
 
         try {
@@ -1600,6 +1592,7 @@ final class ServerHandshaker extends Handshaker {
     /*
      * Returns a HelloRequest message to kickstart renegotiations
      */
+    @Override
     HandshakeMessage getKickstartMessage() {
         return new HelloRequest();
     }
@@ -1608,6 +1601,7 @@ final class ServerHandshaker extends Handshaker {
     /*
      * Fault detected during handshake.
      */
+    @Override
     void handshakeAlert(byte description) throws SSLProtocolException {
 
         String message = Alerts.alertDescription(description);
@@ -1668,11 +1662,6 @@ final class ServerHandshaker extends Handshaker {
              * not *REQUIRED*, this is an acceptable condition.)
              */
             if (doClientAuth == SSLEngineImpl.clauth_requested) {
-                // Smart (aka stupid) to forecast that no CertificateVerify
-                // message will be received.
-                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                    handshakeHash.setCertificateVerifyAlg(null);
-                }
                 return;
             } else {
                 fatalSE(Alerts.alert_bad_certificate,

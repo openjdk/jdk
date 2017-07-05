@@ -65,7 +65,7 @@ public class DivModTests {
      * Math and StrictMath tested and the same results are expected for both.
      */
     static void testIntFloorDivMod() {
-        testIntFloorDivMod(4, 0, new ArithmeticException("/ by zero"), new ArithmeticException("/ by zero")); // Should throw ArithmeticException
+        testIntFloorDivMod(4, 0, new ArithmeticException(), new ArithmeticException()); // Should throw ArithmeticException
         testIntFloorDivMod(4, 3, 1, 1);
         testIntFloorDivMod(3, 3, 1, 0);
         testIntFloorDivMod(2, 3, 0, 2);
@@ -151,7 +151,7 @@ public class DivModTests {
      * Test the floorDiv and floorMod methods for primitive long.
      */
     static void testLongFloorDivMod() {
-        testLongFloorDivMod(4L, 0L, new ArithmeticException("/ by zero"), new ArithmeticException("/ by zero")); // Should throw ArithmeticException
+        testLongFloorDivMod(4L, 0L, new ArithmeticException(), new ArithmeticException()); // Should throw ArithmeticException
         testLongFloorDivMod(4L, 3L, 1L, 1L);
         testLongFloorDivMod(3L, 3L, 1L, 0L);
         testLongFloorDivMod(2L, 3L, 0L, 2L);
@@ -385,9 +385,7 @@ public class DivModTests {
         }
         // Handle special case to compare ArithmeticExceptions
         if (result instanceof ArithmeticException && expected instanceof ArithmeticException) {
-            ArithmeticException ae1 = (ArithmeticException)result;
-            ArithmeticException ae2 = (ArithmeticException)expected;
-            return ae1.getMessage().equals(ae2.getMessage());
+            return true;
         }
         return false;
     }

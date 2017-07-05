@@ -411,14 +411,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Gets an InputStream for this socket.
      */
     protected synchronized InputStream getInputStream() throws IOException {
-        if (isClosedOrPending()) {
-            throw new IOException("Socket Closed");
-        }
-        if (shut_rd) {
-            throw new IOException("Socket input is shutdown");
-        }
-        if (socketInputStream == null) {
-            socketInputStream = new SocketInputStream(this);
+        synchronized (fdLock) {
+            if (isClosedOrPending())
+                throw new IOException("Socket Closed");
+            if (shut_rd)
+                throw new IOException("Socket input is shutdown");
+            if (socketInputStream == null)
+                socketInputStream = new SocketInputStream(this);
         }
         return socketInputStream;
     }
@@ -431,14 +430,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Gets an OutputStream for this socket.
      */
     protected synchronized OutputStream getOutputStream() throws IOException {
-        if (isClosedOrPending()) {
-            throw new IOException("Socket Closed");
-        }
-        if (shut_wr) {
-            throw new IOException("Socket output is shutdown");
-        }
-        if (socketOutputStream == null) {
-            socketOutputStream = new SocketOutputStream(this);
+        synchronized (fdLock) {
+            if (isClosedOrPending())
+                throw new IOException("Socket Closed");
+            if (shut_wr)
+                throw new IOException("Socket output is shutdown");
+            if (socketOutputStream == null)
+                socketOutputStream = new SocketOutputStream(this);
         }
         return socketOutputStream;
     }

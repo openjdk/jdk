@@ -140,6 +140,7 @@ public interface SnmpAdaptorServerMBean extends CommunicatorServerMBean {
      *
      * @return The string "snmp".
      */
+    @Override
     public String getProtocol();
 
     /**
@@ -636,7 +637,8 @@ public interface SnmpAdaptorServerMBean extends CommunicatorServerMBean {
      * @exception IOException An I/O error occurred while sending the inform request.
      * @exception SnmpStatusException If the inform request exceeds the limit defined by <CODE>bufferSize</CODE>.
      */
-    public Vector snmpInformRequest(SnmpInformHandler cb, SnmpOid trapOid, SnmpVarBindList varBindList)
+    public Vector<?> snmpInformRequest(SnmpInformHandler cb, SnmpOid trapOid,
+            SnmpVarBindList varBindList)
         throws IllegalStateException, IOException, SnmpStatusException;
 
     /**

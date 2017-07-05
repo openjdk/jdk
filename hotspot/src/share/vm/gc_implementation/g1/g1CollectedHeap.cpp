@@ -3690,6 +3690,7 @@ void G1CollectedHeap::log_gc_footer(double pause_time_sec) {
     g1_policy()->print_heap_transition();
     gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
   }
+  gclog_or_tty->flush();
 }
 
 bool
@@ -4036,9 +4037,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif
 
       gc_epilogue(false);
-
-      log_gc_footer(os::elapsedTime() - pause_start_sec);
     }
+
+    // Print the remainder of the GC log output.
+    log_gc_footer(os::elapsedTime() - pause_start_sec);
 
     // It is not yet to safe to tell the concurrent mark to
     // start as we have some optional output below. We don't want the

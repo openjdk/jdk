@@ -226,6 +226,9 @@ class ciMethod : public ciMetadata {
   ciCallProfile call_profile_at_bci(int bci);
   int           interpreter_call_site_count(int bci);
 
+  ciField*      get_field_at_bci( int bci, bool &will_link);
+  ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
+
   // Given a certain calling environment, find the monomorphic target
   // for the call.  Return NULL if the call is not monomorphic in
   // its calling environment.

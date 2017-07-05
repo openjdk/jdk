@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"

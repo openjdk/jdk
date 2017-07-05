@@ -27,7 +27,9 @@
 
 package com.sun.jmx.snmp.IPAcl;
 
+import java.net.InetAddress;
 import java.util.Hashtable;
+import java.util.Vector;
 
 class JDMInformBlock extends SimpleNode {
     JDMInformBlock(int id) {
@@ -50,11 +52,13 @@ class JDMInformBlock extends SimpleNode {
      * Do no need to go through this part of the tree for
      * building AclEntry.
      */
+    @Override
     public void buildAclEntries(PrincipalImpl owner, AclImpl acl) {}
 
     /**
      * Do no need to go through this part of the tree for
      * building TrapEntry.
      */
-    public void buildTrapEntries(Hashtable dest) {}
+    @Override
+    public void buildTrapEntries(Hashtable<InetAddress, Vector<String>> dest) {}
 }

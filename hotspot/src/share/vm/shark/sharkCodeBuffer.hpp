@@ -81,6 +81,13 @@ class SharkCodeBuffer : public StackObj {
     return offset;
   }
 
+  int inline_Metadata(Metadata* metadata) const {
+    masm()->align(BytesPerWord);
+    int offset = masm()->offset();
+    masm()->store_Metadata(metadata);
+    return offset;
+  }
+
   // Inline a block of non-oop data into the buffer and return its offset.
  public:
   int inline_data(void *src, size_t size) const {

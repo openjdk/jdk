@@ -64,6 +64,7 @@ final class EngineInputRecord extends InputRecord {
         this.engine = engine;
     }
 
+    @Override
     byte contentType() {
         if (internalData) {
             return super.contentType();
@@ -271,6 +272,7 @@ final class EngineInputRecord extends InputRecord {
      * data to be generated/output before the exception is ever
      * generated.
      */
+    @Override
     void writeBuffer(OutputStream s, byte [] buf, int off, int len)
             throws IOException {
         /*

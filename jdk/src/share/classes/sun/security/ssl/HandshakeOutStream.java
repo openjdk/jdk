@@ -28,7 +28,6 @@ package sun.security.ssl;
 
 import java.io.OutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 
 /**
  * Output stream for handshake data.  This is used only internally
@@ -87,6 +86,7 @@ public class HandshakeOutStream extends OutputStream {
      * Hashes are updated automatically if something gets flushed to the
      * network (e.g. a big cert message etc).
      */
+    @Override
     public void write(byte buf[], int off, int len) throws IOException {
         while (len > 0) {
             int howmuch = Math.min(len, r.availableDataBytes());
@@ -104,6 +104,7 @@ public class HandshakeOutStream extends OutputStream {
     /*
      * write-a-byte
      */
+    @Override
     public void write(int i) throws IOException {
         if (r.availableDataBytes() < 1) {
             flush();
@@ -111,6 +112,7 @@ public class HandshakeOutStream extends OutputStream {
         r.write(i);
     }
 
+    @Override
     public void flush() throws IOException {
         if (socket != null) {
             try {

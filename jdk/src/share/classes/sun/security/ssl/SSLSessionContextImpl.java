@@ -26,24 +26,14 @@
 
 package sun.security.ssl;
 
-import java.io.*;
-import java.net.*;
-import java.util.Date;
 import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.Locale;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.SSLSessionBindingListener;
-import javax.net.ssl.SSLSessionBindingEvent;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 
 import sun.security.util.Cache;
-import sun.security.util.Cache.CacheVisitor;
 
 
 final class SSLSessionContextImpl implements SSLSessionContext {
@@ -53,8 +43,6 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                                         // session cache, "host:port" as key
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
-
-    private static final Debug debug = Debug.getInstance("ssl");
 
     // package private
     SSLSessionContextImpl() {
@@ -69,6 +57,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     /**
      * Returns the <code>SSLSession</code> bound to the specified session id.
      */
+    @Override
     public SSLSession getSession(byte[] sessionId) {
         if (sessionId == null) {
             throw new NullPointerException("session id cannot be null");
@@ -85,6 +74,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     /**
      * Returns an enumeration of the active SSL sessions.
      */
+    @Override
     public Enumeration<byte[]> getIds() {
         SessionCacheVisitor scVisitor = new SessionCacheVisitor();
         sessionCache.accept(scVisitor);
@@ -99,6 +89,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
      * should be timed within the shorter one of the old timeout and the
      * new timeout.
      */
+    @Override
     public void setSessionTimeout(int seconds)
                  throws IllegalArgumentException {
         if (seconds < 0) {
@@ -115,6 +106,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     /**
      * Gets the timeout limit for cached <code>SSLSession</code> objects
      */
+    @Override
     public int getSessionTimeout() {
         return timeout;
     }
@@ -123,6 +115,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
      * Sets the size of the cache used for storing
      * <code>SSLSession</code> objects.
      */
+    @Override
     public void setSessionCacheSize(int size)
                  throws IllegalArgumentException {
         if (size < 0)
@@ -139,6 +132,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
      * Gets the size of the cache used for storing
      * <code>SSLSession</code> objects.
      */
+    @Override
     public int getSessionCacheSize() {
         return cacheLimit;
     }
@@ -207,6 +201,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         try {
         String s = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
+                @Override
                 public String run() {
                     return System.getProperty(
                         "javax.net.ssl.sessionCacheSize");
@@ -238,6 +233,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         Vector<byte[]> ids = null;
 
         // public void visit(java.util.Map<K,V> map) {}
+        @Override
         public void visit(java.util.Map<SessionId, SSLSessionImpl> map) {
             ids = new Vector<>(map.size());
 

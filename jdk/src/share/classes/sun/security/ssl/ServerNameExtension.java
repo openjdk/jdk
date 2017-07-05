@@ -243,10 +243,12 @@ final class ServerNameExtension extends HelloExtension {
         return false;
     }
 
+    @Override
     int length() {
         return listLength == 0 ? 4 : 6 + listLength;
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt16(type.id);
         if (listLength == 0) {
@@ -262,6 +264,7 @@ final class ServerNameExtension extends HelloExtension {
         }
     }
 
+    @Override
     public String toString() {
         StringBuffer buffer = new StringBuffer();
         for (SNIServerName sniName : sniMap.values()) {

@@ -343,7 +343,7 @@ public class SSLParameters {
      * @return null or an immutable list of non-null {@link SNIServerName}s
      *
      * @see List
-     * @see #setServerNames(List<SNIServerName>)
+     * @see #setServerNames(List)
      *
      * @since 1.8
      */
@@ -418,7 +418,7 @@ public class SSLParameters {
      * @return null or an immutable collection of non-null {@link SNIMatcher}s
      *
      * @see SNIMatcher
-     * @see #setSNIMatchers(Collection<SNIMatcher>)
+     * @see #setSNIMatchers(Collection)
      *
      * @since 1.8
      */

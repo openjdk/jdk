@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ import java.lang.SecurityManager;
  * convention follows the  hierarchical property naming convention.
  * Also, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to
- * signify a wildcard match. For example: "foo.*" or "*" is valid,
- * "*foo" or "a*b" is not valid.
+ * signify a wildcard match. For example: "foo.*" and "*" signify a wildcard
+ * match, while "*foo" and "a*b" do not.
  * <P>
  * The following table lists all the possible SSLPermission target names,
  * and for each provides a description of what the permission allows
