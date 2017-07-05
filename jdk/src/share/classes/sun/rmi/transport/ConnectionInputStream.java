@@ -43,7 +43,7 @@ class ConnectionInputStream extends MarshalInputStream {
     private boolean dgcAckNeeded = false;
 
     /** Hashtable mapping Endpoints to lists of LiveRefs to register */
-    private Map incomingRefTable = new HashMap(5);
+    private Map<Endpoint, List<LiveRef>> incomingRefTable = new HashMap<>(5);
 
     /** identifier for gc ack*/
     private UID ackID;
@@ -70,10 +70,10 @@ class ConnectionInputStream extends MarshalInputStream {
         Endpoint ep = ref.getEndpoint();
 
         // check whether endpoint is already in the hashtable
-        List refList = (List) incomingRefTable.get(ep);
+        List<LiveRef> refList = incomingRefTable.get(ep);
 
         if (refList == null) {
-            refList = new ArrayList();
+            refList = new ArrayList<LiveRef>();
             incomingRefTable.put(ep, refList);
         }
 
@@ -89,13 +89,9 @@ class ConnectionInputStream extends MarshalInputStream {
      */
     void registerRefs() throws IOException {
         if (!incomingRefTable.isEmpty()) {
-            Set entrySet = incomingRefTable.entrySet();
-            Iterator iter = entrySet.iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                Endpoint ep = (Endpoint) entry.getKey();
-                List refList = (List) entry.getValue();
-                DGCClient.registerRefs(ep, refList);
+            for (Map.Entry<Endpoint, List<LiveRef>> entry :
+                     incomingRefTable.entrySet()) {
+                DGCClient.registerRefs(entry.getKey(), entry.getValue());
             }
         }
     }

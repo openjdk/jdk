@@ -23,7 +23,7 @@
 
 # @test
 # @bug 6178366
-# @summary confirm that keytool correctly finds (and clones) a private key 
+# @summary confirm that keytool correctly finds (and clones) a private key
 #          when the user is prompted for the key's password.
 #
 # @run shell CloneKeyAskPassword.sh
@@ -55,6 +55,10 @@ case "$OS" in
     PATHSEP=":"
     FILESEP="/"
     ;;
+  Darwin )
+    PATHSEP=":"
+    FILESEP="/"
+    ;;
   CYGWIN* )
     PATHSEP=";"
     FILESEP="/"
@@ -75,11 +79,11 @@ chmod 644 CloneKeyAskPassword.jks
 
 # run the test: attempt to clone the private key
 ${TESTJAVA}${FILESEP}bin${FILESEP}keytool \
-	-keyclone \
-	-alias mykey \
-	-dest myclone \
-	-keystore CloneKeyAskPassword.jks \
-	-storepass test123 <<EOF
+        -keyclone \
+        -alias mykey \
+        -dest myclone \
+        -keystore CloneKeyAskPassword.jks \
+        -storepass test123 <<EOF
 test456
 EOF
 

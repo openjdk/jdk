@@ -21,10 +21,10 @@
 # questions.
 #
 
-# 
+#
 # @test
 # @summary  Tests OperatingSystemMXBean.getSystemLoadAverage() api.
-# @author   Mandy Chung 
+# @author   Mandy Chung
 # @bug      6336608 6367473 6511738
 #
 # @run build GetSystemLoadAverage
@@ -61,10 +61,7 @@ i=1
 while true; do
   echo "Run $i: TestSystemLoadAvg"
   case `uname -s` in
-       SunOS )
-         runOne GetSystemLoadAverage 
-         ;;
-       Linux )
+       SunOS | Linux | Darwin )
          runOne GetSystemLoadAverage
          ;;
       * )
@@ -81,6 +78,6 @@ while true; do
       exit 1
   fi
   i=`expr $i + 1`
-  # sleep for 5 seconds 
+  # sleep for 5 seconds
   sleep 5
 done

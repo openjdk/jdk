@@ -137,7 +137,7 @@ ifeq ($(PLATFORM), solaris)
 OTHER_LDLIBS = -lXt -lXext $(LIBXTST) $(LIBXMU) -lX11 -lXi
 endif
 
-ifeq ($(PLATFORM), linux)
+ifneq (,$(findstring $(PLATFORM), linux macosx))
 OTHER_CFLAGS += -DMLIB_NO_LIBSUNMATH
 # XXX what is this define below? Isn't it motif-related?
 OTHER_CFLAGS += -DXMSTRINGDEFINES=1
@@ -148,7 +148,7 @@ endif
 # !HEADLESS
 
 OTHER_LDLIBS += $(JVMLIB) $(LIBCXX) \
-                -lawt $(LIBM) -ldl
+                -lawt $(LIBM) $(LIBDL)
 
 #
 # Sun CC with -Xa misdefines __STDC__ to 0 (zero).
@@ -191,16 +191,35 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/debug \
         -I$(PLATFORM_SRC)/native/$(PKGDIR) \
         $(EVENT_MODEL)
 
+ifeq ($(PLATFORM), macosx)
+CPPFLAGS += -I$(CUPS_HEADERS_PATH)
+
+ifndef HEADLESS
+CPPFLAGS += -I$(MOTIF_DIR)/include \
+            -I$(OPENWIN_HOME)/include 
+LDFLAGS  += -L$(MOTIF_LIB) -L$(OPENWIN_LIB)
+
+endif # !HEADLESS
+endif # PLATFORM
+
 ifeq ($(PLATFORM), linux)
   # Checking for the X11/extensions headers at the additional location
   CPPFLAGS += -I$(firstword $(wildcard $(OPENWIN_HOME)/include/X11/extensions) \
                         $(wildcard /usr/include/X11/extensions))
 endif
 
+ifeq ($(PLATFORM), macosx))
+  CPPFLAGS += -I$(OPENWIN_HOME)/include/X11/extensions \
+              -I$(OPENWIN_HOME)/include 
+endif
+
 ifeq ($(PLATFORM), solaris)
   CPPFLAGS += -I$(OPENWIN_HOME)/include/X11/extensions
 endif
 
+ifeq ($(PLATFORM), macosx)
+  CPPFLAGS += -DX11_PATH=\"$(X11_PATH)\" -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
+endif
 
 LDFLAGS += -L$(LIBDIR)/$(LIBARCH)/$(TSOBJDIR) \
 	   $(AWT_RUNPATH)

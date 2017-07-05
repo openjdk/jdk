@@ -1,0 +1,596 @@
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH wsgen 1 "10 May 2011"
+.SH "Name"
+wsgen \- Java(TM) API for XML Web Services (JAX\-WS) 2.0
+.LP
+\f3Specification Version:\fP 2.1
+.br
+\f3Implementation Version:\fP 2.1.1
+.LP
+The \f2wsgen\fP tool generates JAX\-WS portable artifacts used in JAX\-WS web services. The tool reads a web service endpoint implementation class (SEI) and generates all the required artifacts for web service deployment, and invocation
+.SH "Overview"
+.LP
+The \f2wsgen\fP tool generates JAX\-WS portable artifacts used in JAX\-WS web services. The tool reads a web service endpoint class and generates all the required artifacts for web service deployment, and invocation. JAXWS 2.1.1 RI also provides a wsgen ant task, see
+.na
+\f2Wsgen ant task\fP @
+.fi
+https://jax\-ws.dev.java.net/nonav/2.1.1/docs/wsgenant.html for details.
+.LP
+.SH "Launching wsgen"
+.RS 3
+.TP 2
+o
+\f3Solaris/Bsd\fP
+.RS 3
+.TP 2
+*
+\f2export JAXWS_HOME=/pathto/jaxws\-ri\fP
+.TP 2
+*
+\f2$JAXWS_HOME/bin/wsgen.sh \-help\fP
+.RE
+.TP 2
+o
+\f3Windows\fP
+.RS 3
+.TP 2
+*
+\f2set JAXWS_HOME=c:\\pathto\\jaxws\-ri\fP
+.TP 2
+*
+\f2%JAXWS_HOME%\\bin\\wsgen.bat \-help\fP
+.RE
+.RE
+
+.LP
+.SH "Syntax"
+.nf
+\f3
+.fl
+wsgen [options] <SEI>\fP
+.br
+\f3
+.fl
+\fP
+.fi
+.LP
+The following table lists the \f2wsgen\fP options.
+.br
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Specify where to find input class files
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Same as \f2\-classpath <path>\fP
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Specify where to place generated output files
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+allow vendor extensions (functionality not specified by the specification). Use of extensions may result in applications that are not portable or may not interoperate with other implementations
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Used only in conjunction with the \-wsdl option. Specify where to place generated resource files such as WSDLs
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Specify where to place generated source files
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Output messages about what the compiler is doing
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Print version information. Use of this option will ONLY print version information. Normal processing will not occur.
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+By default \f2wsgen\fP does not generate a WSDL file. This flag is optional and will cause \f2wsgen\fP to generate a WSDL file and is usually only used so that the developer can look at the WSDL before the endpoint is deploy. The \f2protocol\fP is optional and is used to specify what protocol should be used in the \f2wsdl:binding\fP. Valid protocols include: \f2soap1.1\fP and \f2Xsoap1.2\fP. The default is \f2soap1.1\fP. \f2Xsoap1.2\fP is not standard and can only be used in conjunction with the \f2\-extension\fP option.
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Used only in conjunction with the \f2\-wsdl\fP option. Used to specify a particular \f2wsdl:service\fP name to be generated in the WSDL. Example, \f2\-servicename "{http://mynamespace/}MyService"\fP
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di k+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Used only in conjunction with the \f2\-wsdl\fP option. Used to specify a particular \f2wsdl:port\fP name to be generated in the WSDL. Example, \f2\-portname "{http://mynamespace/}MyPort"\fP
+.br
+.br
+.di
+.nr k| \n(dn
+.nr k- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \w\f3Option\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-classpath <path>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-cp <path>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-d <directory>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-extension\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-help\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-keep\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-r <directory>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-s <directory>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-verbose\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-version\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-wsdl[:protocol]\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-servicename <name>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f4\-portname <name>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wDisplay help
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wKeep generated files
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(k-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 133 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Option\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-classpath <path>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-cp <path>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-d <directory>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-extension\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-help\fP\h'|\n(41u'Display help
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-keep\fP\h'|\n(41u'Keep generated files
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-r <directory>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-s <directory>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-verbose\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-version\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-wsdl[:protocol]\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-servicename <name>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(k|u+\n(.Vu
+.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f4\-portname <name>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.k+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.rm k+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-53
+
+.LP
+.SH "Example"
+.nf
+\f3
+.fl
+\fP\f3wsgen \-d stock \-cp myclasspath stock.StockService\fP
+.fl
+.fi
+.LP
+This will generate the wrapper classes needed for StockService annotated with @WebService annotation inside \f3stock\fPdirectory.
+.nf
+\f3
+.fl
+\fP\f3wsgen \-wsdl \-d stock \-cp myclasspath stock.StockService\fP
+.fl
+.fi
+.LP
+This will generate a SOAP 1.1 WSDL and schema for your Java class stock.StockService annotated with @WebService annotation.
+.nf
+\f3
+.fl
+\fP\f3wsgen \-wsdl:Xsoap1.2 \-d stock \-cp myclasspath stock.StockService\fP
+.fl
+.fi
+.LP
+Will generate a SOAP 1.2 WSDL.
+.LP
+Note that you do not have to generate WSDL at the development time as JAXWS runtime will automatically generate a WSDL for you when you deploy your service.

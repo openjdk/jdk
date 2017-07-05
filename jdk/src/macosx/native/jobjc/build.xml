@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+#
+-->
+<project name="JObjC" default="install" basedir=".">
+  <property environment="env"/>
+  <echoproperties/>
+
+  <target name="installhdrs">
+    <echo>Nothing to do for install-headers build phase</echo>
+  </target>
+
+  <target name="installsrc">
+    <echo>Nothing to do for install-source build phase</echo>
+  </target>
+
+  <property name="redirection-target-defined" value="${env.PRODUCT_NAME}"/>
+
+  <target name="install" description="Redirects to the target specified in $PRODUCT_NAME">
+    <fail unless="env.PRODUCT_NAME" status="-1">
+      This Ant build file depends on the native Xcode project to invoke
+      targets by defining $PRODUCT_NAME to specify the target.
+    </fail>
+
+    <echo>--- Redirecting to target "${env.PRODUCT_NAME}"</echo>
+    <antcall target="${env.PRODUCT_NAME}"/>
+  </target>
+
+  <property name="compile.debug" value="true"/>
+
+  <!-- building from the command line / xcode b&i -->
+  <condition property="src" value="." else="${env.SRCROOT}">
+    <not><isset property="env.SRCROOT"/></not>
+  </condition>
+
+  <condition property="cfg" value="Debug" else="${env.CONFIGURATION}">
+    <not><isset property="env.CONFIGURATION"/></not>
+  </condition>
+
+  <condition property="obj" value="build/JObjC.build/${cfg}" else="${env.OBJROOT}">
+    <not><isset property="env.OBJROOT"/></not>
+  </condition>
+
+  <condition property="dst" value="build/${cfg}" else="${env.DSTROOT}/${cfg}">
+    <not><isset property="env.DSTROOT"/></not>
+  </condition>
+
+  <condition property="ARCHS" value="ppc i386 x86_64" else="${env.RC_ARCHS}">
+    <not><isset property="env.RC_ARCHS"/></not>
+  </condition>
+
+  <!-- -/- -->
+
+  <property name="bin" location="${obj}/bin"/>
+  <property name="gendoc" location="${obj}/doc"/>
+
+  <condition property="nativelib.dir" value="${dst}">
+    <not><isset property="env.CONFIGURATION_BUILD_DIR"/></not>
+  </condition>
+  <condition property="nativelib.dir" value="${env.CONFIGURATION_BUILD_DIR}">
+    <isset property="env.CONFIGURATION_BUILD_DIR"/>
+  </condition>
+  <property name="nativelib.file" location="${nativelib.dir}/libJObjC.dylib" />
+
+  <property name="jniheaders" location="${obj}/src/jni_headers"/>
+
+  <property name="core.src" location="${src}/src/core/java"/>
+  <property name="core.bin" location="${bin}/core"/>
+  <property name="core.jniheaders" location="${jniheaders}/core"/>
+  <property name="core.nativelib.dir" location="${nativelib.dir}"/>
+
+  <property name="generator.src" location="${src}/src/generator/java"/>
+  <property name="generator.bin" location="${bin}/generator"/>
+
+  <property name="generated.src" location="${obj}/src/jobjc"/>
+  <property name="generated.bin" location="${bin}/generated"/>
+
+  <property name="additions.src" location="${src}/src/runtime-additions"/>
+  <property name="additions.bin" location="${bin}/additions"/>
+  <property name="additions.jniheaders" location="${jniheaders}/additions"/>
+  <property name="additions.nativelib.dir" location="${nativelib.dir}"/>
+
+  <property name="test.src" location="${src}/src/tests/java"/>
+  <property name="test.bin" location="${bin}/test"/>
+  <property name="test.jniheaders" location="${jniheaders}/test"/>
+  <property name="test.reports" location="${obj}/test-reports"/>
+
+  <condition property="product.target_path"
+             value="/System/Library/Java/Extensions"
+             else="${env.INSTALL_PATH}">
+    <not><isset property="env.INSTALL_PATH"/></not>
+  </condition>
+
+  <echo message="(Settings :src '${src}' :cfg '${cfg}' :obj '${obj}' :dst '${dst}')"/>
+
+  <path id="test.lib.path.id">
+    <fileset dir="/usr/share/java">
+      <include name="**/*.jar"/>
+    </fileset>
+  </path>
+
+  <property name="product.jarfile.dir" location="${obj}"/>
+  <property name="product.jarfile.name" value="JObjC.jar"/>
+  <property name="product.jarfile" location="${product.jarfile.dir}/${product.jarfile.name}"/>
+
+  <target name="gen-pcoder" description="Generate PrimitiveCoder.java">
+    <exec executable="ruby" failonerror="true">
+      <arg value="${src}/run-and-write-if-okay"/>
+      <arg value="${src}/src/core/PrimitiveCoder.hs"/>
+      <arg value="${src}/src/core/java/com/apple/jobjc/PrimitiveCoder.java"/>
+    </exec>
+  </target>
+
+  <target name="build-core" depends="gen-pcoder" description="Compile the core runtime classes">
+    <mkdir dir="${core.bin}" />
+    <!-- Compile PrimitiveCoder first to work around javac bug. -->
+    <javac srcdir="${core.src}" destdir="${core.bin}" source="1.5" target="1.5" debug="${compile.debug}"
+           includes="**/PrimitiveCoder.java"
+           includeantruntime="false" />
+    <javac srcdir="${core.src}" destdir="${core.bin}" source="1.5" target="1.5" debug="${compile.debug}" includeantruntime="false" />
+
+    <exec executable="/usr/bin/perl" outputproperty="core.classes" failonerror="true">
+      <arg value="${src}/extract_classes.pl"/>
+      <arg path="${core.bin}"/>
+    </exec>
+
+    <mkdir dir="${core.jniheaders}" />
+    <javah destdir="${core.jniheaders}" class="${core.classes}">
+      <classpath path="${core.bin}"/>
+    </javah>
+  </target>
+
+  <target name="build-core-native" depends="build-core">
+    <exec executable="xcodebuild" failonerror="true">
+      <env key="CC" value=""/>
+      <env key="CXX" value=""/>
+      <arg value="-configuration"/>
+      <arg value="${cfg}"/>
+      <arg value="-target"/>
+      <arg value="build-core-native"/>
+      <arg value="SRCROOT=${src}"/>
+      <arg value="OBJROOT=${obj}"/>
+      <arg value="DSTROOT=${dst}"/>
+      <arg value="TARGET_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="PROJECT_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="BUILD_DIR=${env.DSTROOT}"/>
+    </exec>
+  </target>
+
+  <!-- macosx jdk 7 puts jobjc core classes on the bootclasspath by default -->
+  <target name="build-generator" description="Compile and assemble the generator">
+    <mkdir dir="${generator.bin}"/>
+    <javac srcdir="${generator.src}" destdir="${generator.bin}" source="1.5" target="1.5" debug="${compile.debug}" includeantruntime="false">
+      <compilerarg value="-version"/>
+      <compilerarg value="-Xbootclasspath/p:${core.bin}"/>
+    </javac>
+  </target>
+
+  <!-- Use this indirection hack to work around buildit lockup when
+  running the generator. -->
+  <target name="run-generator" depends="build-generator" description="Invoke the assembled generator">
+    <mkdir dir="${generated.src}"/>
+    <exec executable="ruby" failonerror="true">
+      <arg value="${src}/rungen"/>
+      <arg value="install"/>
+      <arg value="${product.jarfile.name}"/>
+      <arg value="${nativelib.dir}"/>
+      <arg value="${obj}"/>
+      <arg value="${ARCHS}"/>
+      <arg value="${env.STABLE_GEN_DIR}"/>
+    </exec>
+  </target>
+
+  <target name="run-generator-old" depends="build-generator" description="Invoke the assembled generator">
+    <mkdir dir="${generated.src}"/>
+    <java classname="com.apple.internal.jobjc.generator.Generator" fork="true" failonerror="true">
+      <jvmarg value="-Xms128m" />
+      <jvmarg value="-Xmx512m" />
+      <assertions><enable/></assertions>
+      <classpath>
+        <path location="${core.bin}"/>
+        <path location="${generator.bin}"/>
+      </classpath>
+      <sysproperty key="java.library.path" value="${core.nativelib.dir}"/>
+      <arg value="dst=${generated.src}"/>
+    </java>
+  </target>
+
+  <target name="build-generated" description="Build and assemble the JObjC core and all generated frameworks">
+    <mkdir dir="${generated.bin}"/>
+    <javac srcdir="${generated.src}" destdir="${generated.bin}" source="1.5" target="1.5" fork="yes" memoryMaximumSize="512m" debug="${compile.debug}" includeantruntime="false">
+      <classpath>
+        <path location="${core.bin}"/>
+      </classpath>
+      <compilerarg value="-version"/>
+    </javac>
+  </target>
+
+  <target name="build-additions" depends="build-generated">
+    <mkdir dir="${additions.bin}"/>
+    <javac srcdir="${additions.src}" destdir="${additions.bin}" source="1.5" target="1.5" debug="${compile.debug}" includeantruntime="false">
+      <classpath>
+        <path location="${core.bin}"/>
+        <path location="${generated.bin}"/>
+      </classpath>
+      <compilerarg value="-version"/>
+    </javac>
+
+    <exec executable="/usr/bin/perl" outputproperty="additions.classes" failonerror="true">
+      <arg value="${src}/extract_classes.pl"/>
+      <arg path="${additions.bin}"/>
+    </exec>
+
+    <mkdir dir="${additions.jniheaders}"/>
+    <javah destdir="${additions.jniheaders}" class="${additions.classes}">
+      <classpath>
+        <path location="${core.bin}"/>
+        <path location="${generated.bin}"/>
+        <path location="${additions.bin}"/>
+      </classpath>
+    </javah>
+  </target>
+
+  <target name="build-additions-native">
+    <exec executable="xcodebuild" failonerror="true">
+      <env key="CC" value=""/>
+      <env key="CXX" value=""/>
+      <arg value="-configuration"/>
+      <arg value="${cfg}"/>
+      <arg value="-target"/>
+      <arg value="build-additions-native"/>
+      <arg value="SRCROOT=${src}"/>
+      <arg value="OBJROOT=${obj}"/>
+      <arg value="DSTROOT=${dst}"/>
+      <arg value="TARGET_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="PROJECT_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="BUILD_DIR=${env.DSTROOT}"/>
+    </exec>
+  </target>
+
+  <target name="assemble-product">
+    <mkdir dir="${product.jarfile.dir}"/>
+    <jar jarfile="${product.jarfile}" level="9" index="true">
+      <fileset dir="${core.bin}"/>
+      <fileset dir="${generated.bin}"/>
+      <fileset dir="${additions.bin}"/>
+    </jar>
+
+    <mkdir dir="${dst}/${product.target_path}"/>
+    <copy file="${product.jarfile}" toDir="${dst}/${product.target_path}" failonerror="true" verbose="true"/>
+    <copy file="${nativelib.file}" toDir="${dst}/${product.target_path}" failonerror="true" verbose="true"/>
+  </target>
+
+  <target name="doc-core">
+    <mkdir dir="${gendoc}"/>
+    <javadoc destdir="${gendoc}" access="protected">
+      <fileset dir="${src}/src" includes="**/*.java"/>
+    </javadoc>
+  </target>
+
+  <target name="build-test" description="compile unit tests">
+    <mkdir dir="${test.bin}"/>
+    <javac srcdir="${test.src}" destdir="${test.bin}" debug="false" includeantruntime="false">
+      <classpath>
+        <pathelement location="${core.bin}"/>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+      <compilerarg value="-version"/>
+    </javac>
+
+    <exec executable="/usr/bin/perl" outputproperty="test.classes" failonerror="true">
+      <arg value="${src}/extract_classes.pl"/>
+      <arg path="${test.bin}"/>
+    </exec>
+
+    <mkdir dir="${test.jniheaders}"/>
+    <javah destdir="${test.jniheaders}" class="${test.classes}">
+      <classpath>
+        <path location="${core.bin}"/>
+        <path location="${generated.bin}"/>
+        <path location="${additions.bin}"/>
+        <path location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+    </javah>
+  </target>
+
+  <target name="build-test-installed" description="compile unit tests">
+    <mkdir dir="${test.bin}"/>
+    <javac srcdir="${test.src}" destdir="${test.bin}" debug="false" includeantruntime="false">
+      <compilerarg value="-verbose"/>
+      <classpath>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+      <compilerarg value="-version"/>
+    </javac>
+
+    <exec executable="/usr/bin/perl" outputproperty="test.classes" failonerror="true">
+      <arg value="${src}/extract_classes.pl"/>
+      <arg path="${test.bin}"/>
+    </exec>
+
+    <mkdir dir="${test.jniheaders}"/>
+    <javah destdir="${test.jniheaders}" class="${test.classes}">
+      <classpath>
+        <path location="${generated.bin}"/>
+        <path location="${additions.bin}"/>
+        <path location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+    </javah>
+  </target>
+
+  <target name="build-test-native" depends="build-test">
+    <exec executable="xcodebuild" failonerror="true">
+      <env key="CC" value=""/>
+      <env key="CXX" value=""/>
+      <arg value="-configuration"/>
+      <arg value="${cfg}"/>
+      <arg value="-target"/>
+      <arg value="build-test-native"/>
+      <arg value="SRCROOT=${src}"/>
+      <arg value="OBJROOT=${obj}"/>
+      <arg value="DSTROOT=${dst}"/>
+      <arg value="TARGET_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="PROJECT_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="BUILD_DIR=${env.DSTROOT}"/>
+    </exec>
+  </target>
+
+  <target name="build-test-native-installed" depends="build-test-installed">
+    <exec executable="xcodebuild" failonerror="true">
+      <env key="CC" value=""/>
+      <env key="CXX" value=""/>
+      <arg value="-configuration"/>
+      <arg value="${cfg}"/>
+      <arg value="-target"/>
+      <arg value="build-test-native"/>
+      <arg value="SRCROOT=${src}"/>
+      <arg value="OBJROOT=${obj}"/>
+      <arg value="DSTROOT=${dst}"/>
+      <arg value="TARGET_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="PROJECT_TEMP_DIR=${env.DSTROOT}"/>
+      <arg value="BUILD_DIR=${env.DSTROOT}"/>
+    </exec>
+  </target>
+
+  <target name="test" depends="build-test-native" description="run unit tests">
+    <mkdir dir="${test.reports}"/>
+    <junit fork="yes" printsummary="yes">
+      <assertions>
+        <enable/>
+      </assertions>
+      <jvmarg value="-server" />
+
+      <sysproperty key="java.library.path" value="${nativelib.dir}" />
+      <classpath>
+        <pathelement location="${core.bin}"/>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+        <pathelement location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+
+      <formatter type="plain"/>
+
+      <batchtest fork="yes" todir="${test.reports}">
+        <fileset dir="${test.src}">
+          <include name="**/*Test.java"/>
+          <exclude name="**/AllTests.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="test-installed" depends="build-test-native-installed" description="run unit tests">
+    <mkdir dir="${test.reports}"/>
+    <junit fork="yes" printsummary="yes">
+      <assertions>
+        <enable/>
+      </assertions>
+      <jvmarg value="-server" />
+
+      <sysproperty key="java.library.path" value="${nativelib.dir}" />
+      <classpath>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+        <pathelement location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+
+      <formatter type="plain"/>
+
+      <batchtest fork="yes" todir="${test.reports}">
+        <fileset dir="${test.src}">
+          <include name="**/*Test.java"/>
+          <exclude name="**/AllTests.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+
+  <condition property="bench_match" value="*" else="${env.BENCH_MATCH}">
+    <not><isset property="env.BENCH_MATCH"/></not>
+  </condition>
+
+  <target name="bench" depends="build-test-native" description="run benchmarks">
+    <mkdir dir="${test.reports}"/>
+    <junit fork="yes" printsummary="yes">
+      <sysproperty key="java.library.path" value="${nativelib.dir}" />
+      <classpath>
+        <pathelement location="${core.bin}"/>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+        <pathelement location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+
+      <jvmarg value="-Xms256m" />
+      <jvmarg value="-Xmx1024m" />
+      <jvmarg value="-server" />
+
+      <formatter type="plain"/>
+
+      <batchtest fork="yes" todir="${test.reports}">
+        <fileset dir="${test.src}">
+          <include name="**/Bench*${bench_match}*.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="bench-installed" depends="build-test-native-installed" description="run benchmarks">
+    <mkdir dir="${test.reports}"/>
+    <junit fork="yes" printsummary="yes">
+      <sysproperty key="java.library.path" value="${nativelib.dir}" />
+      <classpath>
+        <pathelement location="${generator.bin}"/>
+        <pathelement location="${generated.bin}"/>
+        <pathelement location="${additions.bin}"/>
+        <pathelement location="${test.bin}"/>
+      </classpath>
+      <classpath refid="test.lib.path.id"/>
+
+      <jvmarg value="-Xms256m" />
+      <jvmarg value="-Xmx1024m" />
+      <jvmarg value="-server" />
+
+      <formatter type="plain"/>
+
+      <batchtest fork="yes" todir="${test.reports}">
+        <fileset dir="${test.src}">
+          <include name="**/Bench*${bench_match}*.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="clean">
+    <delete dir="build"/>
+    <delete dir="${obj}"/>
+    <delete dir="${dst}"/>
+    <delete dir="${gendoc}"/>
+    <delete dir="${test.reports}"/>
+  </target>
+
+
+  <target name="clean-all" depends="clean,build-core,build-core-native,build-generator,run-generator,build-generated,build-additions,build-additions-native,assemble-product">
+  </target>
+  <target name="all" depends="build-core,build-core-native,build-generator,run-generator,build-generated,build-additions,build-additions-native,assemble-product">
+  </target>
+  <target name="all-test" depends="build-core,build-core-native,build-generator,run-generator,build-generated,build-additions,build-additions-native,assemble-product,test-installed">
+  </target>
+  <target name="clean-all-test" depends="clean,build-core,build-core-native,build-generator,run-generator,build-generated,build-additions,build-additions-native,assemble-product,test-installed">
+  </target>
+  <target name="all-but-gen" depends="clean,build-core,build-core-native,build-generator,build-generated,build-additions,build-additions-native,assemble-product">
+  </target>
+</project>

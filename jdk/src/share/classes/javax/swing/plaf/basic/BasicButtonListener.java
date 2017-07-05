@@ -139,9 +139,9 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
                                JComponent.WHEN_IN_FOCUSED_WINDOW, map);
             }
             map.clear();
-            map.put(KeyStroke.getKeyStroke(m, InputEvent.ALT_MASK, false),
+            map.put(KeyStroke.getKeyStroke(m, BasicLookAndFeel.getFocusAcceleratorKeyMask(), false),
                     "pressed");
-            map.put(KeyStroke.getKeyStroke(m, InputEvent.ALT_MASK, true),
+            map.put(KeyStroke.getKeyStroke(m, BasicLookAndFeel.getFocusAcceleratorKeyMask(), true),
                     "released");
             map.put(KeyStroke.getKeyStroke(m, 0, true), "released");
         }

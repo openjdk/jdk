@@ -26,9 +26,11 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
+#include "jvm_md.h"
 #include "jlong.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include "sun_nio_ch_FileChannelImpl.h"
 #include "java_lang_Integer.h"
 #include "nio.h"
@@ -37,6 +39,13 @@
 
 #if defined(__linux__) || defined(__solaris__)
 #include <sys/sendfile.h>
+#elif defined(_ALLBSD_SOURCE)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+
+#define lseek64 lseek
+#define mmap64 mmap
 #endif
 
 static jfieldID chan_fd;        /* jobject 'fd' in sun.io.FileChannelImpl */
@@ -191,6 +200,33 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
         return IOS_THROWN;
     }
+    return result;
+#elif defined(__APPLE__)
+    off_t numBytes;
+    int result;
+
+    numBytes = count;
+
+#ifdef __APPLE__
+    result = sendfile(srcFD, dstFD, position, &numBytes, NULL, 0);
+#endif
+
+    if (numBytes > 0)
+        return numBytes;
+
+    if (result == -1) {
+        if (errno == EAGAIN)
+            return IOS_UNAVAILABLE;
+        if (errno == EOPNOTSUPP || errno == ENOTSOCK || errno == ENOTCONN)
+            return IOS_UNSUPPORTED_CASE;
+        if ((errno == EINVAL) && ((ssize_t)count >= 0))
+            return IOS_UNSUPPORTED_CASE;
+        if (errno == EINTR)
+            return IOS_INTERRUPTED;
+        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        return IOS_THROWN;
+    }
+
     return result;
 #else
     return IOS_UNSUPPORTED_CASE;

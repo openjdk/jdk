@@ -23,7 +23,7 @@
  * questions.
  */
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <stdio.h>
 #include <ctype.h>
 #endif
@@ -42,9 +42,21 @@
 #include <time.h>
 #include <errno.h>
 
+#ifdef MACOSX
+#include "java_props_macosx.h"
+#endif
+
+#if defined(_ALLBSD_SOURCE)
+#if !defined(P_tmpdir)
+#include <paths.h>
+#define P_tmpdir _PATH_VARTMP
+#endif
+#endif
+
 #include "locale_str.h"
 #include "java_props.h"
 
+#if !defined(_ALLBSD_SOURCE)
 #ifdef __linux__
   #ifndef CODESET
   #define CODESET _NL_CTYPE_CODESET_NAME
@@ -54,6 +66,7 @@
 #define CODESET ALT_CODESET_KEY
 #endif
 #endif
+#endif /* !_ALLBSD_SOURCE */
 
 #ifdef JAVASE_EMBEDDED
 #include <dlfcn.h>
@@ -131,7 +144,12 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
     char *lc;
 
     /* Query the locale set for the category */
+
+#ifdef MACOSX
+    lc = setupMacOSXLocale(cat); // malloc'd memory, need to free
+#else
     lc = setlocale(cat, NULL);
+#endif
 
 #ifndef __linux__
     if (lc == NULL) {
@@ -169,7 +187,9 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
      */
 
     strcpy(temp, lc);
-
+#ifdef MACOSX
+    free(lc); // malloced memory
+#endif
     /* Parse the language, country, encoding, and variant from the
      * locale.  Any of the elements may be missing, but they must occur
      * in the order language_country.encoding@variant, and must be
@@ -354,21 +374,62 @@ GetJavaProperties(JNIEnv *env)
 
     /* tmp dir */
     sprops.tmp_dir = P_tmpdir;
+#ifdef MACOSX
+    /* darwin has a per-user temp dir */
+    static char tmp_path[PATH_MAX];
+    int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, tmp_path, PATH_MAX);
+    if (pathSize > 0 && pathSize <= PATH_MAX) {
+        sprops.tmp_dir = tmp_path;
+    }
+#endif /* MACOSX */
 
     /* Printing properties */
+#ifdef MACOSX
+    sprops.printerJob = "sun.lwawt.macosx.CPrinterJob";
+#else
     sprops.printerJob = "sun.print.PSPrinterJob";
+#endif
 
     /* patches/service packs installed */
     sprops.patch_level = "unknown";
 
     /* Java 2D properties */
+#ifdef MACOSX
+    PreferredToolkit prefToolkit = getPreferredToolkit();
+    switch (prefToolkit) {
+        case CToolkit:
+            sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
+            break;
+        case XToolkit:
+#endif
     sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
-
+#ifdef MACOSX
+            break;
+        default:
+            sprops.graphics_env = "sun.awt.HeadlessGraphicsEnvironment";
+            break;
+    }
+#endif
+    /* AWT properties */
 #ifdef JAVASE_EMBEDDED
     sprops.awt_toolkit = getEmbeddedToolkit();
     if (sprops.awt_toolkit == NULL) // default as below
 #endif
+#ifdef MACOSX
+        switch (prefToolkit) {
+            case CToolkit:
+                sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
+                break;
+            case XToolkit:
+#endif
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
+#ifdef MACOSX
+                break;
+            default:
+                sprops.awt_toolkit = "sun.awt.HToolkit";
+                break;
+        }
+#endif
 
     /* This is used only for debugging of font problems. */
     v = getenv("JAVA2D_FONTPATH");
@@ -396,10 +457,14 @@ GetJavaProperties(JNIEnv *env)
 
     /* os properties */
     {
+#ifdef MACOSX
+        setOSNameAndVersion(&sprops);
+#else
         struct utsname name;
         uname(&name);
         sprops.os_name = strdup(name.sysname);
         sprops.os_version = strdup(name.release);
+#endif
 
         sprops.os_arch = ARCHPROPNAME;
 
@@ -437,6 +502,13 @@ GetJavaProperties(JNIEnv *env)
     sprops.display_variant = sprops.variant;
     sprops.sun_jnu_encoding = sprops.encoding;
 
+#ifdef _ALLBSD_SOURCE
+#if BYTE_ORDER == _LITTLE_ENDIAN
+     sprops.unicode_encoding = "UnicodeLittle";
+ #else
+     sprops.unicode_encoding = "UnicodeBig";
+ #endif
+#else /* !_ALLBSD_SOURCE */
 #ifdef __linux__
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     sprops.unicode_encoding = "UnicodeLittle";
@@ -446,6 +518,7 @@ GetJavaProperties(JNIEnv *env)
 #else
     sprops.unicode_encoding = "UnicodeBig";
 #endif
+#endif /* _ALLBSD_SOURCE */
 
     /* user properties */
     {
@@ -482,12 +555,19 @@ GetJavaProperties(JNIEnv *env)
     sprops.path_separator = ":";
     sprops.line_separator = "\n";
 
+#if !defined(_ALLBSD_SOURCE)
     /* Append CDE message and resource search path to NLSPATH and
      * XFILESEARCHPATH, in order to pick localized message for
      * FileSelectionDialog window (Bug 4173641).
      */
     setPathEnvironment("NLSPATH=/usr/dt/lib/nls/msg/%L/%N.cat");
     setPathEnvironment("XFILESEARCHPATH=/usr/dt/app-defaults/%L/Dt");
+#endif
+
+
+#ifdef MACOSX
+    setProxyProperties(&sprops);
+#endif
 
     return &sprops;
 }

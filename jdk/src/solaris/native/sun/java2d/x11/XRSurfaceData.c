@@ -29,7 +29,7 @@
 #include "X11SurfaceData.h"
 
 /*#include <xcb/xcb.h>*/
-#include <Xrender.h>
+#include <X11/extensions/Xrender.h>
 
 #ifndef RepeatNone  /* added in 0.10 */
 #define RepeatNone    0
