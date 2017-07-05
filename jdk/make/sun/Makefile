@@ -58,13 +58,18 @@ ifdef OPENJDK
 else
   RENDER_SUBDIR = dcpr
 endif
+
 # nio need to be compiled before awt to have all charsets ready
-SUBDIRS = jar security javazic misc jkernel net audio $(RENDER_SUBDIR) image \
-	  nio awt splashscreen $(XAWT_SUBDIR) \
-          $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
-	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \
-	  jawt text launcher management $(ORG_SUBDIR) \
-          native2ascii serialver tools jconsole tracing
+SUBDIRS            = jar security javazic misc net nio text launcher
+SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
+                     awt splashscreen $(XAWT_SUBDIR) \
+                     $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
+                     jawt font jpeg cmm applet beans
+SUBDIRS_management = management
+SUBDIRS_misc       = jkernel $(ORG_SUBDIR) \
+                     rmi $(JDBC_SUBDIR) tracing
+SUBDIRS_tools      = native2ascii serialver tools jconsole
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

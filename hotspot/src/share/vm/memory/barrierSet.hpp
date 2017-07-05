@@ -124,8 +124,6 @@ public:
   // Below length is the # array elements being written
   virtual void write_ref_array_pre(      oop* dst, int length) {}
   virtual void write_ref_array_pre(narrowOop* dst, int length) {}
-  // Below MemRegion mr is expected to be HeapWord-aligned
-  inline void write_ref_array(MemRegion mr);
   // Below count is the # array elements being written, starting
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);

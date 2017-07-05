@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1733,7 +1733,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
           brx(Assembler::zero, false, Assembler::pn, found_null);
           delayed()->nop();
           // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polimorphic case.
+          // Increment total counter to indicate polymorphic case.
           increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
           ba(false, done);
           delayed()->nop();

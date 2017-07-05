@@ -423,7 +423,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             // Try keep-alive only on first attempt
             if (!failedOnce && http.getHttpKeepAliveSet()) {
-                if (http.usingProxy) {
+                if (http.usingProxy && tunnelState() != TunnelState.TUNNELING) {
                     requests.setIfNotSet("Proxy-Connection", "keep-alive");
                 } else {
                     requests.setIfNotSet("Connection", "keep-alive");

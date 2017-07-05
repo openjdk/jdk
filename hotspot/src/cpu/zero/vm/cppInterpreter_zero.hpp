@@ -1,6 +1,6 @@
 /*
  * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,3 +41,7 @@
  private:
   // Stack overflow checks
   static bool stack_overflow_imminent(JavaThread *thread);
+
+ private:
+  // Fast result type determination
+  static BasicType result_type_of(methodOop method);

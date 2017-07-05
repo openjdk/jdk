@@ -46,6 +46,7 @@ ifndef OPENJDK
   SUBDIRS += Java2D SwingSet2 Stylepad
 endif
 
+include $(BUILDDIR)/common/Subdirs.gmk
 all build clean clobber::
 	$(SUBDIRS-loop)
 
