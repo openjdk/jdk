@@ -51,6 +51,7 @@ import javax.management.remote.TargetedNotification;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
+import java.rmi.UnmarshalException;
 
 
 public abstract class ClientNotifForwarder {
@@ -594,10 +595,7 @@ public abstract class ClientNotifForwarder {
                 }
 
                 return nr;
-            } catch (ClassNotFoundException e) {
-                logger.trace("NotifFetcher.fetchNotifs", e);
-                return fetchOneNotif();
-            } catch (NotSerializableException e) {
+            } catch (ClassNotFoundException | NotSerializableException | UnmarshalException e) {
                 logger.trace("NotifFetcher.fetchNotifs", e);
                 return fetchOneNotif();
             } catch (IOException ioe) {
@@ -619,17 +617,18 @@ public abstract class ClientNotifForwarder {
            timeout.  This allows us to skip sequence numbers for
            notifications that don't match our filters.  Then we ask
            for one notification.  If that produces a
-           ClassNotFoundException or a NotSerializableException, we
-           increase our sequence number and ask again.  Eventually we
-           will either get a successful notification, or a return with
-           0 notifications.  In either case we can return a
+           ClassNotFoundException, NotSerializableException or
+           UnmarshalException, we increase our sequence number and ask again.
+           Eventually we will either get a successful notification, or a
+           return with 0 notifications.  In either case we can return a
            NotificationResult.  This algorithm works (albeit less
            well) even if the server implementation doesn't optimize a
            request for 0 notifications to skip sequence numbers for
            notifications that don't match our filters.
 
-           If we had at least one ClassNotFoundException, then we
-           must emit a JMXConnectionNotification.LOST_NOTIFS.
+           If we had at least one
+           ClassNotFoundException/NotSerializableException/UnmarshalException,
+           then we must emit a JMXConnectionNotification.LOST_NOTIFS.
         */
         private NotificationResult fetchOneNotif() {
             ClientNotifForwarder cnf = ClientNotifForwarder.this;
@@ -668,23 +667,20 @@ public abstract class ClientNotifForwarder {
                 try {
                     // 1 notif to skip possible missing class
                     result = cnf.fetchNotifs(startSequenceNumber, 1, 0L);
-                } catch (Exception e) {
-                    if (e instanceof ClassNotFoundException
-                        || e instanceof NotSerializableException) {
-                        logger.warning("NotifFetcher.fetchOneNotif",
-                                     "Failed to deserialize a notification: "+e.toString());
-                        if (logger.traceOn()) {
-                            logger.trace("NotifFetcher.fetchOneNotif",
-                                         "Failed to deserialize a notification.", e);
-                        }
-
-                        notFoundCount++;
-                        startSequenceNumber++;
-                    } else {
-                        if (!shouldStop())
-                            logger.trace("NotifFetcher.fetchOneNotif", e);
-                        return null;
+                } catch (ClassNotFoundException | NotSerializableException | UnmarshalException e) {
+                    logger.warning("NotifFetcher.fetchOneNotif",
+                                   "Failed to deserialize a notification: "+e.toString());
+                    if (logger.traceOn()) {
+                        logger.trace("NotifFetcher.fetchOneNotif",
+                                     "Failed to deserialize a notification.", e);
                     }
+
+                    notFoundCount++;
+                    startSequenceNumber++;
+                } catch (Exception e) {
+                    if (!shouldStop())
+                        logger.trace("NotifFetcher.fetchOneNotif", e);
+                    return null;
                 }
             }
 
@@ -692,7 +688,7 @@ public abstract class ClientNotifForwarder {
                 final String msg =
                     "Dropped " + notFoundCount + " notification" +
                     (notFoundCount == 1 ? "" : "s") +
-                    " because classes were missing locally";
+                    " because classes were missing locally or incompatible";
                 lostNotifs(msg, notFoundCount);
                 // Even if result.getEarliestSequenceNumber() is now greater than
                 // it was initially, meaning some notifs have been dropped

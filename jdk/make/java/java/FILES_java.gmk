@@ -294,6 +294,7 @@ JAVA_JAVA_java = \
 	java/util/IdentityHashMap.java \
 	java/util/EnumMap.java \
     java/util/Arrays.java \
+    java/util/ArraysParallelSortHelpers.java \
     java/util/DualPivotQuicksort.java \
     java/util/TimSort.java \
     java/util/ComparableTimSort.java \
@@ -322,6 +323,7 @@ JAVA_JAVA_java = \
     java/util/concurrent/CopyOnWriteArrayList.java \
     java/util/concurrent/CopyOnWriteArraySet.java \
     java/util/concurrent/CountDownLatch.java \
+    java/util/concurrent/CountedCompleter.java \
     java/util/concurrent/CyclicBarrier.java \
     java/util/concurrent/DelayQueue.java \
     java/util/concurrent/Delayed.java \

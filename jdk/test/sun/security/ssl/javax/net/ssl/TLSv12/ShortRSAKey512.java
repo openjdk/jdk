@@ -23,6 +23,9 @@
  * questions.
  */
 
+// This test case relies on updated static security property, no way to re-use
+// security property in samevm/agentvm mode.
+
 /*
  * @test
  * @bug 7106773
@@ -38,6 +41,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
+import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
@@ -275,6 +279,10 @@ public class ShortRSAKey512 {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
