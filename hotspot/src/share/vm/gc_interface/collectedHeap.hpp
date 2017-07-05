@@ -590,13 +590,27 @@ class CollectedHeap : public CHeapObj {
   void pre_full_gc_dump();
   void post_full_gc_dump();
 
-  virtual void print() const = 0;
+  // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
+  // The default behavior is to call print_on() on tty.
+  virtual void print() const {
+    print_on(tty);
+  }
+  // Print more detailed heap information on the given
+  // outputStream. The default behaviour is to call print_on(). It is
+  // up to each subclass to override it and add any additional output
+  // it needs.
+  virtual void print_extended_on(outputStream* st) const {
+    print_on(st);
+  }
 
   // Print all GC threads (other than the VM thread)
   // used by this heap.
   virtual void print_gc_threads_on(outputStream* st) const = 0;
-  void print_gc_threads() { print_gc_threads_on(tty); }
+  // The default behavior is to call print_gc_threads_on() on tty.
+  void print_gc_threads() {
+    print_gc_threads_on(tty);
+  }
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 

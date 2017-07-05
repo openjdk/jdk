@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6876135 7024172
+ * @bug     6876135 7024172 7067691
  *
  * @summary Test PlatformLoggingMXBean
  *          This test performs similar testing as
@@ -41,10 +41,14 @@ import java.util.List;
 
 public class PlatformLoggingMXBeanTest
 {
-
     ObjectName objectName = null;
     static String LOGGER_NAME_1 = "com.sun.management.Logger1";
     static String LOGGER_NAME_2 = "com.sun.management.Logger2";
+
+    // Use Logger instance variables to prevent premature garbage collection
+    // of weak references.
+    Logger logger1;
+    Logger logger2;
 
     public PlatformLoggingMXBeanTest() throws Exception {
     }
@@ -135,8 +139,8 @@ public class PlatformLoggingMXBeanTest
         System.out.println( "*********** Phase 3 ***********" );
         System.out.println( "*******************************" );
         System.out.println( " Create and test new Loggers" );
-        Logger logger1 = Logger.getLogger( LOGGER_NAME_1 );
-        Logger logger2 = Logger.getLogger( LOGGER_NAME_2 );
+        logger1 = Logger.getLogger( LOGGER_NAME_1 );
+        logger2 = Logger.getLogger( LOGGER_NAME_2 );
 
         // check that Level object are returned properly
         try {
@@ -187,6 +191,7 @@ public class PlatformLoggingMXBeanTest
         System.out.println( " Set and Check the Logger Level" );
         log1 = false;
         log2 = false;
+
         try {
             // Set the level of logger1 to ALL
             params = new Object[2];

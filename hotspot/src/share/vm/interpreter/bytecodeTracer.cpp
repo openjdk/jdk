@@ -241,7 +241,7 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
         st->print_cr(" not secondary entry?", i);
         return false;
       }
-      i = cache->entry_at(i)->main_entry_index();
+      i = cache->entry_at(i)->main_entry_index() + constantPoolOopDesc::CPCACHE_INDEX_TAG;
       goto check_cache_index;
     } else {
       st->print_cr(" not in cache[*]?", i);

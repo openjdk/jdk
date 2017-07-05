@@ -43,8 +43,9 @@
 #include "java_net_Inet4AddressImpl.h"
 
 /* the initial size of our hostent buffers */
-#define HENT_BUF_SIZE 1024
-#define BIG_HENT_BUF_SIZE 10240  /* a jumbo-sized one */
+#ifndef NI_MAXHOST
+#define NI_MAXHOST 1025
+#endif
 
 /************************************************************************
  * Inet4AddressImpl
@@ -57,60 +58,36 @@
  */
 JNIEXPORT jstring JNICALL
 Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
-    char hostname[MAXHOSTNAMELEN+1];
+    char hostname[NI_MAXHOST+1];
 
     hostname[0] = '\0';
     if (JVM_GetHostName(hostname, sizeof(hostname))) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
-#ifdef __linux__
-        /* On Linux gethostname() says "host.domain.sun.com".  On
-         * Solaris gethostname() says "host", so extra work is needed.
-         */
-#else
-        /* Solaris doesn't want to give us a fully qualified domain name.
-         * We do a reverse lookup to try and get one.  This works
-         * if DNS occurs before NIS in /etc/resolv.conf, but fails
-         * if NIS comes first (it still gets only a partial name).
-         * We use thread-safe system calls.
-         */
-#endif /* __linux__ */
-        struct hostent res, res2, *hp;
-        // these buffers must be pointer-aligned so they are declared
-        // with pointer type
-        char *buf[HENT_BUF_SIZE/(sizeof (char *))];
-        char *buf2[HENT_BUF_SIZE/(sizeof (char *))];
-        int h_error=0;
+        struct addrinfo hints, *res;
+        int error;
 
-        // ensure null-terminated
-        hostname[MAXHOSTNAMELEN] = '\0';
+        hostname[NI_MAXHOST] = '\0';
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_flags = AI_CANONNAME;
+        hints.ai_family = AF_INET;
 
-#ifdef __GLIBC__
-        gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &hp, &h_error);
-#else
-        hp = gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &h_error);
-#endif
-        if (hp) {
-#ifdef __GLIBC__
-            gethostbyaddr_r(hp->h_addr, hp->h_length, AF_INET,
-                            &res2, (char*)buf2, sizeof(buf2), &hp, &h_error);
-#else
-            hp = gethostbyaddr_r(hp->h_addr, hp->h_length, AF_INET,
-                                 &res2, (char*)buf2, sizeof(buf2), &h_error);
-#endif
-            if (hp) {
-                /*
-                 * If gethostbyaddr_r() found a fully qualified host name,
-                 * returns that name. Otherwise, returns the hostname
-                 * found by gethostname().
-                 */
-                char *p = hp->h_name;
-                if ((strlen(hp->h_name) > strlen(hostname))
-                    && (strncmp(hostname, hp->h_name, strlen(hostname)) == 0)
-                    && (*(p + strlen(hostname)) == '.'))
-                    strcpy(hostname, hp->h_name);
-            }
+        error = getaddrinfo(hostname, NULL, &hints, &res);
+
+        if (error == 0) {/* host is known to name service */
+            getnameinfo(res->ai_addr,
+                        res->ai_addrlen,
+                        hostname,
+                        NI_MAXHOST,
+                        NULL,
+                        0,
+                        NI_NAMEREQD);
+
+            /* if getnameinfo fails hostname is still the value
+               from gethostname */
+
+            freeaddrinfo(res);
         }
     }
     return (*env)->NewStringUTF(env, hostname);
@@ -140,14 +117,9 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                                                 jstring host) {
     const char *hostname;
     jobjectArray ret = 0;
-    struct hostent res, *hp = 0;
-    // this buffer must be pointer-aligned so is declared
-    // with pointer type
-    char *buf[HENT_BUF_SIZE/(sizeof (char *))];
-
-    /* temporary buffer, on the off chance we need to expand */
-    char *tmp = NULL;
-    int h_error=0;
+    int retLen = 0;
+    int error = 0;
+    struct addrinfo hints, *res, *resNew = NULL;
 
     if (!initialized) {
       ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
@@ -168,6 +140,11 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
     CHECK_NULL_RETURN(hostname, NULL);
 
+    /* Try once, with our static buffer. */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_CANONNAME;
+    hints.ai_family = AF_INET;
+
 #ifdef __solaris__
     /*
      * Workaround for Solaris bug 4160367 - if a hostname contains a
@@ -181,69 +158,93 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     }
 #endif
 
-    /* Try once, with our static buffer. */
-#ifdef __GLIBC__
-    gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &hp, &h_error);
-#else
-    hp = gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &h_error);
-#endif
+    error = getaddrinfo(hostname, NULL, &hints, &res);
 
-    /* With the re-entrant system calls, it's possible that the buffer
-     * we pass to it is not large enough to hold an exceptionally
-     * large DNS entry.  This is signaled by errno->ERANGE.  We try once
-     * more, with a very big size.
-     */
-    if (hp == NULL && errno == ERANGE) {
-        if ((tmp = (char*)malloc(BIG_HENT_BUF_SIZE))) {
-#ifdef __GLIBC__
-            gethostbyname_r(hostname, &res, tmp, BIG_HENT_BUF_SIZE,
-                            &hp, &h_error);
-#else
-            hp = gethostbyname_r(hostname, &res, tmp, BIG_HENT_BUF_SIZE,
-                                 &h_error);
-#endif
-        }
-    }
-    if (hp != NULL) {
-        struct in_addr **addrp = (struct in_addr **) hp->h_addr_list;
+    if (error) {
+        /* report error */
+        ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
+        JNU_ReleaseStringPlatformChars(env, host, hostname);
+        return NULL;
+    } else {
         int i = 0;
+        struct addrinfo *itr, *last = NULL, *iterator = res;
 
-        while (*addrp != (struct in_addr *) 0) {
-            i++;
-            addrp++;
+        while (iterator != NULL) {
+            // remove the duplicate one
+            int skip = 0;
+            itr = resNew;
+            while (itr != NULL) {
+                struct sockaddr_in *addr1, *addr2;
+                addr1 = (struct sockaddr_in *)iterator->ai_addr;
+                addr2 = (struct sockaddr_in *)itr->ai_addr;
+                if (addr1->sin_addr.s_addr ==
+                    addr2->sin_addr.s_addr) {
+                    skip = 1;
+                    break;
+                }
+                itr = itr->ai_next;
+            }
+
+            if (!skip) {
+                struct addrinfo *next
+                    = (struct addrinfo*) malloc(sizeof(struct addrinfo));
+                if (!next) {
+                    JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                    ret = NULL;
+                    goto cleanupAndReturn;
+                }
+                memcpy(next, iterator, sizeof(struct addrinfo));
+                next->ai_next = NULL;
+                if (resNew == NULL) {
+                    resNew = next;
+                } else {
+                    last->ai_next = next;
+                }
+                last = next;
+                i++;
+            }
+            iterator = iterator->ai_next;
         }
 
-        ret = (*env)->NewObjectArray(env, i, ni_iacls, NULL);
+        retLen = i;
+        iterator = resNew;
+
+        ret = (*env)->NewObjectArray(env, retLen, ni_iacls, NULL);
+
         if (IS_NULL(ret)) {
             /* we may have memory to free at the end of this */
             goto cleanupAndReturn;
         }
-        addrp = (struct in_addr **) hp->h_addr_list;
+
         i = 0;
-        while (*addrp) {
-          jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
-          if (IS_NULL(iaObj)) {
-            ret = NULL;
-            goto cleanupAndReturn;
-          }
-          (*env)->SetIntField(env, iaObj, ni_iaaddressID,
-                              ntohl((*addrp)->s_addr));
-          (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
-          (*env)->SetObjectArrayElement(env, ret, i, iaObj);
-          addrp++;
-          i++;
+        while (iterator != NULL) {
+            jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
+            if (IS_NULL(iaObj)) {
+                ret = NULL;
+                goto cleanupAndReturn;
+            }
+            (*env)->SetIntField(env, iaObj, ni_iaaddressID,
+                                ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
+            (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
+            (*env)->SetObjectArrayElement(env, ret, i++, iaObj);
+            iterator = iterator->ai_next;
         }
-    } else {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                        (char *)hostname);
-        ret = NULL;
     }
 
-cleanupAndReturn:
-    JNU_ReleaseStringPlatformChars(env, host, hostname);
-    if (tmp != NULL) {
-        free(tmp);
+ cleanupAndReturn:
+    {
+        struct addrinfo *iterator, *tmp;
+        iterator = resNew;
+        while (iterator != NULL) {
+            tmp = iterator;
+            iterator = iterator->ai_next;
+            free(tmp);
+        }
+        JNU_ReleaseStringPlatformChars(env, host, hostname);
     }
+
+    freeaddrinfo(res);
+
     return ret;
 }
 
@@ -256,63 +257,38 @@ JNIEXPORT jstring JNICALL
 Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
                                             jbyteArray addrArray) {
     jstring ret = NULL;
-    jint addr;
-    struct hostent hent, *hp = 0;
-    // this buffer must be pointer-aligned so is declared
-    // with pointer type
-    char *buf[HENT_BUF_SIZE/(sizeof (char *))];
-    int h_error = 0;
-    char *tmp = NULL;
 
-    /*
-     * We are careful here to use the reentrant version of
-     * gethostbyname because at the Java level this routine is not
-     * protected by any synchronization.
-     *
-     * Still keeping the reentrant platform dependent calls temporarily
-     * We should probably conform to one interface later.
-     *
-     */
+    char host[NI_MAXHOST+1];
+    int error = 0;
+    int len = 0;
     jbyte caddr[4];
+
+    struct sockaddr_in him4;
+    struct sockaddr *sa;
+
+    jint addr;
     (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
     addr = ((caddr[0]<<24) & 0xff000000);
     addr |= ((caddr[1] <<16) & 0xff0000);
     addr |= ((caddr[2] <<8) & 0xff00);
     addr |= (caddr[3] & 0xff);
-    addr = htonl(addr);
-#ifdef __GLIBC__
-    gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET, &hent,
-                    (char*)buf, sizeof(buf), &hp, &h_error);
-#else
-    hp = gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET, &hent,
-                         (char*)buf, sizeof(buf), &h_error);
-#endif
-    /* With the re-entrant system calls, it's possible that the buffer
-     * we pass to it is not large enough to hold an exceptionally
-     * large DNS entry.  This is signaled by errno->ERANGE.  We try once
-     * more, with a very big size.
-     */
-    if (hp == NULL && errno == ERANGE) {
-        if ((tmp = (char*)malloc(BIG_HENT_BUF_SIZE))) {
-#ifdef __GLIBC__
-            gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET,
-                            &hent, tmp, BIG_HENT_BUF_SIZE, &hp, &h_error);
-#else
-            hp = gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET,
-                                 &hent, tmp, BIG_HENT_BUF_SIZE, &h_error);
-#endif
-        } else {
-            JNU_ThrowOutOfMemoryError(env, "getHostByAddr");
-        }
+    memset((void *) &him4, 0, sizeof(him4));
+    him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+    him4.sin_family = AF_INET;
+    sa = (struct sockaddr *) &him4;
+    len = sizeof(him4);
+
+    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0,
+                        NI_NAMEREQD);
+
+    if (!error) {
+        ret = (*env)->NewStringUTF(env, host);
     }
-    if (hp == NULL) {
+
+    if (ret == NULL) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", NULL);
-    } else {
-        ret = (*env)->NewStringUTF(env, hp->h_name);
     }
-    if (tmp) {
-        free(tmp);
-    }
+
     return ret;
 }
 

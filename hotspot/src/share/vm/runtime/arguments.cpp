@@ -1577,17 +1577,8 @@ void Arguments::set_aggressive_opts_flags() {
     sprintf(buffer, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
     add_property(buffer);
   }
-  if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
-    FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
-  }
   if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
     FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
-  }
-  if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeStringConcat)) {
-    FLAG_SET_DEFAULT(OptimizeStringConcat, true);
-  }
-  if (AggressiveOpts && FLAG_IS_DEFAULT(OptimizeFill)) {
-    FLAG_SET_DEFAULT(OptimizeFill, true);
   }
 #endif
 

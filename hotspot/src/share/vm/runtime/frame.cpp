@@ -1338,7 +1338,11 @@ void frame::describe(FrameValues& values, int frame_no) {
     // Label values common to most frames
     values.describe(-1, unextended_sp(), err_msg("unextended_sp for #%d", frame_no));
     values.describe(-1, sp(), err_msg("sp for #%d", frame_no));
-    values.describe(-1, fp(), err_msg("fp for #%d", frame_no));
+    if (is_compiled_frame()) {
+      values.describe(-1, sp() + _cb->frame_size(), err_msg("computed fp for #%d", frame_no));
+    } else {
+      values.describe(-1, fp(), err_msg("fp for #%d", frame_no));
+    }
   }
   if (is_interpreted_frame()) {
     methodOop m = interpreter_frame_method();
@@ -1450,9 +1454,8 @@ void FrameValues::validate() {
 }
 
 
-void FrameValues::print() {
+void FrameValues::print(JavaThread* thread) {
   _values.sort(compare);
-  JavaThread* thread = JavaThread::current();
 
   // Sometimes values like the fp can be invalid values if the
   // register map wasn't updated during the walk.  Trim out values
@@ -1460,12 +1463,22 @@ void FrameValues::print() {
   int min_index = 0;
   int max_index = _values.length() - 1;
   intptr_t* v0 = _values.at(min_index).location;
-  while (!thread->is_in_stack((address)v0)) {
-    v0 = _values.at(++min_index).location;
-  }
   intptr_t* v1 = _values.at(max_index).location;
-  while (!thread->is_in_stack((address)v1)) {
-    v1 = _values.at(--max_index).location;
+
+  if (thread == Thread::current()) {
+    while (!thread->is_in_stack((address)v0)) {
+      v0 = _values.at(++min_index).location;
+    }
+    while (!thread->is_in_stack((address)v1)) {
+      v1 = _values.at(--max_index).location;
+    }
+  } else {
+    while (!thread->on_local_stack((address)v0)) {
+      v0 = _values.at(++min_index).location;
+    }
+    while (!thread->on_local_stack((address)v1)) {
+      v1 = _values.at(--max_index).location;
+    }
   }
   intptr_t* min = MIN2(v0, v1);
   intptr_t* max = MAX2(v0, v1);

@@ -360,6 +360,12 @@ public:
   // Anything this size or smaller may get converted to discrete scalar stores.
   static const int init_array_short_size;
 
+  // Some hardware needs 2 CMOV's for longs.
+  static const int long_cmove_cost();
+
+  // Some hardware have expensive CMOV for float and double.
+  static const int float_cmove_cost();
+
   // Should the Matcher clone shifts on addressing modes, expecting them to
   // be subsumed into complex addressing expressions or compute them into
   // registers?  True for Intel but false for most RISCs
