@@ -87,9 +87,7 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
     _gch->oop_since_save_marks_iterate(_level, _scan_cur_or_nonheap,
                                        _scan_older);
   } while (!_gch->no_allocs_since_save_marks(_level));
-  guarantee(_gen->promo_failure_scan_stack() == NULL
-            || _gen->promo_failure_scan_stack()->length() == 0,
-            "Failed to finish scan");
+  guarantee(_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
@@ -130,9 +128,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    int level,
                                    const char* policy)
   : Generation(rs, initial_size, level),
-    _objs_with_preserved_marks(NULL),
-    _preserved_marks_of_objs(NULL),
-    _promo_failure_scan_stack(NULL),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false)
 {
@@ -604,12 +599,8 @@ void DefNewGeneration::collect(bool   full,
   } else {
     assert(HandlePromotionFailure,
       "Should not be here unless promotion failure handling is on");
-    assert(_promo_failure_scan_stack != NULL &&
-      _promo_failure_scan_stack->length() == 0, "post condition");
-
-    // deallocate stack and it's elements
-    delete _promo_failure_scan_stack;
-    _promo_failure_scan_stack = NULL;
+    assert(_promo_failure_scan_stack.is_empty(), "post condition");
+    _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
     if (PrintGCDetails) {
@@ -620,7 +611,7 @@ void DefNewGeneration::collect(bool   full,
     // case there can be live objects in to-space
     // as a result of a partial evacuation of eden
     // and from-space.
-    swap_spaces();   // For the sake of uniformity wrt ParNewGeneration::collect().
+    swap_spaces();   // For uniformity wrt ParNewGeneration.
     from()->set_next_compaction_space(to());
     gch->set_incremental_collection_will_fail();
 
@@ -653,34 +644,23 @@ void DefNewGeneration::remove_forwarding_pointers() {
   RemoveForwardPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
+
   // Now restore saved marks, if any.
-  if (_objs_with_preserved_marks != NULL) {
-    assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    assert(_objs_with_preserved_marks->length() ==
-           _preserved_marks_of_objs->length(), "Both or none.");
-    for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
-      oop obj   = _objs_with_preserved_marks->at(i);
-      markOop m = _preserved_marks_of_objs->at(i);
-      obj->set_mark(m);
-    }
-    delete _objs_with_preserved_marks;
-    delete _preserved_marks_of_objs;
-    _objs_with_preserved_marks = NULL;
-    _preserved_marks_of_objs = NULL;
+  assert(_objs_with_preserved_marks.size() == _preserved_marks_of_objs.size(),
+         "should be the same");
+  while (!_objs_with_preserved_marks.is_empty()) {
+    oop obj   = _objs_with_preserved_marks.pop();
+    markOop m = _preserved_marks_of_objs.pop();
+    obj->set_mark(m);
   }
+  _objs_with_preserved_marks.clear(true);
+  _preserved_marks_of_objs.clear(true);
 }
 
 void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
   if (m->must_be_preserved_for_promotion_failure(obj)) {
-    if (_objs_with_preserved_marks == NULL) {
-      assert(_preserved_marks_of_objs == NULL, "Both or none.");
-      _objs_with_preserved_marks = new (ResourceObj::C_HEAP)
-        GrowableArray<oop>(PreserveMarkStackSize, true);
-      _preserved_marks_of_objs = new (ResourceObj::C_HEAP)
-        GrowableArray<markOop>(PreserveMarkStackSize, true);
-    }
-    _objs_with_preserved_marks->push(obj);
-    _preserved_marks_of_objs->push(m);
+    _objs_with_preserved_marks.push(obj);
+    _preserved_marks_of_objs.push(m);
   }
 }
 
@@ -695,7 +675,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   old->forward_to(old);
   _promotion_failed = true;
 
-  push_on_promo_failure_scan_stack(old);
+  _promo_failure_scan_stack.push(old);
 
   if (!_promo_failure_drain_in_progress) {
     // prevent recursion in copy_to_survivor_space()
@@ -748,20 +728,9 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   return obj;
 }
 
-void DefNewGeneration::push_on_promo_failure_scan_stack(oop obj) {
-  if (_promo_failure_scan_stack == NULL) {
-    _promo_failure_scan_stack = new (ResourceObj::C_HEAP)
-                                    GrowableArray<oop>(40, true);
-  }
-
-  _promo_failure_scan_stack->push(obj);
-}
-
 void DefNewGeneration::drain_promo_failure_scan_stack() {
-  assert(_promo_failure_scan_stack != NULL, "precondition");
-
-  while (_promo_failure_scan_stack->length() > 0) {
-     oop obj = _promo_failure_scan_stack->pop();
+  while (!_promo_failure_scan_stack.is_empty()) {
+     oop obj = _promo_failure_scan_stack.pop();
      obj->oop_iterate(_promo_failure_scan_stack_closure);
   }
 }

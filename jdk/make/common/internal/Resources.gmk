@@ -251,13 +251,13 @@ compile_all_props: $(COMPILEPROPERTIES_JARFILE) $(COMPILE_PROP_options)
 # Make sure the build rule creates all the properties
 resources:
 
-ifneq ($(PROPERTIES_FILES),)
+ifneq ($(strip $(PROPERTIES_FILES)),)
   resources: strip_prop_options_clean   strip_all_props
   clobber clean:: 
 	$(RM) $(STRIP_PROP_FILES) $(STRIP_PROP_options)
 endif
 
-ifneq ($(COMPILED_PROPERTIES),)
+ifneq ($(strip $(COMPILED_PROPERTIES)),)
   resources: compile_prop_options_clean compile_all_props
   clobber clean:: 
 	$(RM) $(COMPILE_PROP_JAVA_FILES) $(COMPILE_PROP_options)

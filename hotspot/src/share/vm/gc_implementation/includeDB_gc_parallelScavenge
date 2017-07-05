@@ -187,9 +187,11 @@ psCompactionManager.cpp                 parMarkBitMap.hpp
 psCompactionManager.cpp                 psParallelCompact.hpp
 psCompactionManager.cpp                 psCompactionManager.hpp
 psCompactionManager.cpp                 psOldGen.hpp
+psCompactionManager.cpp                 stack.inline.hpp
 psCompactionManager.cpp                 systemDictionary.hpp
 
 psCompactionManager.hpp                 allocation.hpp
+psCompactionManager.hpp                 stack.hpp
 psCompactionManager.hpp                 taskqueue.hpp
 
 psCompactionManager.inline.hpp		psCompactionManager.hpp
@@ -233,12 +235,14 @@ psMarkSweep.cpp                         referencePolicy.hpp
 psMarkSweep.cpp                         referenceProcessor.hpp
 psMarkSweep.cpp                         safepoint.hpp
 psMarkSweep.cpp                         spaceDecorator.hpp
+psMarkSweep.cpp                         stack.inline.hpp
 psMarkSweep.cpp                         symbolTable.hpp
 psMarkSweep.cpp                         systemDictionary.hpp
 psMarkSweep.cpp                         vmThread.hpp
 
 psMarkSweep.hpp                         markSweep.inline.hpp
 psMarkSweep.hpp                         collectorCounters.hpp
+psMarkSweep.hpp                         stack.hpp
 
 psMarkSweepDecorator.cpp                liveRange.hpp
 psMarkSweepDecorator.cpp                markSweep.inline.hpp
@@ -280,6 +284,7 @@ psParallelCompact.cpp			psYoungGen.hpp
 psParallelCompact.cpp			referencePolicy.hpp
 psParallelCompact.cpp			referenceProcessor.hpp
 psParallelCompact.cpp			safepoint.hpp
+psParallelCompact.cpp			stack.inline.hpp
 psParallelCompact.cpp			symbolTable.hpp
 psParallelCompact.cpp			systemDictionary.hpp
 psParallelCompact.cpp			vmThread.hpp
@@ -367,6 +372,7 @@ psScavenge.cpp                          referencePolicy.hpp
 psScavenge.cpp                          referenceProcessor.hpp
 psScavenge.cpp                          resourceArea.hpp
 psScavenge.cpp                          spaceDecorator.hpp
+psScavenge.cpp                          stack.inline.hpp
 psScavenge.cpp                          threadCritical.hpp
 psScavenge.cpp                          vmThread.hpp
 psScavenge.cpp                          vm_operations.hpp
@@ -376,6 +382,7 @@ psScavenge.hpp                          cardTableExtension.hpp
 psScavenge.hpp                          collectorCounters.hpp
 psScavenge.hpp                          oop.hpp
 psScavenge.hpp                          psVirtualspace.hpp
+psScavenge.hpp                          stack.hpp
 
 psScavenge.inline.hpp                   cardTableExtension.hpp
 psScavenge.inline.hpp                   parallelScavengeHeap.hpp

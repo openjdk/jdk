@@ -4761,7 +4761,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,
                                               src, src_offset, dest, dest_offset,
-                                              copy_length);
+                                              ConvI2X(copy_length));
       if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
       checked_control = control();
       checked_i_o     = i_o();
@@ -5206,7 +5206,7 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   int sco_offset = Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc);
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
   Node* n3 = new(C, 3) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
-  Node* check_offset = _gvn.transform(n3);
+  Node* check_offset = ConvI2X(_gvn.transform(n3));
   Node* check_value  = dest_elem_klass;
 
   Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT);

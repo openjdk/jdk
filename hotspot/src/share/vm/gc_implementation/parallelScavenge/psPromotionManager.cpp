@@ -185,7 +185,6 @@ void PSPromotionManager::reset() {
 
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  assert(claimed_stack_depth()->overflow_stack() != NULL, "invariant");
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT

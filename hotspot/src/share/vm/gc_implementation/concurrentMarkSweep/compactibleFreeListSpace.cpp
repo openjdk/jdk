@@ -124,7 +124,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   checkFreeListConsistency();
 
   // Initialize locks for parallel case.
-  if (ParallelGCThreads > 0) {
+
+  if (CollectedHeap::use_parallel_gc_threads()) {
     for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
       _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
                                               "a freelist par lock",
@@ -1071,7 +1072,8 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
   // at address below "p" in finding the object that contains "p"
   // and those objects (if garbage) may have been modified to hold
   // live range information.
-  // assert(ParallelGCThreads > 0 || _bt.block_start(p) == p, "Should be a block boundary");
+  // assert(CollectedHeap::use_parallel_gc_threads() || _bt.block_start(p) == p,
+  //        "Should be a block boundary");
   if (FreeChunk::indicatesFreeChunk(p)) return false;
   klassOop k = oop(p)->klass_or_null();
   if (k != NULL) {
@@ -2932,7 +2934,9 @@ initialize_sequential_subtasks_for_rescan(int n_threads) {
          "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
-  pst->set_par_threads(n_threads);
+  // Sets the condition for completion of the subtask (how many threads
+  // need to finish in order to be done).
+  pst->set_n_threads(n_threads);
   pst->set_n_tasks((int)n_tasks);
 }
 
@@ -2972,6 +2976,8 @@ initialize_sequential_subtasks_for_marking(int n_threads,
          "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
-  pst->set_par_threads(n_threads);
+  // Sets the condition for completion of the subtask (how many threads
+  // need to finish in order to be done).
+  pst->set_n_threads(n_threads);
   pst->set_n_tasks((int)n_tasks);
 }
