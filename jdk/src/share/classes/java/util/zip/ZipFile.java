@@ -154,7 +154,7 @@ class ZipFile implements ZipConstants {
      * @param file the ZIP file to be opened for reading
      * @param mode the mode in which the file is to be opened
      * @param charset
-     *        the {@link java.nio.charset.Charset {@code charset}} to
+     *        the {@linkplain java.nio.charset.Charset charset} to
      *        be used to decode the ZIP entry name and comment that are not
      *        encoded by using UTF-8 encoding (indicated by entry's general
      *        purpose flag).
@@ -206,7 +206,7 @@ class ZipFile implements ZipConstants {
      *
      * @param name the name of the zip file
      * @param charset
-     *        the {@link java.nio.charset.Charset {@code charset}} to
+     *        the {@linkplain java.nio.charset.Charset charset} to
      *        be used to decode the ZIP entry name and comment that are not
      *        encoded by using UTF-8 encoding (indicated by entry's general
      *        purpose flag).
@@ -230,7 +230,7 @@ class ZipFile implements ZipConstants {
      * Opens a ZIP file for reading given the specified File object.
      * @param file the ZIP file to be opened for reading
      * @param charset
-     *        The {@link java.nio.charset.Charset {@code charset}} to be
+     *        The {@linkplain java.nio.charset.Charset charset} to be
      *        used to decode the ZIP entry name and comment (ignored if
      *        the <a href="package-summary.html#lang_encoding"> language
      *        encoding bit</a> of the ZIP entry's general purpose bit

@@ -41,17 +41,17 @@ public class JMods implements JGenerable {
         = JMod.FINAL;
 
     private static int FIELD
-    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
-       | JMod.STATIC | JMod.FINAL
-       | JMod.TRANSIENT | JMod.VOLATILE);
+        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
+           | JMod.STATIC | JMod.FINAL
+           | JMod.TRANSIENT | JMod.VOLATILE);
 
     private static int METHOD
-    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL
-       | JMod.ABSTRACT | JMod.STATIC | JMod.NATIVE | JMod.SYNCHRONIZED);
+        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL
+           | JMod.ABSTRACT | JMod.STATIC | JMod.NATIVE | JMod.SYNCHRONIZED);
 
     private static int CLASS
-    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
-       | JMod.STATIC | JMod.FINAL | JMod.ABSTRACT );
+        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
+           | JMod.STATIC | JMod.FINAL | JMod.ABSTRACT );
 
     private static int INTERFACE = JMod.PUBLIC;
 

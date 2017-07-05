@@ -1,103 +1,83 @@
-'\" t
-.\"
-.\" Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH native2ascii 1 "2004 Ç¯ 6 ·î 22 Æü"
-.SH "Ì¾Á°"
-native2ascii \- ¥Í¥¤¥Æ¥£¥Ö¥³¡¼¥É¤«¤é ASCII ¤Ø¤ÎÊÑ´¹
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
-.SH "·Á¼°"
-.B native2ascii
-[
-.B options 
-]
-.if n .ti +5n
-[
-.IR inputfile " [" outputfile "]]"
-.SH "µ¡Ç½ÀâÌÀ"
-.IX "native to ASCII converter" "" "native to ASCII converter \(em \fLnative2ascii\fP"
-.IX "native2ascii" "" "\fLnative2ascii\fP \(em native to ASCII converter"
-Java ¥³¥ó¥Ñ¥¤¥é¤Ê¤É¤Î
-Java 
-¥Ä¡¼¥ë¤¬½èÍı¤Ç¤­¤ë¥Õ¥¡¥¤¥ë¤Ï¡¢
-Latin-1
-Ê¸»ú¤â¤·¤¯¤Ï\^
-Unicode
-¤Ç¥¨¥ó¥³¡¼¥É¤µ¤ì¤¿Ê¸»ú
-(\\udddd)
-¤«¤é¤Ê¤ë¥Õ¥¡¥¤¥ë¤À¤±¤Ç¤¹¡£
-.B native2ascii
-¤Ï¡¢Â¾¤ÎÊ¸»ú¥³¡¼¥É¤Î¥Õ¥¡¥¤¥ë¤ò
-Latin-1
-¤Ş¤¿¤Ï
-Unicode
-¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤Î¥Õ¥¡¥¤¥ë¤ËÊÑ´¹¤·¤Ş¤¹¡£
-.LP
-.I outputfile
-°ú¿ô¤ò¾ÊÎ¬¤¹¤ë¤È¡¢½ĞÎÏÀè¤ÏÉ¸½à½ĞÎÏ¤È¤Ê¤ê¤Ş¤¹¡£
-¤Ş¤¿¡¢
-.I inputfile
-°ú¿ô¤ò¾ÊÎ¬¤¹¤ë¤È¡¢ÆşÎÏ¸µ¤ÏÉ¸½àÆşÎÏ¤È¤Ê¤ê¤Ş¤¹¡£
-.SH "¥ª¥×¥·¥ç¥ó"
-°Ê²¼¤Î¥ª¥×¥·¥ç¥ó¤¬»ÈÍÑ¤Ç¤­¤Ş¤¹¡£
-.TP 5
-.B \-encoding \f2encoding_name\f1
-ÊÑ´¹½èÍı¤ÇÍÑ¤¤¤ë¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°Ì¾¤ò»ØÄê¤·¤Ş¤¹¡£
-¥Ç¥Õ¥©¥ë¥È¤Î¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°Ì¾¤Ï¡¢¥·¥¹¥Æ¥à¥×¥í¥Ñ¥Æ¥£¤Î
-\f3file.encoding\f1
-¤«¤éÆÀ¤é¤ì¤Ş¤¹¡£
-.I encoding_name 
-Ê¸»úÎó¤Ï¡¢¥É¥­¥å¥á¥ó¥È¡Ö¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤ë¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¡×¤Î¡¢
-¥µ¥İ¡¼¥È¤µ¤ì¤ë¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤ÎÉ½¤ÇºÇ½é¤ÎÎó¤Ë¤¢¤ëÊ¸»úÎó¤Î 1 ¤Ä¤Ç¤Ê¤±¤ì¤Ğ
-¤Ê¤ê¤Ş¤»¤ó¡£
-.br
-http://java.sun.com/j2se/1.5/docs/guide/intl/encoding.doc.html
-.\" http://java.sun.com/j2se/1.5/docs/guide/intl/encoding.doc.html
-.TP 5
-.B \-reverse
-µÕ¤ÎÊÑ´¹½èÍı¤ò¹Ô¤¤¤Ş¤¹¡£¤Ä¤Ş¤ê
-Latin-1
-¤Ş¤¿¤Ï
-Unicode
-¤Ç¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤µ¤ì¤Æ¤¤¤ëÊ¸»ú¤ò¡¢¥Í¥¤¥Æ¥£¥Ö¥³¡¼¥É¤ËÊÑ´¹¤·¤Ş¤¹¡£
-.TP 15
-.BI \-J "option"
-.I option
-¤ò Java ²¾ÁÛ¥Ş¥·¥ó¤ËÅÏ¤·¤Ş¤¹¡£¤³¤³¤Ç¡¢
-.I option
-¤Ï¡¢Java ¥¢¥×¥ê¥±¡¼¥·¥ç¥óµ¯Æ°¥×¥í¥°¥é¥à java(1) ¤Î¥Ş¥Ë¥å¥¢¥ë¥Ú¡¼¥¸¤Ç
-ÀâÌÀ¤µ¤ì¤Æ¤¤¤ë¥ª¥×¥·¥ç¥ó¤Î 1 ¤Ä¤Ç¤¹¡£¤¿¤È¤¨¤Ğ¡¢
-.I \-J-Xms48m
-¤Ï¡¢µ¯Æ°»ş¤Ë»ÈÍÑ¤¹¤ë¥á¥â¥ê¤ò 48M ¥Ğ¥¤¥È¤ËÀßÄê¤·¤Ş¤¹¡£
-.B \-J
-¤¬´ğËÜ¤È¤Ê¤ë²¾ÁÛ¥Ş¥·¥ó¤Ë¥ª¥×¥·¥ç¥ó¤òÅÏ¤¹¤³¤È¤Ï¡¢¶¦ÄÌ¤Îµ¬Ìó¤Ç¤¹¡£
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH native2ascii 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
 
+.LP
+.SH "åå‰"
+native2ascii \- ãƒã‚¤ãƒ†ã‚£ãƒ– \- ASCII ã‚³ãƒ³ãƒãƒ¼ã‚¿
+.LP
+.RS 3
+
+.LP
+.LP
+ãƒã‚¤ãƒ†ã‚£ãƒ–ã‚³ãƒ¼ãƒ‰ (Latin 1 ãŠã‚ˆã³ Unicode ä»¥å¤–) ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ Unicode ã‚³ãƒ¼ãƒ‰ã«å¤‰æ›ã—ã¾ã™ã€‚
+.LP
+.RE
+.SH "å½¢å¼"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f4native2ascii\fP\f2 [options] [inputfile [outputfile]]\fP
+.fl
+.fi
+
+.LP
+.SH "èª¬æ˜"
+.LP
+
+.LP
+.LP
+Java ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ãŠã‚ˆã³ãã®ä»–ã® Java ãƒ„ãƒ¼ãƒ«ã¯ã€Latin\-1 ã¾ãŸã¯ Unicode ã‚³ãƒ¼ãƒ‰ (\\udddd è¡¨è¨˜) æ–‡å­—ã‚’å«ã‚“ã ãƒ•ã‚¡ã‚¤ãƒ«ã ã‘ã‚’å‡¦ç†ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ \f2native2ascii\fP ã¯ã€ã“ã‚Œã‚‰ä»¥å¤–ã®æ–‡å­—ã‚³ãƒ¼ãƒ‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ Latin\-1 ã¾ãŸã¯ Unicode ã‚³ãƒ¼ãƒ‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«å¤‰æ›ã—ã¾ã™ã€‚
+.LP
+.LP
+\f2outputfile\fP ã‚’çœç•¥ã—ãŸå ´åˆã€æ¨™æº–å‡ºåŠ›ã«å‡ºåŠ›ã•ã‚Œã¾ã™ã€‚ã•ã‚‰ã«ã€\f2inputfile\fP ã‚’çœç•¥ã—ãŸå ´åˆã€æ¨™æº–å…¥åŠ›ã‹ã‚‰å…¥åŠ›ã•ã‚Œã¾ã™ã€‚
+.LP
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-reverse 
+é€†ã®å‡¦ç†ã‚’è¡Œã„ã¾ã™ã€‚ã¤ã¾ã‚Šã€Latin\-1 ã¾ãŸã¯ Unicode ã‚³ãƒ¼ãƒ‰ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ãƒã‚¤ãƒ†ã‚£ãƒ–ã‚³ãƒ¼ãƒ‰ã«å¤‰æ›ã—ã¾ã™ã€‚
+.br
+.br
+.TP 3
+\-encoding encoding_name 
+å¤‰æ›å‡¦ç†ã§ä½¿ç”¨ã™ã‚‹ã‚³ãƒ¼ãƒ‰ã®åå‰ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚³ãƒ¼ãƒ‰ã¯ã€ã‚·ã‚¹ãƒ†ãƒ ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ãƒ¼ã® \f2file.encoding\fP ã‹ã‚‰å–å¾—ã•ã‚Œã¾ã™ã€‚\f2encoding_name\fP æ–‡å­—åˆ—ã¯ã€
+.na
+\f4ã€Œã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã€\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/intl/encoding.doc.htmlãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆã«ç¤ºã•ã‚Œã¦ã„ã‚‹ã€ã‚µãƒãƒ¼ãƒˆã•ã‚Œã‚‹ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã®è¡¨ã®æœ€åˆã®åˆ—ã‹ã‚‰å–å¾—ã•ã‚Œã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ 
+.TP 3
+\-Joption 
+Java ä»®æƒ³ãƒã‚·ãƒ³ã« \f2option\fP ã‚’æ¸¡ã—ã¾ã™ã€‚ \f2option\fP ã«ã¯ã€java(1)ã®ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ãƒšãƒ¼ã‚¸ã«è¨˜è¼‰ã•ã‚Œã¦ã„ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ 1 ã¤æŒ‡å®šã—ã¾ã™ã€‚ãŸã¨ãˆã°ã€\f3\-J\-Xms48m\fP ã¨æŒ‡å®šã™ã‚‹ã¨ã€ã‚¹ã‚¿ãƒ¼ãƒˆã‚¢ãƒƒãƒ—ãƒ¡ãƒ¢ãƒªãƒ¼ã¯ 48M ãƒã‚¤ãƒˆã«è¨­å®šã•ã‚Œã¾ã™ã€‚ 
+.RE
+
+.LP
+
+.LP
+ 

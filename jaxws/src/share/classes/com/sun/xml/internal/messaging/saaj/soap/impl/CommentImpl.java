@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: CommentImpl.java,v 1.17 2006/01/27 12:49:34 vj135062 Exp $
- * $Revision: 1.17 $
- * $Date: 2006/01/27 12:49:34 $
+ *
+ *
+ *
  */
 
 
@@ -47,7 +47,7 @@ public class CommentImpl
     extends com.sun.org.apache.xerces.internal.dom.CommentImpl
     implements javax.xml.soap.Text, org.w3c.dom.Comment {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
     protected static ResourceBundle rb =

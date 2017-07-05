@@ -45,12 +45,12 @@ import org.xml.sax.helpers.AttributesImpl;
  * because they are not legal in SOAP.  If the user of this class sets a
  * LexicalHandler, then it forwards events to that handler.
  *
- * $Id: RejectDoctypeSaxFilter.java,v 1.13 2006/01/27 12:49:52 vj135062 Exp $
+ *
  * @author Edwin Goei
  */
 
 public class RejectDoctypeSaxFilter extends XMLFilterImpl implements XMLReader, LexicalHandler{
-    protected static Logger log =
+    protected static final Logger log =
     Logger.getLogger(LogDomainConstants.UTIL_DOMAIN,
     "com.sun.xml.internal.messaging.saaj.util.LocalStrings");
 

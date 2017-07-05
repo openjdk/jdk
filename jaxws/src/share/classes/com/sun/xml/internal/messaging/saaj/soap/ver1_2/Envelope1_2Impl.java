@@ -23,7 +23,7 @@
  * have any questions.
  */
 /*
- * $Id: Envelope1_2Impl.java,v 1.26 2006/01/27 12:49:47 vj135062 Exp $
+ *
  */
 
 
@@ -47,7 +47,7 @@ import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 
 public class Envelope1_2Impl extends EnvelopeImpl {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(Envelope1_2Impl.class.getName(),
                          "com.sun.xml.internal.messaging.saaj.soap.ver1_2.LocalStrings");
 

@@ -428,6 +428,7 @@ public class JDefinedClass
      *      newly created Annotation Type Declaration
      * @exception JClassAlreadyExistsException
      *      When the specified class/interface was already created.
+
      */
     public JDefinedClass _annotationTypeDeclaration(String name) throws JClassAlreadyExistsException {
         return _class (JMod.PUBLIC,name,ClassType.ANNOTATION_TYPE_DECL);

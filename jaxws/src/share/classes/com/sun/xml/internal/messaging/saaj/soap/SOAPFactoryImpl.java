@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPFactoryImpl.java,v 1.21 2006/01/27 12:49:29 vj135062 Exp $
- * $Revision: 1.21 $
- * $Date: 2006/01/27 12:49:29 $
+ *
+ *
+ *
  */
 
 
@@ -50,7 +50,7 @@ import org.w3c.dom.Attr;
 
 public abstract class SOAPFactoryImpl extends SOAPFactory {
 
-    protected static Logger
+    protected static final Logger
         log = Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                                "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
