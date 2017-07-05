@@ -710,8 +710,9 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param length the length &gt;= 0
      * @return the set of instances
      */
-    protected Vector<UndoPosRef> getPositionsInRange(Vector<UndoPosRef> v,
-                                                     int offset, int length) {
+    @SuppressWarnings({"rawtypes", "unchecked"}) // UndoPosRef type cannot be exposed
+    protected Vector getPositionsInRange(Vector v,
+                                         int offset, int length) {
         int endOffset = offset + length;
         int startIndex;
         int endIndex;
@@ -758,7 +759,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      *
      * @param positions the UndoPosRef instances to reset
      */
-    protected void updateUndoPositions(Vector<UndoPosRef> positions, int offset,
+    @SuppressWarnings("rawtypes") // UndoPosRef type cannot be exposed
+    protected void updateUndoPositions(Vector positions, int offset,
                                        int length) {
         // Find the indexs of the end points.
         int endOffset = offset + length;
@@ -775,7 +777,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
         // Reset the location of the refenences.
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
-            UndoPosRef ref = positions.elementAt(counter);
+            UndoPosRef ref = (UndoPosRef) positions.elementAt(counter);
             ref.resetLocation(endOffset, g1);
         }
         // We have to resort the marks in the range startIndex to endIndex.
@@ -902,7 +904,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         protected String string;
         /** An array of instances of UndoPosRef for the Positions in the
          * range that was removed, valid after undo. */
-        protected Vector<UndoPosRef> posRefs;
+        @SuppressWarnings("rawtypes") // UndoPosRef type cannot be exposed
+        protected Vector posRefs;
     } // GapContent.InsertUndo
 
 
@@ -911,6 +914,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      */
     @SuppressWarnings("serial") // JDK-implementation class
     class RemoveUndo extends AbstractUndoableEdit {
+        @SuppressWarnings("unchecked")
         protected RemoveUndo(int offset, String string) {
             super();
             this.offset = offset;
@@ -934,6 +938,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             }
         }
 
+        @SuppressWarnings("unchecked")
         public void redo() throws CannotRedoException {
             super.redo();
             try {

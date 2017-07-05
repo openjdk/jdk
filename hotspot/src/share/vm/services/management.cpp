@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/jmm.h"
 #include "services/lowMemoryDetector.hpp"
@@ -1698,56 +1699,21 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
               "The flag name cannot be null.");
   }
   char* name = java_lang_String::as_utf8_string(fn);
-  Flag* flag = Flag::find_flag(name, strlen(name));
-  if (flag == NULL) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Flag does not exist.");
-  }
-  if (!flag->is_writeable()) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "This flag is not writeable.");
-  }
 
-  bool succeed = false;
-  if (flag->is_bool()) {
-    bool bvalue = (new_value.z == JNI_TRUE ? true : false);
-    succeed = CommandLineFlags::boolAtPut(name, &bvalue, Flag::MANAGEMENT);
-  } else if (flag->is_intx()) {
-    intx ivalue = (intx)new_value.j;
-    succeed = CommandLineFlags::intxAtPut(name, &ivalue, Flag::MANAGEMENT);
-  } else if (flag->is_uintx()) {
-    uintx uvalue = (uintx)new_value.j;
+  FormatBuffer<80> err_msg("%s", "");
+  int succeed = WriteableFlags::set_flag(name, new_value, Flag::MANAGEMENT, err_msg);
 
-    if (strncmp(name, "MaxHeapFreeRatio", 17) == 0) {
-      FormatBuffer<80> err_msg("%s", "");
-      if (!Arguments::verify_MaxHeapFreeRatio(err_msg, uvalue)) {
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), err_msg.buffer());
-      }
-    } else if (strncmp(name, "MinHeapFreeRatio", 17) == 0) {
-      FormatBuffer<80> err_msg("%s", "");
-      if (!Arguments::verify_MinHeapFreeRatio(err_msg, uvalue)) {
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), err_msg.buffer());
-      }
-    }
-    succeed = CommandLineFlags::uintxAtPut(name, &uvalue, Flag::MANAGEMENT);
-  } else if (flag->is_uint64_t()) {
-    uint64_t uvalue = (uint64_t)new_value.j;
-    succeed = CommandLineFlags::uint64_tAtPut(name, &uvalue, Flag::MANAGEMENT);
-  } else if (flag->is_size_t()) {
-    size_t svalue = (size_t)new_value.j;
-    succeed = CommandLineFlags::size_tAtPut(name, &svalue, Flag::MANAGEMENT);
-  } else if (flag->is_ccstr()) {
-    oop str = JNIHandles::resolve_external_guard(new_value.l);
-    if (str == NULL) {
+  if (succeed != WriteableFlags::SUCCESS) {
+    if (succeed == WriteableFlags::MISSING_VALUE) {
+      // missing value causes NPE to be thrown
       THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    ccstr svalue = java_lang_String::as_utf8_string(str);
-    succeed = CommandLineFlags::ccstrAtPut(name, &svalue, Flag::MANAGEMENT);
-    if (succeed) {
-      FREE_C_HEAP_ARRAY(char, svalue);
+    } else {
+      // all the other errors are reported as IAE with the appropriate error message
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg.buffer());
     }
   }
-  assert(succeed, "Setting flag should succeed");
+  assert(succeed == WriteableFlags::SUCCESS, "Setting flag should succeed");
 JVM_END
 
 class ThreadTimesClosure: public ThreadClosure {

@@ -52,6 +52,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);
     HINSTANCE retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL, SW_SHOWNORMAL);
+    DWORD error = ::GetLastError();
     _control87(oldcontrol87, 0xffffffff);
 
     JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
@@ -65,7 +66,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
                     FORMAT_MESSAGE_FROM_SYSTEM  |
                     FORMAT_MESSAGE_IGNORE_INSERTS,
                     NULL,
-                    (int)retval,
+                    error,
                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
                     (LPTSTR)&buffer,
                     0,

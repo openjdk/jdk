@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,20 +29,188 @@
 
 package sun.nio.cs;
 
-import java.nio.charset.*;
+import java.nio.charset.Charset;
+import java.nio.charset.spi.CharsetProvider;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-
-public class StandardCharsets
-    extends FastCharsetProvider
-{
+public class StandardCharsets extends CharsetProvider {
 
     _INCLUDE_ALIASES_TABLES_
     _INCLUDE_ALIASES_MAP_
     _INCLUDE_CLASSES_MAP_
     _INCLUDE_CACHE_MAP_
 
+    // Maps canonical names to class names
+    private Map<String,String> classMap;
+    // Maps alias names to canonical names
+    private Map<String,String> aliasMap;
+    // Maps canonical names to cached instances
+    private Map<String,Charset> cache;
+
+    private String packagePrefix = "sun.nio.cs";
+
     public StandardCharsets() {
-        super("sun.nio.cs", new Aliases(), new Classes(), new Cache());
+        this.aliasMap = new Aliases();
+        this.classMap = new Classes();
+        this.cache = new Cache();
     }
+
+    private String canonicalize(String csn) {
+        String acn = aliasMap.get(csn);
+        return (acn != null) ? acn : csn;
+    }
+
+    // Private ASCII-only version, optimized for interpretation during startup
+    //
+    private static String toLower(String s) {
+        int n = s.length();
+        boolean allLower = true;
+        for (int i = 0; i < n; i++) {
+            int c = s.charAt(i);
+            if (((c - 'A') | ('Z' - c)) >= 0) {
+                allLower = false;
+                break;
+            }
+        }
+        if (allLower)
+            return s;
+        char[] ca = new char[n];
+        for (int i = 0; i < n; i++) {
+            int c = s.charAt(i);
+            if (((c - 'A') | ('Z' - c)) >= 0)
+                ca[i] = (char)(c + 0x20);
+            else
+                ca[i] = (char)c;
+        }
+        return new String(ca);
+    }
+
+    private Charset lookup(String charsetName) {
+        init();
+        String csn = canonicalize(toLower(charsetName));
+
+        // Check cache first
+        Charset cs = cache.get(csn);
+        if (cs != null)
+            return cs;
+
+        // Do we even support this charset?
+        String cln = classMap.get(csn);
+        if (cln == null)
+            return null;
+
+        if (cln.equals("US_ASCII")) {
+            cs = new US_ASCII();
+            cache.put(csn, cs);
+            return cs;
+        }
+
+        // Instantiate the charset and cache it
+        try {
+            Class<?> c = Class.forName(packagePrefix + "." + cln,
+                                    true,
+                                    this.getClass().getClassLoader());
+            cs = (Charset)c.newInstance();
+            cache.put(csn, cs);
+            return cs;
+        } catch (ClassNotFoundException |
+                 IllegalAccessException |
+                 InstantiationException x) {
+            return null;
+        }
+    }
+
+    public final Charset charsetForName(String charsetName) {
+        synchronized (this) {
+            return lookup(canonicalize(charsetName));
+        }
+    }
+
+    public final Iterator<Charset> charsets() {
+        synchronized (this) {
+            init();
+        }
+        return new Iterator<Charset>() {
+
+                Iterator<String> i = classMap.keySet().iterator();
+
+                public boolean hasNext() {
+                    return i.hasNext();
+                }
+
+                public Charset next() {
+                    String csn = i.next();
+                    return lookup(csn);
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+
+            };
+    }
+
+    private boolean initialized = false;
+
+    /*   provider the sun.nio.cs.map property fir sjis/ms932 mapping hack 
+     */
+    private void init() {
+        if (initialized)
+            return;
+        if (!sun.misc.VM.isBooted())
+            return;
+        initialized = true;
+
+        String map = getProperty("sun.nio.cs.map");
+        if (map != null) {
+            String[] maps = map.split(",");
+            for (int i = 0; i < maps.length; i++) {
+                if (maps[i].equalsIgnoreCase("Windows-31J/Shift_JIS")) {
+                    // if we dont have both sjis and ms932, do nothing
+                    if (classMap.get("shift_jis") == null ||
+                        classMap.get("windows-31j") == null) {
+                        break;
+                    }
+                    aliases_MS932 = new String[] {
+                        "MS932",        // JDK historical
+                        "windows-932",
+                        "csWindows31J",
+                        "shift-jis",
+                        "ms_kanji",
+                        "x-sjis",
+                        "csShiftJIS",
+                        // This alias takes precedence over the actual
+                        // Shift_JIS charset itself since aliases are always
+                        // resolved first, before looking up canonical names.
+                        "shift_jis"
+                    };
+                    aliases_SJIS = new String[] { "sjis" };
+
+                    for (String alias : aliases_MS932) {
+                        aliasMap.put(toLower(alias), "windows-31j");
+                    }
+                    cache.put("shift_jis", null);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static String getProperty(String key) {
+        // this method may be called during initialization of
+        // system class loader and thus not using lambda
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return System.getProperty(key);
+                }
+            });
+    }
+
 
 }

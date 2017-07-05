@@ -114,9 +114,20 @@ public class PatternStreamTest extends OpTestCase {
         data.add(new Object[]{description, input, pattern, expected});
 
 
+        description = "Empty input";
         input = "";
         pattern = Pattern.compile("\u56da");
         expected = new ArrayList<>();
+        expected.add("");
+
+        data.add(new Object[]{description, input, pattern, expected});
+
+
+        description = "Empty input with empty pattern";
+        input = "";
+        pattern = Pattern.compile("");
+        expected = new ArrayList<>();
+        expected.add("");
 
         data.add(new Object[]{description, input, pattern, expected});
 

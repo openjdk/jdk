@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -925,8 +925,6 @@ enum LIR_Code {
       , lir_branch
       , lir_cond_float_branch
       , lir_move
-      , lir_prefetchr
-      , lir_prefetchw
       , lir_convert
       , lir_alloc_object
       , lir_monaddr
@@ -2211,8 +2209,6 @@ class LIR_List: public CompilationResourceObj {
   void volatile_load_unsafe_reg(LIR_Opr base, LIR_Opr offset, LIR_Opr dst, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code);
 
   void load(LIR_Address* addr, LIR_Opr src, CodeEmitInfo* info = NULL, LIR_PatchCode patch_code = lir_patch_none);
-
-  void prefetch(LIR_Address* addr, bool is_store);
 
   void store_mem_int(jint v,    LIR_Opr base, int offset_in_bytes, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
   void store_mem_oop(jobject o, LIR_Opr base, int offset_in_bytes, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
