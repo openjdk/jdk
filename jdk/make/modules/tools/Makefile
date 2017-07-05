@@ -135,9 +135,8 @@ $(BUILDTOOLCLASSDIR)/%.class : $(BUILDTOOL_SOURCE_ROOT)/%.java
 
 $(CLASSANALYZER_JAR_FILE): $(BUILDTOOL_MANIFEST_FILE) $(FILES_class)
 	@$(prep-target)
-	$(CD) $(BUILDTOOLCLASSDIR) && \
-	    $(BOOT_JAR_CMD) cfm $@ $(BUILDTOOL_MANIFEST_FILE) \
-	       $(PKGDIR) $(BOOT_JAR_JFLAGS) || $(RM) $@
+	$(BOOT_JAR_CMD) cfm $@ $(BUILDTOOL_MANIFEST_FILE) \
+	    -C $(BUILDTOOLCLASSDIR) $(PKGDIR) $(BOOT_JAR_JFLAGS) || $(RM) $@
 	@$(java-vm-cleanup)
 
 $(BUILDTOOLJARDIR)/classfile.jar: $(FILES_classfile_class)
