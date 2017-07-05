@@ -84,6 +84,9 @@ class CallGenerator : public ResourceObj {
 
   virtual CallStaticJavaNode* call_node() const { ShouldNotReachHere(); return NULL; }
 
+  virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
+  virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
+
   // Note:  It is possible for a CG to be both inline and virtual.
   // (The hashCode intrinsic does a vtable check and an inlined fast path.)
 

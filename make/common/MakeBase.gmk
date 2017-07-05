@@ -421,52 +421,57 @@ containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
 not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
 
 ifneq ($(DISABLE_CACHE_FIND), true)
-################################################################################
-# In Cygwin, finds are very costly, both because of expensive forks and because
-# of bad file system caching. Find is used extensively in $(shell) commands to
-# find source files. This makes rerunning make with no or few changes rather
-# expensive. To speed this up, these two macros are used to cache the results
-# of simple find commands for reuse.
-#
-# Runs a find and stores both the directories where it was run and the results.
-# This macro can be called multiple times to add to the cache. Only finds files
-# with no filters.
-#
-# Needs to be called with $(eval )
-#
+  ################################################################################
+  # In Cygwin, finds are very costly, both because of expensive forks and because
+  # of bad file system caching. Find is used extensively in $(shell) commands to
+  # find source files. This makes rerunning make with no or few changes rather
+  # expensive. To speed this up, these two macros are used to cache the results
+  # of simple find commands for reuse.
+  #
+  # Runs a find and stores both the directories where it was run and the results.
+  # This macro can be called multiple times to add to the cache. Only finds files
+  # with no filters.
+  #
+  # Needs to be called with $(eval )
+  #
   # Even if the performance benifit is negligible on other platforms, keep the
   # functionality active unless explicitly disabled to exercise it more.
   #
   # Initialize FIND_CACHE_DIRS with := to make it a non recursively-expanded variable
   FIND_CACHE_DIRS :=
-# Param 1 - Dir to find in
+  # Param 1 - Dirs to find in
+  # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
   define FillCacheFind
-    # Filter out already cached dirs. The - is needed when FIND_CACHE_DIR is empty
+    # Filter out already cached dirs. The - is needed when FIND_CACHE_DIRS is empty
     # since filter out will then return empty.
     FIND_CACHE_NEW_DIRS := $$(filter-out $$(addsuffix /%,\
         - $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS), $1)
     ifneq ($$(FIND_CACHE_NEW_DIRS), )
       # Remove any trailing slash from dirs in the cache dir list
       FIND_CACHE_DIRS += $$(patsubst %/,%, $$(FIND_CACHE_NEW_DIRS))
-      FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $$(FIND_CACHE_NEW_DIRS) -type f -o -type l))
+      FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $$(FIND_CACHE_NEW_DIRS) \( -type f -o -type l \) $2))
     endif
   endef
 
-# Mimics find by looking in the cache if all of the directories have been cached.
-# Otherwise reverts to shell find. This is safe to call on all platforms, even if
-# cache is deactivated.
-#
-# The extra - is needed when FIND_CACHE_DIR is empty but should be harmless.
-# Param 1 - Dirs to find in
-define CacheFind
+  # Mimics find by looking in the cache if all of the directories have been cached.
+  # Otherwise reverts to shell find. This is safe to call on all platforms, even if
+  # cache is deactivated.
+  #
+  # The extra - is needed when FIND_CACHE_DIRS is empty but should be harmless.
+  #
+  # Param 1 - Dirs to find in
+  # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
+  define CacheFind
     $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
-    $(shell $(FIND) $1 -type f -o -type l), \
+    $(shell $(FIND) $1 \( -type f -o -type l \) $2), \
     $(filter $(addsuffix %,$1),$(FIND_CACHE)))
-endef
+  endef
 else
   # If CacheFind is disabled, just run the find command.
+  # Param 1 - Dirs to find in
+  # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
   define CacheFind
-    $(shell $(FIND) $1 -type f -o -type l)
+    $(shell $(FIND) $1 \( -type f -o -type l \) $2)
   endef
 endif
 

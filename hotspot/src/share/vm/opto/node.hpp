@@ -645,17 +645,18 @@ public:
 
   // Flags are sorted by usage frequency.
   enum NodeFlags {
-    Flag_is_Copy             = 0x01, // should be first bit to avoid shift
-    Flag_rematerialize       = Flag_is_Copy << 1,
+    Flag_is_Copy                     = 0x01, // should be first bit to avoid shift
+    Flag_rematerialize               = Flag_is_Copy << 1,
     Flag_needs_anti_dependence_check = Flag_rematerialize << 1,
-    Flag_is_macro            = Flag_needs_anti_dependence_check << 1,
-    Flag_is_Con              = Flag_is_macro << 1,
-    Flag_is_cisc_alternate   = Flag_is_Con << 1,
-    Flag_is_dead_loop_safe   = Flag_is_cisc_alternate << 1,
-    Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
-    Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
-    Flag_has_call            = Flag_avoid_back_to_back << 1,
-    Flag_is_expensive        = Flag_has_call << 1,
+    Flag_is_macro                    = Flag_needs_anti_dependence_check << 1,
+    Flag_is_Con                      = Flag_is_macro << 1,
+    Flag_is_cisc_alternate           = Flag_is_Con << 1,
+    Flag_is_dead_loop_safe           = Flag_is_cisc_alternate << 1,
+    Flag_may_be_short_branch         = Flag_is_dead_loop_safe << 1,
+    Flag_avoid_back_to_back_before   = Flag_may_be_short_branch << 1,
+    Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
+    Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
+    Flag_is_expensive                = Flag_has_call << 1,
     _max_flags = (Flag_is_expensive << 1) - 1 // allow flags combination
   };
 

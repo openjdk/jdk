@@ -34,6 +34,6 @@ public class Enormous {
         new String(bytes,"ASCII");
 
         // Another manifestation of this bug, reported in bug 6192102.
-        new sun.misc.BASE64Encoder().encode(bytes);
+        java.util.Base64.getEncoder().encodeToString(bytes);
     }
 }
