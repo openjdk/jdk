@@ -24,113 +24,71 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
- * Filter in or out a resource
+ * Filter resource resources using path matcher.
  */
 public class ResourceFilter implements Predicate<String> {
+    private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
-    private final Pattern inPatterns;
-    private final Pattern outPatterns;
-
-    static final String NEG = "^";
+    final boolean negate;
+    final List<PathMatcher> matchers;
 
     public ResourceFilter(String[] patterns) throws IOException {
         this(patterns, false);
     }
 
-    public ResourceFilter(String[] patterns, boolean negateAll) throws IOException {
+    public ResourceFilter(String[] patterns, boolean negate) throws IOException {
+        this.negate = negate;
+        this.matchers = new ArrayList<>();
 
-        // Get the patterns from a file
-        if (patterns != null && patterns.length == 1) {
-            String filePath = patterns[0];
-            File f = new File(filePath);
-            if (f.exists()) {
-                List<String> pats;
-                try (FileInputStream fis = new FileInputStream(f);
-                        InputStreamReader ins = new InputStreamReader(fis,
-                                StandardCharsets.UTF_8);
-                        BufferedReader reader = new BufferedReader(ins)) {
-                    pats = reader.lines().collect(Collectors.toList());
+        for (String pattern : patterns) {
+            if (pattern.startsWith("@")) {
+                File file = new File(pattern.substring(1));
+
+                if (file.exists()) {
+                    List<String> lines;
+
+                    try {
+                        lines = Files.readAllLines(file.toPath());
+                    } catch (IOException ex) {
+                        throw new PluginException(ex);
+                    }
+
+                    for (String line : lines) {
+                        PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, line);
+                        matchers.add(matcher);
+                    }
                 }
-                patterns = new String[pats.size()];
-                pats.toArray(patterns);
+            } else {
+                PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, pattern);
+                matchers.add(matcher);
             }
         }
-
-        if (patterns != null && negateAll) {
-            String[] excluded = new String[patterns.length];
-            for (int i = 0; i < patterns.length; i++) {
-                excluded[i] = ResourceFilter.NEG + patterns[i];
-            }
-            patterns = excluded;
-        }
-
-        StringBuilder inPatternsBuilder = new StringBuilder();
-        StringBuilder outPatternsBuilder = new StringBuilder();
-        if (patterns != null) {
-            for (int i = 0; i < patterns.length; i++) {
-                String p = patterns[i];
-                p = p.replaceAll(" ", "");
-                StringBuilder builder = p.startsWith(NEG)
-                        ? outPatternsBuilder : inPatternsBuilder;
-                String pat = p.startsWith(NEG) ? p.substring(NEG.length()) : p;
-                builder.append(escape(pat));
-                if (i < patterns.length - 1) {
-                    builder.append("|");
-                }
-            }
-        }
-        this.inPatterns = inPatternsBuilder.length() == 0 ? null
-                : Pattern.compile(inPatternsBuilder.toString());
-        this.outPatterns = outPatternsBuilder.length() == 0 ? null
-                : Pattern.compile(outPatternsBuilder.toString());
-    }
-
-    public static String escape(String s) {
-        s = s.replaceAll(" ", "");
-        s = s.replaceAll("\\$", Matcher.quoteReplacement("\\$"));
-        s = s.replaceAll("\\.", Matcher.quoteReplacement("\\."));
-        s = s.replaceAll("\\*", ".+");
-        return s;
-    }
-
-    private boolean accept(String path) {
-        if (outPatterns != null) {
-            Matcher mout = outPatterns.matcher(path);
-            if (mout.matches()) {
-                //System.out.println("Excluding file " + resource.getPath());
-                return false;
-            }
-        }
-        boolean accepted = false;
-        // If the inPatterns is null, means that all resources are accepted.
-        if (inPatterns == null) {
-            accepted = true;
-        } else {
-            Matcher m = inPatterns.matcher(path);
-            if (m.matches()) {
-                //System.out.println("Including file " + resource.getPath());
-                accepted = true;
-            }
-        }
-        return accepted;
     }
 
     @Override
-    public boolean test(String path) {
-        return accept(path);
+    public boolean test(String name) {
+        Path path = JRT_FILE_SYSTEM.getPath(name);
+
+        for (PathMatcher matcher : matchers) {
+            if (matcher.matches(path)) {
+                return !negate;
+            }
+        }
+
+        return negate;
     }
 }

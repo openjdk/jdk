@@ -29,6 +29,7 @@ import java.io.UncheckedIOException;
 import java.net.ProtocolException;
 import java.net.http.WebSocket.Listener;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -169,11 +170,11 @@ final class WSReceiver {
     private final class MessageConsumer implements WSMessageConsumer {
 
         @Override
-        public void onText(WebSocket.MessagePart part, WSDisposableText data) {
+        public void onText(WebSocket.MessagePart part, WSShared<CharBuffer> data) {
             decrementDemand();
             CompletionStage<?> cs;
             try {
-                cs = listener.onText(webSocket, data, part);
+                cs = listener.onText(webSocket, data.buffer(), part);
             } catch (Exception e) {
                 closeExceptionally(new RuntimeException("onText threw an exception", e));
                 return;

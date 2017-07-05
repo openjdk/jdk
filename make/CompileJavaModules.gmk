@@ -477,6 +477,13 @@ MODULE_SRC_DIRS := $(call FindModuleSrcDirs, $(MODULE))
 # be recompiled. If multiple paths are separated by comma, convert that into a
 # space separated list.
 JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
+ifeq ($(JDK_FILTER), )
+  FAIL_NO_SRC := true
+else
+  # When using JDK_FILTER, most module java compilations will end up finding
+  # no source files. Don't let that fail the build.
+  FAIL_NO_SRC := false
+endif
 
 # Get the complete module source path.
 MODULESOURCEPATH := $(call GetModuleSrcPath)
@@ -496,7 +503,8 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     SETUP := $(if $($(MODULE)_SETUP), $($(MODULE)_SETUP), GENERATE_JDKBYTECODE), \
     MODULE := $(MODULE), \
     SRC := $(wildcard $(MODULE_SRC_DIRS)), \
-    INCLUDES := $(JDK_USER_DEFINED_FILTER),\
+    INCLUDES := $(JDK_USER_DEFINED_FILTER), \
+    FAIL_NO_SRC := $(FAIL_NO_SRC), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     ADD_JAVAC_FLAGS := \
