@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6505888
- * @summary Tests CheckedSet encoding
- * @author Sergey Malenkov
- */
 
-import java.util.Collections;
-import java.util.Set;
+public class SuperClazz {
+    public static void testParent() {
+        System.out.println("SuperClazz: entering testParent()");
 
-public final class java_util_Collections_CheckedSet extends AbstractTest<Set<String>> {
-    public static void main(String[] args) {
-        new java_util_Collections_CheckedSet().test(true);
-    }
-
-    protected Set<String> getObject() {
-        Set<String> set = Collections.singleton("string");
-        return Collections.checkedSet(set, String.class);
-    }
-
-    protected Set<String> getAnotherObject() {
-        Set<String> set = Collections.emptySet();
-        return Collections.checkedSet(set, String.class);
+        // The line below will be used to check for successful class transformation
+        System.out.println(TransformUtil.ParentCheckPattern + TransformUtil.BeforePattern);
     }
 }

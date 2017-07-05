@@ -62,7 +62,12 @@ class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
   AbstractGangTask(const char* name) :
     _name(name),
     _gc_id(GCId::current_raw())
- {}
+  {}
+
+  AbstractGangTask(const char* name, const uint gc_id) :
+    _name(name),
+    _gc_id(gc_id)
+  {}
 
   // The abstract work method.
   // The argument tells you which member of the gang you are.

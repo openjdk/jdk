@@ -855,9 +855,9 @@ Java_java_net_PlainSocketImpl_socketShutdown(JNIEnv *env, jobject this,
  * Signature: (IZLjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainSocketImpl_socketSetOption0(JNIEnv *env, jobject this,
-                                              jint cmd, jboolean on,
-                                              jobject value) {
+Java_java_net_PlainSocketImpl_socketSetOption0
+  (JNIEnv *env, jobject this, jint cmd, jboolean on, jobject value)
+{
     int fd;
     int level, optname, optlen;
     union {
@@ -887,7 +887,7 @@ Java_java_net_PlainSocketImpl_socketSetOption0(JNIEnv *env, jobject this,
      * level and option name.
      */
     if (NET_MapSocketOption(cmd, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return;
     }
 
@@ -951,9 +951,9 @@ Java_java_net_PlainSocketImpl_socketSetOption0(JNIEnv *env, jobject this,
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
-                                              jint cmd, jobject iaContainerObj) {
-
+Java_java_net_PlainSocketImpl_socketGetOption
+  (JNIEnv *env, jobject this, jint cmd, jobject iaContainerObj)
+{
     int fd;
     int level, optname, optlen;
     union {
@@ -1004,7 +1004,7 @@ Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
      * level and option name.
      */
     if (NET_MapSocketOption(cmd, &level, &optname)) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return -1;
     }
 

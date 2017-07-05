@@ -473,22 +473,6 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        if (overrides && super.hasOwnProperty(NashornCallSiteDescriptor.getOperand(desc))) {
-            try {
-                final GuardedInvocation inv = super.findCallMethodMethod(desc, request);
-                if (inv != null) {
-                    return inv;
-                }
-            } catch (final Exception e) {
-                //ignored
-            }
-        }
-
-        return findHook(desc, __call__);
-    }
-
-    @Override
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
         final String name = NashornCallSiteDescriptor.getOperand(desc);
         if (overrides && super.hasOwnProperty(name)) {

@@ -82,10 +82,13 @@ ifneq ($(CREATING_BUILDJDK), true)
 
   buildtools-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileTools.gmk)
+
+  buildtools-modules:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileModuleTools.gmk)
 endif
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
-    interim-rmic interim-cldrconverter buildtools-jdk
+    interim-rmic interim-cldrconverter buildtools-jdk buildtools-modules
 
 ################################################################################
 # Special targets for certain modules
@@ -340,8 +343,12 @@ profiles:
 mac-bundles-jdk:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
+exploded-image-optimize:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
+
 ALL_TARGETS += source-tips create-hgtip-files bootcycle-images zip-security \
-     zip-source jrtfs-jar jimages profiles mac-bundles-jdk
+    zip-source jrtfs-jar jimages profiles mac-bundles-jdk \
+    exploded-image-optimize
 
 ################################################################################
 # Docs targets
@@ -521,6 +528,8 @@ else
 
   buildtools-jdk: interim-langtools interim-cldrconverter
 
+  buildtools-modules: exploded-image-base
+
   $(CORBA_GENSRC_TARGETS): interim-langtools
 
   $(HOTSPOT_GENSRC_TARGETS): interim-langtools
@@ -646,6 +655,7 @@ else
     # Avoid calling create-buildjdk from within a create-buildjdk call
     ifneq ($(CREATING_BUILDJDK), true)
       $(JMOD_TARGETS): create-buildjdk
+      buildtools-modules: create-buildjdk
     endif
   endif
 
@@ -676,6 +686,8 @@ else
   profiles: jmods zip-source source-tips jrtfs-jar
 
   mac-bundles-jdk: jimages
+
+  exploded-image-optimize: exploded-image-base buildtools-modules
 
   bootcycle-images: jimages
 
@@ -728,7 +740,7 @@ else
 
   docs-bundles: docs-image
 
-  generate-summary: jmods
+  generate-summary: jmods buildtools-modules
 
 endif
 
@@ -774,7 +786,8 @@ demos: demos-jdk
 samples: samples-jdk
 
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
-exploded-image: $(ALL_MODULES)
+exploded-image-base: $(ALL_MODULES)
+exploded-image: exploded-image-base exploded-image-optimize
 
 create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
 
@@ -815,7 +828,8 @@ all-images: product-images test-image docs-image
 all-bundles: product-bundles test-bundles docs-bundles
 
 ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers jmods \
-    jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples exploded-image \
+    jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples \
+    exploded-image-base exploded-image \
     create-buildjdk mac-bundles product-images docs-image test-image all-images \
     all-bundles
 

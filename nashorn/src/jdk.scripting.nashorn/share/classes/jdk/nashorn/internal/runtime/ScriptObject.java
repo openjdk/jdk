@@ -80,7 +80,6 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
-import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
@@ -1883,8 +1882,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             return findCallMethod(desc, request);
         case NEW:
             return findNewMethod(desc, request);
-        case CALL_METHOD:
-            return findCallMethodMethod(desc, request);
         default:
         }
         return null;
@@ -1917,32 +1914,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     private GuardedInvocation notAFunction(final CallSiteDescriptor desc) {
         throw typeError("not.a.function", NashornCallSiteDescriptor.getFunctionErrorMessage(desc, this));
-    }
-
-    /**
-     * Find an implementation for a CALL_METHOD operation. Note that Nashorn internally never uses
-     * CALL_METHOD, but instead always emits two call sites in bytecode, one for GET_METHOD, and then another
-     * one for CALL. Explicit support for CALL_METHOD is provided for the benefit of potential external
-     * callers. The implementation itself actually folds a GET_METHOD method handle into a CALL method handle.
-     *
-     * @param desc    the call site descriptor.
-     * @param request the link request
-     *
-     * @return GuardedInvocation to be invoked at call site.
-     */
-    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        // R(P0, P1, ...)
-        final MethodType callType = desc.getMethodType();
-        // use type Object(P0) for the getter
-        final CallSiteDescriptor getterType = desc.changeMethodType(MethodType.methodType(Object.class, callType.parameterType(0)));
-        final GuardedInvocation getter = findGetMethod(getterType, request, StandardOperation.GET_METHOD);
-
-        // Object(P0) => Object(P0, P1, ...)
-        final MethodHandle argDroppingGetter = MH.dropArguments(getter.getInvocation(), 1, callType.parameterList().subList(1, callType.parameterCount()));
-        // R(Object, P0, P1, ...)
-        final MethodHandle invoker = Bootstrap.createDynamicInvoker("", NashornCallSiteDescriptor.CALL, callType.insertParameterTypes(0, argDroppingGetter.type().returnType()));
-        // Fold Object(P0, P1, ...) into R(Object, P0, P1, ...) => R(P0, P1, ...)
-        return getter.replaceMethods(MH.foldArguments(invoker, argDroppingGetter), getter.getGuard());
     }
 
     /**

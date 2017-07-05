@@ -616,8 +616,11 @@ final class P11Signature extends SignatureSpi {
                     return dsaToASN1(signature);
                 }
             }
-        } catch (PKCS11Exception e) {
-            throw new ProviderException(e);
+        } catch (PKCS11Exception pe) {
+            throw new ProviderException(pe);
+        } catch (SignatureException | ProviderException e) {
+            cancelOperation();
+            throw e;
         } finally {
             initialized = false;
             session = token.releaseSession(session);
@@ -669,8 +672,8 @@ final class P11Signature extends SignatureSpi {
                 }
             }
             return true;
-        } catch (PKCS11Exception e) {
-            long errorCode = e.getErrorCode();
+        } catch (PKCS11Exception pe) {
+            long errorCode = pe.getErrorCode();
             if (errorCode == CKR_SIGNATURE_INVALID) {
                 return false;
             }
@@ -682,10 +685,11 @@ final class P11Signature extends SignatureSpi {
             if (errorCode == CKR_DATA_LEN_RANGE) {
                 return false;
             }
-            throw new ProviderException(e);
+            throw new ProviderException(pe);
+        }  catch (SignatureException | ProviderException e) {
+            cancelOperation();
+            throw e;
         } finally {
-            // XXX we should not release the session if we abort above
-            // before calling C_Verify
             initialized = false;
             session = token.releaseSession(session);
         }
