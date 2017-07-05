@@ -180,7 +180,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     public void setResizable(boolean resizable) {}
 
     @Override
-    public void setMinimumSize(int width, int height) {}
+    public void setSizeConstraints(int minW, int minH, int maxW, int maxH) {}
 
     @Override
     public Graphics transformGraphics(Graphics g) {

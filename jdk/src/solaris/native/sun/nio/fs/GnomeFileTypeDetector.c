@@ -35,7 +35,7 @@
 #include <strings.h>
 #endif
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__)
 #include <string.h>
 #endif
 

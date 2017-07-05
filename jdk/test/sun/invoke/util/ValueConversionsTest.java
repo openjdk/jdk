@@ -159,14 +159,8 @@ public class ValueConversionsTest {
             assertEquals(caster.type(), ValueConversions.identity().type());
             for (Object obj : objects) {
                 Class<?> src = obj.getClass();
-                boolean canCast;
-                if (dst.isInterface()) {
-                    canCast = true;
-                } else {
-                    canCast = dst.isAssignableFrom(src);
-                    assertEquals(canCast, dst.isInstance(obj));
-                }
-                //System.out.println("obj="+obj+" <: dst="+dst);
+                boolean canCast = dst.isAssignableFrom(src);
+                //System.out.println("obj="+obj+" <: dst="+dst+(canCast ? " (OK)" : " (will fail)"));
                 try {
                     Object result = caster.invokeExact(obj);
                     if (canCast)

@@ -1,0 +1,1229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="wae"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab" draft="unconfirmed">Abčasiš</language>
+			<language type="af" draft="unconfirmed">Afrikáns</language>
+			<language type="am" draft="unconfirmed">Amhariš</language>
+			<language type="ar" draft="unconfirmed">Arabiš</language>
+			<language type="as" draft="unconfirmed">Assamesiš</language>
+			<language type="ay" draft="unconfirmed">Aymara</language>
+			<language type="az" draft="unconfirmed">Serbaidšaniš</language>
+			<language type="be" draft="unconfirmed">Wísrussiš</language>
+			<language type="bg" draft="unconfirmed">Bulgariš</language>
+			<language type="bn" draft="unconfirmed">Bengališ</language>
+			<language type="bo" draft="unconfirmed">Tibetiš</language>
+			<language type="bs" draft="unconfirmed">Bosniš</language>
+			<language type="ca" draft="unconfirmed">Katalaniš</language>
+			<language type="cs" draft="unconfirmed">Tšečiš</language>
+			<language type="cy" draft="unconfirmed">Walisiš</language>
+			<language type="da" draft="unconfirmed">Däniš</language>
+			<language type="de" draft="unconfirmed">Titš</language>
+			<language type="de_AT" draft="unconfirmed">Öštričišes Titš</language>
+			<language type="de_CH" draft="unconfirmed">Schwizer Hočtitš</language>
+			<language type="dv" draft="unconfirmed">Malediwiš</language>
+			<language type="dz" draft="unconfirmed">Butaniš</language>
+			<language type="efi" draft="unconfirmed">Efik</language>
+			<language type="el" draft="unconfirmed">Gričiš</language>
+			<language type="en" draft="unconfirmed">Engliš</language>
+			<language type="en_AU" draft="unconfirmed">Auštrališes Engliš</language>
+			<language type="en_CA" draft="unconfirmed">Kanadišes Engliš</language>
+			<language type="en_GB" draft="unconfirmed">Britišes Engliš</language>
+			<language type="en_US" draft="unconfirmed">Amerikanišes Engliš</language>
+			<language type="es" draft="unconfirmed">Schpaniš</language>
+			<language type="es_419" draft="unconfirmed">Latiamerikanišes Schpaniš</language>
+			<language type="es_ES" draft="unconfirmed">Iberišes Schpaniš</language>
+			<language type="et" draft="unconfirmed">Estniš</language>
+			<language type="eu" draft="unconfirmed">Baskiš</language>
+			<language type="fa" draft="unconfirmed">Persiš</language>
+			<language type="fi" draft="unconfirmed">Finiš</language>
+			<language type="fil" draft="unconfirmed">Filipiniš</language>
+			<language type="fj" draft="unconfirmed">Fidšianiš</language>
+			<language type="fr" draft="unconfirmed">Wälš</language>
+			<language type="fr_CA" draft="unconfirmed">Kanadišes Wälš</language>
+			<language type="fr_CH" draft="unconfirmed">Schwizer Wälš</language>
+			<language type="ga" draft="unconfirmed">Iriš</language>
+			<language type="gl" draft="unconfirmed">Galiziš</language>
+			<language type="gn" draft="unconfirmed">Guarani</language>
+			<language type="gu" draft="unconfirmed">Gujarati</language>
+			<language type="ha" draft="unconfirmed">Hausa</language>
+			<language type="haw" draft="unconfirmed">Hawaíaniš</language>
+			<language type="he" draft="unconfirmed">Hebräiš</language>
+			<language type="hi" draft="unconfirmed">Hindi</language>
+			<language type="hr" draft="unconfirmed">Kroatiš</language>
+			<language type="ht" draft="unconfirmed">Haitianiš</language>
+			<language type="hu" draft="unconfirmed">Ungariš</language>
+			<language type="hy" draft="unconfirmed">Armeniš</language>
+			<language type="id" draft="unconfirmed">Indonesiš</language>
+			<language type="ig" draft="unconfirmed">Igbo</language>
+			<language type="is" draft="unconfirmed">Iisländiš</language>
+			<language type="it" draft="unconfirmed">Italieniš</language>
+			<language type="ja" draft="unconfirmed">Japaniš</language>
+			<language type="ka" draft="unconfirmed">Georgiš</language>
+			<language type="kk" draft="unconfirmed">Kazačiš</language>
+			<language type="km" draft="unconfirmed">Kambodšaniš</language>
+			<language type="kn" draft="unconfirmed">Kannada</language>
+			<language type="ko" draft="unconfirmed">Koreaniš</language>
+			<language type="ks" draft="unconfirmed">Kašmiriš</language>
+			<language type="ku" draft="unconfirmed">Kurdiš</language>
+			<language type="ky" draft="unconfirmed">Kirgisiš</language>
+			<language type="la" draft="unconfirmed">Latiniš</language>
+			<language type="lb" draft="unconfirmed">Luxemburgiš</language>
+			<language type="ln" draft="unconfirmed">Lingala</language>
+			<language type="lo" draft="unconfirmed">Laotiš</language>
+			<language type="lt" draft="unconfirmed">Litauiš</language>
+			<language type="lv" draft="unconfirmed">Lettiš</language>
+			<language type="mg" draft="unconfirmed">Malagási</language>
+			<language type="mi" draft="unconfirmed">Maori</language>
+			<language type="mk" draft="unconfirmed">Mazedoniš</language>
+			<language type="ml" draft="unconfirmed">Malayalam</language>
+			<language type="mn" draft="unconfirmed">Mongoliš</language>
+			<language type="mr" draft="unconfirmed">Marathi</language>
+			<language type="ms" draft="unconfirmed">Malaíš</language>
+			<language type="mt" draft="unconfirmed">Maltesiš</language>
+			<language type="my" draft="unconfirmed">Burmesiš</language>
+			<language type="nb" draft="unconfirmed">Norwegiš Bokmål</language>
+			<language type="nd" draft="unconfirmed">Nordndebele</language>
+			<language type="ne" draft="unconfirmed">Nepalesiš</language>
+			<language type="nl" draft="unconfirmed">Holändiš</language>
+			<language type="nl_BE" draft="unconfirmed">Flämiš</language>
+			<language type="nn" draft="unconfirmed">Norwegiš Nynorsk</language>
+			<language type="nso" draft="unconfirmed">Nordsotho</language>
+			<language type="ny" draft="unconfirmed">Nyanja</language>
+			<language type="or" draft="unconfirmed">Oriya</language>
+			<language type="os" draft="unconfirmed">Osétiš</language>
+			<language type="pa" draft="unconfirmed">Pandšabiš</language>
+			<language type="pl" draft="unconfirmed">Polniš</language>
+			<language type="ps" draft="unconfirmed">Paštu</language>
+			<language type="pt" draft="unconfirmed">Portugisiš</language>
+			<language type="pt_BR" draft="unconfirmed">Brasilianišes Portugisiš</language>
+			<language type="pt_PT" draft="unconfirmed">Iberišes Portugisiš</language>
+			<language type="qu" draft="unconfirmed">Quečua</language>
+			<language type="rm" draft="unconfirmed">Rätromaniš</language>
+			<language type="rn" draft="unconfirmed">Rundi</language>
+			<language type="ro" draft="unconfirmed">Rumäniš</language>
+			<language type="ru" draft="unconfirmed">Rusiš</language>
+			<language type="rw" draft="unconfirmed">Ruandiš</language>
+			<language type="sa" draft="unconfirmed">Sanskrit</language>
+			<language type="sah" draft="unconfirmed">Jakutiš</language>
+			<language type="sd" draft="unconfirmed">Sindhi</language>
+			<language type="se" draft="unconfirmed">Nordsamiš</language>
+			<language type="sg" draft="unconfirmed">Sango</language>
+			<language type="si" draft="unconfirmed">Singalesiš</language>
+			<language type="sk" draft="unconfirmed">Slowakiš</language>
+			<language type="sl" draft="unconfirmed">Sloweniš</language>
+			<language type="sm" draft="unconfirmed">Samoaniš</language>
+			<language type="sn" draft="unconfirmed">Shona</language>
+			<language type="so" draft="unconfirmed">Somališ</language>
+			<language type="sq" draft="unconfirmed">Albaniš</language>
+			<language type="sr" draft="unconfirmed">Serbiš</language>
+			<language type="ss" draft="unconfirmed">Swazi</language>
+			<language type="st" draft="unconfirmed">Südsotho</language>
+			<language type="su" draft="unconfirmed">Sundanesiš</language>
+			<language type="sv" draft="unconfirmed">Schwediš</language>
+			<language type="sw" draft="unconfirmed">Suaheliš</language>
+			<language type="ta" draft="unconfirmed">Tamiliš</language>
+			<language type="te" draft="unconfirmed">Telugu</language>
+			<language type="tet" draft="unconfirmed">Tetum</language>
+			<language type="tg" draft="unconfirmed">Tadšikiš</language>
+			<language type="th" draft="unconfirmed">Thailändiš</language>
+			<language type="ti" draft="unconfirmed">Tigrinja</language>
+			<language type="tk" draft="unconfirmed">Turkmeniš</language>
+			<language type="tn" draft="unconfirmed">Tswana</language>
+			<language type="to" draft="unconfirmed">Tonga</language>
+			<language type="tpi" draft="unconfirmed">Niwmelanesiš</language>
+			<language type="tr" draft="unconfirmed">Türkiš</language>
+			<language type="ts" draft="unconfirmed">Tsonga</language>
+			<language type="ty" draft="unconfirmed">Taitiš</language>
+			<language type="ug" draft="unconfirmed">Uiguriš</language>
+			<language type="uk" draft="unconfirmed">Ukrainiš</language>
+			<language type="und" draft="unconfirmed">Unbekannti Schprač</language>
+			<language type="ur" draft="unconfirmed">Urdu</language>
+			<language type="uz" draft="unconfirmed">Usbekiš</language>
+			<language type="ve" draft="unconfirmed">Venda</language>
+			<language type="vi" draft="unconfirmed">Vietnamesiš</language>
+			<language type="wae">Walser</language>
+			<language type="wo" draft="unconfirmed">Wolof</language>
+			<language type="xh" draft="unconfirmed">Xhosa</language>
+			<language type="yo" draft="unconfirmed">Yoruba</language>
+			<language type="zh" draft="unconfirmed">Chinesiš</language>
+			<language type="zh_Hans" draft="unconfirmed">Vereifačts Chinesiš</language>
+			<language type="zh_Hant" draft="unconfirmed">Traditionells Chinesiš</language>
+			<language type="zu" draft="unconfirmed">Zulu</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">Arabiš</script>
+			<script type="Armn" draft="unconfirmed">Armeniš</script>
+			<script type="Beng" draft="unconfirmed">Bengališ</script>
+			<script type="Cyrl" draft="unconfirmed">Kirilliš</script>
+			<script type="Deva" draft="unconfirmed">Devanagari</script>
+			<script type="Ethi" draft="unconfirmed">Ethiopiš</script>
+			<script type="Geor" draft="unconfirmed">Georgiš</script>
+			<script type="Grek" draft="unconfirmed">Gričiš</script>
+			<script type="Gujr" draft="unconfirmed">Gujarati</script>
+			<script type="Hans" draft="unconfirmed">Vereifačt</script>
+			<script type="Hant" draft="unconfirmed">Traditionell</script>
+			<script type="Hebr" draft="unconfirmed">Hebräiš</script>
+			<script type="Jpan" draft="unconfirmed">Japaniš</script>
+			<script type="Khmr" draft="unconfirmed">Khmer</script>
+			<script type="Knda" draft="unconfirmed">Kannada</script>
+			<script type="Kore" draft="unconfirmed">Korianiš</script>
+			<script type="Laoo" draft="unconfirmed">Laotiš</script>
+			<script type="Latn" draft="unconfirmed">Latiniš</script>
+			<script type="Mlym" draft="unconfirmed">Malaisiš</script>
+			<script type="Mymr" draft="unconfirmed">Burmesiš</script>
+			<script type="Orya" draft="unconfirmed">Oriya</script>
+			<script type="Sinh" draft="unconfirmed">Singalesiš</script>
+			<script type="Taml" draft="unconfirmed">Tamiliš</script>
+			<script type="Telu" draft="unconfirmed">Telugu</script>
+			<script type="Thaa" draft="unconfirmed">Thána</script>
+			<script type="Thai" draft="unconfirmed">Thai</script>
+			<script type="Zxxx" draft="unconfirmed">Schriftlos</script>
+			<script type="Zzzz" draft="unconfirmed">Unkodierti Schrift</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">Wäld</territory>
+			<territory type="002" draft="unconfirmed">Afrika</territory>
+			<territory type="003" draft="unconfirmed">Nordamerika</territory>
+			<territory type="005" draft="unconfirmed">Südamerika</territory>
+			<territory type="009" draft="unconfirmed">Ozeanie</territory>
+			<territory type="011" draft="unconfirmed">Weštafrika</territory>
+			<territory type="013" draft="unconfirmed">Zentralamerika</territory>
+			<territory type="014" draft="unconfirmed">Oštafrika</territory>
+			<territory type="015" draft="unconfirmed">Nordafrika</territory>
+			<territory type="017" draft="unconfirmed">Mittelafrika</territory>
+			<territory type="018" draft="unconfirmed">Südličs Afrika</territory>
+			<territory type="019" draft="unconfirmed">Amerikaniš Kontinänt</territory>
+			<territory type="021" draft="unconfirmed">Nördličs Amerika</territory>
+			<territory type="029" draft="unconfirmed">Karibik</territory>
+			<territory type="030" draft="unconfirmed">Oštasie</territory>
+			<territory type="034" draft="unconfirmed">Südasie</territory>
+			<territory type="035" draft="unconfirmed">Südoštasie</territory>
+			<territory type="039" draft="unconfirmed">Südeuropa</territory>
+			<territory type="053" draft="unconfirmed">Auštralie und Niwséland</territory>
+			<territory type="054" draft="unconfirmed">Melanesie</territory>
+			<territory type="057" draft="unconfirmed">Mikronesišes Inselgebiet</territory>
+			<territory type="061" draft="unconfirmed">Polinesie</territory>
+			<territory type="142" draft="unconfirmed">Asie</territory>
+			<territory type="143" draft="unconfirmed">Zentralasie</territory>
+			<territory type="145" draft="unconfirmed">Weštasie</territory>
+			<territory type="150" draft="unconfirmed">Europa</territory>
+			<territory type="151" draft="unconfirmed">Ošteuropa</territory>
+			<territory type="154" draft="unconfirmed">Nordeuropa</territory>
+			<territory type="155" draft="unconfirmed">Wešteuropa</territory>
+			<territory type="419" draft="unconfirmed">Latíamerika</territory>
+			<territory type="AC" draft="unconfirmed">Himmelfártsinsla</territory>
+			<territory type="AD" draft="unconfirmed">Andorra</territory>
+			<territory type="AE" draft="unconfirmed">Vereinigti Arabiše Emirat</territory>
+			<territory type="AF" draft="unconfirmed">Afganištan</territory>
+			<territory type="AG" draft="unconfirmed">Antigua und Barbuda</territory>
+			<territory type="AI" draft="unconfirmed">Anguilla</territory>
+			<territory type="AL" draft="unconfirmed">Albanie</territory>
+			<territory type="AM" draft="unconfirmed">Armenie</territory>
+			<territory type="AN" draft="unconfirmed">Holändiši Antillä</territory>
+			<territory type="AO" draft="unconfirmed">Angola</territory>
+			<territory type="AQ" draft="unconfirmed">Antarktis</territory>
+			<territory type="AR" draft="unconfirmed">Argentinie</territory>
+			<territory type="AS" draft="unconfirmed">Amerikaniš Samoa</territory>
+			<territory type="AT" draft="unconfirmed">Öštrič</territory>
+			<territory type="AU" draft="unconfirmed">Australie</territory>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="AX" draft="unconfirmed">Alandinslä</territory>
+			<territory type="AZ" draft="unconfirmed">Aserbaidšan</territory>
+			<territory type="BA" draft="unconfirmed">Bosnie und Herzegovina</territory>
+			<territory type="BB" draft="unconfirmed">Barbados</territory>
+			<territory type="BD" draft="unconfirmed">Bangladeš</territory>
+			<territory type="BE" draft="unconfirmed">Belgie</territory>
+			<territory type="BF" draft="unconfirmed">Burkina Faso</territory>
+			<territory type="BG" draft="unconfirmed">Bulgarie</territory>
+			<territory type="BH" draft="unconfirmed">Bačrain</territory>
+			<territory type="BI" draft="unconfirmed">Burundi</territory>
+			<territory type="BJ" draft="unconfirmed">Benin</territory>
+			<territory type="BL" draft="unconfirmed">St. Bartholomäus-Insla</territory>
+			<territory type="BM" draft="unconfirmed">Bermuda</territory>
+			<territory type="BN" draft="unconfirmed">Brunei</territory>
+			<territory type="BO" draft="unconfirmed">Boliwie</territory>
+			<territory type="BR" draft="unconfirmed">Brasilie</territory>
+			<territory type="BS" draft="unconfirmed">Bahamas</territory>
+			<territory type="BT" draft="unconfirmed">Bhutan</territory>
+			<territory type="BV" draft="unconfirmed">Bouvetinsla</territory>
+			<territory type="BW" draft="unconfirmed">Botswana</territory>
+			<territory type="BY" draft="unconfirmed">Wísrussland</territory>
+			<territory type="BZ" draft="unconfirmed">Belize</territory>
+			<territory type="CA" draft="unconfirmed">Kanada</territory>
+			<territory type="CC" draft="unconfirmed">Kokosinslä</territory>
+			<territory type="CD" draft="unconfirmed">Kongo-Kinshasa</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Kongo [Demokratiši Rebublik]</territory>
+			<territory type="CF" draft="unconfirmed">Zentralafrikaniši Rebublik</territory>
+			<territory type="CG" draft="unconfirmed">Kongo Brazzaville</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Kongo [Rebublik]</territory>
+			<territory type="CH" draft="unconfirmed">Schwiz</territory>
+			<territory type="CI" draft="unconfirmed">Elfebeiküšta</territory>
+			<territory type="CI" alt="variant" draft="unconfirmed">Côte d'Ivoire</territory>
+			<territory type="CK" draft="unconfirmed">Cookinslä</territory>
+			<territory type="CL" draft="unconfirmed">Tšile</territory>
+			<territory type="CM" draft="unconfirmed">Kamerun</territory>
+			<territory type="CN" draft="unconfirmed">China</territory>
+			<territory type="CO" draft="unconfirmed">Kolumbie</territory>
+			<territory type="CP" draft="unconfirmed">Clipperton Insla</territory>
+			<territory type="CR" draft="unconfirmed">Costa Rica</territory>
+			<territory type="CU" draft="unconfirmed">Kuba</territory>
+			<territory type="CV" draft="unconfirmed">Kap Verde</territory>
+			<territory type="CX" draft="unconfirmed">Wienäčtsinslä</territory>
+			<territory type="CY" draft="unconfirmed">Zypre</territory>
+			<territory type="CZ" draft="unconfirmed">Tšečie</territory>
+			<territory type="DE" draft="unconfirmed">Titšland</territory>
+			<territory type="DG" draft="unconfirmed">Diego Garcia</territory>
+			<territory type="DJ" draft="unconfirmed">Dšibuti</territory>
+			<territory type="DK" draft="unconfirmed">Dänemark</territory>
+			<territory type="DM" draft="unconfirmed">Doninica</territory>
+			<territory type="DO" draft="unconfirmed">Dominikaniši Rebublik</territory>
+			<territory type="DZ" draft="unconfirmed">Algerie</territory>
+			<territory type="EA" draft="unconfirmed">Ceuta und Melilla</territory>
+			<territory type="EC" draft="unconfirmed">Ecuador</territory>
+			<territory type="EE" draft="unconfirmed">Eštland</territory>
+			<territory type="EG" draft="unconfirmed">Egypte</territory>
+			<territory type="EH" draft="unconfirmed">Weštsahara</territory>
+			<territory type="ER" draft="unconfirmed">Eritrea</territory>
+			<territory type="ES" draft="unconfirmed">Schpanie</territory>
+			<territory type="ET" draft="unconfirmed">Ethiopie</territory>
+			<territory type="EU" draft="unconfirmed">Europäiši Unio</territory>
+			<territory type="FI" draft="unconfirmed">Finnland</territory>
+			<territory type="FJ" draft="unconfirmed">Fidši</territory>
+			<territory type="FK" draft="unconfirmed">Falklandinslä</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">Falklandinslä [Malwine]</territory>
+			<territory type="FM" draft="unconfirmed">Mikronesie</territory>
+			<territory type="FO" draft="unconfirmed">Färöe</territory>
+			<territory type="FR" draft="unconfirmed">Frankrič</territory>
+			<territory type="GA" draft="unconfirmed">Gabon</territory>
+			<territory type="GB" draft="unconfirmed">England</territory>
+			<territory type="GD" draft="unconfirmed">Grenada</territory>
+			<territory type="GE" draft="unconfirmed">Georgie</territory>
+			<territory type="GF" draft="unconfirmed">Französiš Guiana</territory>
+			<territory type="GG" draft="unconfirmed">Guernsey</territory>
+			<territory type="GH" draft="unconfirmed">Gana</territory>
+			<territory type="GI" draft="unconfirmed">Gibraltar</territory>
+			<territory type="GL" draft="unconfirmed">Grönland</territory>
+			<territory type="GM" draft="unconfirmed">Gambia</territory>
+			<territory type="GN" draft="unconfirmed">Ginea</territory>
+			<territory type="GP" draft="unconfirmed">Guadeloupe</territory>
+			<territory type="GQ" draft="unconfirmed">Equatorialginea</territory>
+			<territory type="GR" draft="unconfirmed">Gričeland</territory>
+			<territory type="GS" draft="unconfirmed">Südgeorgie und d'südliče Senwičinslä</territory>
+			<territory type="GT" draft="unconfirmed">Guatemala</territory>
+			<territory type="GU" draft="unconfirmed">Guam</territory>
+			<territory type="GW" draft="unconfirmed">Ginea Bissau</territory>
+			<territory type="GY" draft="unconfirmed">Guyana</territory>
+			<territory type="HK" draft="unconfirmed">Sonderverwaltigszona Hongkong</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">Hongkong</territory>
+			<territory type="HM" draft="unconfirmed">Heard- und McDonald-Inslä</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR" draft="unconfirmed">Kroatie</territory>
+			<territory type="HT" draft="unconfirmed">Haiti</territory>
+			<territory type="HU" draft="unconfirmed">Ungare</territory>
+			<territory type="IC" draft="unconfirmed">Kanariše Inslä</territory>
+			<territory type="ID" draft="unconfirmed">Indonesie</territory>
+			<territory type="IE" draft="unconfirmed">Irland</territory>
+			<territory type="IL" draft="unconfirmed">Israel</territory>
+			<territory type="IM" draft="unconfirmed">Isle of Man</territory>
+			<territory type="IN" draft="unconfirmed">Indie</territory>
+			<territory type="IO" draft="unconfirmed">Britišes Territorium em indiše Ozean</territory>
+			<territory type="IQ" draft="unconfirmed">Irak</territory>
+			<territory type="IR" draft="unconfirmed">Iran</territory>
+			<territory type="IS" draft="unconfirmed">Island</territory>
+			<territory type="IT" draft="unconfirmed">Italie</territory>
+			<territory type="JE" draft="unconfirmed">Jersey</territory>
+			<territory type="JM" draft="unconfirmed">Jamaika</territory>
+			<territory type="JO" draft="unconfirmed">Jordanie</territory>
+			<territory type="JP" draft="unconfirmed">Japan</territory>
+			<territory type="KE" draft="unconfirmed">Kenya</territory>
+			<territory type="KG" draft="unconfirmed">Kirgištan</territory>
+			<territory type="KH" draft="unconfirmed">Kambodša</territory>
+			<territory type="KI" draft="unconfirmed">Kiribati</territory>
+			<territory type="KM" draft="unconfirmed">Komore</territory>
+			<territory type="KN" draft="unconfirmed">St. Kitts und Nevis</territory>
+			<territory type="KP" draft="unconfirmed">Nordkorea</territory>
+			<territory type="KR" draft="unconfirmed">Südkorea</territory>
+			<territory type="KW" draft="unconfirmed">Kuweit</territory>
+			<territory type="KY" draft="unconfirmed">Kaimaninslä</territory>
+			<territory type="KZ" draft="unconfirmed">Kasačstan</territory>
+			<territory type="LA" draft="unconfirmed">Laos</territory>
+			<territory type="LB" draft="unconfirmed">Libanon</territory>
+			<territory type="LC" draft="unconfirmed">St. Lucia</territory>
+			<territory type="LI" draft="unconfirmed">Liečteštei</territory>
+			<territory type="LK" draft="unconfirmed">Sri Lanka</territory>
+			<territory type="LR" draft="unconfirmed">Liberia</territory>
+			<territory type="LS" draft="unconfirmed">Lesotho</territory>
+			<territory type="LT" draft="unconfirmed">Litaue</territory>
+			<territory type="LU" draft="unconfirmed">Luxeburg</territory>
+			<territory type="LV" draft="unconfirmed">Lettland</territory>
+			<territory type="LY" draft="unconfirmed">Lübie</territory>
+			<territory type="MA" draft="unconfirmed">Maroko</territory>
+			<territory type="MC" draft="unconfirmed">Monago</territory>
+			<territory type="MD" draft="unconfirmed">Moldau</territory>
+			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="MF" draft="unconfirmed">St. Martin</territory>
+			<territory type="MG" draft="unconfirmed">Madagaskar</territory>
+			<territory type="MH" draft="unconfirmed">Maršalinslä</territory>
+			<territory type="MK" draft="unconfirmed">Mazedonie</territory>
+			<territory type="MK" alt="variant" draft="unconfirmed">Mazedonie [EJR]</territory>
+			<territory type="ML" draft="unconfirmed">Mali</territory>
+			<territory type="MM" draft="unconfirmed">Burma</territory>
+			<territory type="MN" draft="unconfirmed">Mongolei</territory>
+			<territory type="MO" draft="unconfirmed">Sonderverwaltigszona Makau</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Makau</territory>
+			<territory type="MP" draft="unconfirmed">Nördliči Mariane</territory>
+			<territory type="MQ" draft="unconfirmed">Martinique</territory>
+			<territory type="MR" draft="unconfirmed">Mauretanie</territory>
+			<territory type="MS" draft="unconfirmed">Monserrat</territory>
+			<territory type="MT" draft="unconfirmed">Malta</territory>
+			<territory type="MU" draft="unconfirmed">Mauritius</territory>
+			<territory type="MV" draft="unconfirmed">Malediwe</territory>
+			<territory type="MW" draft="unconfirmed">Malawi</territory>
+			<territory type="MX" draft="unconfirmed">Mexiko</territory>
+			<territory type="MY" draft="unconfirmed">Malaysia</territory>
+			<territory type="MZ" draft="unconfirmed">Mosambik</territory>
+			<territory type="NA" draft="unconfirmed">Namibia</territory>
+			<territory type="NC" draft="unconfirmed">Niwkaledonie</territory>
+			<territory type="NE" draft="unconfirmed">Niger</territory>
+			<territory type="NF" draft="unconfirmed">Norfolkinsla</territory>
+			<territory type="NG" draft="unconfirmed">Nigeria</territory>
+			<territory type="NI" draft="unconfirmed">Nicaragua</territory>
+			<territory type="NL" draft="unconfirmed">Holand</territory>
+			<territory type="NO" draft="unconfirmed">Norwäge</territory>
+			<territory type="NP" draft="unconfirmed">Nepal</territory>
+			<territory type="NR" draft="unconfirmed">Nauru</territory>
+			<territory type="NU" draft="unconfirmed">Niue</territory>
+			<territory type="NZ" draft="unconfirmed">Niwséland</territory>
+			<territory type="OM" draft="unconfirmed">Oman</territory>
+			<territory type="PA" draft="unconfirmed">Panama</territory>
+			<territory type="PE" draft="unconfirmed">Peru</territory>
+			<territory type="PF" draft="unconfirmed">Französiš Polinesie</territory>
+			<territory type="PG" draft="unconfirmed">Papua Niwginea</territory>
+			<territory type="PH" draft="unconfirmed">Philippine</territory>
+			<territory type="PK" draft="unconfirmed">Pakištan</territory>
+			<territory type="PL" draft="unconfirmed">Pole</territory>
+			<territory type="PM" draft="unconfirmed">St. Pierre und Miquelon</territory>
+			<territory type="PN" draft="unconfirmed">Pitcairn</territory>
+			<territory type="PR" draft="unconfirmed">Puerto Rico</territory>
+			<territory type="PS" draft="unconfirmed">Paleština</territory>
+			<territory type="PT" draft="unconfirmed">Portugal</territory>
+			<territory type="PW" draft="unconfirmed">Palau</territory>
+			<territory type="PY" draft="unconfirmed">Paraguai</territory>
+			<territory type="QA" draft="unconfirmed">Katar</territory>
+			<territory type="QO" draft="unconfirmed">Üssers Ozeanie</territory>
+			<territory type="RE" draft="unconfirmed">Réunion</territory>
+			<territory type="RO" draft="unconfirmed">Rumänie</territory>
+			<territory type="RS" draft="unconfirmed">Serbie</territory>
+			<territory type="RU" draft="unconfirmed">Russland</territory>
+			<territory type="RW" draft="unconfirmed">Ruanda</territory>
+			<territory type="SA" draft="unconfirmed">Saudi Arabie</territory>
+			<territory type="SB" draft="unconfirmed">Salomone</territory>
+			<territory type="SC" draft="unconfirmed">Sečelle</territory>
+			<territory type="SD" draft="unconfirmed">Sudan</territory>
+			<territory type="SE" draft="unconfirmed">Schwede</territory>
+			<territory type="SG" draft="unconfirmed">Singapur</territory>
+			<territory type="SH" draft="unconfirmed">St. Helena</territory>
+			<territory type="SI" draft="unconfirmed">Slowenie</territory>
+			<territory type="SJ" draft="unconfirmed">Svalbard und Jan Mayen</territory>
+			<territory type="SK" draft="unconfirmed">Slowakei</territory>
+			<territory type="SL" draft="unconfirmed">Sierra Leone</territory>
+			<territory type="SM" draft="unconfirmed">San Marino</territory>
+			<territory type="SN" draft="unconfirmed">Senegal</territory>
+			<territory type="SO" draft="unconfirmed">Somalia</territory>
+			<territory type="SR" draft="unconfirmed">Suriname</territory>
+			<territory type="ST" draft="unconfirmed">São Tomé and Príncipe</territory>
+			<territory type="SV" draft="unconfirmed">El Salvador</territory>
+			<territory type="SY" draft="unconfirmed">Sürie</territory>
+			<territory type="SZ" draft="unconfirmed">Swasiland</territory>
+			<territory type="TA" draft="unconfirmed">Tristan da Cunha</territory>
+			<territory type="TC" draft="unconfirmed">Turks- und Caicosinslä</territory>
+			<territory type="TD" draft="unconfirmed">Tšad</territory>
+			<territory type="TF" draft="unconfirmed">Französiši Süd- und Antarktisgebiet</territory>
+			<territory type="TG" draft="unconfirmed">Togo</territory>
+			<territory type="TH" draft="unconfirmed">Thailand</territory>
+			<territory type="TJ" draft="unconfirmed">Tadšikistan</territory>
+			<territory type="TK" draft="unconfirmed">Tokelau</territory>
+			<territory type="TL" draft="unconfirmed">Ošttimor</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">Wešttimor</territory>
+			<territory type="TM" draft="unconfirmed">Turkmeništan</territory>
+			<territory type="TN" draft="unconfirmed">Tunesie</territory>
+			<territory type="TO" draft="unconfirmed">Tonga</territory>
+			<territory type="TR" draft="unconfirmed">Türkei</territory>
+			<territory type="TT" draft="unconfirmed">Trinidad und Tobago</territory>
+			<territory type="TV" draft="unconfirmed">Tuvalu</territory>
+			<territory type="TW" draft="unconfirmed">Taiwan</territory>
+			<territory type="TZ" draft="unconfirmed">Tansania</territory>
+			<territory type="UA" draft="unconfirmed">Ukraine</territory>
+			<territory type="UG" draft="unconfirmed">Uganda</territory>
+			<territory type="UM" draft="unconfirmed">Amerikaniš Ozeanie</territory>
+			<territory type="US" draft="unconfirmed">Amerika</territory>
+			<territory type="UY" draft="unconfirmed">Urugauy</territory>
+			<territory type="UZ" draft="unconfirmed">Usbekištan</territory>
+			<territory type="VA" draft="unconfirmed">Vatikan</territory>
+			<territory type="VC" draft="unconfirmed">St. Vincent und d'Grenadine</territory>
+			<territory type="VE" draft="unconfirmed">Venezuela</territory>
+			<territory type="VG" draft="unconfirmed">Britiši Jungfröiwinslä</territory>
+			<territory type="VI" draft="unconfirmed">Amerikaniši Jungfröiwinslä</territory>
+			<territory type="VN" draft="unconfirmed">Vietnam</territory>
+			<territory type="VU" draft="unconfirmed">Vanuatu</territory>
+			<territory type="WF" draft="unconfirmed">Wallis und Futuna</territory>
+			<territory type="WS" draft="unconfirmed">Samoa</territory>
+			<territory type="YE" draft="unconfirmed">Jéme</territory>
+			<territory type="YT" draft="unconfirmed">Moyette</territory>
+			<territory type="ZA" draft="unconfirmed">Südafrika</territory>
+			<territory type="ZM" draft="unconfirmed">Sambia</territory>
+			<territory type="ZW" draft="unconfirmed">Simbabwe</territory>
+			<territory type="ZZ" draft="unconfirmed">Unbekannti Regio</territory>
+		</territories>
+		<types>
+			<type type="ducet" key="collation" draft="unconfirmed">Standard Unicode Sortierreiefolg</type>
+			<type type="gregorian" key="calendar" draft="unconfirmed">Gregorianišä Kaländer</type>
+			<type type="latn" key="numbers" draft="unconfirmed">Arabiši Zálä</type>
+			<type type="search" key="collation" draft="unconfirmed">Allgmeini Süeč</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">Metriš</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">Angloamerikaniš</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Sprač: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Alfabét: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Regio: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a á ä ã b c č d e é f g h i í j k l m n o ó ö õ p q r s š t u ú ü ũ v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[à ă â å ā æ ç è ĕ ê ë ē ì ĭ î ï ī ñ ò ŏ ô ø ō œ ß ù ŭ û ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol" draft="unconfirmed">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">«</quotationStart>
+		<quotationEnd draft="unconfirmed">»</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">‹</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">›</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jen</month>
+							<month type="2" draft="unconfirmed">Hor</month>
+							<month type="3" draft="unconfirmed">Mär</month>
+							<month type="4" draft="unconfirmed">Abr</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Brá</month>
+							<month type="7" draft="unconfirmed">Hei</month>
+							<month type="8" draft="unconfirmed">Öig</month>
+							<month type="9" draft="unconfirmed">Her</month>
+							<month type="10" draft="unconfirmed">Wím</month>
+							<month type="11" draft="unconfirmed">Win</month>
+							<month type="12" draft="unconfirmed">Chr</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">H</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">B</month>
+							<month type="7" draft="unconfirmed">H</month>
+							<month type="8" draft="unconfirmed">Ö</month>
+							<month type="9" draft="unconfirmed">H</month>
+							<month type="10" draft="unconfirmed">W</month>
+							<month type="11" draft="unconfirmed">W</month>
+							<month type="12" draft="unconfirmed">C</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Jenner</month>
+							<month type="2" draft="unconfirmed">Hornig</month>
+							<month type="3" draft="unconfirmed">Märze</month>
+							<month type="4" draft="unconfirmed">Abrille</month>
+							<month type="5" draft="unconfirmed">Meije</month>
+							<month type="6" draft="unconfirmed">Bráčet</month>
+							<month type="7" draft="unconfirmed">Heiwet</month>
+							<month type="8" draft="unconfirmed">Öigšte</month>
+							<month type="9" draft="unconfirmed">Herbštmánet</month>
+							<month type="10" draft="unconfirmed">Wímánet</month>
+							<month type="11" draft="unconfirmed">Wintermánet</month>
+							<month type="12" draft="unconfirmed">Chrištmánet</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jen</month>
+							<month type="2" draft="unconfirmed">Hor</month>
+							<month type="3" draft="unconfirmed">Mär</month>
+							<month type="4" draft="unconfirmed">Abr</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Brá</month>
+							<month type="7" draft="unconfirmed">Hei</month>
+							<month type="8" draft="unconfirmed">Öig</month>
+							<month type="9" draft="unconfirmed">Her</month>
+							<month type="10" draft="unconfirmed">Wím</month>
+							<month type="11" draft="unconfirmed">Win</month>
+							<month type="12" draft="unconfirmed">Chr</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">H</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">B</month>
+							<month type="7" draft="unconfirmed">H</month>
+							<month type="8" draft="unconfirmed">Ö</month>
+							<month type="9" draft="unconfirmed">H</month>
+							<month type="10" draft="unconfirmed">W</month>
+							<month type="11" draft="unconfirmed">W</month>
+							<month type="12" draft="unconfirmed">C</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Jenner</month>
+							<month type="2" draft="unconfirmed">Hornig</month>
+							<month type="3" draft="unconfirmed">Märze</month>
+							<month type="4" draft="unconfirmed">Abrille</month>
+							<month type="5" draft="unconfirmed">Meije</month>
+							<month type="6" draft="unconfirmed">Bráčet</month>
+							<month type="7" draft="unconfirmed">Heiwet</month>
+							<month type="8" draft="unconfirmed">Öigšte</month>
+							<month type="9" draft="unconfirmed">Herbštmánet</month>
+							<month type="10" draft="unconfirmed">Wímánet</month>
+							<month type="11" draft="unconfirmed">Wintermánet</month>
+							<month type="12" draft="unconfirmed">Chrištmánet</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Sun</day>
+							<day type="mon" draft="unconfirmed">Män</day>
+							<day type="tue" draft="unconfirmed">Ziš</day>
+							<day type="wed" draft="unconfirmed">Mit</day>
+							<day type="thu" draft="unconfirmed">Fró</day>
+							<day type="fri" draft="unconfirmed">Fri</day>
+							<day type="sat" draft="unconfirmed">Sam</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">Z</day>
+							<day type="wed" draft="unconfirmed">M</day>
+							<day type="thu" draft="unconfirmed">F</day>
+							<day type="fri" draft="unconfirmed">F</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Sunntag</day>
+							<day type="mon" draft="unconfirmed">Mäntag</day>
+							<day type="tue" draft="unconfirmed">Zištag</day>
+							<day type="wed" draft="unconfirmed">Mittwuč</day>
+							<day type="thu" draft="unconfirmed">Fróntag</day>
+							<day type="fri" draft="unconfirmed">Fritag</day>
+							<day type="sat" draft="unconfirmed">Samštag</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Sun</day>
+							<day type="mon" draft="unconfirmed">Män</day>
+							<day type="tue" draft="unconfirmed">Ziš</day>
+							<day type="wed" draft="unconfirmed">Mit</day>
+							<day type="thu" draft="unconfirmed">Fró</day>
+							<day type="fri" draft="unconfirmed">Fri</day>
+							<day type="sat" draft="unconfirmed">Sam</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">Z</day>
+							<day type="wed" draft="unconfirmed">M</day>
+							<day type="thu" draft="unconfirmed">F</day>
+							<day type="fri" draft="unconfirmed">F</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Sunntag</day>
+							<day type="mon" draft="unconfirmed">Mäntag</day>
+							<day type="tue" draft="unconfirmed">Zištag</day>
+							<day type="wed" draft="unconfirmed">Mittwuč</day>
+							<day type="thu" draft="unconfirmed">Fróntag</day>
+							<day type="fri" draft="unconfirmed">Fritag</day>
+							<day type="sat" draft="unconfirmed">Samštag</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">Q1</quarter>
+							<quarter type="2" draft="unconfirmed">Q2</quarter>
+							<quarter type="3" draft="unconfirmed">Q3</quarter>
+							<quarter type="4" draft="unconfirmed">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1. quartal</quarter>
+							<quarter type="2" draft="unconfirmed">2. quartal</quarter>
+							<quarter type="3" draft="unconfirmed">3. quartal</quarter>
+							<quarter type="4" draft="unconfirmed">4. quartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">Q1</quarter>
+							<quarter type="2" draft="unconfirmed">Q2</quarter>
+							<quarter type="3" draft="unconfirmed">Q3</quarter>
+							<quarter type="4" draft="unconfirmed">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1. quartal</quarter>
+							<quarter type="2" draft="unconfirmed">2. quartal</quarter>
+							<quarter type="3" draft="unconfirmed">3. quartal</quarter>
+							<quarter type="4" draft="unconfirmed">4. quartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">v. Chr.</era>
+						<era type="1" draft="unconfirmed">n. Chr</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d. MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d. MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d. MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ed" draft="unconfirmed">E d.</dateFormatItem>
+						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="M" draft="unconfirmed">LLL</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d. MMM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d. MMM</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d. MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, d. MMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d - d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a - h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h - h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="a" draft="unconfirmed">HH - HH</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH - HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a - h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm - h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm - h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="a" draft="unconfirmed">HH:mm - HH:mm</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm - HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm - HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a - h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm - h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm - h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="a" draft="unconfirmed">HH:mm - HH:mm v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm - HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm - HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a - h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h - h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="a" draft="unconfirmed">HH - HH v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH - HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">MMM - MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">d. MMM - d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d. MMM - d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d. MMM - E, d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d. MMM - E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM - MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d. - d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d. - d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d. MMM - E, d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d. MMM - E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y - y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM - yyyy-MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM - yyyy-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">yyyy-MM-dd - yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM-dd - yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM-dd - yyyy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d. MMM yyyy - E, d. MMM yyyy</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d. MMM yyyy - E, d. MMM yyyy</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d. MMM yyyy - E, d. MMM yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM - MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y - MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d. - d. MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d. MMM - d. MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d. MMM y - d. MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d. - E, d. MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d. MMM - E, d. MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d. MMM y - E, d. MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM - MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y - MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName draft="unconfirmed">Epoča</displayName>
+					</field>
+					<field type="year">
+						<displayName draft="unconfirmed">Jár</displayName>
+					</field>
+					<field type="month">
+						<displayName draft="unconfirmed">Mánet</displayName>
+					</field>
+					<field type="week">
+						<displayName draft="unconfirmed">Wuča</displayName>
+					</field>
+					<field type="day">
+						<displayName draft="unconfirmed">Tag</displayName>
+						<relative type="-2" draft="unconfirmed">Vorgešter</relative>
+						<relative type="-1" draft="unconfirmed">Gešter</relative>
+						<relative type="0" draft="unconfirmed">Hitte</relative>
+						<relative type="1" draft="unconfirmed">Móre</relative>
+						<relative type="2" draft="unconfirmed">Ubermóre</relative>
+					</field>
+					<field type="weekday">
+						<displayName draft="unconfirmed">Wučetag</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName draft="unconfirmed">AM/PM</displayName>
+					</field>
+					<field type="hour">
+						<displayName draft="unconfirmed">Schtund</displayName>
+					</field>
+					<field type="minute">
+						<displayName draft="unconfirmed">Mínütta</displayName>
+					</field>
+					<field type="second">
+						<displayName draft="unconfirmed">Sekunda</displayName>
+					</field>
+					<field type="zone">
+						<displayName draft="unconfirmed">Zitzóna</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">{0} zit</regionFormat>
+			<fallbackRegionFormat draft="unconfirmed">{1} zit ({0})</fallbackRegionFormat>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">Unbekannti Stadt</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Tiran</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">Kordoba</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Wien</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Sidnei</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Brüssel</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">Wagadugu</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Zürič</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">Hawanna</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Prag</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">Dšibuti</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">Kopehage</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">Algier</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">Reval</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Kairo</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">Akra</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">Hongkong</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">Budapešt</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">Jerusalem</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">Bagdad</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">Tehran</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">Rikjawik</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Rom</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">Jamaika</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">Tokio</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">Kaimaninsla</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">Wilna</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">Tripolis</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">Monserat</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">Niger</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">Amšterdam</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">Lima</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">Manila</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">Waršau</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Bukarešt</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">Belgrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">Königsbärg</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">Wolgograd</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">Kartum</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Singapur</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">Laibač</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">Mogadišu</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">Damaskus</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">Tunis</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Konštantinopel</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">Vatikan</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">Johannesburg</exemplarCity>
+			</zone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">Atlantiši Zit</generic>
+					<standard draft="unconfirmed">Atlantiši Standardzit</standard>
+					<daylight draft="unconfirmed">Atlantiši Summerzit</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">Mitteleuropäiši Zit</generic>
+					<standard draft="unconfirmed">Mitteleuropäiši Standardzit</standard>
+					<daylight draft="unconfirmed">Mitteleuropäiši Summerzit</daylight>
+				</long>
+				<short>
+					<generic draft="unconfirmed">MEZ</generic>
+					<standard draft="unconfirmed">MEZ</standard>
+					<daylight draft="unconfirmed">MESZ</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">Ošteuropäiši Zit</generic>
+					<standard draft="unconfirmed">Ošteuropäiši Standardzit</standard>
+					<daylight draft="unconfirmed">Ošteuropäiši Summerzit</daylight>
+				</long>
+				<short>
+					<generic draft="unconfirmed">OEZ</generic>
+					<standard draft="unconfirmed">OEZ</standard>
+					<daylight draft="unconfirmed">OESZ</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">Wešteuropäiši Zit</generic>
+					<standard draft="unconfirmed">Wešteuropäiši Standardzit</standard>
+					<daylight draft="unconfirmed">Wešteuropäiši Summerzit</daylight>
+				</long>
+				<short>
+					<generic draft="unconfirmed">WEZ</generic>
+					<standard draft="unconfirmed">WEZ</standard>
+					<daylight draft="unconfirmed">WESZ</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">’</group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">Brasilianiši Real</displayName>
+				<displayName count="one" draft="unconfirmed">Brasilianišä Real</displayName>
+				<displayName count="other" draft="unconfirmed">Brasilianiši Real</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">Chinesiši Yuan</displayName>
+				<displayName count="one" draft="unconfirmed">Chinesišä Yuan</displayName>
+				<displayName count="other" draft="unconfirmed">Chinesiši Yuan</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">Euro</displayName>
+				<displayName count="one" draft="unconfirmed">Euro</displayName>
+				<displayName count="other" draft="unconfirmed">Euro</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">Pfund</displayName>
+				<displayName count="one" draft="unconfirmed">Pfund</displayName>
+				<displayName count="other" draft="unconfirmed">Pfund</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">Indiši Rupie</displayName>
+				<displayName count="one" draft="unconfirmed">Indišä Rupie</displayName>
+				<displayName count="other" draft="unconfirmed">Indiši Rupie</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">Yen</displayName>
+				<displayName count="one" draft="unconfirmed">Yen</displayName>
+				<displayName count="other" draft="unconfirmed">Yen</displayName>
+				<symbol draft="unconfirmed">¥</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">Rubel</displayName>
+				<displayName count="one" draft="unconfirmed">Rubel</displayName>
+				<displayName count="other" draft="unconfirmed">Rubel</displayName>
+				<symbol draft="unconfirmed">руб</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">Dollar</displayName>
+				<displayName count="one" draft="unconfirmed">Dollar</displayName>
+				<displayName count="other" draft="unconfirmed">Dollar</displayName>
+				<symbol draft="unconfirmed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">Unbekannti Wãrig</displayName>
+				<displayName count="one" draft="unconfirmed">Unbekannti Wãrig</displayName>
+				<displayName count="other" draft="unconfirmed">Unbekannti Wãrig</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="one" draft="unconfirmed">{0} täg</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} täg</unitPattern>
+		</unit>
+		<unit type="day-future">
+			<unitPattern count="one" draft="unconfirmed">i {0} tag</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">i {0} täg</unitPattern>
+		</unit>
+		<unit type="day-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} tag</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">vor {0} täg</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="one" draft="unconfirmed">{0} stund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} stunde</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="one" draft="unconfirmed">i {0} stund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">i {0} stunde</unitPattern>
+		</unit>
+		<unit type="hour-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} stund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">vor {0} stunde</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="one" draft="unconfirmed">{0} minüta</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} minüte</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="one" draft="unconfirmed">i {0} minüta</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">i {0} minüte</unitPattern>
+		</unit>
+		<unit type="minute-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} minüta</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">vor {0} minüte</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="one" draft="unconfirmed">{0} mánet</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} mánet</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="one" draft="unconfirmed">I {0} mánet</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">I {0} mánet</unitPattern>
+		</unit>
+		<unit type="month-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} mánet</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">vor {0} mánet</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="one" draft="unconfirmed">{0} sekund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} sekunde</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="one" draft="unconfirmed">i {0} sekund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">i {0} sekunde</unitPattern>
+		</unit>
+		<unit type="second-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} sekund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">vor {0} sekunde</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="one" draft="unconfirmed">{0} wuča</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} wučä</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="one" draft="unconfirmed">i {0} wuča</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">i {0} wučä</unitPattern>
+		</unit>
+		<unit type="week-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} wuča</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">cor {0} wučä</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="one" draft="unconfirmed">{0} jár</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} jár</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="one" draft="unconfirmed">I {0} jár</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">I {0} jár</unitPattern>
+		</unit>
+		<unit type="year-past">
+			<unitPattern count="one" draft="unconfirmed">vor {0} jár</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">cor {0} jár</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2" draft="unconfirmed">{0} und {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} und {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">ja:j:y</yesstr>
+			<nostr draft="unconfirmed">nei:n</nostr>
+		</messages>
+	</posix>
+</ldml>
+

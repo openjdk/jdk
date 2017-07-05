@@ -1350,19 +1350,18 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
          * value is an InetAddress.
          */
 #ifdef AF_INET6
-#if defined(__solaris__) || defined(MACOSX)
-        if (ipv6_available()) {
-            mcast_set_if_by_addr_v6(env, this, fd, value);
-        } else {
-            mcast_set_if_by_addr_v4(env, this, fd, value);
-        }
-#endif
 #ifdef __linux__
         mcast_set_if_by_addr_v4(env, this, fd, value);
         if (ipv6_available()) {
             mcast_set_if_by_addr_v6(env, this, fd, value);
         }
-#endif
+#else  /* __linux__ not defined */
+        if (ipv6_available()) {
+            mcast_set_if_by_addr_v6(env, this, fd, value);
+        } else {
+            mcast_set_if_by_addr_v4(env, this, fd, value);
+        }
+#endif  /* __linux__ */
 #else
         mcast_set_if_by_addr_v4(env, this, fd, value);
 #endif  /* AF_INET6 */
@@ -1373,19 +1372,18 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
          * value is a NetworkInterface.
          */
 #ifdef AF_INET6
-#if defined(__solaris__) || defined(MACOSX)
-        if (ipv6_available()) {
-            mcast_set_if_by_if_v6(env, this, fd, value);
-        } else {
-            mcast_set_if_by_if_v4(env, this, fd, value);
-        }
-#endif
 #ifdef __linux__
         mcast_set_if_by_if_v4(env, this, fd, value);
         if (ipv6_available()) {
             mcast_set_if_by_if_v6(env, this, fd, value);
         }
-#endif
+#else  /* __linux__ not defined */
+        if (ipv6_available()) {
+            mcast_set_if_by_if_v6(env, this, fd, value);
+        } else {
+            mcast_set_if_by_if_v4(env, this, fd, value);
+        }
+#endif  /* __linux__ */
 #else
         mcast_set_if_by_if_v4(env, this, fd, value);
 #endif  /* AF_INET6 */
@@ -1456,19 +1454,18 @@ static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) 
 static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
                                   jint opt, jobject value) {
 #ifdef AF_INET6
-#if defined(__solaris__) || defined(MACOSX)
-    if (ipv6_available()) {
-        mcast_set_loop_v6(env, this, fd, value);
-    } else {
-        mcast_set_loop_v4(env, this, fd, value);
-    }
-#endif
 #ifdef __linux__
     mcast_set_loop_v4(env, this, fd, value);
     if (ipv6_available()) {
         mcast_set_loop_v6(env, this, fd, value);
     }
-#endif
+#else  /* __linux__ not defined */
+    if (ipv6_available()) {
+        mcast_set_loop_v6(env, this, fd, value);
+    } else {
+        mcast_set_loop_v4(env, this, fd, value);
+    }
+#endif  /* __linux__ */
 #else
     mcast_set_loop_v4(env, this, fd, value);
 #endif  /* AF_INET6 */
@@ -2030,13 +2027,6 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
     }
     /* setsockopt to be correct ttl */
 #ifdef AF_INET6
-#if defined(__solaris__) || defined(MACOSX)
-    if (ipv6_available()) {
-        setHopLimit(env, fd, ttl);
-    } else {
-        setTTL(env, fd, ttl);
-    }
-#endif
 #ifdef __linux__
     setTTL(env, fd, ttl);
     if (ipv6_available()) {
@@ -2045,7 +2035,13 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
             (*env)->SetIntField(env, this, pdsi_ttlID, ttl);
         }
     }
-#endif  // __linux__
+#else  /*  __linux__ not defined */
+    if (ipv6_available()) {
+        setHopLimit(env, fd, ttl);
+    } else {
+        setTTL(env, fd, ttl);
+    }
+#endif  /* __linux__ */
 #else
     setTTL(env, fd, ttl);
 #endif  /* AF_INET6 */

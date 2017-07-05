@@ -576,16 +576,16 @@ public class ManagementFactory {
                                Class<T> mxbeanInterface)
             throws java.io.IOException {
 
-        final Class<?> interfaceClass = mxbeanInterface;
         // Only allow MXBean interfaces from rt.jar loaded by the
         // bootstrap class loader
-        final ClassLoader loader =
+        final Class<?> cls = mxbeanInterface;
+        ClassLoader loader =
             AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
-                    return interfaceClass.getClassLoader();
+                    return cls.getClassLoader();
                 }
             });
-        if (loader != null) {
+        if (!sun.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
         }
@@ -593,10 +593,10 @@ public class ManagementFactory {
         try {
             final ObjectName objName = new ObjectName(mxbeanName);
             // skip the isInstanceOf check for LoggingMXBean
-            String intfName = interfaceClass.getName();
+            String intfName = mxbeanInterface.getName();
             if (!connection.isInstanceOf(objName, intfName)) {
                 throw new IllegalArgumentException(mxbeanName +
-                    " is not an instance of " + interfaceClass);
+                    " is not an instance of " + mxbeanInterface);
             }
 
             final Class[] interfaces;

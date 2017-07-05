@@ -52,6 +52,9 @@
     // Should we navigate into apps?
     BOOL fNavigateApps;
 
+    // Can the dialog choose directories ?
+    BOOL fChooseDirectories;
+
     // Contains the absolute paths of the selected files as URLs
     NSArray *fURLs;
 }
@@ -65,6 +68,7 @@
                  mode:(jint)inMode
          multipleMode:(BOOL)inMultipleMode
        shouldNavigate:(BOOL)inNavigateApps
+ canChooseDirectories:(BOOL)inChooseDirectories
               withEnv:(JNIEnv*)env;
 
 // Invoked from the main thread

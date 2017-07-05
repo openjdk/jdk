@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="as"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="as">অসমীয়া</language>
+			<language type="ie" draft="unconfirmed">উপস্থাপন ভাষা</language>
+			<language type="km" draft="unconfirmed">কম্বোডিয়ান</language>
+		</languages>
+		<scripts>
+			<script type="Beng" draft="contributed">বঙালী</script>
+		</scripts>
+		<territories>
+			<territory type="AQ" draft="contributed">এন্টাৰ্টিকা</territory>
+			<territory type="BR" draft="contributed">ব্ৰাজিল</territory>
+			<territory type="BV" draft="contributed">বভেট দ্বীপ</territory>
+			<territory type="CN" draft="contributed">চীন</territory>
+			<territory type="DE" draft="contributed">জাৰ্মানি</territory>
+			<territory type="FR" draft="contributed">ফ্ৰান্স</territory>
+			<territory type="GB" draft="contributed">সংযুক্ত ৰাজ্য</territory>
+			<territory type="GS" draft="contributed">দক্ষিণ জৰ্জিয়া আৰু দক্ষিণ চেণ্ডৱিচ্‌ দ্বীপ</territory>
+			<territory type="HM" draft="contributed">হাৰ্ড দ্বীপ আৰু মেক্‌ডোনাল্ড দ্বীপ</territory>
+			<territory type="IN">ভাৰত</territory>
+			<territory type="IO" draft="contributed">ব্ৰিটিশ্ব ইণ্ডিয়ান মহাসাগৰৰ অঞ্চল</territory>
+			<territory type="IT" draft="contributed">ইটালি</territory>
+			<territory type="JP" draft="contributed">জাপান</territory>
+			<territory type="RU" draft="contributed">ৰুচ</territory>
+			<territory type="TF" draft="contributed">দক্ষিণ ফ্ৰান্সৰ অঞ্চল</territory>
+			<territory type="US" draft="contributed">যুক্তৰাষ্ট্ৰ</territory>
+			<territory type="ZZ" draft="contributed">অজ্ঞাত বা অবৈধ অঞ্চল</territory>
+		</territories>
+		<keys>
+			<key type="calendar" draft="contributed">পঞ্জিকা</key>
+			<key type="collation" draft="contributed">শৰীকৰণ</key>
+			<key type="currency" draft="contributed">মুদ্ৰা</key>
+		</keys>
+		<types>
+			<type type="big5han" key="collation" draft="contributed">পৰম্পৰাগত চীনা শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম - Big5</type>
+			<type type="buddhist" key="calendar" draft="contributed">বৌদ্ধ পঞ্জিকা</type>
+			<type type="chinese" key="calendar" draft="contributed">চীনা পঞ্জিকা</type>
+			<type type="gb2312han" key="collation" draft="contributed">সৰল চীনা শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম - GB2312</type>
+			<type type="gregorian" key="calendar" draft="contributed">গ্ৰিগোৰীয় পঞ্জিকা</type>
+			<type type="hebrew" key="calendar" draft="contributed">হীব্ৰু পঞ্জিকা</type>
+			<type type="indian" key="calendar" draft="contributed">ভাৰতীয় ৰাষ্ট্ৰীয় পঞ্জিকা</type>
+			<type type="islamic" key="calendar" draft="contributed">ইচলামী পঞ্জিকা</type>
+			<type type="islamic-civil" key="calendar" draft="contributed">ইচলামী-নাগৰিকৰ পঞ্জিকা</type>
+			<type type="japanese" key="calendar" draft="contributed">জাপানী পঞ্জিকা</type>
+			<type type="phonebook" key="collation" draft="contributed">টেলিফোন বহিৰ মতেশৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type type="pinyin" key="collation" draft="contributed">পিন্‌য়িন শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type type="roc" key="calendar" draft="contributed">চীনা গণৰাজ্যৰ পঞ্জিকা</type>
+			<type type="stroke" key="collation" draft="contributed">স্ট্ৰোক শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type type="traditional" key="collation" draft="contributed">পৰম্পৰাগতভাবে শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">মেট্ৰিক</measurementSystemName>
+			<measurementSystemName type="US">ইউ.এছ.</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[অ আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ ং \u0981 ঃ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড {ড\u09BC}ড় ঢ {ঢ\u09BC}ঢ় ণ ত থ দ ধ ন প ফ ব ভ ম য {য\u09BC} ৰ ল ৱ শ ষ স হ া ি ী \u09C1 \u09C2 \u09C3 ে ৈ ো ৌ \u09CD]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D ৲]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[অ আ ই ঈ উ ঊ ঋ ৠ ঌ ৡ এ ঐ ও ঔ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড ঢ ণ ত ৎ থ দ ধ ন প ফ ব ভ ম য ৰ ল ৱ শ ষ স হ ঽ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">জানু</month>
+							<month type="2">ফেব্ৰু</month>
+							<month type="3">মাৰ্চ</month>
+							<month type="4">এপ্ৰিল</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুলাই</month>
+							<month type="8">আগ</month>
+							<month type="9">সেপ্ট</month>
+							<month type="10">অক্টো</month>
+							<month type="11">নভে</month>
+							<month type="12">ডিসে</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">জানুৱাৰী</month>
+							<month type="2">ফেব্ৰুৱাৰী</month>
+							<month type="3">মাৰ্চ</month>
+							<month type="4">এপ্ৰিল</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুলাই</month>
+							<month type="8">আগষ্ট</month>
+							<month type="9">ছেপ্তেম্বৰ</month>
+							<month type="10">অক্টোবৰ</month>
+							<month type="11">নৱেম্বৰ</month>
+							<month type="12">ডিচেম্বৰ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ৰবি</day>
+							<day type="mon">সোম</day>
+							<day type="tue">মঙ্গল</day>
+							<day type="wed">বুধ</day>
+							<day type="thu">বৃহষ্পতি</day>
+							<day type="fri">শুক্ৰ</day>
+							<day type="sat">শনি</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">দেওবাৰ</day>
+							<day type="mon">সোমবাৰ</day>
+							<day type="tue">মঙ্গলবাৰ</day>
+							<day type="wed">বুধবাৰ</day>
+							<day type="thu">বৃহষ্পতিবাৰ</day>
+							<day type="fri">শুক্ৰবাৰ</day>
+							<day type="sat">শনিবাৰ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1">প্ৰথম প্ৰহৰ</quarter>
+							<quarter type="2">দ্বিতীয় প্ৰহৰ</quarter>
+							<quarter type="3">তৃতীয় প্ৰহৰ</quarter>
+							<quarter type="4">চতুৰ্থ প্ৰহৰ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">পূৰ্বাহ্ণ</dayPeriod>
+							<dayPeriod type="pm">অপৰাহ্ণ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd-MM-yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d-M-yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm. a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<fields>
+					<field type="era">
+						<displayName>যুগ</displayName>
+					</field>
+					<field type="year">
+						<displayName>বছৰ</displayName>
+					</field>
+					<field type="month">
+						<displayName>মাহ</displayName>
+					</field>
+					<field type="week">
+						<displayName>সপ্তাহ</displayName>
+					</field>
+					<field type="day">
+						<displayName>দিন</displayName>
+						<relative type="-2" draft="unconfirmed">পৰহি</relative>
+						<relative type="-1">কালি</relative>
+						<relative type="1">কাইলৈ</relative>
+						<relative type="2">পৰহিলৈ</relative>
+					</field>
+					<field type="hour">
+						<displayName>ঘণ্টা</displayName>
+					</field>
+					<field type="minute">
+						<displayName>মিনিট</displayName>
+					</field>
+					<field type="second">
+						<displayName>ছেকেণ্ড</displayName>
+					</field>
+					<field type="zone">
+						<displayName>ক্ষেত্ৰ</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>এলাহাৱাদ</exemplarCity>
+			</zone>
+			<metazone type="India">
+				<long>
+					<standard>ভাৰতীয় সময়</standard>
+				</long>
+				<short>
+					<standard>ভা. স.</standard>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>beng</native>
+		</otherNumberingSystems>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤ #,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>
+

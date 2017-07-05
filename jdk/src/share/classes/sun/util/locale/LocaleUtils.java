@@ -196,7 +196,7 @@ public final class LocaleUtils {
         return isAlpha(c) || isNumeric(c);
     }
 
-    static boolean isAlphaNumericString(String s) {
+    public static boolean isAlphaNumericString(String s) {
         int len = s.length();
         for (int i = 0; i < len; i++) {
             if (!isAlphaNumeric(s.charAt(i))) {

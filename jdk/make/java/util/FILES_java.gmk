@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ FILES_java = \
         sun/util/resources/LocaleNamesBundle.java \
         sun/util/resources/TimeZoneNamesBundle.java \
         sun/util/resources/TimeZoneNames.java \
-        sun/util/resources/TimeZoneNames_de.java \
-        sun/util/resources/TimeZoneNames_en.java \
-        sun/util/resources/TimeZoneNames_en_CA.java \
-        sun/util/resources/TimeZoneNames_en_GB.java \
-        sun/util/resources/TimeZoneNames_en_IE.java \
-        sun/util/resources/TimeZoneNames_es.java \
-        sun/util/resources/TimeZoneNames_fr.java \
-        sun/util/resources/TimeZoneNames_it.java \
-        sun/util/resources/TimeZoneNames_pt_BR.java \
-        sun/util/resources/TimeZoneNames_sv.java
+        sun/util/resources/de/TimeZoneNames_de.java \
+        sun/util/resources/en/TimeZoneNames_en.java \
+        sun/util/resources/en/TimeZoneNames_en_CA.java \
+        sun/util/resources/en/TimeZoneNames_en_GB.java \
+        sun/util/resources/en/TimeZoneNames_en_IE.java \
+        sun/util/resources/es/TimeZoneNames_es.java \
+        sun/util/resources/fr/TimeZoneNames_fr.java \
+        sun/util/resources/it/TimeZoneNames_it.java \
+        sun/util/resources/pt/TimeZoneNames_pt_BR.java \
+        sun/util/resources/sv/TimeZoneNames_sv.java

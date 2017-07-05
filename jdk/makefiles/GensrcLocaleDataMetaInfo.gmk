@@ -47,50 +47,60 @@ NEW_RESOURCES:=$(filter-out $(PREV_LOCALE_RESOURCES),$(LOCALE_RESOURCES))
 
 ifneq (,$(MISSING_RESOURCES)$(NEW_RESOURCES))
     # There is a difference in the number of supported resources. Trigger a regeneration.
-    $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java)
+    $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java)
 endif
 
 # The non-euro zone locales have to be separated from the euro-zone locales.
 NON_EURO_LOCALES:=ar% hi% iw% ja% ko% th% vi% zh%
 
-# This macro creates a sed expression that substitues for example:
-# #FormatData_EuroLocales# with: be be_BY bg bg_BG ca ca_ES... and some more.
-CAPTURE_LOCALE='s/$$(HASH)$1_$2EuroLocales$$(HASH)/ $$($3 $(NON_EURO_LOCALES),$$(filter-out $1,$$(subst $1_,,$$(filter $1_%,$(LOCALE_RESOURCES)))))/g'
+# ja-JP-JP and th-TH-TH need to be manually added, as they don't have any resource files.
+ALL_NON_EURO_LOCALES:=ja-JP-JP th-TH-TH
 
 SED_ARGS:=-e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
+
+# This macro creates a sed expression that substitues for example:
+# #FormatData_EuroLocales# with: be be_BY bg bg_BG ca ca_ES... and some more.
+define CaptureLocale
+    $1_LOCALES := $$(subst _,-,$$(filter-out $1,$$(subst $1_,,$$(filter $1_%,$(LOCALE_RESOURCES)))))
+    $1_EURO_LOCALES := $$(filter-out $(NON_EURO_LOCALES),$$($1_LOCALES))
+    $1_NON_EURO_LOCALES := $$(filter $(NON_EURO_LOCALES),$$($1_LOCALES))
+
+    ALL_EURO_LOCALES += $$($1_EURO_LOCALES)
+    ALL_NON_EURO_LOCALES += $$($1_NON_EURO_LOCALES)
+
+    SED_ARGS+= -e 's/$$(HASH)$1_EuroLocales$$(HASH)/ $$($1_EURO_LOCALES)/g'
+    SED_ARGS+= -e 's/$$(HASH)$1_NonEuroLocales$$(HASH)/ $$($1_NON_EURO_LOCALES)/g'
+endef
+
 #sun.text.resources.FormatData
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,FormatData,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,FormatData,Non,filter))
+$(eval $(call CaptureLocale,FormatData))
 
 #sun.text.resources.CollationData
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CollationData,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CollationData,Non,filter))
+$(eval $(call CaptureLocale,CollationData))
 
 #sun.util.resources.TimeZoneNames
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,TimeZoneNames,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,TimeZoneNames,Non,filter))
+$(eval $(call CaptureLocale,TimeZoneNames))
 
 #sun.util.resources.LocaleNames
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,LocaleNames,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,LocaleNames,Non,filter))
+$(eval $(call CaptureLocale,LocaleNames))
 
 #sun.util.resources.CurrencyNames
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CurrencyNames,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CurrencyNames,Non,filter))
+$(eval $(call CaptureLocale,CurrencyNames))
 
 #sun.util.resources.CalendarData
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CalendarData,,filter-out))
-$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CalendarData,Non,filter))
+$(eval $(call CaptureLocale,CalendarData))
 
-$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java: \
-		$(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template
+SED_ARGS+= -e 's/$(HASH)AvailableLocales_EuroLocales$(HASH)/$(sort $(ALL_EURO_LOCALES))/g'
+SED_ARGS+= -e 's/$(HASH)AvailableLocales_NonEuroLocales$(HASH)/$(sort $(ALL_NON_EURO_LOCALES))/g'
+
+$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java: \
+		$(JDK_TOPDIR)/src/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating sun/util/LocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
-	$(SED) $(SED_ARGS) $(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template \
-		> $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java
+	$(SED) $(SED_ARGS) $< > $@
 
-GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java
+GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java
 
 ###
 

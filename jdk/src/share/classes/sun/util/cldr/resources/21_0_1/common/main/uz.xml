@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5912 $"/>
+		<generation date="$Date: 2011-06-20 01:53:49 +0900 (Mon, 20 Jun 2011) $"/>
+		<language type="uz"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">Арабча</language>
+			<language type="de" draft="unconfirmed">Олмонча</language>
+			<language type="en" draft="unconfirmed">Инглизча</language>
+			<language type="es" draft="unconfirmed">Испанча</language>
+			<language type="fr" draft="unconfirmed">Французча</language>
+			<language type="hi" draft="unconfirmed">Ҳиндча</language>
+			<language type="it" draft="unconfirmed">Италянча</language>
+			<language type="ja" draft="unconfirmed">Японча</language>
+			<language type="pt" draft="unconfirmed">Португалча</language>
+			<language type="ru" draft="unconfirmed">Русча</language>
+			<language type="uz">Ўзбек</language>
+			<language type="zh" draft="unconfirmed">Хитойча</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">Араб</script>
+			<script type="Cyrl" draft="unconfirmed">Кирил</script>
+			<script type="Latn" draft="unconfirmed">Лотин</script>
+		</scripts>
+		<territories>
+			<territory type="AF" draft="unconfirmed">Афғонистон</territory>
+			<territory type="BR" draft="unconfirmed">Бразилия</territory>
+			<territory type="CN" draft="unconfirmed">Хитой</territory>
+			<territory type="DE" draft="unconfirmed">Олмония</territory>
+			<territory type="FR" draft="unconfirmed">Франция</territory>
+			<territory type="GB" draft="unconfirmed">Бирлашган Қироллик</territory>
+			<territory type="IN" draft="unconfirmed">Ҳиндистон</territory>
+			<territory type="IT" draft="unconfirmed">Италия</territory>
+			<territory type="JP" draft="unconfirmed">Япония</territory>
+			<territory type="RU" draft="unconfirmed">Россия</territory>
+			<territory type="US" draft="unconfirmed">Қўшма Штатлар</territory>
+			<territory type="UZ">Ўзбекистон</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а б в г ғ д е ё ж з и й к қ л м н о п р с т у ў ф х ҳ ч ш ъ э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ц щ ы ь]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[А Б В Г Ғ Д Е Ж З И Й К Қ Л М Н О П Р С Т У Ў Ф Х Ҳ Ч Ш Ъ Э Ю Я]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Янв</month>
+							<month type="2">Фев</month>
+							<month type="3">Мар</month>
+							<month type="4">Апр</month>
+							<month type="5">Май</month>
+							<month type="6">Июн</month>
+							<month type="7">Июл</month>
+							<month type="8">Авг</month>
+							<month type="9">Сен</month>
+							<month type="10">Окт</month>
+							<month type="11">Ноя</month>
+							<month type="12">Дек</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Январ</month>
+							<month type="2">Феврал</month>
+							<month type="3">Март</month>
+							<month type="4">Апрел</month>
+							<month type="5">Май</month>
+							<month type="6">Июн</month>
+							<month type="7">Июл</month>
+							<month type="8">Август</month>
+							<month type="9">Сентябр</month>
+							<month type="10">Октябр</month>
+							<month type="11">Ноябр</month>
+							<month type="12">Декабр</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Якш</day>
+							<day type="mon">Душ</day>
+							<day type="tue">Сеш</day>
+							<day type="wed">Чор</day>
+							<day type="thu">Пай</day>
+							<day type="fri">Жум</day>
+							<day type="sat">Шан</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">якшанба</day>
+							<day type="mon">душанба</day>
+							<day type="tue">сешанба</day>
+							<day type="wed">чоршанба</day>
+							<day type="thu">пайшанба</day>
+							<day type="fri">жума</day>
+							<day type="sat">шанба</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">Я</day>
+							<day type="mon">Д</day>
+							<day type="tue">С</day>
+							<day type="wed">Ч</day>
+							<day type="thu">П</day>
+							<day type="fri">Ж</day>
+							<day type="sat">Ш</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, y MMMM dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Муҳаррам</month>
+							<month type="2" draft="unconfirmed">Сафар</month>
+							<month type="3" draft="unconfirmed">Рабиул-аввал</month>
+							<month type="4" draft="unconfirmed">Рабиул-охир</month>
+							<month type="5" draft="unconfirmed">Жумодиул-уло</month>
+							<month type="6" draft="unconfirmed">Жумодиул-ухро</month>
+							<month type="7" draft="unconfirmed">Ражаб</month>
+							<month type="8" draft="unconfirmed">Шаъбон</month>
+							<month type="9" draft="unconfirmed">Рамазон</month>
+							<month type="10" draft="unconfirmed">Шаввол</month>
+							<month type="11" draft="unconfirmed">Зил-қаъда</month>
+							<month type="12" draft="unconfirmed">Зил-ҳижжа</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+		</symbols>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">Бразил реали</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">Хитой юани</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">Евро</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">Инглиз фунт стерлинги</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">Ҳинд рупияси</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">Япон йенаси</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">Рус рубли</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">АҚШ доллари</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">Ўзбекистон сўм</displayName>
+				<symbol draft="unconfirmed">сўм</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

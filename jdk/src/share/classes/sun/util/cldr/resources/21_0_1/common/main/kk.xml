@@ -1,0 +1,2090 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="kk"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab" draft="unconfirmed">Абхаз</language>
+			<language type="af" draft="unconfirmed">Африкаан</language>
+			<language type="am" draft="unconfirmed">амхар</language>
+			<language type="ar" draft="unconfirmed">Араб</language>
+			<language type="as" draft="unconfirmed">ассам</language>
+			<language type="ay" draft="unconfirmed">Аймара</language>
+			<language type="az" draft="unconfirmed">Азербайжан</language>
+			<language type="be" draft="unconfirmed">беларус</language>
+			<language type="bg" draft="unconfirmed">болгар</language>
+			<language type="bh" draft="unconfirmed">бихари</language>
+			<language type="bn" draft="unconfirmed">бенгал</language>
+			<language type="bo" draft="unconfirmed">тибет тілі</language>
+			<language type="br" draft="unconfirmed">брит</language>
+			<language type="bs" draft="unconfirmed">босния</language>
+			<language type="ca" draft="unconfirmed">каталан</language>
+			<language type="cs" draft="unconfirmed">чех</language>
+			<language type="cy" draft="unconfirmed">валлий</language>
+			<language type="da" draft="unconfirmed">дат</language>
+			<language type="de">неміс тілі</language>
+			<language type="de_AT">австриялық неміс тілі</language>
+			<language type="de_CH">швейцариялық ұлы неміс тілі</language>
+			<language type="dv" draft="unconfirmed">Мальдив</language>
+			<language type="dz" draft="unconfirmed">дзонг-кэ</language>
+			<language type="efi" draft="unconfirmed">эфик</language>
+			<language type="el" draft="unconfirmed">грек</language>
+			<language type="en">ағылшын тілі</language>
+			<language type="en_AU">австралиялық ағылшын тілі</language>
+			<language type="en_CA">канадалық ағылшын тілі</language>
+			<language type="en_GB">британиялық ағылшын тілі</language>
+			<language type="en_US">АҚШ ағылшын тілі</language>
+			<language type="eo" draft="unconfirmed">эсперанто</language>
+			<language type="es">испан тілі</language>
+			<language type="es_419">Латин Америкалық испан тілі</language>
+			<language type="es_ES">ибериялық испан тілі</language>
+			<language type="et" draft="unconfirmed">эстон</language>
+			<language type="eu" draft="unconfirmed">баск</language>
+			<language type="fa" draft="unconfirmed">парсы</language>
+			<language type="fi" draft="unconfirmed">фин</language>
+			<language type="fil" draft="unconfirmed">филиппино</language>
+			<language type="fj" draft="unconfirmed">Фиджий</language>
+			<language type="fo" draft="unconfirmed">фарер</language>
+			<language type="fr">француз тілі</language>
+			<language type="fr_CA">канадалық француз тілі</language>
+			<language type="fr_CH">швейцариялық француз тілі</language>
+			<language type="fy" draft="unconfirmed">Фрис</language>
+			<language type="ga" draft="unconfirmed">Ирланд тілі</language>
+			<language type="gd" draft="unconfirmed">Солтүстік Шотландия</language>
+			<language type="gl" draft="unconfirmed">Гал</language>
+			<language type="gn" draft="unconfirmed">гуарани</language>
+			<language type="gu" draft="unconfirmed">гуджарати</language>
+			<language type="ha" draft="unconfirmed">Хауса</language>
+			<language type="haw" draft="unconfirmed">Гавай</language>
+			<language type="he" draft="unconfirmed">иврит</language>
+			<language type="hi" draft="unconfirmed">хинди</language>
+			<language type="hr" draft="unconfirmed">хорват</language>
+			<language type="ht" draft="unconfirmed">Гаит</language>
+			<language type="hu" draft="unconfirmed">мадьяр</language>
+			<language type="hy" draft="unconfirmed">армян</language>
+			<language type="ia" draft="unconfirmed">интерлингва</language>
+			<language type="id" draft="unconfirmed">индонезия</language>
+			<language type="ie" draft="unconfirmed">интерлингве</language>
+			<language type="ig" draft="unconfirmed">Игбо</language>
+			<language type="is" draft="unconfirmed">исланд</language>
+			<language type="it">итальян тілі</language>
+			<language type="ja">жапон тілі</language>
+			<language type="jv" draft="unconfirmed">ява</language>
+			<language type="ka" draft="unconfirmed">грузин</language>
+			<language type="kk">қазақ тілі</language>
+			<language type="km" draft="unconfirmed">камбоджия</language>
+			<language type="kn" draft="unconfirmed">каннада</language>
+			<language type="ko" draft="unconfirmed">кәріс</language>
+			<language type="ks" draft="unconfirmed">Кашмир</language>
+			<language type="ku" draft="unconfirmed">күрд</language>
+			<language type="ky" draft="unconfirmed">қырғыз</language>
+			<language type="la" draft="unconfirmed">латын</language>
+			<language type="lb" draft="unconfirmed">Люксембург</language>
+			<language type="ln" draft="unconfirmed">лингала</language>
+			<language type="lo" draft="unconfirmed">лаос</language>
+			<language type="lt" draft="unconfirmed">литва</language>
+			<language type="lv" draft="unconfirmed">латыш</language>
+			<language type="mg" draft="unconfirmed">малагаси</language>
+			<language type="mi" draft="unconfirmed">маори</language>
+			<language type="mk" draft="unconfirmed">македон</language>
+			<language type="ml" draft="unconfirmed">малайялам</language>
+			<language type="mn" draft="unconfirmed">моңғол</language>
+			<language type="mr" draft="unconfirmed">маратхи</language>
+			<language type="ms" draft="unconfirmed">малай</language>
+			<language type="mt" draft="unconfirmed">мальта</language>
+			<language type="my" draft="unconfirmed">Бирман</language>
+			<language type="nd" draft="unconfirmed">Солтүстік ндебел</language>
+			<language type="ne" draft="unconfirmed">непал</language>
+			<language type="nl" draft="unconfirmed">голланд</language>
+			<language type="nl_BE" draft="unconfirmed">флемиш</language>
+			<language type="nn" draft="unconfirmed">Норвегиялық нинорск</language>
+			<language type="no" draft="unconfirmed">норвег</language>
+			<language type="nso" draft="unconfirmed">Солтүстік сотхо</language>
+			<language type="ny" draft="unconfirmed">ньянджа</language>
+			<language type="oc" draft="unconfirmed">окситан</language>
+			<language type="or" draft="unconfirmed">ория</language>
+			<language type="os" draft="unconfirmed">осетин</language>
+			<language type="pa" draft="unconfirmed">панджаб</language>
+			<language type="pl" draft="unconfirmed">поляк</language>
+			<language type="ps" draft="unconfirmed">пашто</language>
+			<language type="pt">португал тілі</language>
+			<language type="pt_BR">бразилиялық португал тілі</language>
+			<language type="pt_PT">ибериялық португал тілі</language>
+			<language type="qu" draft="unconfirmed">кечуа</language>
+			<language type="rm" draft="unconfirmed">ретороман</language>
+			<language type="rn" draft="unconfirmed">рунди</language>
+			<language type="ro" draft="unconfirmed">румын</language>
+			<language type="ru">орыс тілі</language>
+			<language type="rw" draft="unconfirmed">киньяруанда</language>
+			<language type="sa" draft="unconfirmed">санскрит</language>
+			<language type="sah" draft="unconfirmed">якут</language>
+			<language type="sd" draft="unconfirmed">синдхи</language>
+			<language type="se" draft="unconfirmed">Солтүстік саам</language>
+			<language type="sg" draft="unconfirmed">санго</language>
+			<language type="sh" draft="unconfirmed">сербхорват</language>
+			<language type="si" draft="unconfirmed">сингал</language>
+			<language type="sk" draft="unconfirmed">словак</language>
+			<language type="sl" draft="unconfirmed">словен</language>
+			<language type="so" draft="unconfirmed">сомали</language>
+			<language type="sq" draft="unconfirmed">албан</language>
+			<language type="sr" draft="unconfirmed">серб</language>
+			<language type="st" draft="unconfirmed">сесото</language>
+			<language type="su" draft="unconfirmed">судан</language>
+			<language type="sv" draft="unconfirmed">швед</language>
+			<language type="sw" draft="unconfirmed">суахили</language>
+			<language type="ta" draft="unconfirmed">тамил</language>
+			<language type="te" draft="unconfirmed">телугу</language>
+			<language type="tg" draft="unconfirmed">Тәжік</language>
+			<language type="th" draft="unconfirmed">тай</language>
+			<language type="ti" draft="unconfirmed">тигринья</language>
+			<language type="tk" draft="unconfirmed">түркмен</language>
+			<language type="tlh" draft="unconfirmed">клингон</language>
+			<language type="tr" draft="unconfirmed">Түрік</language>
+			<language type="tw" draft="unconfirmed">тви</language>
+			<language type="ug" draft="unconfirmed">ұйғыр</language>
+			<language type="uk" draft="unconfirmed">украин</language>
+			<language type="und">белгісіз тіл</language>
+			<language type="ur" draft="unconfirmed">урду</language>
+			<language type="uz" draft="unconfirmed">өзбек</language>
+			<language type="vi" draft="unconfirmed">вьетнам</language>
+			<language type="xh" draft="unconfirmed">хоса</language>
+			<language type="yi" draft="unconfirmed">идиш</language>
+			<language type="yo" draft="unconfirmed">Иоруба</language>
+			<language type="zh">қытай тілі</language>
+			<language type="zh_Hans">қарапайым қытай тілі</language>
+			<language type="zh_Hant">дәстүрлік қытай тілі</language>
+			<language type="zu" draft="unconfirmed">зулус</language>
+		</languages>
+		<scripts>
+			<script type="Arab">араб жазылуы</script>
+			<script type="Armn" draft="unconfirmed">армян жазуы</script>
+			<script type="Beng" draft="unconfirmed">бенгал</script>
+			<script type="Cyrl">кириллица</script>
+			<script type="Deva" draft="unconfirmed">Деванагари жазуы</script>
+			<script type="Ethi" draft="unconfirmed">Эфиопия жазуы</script>
+			<script type="Geor" draft="unconfirmed">Грузин жазуы</script>
+			<script type="Grek" draft="unconfirmed">Грек жазуы</script>
+			<script type="Gujr" draft="unconfirmed">Гуджарати жазуы</script>
+			<script type="Hans">қарапайым қытай иероглифы</script>
+			<script type="Hant">дәстүрлік қытай иероглифы</script>
+			<script type="Hebr" draft="unconfirmed">Иврит</script>
+			<script type="Jpan" draft="unconfirmed">жапон</script>
+			<script type="Kana" draft="unconfirmed">катакана</script>
+			<script type="Khmr" draft="unconfirmed">Кхмер</script>
+			<script type="Knda" draft="unconfirmed">Каннада</script>
+			<script type="Kore" draft="unconfirmed">Корей жазуы</script>
+			<script type="Laoo" draft="unconfirmed">Лаос жазуы</script>
+			<script type="Latn">латын жазылуы</script>
+			<script type="Mlym" draft="unconfirmed">Малаял</script>
+			<script type="Mymr" draft="unconfirmed">Маянмар</script>
+			<script type="Orya" draft="unconfirmed">Ория</script>
+			<script type="Sinh" draft="unconfirmed">Сингаль</script>
+			<script type="Taml" draft="unconfirmed">Тамиль</script>
+			<script type="Telu" draft="unconfirmed">Телугу</script>
+			<script type="Thaa" draft="unconfirmed">Таана</script>
+			<script type="Thai" draft="unconfirmed">Тай</script>
+			<script type="Zsym" draft="unconfirmed">Символдар</script>
+			<script type="Zxxx">жазылуысыз</script>
+			<script type="Zzzz">белгісіз жазылуы</script>
+		</scripts>
+		<territories>
+			<territory type="001">Әлем</territory>
+			<territory type="002">Африка</territory>
+			<territory type="003">Солтүстік Америка</territory>
+			<territory type="005">Оңтүстік Америка</territory>
+			<territory type="009">Океания</territory>
+			<territory type="011">Батыс Африка</territory>
+			<territory type="013">Орталық Америка</territory>
+			<territory type="014">Шығыс Африка</territory>
+			<territory type="015">Солтүстік Африка</territory>
+			<territory type="017">Орталық Африка</territory>
+			<territory type="018">Оңтүстік Африка</territory>
+			<territory type="019">Америкалар</territory>
+			<territory type="021">Солтүстік Америка (АҚШ, Канада, Гренландия және Бермуд аралдары)</territory>
+			<territory type="029">Кариб</territory>
+			<territory type="030">Шығыс Азия</territory>
+			<territory type="034">Оңтүстік Азия</territory>
+			<territory type="035">Оңтүстік-шығыс Азия</territory>
+			<territory type="039">Оңтүстік Еуропа</territory>
+			<territory type="053">Австралия және Жаңа Зеландия</territory>
+			<territory type="054">Меланезия</territory>
+			<territory type="057">Микронезия регионы</territory>
+			<territory type="061">Полинезия</territory>
+			<territory type="142">Азия</territory>
+			<territory type="143">Орталық Азия</territory>
+			<territory type="145">Батыс Азия</territory>
+			<territory type="150">Еуропа</territory>
+			<territory type="151">Шығыс Еуропа</territory>
+			<territory type="154">Солтүстік Еуропа</territory>
+			<territory type="155">Батыс Еуропа</territory>
+			<territory type="419">Латын Америкасы</territory>
+			<territory type="AD">Андорра</territory>
+			<territory type="AE">Біріккен Араб Эмираттары</territory>
+			<territory type="AF" draft="unconfirmed">Ауғанстан</territory>
+			<territory type="AL" draft="unconfirmed">Албания</territory>
+			<territory type="AM" draft="unconfirmed">Армения</territory>
+			<territory type="AO" draft="unconfirmed">Ангола</territory>
+			<territory type="AQ" draft="unconfirmed">Антарктика</territory>
+			<territory type="AR" draft="unconfirmed">Аргентина</territory>
+			<territory type="AT">Австрия</territory>
+			<territory type="AU">Австралия</territory>
+			<territory type="AW" draft="unconfirmed">Аруба</territory>
+			<territory type="AZ">Әзербайжан</territory>
+			<territory type="BA" draft="unconfirmed">Босния және Герцеговина</territory>
+			<territory type="BB" draft="unconfirmed">Барбадос</territory>
+			<territory type="BD" draft="unconfirmed">Бангладеш</territory>
+			<territory type="BE">Бельгия</territory>
+			<territory type="BG">Болгария</territory>
+			<territory type="BH">Бахрейн</territory>
+			<territory type="BI">Бурунди</territory>
+			<territory type="BJ">Бенин</territory>
+			<territory type="BO">Боливия</territory>
+			<territory type="BR">Бразилия</territory>
+			<territory type="BT">Бутан</territory>
+			<territory type="BW">Ботсвана</territory>
+			<territory type="BY">Беларусь</territory>
+			<territory type="BZ">Белиз</territory>
+			<territory type="CA">Канада</territory>
+			<territory type="CH">Швейцария</territory>
+			<territory type="CL">Чили</territory>
+			<territory type="CM">Камерун</territory>
+			<territory type="CN">Қытай</territory>
+			<territory type="CO">Колумбия</territory>
+			<territory type="DE">Алмания</territory>
+			<territory type="DK">Дания</territory>
+			<territory type="ES">Испания</territory>
+			<territory type="FI">Финляндия</territory>
+			<territory type="FR">Франция</territory>
+			<territory type="GB">Ұлыбритания</territory>
+			<territory type="GR">Грекия</territory>
+			<territory type="HK">Гонконг (арнайы әкімшілік аймақ)</territory>
+			<territory type="ID">Индонезия</territory>
+			<territory type="IE">Ирландия</territory>
+			<territory type="IN">Индия</territory>
+			<territory type="IT">Италия</territory>
+			<territory type="JP">Жапония</territory>
+			<territory type="KR">Солтүстік Корея</territory>
+			<territory type="KZ">Қазақстан</territory>
+			<territory type="MX">Мексика</territory>
+			<territory type="NL">Голландия</territory>
+			<territory type="NO">Норвегия</territory>
+			<territory type="PL">Польша</territory>
+			<territory type="PT">Португалия</territory>
+			<territory type="RU">Ресей</territory>
+			<territory type="SA">Сауд Арабиясы</territory>
+			<territory type="SE">Швеция</territory>
+			<territory type="TH">Тайланд</territory>
+			<territory type="TO" draft="unconfirmed">Тонга</territory>
+			<territory type="TR">Түркия</territory>
+			<territory type="TW">Тайвань</territory>
+			<territory type="US">АҚШ</territory>
+			<territory type="ZA">Оңтүстік Африка республикасы</territory>
+			<territory type="ZZ">Белгісіз аймақ</territory>
+		</territories>
+		<variants>
+			<variant type="AREVELA" draft="unconfirmed">Шығыс-армян</variant>
+			<variant type="AREVMDA" draft="unconfirmed">Батыс-армян</variant>
+			<variant type="SAAHO" draft="unconfirmed">Сахо</variant>
+			<variant type="WADEGILE" draft="unconfirmed">Уейд-Джайлс жүйесі</variant>
+		</variants>
+		<keys>
+			<key type="calendar" draft="unconfirmed">Күнтізбе</key>
+			<key type="collation" draft="unconfirmed">Салыстыру</key>
+			<key type="currency" draft="unconfirmed">Валюта</key>
+		</keys>
+		<types>
+			<type type="chinese" key="calendar" draft="unconfirmed">Қытай күнтізбесі</type>
+			<type type="gregorian" key="calendar">Грегориандық күнтізбе</type>
+			<type type="indian" key="calendar" draft="unconfirmed">Үндістанның ұлттық күнтізбесі</type>
+			<type type="islamic" key="calendar" draft="unconfirmed">Ислам күнтізбесі</type>
+			<type type="islamic-civil" key="calendar" draft="unconfirmed">Ислам азаматтық күнтізбесі</type>
+			<type type="japanese" key="calendar" draft="unconfirmed">Жапон күнтізбесі</type>
+			<type type="latn" key="numbers">Батыс сандары</type>
+			<type type="persian" key="calendar" draft="unconfirmed">Парсы күнтізбесі</type>
+			<type type="search" key="collation" draft="unconfirmed">іздеу</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">метрикалық жүйе</measurementSystemName>
+			<measurementSystemName type="UK">ҰБ</measurementSystemName>
+			<measurementSystemName type="US">АҚШ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Тіл: {0}</codePattern>
+			<codePattern type="script">Жазылуы: {0}</codePattern>
+			<codePattern type="territory">Аймақ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а ә б в г ғ д е ё ж з и й к қ л м н ң о ө п р с т у ұ ү ф х һ ц ч ш щ ъ ы і ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Ә Б В Г Ғ Д Е Ё Ж З И Й К Қ Л М Н Ң О Ө П Р С Т У Ұ Ү Ф Х Һ Ц Ч Ш Щ Ъ Ы І Ь Э Ю Я]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">1</month>
+							<month type="2" draft="unconfirmed">2</month>
+							<month type="3" draft="unconfirmed">3</month>
+							<month type="4" draft="unconfirmed">4</month>
+							<month type="5" draft="unconfirmed">5</month>
+							<month type="6" draft="unconfirmed">6</month>
+							<month type="7" draft="unconfirmed">7</month>
+							<month type="8" draft="unconfirmed">8</month>
+							<month type="9" draft="unconfirmed">9</month>
+							<month type="10" draft="unconfirmed">10</month>
+							<month type="11" draft="unconfirmed">11</month>
+							<month type="12" draft="unconfirmed">12</month>
+							<month type="13" draft="unconfirmed">13</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">қаң.</month>
+							<month type="2">ақп.</month>
+							<month type="3">нау.</month>
+							<month type="4">сәу.</month>
+							<month type="5">мам.</month>
+							<month type="6">мау.</month>
+							<month type="7">шіл.</month>
+							<month type="8">там.</month>
+							<month type="9">қыр.</month>
+							<month type="10">қаз.</month>
+							<month type="11">қар.</month>
+							<month type="12">желт.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">қаңтар</month>
+							<month type="2">ақпан</month>
+							<month type="3">наурыз</month>
+							<month type="4">сәуір</month>
+							<month type="5">мамыр</month>
+							<month type="6">маусым</month>
+							<month type="7">шілде</month>
+							<month type="8">тамыз</month>
+							<month type="9">қыркүйек</month>
+							<month type="10">қазан</month>
+							<month type="11">қараша</month>
+							<month type="12">желтоқсан</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">қаң.</month>
+							<month type="2" draft="unconfirmed">ақп.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">қаңтар</month>
+							<month type="2" draft="unconfirmed">Ақпан</month>
+							<month type="12" draft="unconfirmed">желтоқсан</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">жс.</day>
+							<day type="mon">дс.</day>
+							<day type="tue">сс.</day>
+							<day type="wed">ср.</day>
+							<day type="thu">бс.</day>
+							<day type="fri">жм.</day>
+							<day type="sat">сһ.</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">1</day>
+							<day type="wed" draft="unconfirmed">4</day>
+							<day type="thu" draft="unconfirmed">5</day>
+							<day type="fri" draft="unconfirmed">6</day>
+							<day type="sat" draft="unconfirmed">7</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">жексені</day>
+							<day type="mon">дуйсенбі</day>
+							<day type="tue">сейсенбі</day>
+							<day type="wed">сәренбі</day>
+							<day type="thu">бейсенбі</day>
+							<day type="fri">жұма</day>
+							<day type="sat">сенбі</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">жс.</day>
+							<day type="mon" draft="unconfirmed">дс.</day>
+							<day type="tue" draft="unconfirmed">сс.</day>
+							<day type="thu" draft="unconfirmed">бс.</day>
+							<day type="fri" draft="unconfirmed">жм.</day>
+							<day type="sat" draft="unconfirmed">сн.</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">жексенбі</day>
+							<day type="mon" draft="unconfirmed">дүйсенбі</day>
+							<day type="tue" draft="unconfirmed">сейсенбі</day>
+							<day type="wed" draft="unconfirmed">сәрсенбі</day>
+							<day type="fri" draft="unconfirmed">жұма</day>
+							<day type="sat" draft="unconfirmed">сенбі</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="narrow">
+							<quarter type="4" draft="unconfirmed">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="3" draft="unconfirmed">3-інші тоқсан</quarter>
+							<quarter type="4" draft="unconfirmed">4-інші тоқсан</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="4" draft="unconfirmed">4-інші тоқсан</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y 'ж'.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y 'ж'.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd.MM.yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="h">h-h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH-HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="h">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="h">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="h">h-h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH-HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">dd.MM - dd.MM</greatestDifference>
+							<greatestDifference id="M">dd.MM - dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, dd.MM - E, dd.MM</greatestDifference>
+							<greatestDifference id="M">E, dd.MM - E, dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d-d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d - E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM - E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM.yy - MM.yy</greatestDifference>
+							<greatestDifference id="y">MM.yy - MM.yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">dd.MM.yy - dd.MM.yy</greatestDifference>
+							<greatestDifference id="M">dd.MM.yy - dd.MM.yy</greatestDifference>
+							<greatestDifference id="y">dd.MM.yy - dd.MM.yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, dd.MM.yy - E, dd.MM.yy</greatestDifference>
+							<greatestDifference id="M">E, dd.MM.yy - E, dd.MM.yy</greatestDifference>
+							<greatestDifference id="y">E, dd.MM.yy - E, dd.MM.yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM-MMM y 'ж'.</greatestDifference>
+							<greatestDifference id="y">MMM y 'ж'. - MMM y 'ж'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d-d MMM y 'ж'.</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM y 'ж'.</greatestDifference>
+							<greatestDifference id="y">d MMM y 'ж'. - d MMM y 'ж'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d - E, d MMM y 'ж'.</greatestDifference>
+							<greatestDifference id="M">E, d MMM - E, d MMM y 'ж'.</greatestDifference>
+							<greatestDifference id="y">E, d MMM y 'ж'. - E, d MMM y 'ж'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM - MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y - MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="year">
+						<displayName draft="unconfirmed">жыл</displayName>
+					</field>
+					<field type="month">
+						<displayName draft="unconfirmed">ай</displayName>
+					</field>
+					<field type="week">
+						<displayName draft="unconfirmed">апта</displayName>
+					</field>
+					<field type="day">
+						<displayName draft="unconfirmed">күн</displayName>
+						<relative type="-2" draft="unconfirmed">алдыңғы күні</relative>
+						<relative type="-1" draft="unconfirmed">кеше</relative>
+						<relative type="0" draft="unconfirmed">бүгін</relative>
+						<relative type="1" draft="unconfirmed">ертең</relative>
+						<relative type="2" draft="unconfirmed">арғы күні</relative>
+					</field>
+					<field type="weekday">
+						<displayName draft="unconfirmed">апта күні</displayName>
+					</field>
+					<field type="hour">
+						<displayName draft="unconfirmed">сағат</displayName>
+					</field>
+					<field type="minute">
+						<displayName draft="unconfirmed">минут</displayName>
+					</field>
+					<field type="second">
+						<displayName draft="unconfirmed">секунд</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat>{0} уақыт</regionFormat>
+			<fallbackRegionFormat>{1} Уақыт ({0})</fallbackRegionFormat>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Белгісіз</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity draft="unconfirmed">Андора</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">Дубай</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">Кабул</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">Антгуа</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">Ангилиа</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Тирана</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">Ереван</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">Курасао</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity draft="unconfirmed">Луанда</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="unconfirmed">Ротера</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity draft="unconfirmed">Палмер</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity draft="unconfirmed">Оңтүстік полюс</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">Сева</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="unconfirmed">Моусон</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="unconfirmed">Дэйвис</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="unconfirmed">Восток</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="unconfirmed">Кейси</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="unconfirmed">Дюмон-д'Юрвиль</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="unconfirmed">Мак Мердо</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">Рио Галлегос</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="unconfirmed">Мендоза</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="unconfirmed">Сан-Хуан</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="unconfirmed">Ушуаиа</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="unconfirmed">Ла Риоха</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="unconfirmed">Сан Луис</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="unconfirmed">Катамарка</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity draft="unconfirmed">Салта</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="unconfirmed">Жужуй</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">Тукуман</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">Кордоба</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="unconfirmed">Буэнос Айрес</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity draft="unconfirmed">Паго-Паго</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Вена</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">Перт</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="unconfirmed">Юкла</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="unconfirmed">Дарвин</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">Аделаида</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="unconfirmed">Брокен Хилл</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity draft="unconfirmed">Керри</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">Мельбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="unconfirmed">Хобарт</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity draft="unconfirmed">Линдеман</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Сидней</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="unconfirmed">Брисбен</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="unconfirmed">Лорд Хау, арал</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">Аруба</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">Баку</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity draft="unconfirmed">Сараево</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">Барбадос</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">Дакка</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Брюссель</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">Уадагуду</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">София</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">Бахрейн</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="unconfirmed">Бужумбура</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">Порто-Ново</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">Бермуды</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity draft="unconfirmed">Бруней</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity draft="unconfirmed">Ла-Пас</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">Эйрунепе</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="unconfirmed">Риу Бранку</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="unconfirmed">Порту-Велью</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="unconfirmed">Бао Виста</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">Манаус</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">Куяба</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">Сантарем</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="unconfirmed">Кампо Гранде</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">Белем</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">Арагуаина</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">Сан Паулу</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">Баия</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="unconfirmed">Форталеза</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">Масейо</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="unconfirmed">Ресифи</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="unconfirmed">Норонха</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">Нассау</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">Тимбу</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="unconfirmed">Габороне</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">Минск</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">Белиз</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">Досон</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">Уайтхорс</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">Инувик</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">Ванкувер</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">Досон Крик</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="unconfirmed">Йеллоунайф</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">Эдмонтон</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">Свифт Карент</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">Кембридж Бей</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">Регина</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">Виннипег</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">Резолют</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="unconfirmed">Рейни-Ривер</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">Ранкин-Инлет</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">Корал Харбор</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="unconfirmed">Тандер Бей</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="unconfirmed">Нипигон</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">Торонто</exemplarCity>
+			</zone>
+			<zone type="America/Montreal">
+				<exemplarCity draft="unconfirmed">Монреаль</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">Икалуит</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="unconfirmed">Пангниртанг</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">Монктон</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">Галифакс</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">Гус-Бей</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">Глейс-Бей</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">Бланк Саблон</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">Сент Джонс</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="unconfirmed">Кокос аралдары</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="unconfirmed">Киншаса</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="unconfirmed">Лубумбаши</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity draft="unconfirmed">Банги</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity draft="unconfirmed">Браззавил</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Цюрих</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">Абиджан</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity draft="unconfirmed">Раротонга</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity draft="unconfirmed">Дуала</exemplarCity>
+			</zone>
+			<zone type="Asia/Kashgar">
+				<exemplarCity draft="unconfirmed">Қашқар</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">Үрімші</exemplarCity>
+			</zone>
+			<zone type="Asia/Harbin">
+				<exemplarCity draft="unconfirmed">Харбин</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">Богота</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">Коста-Рика</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">Гавана</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">Никосиа</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Прага</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">Берлин</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">Джибути</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">Копенгаген</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">Доминика</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">Санто Доминго</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">Алжир</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">Галапагос</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">Таллин</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Каир</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity draft="unconfirmed">Эл-Аюн</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity draft="unconfirmed">Асмера</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Канар аралдары</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="unconfirmed">Сеута</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">Аддис Абеба</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">Хелсинки</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">Фиджи</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity draft="unconfirmed">Стенли</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="unconfirmed">Трук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="unconfirmed">Понапе</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="unconfirmed">Косрае</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">Фарер аралдары</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity draft="unconfirmed">Париж</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity draft="unconfirmed">Либревил</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">Гренада</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">Тбилиси</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">Кайенна</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">Аккра</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">Гибралтар</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">Туле</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">Скорсбиссун</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">Денмарксхавн</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity draft="unconfirmed">Банжул</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="unconfirmed">Конакри</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">Гваделупа</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity draft="unconfirmed">Малабо</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">Афины</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">Гватемала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">Гуам</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">Бисау</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="unconfirmed">Гайана</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">Гонконг</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">Тегусигальпа</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity draft="unconfirmed">Загреб</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">Порт-о-Пренс</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">Будапешт</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="unconfirmed">Жакарта</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="unconfirmed">Понтианак</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="unconfirmed">Макассар</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="unconfirmed">Жайпур</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<exemplarCity draft="unconfirmed">Дублин</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">Иерусалим</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">Мэн, арал</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">Колката</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity draft="unconfirmed">Чагос</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">Бағдат</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">Тегеран</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">Рейкьявик</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Рим</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">Джерси</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">Ямайка</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">Амман</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">Токио</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity draft="unconfirmed">Найроби</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">Бішкек</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">Пномпен</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity draft="unconfirmed">Эндербери</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="unconfirmed">Киритимати</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="unconfirmed">Тарава</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">Коморо</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">Сент Китс</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="unconfirmed">Пхеньян</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">Сеул</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity draft="unconfirmed">Кувейт</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">Кайман аралдары</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Ақтау</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>Орал</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Ақтөбе</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Қызылорда</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Алматы</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">Вьентьян</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity draft="unconfirmed">Бейрут</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">Сент Люсия</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity draft="unconfirmed">Вадуц</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity draft="unconfirmed">Коломбо</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity draft="unconfirmed">Монравия</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity draft="unconfirmed">Масеру</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">Вильнус</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">Люксембург</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">Рига</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">Триполи</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">Кассабланка</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">Монако</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">Кишинев</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity draft="unconfirmed">Подгорица</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity draft="unconfirmed">Антананариво</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="unconfirmed">Кваджалейн</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity draft="unconfirmed">Рангун</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Улан-Батор</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity draft="unconfirmed">Чойбалсан</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity draft="unconfirmed">Сайпан</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">Мартиника</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">Нуакшот</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">Монсеррат</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity draft="unconfirmed">Мальта</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">Маврикий</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">Мальдивы</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity draft="unconfirmed">Блантаир</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">Тихуана</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">Эрмосилло</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">Мазалтан</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">Чиуауа</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">Монтеррей</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">Мехико</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">Мерида</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">Канкун</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="unconfirmed">Кучинг</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity draft="unconfirmed">Мапуту</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">Виндхук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity draft="unconfirmed">Нумеа</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">Ниамей</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity draft="unconfirmed">Норфолк</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">Лагос</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">Манагуа</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">Амстердам</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity draft="unconfirmed">Осло</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">Катманду</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity draft="unconfirmed">Науру</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity draft="unconfirmed">Ниуэ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="unconfirmed">Чатем</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">Маскат</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">Панама</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">Лима</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">Маркиз аралдары</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="unconfirmed">Гамбье</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity draft="unconfirmed">Порт Морсби</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">Манила</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity draft="unconfirmed">Карачи</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">Варшава</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">Микелон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">Питкерн</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">Пуэрто-Рико</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">Газа</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">Азор аралдары</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="unconfirmed">Мадейра</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">Палау</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity draft="unconfirmed">Асунсион</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">Катар</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">Реюньон</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Бухарест</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">Белград</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">Калининград</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Мәскеу</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">Волгоград</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="unconfirmed">Самара</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Екатеринбург</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">Омск</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">Новосибирск</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">Красноярск</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">Иркутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">Якутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">Владивосток</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">Сахалин</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="unconfirmed">Магадан</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">Камчатка</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">Анадыр</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity draft="unconfirmed">Кигали</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">Эр-Рияд</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity draft="unconfirmed">Гвадалканал</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">Маэ</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">Хартум</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">Стокгольм</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Сингапур</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">Любляна</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity draft="unconfirmed">Лонгйир</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity draft="unconfirmed">Братислава</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity draft="unconfirmed">Фритаун</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">Сан-Марино</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity draft="unconfirmed">Дакар</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">Могадишо</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity draft="unconfirmed">Парамарибо</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">Сан-Томе</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">Сальвадор</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">Дамаск</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity draft="unconfirmed">Мбабане</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">Гранд Турк</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">Нджамена</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity draft="unconfirmed">Кергелен</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">Ломе</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">Бангкок</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">Душанбе</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity draft="unconfirmed">Факаофо</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity draft="unconfirmed">Дили</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">Азхабат</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">Тунис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity draft="unconfirmed">Тонгатапу</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Стамбул</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity draft="unconfirmed">Фунафути</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity draft="unconfirmed">Тайбэй</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="unconfirmed">Дар-эс-Салам</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="unconfirmed">Ужгород</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">Симферополь</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="unconfirmed">Запорожье</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity draft="unconfirmed">Кампала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="unconfirmed">Мидуэй</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="unconfirmed">Джонстон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">Уэйк</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">Адак</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="unconfirmed">Гонолулу</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">Анкоридж</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">Якутат</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">Джуно</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">Лос-Анжелес</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">Бойсе</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">Финикс</exemplarCity>
+			</zone>
+			<zone type="America/Shiprock">
+				<exemplarCity draft="unconfirmed">Шипрок</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">Денвер</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">Нью Салем</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">Солтүстік Дакота, Орталық</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">Чикаго</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">Меномини</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">Винсенс, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">Петерсбург, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">Телл-Сити, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">Нокс, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">Винамак, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">Маренго, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">Индианаполис</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">Луисвилл</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">Вивей, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">Монтиселло, Кентуки</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">Детройт</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">Нью-Йорк</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity draft="unconfirmed">Монтевидео</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">Самарқанд</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">Ватикан</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">Сент Винсент</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity draft="unconfirmed">Каракас</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">Тортола</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">Сент Томас</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">Сайгон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity draft="unconfirmed">Эфате</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">Уоллис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity draft="unconfirmed">Апия</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">Аден</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity draft="unconfirmed">Майорка</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">Йоханнесбург</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity draft="unconfirmed">Лусака</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity draft="unconfirmed">Хараре</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Орталық Африка уақыты</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Шығыс Африка уақыты</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Оңтүстік Африка уақыты</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Батыс Африка уақыты</generic>
+					<standard>Батыс Африка стандарт уақыты</standard>
+					<daylight>Батыс Африка жаздық уақыты</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Атлантика уақыты</generic>
+					<standard>Атлантика стандарт уақыты</standard>
+					<daylight>Атлантикалық жаздық уақыт</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Орталық Австралия уақыты</generic>
+					<standard>Австралияның орталық стандарт уақыты</standard>
+					<daylight>Австралиялық орталық жаздық уақыт</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Орталық Австралиялық батыс уақыты</generic>
+					<standard>Орталық Австралиялық батыс стандарт уақыты</standard>
+					<daylight>Орталық Австралиялық батыс жаздық уақыты</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Шығыс Австралиялық уақыт</generic>
+					<standard>Шығыс Австралиялық стандарт уақыты</standard>
+					<daylight>Шығыс Австралиялық жаздық уақыт</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Батыс Австралиялық уақыт</generic>
+					<standard>Батыс Австралиялық стандарт уақыты</standard>
+					<daylight>Батыс Австралиялық жаздық уақыт</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Орталық Еуропа уақыты</generic>
+					<standard>Орталық Еуропа стандарт уақыты</standard>
+					<daylight>Орталық Еуропа жаздық уақыты</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Шығыс Еуропа уақыты</generic>
+					<standard>Шығыс Еуропа стандарт уақыты</standard>
+					<daylight>Шығыс Еуропа жаздық уақыты</daylight>
+				</long>
+				<short>
+					<generic>EET</generic>
+					<standard>EET</standard>
+					<daylight>EEST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Батыс Еуропа уақыты</generic>
+					<standard>Батыс Еуропа стандарт уақыты</standard>
+					<daylight>Батыс Еуропа жаздық уақыты</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000">0.0 мың</pattern>
+					<pattern type="10000">00 мың</pattern>
+					<pattern type="100000">000 мың</pattern>
+					<pattern type="1000000">0.0 млн</pattern>
+					<pattern type="10000000">00 млн</pattern>
+					<pattern type="100000000">000 млн</pattern>
+					<pattern type="1000000000">0.0 млрд</pattern>
+					<pattern type="10000000000">00 млрд</pattern>
+					<pattern type="100000000000">000 млрд</pattern>
+					<pattern type="1000000000000">0.0 трлн</pattern>
+					<pattern type="10000000000000">00 трлн</pattern>
+					<pattern type="100000000000000">000 трлн</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">Дихрам (БАЭ)</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">Афгани</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">Албания лекі</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">Армения драмы</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">Аргентина пессосы</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName draft="unconfirmed">Австралия доллары</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName draft="unconfirmed">Азербайджан манаты (1993-2006)</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">Азербайджан манаты</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">Барбадиан доллары</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">Бангладеш Такасы</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">Болгар леві</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">Бахрейн динары</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">Бурундиан франкі</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">Бруней доллары</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>Бразилия реалы</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="unconfirmed">Беларус рублі</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">Канада доллары</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="unconfirmed">Швейцар франкі</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Қытай юаны</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">Чех кронасы</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">Дат кроны</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>Еуро</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>Британия фунты</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">Гонконг доллары</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">Индонезия рупиі</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Үнді рупия</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">Ямайка доллары</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">Йорданиан динары</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Жапон иені</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">Қырғызстан сомы</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">Оңтүстік Корея воны</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">Кувейт динары</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Қазақстан теңгесі</displayName>
+				<symbol>₸</symbol>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">Мексика пессосы</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">Намибия доллары</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">Норвегия кроны</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">Непал Рупиі</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">Жаңа Зеландия доллары</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">Оман риалы</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">Польша злотасы</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>Ресей рубль</displayName>
+				<symbol>руб.</symbol>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">Сауд риалы</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">Швед кроны</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">Тай баты</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">Түрік лирасы</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">Жаңа Тайван доллары</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>АҚШ доллары</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>Белгісіз валюта</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">Оңтүстік Африка рэнді</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0} тәулік</unitPattern>
+		</unit>
+		<unit type="day-future">
+			<unitPattern count="other">{0} күннен кейін</unitPattern>
+		</unit>
+		<unit type="day-past">
+			<unitPattern count="other">{0} күн бұрын</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0} сағат</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="other">{0} сағаттан кейін</unitPattern>
+		</unit>
+		<unit type="hour-past">
+			<unitPattern count="other">{0} сағат бұрын</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0} минут</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="other">{0} минуттан кейін</unitPattern>
+		</unit>
+		<unit type="minute-past">
+			<unitPattern count="other">{0} минут бұрын</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0} ай</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="other">{0} айдан кейін</unitPattern>
+		</unit>
+		<unit type="month-past">
+			<unitPattern count="other">{0} ай бұрын</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0} секунд</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="other">{0} секундтан кейін</unitPattern>
+		</unit>
+		<unit type="second-past">
+			<unitPattern count="other">{0} секунд бұрын</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0} апта</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="other">{0} аптадан кейін</unitPattern>
+		</unit>
+		<unit type="week-past">
+			<unitPattern count="other">{0} апта бұрын</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0} жыл</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="other">{0} жылдан кейін</unitPattern>
+		</unit>
+		<unit type="year-past">
+			<unitPattern count="other">{0} жыл бұрын</unitPattern>
+		</unit>
+	</units>
+	<posix>
+		<messages>
+			<yesstr>иә:и</yesstr>
+			<nostr>жоқ:ж</nostr>
+		</messages>
+	</posix>
+</ldml>
+
