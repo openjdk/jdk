@@ -354,16 +354,25 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initIDs(JNIEnv *env, jclass wsd,
     initThreadInfoIndex();
 
     xorCompClass = (jclass)env->NewGlobalRef(XORComp);
+    if (env->ExceptionCheck()) {
+        return;
+    }
 
     tc = env->FindClass("java/lang/Thread");
     DASSERT(tc != NULL);
+    CHECK_NULL(tc);
+
     threadClass = (jclass)env->NewGlobalRef(tc);
     DASSERT(threadClass != NULL);
+    CHECK_NULL(threadClass);
+
     currentThreadMethodID =
         env->GetStaticMethodID(threadClass,
                                "currentThread",  "()Ljava/lang/Thread;");
     DASSERT(currentThreadMethodID != NULL);
 }
+
+#undef ExceptionOccurred
 
 /*
  * Class:     sun_java2d_windows_GDIWindowSurfaceData
@@ -394,6 +403,9 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
     wsdo->invalid = JNI_FALSE;
     wsdo->lockType = WIN32SD_LOCK_UNLOCKED;
     wsdo->peer = env->NewWeakGlobalRef(peer);
+    if (env->ExceptionOccurred()) {
+        return;
+    }
     wsdo->depth = depth;
     wsdo->pixelMasks[0] = redMask;
     wsdo->pixelMasks[1] = greenMask;
@@ -997,7 +1009,7 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
 
     ThreadGraphicsInfo *info = GetThreadGraphicsInfo(env, wsdo);
     GDIWinSD_InitDC(env, wsdo, info, type, patrop, clip, comp, color);
-    return info->hDC;
+    return env->ExceptionCheck() ? (HDC)NULL : info->hDC;
 }
 
 JNIEXPORT void JNICALL
@@ -1056,8 +1068,14 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
             int topInset = wsdo->insets.top;
             Region_StartIteration(env, &clipInfo);
             jint numrects = Region_CountIterationRects(&clipInfo);
-            RGNDATA *lpRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
+            RGNDATA *lpRgnData;
+            try {
+                lpRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
                     sizeof(RGNDATAHEADER), numrects, sizeof(RECT));
+            } catch (std::bad_alloc&) {
+                JNU_ThrowOutOfMemoryError(env, "Initialization of surface region data failed.");
+                return;
+            }
             const DWORD nCount = sizeof(RGNDATAHEADER) + numrects * sizeof(RECT);
             lpRgnData->rdh.dwSize = sizeof(RGNDATAHEADER);
             lpRgnData->rdh.iType = RDH_RECTANGLES;
@@ -1086,6 +1104,9 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
             env->DeleteWeakGlobalRef(info->clip);
         }
         info->clip = env->NewWeakGlobalRef(clip);
+        if (env->ExceptionCheck()) {
+            return;
+        }
     }
 
     // init composite

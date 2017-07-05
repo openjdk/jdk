@@ -27,6 +27,7 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.util.List;
 
@@ -257,7 +258,7 @@ public final class NativeFunction {
     }
 
     private static void checkFunctionParameters(final String params) {
-        final Source src = new Source("<function>", params);
+        final Source src = sourceFor("<function>", params);
         final Parser parser = new Parser(Global.getEnv(), src, new Context.ThrowErrorManager());
         try {
             parser.parseFormalParameterList();
@@ -267,7 +268,7 @@ public final class NativeFunction {
     }
 
     private static void checkFunctionBody(final String funcBody) {
-        final Source src = new Source("<function>", funcBody);
+        final Source src = sourceFor("<function>", funcBody);
         final Parser parser = new Parser(Global.getEnv(), src, new Context.ThrowErrorManager());
         try {
             parser.parseFunctionBody();

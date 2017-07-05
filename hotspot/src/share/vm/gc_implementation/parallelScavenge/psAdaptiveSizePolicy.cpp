@@ -379,7 +379,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
       gclog_or_tty->print_cr(
             "PSAdaptiveSizePolicy::compute_eden_space_size: gc time limit"
             " gc_cost: %f "
-            " GCTimeLimit: %d",
+            " GCTimeLimit: " UINTX_FORMAT,
             gc_cost(), GCTimeLimit);
     }
   }
@@ -586,7 +586,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
       gclog_or_tty->print_cr(
             "PSAdaptiveSizePolicy::compute_old_gen_free_space: gc time limit"
             " gc_cost: %f "
-            " GCTimeLimit: %d",
+            " GCTimeLimit: " UINTX_FORMAT,
             gc_cost(), GCTimeLimit);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,19 @@
  */
 package com.sun.java.swing.plaf.motif;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.border.*;
-import javax.swing.plaf.basic.BasicScrollBarUI;
-
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.Graphics;
-import java.awt.Color;
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JScrollBar;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicScrollBarUI;
+
+import static sun.swing.SwingUtilities2.drawHLine;
+import static sun.swing.SwingUtilities2.drawVLine;
 
 
 /**
@@ -74,17 +76,13 @@ public class MotifScrollBarUI extends BasicScrollBarUI
         return new MotifScrollBarButton(orientation);
     }
 
-
     public void paintTrack(Graphics g, JComponent c, Rectangle trackBounds)  {
         g.setColor(trackColor);
         g.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
     }
 
-
-    public void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds)
-    {
-
-        if(thumbBounds.isEmpty() || !scrollbar.isEnabled())     {
+    public void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+        if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
             return;
         }
 
@@ -93,15 +91,15 @@ public class MotifScrollBarUI extends BasicScrollBarUI
 
         g.translate(thumbBounds.x, thumbBounds.y);
         g.setColor(thumbColor);
-        g.fillRect(0, 0, w-1, h-1);
+        g.fillRect(0, 0, w - 1, h - 1);
 
         g.setColor(thumbHighlightColor);
-        g.drawLine(0, 0, 0, h-1);
-        g.drawLine(1, 0, w-1, 0);
+        drawVLine(g, 0, 0, h - 1);
+        drawHLine(g, 1, w - 1, 0);
 
         g.setColor(thumbLightShadowColor);
-        g.drawLine(1, h-1, w-1, h-1);
-        g.drawLine(w-1, 1, w-1, h-2);
+        drawHLine(g, 1, w - 1, h - 1);
+        drawVLine(g, w - 1, 1, h - 2);
 
         g.translate(-thumbBounds.x, -thumbBounds.y);
     }

@@ -41,6 +41,10 @@ public class BitLengthOverflow {
         } catch (ArithmeticException e) {
             // expected
             System.out.println("Overflow is reported by ArithmeticException, as expected");
+        } catch (OutOfMemoryError e) {
+            // possible
+            System.err.println("BitLengthOverflow skipped: OutOfMemoryError");
+            System.err.println("Run jtreg with -javaoption:-Xmx8g");
         }
     }
 }

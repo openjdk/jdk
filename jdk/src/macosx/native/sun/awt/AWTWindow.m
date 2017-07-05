@@ -762,6 +762,10 @@ AWT_ASSERT_APPKIT_THREAD;
     return lastKeyWindow;
 }
 
+- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)newFrame {
+    return !NSEqualSizes(self.nsWindow.frame.size, newFrame.size);
+}
+
 
 @end // AWTWindow
 
