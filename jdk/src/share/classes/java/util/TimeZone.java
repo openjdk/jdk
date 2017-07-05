@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import sun.misc.SharedSecrets;
 import sun.misc.JavaAWTAccess;
 import sun.security.action.GetPropertyAction;
-import sun.util.TimeZoneNameUtility;
+import sun.util.locale.provider.TimeZoneNameUtility;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 
@@ -403,7 +403,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
         String id = getID();
         String[] names = getDisplayNames(id, locale);
         if (names == null) {
-            if (id.startsWith("GMT")) {
+            if (id.startsWith("GMT") && id.length() > 3) {
                 char sign = id.charAt(3);
                 if (sign == '+' || sign == '-') {
                     return id;

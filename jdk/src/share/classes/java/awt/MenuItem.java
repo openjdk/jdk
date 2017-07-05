@@ -31,7 +31,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 import javax.accessibility.*;
-
+import sun.awt.AWTAccessor;
 
 /**
  * All items in a menu must belong to the class
@@ -76,6 +76,29 @@ public class MenuItem extends MenuComponent implements Accessible {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+
+        AWTAccessor.setMenuItemAccessor(
+            new AWTAccessor.MenuItemAccessor() {
+                public boolean isEnabled(MenuItem item) {
+                    return item.enabled;
+                }
+
+                public String getLabel(MenuItem item) {
+                    return item.label;
+                }
+
+                public MenuShortcut getShortcut(MenuItem item) {
+                    return item.shortcut;
+                }
+
+                public String getActionCommandImpl(MenuItem item) {
+                    return item.getActionCommandImpl();
+                }
+
+                public boolean isItemEnabled(MenuItem item) {
+                    return item.isItemEnabled();
+                }
+            });
     }
 
     /**

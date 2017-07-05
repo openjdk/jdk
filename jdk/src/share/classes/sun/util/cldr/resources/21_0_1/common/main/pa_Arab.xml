@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6708 $"/>
+		<generation date="$Date: 2012-03-16 15:58:36 +0900 (Fri, 16 Mar 2012) $"/>
+		<language type="pa"/>
+		<script type="Arab"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="pa">پنجاب</language>
+		</languages>
+		<scripts>
+			<script type="Arab">العربية</script>
+			<script type="Guru">گُرمُکھی</script>
+		</scripts>
+		<territories>
+			<territory type="PK">پکستان</territory>
+		</territories>
+	</localeDisplayNames>
+	<layout>
+		<orientation characters="right-to-left"/>
+	</layout>
+	<characters>
+		<exemplarCharacters>[\u064F ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[أ ٻ ة ٺ ټ ٽ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">جنوری</month>
+							<month type="2">فروری</month>
+							<month type="3">مارچ</month>
+							<month type="4">اپریل</month>
+							<month type="5">مئ</month>
+							<month type="6">جون</month>
+							<month type="7">جولائی</month>
+							<month type="8">اگست</month>
+							<month type="9">ستمبر</month>
+							<month type="10">اکتوبر</month>
+							<month type="11">نومبر</month>
+							<month type="12">دسمبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">اتوار</day>
+							<day type="mon">پیر</day>
+							<day type="tue">منگل</day>
+							<day type="wed">بُدھ</day>
+							<day type="thu">جمعرات</day>
+							<day type="fri">جمعہ</day>
+							<day type="sat">ہفتہ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1">چوتھاي پہلاں</quarter>
+							<quarter type="2">چوتھاي دوجا</quarter>
+							<quarter type="3">چوتھاي تيجا</quarter>
+							<quarter type="4">چوتھاي چوتھا</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraNames>
+						<era type="0">ايساپورو</era>
+						<era type="1">سں</era>
+					</eraNames>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="year">
+						<displayName>ورھا</displayName>
+					</field>
+					<field type="month">
+						<displayName>مہينا</displayName>
+					</field>
+					<field type="week">
+						<displayName>ہفتہ</displayName>
+					</field>
+					<field type="day">
+						<displayName>دئن</displayName>
+					</field>
+					<field type="weekday">
+						<displayName>ہفتے دا دن</displayName>
+					</field>
+					<field type="hour">
+						<displayName>گھنٹا</displayName>
+					</field>
+					<field type="minute">
+						<displayName>منٹ</displayName>
+					</field>
+					<field type="zone">
+						<displayName>ٹپہ</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>arabext</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>arabext</native>
+		</otherNumberingSystems>
+		<currencies>
+			<currency type="EUR">
+				<displayName>يورو</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>روپئیہ [INR]</displayName>
+				<symbol>ر [INR]</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName>روپئیہ</displayName>
+				<symbol>ر</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>ہاں</yesstr>
+			<nostr>نہيں</nostr>
+		</messages>
+	</posix>
+</ldml>

@@ -888,6 +888,8 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer put(String src, int start, int end) {
         checkBounds(start, end - start, src.length());
+        if (end - start > remaining())
+            throw new BufferOverflowException();
         for (int i = start; i < end; i++)
             this.put(src.charAt(i));
         return this;

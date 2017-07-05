@@ -325,15 +325,28 @@ class MethodHandleNatives {
     static MemberName linkMethodImpl(Class<?> callerClass, int refKind,
                                      Class<?> defc, String name, Object type,
                                      Object[] appendixResult) {
-        if (defc != MethodHandle.class || refKind != REF_invokeVirtual)
-            throw new LinkageError("no such method "+defc.getName()+"."+name+type);
-        switch (name) {
-        case "invoke":
-            return Invokers.genericInvokerMethod(callerClass, type, appendixResult);
-        case "invokeExact":
-            return Invokers.exactInvokerMethod(callerClass, type, appendixResult);
+        try {
+            if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
+                switch (name) {
+                case "invoke":
+                    return Invokers.genericInvokerMethod(fixMethodType(callerClass, type), appendixResult);
+                case "invokeExact":
+                    return Invokers.exactInvokerMethod(fixMethodType(callerClass, type), appendixResult);
+                }
+            }
+        } catch (Throwable ex) {
+            if (ex instanceof LinkageError)
+                throw (LinkageError) ex;
+            else
+                throw new LinkageError(ex.getMessage(), ex);
         }
-        throw new UnsupportedOperationException("linkMethod "+name);
+        throw new LinkageError("no such method "+defc.getName()+"."+name+type);
+    }
+    private static MethodType fixMethodType(Class<?> callerClass, Object type) {
+        if (type instanceof MethodType)
+            return (MethodType) type;
+        else
+            return MethodType.fromMethodDescriptorString((String)type, callerClass.getClassLoader());
     }
     // Tracing logic:
     static MemberName linkMethodTracing(Class<?> callerClass, int refKind,
@@ -350,6 +363,7 @@ class MethodHandleNatives {
             throw ex;
         }
     }
+
 
     /**
      * The JVM is resolving a CONSTANT_MethodHandle CP entry.  And it wants our help.

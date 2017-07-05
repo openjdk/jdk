@@ -188,7 +188,6 @@ JAVA_JAVA_java = \
     java/util/IllformedLocaleException.java \
     java/util/FormatterClosedException.java \
     java/util/ListResourceBundle.java \
-        sun/util/EmptyListResourceBundle.java \
     java/util/Locale.java \
         sun/util/locale/BaseLocale.java \
         sun/util/locale/Extension.java \
@@ -201,9 +200,35 @@ JAVA_JAVA_java = \
         sun/util/locale/ParseStatus.java \
         sun/util/locale/StringTokenIterator.java \
         sun/util/locale/UnicodeLocaleExtension.java \
+            sun/util/locale/provider/AuxLocaleProviderAdapter.java \
+            sun/util/locale/provider/AvailableLanguageTags.java \
+            sun/util/locale/provider/BreakDictionary.java \
+            sun/util/locale/provider/BreakIteratorProviderImpl.java \
+            sun/util/locale/provider/CalendarDataProviderImpl.java \
+            sun/util/locale/provider/CalendarDataUtility.java \
+            sun/util/locale/provider/CollationRules.java \
+            sun/util/locale/provider/CollatorProviderImpl.java \
+            sun/util/locale/provider/CurrencyNameProviderImpl.java \
+            sun/util/locale/provider/DateFormatProviderImpl.java \
+            sun/util/locale/provider/DateFormatSymbolsProviderImpl.java \
+            sun/util/locale/provider/DecimalFormatSymbolsProviderImpl.java \
+            sun/util/locale/provider/DictionaryBasedBreakIterator.java \
+            sun/util/locale/provider/HostLocaleProviderAdapter.java \
+            sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
+            sun/util/locale/provider/JRELocaleConstants.java \
+            sun/util/locale/provider/JRELocaleProviderAdapter.java \
+            sun/util/locale/provider/LocaleServiceProviderPool.java \
+            sun/util/locale/provider/LocaleProviderAdapter.java \
+	    sun/util/locale/provider/LocaleDataMetaInfo.java \
+            sun/util/locale/provider/LocaleNameProviderImpl.java \
+            sun/util/locale/provider/LocaleResources.java \
+            sun/util/locale/provider/NumberFormatProviderImpl.java \
+            sun/util/locale/provider/RuleBasedBreakIterator.java \
+            sun/util/locale/provider/SPILocaleProviderAdapter.java \
+            sun/util/locale/provider/TimeZoneNameProviderImpl.java \
+            sun/util/locale/provider/TimeZoneNameUtility.java \
     java/util/LocaleISOData.java \
-        sun/util/LocaleServiceProviderPool.java \
-	sun/util/LocaleDataMetaInfo.java \
+        sun/util/cldr/CLDRLocaleProviderAdapter.java \
     java/util/MissingResourceException.java \
     java/util/NoSuchElementException.java \
     java/util/Observable.java \
@@ -222,7 +247,6 @@ JAVA_JAVA_java = \
     java/util/StringTokenizer.java \
     java/util/TimeZone.java \
         java/util/SimpleTimeZone.java \
-        sun/util/TimeZoneNameUtility.java \
         sun/util/calendar/ZoneInfo.java \
         sun/util/calendar/ZoneInfoFile.java \
         sun/util/calendar/TzIDOldMapping.java \
@@ -369,6 +393,7 @@ JAVA_JAVA_java = \
     java/util/prefs/PreferencesFactory.java \
     java/util/prefs/Base64.java \
     java/util/prefs/XmlSupport.java \
+    java/util/spi/CalendarDataProvider.java \
     java/util/spi/CurrencyNameProvider.java \
     java/util/spi/LocaleNameProvider.java \
     java/util/spi/LocaleServiceProvider.java \

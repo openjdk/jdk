@@ -122,6 +122,9 @@
 
 # jdk_lang
 
+# 7194607
+java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh generic-all
+
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
@@ -141,15 +144,12 @@ javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 # 7144846
 javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 
-# 7149181 
-sun/management/jmxremote/startstop/JMXStartStopTest.sh          generic-all
+# 7158614, locks up Windows machines at least
+sun/management/jmxremote/startstop/JMXStartStopTest.sh		windows-all
 
 ############################################################################
 
 # jdk_math
-
-# 7174532
-java/lang/Math/WorstCaseTests.java				generic-all
 
 ############################################################################
 
@@ -225,11 +225,10 @@ java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 
 # jdk_io
 
-# 6962637
-java/io/File/MaxPathLength.java                                 windows-all
-
-# 7145435 - Test needs AWT window server, does not work headless
+# 7162111 - these tests need to be updated to run headless
 java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
+java/io/Serializable/serialver/classpath/run.sh                 macosx-all
+java/io/Serializable/serialver/nested/run.sh                    macosx-all
 
 ############################################################################
 
@@ -252,6 +251,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
+# 7142919
+java/nio/channels/AsyncCloseAndInterrupt.java			solaris-all
+
 ############################################################################
 
 # jdk_rmi
@@ -259,11 +261,16 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
-# 7132247
-java/rmi/registry/readTest/readTest.sh				windows-all
 ############################################################################
 
 # jdk_security
+
+# 7193792
+sun/security/pkcs11/ec/TestECDSA.java				solaris-all
+sun/security/pkcs11/ec/TestECDSA.java				linux-all
+
+# 7193793
+sun/security/pkcs11/ec/TestECDH.java				linux-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -273,7 +280,6 @@ sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-i586
 sun/security/pkcs11/ec/ReadCertificates.java                    generic-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          generic-all
 sun/security/pkcs11/ec/TestCurves.java                          solaris-i586
-sun/security/pkcs11/ec/TestECDSA.java                           solaris-i586
 #sun/security/pkcs11/ec/TestECGenSpec.java                      solaris-i586
 #sun/security/pkcs11/ec/TestKeyFactory.java                     solaris-i586
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            generic-all
@@ -352,10 +358,8 @@ com/sun/jdi/FieldWatchpoints.java                               generic-all
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
-# Filed 6979016
+# Filed 7172176
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-
-# 7172176
 sun/tools/jconsole/ImmutableResourceTest.sh			generic-all
 
 # 7132203
@@ -371,6 +375,9 @@ tools/launcher/UnicodeTest.java                                 macosx-all
 ############################################################################
 
 # jdk_util
+
+# 7162111 - test needs to be changed to run headless
+java/util/ResourceBundle/Control/Bug6530694.java		macosx-all
 
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all

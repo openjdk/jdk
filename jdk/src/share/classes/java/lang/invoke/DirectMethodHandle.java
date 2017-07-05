@@ -108,8 +108,8 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    String debugString() {
-        return "DMH["+member.toString()+"]="+super.debugString();
+    String internalProperties() {
+        return "/DMH="+member.toString();
     }
 
     //// Implementation methods.

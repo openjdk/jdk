@@ -1,0 +1,4360 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="tr"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>, </localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="aa">Afar</language>
+			<language type="ab">Abhazca</language>
+			<language type="ace">Achinese</language>
+			<language type="ach">Acoli</language>
+			<language type="ada">Adangme</language>
+			<language type="ady">Adigece</language>
+			<language type="ae">Avestçe</language>
+			<language type="af">Afrikaan Dili</language>
+			<language type="afa">Afro-Asyatik Diller</language>
+			<language type="afh">Afrihili</language>
+			<language type="ain">Ayni Dili</language>
+			<language type="ak">Akan</language>
+			<language type="akk">Akad Dili</language>
+			<language type="ale">Aleut</language>
+			<language type="alg">Algonkin Dili</language>
+			<language type="alt">Güney Altayca</language>
+			<language type="am">Amharca</language>
+			<language type="an">Aragonca</language>
+			<language type="ang">Eski İngilizce</language>
+			<language type="anp">Angika</language>
+			<language type="apa">Apaçi Dilleri</language>
+			<language type="ar">Arapça</language>
+			<language type="arc">Aramice</language>
+			<language type="arn">Araukanya Dili</language>
+			<language type="arp">Arapaho Dili</language>
+			<language type="art">Yapay Diller</language>
+			<language type="arw">Arawak Dili</language>
+			<language type="as">Assamca</language>
+			<language type="ast">Asturyasca</language>
+			<language type="ath">Atabaşkan Dilleri</language>
+			<language type="aus">Avustralya Dilleri</language>
+			<language type="av">Avar Dili</language>
+			<language type="awa">Awadhi</language>
+			<language type="ay">Aymara</language>
+			<language type="az">Azerice</language>
+			<language type="az" alt="short">Azeri</language>
+			<language type="ba">Başkırtça</language>
+			<language type="bad">Banda Dili</language>
+			<language type="bai">Bamileke Dilleri</language>
+			<language type="bal">Baluchi</language>
+			<language type="ban">Bali Dili</language>
+			<language type="bas">Basa Dili</language>
+			<language type="bat">Baltık Dilleri</language>
+			<language type="be">Beyaz Rusça</language>
+			<language type="bej">Beja Dili</language>
+			<language type="bem">Bemba</language>
+			<language type="ber">Berberi</language>
+			<language type="bg">Bulgarca</language>
+			<language type="bh">Bihari</language>
+			<language type="bho">Arayanice</language>
+			<language type="bi">Bislama</language>
+			<language type="bik">Bikol</language>
+			<language type="bin">Bini</language>
+			<language type="bla">Siksika</language>
+			<language type="bm">Bambara</language>
+			<language type="bn">Bengalce</language>
+			<language type="bnt">Bantu Dili</language>
+			<language type="bo">Tibetçe</language>
+			<language type="br">Bretonca</language>
+			<language type="bra">Braj</language>
+			<language type="bs">Boşnakça</language>
+			<language type="btk">Batak</language>
+			<language type="bua">Buryat</language>
+			<language type="bug">Bugis</language>
+			<language type="byn">Blin</language>
+			<language type="ca">Katalanca</language>
+			<language type="cad">Caddo</language>
+			<language type="cai">Orta Amerika Yerli Dilleri</language>
+			<language type="car">Carib</language>
+			<language type="cau">Kafkas Dilleri</language>
+			<language type="cch">Atsam</language>
+			<language type="ce">Çeçence</language>
+			<language type="ceb">Cebuano</language>
+			<language type="cel">Kelt Dilleri</language>
+			<language type="ch">Chamorro</language>
+			<language type="chb">Chibcha</language>
+			<language type="chg">Çağatay Dili</language>
+			<language type="chk">Chuukese</language>
+			<language type="chm">Mari</language>
+			<language type="chn">Chinook Jargon</language>
+			<language type="cho">Choctaw</language>
+			<language type="chp">Chipewyan</language>
+			<language type="chr">Çeroki</language>
+			<language type="chy">Şayen Dili</language>
+			<language type="cmc">Chamic Dilleri</language>
+			<language type="co">Korsikaca</language>
+			<language type="cop">Kıptice</language>
+			<language type="cpe">İngilizce tabanlı Creole ve Pidgin Dilleri</language>
+			<language type="cpf">Fransızca tabanlı Creole ve Pidgin Dilleri</language>
+			<language type="cpp">Portekizce tabanlı Creole ve Pidgin Dilleri</language>
+			<language type="cr">Cree</language>
+			<language type="crh">Kırım Türkçesi</language>
+			<language type="crp">Creole ve Pidgin Dilleri</language>
+			<language type="cs">Çekçe</language>
+			<language type="csb">Kashubian</language>
+			<language type="cu">Kilise Slavcası</language>
+			<language type="cus">Kuşitik Diller</language>
+			<language type="cv">Çuvaşça</language>
+			<language type="cy">Galce</language>
+			<language type="da">Danca</language>
+			<language type="dak">Dakota</language>
+			<language type="dar">Dargince</language>
+			<language type="day">Dayak</language>
+			<language type="de">Almanca</language>
+			<language type="de_AT">Avusturya Almancası</language>
+			<language type="de_CH">İsviçre Yüksek Almancası</language>
+			<language type="del">Delaware</language>
+			<language type="den">Slavey</language>
+			<language type="dgr">Dogrib</language>
+			<language type="din">Dinka</language>
+			<language type="doi">Dogri</language>
+			<language type="dra">Dravid Dilleri</language>
+			<language type="dsb">Aşağı Sorbça</language>
+			<language type="dua">Duala</language>
+			<language type="dum">Ortaçağ Felemenkçesi</language>
+			<language type="dv">Divehi</language>
+			<language type="dyu">Dyula</language>
+			<language type="dz">Butan Dili</language>
+			<language type="ee">Ewe</language>
+			<language type="efi">Efik</language>
+			<language type="egy">Eski Mısır Dili</language>
+			<language type="eka">Ekajuk</language>
+			<language type="el">Yunanca</language>
+			<language type="elx">Elam</language>
+			<language type="en">İngilizce</language>
+			<language type="en_AU">Avustralya İngilizcesi</language>
+			<language type="en_CA">Kanada İngilizcesi</language>
+			<language type="en_GB">İngiliz İngilizcesi</language>
+			<language type="en_US">Amerikan İngilizcesi</language>
+			<language type="enm">Ortaçağ İngilizcesi</language>
+			<language type="eo">Esperanto</language>
+			<language type="es">İspanyolca</language>
+			<language type="es_419">Latin Amerika İspanyolcası</language>
+			<language type="es_ES">İber İspanyolcası</language>
+			<language type="et">Estonca</language>
+			<language type="eu">Baskça</language>
+			<language type="ewo">Ewondo</language>
+			<language type="fa">Farsça</language>
+			<language type="fan">Fang</language>
+			<language type="fat">Fanti</language>
+			<language type="ff">Fulah</language>
+			<language type="fi">Fince</language>
+			<language type="fil">Filipino</language>
+			<language type="fiu">Finno - Ugrik Diller</language>
+			<language type="fj">Fiji Dili</language>
+			<language type="fo">Faroe Dili</language>
+			<language type="fon">Fon</language>
+			<language type="fr">Fransızca</language>
+			<language type="fr_CA">Kanada Fransızcası</language>
+			<language type="fr_CH">İsviçre Fransızcası</language>
+			<language type="frm">Ortaçağ Fransızcası</language>
+			<language type="fro">Eski Fransızca</language>
+			<language type="frr">Kuzey Frizce</language>
+			<language type="frs">Doğu Frizcesi</language>
+			<language type="fur">Friulian</language>
+			<language type="fy">Batı Frizcesi</language>
+			<language type="ga">İrlanda Dili</language>
+			<language type="gaa">Ga</language>
+			<language type="gay">Gayo</language>
+			<language type="gba">Gbaya</language>
+			<language type="gd">İskoç Gal Dili</language>
+			<language type="gem">Cermen Dilleri</language>
+			<language type="gez">Geez</language>
+			<language type="gil">Kiribati Dili</language>
+			<language type="gl">Galiçyaca</language>
+			<language type="gmh">Ortaçağ Yüksek Almancası</language>
+			<language type="gn">Guarani</language>
+			<language type="goh">Eski Yüksek Almanca</language>
+			<language type="gon">Gondi</language>
+			<language type="gor">Gorontalo</language>
+			<language type="got">Gotça</language>
+			<language type="grb">Grebo</language>
+			<language type="grc">Antik Yunanca</language>
+			<language type="gsw">İsviçre Almancası</language>
+			<language type="gu">Gücerat Dili</language>
+			<language type="gv">Manks</language>
+			<language type="gwi">Gwichʼin</language>
+			<language type="ha">Hausa</language>
+			<language type="hai">Haida</language>
+			<language type="haw">Hawaii Dili</language>
+			<language type="he">İbranice</language>
+			<language type="hi">Hintçe</language>
+			<language type="hil">Hiligaynon</language>
+			<language type="him">Himachali</language>
+			<language type="hit">Hititçe</language>
+			<language type="hmn">Hmong</language>
+			<language type="ho">Hiri Motu</language>
+			<language type="hr">Hırvatça</language>
+			<language type="hsb">Yukarı Sorbça</language>
+			<language type="ht">Haiti Dili</language>
+			<language type="hu">Macarca</language>
+			<language type="hup">Hupa</language>
+			<language type="hy">Ermenice</language>
+			<language type="hz">Herero</language>
+			<language type="ia">Interlingua</language>
+			<language type="iba">Iban</language>
+			<language type="id">Endonezce</language>
+			<language type="ie">Interlingue</language>
+			<language type="ig">İgbo Dili</language>
+			<language type="ii">Sichuan Yi</language>
+			<language type="ijo">Ijo</language>
+			<language type="ik">Inupiak</language>
+			<language type="ilo">Iloko</language>
+			<language type="inc">Hint Dilleri</language>
+			<language type="ine">Hint-Avrupa Dilleri</language>
+			<language type="inh">İnguşça</language>
+			<language type="io">Ido</language>
+			<language type="ira">İran Dilleri</language>
+			<language type="iro">İroqua Dili</language>
+			<language type="is">İzlandaca</language>
+			<language type="it">İtalyanca</language>
+			<language type="iu">Inuktitut</language>
+			<language type="ja">Japonca</language>
+			<language type="jbo">Lojban</language>
+			<language type="jpr">Yahudi Farsçası</language>
+			<language type="jrb">Yahudi Arapçası</language>
+			<language type="jv">Cava Dili</language>
+			<language type="ka">Gürcüce</language>
+			<language type="kaa">Karakalpakça</language>
+			<language type="kab">Kabile</language>
+			<language type="kac">Kaçin</language>
+			<language type="kaj">Jju</language>
+			<language type="kam">Kamba</language>
+			<language type="kar">Karen</language>
+			<language type="kaw">Kawi</language>
+			<language type="kbd">Kabardeyce</language>
+			<language type="kcg">Tyap</language>
+			<language type="kfo">Koro</language>
+			<language type="kg">Kongo</language>
+			<language type="kha">Khasi</language>
+			<language type="khi">Hoisan Dilleri</language>
+			<language type="kho">Hotanca</language>
+			<language type="ki">Kikuyu</language>
+			<language type="kj">Kuanyama</language>
+			<language type="kk">Kazakça</language>
+			<language type="kl">Grönland Dili</language>
+			<language type="km">Kamboçya Dili</language>
+			<language type="kmb">Kimbundu</language>
+			<language type="kn">Kannada</language>
+			<language type="ko">Korece</language>
+			<language type="kok">Konkani</language>
+			<language type="kos">Kosraean</language>
+			<language type="kpe">Kpelle</language>
+			<language type="kr">Kanuri</language>
+			<language type="krc">Karaçay-Balkarca</language>
+			<language type="krl">Karelyaca</language>
+			<language type="kro">Kru</language>
+			<language type="kru">Kurukh</language>
+			<language type="ks">Keşmirce</language>
+			<language type="ku">Kürtçe</language>
+			<language type="kum">Kumukça</language>
+			<language type="kut">Kutenai</language>
+			<language type="kv">Komi</language>
+			<language type="kw">Kernevekçe</language>
+			<language type="ky">Kırgızca</language>
+			<language type="la">Latince</language>
+			<language type="lad">Ladino</language>
+			<language type="lah">Lahnda</language>
+			<language type="lam">Lamba</language>
+			<language type="lb">Lüksemburgca</language>
+			<language type="lez">Lezgice</language>
+			<language type="lg">Ganda</language>
+			<language type="li">Limburgca</language>
+			<language type="ln">Lingala</language>
+			<language type="lo">Laos Dili</language>
+			<language type="lol">Mongo</language>
+			<language type="loz">Lozi</language>
+			<language type="lt">Litvanyaca</language>
+			<language type="lu">Luba-Katanga</language>
+			<language type="lua">Luba-Lulua</language>
+			<language type="lui">Luiseno</language>
+			<language type="lun">Lunda</language>
+			<language type="luo">Luo</language>
+			<language type="lus">Lushai</language>
+			<language type="lv">Letonca</language>
+			<language type="mad">Madura Dili</language>
+			<language type="mag">Magahi</language>
+			<language type="mai">Maithili</language>
+			<language type="mak">Makasar</language>
+			<language type="man">Mandingo</language>
+			<language type="map">Avustronezya Dili</language>
+			<language type="mas">Masai</language>
+			<language type="mdf">Mokşa Dili</language>
+			<language type="mdr">Mandar</language>
+			<language type="men">Mende</language>
+			<language type="mg">Malagasi</language>
+			<language type="mga">Ortaçağ İrlandacası</language>
+			<language type="mh">Marshall Adaları Dili</language>
+			<language type="mi">Maori</language>
+			<language type="mic">Micmac</language>
+			<language type="min">Minangkabau</language>
+			<language type="mis">Çeşitli Diller</language>
+			<language type="mk">Makedonca</language>
+			<language type="mkh">Mon-Khmer Dilleri</language>
+			<language type="ml">Malayalam</language>
+			<language type="mn">Moğolca</language>
+			<language type="mnc">Mançurya Dili</language>
+			<language type="mni">Manipuri</language>
+			<language type="mno">Manobo Dilleri</language>
+			<language type="mo">Moldovaca</language>
+			<language type="moh">Mohavk Dili</language>
+			<language type="mos">Mossi</language>
+			<language type="mr">Marathi</language>
+			<language type="ms">Malay</language>
+			<language type="mt">Maltaca</language>
+			<language type="mul">Birden Fazla Dil</language>
+			<language type="mun">Munda Dilleri</language>
+			<language type="mus">Creek</language>
+			<language type="mwl">Miranda Dili</language>
+			<language type="mwr">Marvari</language>
+			<language type="my">Birmanya Dili</language>
+			<language type="myn">Maya Dilleri</language>
+			<language type="myv">Erzya</language>
+			<language type="na">Nauru Dili</language>
+			<language type="nah">Nahuatl</language>
+			<language type="nai">Kuzey Amerika Yerli Dilleri</language>
+			<language type="nap">Napolice</language>
+			<language type="nb">Norveççe Bokmål</language>
+			<language type="nd">Kuzey Ndebele</language>
+			<language type="nds">Aşağı Almanca</language>
+			<language type="ne">Nepalce</language>
+			<language type="new">Nevari</language>
+			<language type="ng">Ndonga</language>
+			<language type="nia">Nias</language>
+			<language type="nic">Nijer-Kordofan Dilleri</language>
+			<language type="niu">Niuean</language>
+			<language type="nl">Felemenkçe</language>
+			<language type="nl_BE">Flamanca</language>
+			<language type="nn">Norveççe Nynorsk</language>
+			<language type="no">Norveççe</language>
+			<language type="nog">Nogayca</language>
+			<language type="non">Eski Norse</language>
+			<language type="nqo">N’Ko</language>
+			<language type="nr">Güney Ndebele</language>
+			<language type="nso">Kuzey Sotho</language>
+			<language type="nub">Nubian Dilleri</language>
+			<language type="nv">Navaho Dili</language>
+			<language type="nwc">Klasik Nevari</language>
+			<language type="ny">Nyanja</language>
+			<language type="nym">Nyamvezi</language>
+			<language type="nyn">Nyankole</language>
+			<language type="nyo">Nyoro</language>
+			<language type="nzi">Nzima</language>
+			<language type="oc">Oksitanca</language>
+			<language type="oj">Ojibva Dili</language>
+			<language type="om">Oromo</language>
+			<language type="or">Oriya</language>
+			<language type="os">Osetçe</language>
+			<language type="osa">Osage</language>
+			<language type="ota">Osmanlı Türkçesi</language>
+			<language type="oto">Otomi Dilleri</language>
+			<language type="pa">Pencap Dili</language>
+			<language type="paa">Papua Dilleri</language>
+			<language type="pag">Pangasinan</language>
+			<language type="pal">Pehlevi Dili</language>
+			<language type="pam">Pampanga</language>
+			<language type="pap">Papiamento</language>
+			<language type="pau">Palau Dili</language>
+			<language type="peo">Eski Farsça</language>
+			<language type="phi">Filipinler Dilleri</language>
+			<language type="phn">Fenike Dili</language>
+			<language type="pi">Pali</language>
+			<language type="pl">Lehçe</language>
+			<language type="pon">Pohnpeian</language>
+			<language type="pra">Prakrit Dilleri</language>
+			<language type="pro">Eski Provensal</language>
+			<language type="ps">Peştuca</language>
+			<language type="ps" alt="variant">Peştuca</language>
+			<language type="pt">Portekizce</language>
+			<language type="pt_BR">Brezilya Portekizcesi</language>
+			<language type="pt_PT">İber Portekizcesi</language>
+			<language type="qu">Quechua</language>
+			<language type="raj">Rajasthani</language>
+			<language type="rap">Rapanui</language>
+			<language type="rar">Rarotongan</language>
+			<language type="rm">Rhaeto-Roman Dili</language>
+			<language type="rn">Kirundi</language>
+			<language type="ro">Romence</language>
+			<language type="roa">Roman Dilleri</language>
+			<language type="rom">Romanca</language>
+			<language type="root">Köken</language>
+			<language type="ru">Rusça</language>
+			<language type="rup">Ulahça</language>
+			<language type="rw">Kinyarwanda</language>
+			<language type="sa">Sanskritçe</language>
+			<language type="sad">Sandave</language>
+			<language type="sah">Yakutça</language>
+			<language type="sai">Güney Amerika Yerli Dilleri</language>
+			<language type="sal">Salishan Dilleri</language>
+			<language type="sam">Samarit Aramcası</language>
+			<language type="sas">Sasak</language>
+			<language type="sat">Santali</language>
+			<language type="sc">Sardunya Dili</language>
+			<language type="scn">Sicilyaca</language>
+			<language type="sco">Scots</language>
+			<language type="sd">Sindhi</language>
+			<language type="se">Kuzey Sami</language>
+			<language type="sel">Selkup</language>
+			<language type="sem">Semitik Diller</language>
+			<language type="sg">Sangho</language>
+			<language type="sga">Eski İrlandaca</language>
+			<language type="sgn">İşaret Dilleri</language>
+			<language type="sh">Sırp-Hırvat Dili</language>
+			<language type="shn">Shan Dili</language>
+			<language type="si">Seylanca</language>
+			<language type="sid">Sidamo</language>
+			<language type="sio">Siu Dilleri</language>
+			<language type="sit">Sino-Tibet Dilleri</language>
+			<language type="sk">Slovakça</language>
+			<language type="sl">Slovence</language>
+			<language type="sla">Slav Dilleri</language>
+			<language type="sm">Samoa Dili</language>
+			<language type="sma">Güney Sami</language>
+			<language type="smi">Sami Dilleri</language>
+			<language type="smj">Lule Sami</language>
+			<language type="smn">Inari Sami</language>
+			<language type="sms">Skolt Sami</language>
+			<language type="sn">Shona</language>
+			<language type="snk">Soninke</language>
+			<language type="so">Somali Dili</language>
+			<language type="sog">Sogdiana Dili</language>
+			<language type="son">Songhai</language>
+			<language type="sq">Arnavutça</language>
+			<language type="sr">Sırpça</language>
+			<language type="srn">Sranan Tongo</language>
+			<language type="srr">Serer</language>
+			<language type="ss">Sisvati</language>
+			<language type="ssa">Nil-Sahara Dilleri</language>
+			<language type="st">Güney Sotho</language>
+			<language type="su">Sunda Dili</language>
+			<language type="suk">Sukuma</language>
+			<language type="sus">Susu</language>
+			<language type="sux">Sümerce</language>
+			<language type="sv">İsveççe</language>
+			<language type="sw">Svahili</language>
+			<language type="swb">Komorca</language>
+			<language type="syc">Klasik Süryanice</language>
+			<language type="syr">Süryanice</language>
+			<language type="ta">Tamilce</language>
+			<language type="tai">Tai Dili</language>
+			<language type="te">Telugu</language>
+			<language type="tem">Timne</language>
+			<language type="ter">Tereno</language>
+			<language type="tet">Tetum</language>
+			<language type="tg">Tacikçe</language>
+			<language type="th">Tayca</language>
+			<language type="ti">Tigrinya</language>
+			<language type="tig">Tigre</language>
+			<language type="tiv">Tiv</language>
+			<language type="tk">Türkmence</language>
+			<language type="tkl">Tokelau</language>
+			<language type="tl">Takalotça</language>
+			<language type="tlh">Klingon</language>
+			<language type="tli">Tlingit</language>
+			<language type="tmh">Tamaşek</language>
+			<language type="tn">Setsvana</language>
+			<language type="to">Tonga</language>
+			<language type="tog">Nyasa Tonga</language>
+			<language type="tpi">Tok Pisin</language>
+			<language type="tr">Türkçe</language>
+			<language type="ts">Tsonga</language>
+			<language type="tsi">Tsimshian</language>
+			<language type="tt">Tatarca</language>
+			<language type="tum">Tumbuka</language>
+			<language type="tup">Tupi Dilleri</language>
+			<language type="tut">Altay Dilleri</language>
+			<language type="tvl">Tuvalu</language>
+			<language type="tw">Tvi</language>
+			<language type="ty">Tahiti Dili</language>
+			<language type="tyv">Tuvaca</language>
+			<language type="udm">Udmurtça</language>
+			<language type="ug">Uygurca</language>
+			<language type="ug" alt="variant">Uygurca</language>
+			<language type="uga">Ugarit Dili</language>
+			<language type="uk">Ukraynaca</language>
+			<language type="umb">Umbundu</language>
+			<language type="und">Bilinmeyen Dil</language>
+			<language type="ur">Urduca</language>
+			<language type="uz">Özbekçe</language>
+			<language type="vai">Vai</language>
+			<language type="ve">Venda</language>
+			<language type="vi">Vietnamca</language>
+			<language type="vo">Volapük</language>
+			<language type="vot">Votic</language>
+			<language type="wa">Valonca</language>
+			<language type="wak">Vakaşan Dilleri</language>
+			<language type="wal">Valamo</language>
+			<language type="war">Varay</language>
+			<language type="was">Vaşo</language>
+			<language type="wen">Sorb Dilleri</language>
+			<language type="wo">Volofca</language>
+			<language type="xal">Kalmıkça</language>
+			<language type="xh">Zosa</language>
+			<language type="yao">Yao</language>
+			<language type="yap">Yapça</language>
+			<language type="yi">Yidiş</language>
+			<language type="yo">Yoruba</language>
+			<language type="ypk">Yupik Dili</language>
+			<language type="yue">Kantonca</language>
+			<language type="za">Zhuang</language>
+			<language type="zap">Zapotek Dili</language>
+			<language type="zbl">Blis Sembolleri</language>
+			<language type="zen">Zenaga</language>
+			<language type="zh">Çince</language>
+			<language type="zh_Hans">Basitleştirilmiş Çince</language>
+			<language type="zh_Hant">Geleneksel Çince</language>
+			<language type="znd">Zande</language>
+			<language type="zu">Zulu</language>
+			<language type="zun">Zuni</language>
+			<language type="zxx">Dilbilim içeriği yok</language>
+			<language type="zza">Zazaca</language>
+		</languages>
+		<scripts>
+			<script type="Arab">Arap</script>
+			<script type="Arab" alt="variant">Fars-Arap</script>
+			<script type="Armi">İmparatorluk Aramicesi</script>
+			<script type="Armn">Ermeni</script>
+			<script type="Avst">Avesta</script>
+			<script type="Bali">Bali Dili</script>
+			<script type="Batk">Batak</script>
+			<script type="Beng">Bengal</script>
+			<script type="Blis">Blis Sembolleri</script>
+			<script type="Bopo">Bopomofo</script>
+			<script type="Brah">Brahmi</script>
+			<script type="Brai">Braille</script>
+			<script type="Bugi">Bugis</script>
+			<script type="Buhd">Buhid</script>
+			<script type="Cakm">Chakma</script>
+			<script type="Cans">UCAS</script>
+			<script type="Cari">Karya</script>
+			<script type="Cham">Cham</script>
+			<script type="Cher">Çeroki</script>
+			<script type="Cirt">Cirth</script>
+			<script type="Copt">Kıpti</script>
+			<script type="Cprt">Kıbrıs</script>
+			<script type="Cyrl">Kiril</script>
+			<script type="Cyrs">Eski Kilise Slavcası Kiril</script>
+			<script type="Deva">Devanagari</script>
+			<script type="Dsrt">Deseret</script>
+			<script type="Egyd">Demotik Mısır</script>
+			<script type="Egyh">Hiyeratik Mısır</script>
+			<script type="Egyp">Hiyeroglif Mısır</script>
+			<script type="Ethi">Etiyopya</script>
+			<script type="Geok">Hutsuri Gürcü</script>
+			<script type="Geor">Gürcü</script>
+			<script type="Glag">Glagolit</script>
+			<script type="Goth">Gotik</script>
+			<script type="Grek">Yunan</script>
+			<script type="Gujr">Gücerat</script>
+			<script type="Guru">Gurmukhi</script>
+			<script type="Hang">Hangıl</script>
+			<script type="Hani">Han</script>
+			<script type="Hano">Hanunoo</script>
+			<script type="Hans">Basitleştirilmiş</script>
+			<script type="Hans" alt="stand-alone">Basitleştirilmiş Han</script>
+			<script type="Hant">Geleneksel</script>
+			<script type="Hant" alt="stand-alone">Geleneksel Han</script>
+			<script type="Hebr">İbrani</script>
+			<script type="Hira">Hiragana</script>
+			<script type="Hmng">Pahavh Hmong</script>
+			<script type="Hrkt">Katakana veya Hiragana</script>
+			<script type="Hung">Eski Macar</script>
+			<script type="Inds">Indus</script>
+			<script type="Ital">Eski İtalyan</script>
+			<script type="Java">Cava Dili</script>
+			<script type="Jpan">Japon</script>
+			<script type="Kali">Kayah Li</script>
+			<script type="Kana">Katakana</script>
+			<script type="Khar">Kharoshthi</script>
+			<script type="Khmr">Khmer</script>
+			<script type="Knda">Kannada</script>
+			<script type="Kthi">Kaithi</script>
+			<script type="Lana">Lanna</script>
+			<script type="Laoo">Lao Dili</script>
+			<script type="Latf">Fraktur Latin</script>
+			<script type="Latg">Gael Latin</script>
+			<script type="Latn">Latin</script>
+			<script type="Lepc">Lepcha</script>
+			<script type="Limb">Limbu</script>
+			<script type="Lina">Lineer A</script>
+			<script type="Linb">Lineer B</script>
+			<script type="Lyci">Likya</script>
+			<script type="Lydi">Lidya</script>
+			<script type="Mand">Manden</script>
+			<script type="Maya">Maya Hiyeroglifleri</script>
+			<script type="Mero">Meroitik</script>
+			<script type="Mlym">Malayalam</script>
+			<script type="Mong">Moğol</script>
+			<script type="Moon">Moon</script>
+			<script type="Mtei">Meitei Mayek</script>
+			<script type="Mymr">Myanmar</script>
+			<script type="Nkoo">N’Ko</script>
+			<script type="Ogam">Ogham</script>
+			<script type="Olck">Ol Chiki</script>
+			<script type="Orkh">Orhun</script>
+			<script type="Orya">Oriya</script>
+			<script type="Osma">Osmanya</script>
+			<script type="Perm">Eski Permik</script>
+			<script type="Phag">Phags-pa</script>
+			<script type="Phli">Pehlevi Kitabe Dili</script>
+			<script type="Phlp">Psalter Pehlevi</script>
+			<script type="Phlv">Kitap Pehlevi Dili</script>
+			<script type="Phnx">Fenike</script>
+			<script type="Plrd">Pollard Fonetik</script>
+			<script type="Prti">Partça Kitabe Dili</script>
+			<script type="Rjng">Rejang</script>
+			<script type="Roro">Rongorongo</script>
+			<script type="Runr">Runik</script>
+			<script type="Samr">Samarit</script>
+			<script type="Sara">Sarati</script>
+			<script type="Saur">Saurashtra</script>
+			<script type="Sgnw">İşaret Dili</script>
+			<script type="Shaw">Shavian</script>
+			<script type="Sinh">Sinhal</script>
+			<script type="Sund">Sunda</script>
+			<script type="Sylo">Syloti Nagri</script>
+			<script type="Syrc">Süryani</script>
+			<script type="Syre">Estrangela Süryani</script>
+			<script type="Syrj">Batı Süryani</script>
+			<script type="Syrn">Doğu Süryani</script>
+			<script type="Tagb">Tagbanva</script>
+			<script type="Tale">Tai Le</script>
+			<script type="Talu">New Tai Lue</script>
+			<script type="Taml">Tamil</script>
+			<script type="Tavt">Tai Viet</script>
+			<script type="Telu">Telugu</script>
+			<script type="Teng">Tengvar</script>
+			<script type="Tfng">Tifinagh</script>
+			<script type="Tglg">Takalot</script>
+			<script type="Thaa">Thaana</script>
+			<script type="Thai">Tay</script>
+			<script type="Tibt">Tibet</script>
+			<script type="Ugar">Ugarit Çivi Yazısı</script>
+			<script type="Vaii">Vai</script>
+			<script type="Visp">Konuşma Sesleri Çizimlemesi</script>
+			<script type="Xpeo">Eski Fars</script>
+			<script type="Xsux">Sümer-Akad Çivi Yazısı</script>
+			<script type="Yiii">Yi</script>
+			<script type="Zinh">Kalıtsal</script>
+			<script type="Zmth">Matematiksel Gösterim</script>
+			<script type="Zsym">Sembol</script>
+			<script type="Zxxx">Yazılı Olmayan</script>
+			<script type="Zyyy">Ortak</script>
+			<script type="Zzzz">Bilinmeyen Betik</script>
+		</scripts>
+		<territories>
+			<territory type="001">Dünya</territory>
+			<territory type="002">Afrika</territory>
+			<territory type="003">Kuzey Amerika</territory>
+			<territory type="005">Güney Amerika</territory>
+			<territory type="009">Okyanusya</territory>
+			<territory type="011">Batı Afrika</territory>
+			<territory type="013">Orta Amerika</territory>
+			<territory type="014">Doğu Afrika</territory>
+			<territory type="015">Kuzey Afrika</territory>
+			<territory type="017">Orta Afrika</territory>
+			<territory type="018">Afrika'nın Güneyi</territory>
+			<territory type="019">Amerika</territory>
+			<territory type="021">Amerika'nın Kuzeyi</territory>
+			<territory type="029">Karayipler</territory>
+			<territory type="030">Doğu Asya</territory>
+			<territory type="034">Güney Asya</territory>
+			<territory type="035">Güney Doğu Asya</territory>
+			<territory type="039">Güney Avrupa</territory>
+			<territory type="053">Avustralya ve Yeni Zelanda</territory>
+			<territory type="054">Melanezya</territory>
+			<territory type="057">Mikronezya</territory>
+			<territory type="061">Polinezya</territory>
+			<territory type="142">Asya</territory>
+			<territory type="143">Orta Asya</territory>
+			<territory type="145">Batı Asya</territory>
+			<territory type="150">Avrupa</territory>
+			<territory type="151">Doğu Avrupa</territory>
+			<territory type="154">Kuzey Avrupa</territory>
+			<territory type="155">Batı Avrupa</territory>
+			<territory type="419">Latin Amerika</territory>
+			<territory type="AC">Ascension Adası</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AE">Birleşik Arap Emirlikleri</territory>
+			<territory type="AF">Afganistan</territory>
+			<territory type="AG">Antigua ve Barbuda</territory>
+			<territory type="AI">Anguilla</territory>
+			<territory type="AL">Arnavutluk</territory>
+			<territory type="AM">Ermenistan</territory>
+			<territory type="AN">Hollanda Antilleri</territory>
+			<territory type="AO">Angola</territory>
+			<territory type="AQ">Antarktika</territory>
+			<territory type="AR">Arjantin</territory>
+			<territory type="AS">Amerikan Samoası</territory>
+			<territory type="AT">Avusturya</territory>
+			<territory type="AU">Avustralya</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AX">Aland Adaları</territory>
+			<territory type="AZ">Azerbaycan</territory>
+			<territory type="BA">Bosna Hersek</territory>
+			<territory type="BB">Barbados</territory>
+			<territory type="BD">Bangladeş</territory>
+			<territory type="BE">Belçika</territory>
+			<territory type="BF">Burkina Faso</territory>
+			<territory type="BG">Bulgaristan</territory>
+			<territory type="BH">Bahreyn</territory>
+			<territory type="BI">Burundi</territory>
+			<territory type="BJ">Benin</territory>
+			<territory type="BL">Saint Barthelemy</territory>
+			<territory type="BM">Bermuda</territory>
+			<territory type="BN">Brunei</territory>
+			<territory type="BO">Bolivya</territory>
+			<territory type="BR">Brezilya</territory>
+			<territory type="BS">Bahamalar</territory>
+			<territory type="BT">Butan</territory>
+			<territory type="BV">Bouvet Adası</territory>
+			<territory type="BW">Botsvana</territory>
+			<territory type="BY">Beyaz Rusya</territory>
+			<territory type="BZ">Belize</territory>
+			<territory type="CA">Kanada</territory>
+			<territory type="CC">Cocos Adaları</territory>
+			<territory type="CD">Kongo - Kinşasa</territory>
+			<territory type="CD" alt="variant">Demokratik Kongo Cumhuriyeti</territory>
+			<territory type="CF">Orta Afrika Cumhuriyeti</territory>
+			<territory type="CG">Kongo - Brazavil</territory>
+			<territory type="CG" alt="variant">Kongo Cumhuriyeti</territory>
+			<territory type="CH">İsviçre</territory>
+			<territory type="CI">Fildişi Sahili</territory>
+			<territory type="CI" alt="variant">Fildişi Sahili</territory>
+			<territory type="CK">Cook Adaları</territory>
+			<territory type="CL">Şili</territory>
+			<territory type="CM">Kamerun</territory>
+			<territory type="CN">Çin</territory>
+			<territory type="CO">Kolombiya</territory>
+			<territory type="CP">Clipperton Adası</territory>
+			<territory type="CR">Kosta Rika</territory>
+			<territory type="CS">Sırbistan-Karadağ</territory>
+			<territory type="CU">Küba</territory>
+			<territory type="CV">Cape Verde</territory>
+			<territory type="CX">Christmas Adası</territory>
+			<territory type="CY">Güney Kıbrıs Rum Kesimi</territory>
+			<territory type="CZ">Çek Cumhuriyeti</territory>
+			<territory type="DE">Almanya</territory>
+			<territory type="DG">Diego Garcia</territory>
+			<territory type="DJ">Cibuti</territory>
+			<territory type="DK">Danimarka</territory>
+			<territory type="DM">Dominika</territory>
+			<territory type="DO">Dominik Cumhuriyeti</territory>
+			<territory type="DZ">Cezayir</territory>
+			<territory type="EA">Ceuta ve Melilla</territory>
+			<territory type="EC">Ekvador</territory>
+			<territory type="EE">Estonya</territory>
+			<territory type="EG">Mısır</territory>
+			<territory type="EH">Batı Sahara</territory>
+			<territory type="ER">Eritre</territory>
+			<territory type="ES">İspanya</territory>
+			<territory type="ET">Etiyopya</territory>
+			<territory type="EU">Avrupa Birliği</territory>
+			<territory type="FI">Finlandiya</territory>
+			<territory type="FJ">Fiji</territory>
+			<territory type="FK">Falkland Adaları</territory>
+			<territory type="FK" alt="variant">Falkland Adaları [Malvinas Adaları]</territory>
+			<territory type="FM">Mikronezya Federal Eyaletleri</territory>
+			<territory type="FO">Faroe Adaları</territory>
+			<territory type="FR">Fransa</territory>
+			<territory type="FX">Fransa, Metropolitan</territory>
+			<territory type="GA">Gabon</territory>
+			<territory type="GB">Birleşik Krallık</territory>
+			<territory type="GD">Grenada</territory>
+			<territory type="GE">Gürcistan</territory>
+			<territory type="GF">Fransız Guyanası</territory>
+			<territory type="GG">Guernsey</territory>
+			<territory type="GH">Gana</territory>
+			<territory type="GI">Cebelitarık</territory>
+			<territory type="GL">Grönland</territory>
+			<territory type="GM">Gambiya</territory>
+			<territory type="GN">Gine</territory>
+			<territory type="GP">Guadalupe</territory>
+			<territory type="GQ">Ekvator Ginesi</territory>
+			<territory type="GR">Yunanistan</territory>
+			<territory type="GS">Güney Georgia ve Güney Sandwich Adaları</territory>
+			<territory type="GT">Guatemala</territory>
+			<territory type="GU">Guam</territory>
+			<territory type="GW">Gine-Bissau</territory>
+			<territory type="GY">Guyana</territory>
+			<territory type="HK">Hong Kong SAR - Çin</territory>
+			<territory type="HK" alt="short">Hong Kong</territory>
+			<territory type="HM">Heard Adası ve McDonald Adaları</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="HR">Hırvatistan</territory>
+			<territory type="HT">Haiti</territory>
+			<territory type="HU">Macaristan</territory>
+			<territory type="IC">Kanarya Adaları</territory>
+			<territory type="ID">Endonezya</territory>
+			<territory type="IE">İrlanda</territory>
+			<territory type="IL">İsrail</territory>
+			<territory type="IM">Man Adası</territory>
+			<territory type="IN">Hindistan</territory>
+			<territory type="IO">İngiliz Hint Okyanusu Bölgesi</territory>
+			<territory type="IQ">Irak</territory>
+			<territory type="IR">İran</territory>
+			<territory type="IS">İzlanda</territory>
+			<territory type="IT">İtalya</territory>
+			<territory type="JE">Jersey</territory>
+			<territory type="JM">Jamaika</territory>
+			<territory type="JO">Ürdün</territory>
+			<territory type="JP">Japonya</territory>
+			<territory type="KE">Kenya</territory>
+			<territory type="KG">Kırgızistan</territory>
+			<territory type="KH">Kamboçya</territory>
+			<territory type="KI">Kiribati</territory>
+			<territory type="KM">Komorlar</territory>
+			<territory type="KN">Saint Kitts ve Nevis</territory>
+			<territory type="KP">Kuzey Kore</territory>
+			<territory type="KR">Güney Kore</territory>
+			<territory type="KW">Kuveyt</territory>
+			<territory type="KY">Cayman Adaları</territory>
+			<territory type="KZ">Kazakistan</territory>
+			<territory type="LA">Laos</territory>
+			<territory type="LB">Lübnan</territory>
+			<territory type="LC">Saint Lucia</territory>
+			<territory type="LI">Liechtenstein</territory>
+			<territory type="LK">Sri Lanka</territory>
+			<territory type="LR">Liberya</territory>
+			<territory type="LS">Lesoto</territory>
+			<territory type="LT">Litvanya</territory>
+			<territory type="LU">Lüksemburg</territory>
+			<territory type="LV">Letonya</territory>
+			<territory type="LY">Libya</territory>
+			<territory type="MA">Fas</territory>
+			<territory type="MC">Monako</territory>
+			<territory type="MD">Moldova</territory>
+			<territory type="ME">Karadağ</territory>
+			<territory type="MF">Saint Martin</territory>
+			<territory type="MG">Madagaskar</territory>
+			<territory type="MH">Marshall Adaları</territory>
+			<territory type="MK">Makedonya</territory>
+			<territory type="MK" alt="variant">Makedonya [EYMC]</territory>
+			<territory type="ML">Mali</territory>
+			<territory type="MM">Myanmar</territory>
+			<territory type="MN">Moğolistan</territory>
+			<territory type="MO">Makao SAR - Çin</territory>
+			<territory type="MO" alt="short">Makao</territory>
+			<territory type="MP">Kuzey Mariana Adaları</territory>
+			<territory type="MQ">Martinik</territory>
+			<territory type="MR">Moritanya</territory>
+			<territory type="MS">Montserrat</territory>
+			<territory type="MT">Malta</territory>
+			<territory type="MU">Mauritius</territory>
+			<territory type="MV">Maldivler</territory>
+			<territory type="MW">Malavi</territory>
+			<territory type="MX">Meksika</territory>
+			<territory type="MY">Malezya</territory>
+			<territory type="MZ">Mozambik</territory>
+			<territory type="NA">Namibya</territory>
+			<territory type="NC">Yeni Kaledonya</territory>
+			<territory type="NE">Nijer</territory>
+			<territory type="NF">Norfolk Adası</territory>
+			<territory type="NG">Nijerya</territory>
+			<territory type="NI">Nikaragua</territory>
+			<territory type="NL">Hollanda</territory>
+			<territory type="NO">Norveç</territory>
+			<territory type="NP">Nepal</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
+			<territory type="NZ">Yeni Zelanda</territory>
+			<territory type="OM">Umman</territory>
+			<territory type="PA">Panama</territory>
+			<territory type="PE">Peru</territory>
+			<territory type="PF">Fransız Polinezyası</territory>
+			<territory type="PG">Papua Yeni Gine</territory>
+			<territory type="PH">Filipinler</territory>
+			<territory type="PK">Pakistan</territory>
+			<territory type="PL">Polonya</territory>
+			<territory type="PM">Saint Pierre ve Miquelon</territory>
+			<territory type="PN">Pitcairn</territory>
+			<territory type="PR">Porto Riko</territory>
+			<territory type="PS">Filistin Bölgesi</territory>
+			<territory type="PT">Portekiz</territory>
+			<territory type="PW">Palau</territory>
+			<territory type="PY">Paraguay</territory>
+			<territory type="QA">Katar</territory>
+			<territory type="QO">Uzak Okyanusya</territory>
+			<territory type="RE">Reunion</territory>
+			<territory type="RO">Romanya</territory>
+			<territory type="RS">Sırbistan</territory>
+			<territory type="RU">Rusya</territory>
+			<territory type="RW">Ruanda</territory>
+			<territory type="SA">Suudi Arabistan</territory>
+			<territory type="SB">Solomon Adaları</territory>
+			<territory type="SC">Seyşeller</territory>
+			<territory type="SD">Sudan</territory>
+			<territory type="SE">İsveç</territory>
+			<territory type="SG">Singapur</territory>
+			<territory type="SH">Saint Helena</territory>
+			<territory type="SI">Slovenya</territory>
+			<territory type="SJ">Svalbard ve Jan Mayen Adaları</territory>
+			<territory type="SK">Slovakya</territory>
+			<territory type="SL">Sierra Leone</territory>
+			<territory type="SM">San Marino</territory>
+			<territory type="SN">Senegal</territory>
+			<territory type="SO">Somali</territory>
+			<territory type="SR">Surinam</territory>
+			<territory type="ST">Sao Tome ve Principe</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SY">Suriye</territory>
+			<territory type="SZ">Svaziland</territory>
+			<territory type="TA">Tristan da Cunha</territory>
+			<territory type="TC">Turks ve Caicos Adaları</territory>
+			<territory type="TD">Çad</territory>
+			<territory type="TF">Fransız Güney Bölgeleri</territory>
+			<territory type="TG">Togo</territory>
+			<territory type="TH">Tayland</territory>
+			<territory type="TJ">Tacikistan</territory>
+			<territory type="TK">Tokelau</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">Doğu Timor</territory>
+			<territory type="TM">Türkmenistan</territory>
+			<territory type="TN">Tunus</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Türkiye</territory>
+			<territory type="TT">Trinidad ve Tobago</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Tayvan</territory>
+			<territory type="TZ">Tanzanya</territory>
+			<territory type="UA">Ukrayna</territory>
+			<territory type="UG">Uganda</territory>
+			<territory type="UM">Amerika Birleşik Devletleri Küçük Dış Adaları</territory>
+			<territory type="US">Amerika Birleşik Devletleri</territory>
+			<territory type="UY">Uruguay</territory>
+			<territory type="UZ">Özbekistan</territory>
+			<territory type="VA">Vatikan</territory>
+			<territory type="VC">Saint Vincent ve Grenadinler</territory>
+			<territory type="VE">Venezuela</territory>
+			<territory type="VG">İngiliz Virgin Adaları</territory>
+			<territory type="VI">ABD Virgin Adaları</territory>
+			<territory type="VN">Vietnam</territory>
+			<territory type="VU">Vanuatu</territory>
+			<territory type="WF">Wallis ve Futuna Adaları</territory>
+			<territory type="WS">Samoa</territory>
+			<territory type="YE">Yemen</territory>
+			<territory type="YT">Mayotte</territory>
+			<territory type="ZA">Güney Afrika</territory>
+			<territory type="ZM">Zambiya</territory>
+			<territory type="ZW">Zimbabve</territory>
+			<territory type="ZZ">Bilinmeyen Bölge</territory>
+		</territories>
+		<variants>
+			<variant type="1901">Geleneksel Almanca Yazım Kuralları</variant>
+			<variant type="1994">Standart Resia Yazım Kuralları</variant>
+			<variant type="1996">1996 Almanca Yazım Kuralları</variant>
+			<variant type="1606NICT">1606'ya Dek Geç Ortaçağ Fransızcası</variant>
+			<variant type="1694ACAD">Erken Modern Fransızca</variant>
+			<variant type="1959ACAD">Akademik</variant>
+			<variant type="AREVELA">Doğu Ermenicesi</variant>
+			<variant type="AREVMDA">Batı Ermenicesi</variant>
+			<variant type="BAKU1926">Birleştirilmiş Yeni Türk Alfabesi</variant>
+			<variant type="BISKE">San Giorgio/Bila Lehçesi</variant>
+			<variant type="BOONT">Boontling</variant>
+			<variant type="FONIPA">IPA Ses Bilimi</variant>
+			<variant type="FONUPA">UPA Ses Bilimi</variant>
+			<variant type="KKCOR">Ortak Yazım Kuralları</variant>
+			<variant type="LIPAW">Resia Lipovaz Lehçesi</variant>
+			<variant type="MONOTON">Monotonik</variant>
+			<variant type="NEDIS">Natisone Lehçesi</variant>
+			<variant type="NJIVA">Gniva/Njiva Lehçesi</variant>
+			<variant type="OSOJS">Oseacco/Osojane Lehçesi</variant>
+			<variant type="PINYIN">Pinyin (Latin Alfabesinde Yazımı)</variant>
+			<variant type="POLYTON">Politonik</variant>
+			<variant type="POSIX">Bilgisayar</variant>
+			<variant type="REVISED">Gözden Geçirilmiş Yazım Kuralları</variant>
+			<variant type="ROZAJ">Resia Lehçesi</variant>
+			<variant type="SAAHO">Saho</variant>
+			<variant type="SCOTLAND">İskoç Standart İngilizcesi</variant>
+			<variant type="SCOUSE">Scouse</variant>
+			<variant type="SOLBA">Stolvizza/Solbica Lehçesi</variant>
+			<variant type="TARASK">Taraskievica Yazım Kuralları</variant>
+			<variant type="UCCOR">Birleştirilmiş Yazım Kuralları</variant>
+			<variant type="UCRCOR">Gözden Geçirilmiş Birleştirilmiş Yazım Kuralları</variant>
+			<variant type="VALENCIA">Valensiyaca</variant>
+			<variant type="WADEGILE">Wade-Giles (Latin Alfabesinde Yazımı)</variant>
+		</variants>
+		<keys>
+			<key type="calendar">Takvim</key>
+			<key type="collation">Sıralama</key>
+			<key type="currency">Para Birimi</key>
+			<key type="numbers">Sayılar</key>
+			<key type="x">Özel Kullanım</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers">Hint-Arap Rakamları</type>
+			<type type="arabext" key="numbers">Genişletilmiş Hint-Arap Rakamları</type>
+			<type type="armn" key="numbers">Ermenice Rakamlar</type>
+			<type type="armnlow" key="numbers">Ermenice Rakamlar (Küçük Harf)</type>
+			<type type="beng" key="numbers">Bengalce Rakamlar</type>
+			<type type="big5han" key="collation">Geleneksel Çince Sıralaması - Big5</type>
+			<type type="buddhist" key="calendar">Budist Takvimi</type>
+			<type type="chinese" key="calendar">Çin Takvimi</type>
+			<type type="coptic" key="calendar">Kıpti Takvim</type>
+			<type type="deva" key="numbers">Devanagari Rakamları</type>
+			<type type="dictionary" key="collation">Sözlük Sıralama Düzeni</type>
+			<type type="ducet" key="collation">Saptanmış Unicode Sıralaması</type>
+			<type type="ethi" key="numbers">Etiyopik Rakamlar</type>
+			<type type="ethiopic" key="calendar">Etiyopik Takvim</type>
+			<type type="ethiopic-amete-alem" key="calendar">Etiyopik Amete Alem Takvimi</type>
+			<type type="fullwide" key="numbers">Tam Genişlikte Rakamlar</type>
+			<type type="gb2312han" key="collation">Basitleştirilmiş Çince Sıralaması - GB2312</type>
+			<type type="geor" key="numbers">Gürcüce Rakamlar</type>
+			<type type="gregorian" key="calendar">Miladi Takvim</type>
+			<type type="grek" key="numbers">Yunanca Rakamlar</type>
+			<type type="greklow" key="numbers">Yunanca Rakamlar (Küçük Harf)</type>
+			<type type="gujr" key="numbers">Gucerat Rakamları</type>
+			<type type="guru" key="numbers">Gurmukhi Rakamları</type>
+			<type type="hanidec" key="numbers">Çince Ondalık Rakamlar</type>
+			<type type="hans" key="numbers">Basitleştirilmiş Çince Rakamlar</type>
+			<type type="hansfin" key="numbers">Basitleştirilmiş Çince Finansal Rakamlar</type>
+			<type type="hant" key="numbers">Geleneksel Çince Rakamlar</type>
+			<type type="hantfin" key="numbers">Geleneksel Çince Finansal Rakamlar</type>
+			<type type="hebr" key="numbers">İbranice Rakamlar</type>
+			<type type="hebrew" key="calendar">Yahudi Takvimi</type>
+			<type type="indian" key="calendar">Ulusal Hint Takvimi</type>
+			<type type="islamic" key="calendar">Hicri Takvim</type>
+			<type type="islamic-civil" key="calendar">Arap Takvimi</type>
+			<type type="japanese" key="calendar">Japon Takvimi</type>
+			<type type="jpan" key="numbers">Japonca Rakamlar</type>
+			<type type="jpanfin" key="numbers">Japonca Finansal Rakamlar</type>
+			<type type="khmr" key="numbers">Khmer Rakamları</type>
+			<type type="knda" key="numbers">Kannada Rakamları</type>
+			<type type="laoo" key="numbers">Lao Rakamları</type>
+			<type type="latn" key="numbers">Batı Rakamları</type>
+			<type type="mlym" key="numbers">Malayalam Rakamları</type>
+			<type type="mong" key="numbers">Moğolca Rakamlar</type>
+			<type type="mymr" key="numbers">Myanmar Rakamları</type>
+			<type type="orya" key="numbers">Oriya Rakamları</type>
+			<type type="persian" key="calendar">Farsça Takvim</type>
+			<type type="phonebook" key="collation">Telefon Defteri Sıralaması</type>
+			<type type="pinyin" key="collation">Basitleştirilmiş Çince Pinyin Sıralaması</type>
+			<type type="reformed" key="collation">Yeni Sıralama Düzeni</type>
+			<type type="roc" key="calendar">Çin Cumhuriyeti Takvimi</type>
+			<type type="roman" key="numbers">Roma Rakamları</type>
+			<type type="romanlow" key="numbers">Roma Rakamları (Küçük Harf)</type>
+			<type type="search" key="collation">Genel Amaçlı Arama</type>
+			<type type="stroke" key="collation">Geleneksel Çince Vuruş Sıralaması</type>
+			<type type="taml" key="numbers">Tamil Rakamları</type>
+			<type type="telu" key="numbers">Telugu Rakamları</type>
+			<type type="thai" key="numbers">Tay Dili Rakamları</type>
+			<type type="tibt" key="numbers">Tibet Rakamları</type>
+			<type type="traditional" key="collation">Geleneksel Sıralama</type>
+			<type type="unihan" key="collation">Radical-Stroke Sıralama Düzeni</type>
+		</types>
+		<transformNames>
+			<transformName type="Numeric">Rakam</transformName>
+			<transformName type="Tone">Ton</transformName>
+			<transformName type="x-Accents">Aksanlar</transformName>
+			<transformName type="x-Fullwidth">Tam Genişlik</transformName>
+			<transformName type="x-Halfwidth">Yarım genişlik</transformName>
+			<transformName type="x-Jamo">Jamo</transformName>
+			<transformName type="x-Pinyin">Pinyin</transformName>
+			<transformName type="x-Publishing">Yayıncılık</transformName>
+		</transformNames>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Metrik</measurementSystemName>
+			<measurementSystemName type="UK">İngiliz</measurementSystemName>
+			<measurementSystemName type="US">Amerikan</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Dil: {0}</codePattern>
+			<codePattern type="script">Alfabe: {0}</codePattern>
+			<codePattern type="territory">Bölge: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c ç d e f g ğ h ı i {i\u0307} j k l m n o ö p r s ş t u ü v y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ä ā æ é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ø ō œ q ú ù ŭ û ū w x ÿ]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol">[a b c č d e f g h i j k l ł m n o º p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C Ç D E F G H I İ J K L M N O Ö P Q R S Ş T U Ü V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>dd MMMM y G EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd.MM E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">dd MMM E</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yM">MM.y G</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yMEd">dd.MM.y G E</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMd">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMEd">dd MMM y G E</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyMM">MM.yy G</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyQQQQ">QQQQ yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Tût</month>
+							<month type="2">Bâbe</month>
+							<month type="3">Hatur</month>
+							<month type="4">Keyhek</month>
+							<month type="5">Tûbe</month>
+							<month type="6">Imşir</month>
+							<month type="7">Bermuhat</month>
+							<month type="8">Bermude</month>
+							<month type="9">Peyştes</month>
+							<month type="10">Bune</month>
+							<month type="11">Ebip</month>
+							<month type="12">Mısrî</month>
+							<month type="13">Nesî</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Meskerem</month>
+							<month type="2">Tikimt</month>
+							<month type="3">Hidar</month>
+							<month type="4">Tahsas</month>
+							<month type="5">Tir</month>
+							<month type="6">Yakatit</month>
+							<month type="7">Magabit</month>
+							<month type="8">Miyazya</month>
+							<month type="9">Ginbot</month>
+							<month type="10">Sene</month>
+							<month type="11">Hamle</month>
+							<month type="12">Nehasa</month>
+							<month type="13">Pagumiene</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Oca</month>
+							<month type="2">Şub</month>
+							<month type="3">Mar</month>
+							<month type="4">Nis</month>
+							<month type="5">May</month>
+							<month type="6">Haz</month>
+							<month type="7">Tem</month>
+							<month type="8">Ağu</month>
+							<month type="9">Eyl</month>
+							<month type="10">Eki</month>
+							<month type="11">Kas</month>
+							<month type="12">Ara</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">O</month>
+							<month type="2">Ş</month>
+							<month type="3">M</month>
+							<month type="4">N</month>
+							<month type="5">M</month>
+							<month type="6">H</month>
+							<month type="7">T</month>
+							<month type="8">A</month>
+							<month type="9">E</month>
+							<month type="10">E</month>
+							<month type="11">K</month>
+							<month type="12">A</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Ocak</month>
+							<month type="2">Şubat</month>
+							<month type="3">Mart</month>
+							<month type="4">Nisan</month>
+							<month type="5">Mayıs</month>
+							<month type="6">Haziran</month>
+							<month type="7">Temmuz</month>
+							<month type="8">Ağustos</month>
+							<month type="9">Eylül</month>
+							<month type="10">Ekim</month>
+							<month type="11">Kasım</month>
+							<month type="12">Aralık</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Oca</month>
+							<month type="2">Şub</month>
+							<month type="3">Mar</month>
+							<month type="4">Nis</month>
+							<month type="5">May</month>
+							<month type="6">Haz</month>
+							<month type="7">Tem</month>
+							<month type="8">Ağu</month>
+							<month type="9">Eyl</month>
+							<month type="10">Eki</month>
+							<month type="11">Kas</month>
+							<month type="12">Ara</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">O</month>
+							<month type="2">Ş</month>
+							<month type="3">M</month>
+							<month type="4">N</month>
+							<month type="5">M</month>
+							<month type="6">H</month>
+							<month type="7">T</month>
+							<month type="8">A</month>
+							<month type="9">E</month>
+							<month type="10">E</month>
+							<month type="11">K</month>
+							<month type="12">A</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Ocak</month>
+							<month type="2">Şubat</month>
+							<month type="3">Mart</month>
+							<month type="4">Nisan</month>
+							<month type="5">Mayıs</month>
+							<month type="6">Haziran</month>
+							<month type="7">Temmuz</month>
+							<month type="8">Ağustos</month>
+							<month type="9">Eylül</month>
+							<month type="10">Ekim</month>
+							<month type="11">Kasım</month>
+							<month type="12">Aralık</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Paz</day>
+							<day type="mon">Pzt</day>
+							<day type="tue">Sal</day>
+							<day type="wed">Çar</day>
+							<day type="thu">Per</day>
+							<day type="fri">Cum</day>
+							<day type="sat">Cmt</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">P</day>
+							<day type="mon">P</day>
+							<day type="tue">S</day>
+							<day type="wed">Ç</day>
+							<day type="thu">P</day>
+							<day type="fri">C</day>
+							<day type="sat">C</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Pazar</day>
+							<day type="mon">Pazartesi</day>
+							<day type="tue">Salı</day>
+							<day type="wed">Çarşamba</day>
+							<day type="thu">Perşembe</day>
+							<day type="fri">Cuma</day>
+							<day type="sat">Cumartesi</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Paz</day>
+							<day type="mon">Pzt</day>
+							<day type="tue">Sal</day>
+							<day type="wed">Çar</day>
+							<day type="thu">Per</day>
+							<day type="fri">Cum</day>
+							<day type="sat">Cmt</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">P</day>
+							<day type="mon">P</day>
+							<day type="tue">S</day>
+							<day type="wed">Ç</day>
+							<day type="thu">P</day>
+							<day type="fri">C</day>
+							<day type="sat">C</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Pazar</day>
+							<day type="mon">Pazartesi</day>
+							<day type="tue">Salı</day>
+							<day type="wed">Çarşamba</day>
+							<day type="thu">Perşembe</day>
+							<day type="fri">Cuma</day>
+							<day type="sat">Cumartesi</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Ç1</quarter>
+							<quarter type="2">Ç2</quarter>
+							<quarter type="3">Ç3</quarter>
+							<quarter type="4">Ç4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1. çeyrek</quarter>
+							<quarter type="2">2. çeyrek</quarter>
+							<quarter type="3">3. çeyrek</quarter>
+							<quarter type="4">4. çeyrek</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Ç1</quarter>
+							<quarter type="2">Ç2</quarter>
+							<quarter type="3">Ç3</quarter>
+							<quarter type="4">Ç4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1. çeyrek</quarter>
+							<quarter type="2">2. çeyrek</quarter>
+							<quarter type="3">3. çeyrek</quarter>
+							<quarter type="4">4. çeyrek</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Milattan Önce</era>
+						<era type="1">Milattan Sonra</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">MÖ</era>
+						<era type="1">MS</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>d MMMM y EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd.MM E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">d MMMM E</dateFormatItem>
+						<dateFormatItem id="MMMMd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">dd MMMM E</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">MM.yy</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.yyyy</dateFormatItem>
+						<dateFormatItem id="yMEd">dd.MM.yyyy E</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">dd MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">d MMM y E</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQ">y-Q</dateFormatItem>
+						<dateFormatItem id="yQQQ">y-QQQ</dateFormatItem>
+						<dateFormatItem id="yyMM">MM.yy</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy</dateFormatItem>
+						<dateFormatItem id="yyQQQQ">QQQQ yy</dateFormatItem>
+						<dateFormatItem id="yyyy">y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a - h a</greatestDifference>
+							<greatestDifference id="h">h-h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="a">HH-HH</greatestDifference>
+							<greatestDifference id="H">HH-HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a - h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="a">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a - h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="a">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a - h a v</greatestDifference>
+							<greatestDifference id="h">h-h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="a">HH-HH v</greatestDifference>
+							<greatestDifference id="H">HH-HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM - MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">dd.MM - dd.MM</greatestDifference>
+							<greatestDifference id="M">dd.MM - dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">dd.MM E - dd.MM E</greatestDifference>
+							<greatestDifference id="M">dd.MM E - dd.MM E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d - d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">d MMM E - d MMM E</greatestDifference>
+							<greatestDifference id="M">d MMM E - d MMM E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM.yy - MM.yy</greatestDifference>
+							<greatestDifference id="y">MM.yy - MM.yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">dd.MM.yy - dd.MM.yy</greatestDifference>
+							<greatestDifference id="M">dd.MM.yy - dd.MM.yy</greatestDifference>
+							<greatestDifference id="y">dd.MM.yy - dd.MM.yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">dd.MM.yy E - dd.MM.yy E</greatestDifference>
+							<greatestDifference id="M">dd.MM.yy E - dd.MM.yy E</greatestDifference>
+							<greatestDifference id="y">dd.MM.yy E - dd.MM.yy E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM-MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y - MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d - d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y - d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">d MMM y E - d MMM y E</greatestDifference>
+							<greatestDifference id="M">d MMM y E - d MMM y E</greatestDifference>
+							<greatestDifference id="y">d MMM y E - d MMM y E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM-MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y - MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>Miladi Dönem</displayName>
+					</field>
+					<field type="year">
+						<displayName>Yıl</displayName>
+						<relative type="-1">Geçen yıl</relative>
+						<relative type="0">Bu yıl</relative>
+						<relative type="1">Gelecek yıl</relative>
+					</field>
+					<field type="month">
+						<displayName>Ay</displayName>
+						<relative type="-1">Geçen ay</relative>
+						<relative type="0">Bu ay</relative>
+						<relative type="1">Gelecek ay</relative>
+					</field>
+					<field type="week">
+						<displayName>Hafta</displayName>
+						<relative type="-1">Geçen hafta</relative>
+						<relative type="0">Bu hafta</relative>
+						<relative type="1">Gelecek hafta</relative>
+					</field>
+					<field type="day">
+						<displayName>Gün</displayName>
+						<relative type="-2">Evvelsi gün</relative>
+						<relative type="-1">Dün</relative>
+						<relative type="0">Bugün</relative>
+						<relative type="1">Yarın</relative>
+						<relative type="2">Yarından sonraki gün</relative>
+					</field>
+					<field type="weekday">
+						<displayName>Haftanın Günü</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>AM/PM</displayName>
+					</field>
+					<field type="hour">
+						<displayName>Saat</displayName>
+					</field>
+					<field type="minute">
+						<displayName>Dakika</displayName>
+					</field>
+					<field type="second">
+						<displayName>Saniye</displayName>
+					</field>
+					<field type="zone">
+						<displayName>Saat Dilimi</displayName>
+					</field>
+				</fields>
+			</calendar>
+			<calendar type="hebrew">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Tişri</month>
+							<month type="2">Heşvan</month>
+							<month type="3">Kislev</month>
+							<month type="4">Tevet</month>
+							<month type="5">Şevat</month>
+							<month type="6">Veadar</month>
+							<month type="7">Adar</month>
+							<month type="7" yeartype="leap">Adar II</month>
+							<month type="8">Nisan</month>
+							<month type="9">İyar</month>
+							<month type="10">Sivan</month>
+							<month type="11">Tamuz</month>
+							<month type="12">Av</month>
+							<month type="13">Elul</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Muharrem</month>
+							<month type="2">Safer</month>
+							<month type="3">Rebiülevvel</month>
+							<month type="4">Rebiülahir</month>
+							<month type="5">Cemaziyelevvel</month>
+							<month type="6">Cemaziyelahir</month>
+							<month type="7">Recep</month>
+							<month type="8">Şaban</month>
+							<month type="9">Ramazan</month>
+							<month type="10">Şevval</month>
+							<month type="11">Zilkade</month>
+							<month type="12">Zilhicce</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>dd MMMM y G EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd.MM E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">dd MMM E</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="yyMM">MM.yy G</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyQQQQ">QQQQ yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">dd.MM.y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">dd MMM y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>dd MMMM y G EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd.MM E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">dd MMM E</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyMM">MM.yy G</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyQQQQ">QQQQ yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">dd.MM.y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">dd MMM y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Ferverdin</month>
+							<month type="2">Ordibeheşt</month>
+							<month type="3">Hordad</month>
+							<month type="4">Tir</month>
+							<month type="5">Mordad</month>
+							<month type="6">Şehriver</month>
+							<month type="7">Mehr</month>
+							<month type="9">Azer</month>
+							<month type="10">Dey</month>
+							<month type="11">Behmen</month>
+							<month type="12">Esfend</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="roc">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>dd MMMM y G EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.yyyy G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd.MM E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">dd MMM E</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyMM">MM.yy G</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy G</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy G</dateFormatItem>
+						<dateFormatItem id="yyQQQQ">QQQQ yy G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">dd.MM.y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">dd MMM y G E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQ">Q y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<regionFormat>{0} Saati</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<fallbackRegionFormat>{1} Saati ({0})</fallbackRegionFormat>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Beulah, Kuzey Dakota</exemplarCity>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Bilinmeyen Şehir</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>Kabil</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>Tiran</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>Erivan</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity>Güney Kutbu</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Dumont D'Urville</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>Viyana</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>Sidney</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>Bakü</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>Saraybosna</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>Dakka</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>Brüksel</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>Sofya</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>Bahreyn</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>Kinşasa</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>Brazzavil</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>Zürih</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>Abican</exemplarCity>
+			</zone>
+			<zone type="Asia/Kashgar">
+				<exemplarCity>Kaşgar</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>Urumçi</exemplarCity>
+			</zone>
+			<zone type="Asia/Chongqing">
+				<exemplarCity>Çunking</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>Şangay</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Kosta Rika</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>Christmas</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>Lefkoşa</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>Prag</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>Cibuti</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>Kopenhag</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Dominika</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>Cezayir</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>Kahire</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>El Aaiun</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Kanarya Adaları</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>Septe</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<exemplarCity>Londra</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>Tiflis</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>Akra</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>Cebelitarık</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>Konakri</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>Atina</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>Güney Georgia</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>Budapeşte</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>Cakarta</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>Kudüs</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>Man Adası</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>Kalküta</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>Bağdat</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>Tahran</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>Roma</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaika</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>Bişkek</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>St. Kitts</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>Seul</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>Kuveyt</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Cayman</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aktav</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>Uralsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Aktöbe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kızılorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Almatı</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>Beyrut</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>St. Lucia</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>Kolombo</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>Lüksemburg</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>Trablus</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>Kazablanka</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>Monako</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>Kişinev</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>Üsküp</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>Yangon</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>Kobdo</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>Ulan Batur</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity>Çoybalsan</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>Makao</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Martinique</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>Mauritius</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>Maldivler</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Meksiko City</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>Kuçing</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>Katmandu</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>Nauru</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>Maskat</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>Markiz Adaları</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>Karaçi</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>Varşova</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>Pitcairn</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Porto Riko</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>Gazze</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>Azor Adaları</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>Lizbon</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>Katar</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>Reunion</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>Bükreş</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>Belgrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>Moskova</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>İrkutsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>Sahalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>Kamçatka</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>Anadır</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>Riyad</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>Hartum</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>Stokholm</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>Singapur</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>Mogadişu</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>El Salvador</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>Şam</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>Duşanbe</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>Aşkabat</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>Tunus</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>İstanbul</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Port of Spain</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>Darüsselam</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity>Ujgorod</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Akmescit</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity>Zaporojye</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>New Salem, Kuzey Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Merkez, Kuzey Dakota</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>Knox</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>Marengo</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>Semerkand</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>Taşkent</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>Vatikan</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>St. Vincent</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>Karakas</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>St. Thomas</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>Ho Chi Minh Kenti</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>Mayotte</exemplarCity>
+			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Saati</generic>
+					<standard>Acre Standart Saati</standard>
+					<daylight>Acre Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Afganistan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Orta Afrika Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Doğu Afrika Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Güney Afrika Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Batı Afrika Saati</generic>
+					<standard>Batı Afrika Standart Saati</standard>
+					<daylight>Batı Afrika Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aktyubinsk">
+				<long>
+					<generic>Aktyubinsk Saati</generic>
+					<standard>Aktyubinsk Standart Saati</standard>
+					<daylight>Aktyubinsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Alaska Saati</generic>
+					<standard>Alaska Standart Saati</standard>
+					<daylight>Alaska Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska_Hawaii">
+				<long>
+					<generic>Alaska-Hawaii Saati</generic>
+					<standard>Alaska-Hawaii Standart Saati</standard>
+					<daylight>Alaska-Hawaii Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic>Almatı Saati</generic>
+					<standard>Almatı Standart Saati</standard>
+					<daylight>Almatı Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Amazon Saati</generic>
+					<standard>Amazon Standart Saati</standard>
+					<daylight>Amazon Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Merkezi Saat</generic>
+					<standard>Merkezi Standart Saati</standard>
+					<daylight>Merkezi Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Doğu Saati</generic>
+					<standard>Doğu Standart Saati</standard>
+					<daylight>Doğu Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>ABD Sıradağlar Saati</generic>
+					<standard>ABD Sıradağlar Standart Saati</standard>
+					<daylight>ABD Sıradağlar Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Pasifik Saati</generic>
+					<standard>Pasifik Standart Saati</standard>
+					<daylight>Pasifik Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic>Anadyr Saati</generic>
+					<standard>Anadır Standart Saati</standard>
+					<daylight>Anadır Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic>Aktav Saati</generic>
+					<standard>Aktav Standart Saati</standard>
+					<daylight>Aktav Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic>Aktöbe Saati</generic>
+					<standard>Aktöbe Standart Saati</standard>
+					<daylight>Aktöbe Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Arabistan Saati</generic>
+					<standard>Arabistan Standart Saati</standard>
+					<daylight>Arabistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Arjantin Saati</generic>
+					<standard>Arjantin Standart Saati</standard>
+					<daylight>Arjantin Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Batı Arjantin Saati</generic>
+					<standard>Batı Arjantin Standart Saati</standard>
+					<daylight>Batı Arjantin Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Ermenistan Saati</generic>
+					<standard>Ermenistan Standart Saati</standard>
+					<daylight>Ermenistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ashkhabad">
+				<long>
+					<generic>Aşkabat Saati</generic>
+					<standard>Aşkabat Standart Saati</standard>
+					<daylight>Aşkabat Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Atlantik Saati</generic>
+					<standard>Atlantik Standart Saati</standard>
+					<daylight>Atlantik Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Orta Avustralya Saati</generic>
+					<standard>Orta Avustralya Standart Saati</standard>
+					<daylight>Orta Avustralya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>İçbatı Avustralya Saati</generic>
+					<standard>İçbatı Avustralya Standart Saati</standard>
+					<daylight>İçbatı Avustralya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Doğu Avustralya Saati</generic>
+					<standard>Doğu Avustralya Standart Saati</standard>
+					<daylight>Doğu Avustralya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Batı Avustralya Saati</generic>
+					<standard>Batı Avustralya Standart Saati</standard>
+					<daylight>Batı Avustralya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Azerbaycan Saati</generic>
+					<standard>Azerbaycan Standart Saati</standard>
+					<daylight>Azerbaycan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Azor Adaları Saati</generic>
+					<standard>Azor Adaları Standart Saati</standard>
+					<daylight>Azor Adaları Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Baku">
+				<long>
+					<generic>Bakü Saati</generic>
+					<standard>Bakü Standart Saati</standard>
+					<daylight>Bakü Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Bangladeş Saati</generic>
+					<standard>Bangladeş Standart Saati</standard>
+					<daylight>Bangladeş Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bering">
+				<long>
+					<generic>Bering Saati</generic>
+					<standard>Bering Standart Saati</standard>
+					<daylight>Bering Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Bhutan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Bolivya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Borneo">
+				<long>
+					<generic>Borneo Saati</generic>
+					<standard>Borneo Standart Saati</standard>
+					<daylight>Borneo Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Brasilia Saati</generic>
+					<standard>Brasilia Standart Saati</standard>
+					<daylight>Brasilia Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Bruney Sultanlığı Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Cape Verde Saati</generic>
+					<standard>Cape Verde Standart Saati</standard>
+					<daylight>Cape Verde Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Chamorro Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Changbai">
+				<long>
+					<standard>Changbai Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Chatham Saati</generic>
+					<standard>Chatham Standart Saati</standard>
+					<daylight>Chatham Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Şili Saati</generic>
+					<standard>Şili Standart Saati</standard>
+					<daylight>Şili Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Çin Saati</generic>
+					<standard>Çin Standart Saati</standard>
+					<daylight>Çin Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Choibalsan Saati</generic>
+					<standard>Çoybalsan Standart Saati</standard>
+					<daylight>Çoybalsan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Christmas Adası Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Cocos Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Kolombiya Saati</generic>
+					<standard>Kolombiya Standart Saati</standard>
+					<daylight>Kolombiya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Cook Adaları Saati</generic>
+					<standard>Cook Adaları Standart Saati</standard>
+					<daylight>Cook Adaları Yarı Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Küba Saati</generic>
+					<standard>Küba Standart Saati</standard>
+					<daylight>Küba Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dacca">
+				<long>
+					<standard>Dakka Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Davis Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Dumont-d'Urville Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Dushanbe">
+				<long>
+					<generic>Duşanbe Saati</generic>
+					<standard>Duşanbe Standart Saati</standard>
+					<daylight>Duşanbe Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dutch_Guiana">
+				<long>
+					<standard>Hollanda Guyanası Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Doğu Timor Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Easter Adası Saati</generic>
+					<standard>Easter Adası Standart Saati</standard>
+					<daylight>Easter Adası Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Ekvador Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Orta Avrupa Saati</generic>
+					<standard>Orta Avrupa Standart Saati</standard>
+					<daylight>Orta Avrupa Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Doğu Avrupa Saati</generic>
+					<standard>Doğu Avrupa Standart Saati</standard>
+					<daylight>Doğu Avrupa Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Batı Avrupa Saati</generic>
+					<standard>Batı Avrupa Standart Saati</standard>
+					<daylight>Batı Avrupa Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Falkland Adaları Saati</generic>
+					<standard>Falkland Adaları Standart Saati</standard>
+					<daylight>Falkland Adaları Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Fiji Saati</generic>
+					<standard>Fiji Standart Saati</standard>
+					<daylight>Fiji Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Fransız Guyanası Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Fransız Güney ve Antarktika Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Frunze">
+				<long>
+					<generic>Bişkek Saati</generic>
+					<standard>Bişkek Standart Saati</standard>
+					<daylight>Bişkek Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Galapagos Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Gambier Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Gürcistan Saati</generic>
+					<standard>Gürcistan Standart Saati</standard>
+					<daylight>Gürcistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Gilbert Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Merkez Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Central">
+				<long>
+					<generic>Orta Grönland Saati</generic>
+					<standard>Orta Grönland Standart Saati</standard>
+					<daylight>Orta Grönland Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Doğu Grönland Saati</generic>
+					<standard>Doğu Grönland Standart Saati</standard>
+					<daylight>Doğu Grönland Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Batı Grönland Saati</generic>
+					<standard>Batı Grönland Standart Saati</standard>
+					<daylight>Batı Grönland Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard>Guam Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Körfez Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Guyana Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Hawaii Aleutian Saati</generic>
+					<standard>Hawaii-Aleutian Standart Saati</standard>
+					<daylight>Hawaii-Aleutian Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Hong Kong Saati</generic>
+					<standard>Hong Kong Standart Saati</standard>
+					<daylight>Hong Kong Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Hovd Saati</generic>
+					<standard>Kobdo Standart Saati</standard>
+					<daylight>Kobdo Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Hindistan Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Hint Okyanusu Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Çinhindi Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Orta Endonezya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Doğu Endonezya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Batı Endonezya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>İran Saati</generic>
+					<standard>İran Standart Saati</standard>
+					<daylight>İran Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Irkutsk Saati</generic>
+					<standard>İrkutsk Standart Saati</standard>
+					<daylight>İrkutsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>İsrail Saati</generic>
+					<standard>İsrail Standart Saati</standard>
+					<daylight>İsrail Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Japonya Saati</generic>
+					<standard>Japonya Standart Saati</standard>
+					<daylight>Japonya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Petropavlovsk-Kamçatski Saati</generic>
+					<standard>Petropavlovsk-Kamçatski Standart Saati</standard>
+					<daylight>Petropavlovsk-Kamçatski Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Karachi">
+				<long>
+					<standard>Karaçi Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Kashgar">
+				<long>
+					<standard>Kaşgar Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Doğu Kazakistan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Batı Kazakistan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Kizilorda">
+				<long>
+					<generic>Kızılorda Saati</generic>
+					<standard>Kızılorda Standart Saati</standard>
+					<daylight>Kızılorda Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Kore Saati</generic>
+					<standard>Kore Standart Saati</standard>
+					<daylight>Kore Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Kosrae Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Krasnoyarsk Saati</generic>
+					<standard>Krasnoyarsk Standart Saati</standard>
+					<daylight>Krasnoyarsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kuybyshev">
+				<long>
+					<generic>Kuybişev Saati</generic>
+					<standard>Kuybişev Standart Saati</standard>
+					<daylight>Kuybişev Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kwajalein">
+				<long>
+					<standard>Kwajalein Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Kırgızistan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard>Lanka Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Line Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Long_Shu">
+				<long>
+					<standard>Long-Shu Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Lord Howe Saati</generic>
+					<standard>Lord Howe Standart Saati</standard>
+					<daylight>Lord Howe Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic>Makao Saati</generic>
+					<standard>Makao Standart Saati</standard>
+					<daylight>Makao Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Macquarie Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Magadan Saati</generic>
+					<standard>Magadan Standart Saati</standard>
+					<daylight>Magadan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaya">
+				<long>
+					<standard>Malaya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malezya Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Maldivler Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Markiz Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Marshall Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Mauritius Saati</generic>
+					<standard>Mauritius Standart Saati</standard>
+					<daylight>Mauritius Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Mawson Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Ulan Batur Saati</generic>
+					<standard>Ulan Batur Standart Saati</standard>
+					<daylight>Ulan Batur Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Moskova Saati</generic>
+					<standard>Moskova Standart Saati</standard>
+					<daylight>Moskova Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Myanmar Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Nauru Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Nepal Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Yeni Kaledonya Saati</generic>
+					<standard>Yeni Kaledonya Standart Saati</standard>
+					<daylight>Yeni Kaledonya Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Yeni Zelanda Saati</generic>
+					<standard>Yeni Zelanda Standart Saati</standard>
+					<daylight>Yeni Zelanda Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Newfoundland Saati</generic>
+					<standard>Newfoundland Standart Saati</standard>
+					<daylight>Newfoundland Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Niue Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>Norfolk Adası Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Fernando de Noronha Saati</generic>
+					<standard>Fernando de Noronha Standart Saati</standard>
+					<daylight>Fernando de Noronha Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>Kuzey Mariana Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Novosibirsk Saati</generic>
+					<standard>Novosibirsk Standart Saati</standard>
+					<daylight>Novosibirsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Omsk Saati</generic>
+					<standard>Omsk Standart Saati</standard>
+					<daylight>Omsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Pakistan Saati</generic>
+					<standard>Pakistan Standart Saati</standard>
+					<daylight>Pakistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Palau Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Papua Yeni Gine Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Paraguay Saati</generic>
+					<standard>Paraguay Standart Saati</standard>
+					<daylight>Paraguay Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Peru Saati</generic>
+					<standard>Peru Standart Saati</standard>
+					<daylight>Peru Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Filipinler Saati</generic>
+					<standard>Filipinler Standart Saati</standard>
+					<daylight>Filipinler Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Phoenix Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Pierre ve Miquelon Saati</generic>
+					<standard>Pierre ve Miquelon Standart Saati</standard>
+					<daylight>Pierre ve Miquelon Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Pitcairn Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponape Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic>Kızılorda Saati</generic>
+					<standard>Kızılorda Standart Saati</standard>
+					<daylight>Kızılorda Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Reunion Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Rothera Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Sakhalin Saati</generic>
+					<standard>Sakhalin Standart Saati</standard>
+					<daylight>Sakhalin Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara Saati</generic>
+					<standard>Samara Standart Saati</standard>
+					<daylight>Samara Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samarkand">
+				<long>
+					<generic>Semerkand Saati</generic>
+					<standard>Semerkand Standart Saati</standard>
+					<daylight>Semerkand Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<standard>Samoa Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Seyşel Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Shevchenko">
+				<long>
+					<generic>Şevçenko Saati</generic>
+					<standard>Şevçenko Standart Saati</standard>
+					<daylight>Şevçenko Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Singapur Standart Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Solomon Adaları Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Güney Georgia Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Surinam Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Sverdlovsk">
+				<long>
+					<generic>Sverdlovsk Saati</generic>
+					<standard>Sverdlovsk Standart Saati</standard>
+					<daylight>Sverdlovsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Showa Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Tahiti Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Taipei Saati</generic>
+					<standard>Taipei Standart Saati</standard>
+					<daylight>Taipei Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Tacikistan Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Tashkent">
+				<long>
+					<generic>Taşkent Saati</generic>
+					<standard>Taşkent Standart Saati</standard>
+					<daylight>Taşkent Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tbilisi">
+				<long>
+					<generic>Tiflis Saati</generic>
+					<standard>Tiflis Standart Saati</standard>
+					<daylight>Tiflis Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Tokelau Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Tonga Saati</generic>
+					<standard>Tonga Standart Saati</standard>
+					<daylight>Tonga Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Truk Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Saati</generic>
+					<standard>Türkiye Standart Saati</standard>
+					<daylight>Türkiye Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Türkmenistan Saati</generic>
+					<standard>Türkmenistan Standart Saati</standard>
+					<daylight>Türkmenistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Tuvalu Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Uralsk">
+				<long>
+					<generic>Oral Saati</generic>
+					<standard>Oral Standart Saati</standard>
+					<daylight>Oral Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Uruguay Saati</generic>
+					<standard>Uruguay Standart Saati</standard>
+					<daylight>Uruguay Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumçi Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Özbekistan Saati</generic>
+					<standard>Özbekistan Standart Saati</standard>
+					<daylight>Özbekistan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Vanuatu Saati</generic>
+					<standard>Vanuatu Standart Saati</standard>
+					<daylight>Vanuatu Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Venezuela Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Vladivostok Saati</generic>
+					<standard>Vladivostok Standart Saati</standard>
+					<daylight>Vladivostok Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Volgograd Saati</generic>
+					<standard>Volgograd Standart Saati</standard>
+					<daylight>Volgograd Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Vostok Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Wake Adası Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Wallis ve Futuna Saati</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Yakutsk Saati</generic>
+					<standard>Yakutsk Standart Saati</standard>
+					<daylight>Yakutsk Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Yekaterinburg Saati</generic>
+					<standard>Yekaterinburg Standart Saati</standard>
+					<daylight>Yekaterinburg Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yerevan">
+				<long>
+					<generic>Erivan Saati</generic>
+					<standard>Erivan Standart Saati</standard>
+					<daylight>Erivan Yaz Saati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<generic>Yukon Saati</generic>
+					<standard>Yukon Standart Saati</standard>
+					<daylight>Yukon Yaz Saati</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" draft="contributed">0000</pattern>
+					<pattern type="10000" draft="contributed">00 B</pattern>
+					<pattern type="100000" draft="contributed">000 B</pattern>
+					<pattern type="1000000" draft="contributed">0.0 Mn</pattern>
+					<pattern type="10000000" draft="contributed">00 Mn</pattern>
+					<pattern type="100000000" draft="contributed">000 Mn</pattern>
+					<pattern type="1000000000" draft="contributed">0.0 Mr</pattern>
+					<pattern type="10000000000" draft="contributed">00 Mr</pattern>
+					<pattern type="100000000000" draft="contributed">000 Mr</pattern>
+					<pattern type="1000000000000" draft="contributed">0.0 T</pattern>
+					<pattern type="10000000000000" draft="contributed">00 T</pattern>
+					<pattern type="100000000000000" draft="contributed">000 T</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>%#,##0</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="ADP">
+				<displayName>Andorra Pezetası</displayName>
+			</currency>
+			<currency type="AED">
+				<displayName>Birleşik Arap Emirlikleri Dirhemi</displayName>
+			</currency>
+			<currency type="AFA">
+				<displayName>Afganistan Afganisi (1927-2002)</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Afganistan Afganisi</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Arnavutluk Leki</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Ermenistan Dramı</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Hollanda Antilleri Guldeni</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Angola Kvanzası</displayName>
+			</currency>
+			<currency type="AOK">
+				<displayName>Angola Kvanzası (1977-1990)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>Yeni Angola Kvanzası (1990-2000)</displayName>
+			</currency>
+			<currency type="AOR">
+				<displayName>Angola Kvanzası Reajustado (1995-1999)</displayName>
+			</currency>
+			<currency type="ARA">
+				<displayName>Arjantin Australi</displayName>
+			</currency>
+			<currency type="ARP">
+				<displayName>Arjantin Pezosu (1983-1985)</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Arjantin Pezosu</displayName>
+			</currency>
+			<currency type="ATS">
+				<displayName>Avusturya Şilini</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Avustralya Doları</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Aruba Florini</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName>Azerbaycan Manatı (1993-2006)</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Azerbaycan Manatı</displayName>
+			</currency>
+			<currency type="BAD">
+				<displayName>Bosna Hersek Dinarı</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Konvertibl Bosna Hersek Markı</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Barbados Doları</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Bangladeş Takası</displayName>
+			</currency>
+			<currency type="BEC">
+				<displayName>Belçika Frangı (konvertibl)</displayName>
+			</currency>
+			<currency type="BEF">
+				<displayName>Belçika Frangı</displayName>
+			</currency>
+			<currency type="BEL">
+				<displayName>Belçika Frangı (finansal)</displayName>
+			</currency>
+			<currency type="BGL">
+				<displayName>Bulgar Levası (Hard)</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Yeni Bulgar Levası</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Bahreyn Dinarı</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Burundi Frangı</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Bermuda Doları</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Brunei Doları</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Bolivya Bolivyanosu</displayName>
+			</currency>
+			<currency type="BOP">
+				<displayName>Bolivya Pezosu</displayName>
+			</currency>
+			<currency type="BOV">
+				<displayName>Bolivya Mvdolu</displayName>
+			</currency>
+			<currency type="BRB">
+				<displayName>Yeni Brezilya Kruzeirosu (1967-1986)</displayName>
+			</currency>
+			<currency type="BRC">
+				<displayName>Brezilya Kruzadosu</displayName>
+			</currency>
+			<currency type="BRE">
+				<displayName>Brezilya Kruzeirosu (1990-1993)</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>Brezilya Reali</displayName>
+			</currency>
+			<currency type="BRN">
+				<displayName>Yeni Brezilya Kruzadosu</displayName>
+			</currency>
+			<currency type="BRR">
+				<displayName>Brezilya Kruzeirosu</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Bahama Doları</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Bhutan Ngultrumu</displayName>
+			</currency>
+			<currency type="BUK">
+				<displayName>Burma Kyatı</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Botsvana Pulası</displayName>
+			</currency>
+			<currency type="BYB">
+				<displayName>Yeni Beyaz Rusya Rublesi (1994-1999)</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Beyaz Rusya Rublesi</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Belize Doları</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Kanada Doları</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Kongo Frangı</displayName>
+			</currency>
+			<currency type="CHE">
+				<displayName>WIR Avrosu</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>İsviçre Frangı</displayName>
+			</currency>
+			<currency type="CHW">
+				<displayName>WIR Frangı</displayName>
+			</currency>
+			<currency type="CLF">
+				<displayName>Şili Unidades de Fomento</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Şili Pezosu</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Çin Yuanı</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Kolombiya Pezosu</displayName>
+			</currency>
+			<currency type="COU">
+				<displayName>Unidad de Valor Real</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Kosta Rika Kolonu</displayName>
+			</currency>
+			<currency type="CSD">
+				<displayName>Eski Sırbistan Dinarı</displayName>
+			</currency>
+			<currency type="CSK">
+				<displayName>Çekoslavak Korunası (Hard)</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Konvertibl Küba Pezosu</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Küba Pezosu</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Cape Verde Esküdosu</displayName>
+			</currency>
+			<currency type="CYP">
+				<displayName>Güney Kıbrıs Lirası</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Çek Cumhuriyeti Korunası</displayName>
+			</currency>
+			<currency type="DDM">
+				<displayName>Doğu Alman Markı</displayName>
+			</currency>
+			<currency type="DEM">
+				<displayName>Alman Markı</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Cibuti Frangı</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Danimarka Kronu</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Dominik Pezosu</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Cezayir Dinarı</displayName>
+			</currency>
+			<currency type="ECS">
+				<displayName>Ekvador Sukresi</displayName>
+			</currency>
+			<currency type="ECV">
+				<displayName>Ekvador Unidad de Valor Constante (UVC)</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName>Estonya Krunu</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Mısır Lirası</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Eritre Nakfası</displayName>
+			</currency>
+			<currency type="ESA">
+				<displayName>İspanyol Pezetası (A hesabı)</displayName>
+			</currency>
+			<currency type="ESB">
+				<displayName>İspanyol Pezetası (konvertibl hesap)</displayName>
+			</currency>
+			<currency type="ESP">
+				<displayName>İspanyol Pezetası</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Etiyopya Birri</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>Euro</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName>Fin Markkası</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Fiji Doları</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Falkland Adaları Lirası</displayName>
+			</currency>
+			<currency type="FRF">
+				<displayName>Fransız Frangı</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>İngiliz Sterlini</displayName>
+			</currency>
+			<currency type="GEK">
+				<displayName>Gürcistan Kupon Larisi</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>Gürcistan Larisi</displayName>
+			</currency>
+			<currency type="GHC">
+				<displayName>Gana Sedisi (1979-2007)</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Gana Sedisi</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Cebelitarık Lirası</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Gambiya Dalasisi</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Gine Frangı</displayName>
+			</currency>
+			<currency type="GNS">
+				<displayName>Gine Sylisi</displayName>
+			</currency>
+			<currency type="GQE">
+				<displayName>Ekvator Ginesi Ekuelesi</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName>Yunan Drahmisi</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Guatemala Ketzali</displayName>
+			</currency>
+			<currency type="GWE">
+				<displayName>Portekiz Ginesi Esküdosu</displayName>
+			</currency>
+			<currency type="GWP">
+				<displayName>Gine-Bissau Pezosu</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Guyana Doları</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Hong Kong Doları</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Honduras Lempirası</displayName>
+			</currency>
+			<currency type="HRD">
+				<displayName>Hırvatistan Dinarı</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Hırvatistan Kunası</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Haiti Gurdu</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Macar Forinti</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Endonezya Rupiahı</displayName>
+			</currency>
+			<currency type="IEP">
+				<displayName>İrlanda Lirası</displayName>
+			</currency>
+			<currency type="ILP">
+				<displayName>İsrail Lirası</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Yeni İsrail Şekeli</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Hindistan Rupisi</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Irak Dinarı</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>İran Riyali</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>İzlanda Kronu</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName>İtalyan Lireti</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Jamaika Doları</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Ürdün Dinarı</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Japon Yeni</displayName>
+				<symbol>¥</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName>Kenya Şilini</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>Kırgız Somu</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Kamboçya Rieli</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Komorlar Frangı</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Kuzey Kore Wonu</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Güney Kore Wonu</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Kuveyt Dinarı</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Cayman Adaları Doları</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Kazakistan Tengesi</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Laos Kipi</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Lübnan Lirası</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Sri Lanka Rupisi</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>Liberya Doları</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>Lesotho Lotisi</displayName>
+			</currency>
+			<currency type="LTL">
+				<displayName>Litvanya Litası</displayName>
+			</currency>
+			<currency type="LTT">
+				<displayName>Litvanya Talonu</displayName>
+			</currency>
+			<currency type="LUC">
+				<displayName>Konvertibl Lüksemburg Frangı</displayName>
+			</currency>
+			<currency type="LUF">
+				<displayName>Lüksemburg Frangı</displayName>
+			</currency>
+			<currency type="LUL">
+				<displayName>Finansal Lüksemburg Frangı</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName>Letonya Latı</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName>Letonya Rublesi</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Libya Dinarı</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Fas Dirhemi</displayName>
+			</currency>
+			<currency type="MAF">
+				<displayName>Fas Frangı</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Moldova Leyi</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Madagaskar Ariarisi</displayName>
+			</currency>
+			<currency type="MGF">
+				<displayName>Madagaskar Frangı</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Makedonya Dinarı</displayName>
+			</currency>
+			<currency type="MLF">
+				<displayName>Mali Frangı</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Myanmar Kyatı</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Moğol Tugriki</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Makao Patacası</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName>Moritanya Ouguiyası</displayName>
+			</currency>
+			<currency type="MTL">
+				<displayName>Malta Lirası</displayName>
+			</currency>
+			<currency type="MTP">
+				<displayName>Malta Sterlini</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Mauritius Rupisi</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Maldiv Adaları Rufiyaa</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Malavi Kvaçası</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Meksika Pesosu</displayName>
+			</currency>
+			<currency type="MXP">
+				<displayName>Gümüş Meksika Pezosu (1861-1992)</displayName>
+			</currency>
+			<currency type="MXV">
+				<displayName>Meksika Unidad de Inversion (UDI)</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Malezya Ringiti</displayName>
+			</currency>
+			<currency type="MZE">
+				<displayName>Mozambik Esküdosu</displayName>
+			</currency>
+			<currency type="MZM">
+				<displayName>Eski Mozambik Metikali</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Mozambik Metikali</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>Namibya Doları</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>Nijerya Nairası</displayName>
+			</currency>
+			<currency type="NIC">
+				<displayName>Nikaragua Kordobası</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Nikaragua Kordobası (Oro)</displayName>
+			</currency>
+			<currency type="NLG">
+				<displayName>Hollanda Florini</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Norveç Kronu</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Nepal Rupisi</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Yeni Zelanda Doları</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Umman Riyali</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Panama Balboası</displayName>
+			</currency>
+			<currency type="PEI">
+				<displayName>Peru İnti</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Yeni Peru Solu</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName>Peru Solu</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Papua Yeni Gine Kinası</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Filipinler Pezosu</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Pakistan Rupisi</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Polonya Zlotisi</displayName>
+			</currency>
+			<currency type="PLZ">
+				<displayName>Polonya Zlotisi (1950-1995)</displayName>
+			</currency>
+			<currency type="PTE">
+				<displayName>Portekiz Esküdosu</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Paraguay Guaranisi</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Katar Riyali</displayName>
+			</currency>
+			<currency type="RHD">
+				<displayName>Rodezya Doları</displayName>
+			</currency>
+			<currency type="ROL">
+				<displayName>Eski Romen Leyi</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Romen Leyi</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Sırp Dinarı</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>Rus Rublesi</displayName>
+			</currency>
+			<currency type="RUR">
+				<displayName>Rus Rublesi (1991-1998)</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName>Ruanda Frangı</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Suudi Arabistan Riyali</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Solomon Adaları Doları</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Seyşel Rupisi</displayName>
+			</currency>
+			<currency type="SDD">
+				<displayName>Eski Sudan Dinarı</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>Sudan Lirası</displayName>
+			</currency>
+			<currency type="SDP">
+				<displayName>Eski Sudan Lirası</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>İsveç Kronu</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Singapur Doları</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Saint Helena Lirası</displayName>
+			</currency>
+			<currency type="SIT">
+				<displayName>Slovenya Toları</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName>Slovak Korunası</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leone Leonesi</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Somali Şilini</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName>Surinam Doları</displayName>
+			</currency>
+			<currency type="SRG">
+				<displayName>Surinam Guldeni</displayName>
+			</currency>
+			<currency type="STD">
+				<displayName>Sao Tome ve Principe Dobrası</displayName>
+			</currency>
+			<currency type="SUR">
+				<displayName>Sovyet Rublesi</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName>El Salvador Kolonu</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Suriye Lirası</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Svaziland Lilangenisi</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Tayland Bahtı</displayName>
+			</currency>
+			<currency type="TJR">
+				<displayName>Tacikistan Rublesi</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Tacikistan Somonisi</displayName>
+			</currency>
+			<currency type="TMM">
+				<displayName>Türkmenistan Manatı</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Yeni Türkmenistan Manatı</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Tunus Dinarı</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>Tonga Paʻangası</displayName>
+			</currency>
+			<currency type="TPE">
+				<displayName>Timor Esküdosu</displayName>
+			</currency>
+			<currency type="TRL">
+				<displayName>Eski Türk Lirası</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Türk Lirası</displayName>
+				<symbol>TL</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName>Trinidad ve Tobago Doları</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Yeni Tayvan Doları</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Tanzanya Şilini</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Ukrayna Grivnası</displayName>
+			</currency>
+			<currency type="UAK">
+				<displayName>Ukrayna Karbovanetz</displayName>
+			</currency>
+			<currency type="UGS">
+				<displayName>Uganda Şilini (1966-1987)</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Uganda Şilini</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>ABD Doları</displayName>
+				<symbol>$</symbol>
+			</currency>
+			<currency type="USN">
+				<displayName>ABD Doları (Ertesi gün)</displayName>
+			</currency>
+			<currency type="USS">
+				<displayName>ABD Doları (Aynı gün)</displayName>
+			</currency>
+			<currency type="UYI">
+				<displayName>Uruguay Peso en Unidades Indexadas</displayName>
+			</currency>
+			<currency type="UYP">
+				<displayName>Uruguay Pezosu (1975-1993)</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName>Uruguay Pezosu (Uruguayo)</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Özbekistan Somu</displayName>
+			</currency>
+			<currency type="VEB">
+				<displayName>Venezuela Bolivarı</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName>Güçlü Venezuela Bolivarı</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Vietnam Dongu</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Vanuatu Vatusu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Batı Samoa Talası</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>CFA Frangı BEAC</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName>Gümüş</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName>Altın</displayName>
+			</currency>
+			<currency type="XBA">
+				<displayName>Birleşik Avrupa Birimi</displayName>
+			</currency>
+			<currency type="XBB">
+				<displayName>Avrupa Para Birimi (EMU)</displayName>
+			</currency>
+			<currency type="XBC">
+				<displayName>Avrupa Hesap Birimi (XBC)</displayName>
+			</currency>
+			<currency type="XBD">
+				<displayName>Avrupa Hesap Birimi (XBD)</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Doğu Karayip Doları</displayName>
+			</currency>
+			<currency type="XDR">
+				<displayName>Özel Çekme Hakkı (SDR)</displayName>
+			</currency>
+			<currency type="XEU">
+				<displayName>Avrupa Para Birimi</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName>Fransız Altın Frangı</displayName>
+			</currency>
+			<currency type="XFU">
+				<displayName>Fransız UIC-Frangı</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>CFA Frangı BCEAO</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName>Paladyum</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>CFP Frangı</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName>Platin</displayName>
+			</currency>
+			<currency type="XRE">
+				<displayName>RINET Fonları</displayName>
+			</currency>
+			<currency type="XTS">
+				<displayName>Test Para Birimi Kodu</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>Bilinmeyen Para Birimi</displayName>
+			</currency>
+			<currency type="YDD">
+				<displayName>Yemen Dinarı</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Yemen Riyali</displayName>
+			</currency>
+			<currency type="YUD">
+				<displayName>Yugoslav Dinarı (Hard)</displayName>
+			</currency>
+			<currency type="YUM">
+				<displayName>Yeni Yugoslav Dinarı</displayName>
+			</currency>
+			<currency type="YUN">
+				<displayName>Konvertibl Yugoslav Dinarı</displayName>
+			</currency>
+			<currency type="ZAL">
+				<displayName>Güney Afrika Randı (finansal)</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Güney Afrika Randı</displayName>
+			</currency>
+			<currency type="ZMK">
+				<displayName>Zambiya Kvaçası</displayName>
+			</currency>
+			<currency type="ZRN">
+				<displayName>Yeni Zaire Zairesi</displayName>
+			</currency>
+			<currency type="ZRZ">
+				<displayName>Zaire Zairesi</displayName>
+			</currency>
+			<currency type="ZWD">
+				<displayName>Zimbabve Doları</displayName>
+			</currency>
+			<currency type="ZWL">
+				<displayName>Zimbabve Doları (2009)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0} gün</unitPattern>
+			<unitPattern count="other" alt="short">{0} gün</unitPattern>
+		</unit>
+		<unit type="day-future">
+			<unitPattern count="0">0 gün sonra</unitPattern>
+			<unitPattern count="1">1 gün sonra</unitPattern>
+			<unitPattern count="other">{0} gün sonra</unitPattern>
+		</unit>
+		<unit type="day-past">
+			<unitPattern count="0">0 gün önce</unitPattern>
+			<unitPattern count="1">1 gün önce</unitPattern>
+			<unitPattern count="other">{0} gün önce</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0} saat</unitPattern>
+			<unitPattern count="other" alt="short">{0} sa.</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="0">0 saat sonra</unitPattern>
+			<unitPattern count="1">1 saat sonra</unitPattern>
+			<unitPattern count="other">{0} saat sonra</unitPattern>
+		</unit>
+		<unit type="hour-past">
+			<unitPattern count="0">0 saat önce</unitPattern>
+			<unitPattern count="1">1 saat önce</unitPattern>
+			<unitPattern count="other">{0} saat önce</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0} dakika</unitPattern>
+			<unitPattern count="other" alt="short">{0} dk.</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="0">0 dakika sonra</unitPattern>
+			<unitPattern count="1">1 dakika sonra</unitPattern>
+			<unitPattern count="other">{0} dakika sonra</unitPattern>
+		</unit>
+		<unit type="minute-past">
+			<unitPattern count="0">0 dakika önce</unitPattern>
+			<unitPattern count="1">1 dakika önce</unitPattern>
+			<unitPattern count="other">{0} dakika önce</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0} ay</unitPattern>
+			<unitPattern count="other" alt="short">{0} ay</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="0">0 ay sonra</unitPattern>
+			<unitPattern count="1">1 ay sonra</unitPattern>
+			<unitPattern count="other">{0} ay sonra</unitPattern>
+		</unit>
+		<unit type="month-past">
+			<unitPattern count="0">0 ay önce</unitPattern>
+			<unitPattern count="1">1 ay önce</unitPattern>
+			<unitPattern count="other">{0} ay önce</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0} saniye</unitPattern>
+			<unitPattern count="other" alt="short">{0} sn.</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="0">0 saniye sonra</unitPattern>
+			<unitPattern count="1">1 saniye sonra</unitPattern>
+			<unitPattern count="other">{0} saniye sonra</unitPattern>
+		</unit>
+		<unit type="second-past">
+			<unitPattern count="0">0 saniye önce</unitPattern>
+			<unitPattern count="1">1 saniye önce</unitPattern>
+			<unitPattern count="other">{0} saniye önce</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0} hafta</unitPattern>
+			<unitPattern count="other" alt="short">{0} hafta</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="0">0 hafta sonra</unitPattern>
+			<unitPattern count="1">1 hafta sonra</unitPattern>
+			<unitPattern count="other">{0} hafta sonra</unitPattern>
+		</unit>
+		<unit type="week-past">
+			<unitPattern count="0">0 hafta önce</unitPattern>
+			<unitPattern count="1">1 hafta önce</unitPattern>
+			<unitPattern count="other">{0} hafta önce</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0} yıl</unitPattern>
+			<unitPattern count="other" alt="short">{0} yıl</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="0">0 yıl sonra</unitPattern>
+			<unitPattern count="1">1 yıl sonra</unitPattern>
+			<unitPattern count="other">{0} yıl sonra</unitPattern>
+		</unit>
+		<unit type="year-past">
+			<unitPattern count="0">0 yıl önce</unitPattern>
+			<unitPattern count="1">1 yıl önce</unitPattern>
+			<unitPattern count="other">{0} yıl önce</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2">{0} ve {1}</listPatternPart>
+			<listPatternPart type="end">{0} ve {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>evet:e</yesstr>
+			<nostr>hayır:hayir:h</nostr>
+		</messages>
+	</posix>
+</ldml>
+

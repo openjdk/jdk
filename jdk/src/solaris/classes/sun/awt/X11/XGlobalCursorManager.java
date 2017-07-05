@@ -27,33 +27,13 @@ package sun.awt.X11;
 
 import java.awt.*;
 import java.awt.peer.ComponentPeer;
-import java.awt.peer.LightweightPeer;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import sun.awt.AWTAccessor;
 
 import sun.awt.GlobalCursorManager;
 import sun.awt.SunToolkit;
 
 public final class XGlobalCursorManager extends GlobalCursorManager {
-
-    private static Field  field_pData;
-    private static Field  field_type;
-    private static Class  cursorClass;
-    private static Method method_setPData;
-    static {
-        cursorClass = java.awt.Cursor.class;
-        field_pData = SunToolkit.getField(cursorClass, "pData");
-        field_type  = SunToolkit.getField(cursorClass, "type");
-        method_setPData = SunToolkit.getMethod(cursorClass, "setPData", new Class[] {long.class});
-        if (field_pData == null || field_type == null || method_setPData == null) {
-            System.out.println("Unable to initialize XGlobalCursorManager: ");
-            Thread.dumpStack();
-
-        }
-    }
-
 
     // cached nativeContainer
     private WeakReference<Component> nativeContainer;
@@ -213,8 +193,8 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
         long pData = 0;
         int type = 0;
         try {
-            pData = field_pData.getLong(c);
-            type = field_type.getInt(c);
+            pData = AWTAccessor.getCursorAccessor().getPData(c);
+            type = AWTAccessor.getCursorAccessor().getType(c);
         }
         catch (Exception e)
         {
@@ -284,7 +264,7 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
 
     static void setPData(Cursor c, long pData) {
         try {
-            method_setPData.invoke(c, pData);
+            AWTAccessor.getCursorAccessor().setPData(c, pData);
         }
         catch (Exception e)
         {

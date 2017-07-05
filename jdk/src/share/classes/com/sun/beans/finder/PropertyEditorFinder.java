@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ import com.sun.beans.WeakCache;
 
 import java.beans.PropertyEditor;
 
-import sun.beans.editors.BooleanEditor;
-import sun.beans.editors.ByteEditor;
-import sun.beans.editors.DoubleEditor;
-import sun.beans.editors.EnumEditor;
-import sun.beans.editors.FloatEditor;
-import sun.beans.editors.IntegerEditor;
-import sun.beans.editors.LongEditor;
-import sun.beans.editors.ShortEditor;
+import com.sun.beans.editors.BooleanEditor;
+import com.sun.beans.editors.ByteEditor;
+import com.sun.beans.editors.DoubleEditor;
+import com.sun.beans.editors.EnumEditor;
+import com.sun.beans.editors.FloatEditor;
+import com.sun.beans.editors.IntegerEditor;
+import com.sun.beans.editors.LongEditor;
+import com.sun.beans.editors.ShortEditor;
 
 /**
  * This is utility class that provides functionality
@@ -48,10 +48,13 @@ import sun.beans.editors.ShortEditor;
 public final class PropertyEditorFinder
         extends InstanceFinder<PropertyEditor> {
 
+    private static final String DEFAULT = "sun.beans.editors";
+    private static final String DEFAULT_NEW = "com.sun.beans.editors";
+
     private final WeakCache<Class<?>, Class<?>> registry;
 
     public PropertyEditorFinder() {
-        super(PropertyEditor.class, false, "Editor", "sun.beans.editors");
+        super(PropertyEditor.class, false, "Editor", DEFAULT);
 
         this.registry = new WeakCache<Class<?>, Class<?>>();
         this.registry.put(Byte.TYPE, ByteEditor.class);
@@ -83,5 +86,10 @@ public final class PropertyEditorFinder
             }
         }
         return editor;
+    }
+
+    @Override
+    protected PropertyEditor instantiate(Class<?> type, String prefix, String name) {
+        return super.instantiate(type, DEFAULT.equals(prefix) ? DEFAULT_NEW : prefix, name);
     }
 }

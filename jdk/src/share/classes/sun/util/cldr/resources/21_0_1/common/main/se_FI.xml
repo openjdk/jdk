@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5663 $"/>
+		<generation date="$Date: 2011-04-26 04:35:18 +0900 (Tue, 26 Apr 2011) $"/>
+		<language type="se"/>
+		<territory type="FI"/>
+	</identity>
+	<fallback>fi_FI</fallback>
+	<localeDisplayNames>
+		<territories>
+			<territory type="002" draft="provisional">Afrihká</territory>
+			<territory type="005" draft="provisional">Mátta-Amerihká</territory>
+			<territory type="011" draft="provisional">Oarji-Afrihká</territory>
+			<territory type="015" draft="provisional">Davvi-Afrihká</territory>
+			<territory type="017" draft="provisional">Gaska-Afrihká</territory>
+			<territory type="021" draft="provisional">Davvi-Amerihká</territory>
+			<territory type="030" draft="provisional">Nuorta-Ásia</territory>
+			<territory type="034" draft="provisional">Mátta-Ásia</territory>
+			<territory type="039" draft="provisional">Mátta-Eurohpa</territory>
+			<territory type="143" draft="provisional">Gaska-Ásia</territory>
+			<territory type="145" draft="provisional">Oarji-Ásia</territory>
+			<territory type="150" draft="provisional">Eurohpa</territory>
+			<territory type="151" draft="provisional">Nuorta-Eurohpá</territory>
+			<territory type="154" draft="provisional">Davvi-Eurohpa</territory>
+			<territory type="155" draft="provisional">Oarji-Eurohpa</territory>
+		</territories>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ođđajage</month>
+							<month type="2" draft="unconfirmed">guovva</month>
+							<month type="3" draft="unconfirmed">njukča</month>
+							<month type="4" draft="unconfirmed">cuoŋo</month>
+							<month type="5" draft="unconfirmed">miesse</month>
+							<month type="6" draft="unconfirmed">geasse</month>
+							<month type="7" draft="unconfirmed">suoidne</month>
+							<month type="8" draft="unconfirmed">borge</month>
+							<month type="9" draft="unconfirmed">čakča</month>
+							<month type="10" draft="unconfirmed">golggot</month>
+							<month type="11" draft="unconfirmed">skábma</month>
+							<month type="12" draft="unconfirmed">juovla</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">aejlege</day>
+							<day type="mon" draft="unconfirmed">måanta</day>
+							<day type="tue" draft="unconfirmed">däjsta</day>
+							<day type="wed" draft="unconfirmed">gaskevahkoe</day>
+							<day type="thu" draft="unconfirmed">dåarsta</day>
+							<day type="fri" draft="unconfirmed">bearjadahke</day>
+							<day type="sat" draft="unconfirmed">laavadahke</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">D</day>
+							<day type="wed" draft="unconfirmed">G</day>
+							<day type="thu" draft="unconfirmed">D</day>
+							<day type="fri" draft="unconfirmed">B</day>
+							<day type="sat" draft="unconfirmed">L</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
+		</timeZoneNames>
+	</dates>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -35,7 +36,6 @@ import sun.util.calendar.Era;
 import sun.util.calendar.Gregorian;
 import sun.util.calendar.LocalGregorianCalendar;
 import sun.util.calendar.ZoneInfo;
-import sun.util.resources.LocaleData;
 
 /**
  * <code>JapaneseImperialCalendar</code> implements a Japanese
@@ -299,6 +299,17 @@ class JapaneseImperialCalendar extends Calendar {
         super(zone, aLocale);
         jdate = jcal.newCalendarDate(zone);
         setTimeInMillis(System.currentTimeMillis());
+    }
+
+    /**
+     * Returns {@code "japanese"} as the calendar type of this {@code
+     * JapaneseImperialCalendar}.
+     *
+     * @return {@code "japanese"}
+     */
+    @Override
+    public String getCalendarType() {
+        return "japanese";
     }
 
     /**
@@ -941,35 +952,20 @@ class JapaneseImperialCalendar extends Calendar {
             return null;
         }
 
+        int fieldValue = get(field);
+
         // "GanNen" is supported only in the LONG style.
         if (field == YEAR
-            && (style == SHORT || get(YEAR) != 1 || get(ERA) == 0)) {
+            && (getBaseStyle(style) == SHORT || fieldValue != 1 || get(ERA) == 0)) {
             return null;
         }
 
-        ResourceBundle rb = LocaleData.getDateFormatData(locale);
-        String name = null;
-        String key = getKey(field, style);
-        if (key != null) {
-            String[] strings = rb.getStringArray(key);
-            if (field == YEAR) {
-                if (strings.length > 0) {
-                    name = strings[0];
-                }
-            } else {
-                int index = get(field);
-                // If the ERA value is out of range for strings, then
-                // try to get its name or abbreviation from the Era instance.
-                if (field == ERA && index >= strings.length && index < eras.length) {
-                    Era era = eras[index];
-                    name = (style == SHORT) ? era.getAbbreviation() : era.getName();
-                } else {
-                    if (field == DAY_OF_WEEK) {
-                        --index;
-                    }
-                    name = strings[index];
-                }
-            }
+        String name = CalendarDataUtility.retrieveFieldValueName("japanese", field, fieldValue, style, locale);
+        // If the ERA value is null, then
+        // try to get its name or abbreviation from the Era instance.
+        if (name == null && field == ERA && fieldValue < eras.length) {
+            Era era = eras[fieldValue];
+            name = (style == SHORT) ? era.getAbbreviation() : era.getName();
         }
         return name;
     }
@@ -979,83 +975,27 @@ class JapaneseImperialCalendar extends Calendar {
                                     ERA_MASK|YEAR_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
         }
-
-        if (style == ALL_STYLES) {
-            Map<String,Integer> shortNames = getDisplayNamesImpl(field, SHORT, locale);
-            if (field == AM_PM) {
-                return shortNames;
+        Map<String, Integer> names = CalendarDataUtility.retrieveFieldValueNames("japanese", field, style, locale);
+        // If strings[] has fewer than eras[], get more names from eras[].
+        if (field == ERA) {
+            int size = names.size();
+            if (style == ALL_STYLES) {
+                size /= 2; // SHORT and LONG
             }
-            Map<String,Integer> longNames = getDisplayNamesImpl(field, LONG, locale);
-            if (shortNames == null) {
-                return longNames;
-            }
-            if (longNames != null) {
-                shortNames.putAll(longNames);
-            }
-            return shortNames;
-        }
-
-        // SHORT or LONG
-        return getDisplayNamesImpl(field, style, locale);
-    }
-
-    private Map<String,Integer> getDisplayNamesImpl(int field, int style, Locale locale) {
-        ResourceBundle rb = LocaleData.getDateFormatData(locale);
-        String key = getKey(field, style);
-        Map<String,Integer> map = new HashMap<>();
-        if (key != null) {
-            String[] strings = rb.getStringArray(key);
-            if (field == YEAR) {
-                if (strings.length > 0) {
-                    map.put(strings[0], 1);
-                }
-            } else {
-                int base = (field == DAY_OF_WEEK) ? 1 : 0;
-                for (int i = 0; i < strings.length; i++) {
-                    map.put(strings[i], base + i);
-                }
-                // If strings[] has fewer than eras[], get more names from eras[].
-                if (field == ERA && strings.length < eras.length) {
-                    for (int i = strings.length; i < eras.length; i++) {
-                        Era era = eras[i];
-                        String name = (style == SHORT) ? era.getAbbreviation() : era.getName();
-                        map.put(name, i);
+            if (size < eras.length) {
+                int baseStyle = getBaseStyle(style);
+                for (int i = size; i < eras.length; i++) {
+                    Era era = eras[i];
+                    if (baseStyle == ALL_STYLES || baseStyle == SHORT) {
+                        names.put(era.getAbbreviation(), i);
+                    }
+                    if (baseStyle == ALL_STYLES || baseStyle == LONG) {
+                        names.put(era.getName(), i);
                     }
                 }
             }
         }
-        return map.size() > 0 ? map : null;
-    }
-
-    private String getKey(int field, int style) {
-        String className = JapaneseImperialCalendar.class.getName();
-        StringBuilder key = new StringBuilder();
-        switch (field) {
-        case ERA:
-            key.append(className);
-            if (style == SHORT) {
-                key.append(".short");
-            }
-            key.append(".Eras");
-            break;
-
-        case YEAR:
-            key.append(className).append(".FirstYear");
-            break;
-
-        case MONTH:
-            key.append(style == SHORT ? "MonthAbbreviations" : "MonthNames");
-            break;
-
-        case DAY_OF_WEEK:
-            key.append(style == SHORT ? "DayAbbreviations" : "DayNames");
-            break;
-
-        case AM_PM:
-            key.append("AmPmMarkers");
-            break;
-        }
-        return key.length() > 0 ? key.toString() : null;
+        return names;
     }
 
     /**

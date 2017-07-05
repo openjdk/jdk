@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640
+ * 7067045 7014640 7189363
  */
 
 import java.util.regex.*;
@@ -143,6 +143,7 @@ public class RegExTest {
         unicodeClassesTest();
         horizontalAndVerticalWSTest();
         linebreakTest();
+        branchTest();
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -3916,6 +3917,34 @@ public class RegExTest {
             Pattern.compile("\\R\\R").matcher(crnl).matches())
             failCount++;
         report("linebreakTest");
+    }
+
+    // #7189363
+    private static void branchTest() throws Exception {
+        if (!Pattern.compile("(a)?bc|d").matcher("d").find() ||     // greedy
+            !Pattern.compile("(a)+bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)*bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)??bc|d").matcher("d").find() ||    // reluctant
+            !Pattern.compile("(a)+?bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)*?bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)?+bc|d").matcher("d").find() ||    // possessive
+            !Pattern.compile("(a)++bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)*+bc|d").matcher("d").find() ||
+            !Pattern.compile("(a)?bc|d").matcher("d").matches() ||  // greedy
+            !Pattern.compile("(a)+bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)*bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)??bc|d").matcher("d").matches() || // reluctant
+            !Pattern.compile("(a)+?bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)*?bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)?+bc|d").matcher("d").matches() || // possessive
+            !Pattern.compile("(a)++bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)*+bc|d").matcher("d").matches() ||
+            !Pattern.compile("(a)?bc|de").matcher("de").find() ||   // others
+            !Pattern.compile("(a)??bc|de").matcher("de").find() ||
+            !Pattern.compile("(a)?bc|de").matcher("de").matches() ||
+            !Pattern.compile("(a)??bc|de").matcher("de").matches())
+            failCount++;
+        report("branchTest");
     }
 
 }
