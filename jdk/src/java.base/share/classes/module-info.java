@@ -165,6 +165,7 @@ module java.base {
         java.sql,
         java.xml,
         jdk.charsets,
+        jdk.compiler,
         jdk.jartool,
         jdk.jlink,
         jdk.net,

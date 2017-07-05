@@ -376,12 +376,17 @@ final class ZipPath implements Path {
             // count names
             count = 0;
             index = 0;
-            while (index < path.length) {
-                byte c = path[index++];
-                if (c != '/') {
-                    count++;
-                    while (index < path.length && path[index] != '/')
-                        index++;
+            if (path.length == 0) {
+                // empty path has one name
+                count = 1;
+            } else {
+                while (index < path.length) {
+                    byte c = path[index++];
+                    if (c != '/') {
+                        count++;
+                        while (index < path.length && path[index] != '/')
+                             index++;
+                    }
                 }
             }
             // populate offsets
@@ -423,10 +428,11 @@ final class ZipPath implements Path {
     // removes redundant slashs, replace "\" to zip separator "/"
     // and check for invalid characters
     private byte[] normalize(byte[] path) {
-        if (path.length == 0)
+        int len = path.length;
+        if (len == 0)
             return path;
         byte prevC = 0;
-        for (int i = 0; i < path.length; i++) {
+        for (int i = 0; i < len; i++) {
             byte c = path[i];
             if (c == '\\' || c == '\u0000')
                 return normalize(path, i);
@@ -434,6 +440,8 @@ final class ZipPath implements Path {
                 return normalize(path, i - 1);
             prevC = c;
         }
+        if (len > 1 && prevC == '/')
+            return Arrays.copyOf(path, len - 1);
         return path;
     }
 
@@ -567,7 +575,8 @@ final class ZipPath implements Path {
         if (watcher == null || events == null || modifiers == null) {
             throw new NullPointerException();
         }
-        throw new UnsupportedOperationException();
+        // watcher must be associated with a different provider
+        throw new ProviderMismatchException();
     }
 
     @Override
