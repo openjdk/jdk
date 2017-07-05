@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,27 +127,6 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   __ should_not_reach_here();
 #endif
 }
-
-
-// Implementation of ArrayStoreExceptionStub
-
-ArrayStoreExceptionStub::ArrayStoreExceptionStub(CodeEmitInfo* info):
-  _info(info) {
-}
-
-
-void ArrayStoreExceptionStub::emit_code(LIR_Assembler* ce) {
-  __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::throw_array_store_exception_id), relocInfo::runtime_call_type);
-  __ delayed()->nop();
-  ce->add_call_info_here(_info);
-  ce->verify_oop_map(_info);
-#ifdef ASSERT
-  __ should_not_reach_here();
-#endif
-}
-
-
 
 
 // Implementation of NewInstanceStub

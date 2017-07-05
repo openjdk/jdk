@@ -196,11 +196,11 @@ public class Method extends Oop {
   public Address      getFromCompiledCodeEntryPoint() { return fromCompiledCodeEntryPointField.getValue(this); }
   */
   // Accessors
-  public Symbol  getName()          { return (Symbol) getConstants().getObjAt(getNameIndex());         }
-  public Symbol  getSignature()     { return (Symbol) getConstants().getObjAt(getSignatureIndex());    }
+  public Symbol  getName()          { return getConstants().getSymbolAt(getNameIndex());         }
+  public Symbol  getSignature()     { return getConstants().getSymbolAt(getSignatureIndex());    }
   public Symbol  getGenericSignature() {
      long index = getGenericSignatureIndex();
-     return (index != 0L) ? (Symbol) getConstants().getObjAt(index) : null;
+     return (index != 0L) ? getConstants().getSymbolAt(index) : null;
   }
 
   // Method holder (the Klass holding this method)

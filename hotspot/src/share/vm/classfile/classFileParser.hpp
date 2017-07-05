@@ -32,6 +32,7 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/accessFlags.hpp"
 
+class TempNewSymbol;
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
@@ -42,7 +43,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool _relax_verify;
   u2   _major_version;
   u2   _minor_version;
-  symbolHandle _class_name;
+  Symbol* _class_name;
   KlassHandle _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
 
@@ -73,7 +74,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                   int length,
                                   Handle class_loader,
                                   Handle protection_domain,
-                                  symbolHandle class_name,
+                                  Symbol* class_name,
                                   TRAPS);
 
   // Field parsing
@@ -209,21 +210,21 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   }
 
   void throwIllegalSignature(
-      const char* type, symbolHandle name, symbolHandle sig, TRAPS);
+      const char* type, Symbol* name, Symbol* sig, TRAPS);
 
   bool is_supported_version(u2 major, u2 minor);
   bool has_illegal_visibility(jint flags);
 
   void verify_constantvalue(int constantvalue_index, int signature_index, constantPoolHandle cp, TRAPS);
   void verify_legal_utf8(const unsigned char* buffer, int length, TRAPS);
-  void verify_legal_class_name(symbolHandle name, TRAPS);
-  void verify_legal_field_name(symbolHandle name, TRAPS);
-  void verify_legal_method_name(symbolHandle name, TRAPS);
-  void verify_legal_field_signature(symbolHandle fieldname, symbolHandle signature, TRAPS);
-  int  verify_legal_method_signature(symbolHandle methodname, symbolHandle signature, TRAPS);
+  void verify_legal_class_name(Symbol* name, TRAPS);
+  void verify_legal_field_name(Symbol* name, TRAPS);
+  void verify_legal_method_name(Symbol* name, TRAPS);
+  void verify_legal_field_signature(Symbol* fieldname, Symbol* signature, TRAPS);
+  int  verify_legal_method_signature(Symbol* methodname, Symbol* signature, TRAPS);
   void verify_legal_class_modifiers(jint flags, TRAPS);
   void verify_legal_field_modifiers(jint flags, bool is_interface, TRAPS);
-  void verify_legal_method_modifiers(jint flags, bool is_interface, symbolHandle name, TRAPS);
+  void verify_legal_method_modifiers(jint flags, bool is_interface, Symbol* name, TRAPS);
   bool verify_unqualified_name(char* name, unsigned int length, int type);
   char* skip_over_field_name(char* name, bool slash_ok, unsigned int length);
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
@@ -272,21 +273,21 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   //
   // "parsed_name" is updated by this method, and is the name found
   // while parsing the stream.
-  instanceKlassHandle parseClassFile(symbolHandle name,
+  instanceKlassHandle parseClassFile(Symbol* name,
                                      Handle class_loader,
                                      Handle protection_domain,
-                                     symbolHandle& parsed_name,
+                                     TempNewSymbol& parsed_name,
                                      bool verify,
                                      TRAPS) {
     KlassHandle no_host_klass;
     return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, verify, THREAD);
   }
-  instanceKlassHandle parseClassFile(symbolHandle name,
+  instanceKlassHandle parseClassFile(Symbol* name,
                                      Handle class_loader,
                                      Handle protection_domain,
                                      KlassHandle host_klass,
                                      GrowableArray<Handle>* cp_patches,
-                                     symbolHandle& parsed_name,
+                                     TempNewSymbol& parsed_name,
                                      bool verify,
                                      TRAPS);
 

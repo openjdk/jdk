@@ -100,7 +100,7 @@ class MethodStream : public KlassStream {
 // Usage:
 //
 //    for (FieldStream st(k, false, false); !st.eos(); st.next()) {
-//      symbolOop field_name = st.name();
+//      Symbol* field_name = st.name();
 //      ...
 //    }
 
@@ -126,11 +126,11 @@ class FieldStream : public KlassStream {
     flags.set_flags(fields()->ushort_at(index() + instanceKlass::access_flags_offset));
     return flags;
   }
-  symbolOop name() const {
+  Symbol* name() const {
     int name_index = fields()->ushort_at(index() + instanceKlass::name_index_offset);
     return constants()->symbol_at(name_index);
   }
-  symbolOop signature() const {
+  Symbol* signature() const {
     int signature_index = fields()->ushort_at(index() +
                                        instanceKlass::signature_index_offset);
     return constants()->symbol_at(signature_index);
@@ -197,7 +197,7 @@ class FilteredFieldsMap : AllStatic {
 // Usage:
 //
 //    for (FilteredFieldStream st(k, false, false); !st.eos(); st.next()) {
-//      symbolOop field_name = st.name();
+//      Symbol* field_name = st.name();
 //      ...
 //    }
 

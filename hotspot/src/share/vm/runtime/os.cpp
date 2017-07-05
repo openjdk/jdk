@@ -255,7 +255,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
       default: {
         // Dispatch the signal to java
         HandleMark hm(THREAD);
-        klassOop k = SystemDictionary::resolve_or_null(vmSymbolHandles::sun_misc_Signal(), THREAD);
+        klassOop k = SystemDictionary::resolve_or_null(vmSymbols::sun_misc_Signal(), THREAD);
         KlassHandle klass (THREAD, k);
         if (klass.not_null()) {
           JavaValue result(T_VOID);
@@ -264,8 +264,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
           JavaCalls::call_static(
             &result,
             klass,
-            vmSymbolHandles::dispatch_name(),
-            vmSymbolHandles::int_void_signature(),
+            vmSymbols::dispatch_name(),
+            vmSymbols::int_void_signature(),
             &args,
             THREAD
           );
@@ -298,7 +298,7 @@ void os::signal_init() {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     EXCEPTION_MARK;
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_Thread(), true, CHECK);
+    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
     instanceKlassHandle klass (THREAD, k);
     instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
@@ -310,8 +310,8 @@ void os::signal_init() {
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, thread_oop,
                            klass,
-                           vmSymbolHandles::object_initializer_name(),
-                           vmSymbolHandles::threadgroup_string_void_signature(),
+                           vmSymbols::object_initializer_name(),
+                           vmSymbols::threadgroup_string_void_signature(),
                            thread_group,
                            string,
                            CHECK);
@@ -320,8 +320,8 @@ void os::signal_init() {
     JavaCalls::call_special(&result,
                             thread_group,
                             group,
-                            vmSymbolHandles::add_method_name(),
-                            vmSymbolHandles::thread_void_signature(),
+                            vmSymbols::add_method_name(),
+                            vmSymbols::thread_void_signature(),
                             thread_oop,         // ARG 1
                             CHECK);
 

@@ -32,7 +32,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
@@ -51,7 +51,7 @@
 #endif
 
 
-static void mangle_name_on(outputStream* st, symbolOop name, int begin, int end) {
+static void mangle_name_on(outputStream* st, Symbol* name, int begin, int end) {
   char* bytes = (char*)name->bytes() + begin;
   char* end_bytes = (char*)name->bytes() + end;
   while (bytes < end_bytes) {
@@ -70,7 +70,7 @@ static void mangle_name_on(outputStream* st, symbolOop name, int begin, int end)
 }
 
 
-static void mangle_name_on(outputStream* st, symbolOop name) {
+static void mangle_name_on(outputStream* st, Symbol* name) {
   mangle_name_on(st, name, 0, name->utf8_length());
 }
 
@@ -91,7 +91,7 @@ char* NativeLookup::pure_jni_name(methodHandle method) {
 char* NativeLookup::long_jni_name(methodHandle method) {
   // Signature ignore the wrapping parenteses and the trailing return type
   stringStream st;
-  symbolOop signature = method->signature();
+  Symbol* signature = method->signature();
   st.print("__");
   // find ')'
   int end;
@@ -168,8 +168,8 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
   JavaValue result(T_LONG);
   JavaCalls::call_static(&result,
                          klass,
-                         vmSymbolHandles::findNative_name(),
-                         vmSymbolHandles::classloader_string_long_signature(),
+                         vmSymbols::findNative_name(),
+                         vmSymbols::classloader_string_long_signature(),
                          // Arguments
                          loader,
                          name_arg,
@@ -249,10 +249,10 @@ address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_l
   if (wrapper_name != in_name) {
     // we have a name for a wrapping method
     int wrapper_name_len = (int)strlen(wrapper_name);
-    symbolHandle wrapper_symbol(THREAD, SymbolTable::probe(wrapper_name, wrapper_name_len));
-    if (!wrapper_symbol.is_null()) {
+    TempNewSymbol wrapper_symbol = SymbolTable::probe(wrapper_name, wrapper_name_len);
+    if (wrapper_symbol != NULL) {
       KlassHandle kh(method->method_holder());
-      methodOop wrapper_method = Klass::cast(kh())->lookup_method(wrapper_symbol(),
+      methodOop wrapper_method = Klass::cast(kh())->lookup_method(wrapper_symbol,
                                                                   method->signature());
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry
@@ -301,9 +301,9 @@ address NativeLookup::lookup(methodHandle method, bool& in_base_library, TRAPS) 
 address NativeLookup::base_library_lookup(const char* class_name, const char* method_name, const char* signature) {
   EXCEPTION_MARK;
   bool in_base_library = true;  // SharedRuntime inits some math methods.
-  symbolHandle c_name = oopFactory::new_symbol_handle(class_name,  CATCH);
-  symbolHandle m_name = oopFactory::new_symbol_handle(method_name, CATCH);
-  symbolHandle s_name = oopFactory::new_symbol_handle(signature,   CATCH);
+  TempNewSymbol c_name = SymbolTable::new_symbol(class_name,  CATCH);
+  TempNewSymbol m_name = SymbolTable::new_symbol(method_name, CATCH);
+  TempNewSymbol s_name = SymbolTable::new_symbol(signature,   CATCH);
 
   // Find the class
   klassOop k = SystemDictionary::resolve_or_fail(c_name, true, CATCH);
@@ -311,7 +311,7 @@ address NativeLookup::base_library_lookup(const char* class_name, const char* me
 
   // Find method and invoke standard lookup
   methodHandle method (THREAD,
-                       klass->uncached_lookup_method(m_name(), s_name()));
+                       klass->uncached_lookup_method(m_name, s_name));
   address result = lookup(method, in_base_library, CATCH);
   assert(in_base_library, "must be in basic library");
   guarantee(result != NULL, "must be non NULL");
