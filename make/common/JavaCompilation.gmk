@@ -564,7 +564,7 @@ define SetupJavaCompilation
     endif
 
     # Using sjavac to compile.
-    $1_COMPILE_TARGETS := $$($1_BIN)/javac_state
+    $1_COMPILE_TARGETS := $$($1_BIN)/_the.$1_batch
 
     # Create SJAVAC variable form JAVAC variable. Expects $1_JAVAC to be
     # "bootclasspathprepend -cp .../javac.jar com.sun.tools.javac.Main"
@@ -574,8 +574,12 @@ define SetupJavaCompilation
     # Set the $1_REMOTE to spawn a background javac server.
     $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
-    $$($1_BIN)/javac_state: $$($1_SRCS) $$($1_DEPENDS)
+    $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS)
 	$(MKDIR) -p $$(@D)
+        # As a workaround for sjavac not tracking api changed from the classpath, force full
+        # recompile if an external dependency, which is something other than a source
+        # change, triggered this compilation.
+	$$(if $$(filter-out $$($1_SRCS), $$?), $(FIND) $$(@D) -name "*.class" $(FIND_DELETE))
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling $1
 	($$($1_JVM) $$($1_SJAVAC) \
@@ -590,8 +594,16 @@ define SetupJavaCompilation
 	    $$($1_HEADERS_ARG) \
 	    -d $$($1_BIN) && \
 	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
-        # sjavac doesn't touch this if nothing has changed
-	$(TOUCH) $$@
+        # Create a pubapi file that only changes when the pubapi changes. Dependent
+        # compilations can use this file to only get recompiled when pubapi has changed.
+        # Grep returns 1 if no matching lines are found. Do not fail for this.
+	$(GREP) -e "^I" $$($1_BIN)/javac_state > $$($1_BIN)/_the.$1_pubapi.tmp \
+	    || test "$$$$?" = "1"
+	if [ ! -f $$($1_BIN)/_the.$1_pubapi ] \
+	    || [ "`$(DIFF) $$($1_BIN)/_the.$1_pubapi $$($1_BIN)/_the.$1_pubapi.tmp`" != "" ]; then \
+	  $(MV) $$($1_BIN)/_the.$1_pubapi.tmp $$($1_BIN)/_the.$1_pubapi; \
+	fi
+
   else
     # Using plain javac to batch compile everything.
     $1_COMPILE_TARGETS := $$($1_BIN)/_the.$1_batch
@@ -681,7 +693,7 @@ endef
 # param 1 is for example BUILD_MYPACKAGE
 # param 2 is the output directory (BIN)
 define SetupJavaCompilationCompileTarget
-  $(if $(findsring yes, $(ENABLE_SJAVAC)), $(strip $2)/javac_state, \
+  $(if $(findstring yes, $(ENABLE_SJAVAC)), $(strip $2)/_the.$(strip $1)_pubapi, \
       $(strip $2)/_the.$(strip $1)_batch)
 endef
 endif

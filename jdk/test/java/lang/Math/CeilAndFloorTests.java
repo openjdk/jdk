@@ -27,8 +27,6 @@
  * @summary Check for correct implementation of Math.ceil and Math.floor
  */
 
-import sun.misc.DoubleConsts;
-
 public class CeilAndFloorTests {
     private static int testCeilCase(double input, double expected) {
         int failures = 0;
@@ -139,10 +137,10 @@ public class CeilAndFloorTests {
         double [][] testCases = {
             { Double.MIN_VALUE,                           1.0},
             {-Double.MIN_VALUE,                          -0.0},
-            { Math.nextDown(DoubleConsts.MIN_NORMAL),     1.0},
-            {-Math.nextDown(DoubleConsts.MIN_NORMAL),    -0.0},
-            { DoubleConsts.MIN_NORMAL,                    1.0},
-            {-DoubleConsts.MIN_NORMAL,                   -0.0},
+            { Math.nextDown(Double.MIN_NORMAL),           1.0},
+            {-Math.nextDown(Double.MIN_NORMAL),          -0.0},
+            { Double.MIN_NORMAL,                          1.0},
+            {-Double.MIN_NORMAL,                         -0.0},
 
             { 0.1,                                        1.0},
             {-0.1,                                       -0.0},

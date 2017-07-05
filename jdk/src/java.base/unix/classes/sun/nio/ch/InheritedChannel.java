@@ -226,6 +226,7 @@ class InheritedChannel {
 
     // -- Native methods --
 
+    private static native void initIDs();
     private static native int dup(int fd) throws IOException;
     private static native void dup2(int fd, int fd2) throws IOException;
     private static native int open0(String path, int oflag) throws IOException;
@@ -236,5 +237,6 @@ class InheritedChannel {
 
     static {
         IOUtil.load();
+        initIDs();
     }
 }

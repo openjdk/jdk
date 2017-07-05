@@ -56,17 +56,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-  BUILD_LIBNIO_FILES += \
-      AixPollPort.c \
-      InheritedChannel.c \
-      AixNativeThread.c \
-      PollArrayWrapper.c \
-      UnixAsynchronousServerSocketChannelImpl.c \
-      UnixAsynchronousSocketChannelImpl.c \
-      GnomeFileTypeDetector.c \
-      UnixCopyFile.c \
-      AixNativeDispatcher.c \
-      UnixNativeDispatcher.c
+  BUILD_LIBNIO_EXFILES += \
+      NativeThread.c
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
