@@ -1422,42 +1422,168 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   bind(no_reserved_zone_enabling);
 }
 
-// CmpxchgX sets condition register to cmpX(current, compare).
-void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_value,
-                              Register compare_value, Register exchange_value,
-                              Register addr_base, int semantics, bool cmpxchgx_hint,
-                              Register int_flag_success, bool contention_hint, bool weak) {
+void MacroAssembler::getandsetd(Register dest_current_value, Register exchange_value, Register addr_base,
+                                bool cmpxchgx_hint) {
   Label retry;
-  Label failed;
-  Label done;
-
-  // Save one branch if result is returned via register and
-  // result register is different from the other ones.
-  bool use_result_reg    = (int_flag_success != noreg);
-  bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value &&
-                            int_flag_success != exchange_value && int_flag_success != addr_base);
-  assert(!weak || flag == CCR0, "weak only supported with CCR0");
-
-  if (use_result_reg && preset_result_reg) {
-    li(int_flag_success, 0); // preset (assume cas failed)
+  bind(retry);
+  ldarx(dest_current_value, addr_base, cmpxchgx_hint);
+  stdcx_(exchange_value, addr_base);
+  if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
+    bne_predict_not_taken(CCR0, retry); // StXcx_ sets CCR0.
+  } else {
+    bne(                  CCR0, retry); // StXcx_ sets CCR0.
   }
+}
 
-  // Add simple guard in order to reduce risk of starving under high contention (recommended by IBM).
-  if (contention_hint) { // Don't try to reserve if cmp fails.
-    lwz(dest_current_value, 0, addr_base);
-    cmpw(flag, dest_current_value, compare_value);
-    bne(flag, failed);
+void MacroAssembler::getandaddd(Register dest_current_value, Register inc_value, Register addr_base,
+                                Register tmp, bool cmpxchgx_hint) {
+  Label retry;
+  bind(retry);
+  ldarx(dest_current_value, addr_base, cmpxchgx_hint);
+  add(tmp, dest_current_value, inc_value);
+  stdcx_(tmp, addr_base);
+  if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
+    bne_predict_not_taken(CCR0, retry); // StXcx_ sets CCR0.
+  } else {
+    bne(                  CCR0, retry); // StXcx_ sets CCR0.
   }
+}
 
-  // release/fence semantics
-  if (semantics & MemBarRel) {
-    release();
+// Word/sub-word atomic helper functions
+
+// Temps and addr_base are killed if size < 4 and processor does not support respective instructions.
+// Only signed types are supported with size < 4.
+// Atomic add always kills tmp1.
+void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
+                                                   Register addr_base, Register tmp1, Register tmp2, Register tmp3,
+                                                   bool cmpxchgx_hint, bool is_add, int size) {
+  // Sub-word instructions are available since Power 8.
+  // For older processors, instruction_type != size holds, and we
+  // emulate the sub-word instructions by constructing a 4-byte value
+  // that leaves the other bytes unchanged.
+  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
+
+  Label retry;
+  Register shift_amount = noreg,
+           val32 = dest_current_value,
+           modval = is_add ? tmp1 : exchange_value;
+
+  if (instruction_type != size) {
+    assert_different_registers(tmp1, tmp2, tmp3, dest_current_value, exchange_value, addr_base);
+    modval = tmp1;
+    shift_amount = tmp2;
+    val32 = tmp3;
+    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+#ifdef VM_LITTLE_ENDIAN
+    rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
+    clrrdi(addr_base, addr_base, 2);
+#else
+    xori(shift_amount, addr_base, (size == 1) ? 3 : 2);
+    clrrdi(addr_base, addr_base, 2);
+    rldic(shift_amount, shift_amount, 3, 64-5); // byte: ((3-dest) & 3) * 8; short: ((1-dest/2) & 1) * 16;
+#endif
   }
 
   // atomic emulation loop
   bind(retry);
 
-  lwarx(dest_current_value, addr_base, cmpxchgx_hint);
+  switch (instruction_type) {
+    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    default: ShouldNotReachHere();
+  }
+
+  if (instruction_type != size) {
+    srw(dest_current_value, val32, shift_amount);
+  }
+
+  if (is_add) { add(modval, dest_current_value, exchange_value); }
+
+  if (instruction_type != size) {
+    // Transform exchange value such that the replacement can be done by one xor instruction.
+    xorr(modval, dest_current_value, is_add ? modval : exchange_value);
+    clrldi(modval, modval, (size == 1) ? 56 : 48);
+    slw(modval, modval, shift_amount);
+    xorr(modval, val32, modval);
+  }
+
+  switch (instruction_type) {
+    case 4: stwcx_(modval, addr_base); break;
+    case 2: sthcx_(modval, addr_base); break;
+    case 1: stbcx_(modval, addr_base); break;
+    default: ShouldNotReachHere();
+  }
+
+  if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
+    bne_predict_not_taken(CCR0, retry); // StXcx_ sets CCR0.
+  } else {
+    bne(                  CCR0, retry); // StXcx_ sets CCR0.
+  }
+
+  // l?arx zero-extends, but Java wants byte/short values sign-extended.
+  if (size == 1) {
+    extsb(dest_current_value, dest_current_value);
+  } else if (size == 2) {
+    extsh(dest_current_value, dest_current_value);
+  };
+}
+
+// Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
+// Only signed types are supported with size < 4.
+void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
+                                       Register compare_value, Register exchange_value,
+                                       Register addr_base, Register tmp1, Register tmp2,
+                                       Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
+  // Sub-word instructions are available since Power 8.
+  // For older processors, instruction_type != size holds, and we
+  // emulate the sub-word instructions by constructing a 4-byte value
+  // that leaves the other bytes unchanged.
+  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
+
+  Register shift_amount = noreg,
+           val32 = dest_current_value,
+           modval = exchange_value;
+
+  if (instruction_type != size) {
+    assert_different_registers(tmp1, tmp2, dest_current_value, compare_value, exchange_value, addr_base);
+    shift_amount = tmp1;
+    val32 = tmp2;
+    modval = tmp2;
+    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+#ifdef VM_LITTLE_ENDIAN
+    rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
+    clrrdi(addr_base, addr_base, 2);
+#else
+    xori(shift_amount, addr_base, (size == 1) ? 3 : 2);
+    clrrdi(addr_base, addr_base, 2);
+    rldic(shift_amount, shift_amount, 3, 64-5); // byte: ((3-dest) & 3) * 8; short: ((1-dest/2) & 1) * 16;
+#endif
+    // Transform exchange value such that the replacement can be done by one xor instruction.
+    xorr(exchange_value, compare_value, exchange_value);
+    clrldi(exchange_value, exchange_value, (size == 1) ? 56 : 48);
+    slw(exchange_value, exchange_value, shift_amount);
+  }
+
+  // atomic emulation loop
+  bind(retry);
+
+  switch (instruction_type) {
+    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    default: ShouldNotReachHere();
+  }
+
+  if (instruction_type != size) {
+    srw(dest_current_value, val32, shift_amount);
+  }
+  if (size == 1) {
+    extsb(dest_current_value, dest_current_value);
+  } else if (size == 2) {
+    extsh(dest_current_value, dest_current_value);
+  };
+
   cmpw(flag, dest_current_value, compare_value);
   if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
     bne_predict_not_taken(flag, failed);
@@ -1467,7 +1593,60 @@ void MacroAssembler::cmpxchgw(ConditionRegister flag, Register dest_current_valu
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
-  stwcx_(exchange_value, addr_base);
+  if (instruction_type != size) {
+    xorr(modval, val32, exchange_value);
+  }
+
+  switch (instruction_type) {
+    case 4: stwcx_(modval, addr_base); break;
+    case 2: sthcx_(modval, addr_base); break;
+    case 1: stbcx_(modval, addr_base); break;
+    default: ShouldNotReachHere();
+  }
+}
+
+// CmpxchgX sets condition register to cmpX(current, compare).
+void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
+                                     Register compare_value, Register exchange_value,
+                                     Register addr_base, Register tmp1, Register tmp2,
+                                     int semantics, bool cmpxchgx_hint,
+                                     Register int_flag_success, bool contention_hint, bool weak, int size) {
+  Label retry;
+  Label failed;
+  Label done;
+
+  // Save one branch if result is returned via register and
+  // result register is different from the other ones.
+  bool use_result_reg    = (int_flag_success != noreg);
+  bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value &&
+                            int_flag_success != exchange_value && int_flag_success != addr_base &&
+                            int_flag_success != tmp1 && int_flag_success != tmp2);
+  assert(!weak || flag == CCR0, "weak only supported with CCR0");
+  assert(size == 1 || size == 2 || size == 4, "unsupported");
+
+  if (use_result_reg && preset_result_reg) {
+    li(int_flag_success, 0); // preset (assume cas failed)
+  }
+
+  // Add simple guard in order to reduce risk of starving under high contention (recommended by IBM).
+  if (contention_hint) { // Don't try to reserve if cmp fails.
+    switch (size) {
+      case 1: lbz(dest_current_value, 0, addr_base); extsb(dest_current_value, dest_current_value); break;
+      case 2: lha(dest_current_value, 0, addr_base); break;
+      case 4: lwz(dest_current_value, 0, addr_base); break;
+      default: ShouldNotReachHere();
+    }
+    cmpw(flag, dest_current_value, compare_value);
+    bne(flag, failed);
+  }
+
+  // release/fence semantics
+  if (semantics & MemBarRel) {
+    release();
+  }
+
+  cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                    retry, failed, cmpxchgx_hint, size);
   if (!weak || use_result_reg) {
     if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
       bne_predict_not_taken(CCR0, weak ? failed : retry); // StXcx_ sets CCR0.
@@ -3749,454 +3928,6 @@ void MacroAssembler::has_negatives(Register src, Register cnt, Register result,
   li(result, 0);
 
   bind(Ldone);
-}
-
-
-// Intrinsics for non-CompactStrings
-
-// Search for a single jchar in an jchar[].
-//
-// Assumes that result differs from all other registers.
-//
-// 'haystack' is the addresses of a jchar-array.
-// 'needle' is either the character to search for or R0.
-// 'needleChar' is the character to search for if 'needle' == R0..
-// 'haycnt' is the length of the haystack. We assume 'haycnt' >=1.
-//
-// Preserves haystack, haycnt, needle and kills all other registers.
-//
-// If needle == R0, we search for the constant needleChar.
-void MacroAssembler::string_indexof_1(Register result, Register haystack, Register haycnt,
-                                      Register needle, jchar needleChar,
-                                      Register tmp1, Register tmp2) {
-
-  assert_different_registers(result, haystack, haycnt, needle, tmp1, tmp2);
-
-  Label L_InnerLoop, L_FinalCheck, L_Found1, L_Found2, L_Found3, L_NotFound, L_End;
-  Register addr = tmp1,
-           ch1 = tmp2,
-           ch2 = R0;
-
-//3:
-   dcbtct(haystack, 0x00);                        // Indicate R/O access to haystack.
-
-   srwi_(tmp2, haycnt, 1);   // Shift right by exact_log2(UNROLL_FACTOR).
-   mr(addr, haystack);
-   beq(CCR0, L_FinalCheck);
-   mtctr(tmp2);              // Move to count register.
-//8:
-  bind(L_InnerLoop);             // Main work horse (2x unrolled search loop).
-   lhz(ch1, 0, addr);        // Load characters from haystack.
-   lhz(ch2, 2, addr);
-   (needle != R0) ? cmpw(CCR0, ch1, needle) : cmplwi(CCR0, ch1, needleChar);
-   (needle != R0) ? cmpw(CCR1, ch2, needle) : cmplwi(CCR1, ch2, needleChar);
-   beq(CCR0, L_Found1);   // Did we find the needle?
-   beq(CCR1, L_Found2);
-   addi(addr, addr, 4);
-   bdnz(L_InnerLoop);
-//16:
-  bind(L_FinalCheck);
-   andi_(R0, haycnt, 1);
-   beq(CCR0, L_NotFound);
-   lhz(ch1, 0, addr);        // One position left at which we have to compare.
-   (needle != R0) ? cmpw(CCR1, ch1, needle) : cmplwi(CCR1, ch1, needleChar);
-   beq(CCR1, L_Found3);
-//21:
-  bind(L_NotFound);
-   li(result, -1);           // Not found.
-   b(L_End);
-
-  bind(L_Found2);
-   addi(addr, addr, 2);
-//24:
-  bind(L_Found1);
-  bind(L_Found3);                  // Return index ...
-   subf(addr, haystack, addr); // relative to haystack,
-   srdi(result, addr, 1);      // in characters.
-  bind(L_End);
-}
-
-
-// Implementation of IndexOf for jchar arrays.
-//
-// The length of haystack and needle are not constant, i.e. passed in a register.
-//
-// Preserves registers haystack, needle.
-// Kills registers haycnt, needlecnt.
-// Assumes that result differs from all other registers.
-// Haystack, needle are the addresses of jchar-arrays.
-// Haycnt, needlecnt are the lengths of them, respectively.
-//
-// Needlecntval must be zero or 15-bit unsigned immediate and > 1.
-void MacroAssembler::string_indexof(Register result, Register haystack, Register haycnt,
-                                    Register needle, ciTypeArray* needle_values, Register needlecnt, int needlecntval,
-                                    Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
-
-  // Ensure 0<needlecnt<=haycnt in ideal graph as prerequisite!
-  Label L_TooShort, L_Found, L_NotFound, L_End;
-  Register last_addr = haycnt, // Kill haycnt at the beginning.
-           addr      = tmp1,
-           n_start   = tmp2,
-           ch1       = tmp3,
-           ch2       = R0;
-
-  // **************************************************************************************************
-  // Prepare for main loop: optimized for needle count >=2, bail out otherwise.
-  // **************************************************************************************************
-
-//1 (variable) or 3 (const):
-   dcbtct(needle, 0x00);    // Indicate R/O access to str1.
-   dcbtct(haystack, 0x00);  // Indicate R/O access to str2.
-
-  // Compute last haystack addr to use if no match gets found.
-  if (needlecntval == 0) { // variable needlecnt
-//3:
-   subf(ch1, needlecnt, haycnt);      // Last character index to compare is haycnt-needlecnt.
-   addi(addr, haystack, -2);          // Accesses use pre-increment.
-   cmpwi(CCR6, needlecnt, 2);
-   blt(CCR6, L_TooShort);          // Variable needlecnt: handle short needle separately.
-   slwi(ch1, ch1, 1);                 // Scale to number of bytes.
-   lwz(n_start, 0, needle);           // Load first 2 characters of needle.
-   add(last_addr, haystack, ch1);     // Point to last address to compare (haystack+2*(haycnt-needlecnt)).
-   addi(needlecnt, needlecnt, -2);    // Rest of needle.
-  } else { // constant needlecnt
-  guarantee(needlecntval != 1, "IndexOf with single-character needle must be handled separately");
-  assert((needlecntval & 0x7fff) == needlecntval, "wrong immediate");
-//5:
-   addi(ch1, haycnt, -needlecntval);  // Last character index to compare is haycnt-needlecnt.
-   lwz(n_start, 0, needle);           // Load first 2 characters of needle.
-   addi(addr, haystack, -2);          // Accesses use pre-increment.
-   slwi(ch1, ch1, 1);                 // Scale to number of bytes.
-   add(last_addr, haystack, ch1);     // Point to last address to compare (haystack+2*(haycnt-needlecnt)).
-   li(needlecnt, needlecntval-2);     // Rest of needle.
-  }
-
-  // Main Loop (now we have at least 3 characters).
-//11:
-  Label L_OuterLoop, L_InnerLoop, L_FinalCheck, L_Comp1, L_Comp2, L_Comp3;
-  bind(L_OuterLoop); // Search for 1st 2 characters.
-  Register addr_diff = tmp4;
-   subf(addr_diff, addr, last_addr); // Difference between already checked address and last address to check.
-   addi(addr, addr, 2);              // This is the new address we want to use for comparing.
-   srdi_(ch2, addr_diff, 2);
-   beq(CCR0, L_FinalCheck);       // 2 characters left?
-   mtctr(ch2);                       // addr_diff/4
-//16:
-  bind(L_InnerLoop);                // Main work horse (2x unrolled search loop)
-   lwz(ch1, 0, addr);           // Load 2 characters of haystack (ignore alignment).
-   lwz(ch2, 2, addr);
-   cmpw(CCR0, ch1, n_start); // Compare 2 characters (1 would be sufficient but try to reduce branches to CompLoop).
-   cmpw(CCR1, ch2, n_start);
-   beq(CCR0, L_Comp1);       // Did we find the needle start?
-   beq(CCR1, L_Comp2);
-   addi(addr, addr, 4);
-   bdnz(L_InnerLoop);
-//24:
-  bind(L_FinalCheck);
-   rldicl_(addr_diff, addr_diff, 64-1, 63); // Remaining characters not covered by InnerLoop: (addr_diff>>1)&1.
-   beq(CCR0, L_NotFound);
-   lwz(ch1, 0, addr);                       // One position left at which we have to compare.
-   cmpw(CCR1, ch1, n_start);
-   beq(CCR1, L_Comp3);
-//29:
-  bind(L_NotFound);
-   li(result, -1); // not found
-   b(L_End);
-
-
-   // **************************************************************************************************
-   // Special Case: unfortunately, the variable needle case can be called with needlecnt<2
-   // **************************************************************************************************
-//31:
- if ((needlecntval>>1) !=1 ) { // Const needlecnt is 2 or 3? Reduce code size.
-  int nopcnt = 5;
-  if (needlecntval !=0 ) ++nopcnt; // Balance alignment (other case: see below).
-  if (needlecntval == 0) {         // We have to handle these cases separately.
-  Label L_OneCharLoop;
-  bind(L_TooShort);
-   mtctr(haycnt);
-   lhz(n_start, 0, needle);    // First character of needle
-  bind(L_OneCharLoop);
-   lhzu(ch1, 2, addr);
-   cmpw(CCR1, ch1, n_start);
-   beq(CCR1, L_Found);      // Did we find the one character needle?
-   bdnz(L_OneCharLoop);
-   li(result, -1);             // Not found.
-   b(L_End);
-  } // 8 instructions, so no impact on alignment.
-  for (int x = 0; x < nopcnt; ++x) nop();
- }
-
-  // **************************************************************************************************
-  // Regular Case Part II: compare rest of needle (first 2 characters have been compared already)
-  // **************************************************************************************************
-
-  // Compare the rest
-//36 if needlecntval==0, else 37:
-  bind(L_Comp2);
-   addi(addr, addr, 2); // First comparison has failed, 2nd one hit.
-  bind(L_Comp1);            // Addr points to possible needle start.
-  bind(L_Comp3);            // Could have created a copy and use a different return address but saving code size here.
-  if (needlecntval != 2) {  // Const needlecnt==2?
-   if (needlecntval != 3) {
-    if (needlecntval == 0) beq(CCR6, L_Found); // Variable needlecnt==2?
-    Register ind_reg = tmp4;
-    li(ind_reg, 2*2);   // First 2 characters are already compared, use index 2.
-    mtctr(needlecnt);   // Decremented by 2, still > 0.
-//40:
-   Label L_CompLoop;
-   bind(L_CompLoop);
-    lhzx(ch2, needle, ind_reg);
-    lhzx(ch1, addr, ind_reg);
-    cmpw(CCR1, ch1, ch2);
-    bne(CCR1, L_OuterLoop);
-    addi(ind_reg, ind_reg, 2);
-    bdnz(L_CompLoop);
-   } else { // No loop required if there's only one needle character left.
-    lhz(ch2, 2*2, needle);
-    lhz(ch1, 2*2, addr);
-    cmpw(CCR1, ch1, ch2);
-    bne(CCR1, L_OuterLoop);
-   }
-  }
-  // Return index ...
-//46:
-  bind(L_Found);
-   subf(addr, haystack, addr); // relative to haystack, ...
-   srdi(result, addr, 1);      // in characters.
-//48:
-  bind(L_End);
-}
-
-// Implementation of Compare for jchar arrays.
-//
-// Kills the registers str1, str2, cnt1, cnt2.
-// Kills cr0, ctr.
-// Assumes that result differes from the input registers.
-void MacroAssembler::string_compare(Register str1_reg, Register str2_reg, Register cnt1_reg, Register cnt2_reg,
-                                    Register result_reg, Register tmp_reg) {
-   assert_different_registers(result_reg, str1_reg, str2_reg, cnt1_reg, cnt2_reg, tmp_reg);
-
-   Label Ldone, Lslow_case, Lslow_loop, Lfast_loop;
-   Register cnt_diff = R0,
-            limit_reg = cnt1_reg,
-            chr1_reg = result_reg,
-            chr2_reg = cnt2_reg,
-            addr_diff = str2_reg;
-
-   // 'cnt_reg' contains the number of characters in the string's character array for the
-   // pre-CompactStrings strings implementation and the number of bytes in the string's
-   // byte array for the CompactStrings strings implementation.
-   const int HAS_COMPACT_STRING = java_lang_String::has_coder_field() ? 1 : 0; // '1' = byte array, '0' = char array
-
-   // Offset 0 should be 32 byte aligned.
-//-6:
-    srawi(cnt1_reg, cnt1_reg, HAS_COMPACT_STRING);
-    srawi(cnt2_reg, cnt2_reg, HAS_COMPACT_STRING);
-//-4:
-    dcbtct(str1_reg, 0x00);  // Indicate R/O access to str1.
-    dcbtct(str2_reg, 0x00);  // Indicate R/O access to str2.
-//-2:
-   // Compute min(cnt1, cnt2) and check if 0 (bail out if we don't need to compare characters).
-    subf(result_reg, cnt2_reg, cnt1_reg);  // difference between cnt1/2
-    subf_(addr_diff, str1_reg, str2_reg);  // alias?
-    beq(CCR0, Ldone);                   // return cnt difference if both ones are identical
-    srawi(limit_reg, result_reg, 31);      // generate signmask (cnt1/2 must be non-negative so cnt_diff can't overflow)
-    mr(cnt_diff, result_reg);
-    andr(limit_reg, result_reg, limit_reg); // difference or zero (negative): cnt1<cnt2 ? cnt1-cnt2 : 0
-    add_(limit_reg, cnt2_reg, limit_reg);  // min(cnt1, cnt2)==0?
-    beq(CCR0, Ldone);                   // return cnt difference if one has 0 length
-
-    lhz(chr1_reg, 0, str1_reg);            // optional: early out if first characters mismatch
-    lhzx(chr2_reg, str1_reg, addr_diff);   // optional: early out if first characters mismatch
-    addi(tmp_reg, limit_reg, -1);          // min(cnt1, cnt2)-1
-    subf_(result_reg, chr2_reg, chr1_reg); // optional: early out if first characters mismatch
-    bne(CCR0, Ldone);                   // optional: early out if first characters mismatch
-
-   // Set loop counter by scaling down tmp_reg
-    srawi_(chr2_reg, tmp_reg, exact_log2(4)); // (min(cnt1, cnt2)-1)/4
-    ble(CCR0, Lslow_case);                 // need >4 characters for fast loop
-    andi(limit_reg, tmp_reg, 4-1);            // remaining characters
-
-   // Adapt str1_reg str2_reg for the first loop iteration
-    mtctr(chr2_reg);                 // (min(cnt1, cnt2)-1)/4
-    addi(limit_reg, limit_reg, 4+1); // compare last 5-8 characters in slow_case if mismatch found in fast_loop
-//16:
-   // Compare the rest of the characters
-   bind(Lfast_loop);
-    ld(chr1_reg, 0, str1_reg);
-    ldx(chr2_reg, str1_reg, addr_diff);
-    cmpd(CCR0, chr2_reg, chr1_reg);
-    bne(CCR0, Lslow_case); // return chr1_reg
-    addi(str1_reg, str1_reg, 4*2);
-    bdnz(Lfast_loop);
-    addi(limit_reg, limit_reg, -4); // no mismatch found in fast_loop, only 1-4 characters missing
-//23:
-   bind(Lslow_case);
-    mtctr(limit_reg);
-//24:
-   bind(Lslow_loop);
-    lhz(chr1_reg, 0, str1_reg);
-    lhzx(chr2_reg, str1_reg, addr_diff);
-    subf_(result_reg, chr2_reg, chr1_reg);
-    bne(CCR0, Ldone); // return chr1_reg
-    addi(str1_reg, str1_reg, 1*2);
-    bdnz(Lslow_loop);
-//30:
-   // If strings are equal up to min length, return the length difference.
-    mr(result_reg, cnt_diff);
-    nop(); // alignment
-//32:
-   // Otherwise, return the difference between the first mismatched chars.
-   bind(Ldone);
-}
-
-
-// Compare char[] arrays.
-//
-// str1_reg   USE only
-// str2_reg   USE only
-// cnt_reg    USE_DEF, due to tmp reg shortage
-// result_reg DEF only, might compromise USE only registers
-void MacroAssembler::char_arrays_equals(Register str1_reg, Register str2_reg, Register cnt_reg, Register result_reg,
-                                        Register tmp1_reg, Register tmp2_reg, Register tmp3_reg, Register tmp4_reg,
-                                        Register tmp5_reg) {
-
-  // Str1 may be the same register as str2 which can occur e.g. after scalar replacement.
-  assert_different_registers(result_reg, str1_reg, cnt_reg, tmp1_reg, tmp2_reg, tmp3_reg, tmp4_reg, tmp5_reg);
-  assert_different_registers(result_reg, str2_reg, cnt_reg, tmp1_reg, tmp2_reg, tmp3_reg, tmp4_reg, tmp5_reg);
-
-  // Offset 0 should be 32 byte aligned.
-  Label Linit_cbc, Lcbc, Lloop, Ldone_true, Ldone_false;
-  Register index_reg = tmp5_reg;
-  Register cbc_iter  = tmp4_reg;
-
-  // 'cnt_reg' contains the number of characters in the string's character array for the
-  // pre-CompactStrings strings implementation and the number of bytes in the string's
-  // byte array for the CompactStrings strings implementation.
-  const int HAS_COMPACT_STRING = java_lang_String::has_coder_field() ? 1 : 0; // '1' = byte array, '0' = char array
-
-//-1:
-  dcbtct(str1_reg, 0x00);  // Indicate R/O access to str1.
-  dcbtct(str2_reg, 0x00);  // Indicate R/O access to str2.
-//1:
-  // cbc_iter: remaining characters after the '4 java characters per iteration' loop.
-  rlwinm(cbc_iter, cnt_reg, 32 - HAS_COMPACT_STRING, 30, 31); // (cnt_reg % (HAS_COMPACT_STRING ? 8 : 4)) >> HAS_COMPACT_STRING
-  li(index_reg, 0); // init
-  li(result_reg, 0); // assume false
-  // tmp2_reg: units of 4 java characters (i.e. 8 bytes) per iteration (main loop).
-  srwi_(tmp2_reg, cnt_reg, exact_log2(4 << HAS_COMPACT_STRING)); // cnt_reg / (HAS_COMPACT_STRING ? 8 : 4)
-
-  cmpwi(CCR1, cbc_iter, 0);             // CCR1 = (cbc_iter==0)
-  beq(CCR0, Linit_cbc);                 // too short
-    mtctr(tmp2_reg);
-//8:
-    bind(Lloop);
-      ldx(tmp1_reg, str1_reg, index_reg);
-      ldx(tmp2_reg, str2_reg, index_reg);
-      cmpd(CCR0, tmp1_reg, tmp2_reg);
-      bne(CCR0, Ldone_false);  // Unequal char pair found -> done.
-      addi(index_reg, index_reg, 4*sizeof(jchar));
-      bdnz(Lloop);
-//14:
-  bind(Linit_cbc);
-  beq(CCR1, Ldone_true);
-    mtctr(cbc_iter);
-//16:
-    bind(Lcbc);
-      lhzx(tmp1_reg, str1_reg, index_reg);
-      lhzx(tmp2_reg, str2_reg, index_reg);
-      cmpw(CCR0, tmp1_reg, tmp2_reg);
-      bne(CCR0, Ldone_false);  // Unequal char pair found -> done.
-      addi(index_reg, index_reg, 1*sizeof(jchar));
-      bdnz(Lcbc);
-    nop();
-  bind(Ldone_true);
-  li(result_reg, 1);
-//24:
-  bind(Ldone_false);
-}
-
-
-void MacroAssembler::char_arrays_equalsImm(Register str1_reg, Register str2_reg, int cntval, Register result_reg,
-                                           Register tmp1_reg, Register tmp2_reg) {
-  // Str1 may be the same register as str2 which can occur e.g. after scalar replacement.
-  assert_different_registers(result_reg, str1_reg, tmp1_reg, tmp2_reg);
-  assert_different_registers(result_reg, str2_reg, tmp1_reg, tmp2_reg);
-  assert(sizeof(jchar) == 2, "must be");
-  assert(cntval >= 0 && ((cntval & 0x7fff) == cntval), "wrong immediate");
-
-  // 'cntval' contains the number of characters in the string's character array for the
-  // pre-CompactStrings strings implementation and the number of bytes in the string's
-  // byte array for the CompactStrings strings implementation.
-  cntval >>= (java_lang_String::has_coder_field() ? 1 : 0); // '1' = byte array strings, '0' = char array strings
-
-  Label Ldone_false;
-
-  if (cntval < 16) { // short case
-    if (cntval != 0) li(result_reg, 0); // assume false
-
-    const int num_bytes = cntval*sizeof(jchar);
-    int index = 0;
-    for (int next_index; (next_index = index + 8) <= num_bytes; index = next_index) {
-      ld(tmp1_reg, index, str1_reg);
-      ld(tmp2_reg, index, str2_reg);
-      cmpd(CCR0, tmp1_reg, tmp2_reg);
-      bne(CCR0, Ldone_false);
-    }
-    if (cntval & 2) {
-      lwz(tmp1_reg, index, str1_reg);
-      lwz(tmp2_reg, index, str2_reg);
-      cmpw(CCR0, tmp1_reg, tmp2_reg);
-      bne(CCR0, Ldone_false);
-      index += 4;
-    }
-    if (cntval & 1) {
-      lhz(tmp1_reg, index, str1_reg);
-      lhz(tmp2_reg, index, str2_reg);
-      cmpw(CCR0, tmp1_reg, tmp2_reg);
-      bne(CCR0, Ldone_false);
-    }
-    // fallthrough: true
-  } else {
-    Label Lloop;
-    Register index_reg = tmp1_reg;
-    const int loopcnt = cntval/4;
-    assert(loopcnt > 0, "must be");
-    // Offset 0 should be 32 byte aligned.
-    //2:
-    dcbtct(str1_reg, 0x00);  // Indicate R/O access to str1.
-    dcbtct(str2_reg, 0x00);  // Indicate R/O access to str2.
-    li(tmp2_reg, loopcnt);
-    li(index_reg, 0); // init
-    li(result_reg, 0); // assume false
-    mtctr(tmp2_reg);
-    //8:
-    bind(Lloop);
-    ldx(R0, str1_reg, index_reg);
-    ldx(tmp2_reg, str2_reg, index_reg);
-    cmpd(CCR0, R0, tmp2_reg);
-    bne(CCR0, Ldone_false);  // Unequal char pair found -> done.
-    addi(index_reg, index_reg, 4*sizeof(jchar));
-    bdnz(Lloop);
-    //14:
-    if (cntval & 2) {
-      lwzx(R0, str1_reg, index_reg);
-      lwzx(tmp2_reg, str2_reg, index_reg);
-      cmpw(CCR0, R0, tmp2_reg);
-      bne(CCR0, Ldone_false);
-      if (cntval & 1) addi(index_reg, index_reg, 2*sizeof(jchar));
-    }
-    if (cntval & 1) {
-      lhzx(R0, str1_reg, index_reg);
-      lhzx(tmp2_reg, str2_reg, index_reg);
-      cmpw(CCR0, R0, tmp2_reg);
-      bne(CCR0, Ldone_false);
-    }
-    // fallthru: true
-  }
-  li(result_reg, 1);
-  bind(Ldone_false);
 }
 
 #endif // Compiler2

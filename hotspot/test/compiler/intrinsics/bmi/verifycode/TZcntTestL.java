@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox / ..
+ * @library /testlibrary /test/lib / ..
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TZcntTestL
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountTrailingZerosInstruction TZcntTestL
  */

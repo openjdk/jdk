@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.util.Vector;
 import java.util.Properties;
 import java.awt.*;
+import java.util.Objects;
 import javax.swing.event.*;
 
 /**
@@ -57,6 +58,17 @@ public class PlainView extends View implements TabExpander {
         Integer i = (Integer) getDocument().getProperty(PlainDocument.tabSizeAttribute);
         int size = (i != null) ? i.intValue() : 8;
         return size;
+    }
+
+    /**
+     * Returns the tab size set for the document, defaulting to 8.
+     *
+     * @implSpec This implementation calls {@link #getTabSize() getTabSize()}.
+     *
+     * @return the tab size
+     */
+    protected float getFractionalTabSize() {
+        return getTabSize();
     }
 
     /**
@@ -91,6 +103,28 @@ public class PlainView extends View implements TabExpander {
         } catch (BadLocationException e) {
             throw new StateInvariantError("Can't render line: " + lineIndex);
         }
+    }
+
+    /**
+     * Renders a line of text, suppressing whitespace at the end
+     * and expanding any tabs.  This is implemented to make calls
+     * to the methods {@code drawUnselectedText} and
+     * {@code drawSelectedText} so that the way selected and
+     * unselected text are rendered can be customized.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawLine(int, Graphics, int, int)
+     * drawLine(lineIndex, (Graphics)g, (int) x, (int) y)}.
+     *
+     * @param lineIndex the line to draw {@code >= 0}
+     * @param g the {@code Graphics} context
+     * @param x the starting X position {@code >= 0}
+     * @param y the starting Y position {@code >= 0}
+     * @see #drawUnselectedText
+     * @see #drawSelectedText
+     */
+    protected void drawLine(int lineIndex, Graphics2D g, float x, float y) {
+        drawLine(lineIndex, (Graphics)g, (int) x, (int) y);
     }
 
     private int drawElement(int lineIndex, Element elem, Graphics g, int x, int y) throws BadLocationException {
@@ -157,6 +191,27 @@ public class PlainView extends View implements TabExpander {
     }
 
     /**
+     * Renders the given range in the model as normal unselected
+     * text.  Uses the foreground or disabled color to render the text.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawUnselectedText(Graphics, int, int, int, int)
+     * drawUnselectedText((Graphics)g, (int) x, (int) y, p0, p1)}.
+     *
+     * @param g the graphics context
+     * @param x the starting X coordinate {@code >= 0}
+     * @param y the starting Y coordinate {@code >= 0}
+     * @param p0 the beginning position in the model {@code >= 0}
+     * @param p1 the ending position in the model {@code >= 0}
+     * @return the X location of the end of the range {@code >= 0}
+     * @exception BadLocationException if the range is invalid
+     */
+    protected float drawUnselectedText(Graphics2D g, float x, float y,
+                                       int p0, int p1) throws BadLocationException {
+        return drawUnselectedText((Graphics)g, (int) x, (int) y, p0, p1);
+    }
+
+    /**
      * Renders the given range in the model as selected text.  This
      * is implemented to render the text in the color specified in
      * the hosting component.  It assumes the highlighter will render
@@ -182,6 +237,30 @@ public class PlainView extends View implements TabExpander {
     }
 
     /**
+     * Renders the given range in the model as selected text.  This
+     * is implemented to render the text in the color specified in
+     * the hosting component.  It assumes the highlighter will render
+     * the selected background.
+     *
+     * @implSpec This implementation calls
+     * {@link #drawSelectedText(Graphics, int, int, int, int)
+     * drawSelectedText((Graphics)g, (int) x, (int) y, p0, p1)}.
+     *
+     * @param g the graphics context
+     * @param x the starting X coordinate {@code >= 0}
+     * @param y the starting Y coordinate {@code >= 0}
+     * @param p0 the beginning position in the model {@code >= 0}
+     * @param p1 the ending position in the model {@code >= 0}
+     * @return the location of the end of the range
+     * @exception BadLocationException if the range is invalid
+     */
+
+    protected float drawSelectedText(Graphics2D g, float x,
+                                     float y, int p0, int p1) throws BadLocationException {
+        return drawSelectedText((Graphics)g, (int) x, (int) y, p0, p1);
+    }
+
+    /**
      * Gives access to a buffer that can be used to fetch
      * text from the associated document.
      *
@@ -203,7 +282,8 @@ public class PlainView extends View implements TabExpander {
     protected void updateMetrics() {
         Component host = getContainer();
         Font f = host.getFont();
-        if (font != f) {
+        FontMetrics fm = (font == null) ? null : host.getFontMetrics(font);
+        if (font != f || !Objects.equals(metrics, fm)) {
             // The font changed, we need to recalculate the
             // longest line.
             calculateLongestLine();

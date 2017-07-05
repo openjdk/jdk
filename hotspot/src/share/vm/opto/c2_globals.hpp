@@ -73,10 +73,10 @@
                  constraint, \
                  writeable) \
                                                                             \
-  develop(bool, StressLCM, false,                                           \
+  diagnostic(bool, StressLCM, false,                                        \
           "Randomize instruction scheduling in LCM")                        \
                                                                             \
-  develop(bool, StressGCM, false,                                           \
+  diagnostic(bool, StressGCM, false,                                        \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
   develop(intx, OptoPrologueNops, 0,                                        \

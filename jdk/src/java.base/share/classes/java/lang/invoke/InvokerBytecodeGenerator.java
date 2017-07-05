@@ -751,9 +751,23 @@ class InvokerBytecodeGenerator {
         classFileEpilogue();
         bogusMethod(lambdaForm);
 
-        final byte[] classFile = cw.toByteArray();
+        final byte[] classFile;
+        try {
+            classFile = cw.toByteArray();
+        } catch (RuntimeException e) {
+            // ASM throws RuntimeException if something goes wrong - capture these and wrap them in a meaningful
+            // exception to support falling back to LambdaForm interpretation
+            throw new BytecodeGenerationException(e);
+        }
         maybeDump(className, classFile);
         return classFile;
+    }
+
+    @SuppressWarnings("serial")
+    static final class BytecodeGenerationException extends RuntimeException {
+        BytecodeGenerationException(Exception cause) {
+            super(cause);
+        }
     }
 
     void emitArrayLoad(Name name)   { emitArrayOp(name, Opcodes.AALOAD);      }

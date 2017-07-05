@@ -27,6 +27,7 @@ package sun.awt.shell;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.BaseMultiResolutionImage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -116,13 +117,21 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             return result;
         }
 
-        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        final int[] iconBits = Win32ShellFolder2
+                .getStandardViewButton0(iconIndex, true);
+        if (iconBits != null) {
+            // icons are always square
+            final int size = (int) Math.sqrt(iconBits.length);
+            final BufferedImage img =
+                    new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            img.setRGB(0, 0, size, size, iconBits, 0, size);
 
-        img.setRGB(0, 0, 16, 16, Win32ShellFolder2.getStandardViewButton0(iconIndex), 0, 16);
+            STANDARD_VIEW_BUTTONS[iconIndex] = (size == 16)
+                    ? img
+                    : new MultiResolutionIconImage(16, img);
+        }
 
-        STANDARD_VIEW_BUTTONS[iconIndex] = img;
-
-        return img;
+        return STANDARD_VIEW_BUTTONS[iconIndex];
     }
 
     // Special folders

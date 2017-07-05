@@ -51,14 +51,14 @@ public abstract class AbstractProfiledItem<T> implements Comparable<AbstractProf
         return probability;
     }
 
+    /**
+     * Returns -1 if the {@linkplain #getProbability() probability} of this item is greater than
+     * {@code o}'s probability, 0 if there are equal otherwise 1.
+     */
     @Override
     public int compareTo(AbstractProfiledItem<?> o) {
-        if (getProbability() > o.getProbability()) {
-            return -1;
-        } else if (getProbability() < o.getProbability()) {
-            return 1;
-        }
-        return 0;
+        // Need to swap the order of operands so that higher probabilities are sorted first
+        return Double.compare(o.getProbability(), getProbability());
     }
 
     @Override

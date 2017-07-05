@@ -89,7 +89,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -217,7 +217,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
             });
 
             checkROBE(() -> {
-                long r = (long) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkROBE(() -> {
@@ -307,7 +307,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
             });
 
             checkIOOBE(() -> {
-                long r = (long) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
             checkIOOBE(() -> {
@@ -399,7 +399,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 });
 
                 checkIOOBE(() -> {
-                    long r = (long) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkIOOBE(() -> {
@@ -482,7 +482,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 });
 
                 checkISE(() -> {
-                    long r = (long) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                    long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                 });
 
                 checkISE(() -> {
@@ -568,7 +568,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     });
 
                     checkISE(() -> {
-                        long r = (long) vh.compareAndExchangeVolatile(array, ci, VALUE_2, VALUE_1);
+                        long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
                     });
 
                     checkISE(() -> {
@@ -670,17 +670,17 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    long r = (long) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile long");
+                    long r = (long) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange long");
                     long x = (long) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile long value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange long value");
                 }
 
                 {
-                    long r = (long) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile long");
+                    long r = (long) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange long");
                     long x = (long) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile long value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange long value");
                 }
 
                 {
@@ -828,17 +828,17 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                 }
 
                 {
-                    long r = (long) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeVolatile long");
+                    long r = (long) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange long");
                     long x = (long) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeVolatile long value");
+                    assertEquals(x, VALUE_1, "success compareAndExchange long value");
                 }
 
                 {
-                    long r = (long) vh.compareAndExchangeVolatile(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeVolatile long");
+                    long r = (long) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange long");
                     long x = (long) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeVolatile long value");
+                    assertEquals(x, VALUE_1, "failing compareAndExchange long value");
                 }
 
                 {

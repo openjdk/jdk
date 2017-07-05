@@ -594,7 +594,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                  throws CertPathValidatorException {
              Date currentDate;
 
-             if (cp.getPKIXParamDate() != null) {
+             if (cp.getJARTimestamp() != null) {
+                 currentDate = cp.getJARTimestamp().getTimestamp();
+             } else if (cp.getPKIXParamDate() != null) {
                  currentDate = cp.getPKIXParamDate();
              } else {
                  currentDate = new Date();

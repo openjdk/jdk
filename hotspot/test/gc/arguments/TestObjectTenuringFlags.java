@@ -25,7 +25,7 @@
  * @test TestObjectTenuringFlags
  * @key gc
  * @bug 6521376
- * @requires vm.gc=="Parallel" | vm.gc=="null"
+ * @requires vm.gc.Parallel
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /testlibrary

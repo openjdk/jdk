@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public final class ArrayCache implements MarlinConst {
         for (int i = 0; i < BUCKETS; i++, arraySize <<= 2) {
             ARRAY_SIZES[i] = arraySize;
 
-            if (doTrace) {
+            if (DO_TRACE) {
                 logInfo("arraySize[" + i + "]: " + arraySize);
             }
         }
@@ -71,7 +71,7 @@ public final class ArrayCache implements MarlinConst {
         for (int i = 0; i < BUCKETS; i++, arraySize <<= 1) {
             DIRTY_BYTE_ARRAY_SIZES[i] = arraySize;
 
-            if (doTrace) {
+            if (DO_TRACE) {
                 logInfo("dirty arraySize[" + i + "]: " + arraySize);
             }
         }
@@ -83,7 +83,7 @@ public final class ArrayCache implements MarlinConst {
         THRESHOLD_LARGE_ARRAY_SIZE = 8L * THRESHOLD_ARRAY_SIZE; // 16M
         THRESHOLD_HUGE_ARRAY_SIZE  = 8L * THRESHOLD_LARGE_ARRAY_SIZE; // 128M
 
-        if (doStats || doMonitors) {
+        if (DO_STATS || DO_MONITORS) {
             logInfo("ArrayCache.BUCKETS        = " + BUCKETS);
             logInfo("ArrayCache.MIN_ARRAY_SIZE = " + MIN_ARRAY_SIZE);
             logInfo("ArrayCache.MAX_ARRAY_SIZE = " + MAX_ARRAY_SIZE);

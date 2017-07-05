@@ -167,17 +167,17 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, $value2$, $value1$);
-            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, $value2$, $value3$);
-            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -265,7 +265,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, $value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -350,17 +350,17 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact($value2$, $value1$);
-            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact($value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact($value2$, $value3$);
-            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact($value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -448,7 +448,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact($value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -536,17 +536,17 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
 
             {
-                $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, $value2$, $value1$);
-                assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+                $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, $value2$, $value1$);
+                assertEquals(r, $value2$, "success compareAndExchange $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+                assertEquals(x, $value1$, "success compareAndExchange $type$ value");
             }
 
             {
-                $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, $value2$, $value3$);
-                assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+                $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, $value2$, $value3$);
+                assertEquals(r, $value1$, "failing compareAndExchange $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+                assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
             }
 
             {
@@ -634,7 +634,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, $value3$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
                 $type$ c = ($type$) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, $value3$);
-                assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
             }
 #end[AtomicAdd]
         }

@@ -30,12 +30,12 @@ import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.test.TestAssembler;
+import jdk.vm.ci.code.test.TestHotSpotVMConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
@@ -45,11 +45,12 @@ public class SPARCTestAssembler extends TestAssembler {
 
     private static final int MASK13 = (1 << 13) - 1;
 
-    public SPARCTestAssembler(CodeCacheProvider codeCache) {
-        super(codeCache, 0, 16, SPARCKind.WORD, SPARC.l0, SPARC.l1, SPARC.l2, SPARC.l3, SPARC.l4, SPARC.l5, SPARC.l6, SPARC.l7);
+    public SPARCTestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
+        super(codeCache, config, 0, 16, SPARCKind.WORD, SPARC.l0, SPARC.l1, SPARC.l2, SPARC.l3, SPARC.l4, SPARC.l5, SPARC.l6, SPARC.l7);
     }
 
     private void emitOp2(Register rd, int op2, int imm22) {
+        assert isSimm(imm22, 22);
         code.emitInt((0b00 << 30) | (rd.encoding << 25) | (op2 << 22) | imm22);
     }
 
@@ -58,11 +59,33 @@ public class SPARCTestAssembler extends TestAssembler {
     }
 
     private void emitOp3(int op, Register rd, int op3, Register rs1, int simm13) {
+        assert isSimm(simm13, 13);
         code.emitInt((op << 30) | (rd.encoding << 25) | (op3 << 19) | (rs1.encoding << 14) | (1 << 13) | (simm13 & MASK13));
     }
 
     private void emitNop() {
         code.emitInt(1 << 24);
+    }
+
+    /**
+     * Minimum value for signed immediate ranges.
+     */
+    public static long minSimm(long nbits) {
+        return -(1L << (nbits - 1));
+    }
+
+    /**
+     * Maximum value for signed immediate ranges.
+     */
+    public static long maxSimm(long nbits) {
+        return (1L << (nbits - 1)) - 1;
+    }
+
+    /**
+     * Test if imm is within signed immediate range for nbits.
+     */
+    public static boolean isSimm(long imm, int nbits) {
+        return minSimm(nbits) <= imm && imm <= maxSimm(nbits);
     }
 
     @Override
@@ -74,7 +97,6 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public void emitEpilogue() {
-        HotSpotVMConfig config = HotSpotVMConfig.config();
         recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
         recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 4, true, null);
         code.emitInt(1 << 30); // CALL
@@ -88,22 +110,33 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public void emitGrowStack(int size) {
-        emitOp3(0b10, SPARC.sp, 0b000100, SPARC.sp, size); // SUB sp, size, sp
+        frameSize += size;
+        if (isSimm(size, 13)) {
+            emitOp3(0b10, SPARC.sp, 0b000100, SPARC.sp, size); // SUB sp, size, sp
+        } else {
+            Register r = emitLoadInt(size);
+            emitOp3(0b10, SPARC.sp, 0b000100, SPARC.sp, r); // SUB sp, size, sp
+        }
     }
 
     @Override
     public Register emitIntArg0() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int)[0];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int).get(0);
     }
 
     @Override
     public Register emitIntArg1() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int)[1];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCallee, JavaKind.Int).get(1);
     }
 
     @Override
     public Register emitLoadInt(int c) {
         Register ret = newRegister();
+        loadIntToRegister(c, ret);
+        return ret;
+    }
+
+    private void loadIntToRegister(int c, Register ret) {
         int hi = c >>> 10;
         int lo = c & ((1 << 10) - 1);
         if (hi == 0) {
@@ -114,19 +147,28 @@ public class SPARCTestAssembler extends TestAssembler {
                 emitOp3(0b10, ret, 0b000010, ret, lo);  // OR ret, lo, ret
             }
         }
-        return ret;
     }
 
     @Override
     public Register emitLoadLong(long c) {
+        Register ret = newRegister();
+        emitLoadLongToRegister(c, ret);
+        return ret;
+    }
+
+    private void loadLongToRegister(long c, Register ret) {
+        DataSectionReference ref = new DataSectionReference();
+        data.align(8);
+        ref.setOffset(data.position());
+        data.emitLong(c);
+        emitLoadPointerToRegister(ref, ret);
+    }
+
+    public void emitLoadLongToRegister(long c, Register r) {
         if ((c & 0xFFFF_FFFFL) == c) {
-            return emitLoadInt((int) c);
+            loadIntToRegister((int) c, r);
         } else {
-            DataSectionReference ref = new DataSectionReference();
-            data.align(8);
-            ref.setOffset(data.position());
-            data.emitLong(c);
-            return emitLoadPointer(ref);
+            loadLongToRegister(c, r);
         }
     }
 
@@ -169,10 +211,14 @@ public class SPARCTestAssembler extends TestAssembler {
     @Override
     public Register emitLoadPointer(DataSectionReference ref) {
         Register ret = newRegister();
+        emitLoadPointerToRegister(ref, ret);
+        return ret;
+    }
+
+    private void emitLoadPointerToRegister(DataSectionReference ref, Register ret) {
         recordDataPatchInCode(ref);
         emitPatchableSethi(ret, true);
         emitOp3(0b11, ret, 0b001011, ret, 0); // LDX [ret+0], ret
-        return ret;
     }
 
     @Override
@@ -195,15 +241,15 @@ public class SPARCTestAssembler extends TestAssembler {
     public StackSlot emitIntToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.WORD);
         // STW a, [fp+offset]
-        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
+        emitStore(0b000100, a, ret);
         return ret;
     }
 
     @Override
     public StackSlot emitLongToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.XWORD);
-        // STX a, [fp+offset]
-        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
+        // STX a, [sp+offset]
+        emitStore(0b001110, a, ret);
         return ret;
     }
 
@@ -211,7 +257,7 @@ public class SPARCTestAssembler extends TestAssembler {
     public StackSlot emitFloatToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.SINGLE);
         // STF a, [fp+offset]
-        emitOp3(0b11, a, 0b100100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
+        emitStore(0b100100, a, ret);
         return ret;
     }
 
@@ -219,7 +265,7 @@ public class SPARCTestAssembler extends TestAssembler {
     public StackSlot emitPointerToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.XWORD);
         // STX a, [fp+offset]
-        emitOp3(0b11, a, 0b001110, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
+        emitStore(0b001110, a, ret);
         return ret;
     }
 
@@ -227,8 +273,22 @@ public class SPARCTestAssembler extends TestAssembler {
     public StackSlot emitNarrowPointerToStack(Register a) {
         StackSlot ret = newStackSlot(SPARCKind.WORD);
         // STW a, [fp+offset]
-        emitOp3(0b11, a, 0b000100, SPARC.fp, ret.getRawOffset() + SPARC.STACK_BIAS);
+        emitStore(0b000100, a, ret);
         return ret;
+    }
+
+    private void emitStore(int op3, Register a, StackSlot ret) {
+        int offset = ret.getRawOffset() + SPARC.STACK_BIAS;
+        if (isSimm(offset, 13)) {
+            // op3 a, [sp+offset]
+            emitOp3(0b11, a, op3, SPARC.fp, offset);
+        } else {
+            assert a != SPARC.g3;
+            Register r = SPARC.g3;
+            loadLongToRegister(offset, r);
+            // op3 a, [sp+g3]
+            emitOp3(0b11, a, op3, SPARC.fp, r);
+        }
     }
 
     @Override
