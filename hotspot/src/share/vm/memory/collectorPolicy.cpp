@@ -193,6 +193,8 @@ size_t GenCollectorPolicy::compute_max_alignment() {
       alignment = lcm(os::large_page_size(), alignment);
   }
 
+  assert(alignment >= min_alignment(), "Must be");
+
   return alignment;
 }
 

@@ -25,7 +25,8 @@
 
 # This file identifies the root of the test-suite hierarchy.
 # It also contains test-suite configuration information.
-# DO NOT EDIT without first contacting hotspot-regtest@sun.com
 
 # The list of keywords supported in this test suite
 keys=cte_test jcmd nmt regression gc
+
+groups=TEST.groups [closed/TEST.groups]
