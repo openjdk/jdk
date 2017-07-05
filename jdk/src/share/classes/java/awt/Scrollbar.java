@@ -213,7 +213,8 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * The size of the <code>Scrollbar</code>'s bubble.
      * When a scroll bar is used to select a range of values,
      * the visibleAmount represents the size of this range.
-     * This is visually indicated by the size of the bubble.
+     * Depending on platform, this may be visually indicated
+     * by the size of the bubble.
      *
      * @serial
      * @see #getVisibleAmount
@@ -637,6 +638,8 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * bubble (also called a thumb or scroll box), usually gives a
      * visual representation of the relationship of the visible
      * amount to the range of the scroll bar.
+     * Note that depending on platform, the value of the visible amount property
+     * may not be visually indicated by the size of the bubble.
      * <p>
      * The scroll bar's bubble may not be displayed when it is not
      * moveable (e.g. when it takes up the entire length of the
@@ -670,6 +673,8 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * bubble (also called a thumb or scroll box), usually gives a
      * visual representation of the relationship of the visible
      * amount to the range of the scroll bar.
+     * Note that depending on platform, the value of the visible amount property
+     * may not be visually indicated by the size of the bubble.
      * <p>
      * The scroll bar's bubble may not be displayed when it is not
      * moveable (e.g. when it takes up the entire length of the

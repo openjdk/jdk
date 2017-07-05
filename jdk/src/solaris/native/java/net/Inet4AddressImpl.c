@@ -381,7 +381,15 @@ ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
       n = sendto(fd, sendbuf, plen, 0, (struct sockaddr *)him,
                  sizeof(struct sockaddr));
       if (n < 0 && errno != EINPROGRESS ) {
-        NET_ThrowNew(env, errno, "Can't send ICMP packet");
+#ifdef __linux__
+        if (errno != EINVAL)
+          /*
+           * On some Linuxes, when bound to the loopback interface, sendto
+           * will fail and errno will be set to EINVAL. When that happens,
+           * don't throw an exception, just return false.
+           */
+#endif /*__linux__ */
+          NET_ThrowNew(env, errno, "Can't send ICMP packet");
         close(fd);
         return JNI_FALSE;
       }

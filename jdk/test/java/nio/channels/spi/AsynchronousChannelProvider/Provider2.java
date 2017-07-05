@@ -23,7 +23,6 @@
 
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.nio.channels.*;
-import java.net.ProtocolFamily;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.io.IOException;
@@ -56,13 +55,6 @@ public class Provider2 extends AsynchronousChannelProvider {
     @Override
     public AsynchronousServerSocketChannel openAsynchronousServerSocketChannel
         (AsynchronousChannelGroup group) throws IOException
-    {
-        throw new RuntimeException();
-    }
-
-    @Override
-    public AsynchronousDatagramChannel openAsynchronousDatagramChannel
-        (ProtocolFamily family, AsynchronousChannelGroup group) throws IOException
     {
         throw new RuntimeException();
     }

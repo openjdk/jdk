@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,5 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
+/*
+ * @test
+ * @bug 4358979
+ * @summary Tests BasicStroke encoding
+ * @author Sergey Malenkov
+ */
+
+import java.awt.BasicStroke;
+
+public final class java_awt_BasicStroke extends AbstractTest<BasicStroke> {
+    public static void main(String[] args) {
+        new java_awt_BasicStroke().test(true);
+    }
+
+    protected BasicStroke getObject() {
+        return new BasicStroke();
+    }
+
+    protected BasicStroke getAnotherObject() {
+        float[] f = {1.0f, 2.0f, 3.0f, 4.0f};
+        return new BasicStroke(f[1], BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, f[2], f, f[3]);
+    }
+}

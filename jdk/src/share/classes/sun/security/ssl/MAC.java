@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,10 @@ final class MAC {
             algorithm = tls ? "HmacMD5" : "SslMacMD5";
         } else if (macAlg == M_SHA) {
             algorithm = tls ? "HmacSHA1" : "SslMacSHA1";
+        } else if (macAlg == M_SHA256) {
+            algorithm = "HmacSHA256";    // TLS 1.2+
+        } else if (macAlg == M_SHA384) {
+            algorithm = "HmacSHA384";    // TLS 1.2+
         } else {
             throw new RuntimeException("Unknown Mac " + macAlg);
         }
@@ -155,6 +159,42 @@ final class MAC {
         return compute(type, bb, null, 0, bb.remaining());
     }
 
+    /**
+     * Check whether the sequence number is close to wrap
+     *
+     * Sequence numbers are of type uint64 and may not exceed 2^64-1.
+     * Sequence numbers do not wrap. When the sequence number is near
+     * to wrap, we need to close the connection immediately.
+     */
+    final boolean seqNumOverflow() {
+        /*
+         * Conservatively, we don't allow more records to be generated
+         * when there are only 2^8 sequence numbers left.
+         */
+        return (block != null && mac != null &&
+                block[0] == 0xFF && block[1] == 0xFF &&
+                block[2] == 0xFF && block[3] == 0xFF &&
+                block[4] == 0xFF && block[5] == 0xFF &&
+                block[6] == 0xFF);
+    }
+
+    /*
+     * Check whether to renew the sequence number
+     *
+     * Sequence numbers are of type uint64 and may not exceed 2^64-1.
+     * Sequence numbers do not wrap.  If a TLS
+     * implementation would need to wrap a sequence number, it must
+     * renegotiate instead.
+     */
+    final boolean seqNumIsHuge() {
+        /*
+         * Conservatively, we should ask for renegotiation when there are
+         * only 2^48 sequence numbers left.
+         */
+        return (block != null && mac != null &&
+                block[0] == 0xFF && block[1] == 0xFF);
+    }
+
     // increment the sequence number in the block array
     // it is a 64-bit number stored in big-endian format
     private void incrementSequenceNumber() {
@@ -168,7 +208,8 @@ final class MAC {
      * Compute based on either buffer type, either bb.position/limit
      * or buf/offset/len.
      */
-    private byte[] compute(byte type, ByteBuffer bb, byte[] buf, int offset, int len) {
+    private byte[] compute(byte type, ByteBuffer bb, byte[] buf,
+            int offset, int len) {
 
         if (macSize == 0) {
             return nullMAC;

@@ -25,15 +25,12 @@
 
 package java.dyn;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.*;
 import sun.dyn.Access;
 import sun.dyn.MemberName;
 import sun.dyn.MethodHandleImpl;
 import sun.dyn.util.VerifyAccess;
 import sun.dyn.util.Wrapper;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,6 +78,14 @@ public class MethodHandles {
      * Return a {@link Lookup lookup object} which is trusted minimally.
      * It can only be used to create method handles to
      * publicly accessible fields and methods.
+     * <p>
+     * As a matter of pure convention, the {@linkplain Lookup#lookupClass lookup class}
+     * of this lookup object will be {@link java.lang.Object}.
+     * <p>
+     * The lookup class can be changed to any other class {@code C} using an expression of the form
+     * {@linkplain Lookup#in <code>publicLookup().in(C.class)</code>}.
+     * Since all classes have equal access to public names,
+     * such a change would confer no new access rights.
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
@@ -90,9 +95,10 @@ public class MethodHandles {
      * A <em>lookup object</em> is a factory for creating method handles,
      * when the creation requires access checking.
      * Method handles do not perform
-     * access checks when they are called; this is a major difference
+     * access checks when they are called, but rather when they are created.
+     * (This is a major difference
      * from reflective {@link Method}, which performs access checking
-     * against every caller, on every call.
+     * against every caller, on every call.)
      * Therefore, method handle access
      * restrictions must be enforced when a method handle is created.
      * The caller class against which those restrictions are enforced
@@ -107,7 +113,7 @@ public class MethodHandles {
      * It may then use this factory to create method handles on
      * all of its methods, including private ones.
      * It may also delegate the lookup (e.g., to a metaobject protocol)
-     * by passing the {@code Lookup} object to other code.
+     * by passing the lookup object to other code.
      * If this other code creates method handles, they will be access
      * checked against the original lookup class, and not with any higher
      * privileges.
@@ -125,23 +131,28 @@ public class MethodHandles {
      * It can also fail if a security manager is installed and refuses
      * access.  In any of these cases, an exception will be
      * thrown from the attempted lookup.
+     * <p>
      * In general, the conditions under which a method handle may be
      * created for a method {@code M} are exactly as restrictive as the conditions
      * under which the lookup class could have compiled a call to {@code M}.
-     * At least some of these error conditions are likely to be
-     * represented by checked exceptions in the final version of this API.
+     * This rule is applied even if the Java compiler might have created
+     * an wrapper method to access a private method of another class
+     * in the same top-level declaration.
+     * For example, a lookup object created for a nested class {@code C.D}
+     * can access private members within other related classes such as
+     * {@code C}, {@code C.D.E}, or {@code C.B}.
      */
     public static final
     class Lookup {
         /** The class on behalf of whom the lookup is being performed. */
         private final Class<?> lookupClass;
 
-        /** The allowed sorts of members which may be looked up (public, etc.), with STRICT for package. */
+        /** The allowed sorts of members which may be looked up (public, etc.), with STATIC for package. */
         private final int allowedModes;
 
         private static final int
             PUBLIC    = Modifier.PUBLIC,
-            PACKAGE   = Modifier.STRICT,
+            PACKAGE   = Modifier.STATIC,
             PROTECTED = Modifier.PROTECTED,
             PRIVATE   = Modifier.PRIVATE,
             ALL_MODES = (PUBLIC | PACKAGE | PROTECTED | PRIVATE),
@@ -155,8 +166,10 @@ public class MethodHandles {
         /** Which class is performing the lookup?  It is this class against
          *  which checks are performed for visibility and access permissions.
          *  <p>
-         *  This value is null if and only if this lookup was produced
-         *  by {@link MethodHandles#publicLookup}.
+         *  The class implies a maximum level of access permission,
+         *  but the permissions may be additionally limited by the bitmask
+         *  {@link #lookupModes}, which controls whether non-public members
+         *  can be accessed.
          */
         public Class<?> lookupClass() {
             return lookupClass;
@@ -168,10 +181,15 @@ public class MethodHandles {
         }
 
         /** Which types of members can this lookup object produce?
-         *  The result is a bit-mask of the modifier bits PUBLIC, PROTECTED, PRIVATE, and STRICT.
-         *  The modifier bit STRICT stands in for the (non-existent) package protection mode.
+         *  The result is a bit-mask of the {@link Modifier} bits
+         *  {@linkplain Modifier#PUBLIC PUBLIC (0x01)},
+         *  {@linkplain Modifier#PROTECTED PROTECTED (0x02)},
+         *  {@linkplain Modifier#PRIVATE PRIVATE (0x04)},
+         *  and {@linkplain Modifier#STATIC STATIC (0x08)}.
+         *  The modifier bit {@code STATIC} stands in for the package protection mode,
+         *  which does not have an explicit modifier bit.
          */
-        int lookupModes() {
+        public int lookupModes() {
             return allowedModes & ALL_MODES;
         }
 
@@ -621,32 +639,32 @@ public class MethodHandles {
 
         /// Helper methods, all package-private.
 
-        MemberName resolveOrFail(Class<?> refc, String name, Class<?> type, boolean isStatic) {
+        MemberName resolveOrFail(Class<?> refc, String name, Class<?> type, boolean isStatic) throws NoAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
             int mods = (isStatic ? Modifier.STATIC : 0);
             return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
         }
 
-        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic) {
+        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic) throws NoAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
             int mods = (isStatic ? Modifier.STATIC : 0);
             return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
         }
 
         MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic,
-                                 boolean searchSupers, Class<?> specialCaller) {
+                                 boolean searchSupers, Class<?> specialCaller) throws NoAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
             int mods = (isStatic ? Modifier.STATIC : 0);
             return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), searchSupers, specialCaller);
         }
 
-        void checkSymbolicClass(Class<?> refc) {
+        void checkSymbolicClass(Class<?> refc) throws NoAccessException {
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller))
                 throw newNoAccessException("symbolic reference class is not public", new MemberName(refc), caller);
         }
 
-        void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) {
+        void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) throws NoAccessException {
             String message;
             if (m.isConstructor())
                 message = "expected a method, not a constructor";
@@ -659,7 +677,7 @@ public class MethodHandles {
             throw newNoAccessException(message, m, lookupClass());
         }
 
-        void checkAccess(Class<?> refc, MemberName m) {
+        void checkAccess(Class<?> refc, MemberName m) throws NoAccessException {
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
@@ -695,14 +713,14 @@ public class MethodHandles {
             return "member is private to package";
         }
 
-        void checkSpecialCaller(Class<?> specialCaller) {
+        void checkSpecialCaller(Class<?> specialCaller) throws NoAccessException {
             if (allowedModes == TRUSTED)  return;
             if (!VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))
                 throw newNoAccessException("no private access for invokespecial",
                                            new MemberName(specialCaller), lookupClass());
         }
 
-        MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) {
+        MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) throws NoAccessException {
             // The accessing class only has the right to use a protected member
             // on itself or a subclass.  Enforce that restriction, from JVMS 5.4.4, etc.
             if (!method.isProtected() || method.isStatic()
@@ -712,7 +730,7 @@ public class MethodHandles {
             else
                 return restrictReceiver(method, mh, lookupClass());
         }
-        MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) {
+        MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) throws NoAccessException {
             assert(!method.isStatic());
             Class<?> defc = method.getDeclaringClass();  // receiver type of mh is too wide
             if (defc.isInterface() || !defc.isAssignableFrom(caller)) {
@@ -898,11 +916,16 @@ public class MethodHandles {
      * @return a method handle which always invokes the call site's target
      */
     public static
-    MethodHandle dynamicInvoker(CallSite site) {
+    MethodHandle dynamicInvoker(CallSite site) throws NoAccessException {
         MethodHandle getCSTarget = GET_TARGET;
-        if (getCSTarget == null)
-            GET_TARGET = getCSTarget = Lookup.IMPL_LOOKUP.
-                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+        if (getCSTarget == null) {
+            try {
+                GET_TARGET = getCSTarget = Lookup.IMPL_LOOKUP.
+                    findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+            } catch (NoAccessException ex) {
+                throw new InternalError();
+            }
+        }
         MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, getCSTarget, site);
         MethodHandle invoker = exactInvoker(site.type());
         return foldArguments(invoker, getTarget);
@@ -1260,17 +1283,20 @@ public class MethodHandles {
      * <p>
      * <b>Example:</b>
      * <p><blockquote><pre>
-     *   MethodHandle cat = MethodHandles.lookup().
-     *     findVirtual(String.class, "concat", String.class, String.class);
-     *   System.out.println(cat.&lt;String&gt;invokeExact("x", "y")); // xy
+     *   import static java.dyn.MethodHandles.*;
+     *   import static java.dyn.MethodType.*;
+     *   ...
+     *   MethodHandle cat = lookup().findVirtual(String.class,
+     *     "concat", methodType(String.class, String.class));
+     *   System.out.println((String) cat.invokeExact("x", "y")); // xy
      *   MethodHandle d0 = dropArguments(cat, 0, String.class);
-     *   System.out.println(d0.&lt;String&gt;invokeExact("x", "y", "z")); // xy
+     *   System.out.println((String) d0.invokeExact("x", "y", "z")); // yz
      *   MethodHandle d1 = dropArguments(cat, 1, String.class);
-     *   System.out.println(d1.&lt;String&gt;invokeExact("x", "y", "z")); // xz
+     *   System.out.println((String) d1.invokeExact("x", "y", "z")); // xz
      *   MethodHandle d2 = dropArguments(cat, 2, String.class);
-     *   System.out.println(d2.&lt;String&gt;invokeExact("x", "y", "z")); // yz
-     *   MethodHandle d12 = dropArguments(cat, 1, String.class, String.class);
-     *   System.out.println(d12.&lt;String&gt;invokeExact("w", "x", "y", "z")); // wz
+     *   System.out.println((String) d2.invokeExact("x", "y", "z")); // xy
+     *   MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
+     *   System.out.println((String) d12.invokeExact("x", 12, true, "z")); // xz
      * </pre></blockquote>
      * @param target the method handle to invoke after the argument is dropped
      * @param valueTypes the type(s) of the argument to drop
@@ -1561,5 +1587,108 @@ public class MethodHandles {
     public static
     MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType) {
         return MethodHandleImpl.throwException(IMPL_TOKEN, MethodType.methodType(returnType, exType));
+    }
+
+    /**
+     * Produce a wrapper instance of the given "SAM" type which redirects its calls to the given method handle.
+     * A SAM type is a type which declares a single abstract method.
+     * Additionally, it must have either no constructor (as an interface)
+     * or have a public or protected constructor of zero arguments (as a class).
+     * <p>
+     * The resulting instance of the required SAM type will respond to
+     * invocation of the SAM type's single abstract method by calling
+     * the given {@code target} on the incoming arguments,
+     * and returning or throwing whatever the {@code target}
+     * returns or throws.  The invocation will be as if by
+     * {@code target.invokeExact}.
+     * <p>
+     * The method handle may throw an <em>undeclared exception</em>,
+     * which means any checked exception (or other checked throwable)
+     * not declared by the SAM type's single abstract method.
+     * If this happens, the throwable will be wrapped in an instance
+     * of {@link UndeclaredThrowableException} and thrown in that
+     * wrapped form.
+     * <p>
+     * The wrapper instance is guaranteed to be of a non-public
+     * implementation class C in a package containing no classes
+     * or methods except system-defined classes and methods.
+     * The implementation class C will have no public supertypes
+     * or public methods beyond the following:
+     * <ul>
+     * <li>the SAM type itself and any methods in the SAM type
+     * <li>the supertypes of the SAM type (if any) and their methods
+     * <li>{@link Object} and its methods
+     * <li>{@link MethodHandleProvider} and its methods
+     * </ul>
+     * <p>
+     * No stable mapping is promised between the SAM type and
+     * the implementation class C.  Over time, several implementation
+     * classes might be used for the same SAM type.
+     * <p>
+     * This method is not guaranteed to return a distinct
+     * wrapper object for each separate call.  If the JVM is able
+     * to prove that a wrapper has already been created for a given
+     * method handle, or for another method handle with the
+     * same behavior, the JVM may return that wrapper in place of
+     * a new wrapper.
+     * @param target the method handle to invoke from the wrapper
+     * @param samType the desired type of the wrapper, a SAM type
+     * @return a correctly-typed wrapper for the given {@code target}
+     * @throws IllegalArgumentException if the {@code target} throws
+     *         an undeclared exception
+     */
+    // ISSUE: Should we delegate equals/hashCode to the targets?
+    // Not useful unless there is a stable equals/hashCode behavior
+    // for MethodHandle, and for MethodHandleProvider.asMethodHandle.
+    public static
+    <T> T asInstance(MethodHandle target, Class<T> samType) {
+        // POC implementation only; violates the above contract several ways
+        final Method sam = getSamMethod(samType);
+        if (sam == null)
+            throw new IllegalArgumentException("not a SAM type: "+samType.getName());
+        MethodType samMT = MethodType.methodType(sam.getReturnType(), sam.getParameterTypes());
+        if (!samMT.equals(target.type()))
+            throw new IllegalArgumentException("wrong method type");
+        final MethodHandle mh = target;
+        return samType.cast(Proxy.newProxyInstance(
+                samType.getClassLoader(),
+                new Class[]{ samType, MethodHandleProvider.class },
+                new InvocationHandler() {
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        if (method.getDeclaringClass() == MethodHandleProvider.class) {
+                            return method.invoke(mh, args);
+                        }
+                        assert method.equals(sam) : method;
+                        return mh.invokeVarargs(args);
+                    }
+                }));
+    }
+
+    private static
+    Method getSamMethod(Class<?> samType) {
+        Method sam = null;
+        for (Method m : samType.getMethods()) {
+            int mod = m.getModifiers();
+            if (Modifier.isAbstract(mod)) {
+                if (sam != null)
+                    return null;  // too many abstract methods
+                sam = m;
+            }
+        }
+        if (!samType.isInterface() && getSamConstructor(samType) == null)
+            return null;  // wrong kind of constructor
+        return sam;
+    }
+
+    private static
+    Constructor getSamConstructor(Class<?> samType) {
+        for (Constructor c : samType.getDeclaredConstructors()) {
+            if (c.getParameterTypes().length == 0) {
+                int mod = c.getModifiers();
+                if (Modifier.isPublic(mod) || Modifier.isProtected(mod))
+                    return c;
+            }
+        }
+        return null;
     }
 }

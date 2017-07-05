@@ -436,6 +436,8 @@ public:
   }
 
   void check_all_cards(size_t left_card, size_t right_card) const;
+
+  virtual void set_for_starts_humongous(HeapWord* new_end);
 };
 
 // A subtype of BlockOffsetArray that takes advantage of the fact
@@ -484,4 +486,6 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
 
   HeapWord* block_start_unsafe(const void* addr);
   HeapWord* block_start_unsafe_const(const void* addr) const;
+
+  virtual void set_for_starts_humongous(HeapWord* new_end);
 };

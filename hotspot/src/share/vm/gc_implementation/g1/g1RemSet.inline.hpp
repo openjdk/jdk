@@ -30,16 +30,18 @@ inline size_t G1RemSet::n_workers() {
   }
 }
 
-template <class T> inline void HRInto_G1RemSet::write_ref_nv(HeapRegion* from, T* p) {
+template <class T>
+inline void G1RemSet::write_ref_nv(HeapRegion* from, T* p) {
   par_write_ref_nv(from, p, 0);
 }
 
-inline bool HRInto_G1RemSet::self_forwarded(oop obj) {
+inline bool G1RemSet::self_forwarded(oop obj) {
   bool result =  (obj->is_forwarded() && (obj->forwardee()== obj));
   return result;
 }
 
-template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* from, T* p, int tid) {
+template <class T>
+inline void G1RemSet::par_write_ref_nv(HeapRegion* from, T* p, int tid) {
   oop obj = oopDesc::load_decode_heap_oop(p);
 #ifdef ASSERT
   // can't do because of races
@@ -77,7 +79,7 @@ template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* fro
       // Deferred updates to the CSet are either discarded (in the normal case),
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
-      // See HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do().
+      // See G1RemSet::cleanup_after_oops_into_collection_set_do().
     } else {
 #if G1_REM_SET_LOGGING
       gclog_or_tty->print_cr("Adding " PTR_FORMAT " (" PTR_FORMAT ") to RS"
@@ -91,12 +93,14 @@ template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* fro
   }
 }
 
-template <class T> inline void UpdateRSOopClosure::do_oop_work(T* p) {
+template <class T>
+inline void UpdateRSOopClosure::do_oop_work(T* p) {
   assert(_from != NULL, "from region must be non-NULL");
   _rs->par_write_ref(_from, p, _worker_i);
 }
 
-template <class T> inline void UpdateRSetImmediate::do_oop_work(T* p) {
+template <class T>
+inline void UpdateRSetImmediate::do_oop_work(T* p) {
   assert(_from->is_in_reserved(p), "paranoia");
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {

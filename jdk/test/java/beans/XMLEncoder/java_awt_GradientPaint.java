@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,5 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
+/*
+ * @test
+ * @bug 4358979
+ * @summary Tests GradientPaint encoding
+ * @author Sergey Malenkov
+ */
+
+import java.awt.Color;
+import java.awt.GradientPaint;
+
+public final class java_awt_GradientPaint extends AbstractTest<GradientPaint> {
+    public static void main(String[] args) {
+        new java_awt_GradientPaint().test(true);
+    }
+
+    protected GradientPaint getObject() {
+        return new GradientPaint(0.1f, 0.2f, Color.BLACK, 0.3f, 0.4f, Color.WHITE, true);
+    }
+
+    protected GradientPaint getAnotherObject() {
+        return null; /* TODO: could not update property
+        return new GradientPaint(0.4f, 0.3f, Color.WHITE, 0.2f, 0.1f, Color.BLACK, false);*/
+    }
+}

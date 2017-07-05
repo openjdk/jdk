@@ -711,10 +711,8 @@ class DatagramChannelImpl
                     cachedSenderInetAddress = isa.getAddress();
                     cachedSenderPort = isa.getPort();
 
-                    // Socket was not bound before connecting,
-                    if (localAddress == null) {
-                        localAddress = Net.localAddress(fd);
-                    }
+                    // set or refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }
@@ -735,6 +733,9 @@ class DatagramChannelImpl
                     disconnect0(fd);
                     remoteAddress = null;
                     state = ST_UNCONNECTED;
+
+                    // refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }
