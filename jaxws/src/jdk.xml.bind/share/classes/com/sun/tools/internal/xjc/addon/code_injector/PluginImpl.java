@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 
 package com.sun.tools.internal.xjc.addon.code_injector;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.Plugin;
 import com.sun.tools.internal.xjc.model.CPluginCustomization;
-import com.sun.tools.internal.xjc.outline.ClassOutline;
+import com.sun.tools.internal.xjc.outline.CustomizableOutline;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.util.DOMUtils;
 
@@ -54,7 +56,7 @@ public class PluginImpl extends Plugin {
     }
 
     public boolean isCustomizationTagName(String nsUri, String localName) {
-        return nsUri.equals(Const.NS) && localName.equals("code");
+        return Const.NS.equals(nsUri) && "code".equals(localName);
     }
 
     public String getUsage() {
@@ -62,9 +64,15 @@ public class PluginImpl extends Plugin {
     }
 
     // meat of the processing
-    public boolean run(Outline model, Options opt, ErrorHandler errorHandler) {
-        for( ClassOutline co : model.getClasses() ) {
-            CPluginCustomization c = co.target.getCustomizations().find(Const.NS,"code");
+    public boolean run(@NotNull Outline model, Options opt, ErrorHandler errorHandler) {
+        checkAndInject(model.getClasses());
+        checkAndInject(model.getEnums());
+        return true;
+    }
+
+    private static void checkAndInject(Collection<? extends CustomizableOutline> outlines) {
+        for (CustomizableOutline co : outlines) {
+            CPluginCustomization c = co.getTarget().getCustomizations().find(Const.NS, "code");
             if(c==null)
                 continue;   // no customization --- nothing to inject here
 
@@ -74,9 +82,7 @@ public class PluginImpl extends Plugin {
             String codeFragment = DOMUtils.getElementText(c.element);
 
             // inject the specified code fragment into the implementation class.
-            co.implClass.direct(codeFragment);
+            co.getImplClass().direct(codeFragment);
         }
-
-        return true;
     }
 }

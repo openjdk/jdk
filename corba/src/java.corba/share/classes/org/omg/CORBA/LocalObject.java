@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * to attempt determination of whether two distinct object references
      * refer to the same object, since such determination could be impractically
      * expensive.
-     * <P>Default implementation of the org.omg.CORBA.Object method. <P>
+     * <P>Default implementation of the org.omg.CORBA.Object method.
      *
      * @param that the object reference with which to check for equivalence
      * @return <code>true</code> if this object reference is known to be
@@ -87,7 +87,7 @@ public class LocalObject implements org.omg.CORBA.Object
     /**
      * Always returns <code>false</code>.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      *
      * @return <code>false</code>
      */
@@ -99,9 +99,10 @@ public class LocalObject implements org.omg.CORBA.Object
      * Returns a hash value that is consistent for the
      * lifetime of the object, using the given number as the maximum.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @param maximum an <code>int</code> identifying maximum value of
-     *                  the hashcode
+     *                the hashcode
      * @return this instance's hashcode
      */
     public int _hash(int maximum) {
@@ -113,7 +114,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object."  This method
      * does not apply to local objects and is therefore not implemented.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      *
      * @param repository_id a <code>String</code>
      * @return NO_IMPLEMENT because this is a locally constrained object
@@ -131,7 +132,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @return a duplicate of this <code>LocalObject</code> instance.
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
@@ -145,7 +147,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
      *      comments for unimplemented features</a>
@@ -158,7 +161,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      *
      * @param operation a <code>String</code> giving the name of an operation
      *        to be performed by the request that is returned
@@ -175,7 +178,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      *
      * @param ctx          a <code>Context</code> object containing
      *                     a list of properties
@@ -202,7 +205,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      *
      * @param ctx          a <code>Context</code> object containing
      *                     a list of properties
@@ -237,7 +240,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object." This method
      * does not apply to local objects and is therefore not implemented.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @return NO_IMPLEMENT because this is a locally constrained object
      *      and this method does not apply to local objects
      * @exception NO_IMPLEMENT because this is a locally constrained object
@@ -254,7 +258,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
      *      comments for unimplemented features</a>
@@ -275,7 +280,7 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
      * @return the ORB instance that created the Delegate contained in this
      * <code>ObjectImpl</code>
      * @exception NO_IMPLEMENT
@@ -291,7 +296,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object." This method
      * does not apply to local objects and is therefore not implemented.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @param policy_type  an <code>int</code>
      * @return NO_IMPLEMENT because this is a locally constrained object
      *      and this method does not apply to local objects
@@ -310,7 +316,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object." This method
      * does not apply to local objects and is therefore not implemented.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
      *      comments for unimplemented features</a>
@@ -347,7 +354,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
      * <code>org.omg.CORBA.Object</code> method.<P>
-     * Returns <code>true</code> for this <code>LocalObject</code> instance.<P>
+     * Returns <code>true</code> for this <code>LocalObject</code> instance.
+     *
      * @return <code>true</code> always
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
@@ -361,7 +369,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @param operation a <code>String</code> indicating which operation
      *                  to preinvoke
      * @param expectedType the class of the type of operation mentioned above
@@ -381,7 +390,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * Throws an <code>org.omg.CORBA.NO_IMPLEMENT</code> exception with
      * the message "This is a locally constrained object."
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @param servant the servant object on which to post-invoke
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
@@ -403,8 +413,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * <code>org.omg.CORBA.Object</code> method.
      * <P>Called by a stub to obtain an OutputStream for
      * marshaling arguments. The stub must supply the operation name,
-     * and indicate if a response is expected (i.e is this a oneway
-     * call).<P>
+     * and indicate if a response is expected (i.e is this a oneway call).
+     *
      * @param operation the name of the operation being requested
      * @param responseExpected <code>true</code> if a response is expected,
      *                         <code>false</code> if it is a one-way call
@@ -433,7 +443,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * marshaled reply. If an exception occurs, <code>_invoke</code> may throw an
      * <code>ApplicationException</code> object which contains an
      * <code>InputStream</code> from
-     * which the user exception state may be unmarshaled.<P>
+     * which the user exception state may be unmarshaled.
+     *
      * @param output the <code>OutputStream</code> to invoke
      * @return NO_IMPLEMENT because this is a locally constrained object
      *      and this method does not apply to local objects
@@ -470,7 +481,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * <code>ApplicationException.getInputStream()</code>.
      * A null
      * value may also be passed to <code>_releaseReply</code>, in which case the
-     * method is a no-op.<P>
+     * method is a no-op.
+     *
      * @param input the reply stream back to the ORB or null
      * @exception NO_IMPLEMENT
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
@@ -485,7 +497,8 @@ public class LocalObject implements org.omg.CORBA.Object
      * the message "This is a locally constrained object." This method
      * does not apply to local objects and is therefore not implemented.
      * This method is the default implementation of the
-     * <code>org.omg.CORBA.Object</code> method.<P>
+     * <code>org.omg.CORBA.Object</code> method.
+     *
      * @return NO_IMPLEMENT because this is a locally constrained object
      *      and this method does not apply to local objects
      * @exception NO_IMPLEMENT because this is a locally constrained object

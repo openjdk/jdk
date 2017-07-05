@@ -27,6 +27,7 @@
 #include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
@@ -34,15 +35,12 @@
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 //
 // ThreadRootsMarkingTask
@@ -221,12 +219,11 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   int random_seed = 17;
   do {
     while (ParCompactionManager::steal_objarray(which, &random_seed, task)) {
-      ObjArrayKlass* k = (ObjArrayKlass*)task.obj()->klass();
-      k->oop_follow_contents(cm, task.obj(), task.index());
+      cm->follow_contents((objArrayOop)task.obj(), task.index());
       cm->follow_marking_stacks();
     }
     while (ParCompactionManager::steal(which, &random_seed, obj)) {
-      obj->follow_contents(cm);
+      cm->follow_contents(obj);
       cm->follow_marking_stacks();
     }
   } while (!terminator()->offer_termination());
@@ -257,7 +254,7 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
     which_stack_index = which;
     assert(manager->active_workers() == ParallelGCThreads,
            err_msg("all_workers_active has been incorrectly set: "
-                   " active %d  ParallelGCThreads %d", manager->active_workers(),
+                   " active %d  ParallelGCThreads " UINTX_FORMAT, manager->active_workers(),
                    ParallelGCThreads));
   } else {
     which_stack_index = ParCompactionManager::pop_recycled_stack_index();
@@ -269,7 +266,7 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
     gclog_or_tty->print_cr("StealRegionCompactionTask::do_it "
                            "region_stack_index %d region_stack = " PTR_FORMAT " "
                            " empty (%d) use all workers %d",
-    which_stack_index, ParCompactionManager::region_list(which_stack_index),
+    which_stack_index, p2i(ParCompactionManager::region_list(which_stack_index)),
     cm->region_stack()->is_empty(),
     use_all_workers);
   }
@@ -336,7 +333,7 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
     which_stack_index = which;
     assert(manager->active_workers() == ParallelGCThreads,
            err_msg("all_workers_active has been incorrectly set: "
-                   " active %d  ParallelGCThreads %d", manager->active_workers(),
+                   " active %d  ParallelGCThreads " UINTX_FORMAT, manager->active_workers(),
                    ParallelGCThreads));
   } else {
     which_stack_index = stack_index();
@@ -370,7 +367,7 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
       void* old_region_stack = (void*) cm->region_stack();
       int old_region_stack_index = cm->region_stack_index();
       gclog_or_tty->print_cr("Pushing region stack " PTR_FORMAT "/%d",
-        old_region_stack, old_region_stack_index);
+        p2i(old_region_stack), old_region_stack_index);
     }
 
     cm->set_region_stack(NULL);

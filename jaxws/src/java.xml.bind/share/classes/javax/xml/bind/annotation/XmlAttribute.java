@@ -89,14 +89,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         public java.math.BigDecimal getPrice() {...} ;
  *         public void setPrice(java.math.BigDecimal ) {...};
  *     }
+ * {@code
  *
- *     &lt;!-- Example: XML Schema fragment --&gt;
- *     &lt;xs:complexType name="USPrice"&gt;
- *       &lt;xs:sequence&gt;
- *       &lt;/xs:sequence&gt;
- *       &lt;xs:attribute name="price" type="xs:decimal"/&gt;
- *     &lt;/xs:complexType&gt;
- * </pre>
+ *     <!-- Example: XML Schema fragment -->
+ *     <xs:complexType name="USPrice">
+ *       <xs:sequence>
+ *       </xs:sequence>
+ *       <xs:attribute name="price" type="xs:decimal"/>
+ *     </xs:complexType>
+ * }</pre>
  *
  * <p> <b>Example 2: </b>Map a JavaBean property to an XML attribute with anonymous type.</p>
  * See Example 7 in @{@link XmlType}.
@@ -108,17 +109,18 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         ...
  *         &#64;XmlAttribute List&lt;Integer&gt; items;
  *     }
+ * {@code
  *
- *     &lt;!-- Example: XML Schema fragment --&gt;
- *     &lt;xs:complexType name="foo"&gt;
+ *     <!-- Example: XML Schema fragment -->
+ *     <xs:complexType name="foo">
  *       ...
- *       &lt;xs:attribute name="items"&gt;
- *         &lt;xs:simpleType&gt;
- *           &lt;xs:list itemType="xs:int"/&gt;
- *         &lt;/xs:simpleType&gt;
- *     &lt;/xs:complexType&gt;
+ *       <xs:attribute name="items">
+ *         <xs:simpleType>
+ *           <xs:list itemType="xs:int"/>
+ *         </xs:simpleType>
+ *     </xs:complexType>
  *
- * </pre>
+ * }</pre>
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @see XmlType
  * @since 1.6, JAXB 2.0

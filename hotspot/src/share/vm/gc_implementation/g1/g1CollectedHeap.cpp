@@ -66,7 +66,6 @@
 #include "memory/iterator.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -402,25 +401,6 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
   hr->set_next_dirty_cards_region(NULL);
   return hr;
 }
-
-#ifdef ASSERT
-// A region is added to the collection set as it is retired
-// so an address p can point to a region which will be in the
-// collection set but has not yet been retired.  This method
-// therefore is only accurate during a GC pause after all
-// regions have been retired.  It is used for debugging
-// to check if an nmethod has references to objects that can
-// be move during a partial collection.  Though it can be
-// inaccurate, it is sufficient for G1 because the conservative
-// implementation of is_scavengable() for G1 will indicate that
-// all nmethods must be scanned during a partial collection.
-bool G1CollectedHeap::is_in_partial_collection(const void* p) {
-  if (p == NULL) {
-    return false;
-  }
-  return heap_region_containing(p)->in_collection_set();
-}
-#endif
 
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
@@ -1748,7 +1728,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
-  SharedHeap(policy_),
+  SharedHeap(),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
@@ -3732,7 +3712,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    uint active_workers = workers()->active_workers();
+    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                                                  workers()->active_workers(),
+                                                                  Threads::number_of_non_daemon_threads());
+    assert(UseDynamicNumberOfGCThreads ||
+           active_workers == workers()->total_workers(),
+           "If not dynamic should be using all the  workers");
+    workers()->set_active_workers(active_workers);
+
     double pause_start_sec = os::elapsedTime();
     g1_policy()->phase_times()->note_gc_start(active_workers, mark_in_progress());
     log_gc_header();
@@ -5430,15 +5417,10 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->reset_hot_cache_claimed_index();
   hot_card_cache->set_use_cache(false);
 
-  uint n_workers;
-  n_workers =
-    AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                   workers()->active_workers(),
-                                   Threads::number_of_non_daemon_threads());
+  const uint n_workers = workers()->active_workers();
   assert(UseDynamicNumberOfGCThreads ||
          n_workers == workers()->total_workers(),
          "If not dynamic should be using all the  workers");
-  workers()->set_active_workers(n_workers);
   set_par_threads(n_workers);
 
 

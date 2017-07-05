@@ -82,14 +82,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         &#64;XmlElement(name="itemprice")
  *         public java.math.BigDecimal price;
  *     }
+ * {@code
  *
- *     &lt;!-- Example: Local XML Schema element --&gt;
- *     &lt;xs:complexType name="USPrice"/&gt;
- *       &lt;xs:sequence&gt;
- *         &lt;xs:element name="itemprice" type="xs:decimal" minOccurs="0"/&gt;
- *       &lt;/sequence&gt;
- *     &lt;/xs:complexType&gt;
- *   </pre>
+ *     <!-- Example: Local XML Schema element -->
+ *     <xs:complexType name="USPrice"/>
+ *       <xs:sequence>
+ *         <xs:element name="itemprice" type="xs:decimal" minOccurs="0"/>
+ *       </sequence>
+ *     </xs:complexType>
+ *   }</pre>
  * <p>
  *
  * <b> Example 2: </b> Map a field to a nillable element.
@@ -100,14 +101,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         &#64;XmlElement(nillable=true)
  *         public java.math.BigDecimal price;
  *     }
+ * {@code
  *
- *     &lt;!-- Example: Local XML Schema element --&gt;
- *     &lt;xs:complexType name="USPrice"&gt;
- *       &lt;xs:sequence&gt;
- *         &lt;xs:element name="price" type="xs:decimal" nillable="true" minOccurs="0"/&gt;
- *       &lt;/sequence&gt;
- *     &lt;/xs:complexType&gt;
- *   </pre>
+ *     <!-- Example: Local XML Schema element -->
+ *     <xs:complexType name="USPrice">
+ *       <xs:sequence>
+ *         <xs:element name="price" type="xs:decimal" nillable="true" minOccurs="0"/>
+ *       </sequence>
+ *     </xs:complexType>
+ *   }</pre>
  * <p>
  * <b> Example 3: </b> Map a field to a nillable, required element.
  *   <pre>
@@ -117,14 +119,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         &#64;XmlElement(nillable=true, required=true)
  *         public java.math.BigDecimal price;
  *     }
+ * {@code
  *
- *     &lt;!-- Example: Local XML Schema element --&gt;
- *     &lt;xs:complexType name="USPrice"&gt;
- *       &lt;xs:sequence&gt;
- *         &lt;xs:element name="price" type="xs:decimal" nillable="true" minOccurs="1"/&gt;
- *       &lt;/sequence&gt;
- *     &lt;/xs:complexType&gt;
- *   </pre>
+ *     <!-- Example: Local XML Schema element -->
+ *     <xs:complexType name="USPrice">
+ *       <xs:sequence>
+ *         <xs:element name="price" type="xs:decimal" nillable="true" minOccurs="1"/>
+ *       </sequence>
+ *     </xs:complexType>
+ *   }</pre>
  *
  * <p> <b>Example 4: </b>Map a JavaBean property to an XML element
  * with anonymous type.</p>
@@ -179,7 +182,7 @@ public @interface XmlElement {
      *  the enclosing class.
      *
      *  <li>
-     *  Otherwise &#39;&#39; (which produces unqualified element in the default
+     *  Otherwise {@literal ''} (which produces unqualified element in the default
      *  namespace.
      * </ol>
      */

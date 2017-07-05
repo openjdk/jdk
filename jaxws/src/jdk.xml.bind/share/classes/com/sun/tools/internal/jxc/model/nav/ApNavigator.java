@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,12 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.Location;
-
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -52,12 +57,6 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 /**
  * {@link Navigator} implementation for annotation processing.
@@ -241,7 +240,7 @@ public final class ApNavigator implements Navigator<TypeMirror, TypeElement, Var
 
     public VariableElement[] getEnumConstants(TypeElement clazz) {
         List<? extends Element> elements = env.getElementUtils().getAllMembers(clazz);
-        Collection<VariableElement> constants = new HashSet<VariableElement>();
+        Collection<VariableElement> constants = new ArrayList<VariableElement>();
         for (Element element : elements) {
             if (element.getKind().equals(ElementKind.ENUM_CONSTANT)) {
                 constants.add((VariableElement) element);

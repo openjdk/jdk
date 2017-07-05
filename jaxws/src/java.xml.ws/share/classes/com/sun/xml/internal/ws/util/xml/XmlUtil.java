@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ public class XmlUtil {
     static final ContextClassloaderLocal<SAXParserFactory> saxParserFactory = new ContextClassloaderLocal<SAXParserFactory>() {
         @Override
         protected SAXParserFactory initialValue() throws Exception {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParserFactory factory = newSAXParserFactory(true);
             factory.setNamespaceAware(true);
             return factory;
         }
@@ -371,57 +371,49 @@ public class XmlUtil {
         }
     };
 
-    public static DocumentBuilderFactory newDocumentBuilderFactory() {
-        return newDocumentBuilderFactory(true);
-    }
-
-    public static DocumentBuilderFactory newDocumentBuilderFactory(boolean secureXmlProcessing) {
+    public static DocumentBuilderFactory newDocumentBuilderFactory(boolean disableSecurity) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessing));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, !xmlSecurityDisabled(disableSecurity));
         } catch (ParserConfigurationException e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
         }
         return factory;
     }
 
-    public static TransformerFactory newTransformerFactory(boolean secureXmlProcessingEnabled) {
+    public static TransformerFactory newTransformerFactory(boolean disableSecurity) {
         TransformerFactory factory = TransformerFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, !xmlSecurityDisabled(disableSecurity));
         } catch (TransformerConfigurationException e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
         }
         return factory;
     }
 
-    public static TransformerFactory newTransformerFactory() {
-        return newTransformerFactory(true);
-    }
-
-    public static SAXParserFactory newSAXParserFactory(boolean secureXmlProcessingEnabled) {
+    public static SAXParserFactory newSAXParserFactory(boolean disableSecurity) {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, !xmlSecurityDisabled(disableSecurity));
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
         }
         return factory;
     }
 
-    public static XPathFactory newXPathFactory(boolean secureXmlProcessingEnabled) {
+    public static XPathFactory newXPathFactory(boolean disableSecurity) {
         XPathFactory factory = XPathFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, !xmlSecurityDisabled(disableSecurity));
         } catch (XPathFactoryConfigurationException e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
         }
         return factory;
     }
 
-    public static XMLInputFactory newXMLInputFactory(boolean secureXmlProcessingEnabled)  {
+    public static XMLInputFactory newXMLInputFactory(boolean disableSecurity)  {
         XMLInputFactory factory = XMLInputFactory.newInstance();
-        if (isXMLSecurityDisabled(secureXmlProcessingEnabled)) {
+        if (xmlSecurityDisabled(disableSecurity)) {
             // TODO-Miran: are those apppropriate defaults?
             factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
             factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -429,14 +421,14 @@ public class XmlUtil {
         return factory;
     }
 
-    private static boolean isXMLSecurityDisabled(boolean runtimeDisabled) {
+    private static boolean xmlSecurityDisabled(boolean runtimeDisabled) {
         return XML_SECURITY_DISABLED || runtimeDisabled;
     }
 
-    public static SchemaFactory allowExternalAccess(SchemaFactory sf, String value, boolean disableSecureProcessing) {
+    public static SchemaFactory allowExternalAccess(SchemaFactory sf, String value, boolean disableSecurity) {
 
         // if xml security (feature secure processing) disabled, nothing to do, no restrictions applied
-        if (isXMLSecurityDisabled(disableSecureProcessing)) {
+        if (xmlSecurityDisabled(disableSecurity)) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, "Xml Security disabled, no JAXP xsd external access configuration necessary.");
             }

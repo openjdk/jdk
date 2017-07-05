@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.internal.xjc.outline;
 
 import com.sun.codemodel.internal.JDefinedClass;
+import com.sun.tools.internal.xjc.model.CCustomizable;
 import com.sun.tools.internal.xjc.model.CElementInfo;
 
 /**
@@ -39,7 +40,7 @@ import com.sun.tools.internal.xjc.model.CElementInfo;
  *
  * @author Kohsuke Kawaguchi
  */
-public abstract class ElementOutline {
+public abstract class ElementOutline implements CustomizableOutline {
 
     /**
      * A {@link Outline} that encloses all the class outlines.
@@ -68,5 +69,15 @@ public abstract class ElementOutline {
     protected ElementOutline(CElementInfo target, JDefinedClass implClass) {
         this.target = target;
         this.implClass = implClass;
+    }
+
+    @Override
+    public CCustomizable getTarget() {
+        return target;
+    }
+
+    @Override
+    public JDefinedClass getImplClass() {
+        return implClass;
     }
 }

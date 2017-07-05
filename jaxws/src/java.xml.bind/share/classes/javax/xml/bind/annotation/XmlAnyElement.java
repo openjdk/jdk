@@ -94,15 +94,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <h2>Schema To Java example</h2>
  *
  * The following schema would produce the following Java class:
- * <pre>
- * &lt;xs:complexType name="foo"&gt;
- *   &lt;xs:sequence&gt;
- *     &lt;xs:element name="a" type="xs:int" /&gt;
- *     &lt;xs:element name="b" type="xs:int" /&gt;
- *     &lt;xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" /&gt;
- *   &lt;/xs:sequence&gt;
- * &lt;/xs:complexType&gt;
- * </pre>
+ * <pre>{@code
+ * <xs:complexType name="foo">
+ *   <xs:sequence>
+ *     <xs:element name="a" type="xs:int" />
+ *     <xs:element name="b" type="xs:int" />
+ *     <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+ *   </xs:sequence>
+ * </xs:complexType>
+ * }</pre>
  *
  * <pre>
  * class Foo {
@@ -115,30 +115,30 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * It can unmarshal instances like
  *
- * <pre>
- * &lt;foo xmlns:e="extra"&gt;
- *   &lt;a&gt;1&lt;/a&gt;
- *   &lt;e:other /&gt;  // this will be bound to DOM, because unmarshalling is orderless
- *   &lt;b&gt;3&lt;/b&gt;
- *   &lt;e:other /&gt;
- *   &lt;c&gt;5&lt;/c&gt;     // this will be bound to DOM, because the annotation doesn't remember namespaces.
- * &lt;/foo&gt;
- * </pre>
+ * <pre>{@code
+ * <foo xmlns:e="extra">
+ *   <a>1</a>
+ *   <e:other />  // this will be bound to DOM, because unmarshalling is orderless
+ *   <b>3</b>
+ *   <e:other />
+ *   <c>5</c>     // this will be bound to DOM, because the annotation doesn't remember namespaces.
+ * </foo>
+ * }</pre>
  *
  *
  *
  * The following schema would produce the following Java class:
- * <pre>
- * &lt;xs:complexType name="bar"&gt;
- *   &lt;xs:complexContent&gt;
- *   &lt;xs:extension base="foo"&gt;
- *     &lt;xs:sequence&gt;
- *       &lt;xs:element name="c" type="xs:int" /&gt;
- *       &lt;xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" /&gt;
- *     &lt;/xs:sequence&gt;
- *   &lt;/xs:extension&gt;
- * &lt;/xs:complexType&gt;
- * </pre>
+ * <pre>{@code
+ * <xs:complexType name="bar">
+ *   <xs:complexContent>
+ *   <xs:extension base="foo">
+ *     <xs:sequence>
+ *       <xs:element name="c" type="xs:int" />
+ *       <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+ *     </xs:sequence>
+ *   </xs:extension>
+ * </xs:complexType>
+ * }</pre>
  *
  * <pre>
  * class Bar extends Foo {
@@ -150,16 +150,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * It can unmarshal instances like
  *
- * <pre>
- * &lt;bar xmlns:e="extra"&gt;
- *   &lt;a&gt;1&lt;/a&gt;
- *   &lt;e:other /&gt;  // this will be bound to DOM, because unmarshalling is orderless
- *   &lt;b&gt;3&lt;/b&gt;
- *   &lt;e:other /&gt;
- *   &lt;c&gt;5&lt;/c&gt;     // this now goes to Bar.c
- *   &lt;e:other /&gt;  // this will go to Foo.any
- * &lt;/bar&gt;
- * </pre>
+ * <pre>{@code
+ * <bar xmlns:e="extra">
+ *   <a>1</a>
+ *   <e:other />  // this will be bound to DOM, because unmarshalling is orderless
+ *   <b>3</b>
+ *   <e:other />
+ *   <c>5</c>     // this now goes to Bar.c
+ *   <e:other />  // this will go to Foo.any
+ * </bar>
+ * }</pre>
  *
  *
  *
@@ -171,15 +171,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * <p>
  * The following schema would produce the following Java class:
- * <pre>
- * &lt;xs:complexType name="foo"&gt;
- *   &lt;xs:choice maxOccurs="unbounded" minOccurs="0"&gt;
- *     &lt;xs:element name="a" type="xs:int" /&gt;
- *     &lt;xs:element name="b" type="xs:int" /&gt;
- *     &lt;xs:any namespace="##other" processContents="lax" /&gt;
- *   &lt;/xs:choice&gt;
- * &lt;/xs:complexType&gt;
- * </pre>
+ * <pre>{@code
+ * <xs:complexType name="foo">
+ *   <xs:choice maxOccurs="unbounded" minOccurs="0">
+ *     <xs:element name="a" type="xs:int" />
+ *     <xs:element name="b" type="xs:int" />
+ *     <xs:any namespace="##other" processContents="lax" />
+ *   </xs:choice>
+ * </xs:complexType>
+ * }</pre>
  *
  * <pre>
  * class Foo {
@@ -204,11 +204,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * It can unmarshal instances like
  *
  * <pre>
- * &lt;foo xmlns:e="extra"&gt;
- *   &lt;a&gt;1&lt;/a&gt;     // this will unmarshal to a {@link JAXBElement} instance whose value is 1.
- *   &lt;e:other /&gt;  // this will unmarshal to a DOM {@link Element}.
- *   &lt;b&gt;3&lt;/b&gt;     // this will unmarshal to a {@link JAXBElement} instance whose value is 1.
- * &lt;/foo&gt;
+ *{@code <foo xmlns:e="extra">}
+ *{@code   <a>1</a>}     // this will unmarshal to a {@link JAXBElement} instance whose value is 1.
+ *{@code   <e:other />}  // this will unmarshal to a DOM {@link Element}.
+ *{@code   <b>3</b>}     // this will unmarshal to a {@link JAXBElement} instance whose value is 1.
+ *{@code </foo>}
  * </pre>
  *
  *
@@ -225,11 +225,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }
  * </pre>
  * then the following document will unmarshal like this:
- * <pre>
- * &lt;foo&gt;
- *   &lt;unknown /&gt;
- *   &lt;foo /&gt;
- * &lt;/foo&gt;
+ * <pre>{@code
+ * <foo>
+ *   <unknown />
+ *   <foo />
+ * </foo>
  *
  * Foo foo = unmarshal();
  * // 1 for 'unknown', another for 'foo'
@@ -239,7 +239,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * // because of lax=true, the 'foo' element eagerly
  * // unmarshals to a Foo object.
  * assert foo.others[1] instanceof Foo;
- * </pre>
+ * }</pre>
  *
  * @author Kohsuke Kawaguchi
  * @since 1.6, JAXB 2.0

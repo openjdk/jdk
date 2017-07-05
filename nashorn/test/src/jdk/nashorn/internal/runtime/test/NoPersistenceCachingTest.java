@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8037378
  * @summary Sanity tests for no persistence caching
- * @run testng/othervm jdk.nashorn.internal.runtime.NoPersistenceCachingTest
+ * @run testng/othervm jdk.nashorn.internal.runtime.test.NoPersistenceCachingTest
  */
 @SuppressWarnings("javadoc")
 public class NoPersistenceCachingTest {
