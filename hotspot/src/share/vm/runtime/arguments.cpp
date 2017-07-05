@@ -59,7 +59,8 @@
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #endif
 
-#define DEFAULT_VENDOR_URL_BUG "http://java.sun.com/webapps/bugreport/crash.jsp"
+// Note: This is a special bug reporting site for the JVM
+#define DEFAULT_VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
 char**  Arguments::_jvm_flags_array             = NULL;
@@ -243,6 +244,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
+  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -961,6 +963,16 @@ void Arguments::set_mode_flags(Mode mode) {
   UseInterpreter             = true;
   UseCompiler                = true;
   UseLoopCounter             = true;
+
+#ifndef ZERO
+  // Turn these off for mixed and comp.  Leave them on for Zero.
+  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
+    UseFastAccessorMethods = mode == _int;
+  }
+  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
+    UseFastEmptyMethods = mode == _int;
+  }
+#endif
 
   // Default values may be platform/compiler dependent -
   // use the saved values

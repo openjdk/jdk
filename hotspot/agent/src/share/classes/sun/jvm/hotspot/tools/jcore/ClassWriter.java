@@ -321,7 +321,6 @@ public class ClassWriter implements /* imports */ ClassConstants
                      break;
                 }
 
-                case JVM_CONSTANT_InvokeDynamicTrans:
                 case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);

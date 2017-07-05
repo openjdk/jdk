@@ -387,7 +387,7 @@ void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {
   Label not_null;
-  br_zero(Assembler::notEqual, false, Assembler::pt, r, not_null);
+  br_notnull(r, false, Assembler::pt, not_null);
   delayed()->nop();
   stop("non-null oop required");
   bind(not_null);

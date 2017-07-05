@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ class SharkCompiler : public AbstractCompiler {
   // Generate a wrapper for a native (JNI) method
   nmethod* generate_native_wrapper(MacroAssembler* masm,
                                    methodHandle    target,
+                                   int             compile_id,
                                    BasicType*      arg_types,
                                    BasicType       return_type);
 
@@ -113,7 +114,8 @@ class SharkCompiler : public AbstractCompiler {
   // Global access
  public:
   static SharkCompiler* compiler() {
-    AbstractCompiler *compiler = CompileBroker::compiler(CompLevel_simple);
+    AbstractCompiler *compiler =
+      CompileBroker::compiler(CompLevel_full_optimization);
     assert(compiler->is_shark() && compiler->is_initialized(), "should be");
     return (SharkCompiler *) compiler;
   }

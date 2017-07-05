@@ -928,6 +928,7 @@ static const char* always_null_names[] = {
 };
 
 static bool is_always_null_type(klassOop klass) {
+  if (klass == NULL)  return false;  // safety
   if (!Klass::cast(klass)->oop_is_instance())  return false;
   instanceKlass* ik = instanceKlass::cast(klass);
   // Must be on the boot class path:
@@ -944,6 +945,8 @@ static bool is_always_null_type(klassOop klass) {
 }
 
 bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
+  if (dst == NULL)  return true;
+  if (src == NULL)  return (dst != SystemDictionary::Object_klass());
   if (src == dst || dst == SystemDictionary::Object_klass())
     return false;                               // quickest checks
   Klass* srck = Klass::cast(src);
@@ -1026,10 +1029,15 @@ void MethodHandles::verify_method_signature(methodHandle m,
                                             int first_ptype_pos,
                                             KlassHandle insert_ptype,
                                             TRAPS) {
+  Handle mhi_type;
+  if (m->is_method_handle_invoke()) {
+    // use this more exact typing instead of the symbolic signature:
+    mhi_type = Handle(THREAD, m->method_handle_type());
+  }
   objArrayHandle ptypes(THREAD, java_lang_invoke_MethodType::ptypes(mtype()));
   int pnum = first_ptype_pos;
   int pmax = ptypes->length();
-  int mnum = 0;                 // method argument
+  int anum = 0;                 // method argument
   const char* err = NULL;
   ResourceMark rm(THREAD);
   for (SignatureStream ss(m->signature()); !ss.is_done(); ss.next()) {
@@ -1048,47 +1056,70 @@ void MethodHandles::verify_method_signature(methodHandle m,
       else
         ptype_oop = insert_ptype->java_mirror();
       pnum += 1;
-      mnum += 1;
+      anum += 1;
     }
-    klassOop  pklass = NULL;
-    BasicType ptype  = T_OBJECT;
-    if (ptype_oop != NULL)
-      ptype = java_lang_Class::as_BasicType(ptype_oop, &pklass);
-    else
-      // null does not match any non-reference; use Object to report the error
-      pklass = SystemDictionary::Object_klass();
-    klassOop  mklass = NULL;
-    BasicType mtype  = ss.type();
-    if (mtype == T_ARRAY)  mtype = T_OBJECT; // fold all refs to T_OBJECT
-    if (mtype == T_OBJECT) {
-      if (ptype_oop == NULL) {
+    KlassHandle pklass;
+    BasicType   ptype = T_OBJECT;
+    bool   have_ptype = false;
+    // missing ptype_oop does not match any non-reference; use Object to report the error
+    pklass = SystemDictionaryHandles::Object_klass();
+    if (ptype_oop != NULL) {
+      have_ptype = true;
+      klassOop pklass_oop = NULL;
+      ptype = java_lang_Class::as_BasicType(ptype_oop, &pklass_oop);
+      pklass = KlassHandle(THREAD, pklass_oop);
+    }
+    ptype_oop = NULL; //done with this
+    KlassHandle aklass;
+    BasicType   atype = ss.type();
+    if (atype == T_ARRAY)  atype = T_OBJECT; // fold all refs to T_OBJECT
+    if (atype == T_OBJECT) {
+      if (!have_ptype) {
         // null matches any reference
         continue;
       }
-      KlassHandle pklass_handle(THREAD, pklass); pklass = NULL;
-      // If we fail to resolve types at this point, we will throw an error.
-      Symbol* name = ss.as_symbol(CHECK);
-      instanceKlass* mk = instanceKlass::cast(m->method_holder());
-      Handle loader(THREAD, mk->class_loader());
-      Handle domain(THREAD, mk->protection_domain());
-      mklass = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
-      pklass = pklass_handle();
-      if (mklass == NULL && pklass != NULL &&
-          Klass::cast(pklass)->name() == name &&
-          m->is_method_handle_invoke()) {
-        // Assume a match.  We can't really decode the signature of MH.invoke*.
-        continue;
+      if (mhi_type.is_null()) {
+        // If we fail to resolve types at this point, we will usually throw an error.
+        TempNewSymbol name = ss.as_symbol_or_null();
+        if (name != NULL) {
+          instanceKlass* mk = instanceKlass::cast(m->method_holder());
+          Handle loader(THREAD, mk->class_loader());
+          Handle domain(THREAD, mk->protection_domain());
+          klassOop aklass_oop = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
+          if (aklass_oop != NULL)
+            aklass = KlassHandle(THREAD, aklass_oop);
+        }
+      } else {
+        // for method handle invokers we don't look at the name in the signature
+        oop atype_oop;
+        if (ss.at_return_type())
+          atype_oop = java_lang_invoke_MethodType::rtype(mhi_type());
+        else
+          atype_oop = java_lang_invoke_MethodType::ptype(mhi_type(), anum-1);
+        klassOop aklass_oop = NULL;
+        atype = java_lang_Class::as_BasicType(atype_oop, &aklass_oop);
+        aklass = KlassHandle(THREAD, aklass_oop);
       }
     }
     if (!ss.at_return_type()) {
-      err = check_argument_type_change(ptype, pklass, mtype, mklass, mnum);
+      err = check_argument_type_change(ptype, pklass(), atype, aklass(), anum);
     } else {
-      err = check_return_type_change(mtype, mklass, ptype, pklass); // note reversal!
+      err = check_return_type_change(atype, aklass(), ptype, pklass()); // note reversal!
     }
     if (err != NULL)  break;
   }
 
   if (err != NULL) {
+#ifndef PRODUCT
+    if (PrintMiscellaneous && (Verbose || WizardMode)) {
+      tty->print("*** verify_method_signature failed: ");
+      java_lang_invoke_MethodType::print_signature(mtype(), tty);
+      tty->cr();
+      tty->print_cr("    first_ptype_pos = %d, insert_ptype = "UINTX_FORMAT, first_ptype_pos, insert_ptype());
+      tty->print("    Failing method: ");
+      m->print();
+    }
+#endif //PRODUCT
     THROW_MSG(vmSymbols::java_lang_InternalError(), err);
   }
 }
@@ -1288,10 +1319,12 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
   // format, format, format
   const char* src_name = type2name(src_type);
   const char* dst_name = type2name(dst_type);
-  if (src_type == T_OBJECT)  src_name = Klass::cast(src_klass)->external_name();
-  if (dst_type == T_OBJECT)  dst_name = Klass::cast(dst_klass)->external_name();
   if (src_name == NULL)  src_name = "unknown type";
   if (dst_name == NULL)  dst_name = "unknown type";
+  if (src_type == T_OBJECT)
+    src_name = (src_klass != NULL) ? Klass::cast(src_klass)->external_name() : "an unresolved class";
+  if (dst_type == T_OBJECT)
+    dst_name = (dst_klass != NULL) ? Klass::cast(dst_klass)->external_name() : "an unresolved class";
 
   size_t msglen = strlen(err) + strlen(src_name) + strlen(dst_name) + (argnum < 10 ? 1 : 11);
   char* msg = NEW_RESOURCE_ARRAY(char, msglen + 1);
@@ -2488,74 +2521,21 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
-JVM_ENTRY(void, MHN_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh, jobject bsm_jh)) {
-  instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
-  if (!AllowTransitionalJSR292) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "registerBootstrapMethod is only supported in JSR 292 EDR");
-  }
-  ik->link_class(CHECK);
-  if (!java_lang_invoke_MethodHandle::is_instance(JNIHandles::resolve(bsm_jh))) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "method handle");
-  }
-  const char* err = NULL;
-  if (ik->is_initialized() || ik->is_in_error_state()) {
-    err = "too late: class is already initialized";
-  } else {
-    ObjectLocker ol(ik, THREAD);  // note:  this should be a recursive lock
-    if (ik->is_not_initialized() ||
-        (ik->is_being_initialized() && ik->is_reentrant_initialization(THREAD))) {
-      if (ik->bootstrap_method() != NULL) {
-        err = "class is already equipped with a bootstrap method";
-      } else {
-        ik->set_bootstrap_method(JNIHandles::resolve_non_null(bsm_jh));
-        err = NULL;
-      }
-    } else {
-      err = "class is already initialized";
-      if (ik->is_being_initialized())
-        err = "class is already being initialized in a different thread";
-    }
-  }
-  if (err != NULL) {
-    THROW_MSG(vmSymbols::java_lang_IllegalStateException(), err);
-  }
-}
-JVM_END
-
-JVM_ENTRY(jobject, MHN_getBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh)) {
-  if (!AllowTransitionalJSR292)
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "getBootstrap: transitional only");
-  instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
-  return JNIHandles::make_local(THREAD, ik->bootstrap_method());
-}
-JVM_END
-
-JVM_ENTRY(void, MHN_setCallSiteTarget(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
-  if (!AllowTransitionalJSR292)
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "setCallSite: transitional only");
-}
-JVM_END
-
 
 /// JVM_RegisterMethodHandleMethods
 
 #define LANG "Ljava/lang/"
-#define JLINV "Ljava/lang/invoke/" /* standard package */
-#define JDYN "Ljava/dyn/" /* alternative package to JLINV if AllowTransitionalJSR292 */
-#define IDYN "Lsun/dyn/"  /* alternative package to JDYN if AllowTransitionalJSR292 */
-// FIXME: After AllowTransitionalJSR292 is removed, replace JDYN and IDYN by JLINV.
+#define JLINV "Ljava/lang/invoke/"
 
 #define OBJ   LANG"Object;"
 #define CLS   LANG"Class;"
 #define STRG  LANG"String;"
-#define CST   JDYN"CallSite;"
-#define MT    JDYN"MethodType;"
-#define MH    JDYN"MethodHandle;"
-#define MEM   IDYN"MemberName;"
-#define AMH   IDYN"AdapterMethodHandle;"
-#define BMH   IDYN"BoundMethodHandle;"
-#define DMH   IDYN"DirectMethodHandle;"
+#define MT    JLINV"MethodType;"
+#define MH    JLINV"MethodHandle;"
+#define MEM   JLINV"MemberName;"
+#define AMH   JLINV"AdapterMethodHandle;"
+#define BMH   JLINV"BoundMethodHandle;"
+#define DMH   JLINV"DirectMethodHandle;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -2579,39 +2559,6 @@ static JNINativeMethod methods[] = {
   {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
 };
 
-// FIXME: Remove methods2 after AllowTransitionalJSR292 is removed.
-static JNINativeMethod methods2[] = {
-  {CC"registerBootstrap",       CC"("CLS MH")V",                FN_PTR(MHN_registerBootstrap)},
-  {CC"getBootstrap",            CC"("CLS")"MH,                  FN_PTR(MHN_getBootstrap)},
-  {CC"setCallSiteTarget",       CC"("CST MH")V",                FN_PTR(MHN_setCallSiteTarget)}
-};
-
-static void hack_signatures(JNINativeMethod* methods, jint num_methods, const char* from_sig, const char* to_sig) {
-  for (int i = 0; i < num_methods; i++) {
-    const char* sig = methods[i].signature;
-    if (!strstr(sig, from_sig))  continue;
-    size_t buflen = strlen(sig) + 100;
-    char* buf = NEW_C_HEAP_ARRAY(char, buflen);
-    char* bufp = buf;
-    const char* sigp = sig;
-    size_t from_len = strlen(from_sig), to_len = strlen(to_sig);
-    while (*sigp != '\0') {
-      assert(bufp < buf + buflen - to_len - 1, "oob");
-      if (strncmp(sigp, from_sig, from_len) != 0) {
-        *bufp++ = *sigp++;
-      } else {
-        strcpy(bufp, to_sig);
-        bufp += to_len;
-        sigp += from_len;
-      }
-    }
-    *bufp = '\0';
-    methods[i].signature = buf;  // replace with new signature
-    if (TraceMethodHandles)
-      tty->print_cr("MethodHandleNatives: %s: change signature %s => %s", methods[i].name, sig, buf);
-  }
-}
-
 // This one function is exported, used by NativeLookup.
 
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
@@ -2622,92 +2569,41 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     return;  // bind nothing
   }
 
-  if (SystemDictionary::MethodHandleNatives_klass() != NULL &&
-      SystemDictionary::MethodHandleNatives_klass() != java_lang_Class::as_klassOop(JNIHandles::resolve(MHN_class))) {
-    warning("multiple versions of MethodHandleNatives in boot classpath; consider using -XX:+PreferTransitionalJSR292");
-    THROW_MSG(vmSymbols::java_lang_InternalError(), "multiple versions of MethodHandleNatives in boot classpath; consider using -XX:+PreferTransitionalJSR292");
-  }
-
   bool enable_MH = true;
 
-  // Loop control.  FIXME: Replace by dead reckoning after AllowTransitionalJSR292 is removed.
-  bool registered_natives = false;
-  bool try_plain = true, try_JDYN = true, try_IDYN = true;
-  for (;;) {
+  {
     ThreadToNativeFromVM ttnfv(thread);
 
-    if      (try_plain) { try_plain = false; }
-    else if (try_JDYN)  { try_JDYN  = false; hack_signatures(methods, sizeof(methods)/sizeof(JNINativeMethod), IDYN, JDYN); }
-    else if (try_IDYN)  { try_IDYN  = false; hack_signatures(methods, sizeof(methods)/sizeof(JNINativeMethod), JDYN, JLINV); }
-    else                { break; }
     int status = env->RegisterNatives(MHN_class, methods, sizeof(methods)/sizeof(JNINativeMethod));
     if (env->ExceptionOccurred()) {
+      MethodHandles::set_enabled(false);
+      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+      enable_MH = false;
       env->ExceptionClear();
-      // and try again...
-    } else {
-      registered_natives = true;
-      break;
     }
-  }
-  if (!registered_natives) {
-    MethodHandles::set_enabled(false);
-    warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
-    enable_MH = false;
   }
 
   if (enable_MH) {
-    bool found_raise_exception = false;
     KlassHandle MHN_klass = SystemDictionaryHandles::MethodHandleNatives_klass();
-    KlassHandle MHI_klass = SystemDictionaryHandles::MethodHandleImpl_klass();
-    // Loop control.  FIXME: Replace by dead reckoning after AllowTransitionalJSR292 is removed.
-    bool try_MHN = true, try_MHI = AllowTransitionalJSR292;
-    for (;;) {
-      KlassHandle try_klass;
-      if      (try_MHN) { try_MHN = false; try_klass = MHN_klass; }
-      else if (try_MHI) { try_MHI = false; try_klass = MHI_klass; }
-      else              { break; }
-      if (try_klass.is_null())  continue;
+    if (MHN_klass.not_null()) {
       TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK);
       TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK);
-      methodOop raiseException_method  = instanceKlass::cast(try_klass->as_klassOop())
+      methodOop raiseException_method  = instanceKlass::cast(MHN_klass->as_klassOop())
                     ->find_method(raiseException_name, raiseException_sig);
       if (raiseException_method != NULL && raiseException_method->is_static()) {
         MethodHandles::set_raise_exception_method(raiseException_method);
-        found_raise_exception = true;
-        break;
+      } else {
+        warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+        enable_MH = false;
       }
-    }
-    if (!found_raise_exception) {
-      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+    } else {
       enable_MH = false;
     }
   }
 
   if (enable_MH) {
-    if (AllowTransitionalJSR292) {
-      // We need to link the MethodHandleImpl klass before we generate
-      // the method handle adapters as the _raise_exception adapter uses
-      // one of its methods (and its c2i-adapter).
-      klassOop k = SystemDictionary::MethodHandleImpl_klass();
-      if (k != NULL) {
-        instanceKlass* ik = instanceKlass::cast(k);
-        ik->link_class(CHECK);
-      }
-    }
-
     MethodHandles::generate_adapters();
     MethodHandles::set_enabled(true);
-  }
-
-  if (AllowTransitionalJSR292) {
-    ThreadToNativeFromVM ttnfv(thread);
-
-    int status = env->RegisterNatives(MHN_class, methods2, sizeof(methods2)/sizeof(JNINativeMethod));
-    if (env->ExceptionOccurred()) {
-      // Don't do this, since it's too late:
-      //   MethodHandles::set_enabled(false)
-      env->ExceptionClear();
-    }
   }
 }
 JVM_END
