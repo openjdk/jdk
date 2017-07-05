@@ -40,7 +40,6 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/linux/makefiles/mapfile-vers-product
 
-G_SUFFIX =
 SYSDEFS += -DPRODUCT
 VERSION = optimized
 

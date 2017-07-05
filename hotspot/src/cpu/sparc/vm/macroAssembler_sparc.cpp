@@ -100,34 +100,6 @@ const char* Argument::name() const {
 bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
 
-
-void MacroAssembler::print_instruction(int inst) {
-  const char* s;
-  switch (inv_op(inst)) {
-  default:         s = "????"; break;
-  case call_op:    s = "call"; break;
-  case branch_op:
-    switch (inv_op2(inst)) {
-      case fb_op2:     s = "fb";   break;
-      case fbp_op2:    s = "fbp";  break;
-      case br_op2:     s = "br";   break;
-      case bp_op2:     s = "bp";   break;
-      case cb_op2:     s = "cb";   break;
-      case bpr_op2: {
-        if (is_cbcond(inst)) {
-          s = is_cxb(inst) ? "cxb" : "cwb";
-        } else {
-          s = "bpr";
-        }
-        break;
-      }
-      default:         s = "????"; break;
-    }
-  }
-  ::tty->print("%s", s);
-}
-
-
 // Patch instruction inst at offset inst_pos to refer to dest_pos
 // and return the resulting instruction.
 // We should have pcs, not offsets, but since all is relative, it will work out
