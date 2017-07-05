@@ -2269,6 +2269,7 @@ void java_lang_LiveStackFrameInfo::compute_offsets() {
   compute_offset(_monitors_offset,   k, vmSymbols::monitors_name(),    vmSymbols::object_array_signature());
   compute_offset(_locals_offset,     k, vmSymbols::locals_name(),      vmSymbols::object_array_signature());
   compute_offset(_operands_offset,   k, vmSymbols::operands_name(),    vmSymbols::object_array_signature());
+  compute_offset(_mode_offset,       k, vmSymbols::mode_name(),        vmSymbols::int_signature());
 }
 
 void java_lang_reflect_AccessibleObject::compute_offsets() {
@@ -3658,6 +3659,7 @@ int java_lang_StackFrameInfo::_version_offset;
 int java_lang_LiveStackFrameInfo::_monitors_offset;
 int java_lang_LiveStackFrameInfo::_locals_offset;
 int java_lang_LiveStackFrameInfo::_operands_offset;
+int java_lang_LiveStackFrameInfo::_mode_offset;
 int java_lang_AssertionStatusDirectives::classes_offset;
 int java_lang_AssertionStatusDirectives::classEnabled_offset;
 int java_lang_AssertionStatusDirectives::packages_offset;
@@ -3726,6 +3728,10 @@ void java_lang_LiveStackFrameInfo::set_locals(oop element, oop value) {
 
 void java_lang_LiveStackFrameInfo::set_operands(oop element, oop value) {
   element->obj_field_put(_operands_offset, value);
+}
+
+void java_lang_LiveStackFrameInfo::set_mode(oop element, int value) {
+  element->int_field_put(_mode_offset, value);
 }
 
 // Support for java Assertions - java_lang_AssertionStatusDirectives.
