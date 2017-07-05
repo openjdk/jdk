@@ -501,6 +501,7 @@ class Instruction: public CompilationResourceObj {
   virtual RoundFP*          as_RoundFP()         { return NULL; }
   virtual ExceptionObject*  as_ExceptionObject() { return NULL; }
   virtual UnsafeOp*         as_UnsafeOp()        { return NULL; }
+  virtual ProfileInvoke*    as_ProfileInvoke()   { return NULL; }
 
   virtual void visit(InstructionVisitor* v)      = 0;
 

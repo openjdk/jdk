@@ -50,6 +50,7 @@ ProjectCreatorIncludesPRIVATE=\
         -relativeInclude src\closed\os_cpu\windows_$(Platform_arch)\vm \
         -relativeInclude src\closed\cpu\$(Platform_arch)\vm \
         -relativeInclude src\share\vm \
+        -relativeInclude src\share\vm\precompiled \
         -relativeInclude src\share\vm\prims \
         -relativeInclude src\os\windows\vm \
         -relativeInclude src\os_cpu\windows_$(Platform_arch)\vm \

@@ -161,6 +161,7 @@ public:
   NameList    _regDefs;         // List of registers in class
   Dict        _regDef;          // Dictionary of registers in class
   bool        _stack_or_reg;    // Allowed on any stack slot
+  char*       _user_defined;
 
   // Public Methods
   RegClass(const char *classid);// Constructor

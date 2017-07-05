@@ -767,7 +767,7 @@ void AdapterGenerator::gen_c2i_adapter(
   // In the 64bit build because of wider slots and STACKBIAS we can run
   // out of bits in the displacement to do loads and stores.  Use g3 as
   // temporary displacement.
-  if (! __ is_simm13(extraspace)) {
+  if (!Assembler::is_simm13(extraspace)) {
     __ set(extraspace, G3_scratch);
     __ sub(SP, G3_scratch, SP);
   } else {
