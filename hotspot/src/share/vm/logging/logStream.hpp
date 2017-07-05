@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,27 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_LIVERANGE_HPP
-#define SHARE_VM_GC_SHARED_LIVERANGE_HPP
+#ifndef SHARE_VM_LOGGING_LOGSTREAM_HPP
+#define SHARE_VM_LOGGING_LOGSTREAM_HPP
 
-#include "memory/memRegion.hpp"
-#include "utilities/copy.hpp"
+#include "logging/log.hpp"
+#include "utilities/ostream.hpp"
 
-// This is a shared helper class used during phase 3 and 4 to move all the objects
-// Dead regions in a Space are linked together to keep track of the live regions
-// so that the live data can be traversed quickly without having to look at each
-// object.
+// An output stream that logs to the logging framework.
+// Requires a ResourceMark on the stack.
+class LogStreamNoResourceMark : public outputStream {
+private:
+  stringStream _current_line;
+  LogLevelType _level;
+  LogTagSet*   _tagset;
 
-class LiveRange: public MemRegion {
 public:
-  LiveRange(HeapWord* bottom, HeapWord* top): MemRegion(bottom, top) {}
-
-  void set_end(HeapWord* e) {
-    assert(e >= start(), "should be a non-zero range");
-    MemRegion::set_end(e);
-  }
-  void set_word_size(size_t ws) {
-    MemRegion::set_word_size(ws);
+  LogStreamNoResourceMark(LogLevelType level, LogTagSet* tagset) : _level(level), _tagset(tagset) {}
+  ~LogStreamNoResourceMark() {
+    guarantee(_current_line.size() == 0, "Buffer not flushed. Missing call to print_cr()?");
   }
 
-  LiveRange * next() { return (LiveRange *) end(); }
-
-  void move_to(HeapWord* destination) {
-    Copy::aligned_conjoint_words(start(), destination, word_size());
-  }
+  void write(const char* s, size_t len);
 };
 
-#endif // SHARE_VM_GC_SHARED_LIVERANGE_HPP
+#endif // SHARE_VM_LOGGING_LOGSTREAM_HPP

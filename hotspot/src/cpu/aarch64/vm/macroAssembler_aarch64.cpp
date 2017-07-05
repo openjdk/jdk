@@ -1637,6 +1637,11 @@ Address MacroAssembler::form_address(Register Rd, Register base, long byte_offse
 }
 
 void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
+  if (UseLSE) {
+    mov(tmp, 1);
+    ldadd(Assembler::word, tmp, zr, counter_addr);
+    return;
+  }
   Label retry_load;
   prfm(Address(counter_addr), PSTL1STRM);
   bind(retry_load);
@@ -2172,8 +2177,18 @@ static bool different(Register a, RegisterOrConstant b, Register c) {
     return a != b.as_register() && a != c && b.as_register() != c;
 }
 
-#define ATOMIC_OP(LDXR, OP, IOP, STXR)                                       \
-void MacroAssembler::atomic_##OP(Register prev, RegisterOrConstant incr, Register addr) { \
+#define ATOMIC_OP(NAME, LDXR, OP, IOP, AOP, STXR, sz)                   \
+void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Register addr) { \
+  if (UseLSE) {                                                         \
+    prev = prev->is_valid() ? prev : zr;                                \
+    if (incr.is_register()) {                                           \
+      AOP(sz, incr.as_register(), prev, addr);                          \
+    } else {                                                            \
+      mov(rscratch2, incr.as_constant());                               \
+      AOP(sz, rscratch2, prev, addr);                                   \
+    }                                                                   \
+    return;                                                             \
+  }                                                                     \
   Register result = rscratch2;                                          \
   if (prev->is_valid())                                                 \
     result = different(prev, incr, addr) ? prev : rscratch2;            \
@@ -2190,13 +2205,20 @@ void MacroAssembler::atomic_##OP(Register prev, RegisterOrConstant incr, Registe
   }                                                                     \
 }
 
-ATOMIC_OP(ldxr, add, sub, stxr)
-ATOMIC_OP(ldxrw, addw, subw, stxrw)
+ATOMIC_OP(add, ldxr, add, sub, ldadd, stxr, Assembler::xword)
+ATOMIC_OP(addw, ldxrw, addw, subw, ldadd, stxrw, Assembler::word)
+ATOMIC_OP(addal, ldaxr, add, sub, ldaddal, stlxr, Assembler::xword)
+ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word)
 
 #undef ATOMIC_OP
 
-#define ATOMIC_XCHG(OP, LDXR, STXR)                                     \
+#define ATOMIC_XCHG(OP, AOP, LDXR, STXR, sz)                            \
 void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { \
+  if (UseLSE) {                                                         \
+    prev = prev->is_valid() ? prev : zr;                                \
+    AOP(sz, newv, prev, addr);                                          \
+    return;                                                             \
+  }                                                                     \
   Register result = rscratch2;                                          \
   if (prev->is_valid())                                                 \
     result = different(prev, newv, addr) ? prev : rscratch2;            \
@@ -2211,8 +2233,10 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     mov(prev, result);                                                  \
 }
 
-ATOMIC_XCHG(xchg, ldxr, stxr)
-ATOMIC_XCHG(xchgw, ldxrw, stxrw)
+ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
+ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
 #undef ATOMIC_XCHG
 

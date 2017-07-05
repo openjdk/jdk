@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -153,7 +154,7 @@ YoungList::reset_auxilary_lists() {
     // The region is a non-empty survivor so let's add it to
     // the incremental collection set for the next evacuation
     // pause.
-    _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
+    _g1h->collection_set()->add_survivor_regions(curr);
     young_index_in_cset += 1;
   }
   assert((uint) young_index_in_cset == _survivor_length, "post-condition");

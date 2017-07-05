@@ -28,7 +28,7 @@
  * @summary Add C2 x86 intrinsic for BigInteger::mulAdd() method
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
- *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-UseSquareToLenIntrinsic -XX:-UseMultiplyToLenIntrinsic
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:-UseSquareToLenIntrinsic -XX:-UseMultiplyToLenIntrinsic
  *      -XX:CompileCommand=dontinline,TestMulAdd::main
  *      -XX:CompileCommand=option,TestMulAdd::base_multiply,ccstr,DisableIntrinsic,_mulAdd
  *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstr,DisableIntrinsic,_mulAdd

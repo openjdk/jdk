@@ -37,6 +37,7 @@
   <xsl:call-template name="sourceHeader"/>
   <xsl:text>
 # include "precompiled.hpp"
+# include "memory/resourceArea.hpp"
 # include "utilities/macros.hpp"
 #if INCLUDE_JVMTI
 # include "oops/oop.inline.hpp"

@@ -55,6 +55,7 @@ define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
+define_pd_global(intx, PostLoopMultiversioning,      false);
 
 // Peephole and CISC spilling both break the graph, and so make the
 // scheduler sick.

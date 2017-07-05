@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,44 +53,6 @@
 //    [locals and parameters ]
 //                               <- sender sp
 // ------------------------------ Asm interpreter ----------------------------------------
-
-// ------------------------------ C++ interpreter ----------------------------------------
-//
-// Layout of C++ interpreter frame: (While executing in BytecodeInterpreter::run)
-//
-//                             <- SP (current esp/rsp)
-//    [local variables         ] BytecodeInterpreter::run local variables
-//    ...                        BytecodeInterpreter::run local variables
-//    [local variables         ] BytecodeInterpreter::run local variables
-//    [old frame pointer       ]   fp [ BytecodeInterpreter::run's ebp/rbp ]
-//    [return pc               ]  (return to frame manager)
-//    [interpreter_state*      ]  (arg to BytecodeInterpreter::run)   --------------
-//    [expression stack        ] <- last_Java_sp                           |
-//    [...                     ] * <- interpreter_state.stack              |
-//    [expression stack        ] * <- interpreter_state.stack_base         |
-//    [monitors                ]   \                                       |
-//     ...                          | monitor block size                   |
-//    [monitors                ]   / <- interpreter_state.monitor_base     |
-//    [struct interpretState   ] <-----------------------------------------|
-//    [return pc               ] (return to callee of frame manager [1]
-//    [locals and parameters   ]
-//                               <- sender sp
-
-// [1] When the C++ interpreter calls a new method it returns to the frame
-//     manager which allocates a new frame on the stack. In that case there
-//     is no real callee of this newly allocated frame. The frame manager is
-//     aware of the additional frame(s) and will pop them as nested calls
-//     complete. However, to make it look good in the debugger the frame
-//     manager actually installs a dummy pc pointing to RecursiveInterpreterActivation
-//     with a fake interpreter_state* parameter to make it easy to debug
-//     nested calls.
-
-// Note that contrary to the layout for the assembly interpreter the
-// expression stack allocated for the C++ interpreter is full sized.
-// However this is not as bad as it seems as the interpreter frame_manager
-// will truncate the unused space on successive method calls.
-//
-// ------------------------------ C++ interpreter ----------------------------------------
 
  public:
   enum {

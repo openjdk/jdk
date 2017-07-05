@@ -35,6 +35,7 @@
 class ConcurrentG1RefineThread;
 class G1CollectedHeap;
 class G1HotCardCache;
+class G1Predictions;
 class G1RegionToSpaceMapper;
 class G1RemSet;
 class DirtyCardQueue;
@@ -67,13 +68,15 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   size_t _thread_threshold_step;
 
+  double _predictor_sigma;
+
   // We delay the refinement of 'hot' cards using the hot card cache.
   G1HotCardCache _hot_card_cache;
 
   // Reset the threshold step value based of the current zone boundaries.
   void reset_threshold_step();
 
-  ConcurrentG1Refine(G1CollectedHeap* g1h);
+  ConcurrentG1Refine(G1CollectedHeap* g1h, const G1Predictions* predictions);
 
  public:
   ~ConcurrentG1Refine();
@@ -84,6 +87,8 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   void init(G1RegionToSpaceMapper* card_counts_storage);
   void stop();
+
+  void adjust(double update_rs_time, double update_rs_processed_buffers, double goal_ms);
 
   void reinitialize_threads();
 

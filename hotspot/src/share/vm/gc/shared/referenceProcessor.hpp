@@ -225,7 +225,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
 
   uint num_q()                             { return _num_q; }
   uint max_num_q()                         { return _max_num_q; }
-  void set_active_mt_degree(uint v)        { _num_q = v; }
+  void set_active_mt_degree(uint v);
 
   DiscoveredList* discovered_refs()        { return _discovered_refs; }
 
@@ -326,9 +326,11 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // round-robin mod _num_q (not: _not_ mode _max_num_q)
   uint next_id() {
     uint id = _next_id;
+    assert(!_discovery_is_mt, "Round robin should only be used in serial discovery");
     if (++_next_id == _num_q) {
       _next_id = 0;
     }
+    assert(_next_id < _num_q, "_next_id %u _num_q %u _max_num_q %u", _next_id, _num_q, _max_num_q);
     return id;
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
@@ -340,7 +342,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // Calculate the number of jni handles.
   size_t count_jni_refs();
 
-  void log_reflist_counts(DiscoveredList ref_lists[], size_t total_count) PRODUCT_RETURN;
+  void log_reflist_counts(DiscoveredList ref_lists[], uint active_length, size_t total_count) PRODUCT_RETURN;
 
   // Balances reference queues.
   void balance_queues(DiscoveredList ref_lists[]);
