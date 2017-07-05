@@ -72,10 +72,11 @@ inline void HeapRegion::note_end_of_marking() {
 }
 
 inline void HeapRegion::note_start_of_copying(bool during_initial_mark) {
-  if (during_initial_mark) {
-    if (is_survivor()) {
-      assert(false, "should not allocate survivors during IM");
-    } else {
+  if (is_survivor()) {
+    // This is how we always allocate survivors.
+    assert(_next_top_at_mark_start == bottom(), "invariant");
+  } else {
+    if (during_initial_mark) {
       // During initial-mark we'll explicitly mark any objects on old
       // regions that are pointed to by roots. Given that explicit
       // marks only make sense under NTAMS it'd be nice if we could
@@ -84,11 +85,6 @@ inline void HeapRegion::note_start_of_copying(bool during_initial_mark) {
       // NTAMS to the end of the region so all marks will be below
       // NTAMS. We'll set it to the actual top when we retire this region.
       _next_top_at_mark_start = end();
-    }
-  } else {
-    if (is_survivor()) {
-      // This is how we always allocate survivors.
-      assert(_next_top_at_mark_start == bottom(), "invariant");
     } else {
       // We could have re-used this old region as to-space over a
       // couple of GCs since the start of the concurrent marking
@@ -101,19 +97,15 @@ inline void HeapRegion::note_start_of_copying(bool during_initial_mark) {
 }
 
 inline void HeapRegion::note_end_of_copying(bool during_initial_mark) {
-  if (during_initial_mark) {
-    if (is_survivor()) {
-      assert(false, "should not allocate survivors during IM");
-    } else {
+  if (is_survivor()) {
+    // This is how we always allocate survivors.
+    assert(_next_top_at_mark_start == bottom(), "invariant");
+  } else {
+    if (during_initial_mark) {
       // See the comment for note_start_of_copying() for the details
       // on this.
       assert(_next_top_at_mark_start == end(), "pre-condition");
       _next_top_at_mark_start = top();
-    }
-  } else {
-    if (is_survivor()) {
-      // This is how we always allocate survivors.
-      assert(_next_top_at_mark_start == bottom(), "invariant");
     } else {
       // See the comment for note_start_of_copying() for the details
       // on this.

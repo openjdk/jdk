@@ -1354,9 +1354,10 @@ class LIR_OpBranch: public LIR_Op {
   CodeStub*     _stub;   // if this is a branch to a stub, this is the stub
 
  public:
-  LIR_OpBranch(LIR_Condition cond, Label* lbl)
+  LIR_OpBranch(LIR_Condition cond, BasicType type, Label* lbl)
     : LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*) NULL)
     , _cond(cond)
+    , _type(type)
     , _label(lbl)
     , _block(NULL)
     , _ublock(NULL)
@@ -2053,7 +2054,7 @@ class LIR_List: public CompilationResourceObj {
   void jump(CodeStub* stub) {
     append(new LIR_OpBranch(lir_cond_always, T_ILLEGAL, stub));
   }
-  void branch(LIR_Condition cond, Label* lbl)        { append(new LIR_OpBranch(cond, lbl)); }
+  void branch(LIR_Condition cond, BasicType type, Label* lbl)        { append(new LIR_OpBranch(cond, type, lbl)); }
   void branch(LIR_Condition cond, BasicType type, BlockBegin* block) {
     assert(type != T_FLOAT && type != T_DOUBLE, "no fp comparisons");
     append(new LIR_OpBranch(cond, type, block));

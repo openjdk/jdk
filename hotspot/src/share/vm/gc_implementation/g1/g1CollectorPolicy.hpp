@@ -65,6 +65,7 @@ public:
 
 class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
+  define_num_seq(root_region_scan_wait)
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
     define_num_seq(satb_filtering)
@@ -177,7 +178,6 @@ private:
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
-  size_t _prev_collection_pause_used_at_end_bytes;
   double _cur_collection_par_time_ms;
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
@@ -716,6 +716,7 @@ private:
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
+  double _root_region_scan_wait_time_ms;
 
   // Update the young list target length either by setting it to the
   // desired fixed value or by calculating it using G1's pause
@@ -800,6 +801,8 @@ public:
 
   GenRemSet::Name  rem_set_name()     { return GenRemSet::CardTable; }
 
+  bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+
   // Update the heuristic info to record a collection pause of the given
   // start time, where the given number of bytes were used at the start.
   // This may involve changing the desired size of a collection set.
@@ -814,6 +817,10 @@ public:
 
   void record_mark_closure_time(double mark_closure_time_ms) {
     _mark_closure_time_ms = mark_closure_time_ms;
+  }
+
+  void record_root_region_scan_wait_time(double time_ms) {
+    _root_region_scan_wait_time_ms = time_ms;
   }
 
   void record_concurrent_mark_remark_start();
@@ -1144,11 +1151,6 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void tenure_all_objects() {
-    _max_survivor_regions = 0;
-    _tenuring_threshold = 0;
   }
 
   void record_survivor_regions(size_t      regions,
