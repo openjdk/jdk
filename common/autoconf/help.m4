@@ -75,20 +75,18 @@ cygwin_help() {
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
       ;;
     freetype)
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        HELP_MSG="To install freetype, run:
-wget \"http://gnuwin32.sourceforge.net/downlinks/freetype.php\" -O /tmp/freetype-setup.exe
-chmod +x /tmp/freetype-setup.exe
-/tmp/freetype-setup.exe
-Follow GUI prompts, and install to default directory \"C:\Program Files (x86)\GnuWin32\".
-After installation, locate lib/libfreetype.dll.a and make a copy with the name freetype.dll."
-      else
-        HELP_MSG="You need to build a 64-bit version of freetype.
-This is not readily available.
-You can find source code and build instructions on
-http://www.freetype.org/
-If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
-      fi
+      HELP_MSG="
+The freetype library can now be build during the configure process.
+Download the freetype sources and unpack them into an arbitrary directory:
+
+wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
+tar -xzf freetype-2.5.3.tar.gz
+
+Then run configure with '--with-freetype-src=<freetype_src>'. This will
+automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
+builds or into '<freetype_src>/lib32' for 32-bit builds.
+Afterwards you can always use '--with-freetype-include=<freetype_src>/include'
+and '--with-freetype-lib=<freetype_src>/lib[32|64]' for other builds."
       ;;
   esac
 }
