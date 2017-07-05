@@ -230,7 +230,8 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 
   GEN_OFFS(CodeBlob, _name);
   GEN_OFFS(CodeBlob, _header_size);
-  GEN_OFFS(CodeBlob, _instructions_offset);
+  GEN_OFFS(CodeBlob, _content_offset);
+  GEN_OFFS(CodeBlob, _code_offset);
   GEN_OFFS(CodeBlob, _data_offset);
   GEN_OFFS(CodeBlob, _frame_size);
   printf("\n");

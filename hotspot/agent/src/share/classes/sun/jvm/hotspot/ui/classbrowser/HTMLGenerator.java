@@ -1415,13 +1415,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.append(genMethodAndKlassLink(nmethod.getMethod()));
 
          buf.h3("Compiled Code");
-         sun.jvm.hotspot.debugger.Address codeBegin = nmethod.codeBegin();
-         sun.jvm.hotspot.debugger.Address codeEnd   = nmethod.codeEnd();
-         final int codeSize = (int)codeEnd.minus(codeBegin);
-         final long startPc = addressToLong(codeBegin);
-         final byte[] code = new byte[codeSize];
+         sun.jvm.hotspot.debugger.Address instsBegin = nmethod.instsBegin();
+         sun.jvm.hotspot.debugger.Address instsEnd   = nmethod.instsEnd();
+         final int instsSize = nmethod.instsSize();
+         final long startPc = addressToLong(instsBegin);
+         final byte[] code = new byte[instsSize];
          for (int i=0; i < code.length; i++)
-            code[i] = codeBegin.getJByteAt(i);
+            code[i] = instsBegin.getJByteAt(i);
 
          final long verifiedEntryPoint = addressToLong(nmethod.getVerifiedEntryPoint());
          final long entryPoint = addressToLong(nmethod.getEntryPoint());
@@ -1499,8 +1499,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.h3("CodeBlob");
 
          buf.h3("Compiled Code");
-         final sun.jvm.hotspot.debugger.Address codeBegin = blob.instructionsBegin();
-         final int codeSize = blob.getInstructionsSize();
+         final sun.jvm.hotspot.debugger.Address codeBegin = blob.codeBegin();
+         final int codeSize = blob.getCodeSize();
          final long startPc = addressToLong(codeBegin);
          final byte[] code = new byte[codeSize];
          for (int i=0; i < code.length; i++)

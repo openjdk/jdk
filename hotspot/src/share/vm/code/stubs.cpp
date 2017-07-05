@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
     vm_exit_out_of_memory(size, err_msg("CodeCache: no room for %s", name));
   }
   _stub_interface  = stub_interface;
-  _buffer_size     = blob->instructions_size();
-  _buffer_limit    = blob->instructions_size();
-  _stub_buffer     = blob->instructions_begin();
+  _buffer_size     = blob->content_size();
+  _buffer_limit    = blob->content_size();
+  _stub_buffer     = blob->content_begin();
   _queue_begin     = 0;
   _queue_end       = 0;
   _number_of_stubs = 0;

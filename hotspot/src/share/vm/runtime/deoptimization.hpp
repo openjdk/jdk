@@ -311,12 +311,6 @@ class Deoptimization : AllStatic {
   static void popframe_preserve_args(JavaThread* thread, int bytes_to_save, void* start_address);
 
  private:
-  enum {
-    _no_count = -1
-  };
-
-  static void reset_invocation_counter(ScopeDesc* trap_scope, jint count = _no_count);
-
   static methodDataOop get_method_data(JavaThread* thread, methodHandle m, bool create_if_missing);
   // Update the mdo's count and per-BCI reason bits, returning previous state:
   static ProfileData* query_update_method_data(methodDataHandle trap_mdo,

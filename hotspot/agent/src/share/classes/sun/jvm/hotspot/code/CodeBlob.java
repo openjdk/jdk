@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ public class CodeBlob extends VMObject {
   private static CIntegerField sizeField;
   private static CIntegerField headerSizeField;
   private static CIntegerField relocationSizeField;
-  private static CIntegerField instructionsOffsetField;
+  private static CIntegerField contentOffsetField;
+  private static CIntegerField codeOffsetField;
   private static CIntegerField frameCompleteOffsetField;
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
@@ -68,7 +69,8 @@ public class CodeBlob extends VMObject {
     headerSizeField          = type.getCIntegerField("_header_size");
     relocationSizeField      = type.getCIntegerField("_relocation_size");
     frameCompleteOffsetField = type.getCIntegerField("_frame_complete_offset");
-    instructionsOffsetField  = type.getCIntegerField("_instructions_offset");
+    contentOffsetField       = type.getCIntegerField("_content_offset");
+    codeOffsetField          = type.getCIntegerField("_code_offset");
     dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
@@ -111,11 +113,19 @@ public class CodeBlob extends VMObject {
   //  public RelocInfo relocationBegin();
   //  public RelocInfo relocationEnd();
 
-  public Address instructionsBegin() {
-    return headerBegin().addOffsetTo(instructionsOffsetField.getValue(addr));
+  public Address contentBegin() {
+    return headerBegin().addOffsetTo(contentOffsetField.getValue(addr));
   }
 
-  public Address instructionsEnd() {
+  public Address contentEnd() {
+    return headerBegin().addOffsetTo(dataOffsetField.getValue(addr));
+  }
+
+  public Address codeBegin() {
+    return headerBegin().addOffsetTo(contentOffsetField.getValue(addr));
+  }
+
+  public Address codeEnd() {
     return headerBegin().addOffsetTo(dataOffsetField.getValue(addr));
   }
 
@@ -128,24 +138,27 @@ public class CodeBlob extends VMObject {
   }
 
   // Offsets
-  public int getRelocationOffset()   { return (int) headerSizeField.getValue(addr);         }
-  public int getInstructionsOffset() { return (int) instructionsOffsetField.getValue(addr); }
-  public int getDataOffset()         { return (int) dataOffsetField.getValue(addr);         }
+  public int getRelocationOffset() { return (int) headerSizeField   .getValue(addr); }
+  public int getContentOffset()    { return (int) contentOffsetField.getValue(addr); }
+  public int getCodeOffset()       { return (int) codeOffsetField   .getValue(addr); }
+  public int getDataOffset()       { return (int) dataOffsetField   .getValue(addr); }
 
   // Sizes
-  public int getSize()             { return (int) sizeField.getValue(addr);                     }
-  public int getHeaderSize()       { return (int) headerSizeField.getValue(addr);               }
+  public int getSize()             { return (int) sizeField      .getValue(addr);     }
+  public int getHeaderSize()       { return (int) headerSizeField.getValue(addr);     }
   // FIXME: add getRelocationSize()
-  public int getInstructionsSize() { return (int) instructionsEnd().minus(instructionsBegin()); }
-  public int getDataSize()         { return (int) dataEnd().minus(dataBegin());                 }
+  public int getContentSize()      { return (int) contentEnd().minus(contentBegin()); }
+  public int getCodeSize()         { return (int) codeEnd()   .minus(codeBegin());    }
+  public int getDataSize()         { return (int) dataEnd()   .minus(dataBegin());    }
 
   // Containment
-  public boolean blobContains(Address addr)         { return headerBegin().lessThanOrEqual(addr) && dataEnd().greaterThan(addr);               }
+  public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
   // FIXME: add relocationContains
-  public boolean instructionsContains(Address addr) { return instructionsBegin().lessThanOrEqual(addr) && instructionsEnd().greaterThan(addr); }
-  public boolean dataContains(Address addr)         { return dataBegin().lessThanOrEqual(addr) && dataEnd().greaterThan(addr);                 }
-  public boolean contains(Address addr)             { return instructionsContains(addr);                                                       }
-  public boolean isFrameCompleteAt(Address a)       { return instructionsContains(a) && a.minus(instructionsBegin()) >= frameCompleteOffsetField.getValue(addr); }
+  public boolean contentContains(Address addr) { return contentBegin().lessThanOrEqual(addr) && contentEnd().greaterThan(addr); }
+  public boolean codeContains(Address addr)    { return codeBegin()   .lessThanOrEqual(addr) && codeEnd()   .greaterThan(addr); }
+  public boolean dataContains(Address addr)    { return dataBegin()   .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
+  public boolean contains(Address addr)        { return contentContains(addr);                                                  }
+  public boolean isFrameCompleteAt(Address a)  { return codeContains(a) && a.minus(codeBegin()) >= frameCompleteOffsetField.getValue(addr); }
 
   // Reclamation support (really only used by the nmethods, but in order to get asserts to work
   // in the CodeCache they are defined virtual here)
@@ -168,7 +181,7 @@ public class CodeBlob extends VMObject {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getOopMaps() != null, "nope");
     }
-    return getOopMaps().findMapAtOffset(pc.minus(instructionsBegin()), debugging);
+    return getOopMaps().findMapAtOffset(pc.minus(codeBegin()), debugging);
   }
 
   //  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, void f(oop*)) { ShouldNotReachHere(); }
@@ -200,7 +213,8 @@ public class CodeBlob extends VMObject {
   }
 
   protected void printComponentsOn(PrintStream tty) {
-    tty.println(" instructions: [" + instructionsBegin() + ", " + instructionsEnd() + "), " +
+    tty.println(" content: [" + contentBegin() + ", " + contentEnd() + "), " +
+                " code: [" + codeBegin() + ", " + codeEnd() + "), " +
                 " data: [" + dataBegin() + ", " + dataEnd() + "), " +
                 " frame size: " + getFrameSize());
   }

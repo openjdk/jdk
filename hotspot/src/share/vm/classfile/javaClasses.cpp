@@ -2424,12 +2424,15 @@ int java_dyn_MethodType::ptype_count(oop mt) {
 
 int java_dyn_MethodTypeForm::_vmslots_offset;
 int java_dyn_MethodTypeForm::_erasedType_offset;
+int java_dyn_MethodTypeForm::_genericInvoker_offset;
 
 void java_dyn_MethodTypeForm::compute_offsets() {
   klassOop k = SystemDictionary::MethodTypeForm_klass();
   if (k != NULL) {
     compute_optional_offset(_vmslots_offset,    k, vmSymbols::vmslots_name(),    vmSymbols::int_signature(), true);
     compute_optional_offset(_erasedType_offset, k, vmSymbols::erasedType_name(), vmSymbols::java_dyn_MethodType_signature(), true);
+    compute_optional_offset(_genericInvoker_offset, k, vmSymbols::genericInvoker_name(), vmSymbols::java_dyn_MethodHandle_signature(), true);
+    if (_genericInvoker_offset == 0)  _genericInvoker_offset = -1;  // set to explicit "empty" value
   }
 }
 
@@ -2441,6 +2444,11 @@ int java_dyn_MethodTypeForm::vmslots(oop mtform) {
 oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
   assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
   return mtform->obj_field(_erasedType_offset);
+}
+
+oop java_dyn_MethodTypeForm::genericInvoker(oop mtform) {
+  assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
+  return mtform->obj_field(_genericInvoker_offset);
 }
 
 

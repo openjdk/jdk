@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -504,6 +504,7 @@ graphKit.hpp                            addnode.hpp
 graphKit.hpp                            callnode.hpp
 graphKit.hpp                            cfgnode.hpp
 graphKit.hpp                            ciEnv.hpp
+graphKit.hpp                            ciMethodData.hpp
 graphKit.hpp                            divnode.hpp
 graphKit.hpp                            compile.hpp
 graphKit.hpp                            deoptimization.hpp
@@ -624,6 +625,7 @@ loopTransform.cpp                       divnode.hpp
 loopTransform.cpp                       loopnode.hpp
 loopTransform.cpp                       mulnode.hpp
 loopTransform.cpp                       rootnode.hpp
+loopTransform.cpp                       runtime.hpp
 loopTransform.cpp                       subnode.hpp
 
 loopUnswitch.cpp                        allocation.inline.hpp
