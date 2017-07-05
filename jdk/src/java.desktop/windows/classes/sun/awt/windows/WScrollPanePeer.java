@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.peer.ScrollPanePeer;
 
 import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.PeerEvent;
 
 import sun.util.logging.PlatformLogger;
@@ -199,7 +200,6 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
         public void run() {
             if (getScrollChild() == null) {
                 return;
@@ -267,8 +267,9 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             // Paint the exposed area right away.  To do this - find
             // the heavyweight ancestor of the scroll child.
             Component hwAncestor = getScrollChild();
+            final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
             while (hwAncestor != null
-                   && !(hwAncestor.getPeer() instanceof WComponentPeer))
+                   && !(acc.getPeer(hwAncestor) instanceof WComponentPeer))
             {
                 hwAncestor = hwAncestor.getParent();
             }
@@ -278,7 +279,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
                              "couldn't find heavyweight ancestor of scroll pane child");
                 }
             }
-            WComponentPeer hwPeer = (WComponentPeer)hwAncestor.getPeer();
+            WComponentPeer hwPeer = acc.getPeer(hwAncestor);
             hwPeer.paintDamagedAreaImmediately();
         }
     }

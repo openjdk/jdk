@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ import sun.security.util.SecurityConstants;
  * implementation (a default subclass implementation of this abstract class).
  * The default Policy implementation can be changed by setting the value
  * of the {@code policy.provider} security property to the fully qualified
- * name of the desired Policy subclass implementation.
+ * name of the desired Policy subclass implementation. The system class loader
+ * is used to load this class.
  *
  * <p> Application code can directly subclass Policy to provide a custom
  * implementation.  In addition, an instance of a Policy object can be
@@ -111,6 +112,10 @@ public abstract class Policy {
 
     private static final Debug debug = Debug.getInstance("policy");
 
+    // Default policy provider
+    private static final String DEFAULT_POLICY =
+        "sun.security.provider.PolicyFile";
+
     // Cache mapping ProtectionDomain.Key to PermissionCollection
     private WeakHashMap<ProtectionDomain.Key, PermissionCollection> pdMapping;
 
@@ -169,79 +174,76 @@ public abstract class Policy {
             synchronized (Policy.class) {
                 PolicyInfo pinfo = policy.get();
                 if (pinfo.policy == null) {
-                    String policy_class = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                        public String run() {
-                            return Security.getProperty("policy.provider");
-                        }
-                    });
-                    if (policy_class == null) {
-                        policy_class = "sun.security.provider.PolicyFile";
-                    }
-
-                    try {
-                        pinfo = new PolicyInfo(
-                            (Policy) Class.forName(policy_class).newInstance(),
-                            true);
-                    } catch (Exception e) {
-                        /*
-                         * The policy_class seems to be an extension
-                         * so we have to bootstrap loading it via a policy
-                         * provider that is on the bootclasspath.
-                         * If it loads then shift gears to using the configured
-                         * provider.
-                         */
-
-                        // install the bootstrap provider to avoid recursion
-                        Policy polFile = new sun.security.provider.PolicyFile();
-                        pinfo = new PolicyInfo(polFile, false);
-                        policy.set(pinfo);
-
-                        final String pc = policy_class;
-                        Policy pol = AccessController.doPrivileged(
-                            new PrivilegedAction<>() {
-                            public Policy run() {
-                                try {
-                                    ClassLoader cl =
-                                            ClassLoader.getSystemClassLoader();
-                                    // we want the extension loader
-                                    ClassLoader extcl = null;
-                                    while (cl != null) {
-                                        extcl = cl;
-                                        cl = cl.getParent();
-                                    }
-                                    return (extcl != null ? (Policy)Class.forName(
-                                            pc, true, extcl).newInstance() : null);
-                                } catch (Exception e) {
-                                    if (debug != null) {
-                                        debug.println("policy provider " +
-                                                    pc +
-                                                    " not available");
-                                        e.printStackTrace();
-                                    }
-                                    return null;
-                                }
-                            }
-                        });
-                        /*
-                         * if it loaded install it as the policy provider. Otherwise
-                         * continue to use the system default implementation
-                         */
-                        if (pol != null) {
-                            pinfo = new PolicyInfo(pol, true);
-                        } else {
-                            if (debug != null) {
-                                debug.println("using sun.security.provider.PolicyFile");
-                            }
-                            pinfo = new PolicyInfo(polFile, true);
-                        }
-                    }
-                    policy.set(pinfo);
+                    return loadPolicyProvider();
                 }
                 return pinfo.policy;
             }
         }
         return pi.policy;
+    }
+
+    /**
+     * Loads and instantiates a Policy implementation specified by the
+     * policy.provider security property. Note that this method should only
+     * be called by getPolicyNoCheck and from within a synchronized block with
+     * an intrinsic lock on the Policy.class.
+     */
+    private static Policy loadPolicyProvider() {
+        String policyProvider =
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
+                public String run() {
+                    return Security.getProperty("policy.provider");
+                }
+            });
+
+        /*
+         * If policy.provider is not set or is set to the default provider,
+         * simply instantiate it and return.
+         */
+        if (policyProvider == null || policyProvider.isEmpty() ||
+            policyProvider.equals(DEFAULT_POLICY))
+        {
+            Policy polFile = new sun.security.provider.PolicyFile();
+            policy.set(new PolicyInfo(polFile, true));
+            return polFile;
+        }
+
+        /*
+         * Locate, load, and instantiate the policy.provider impl using
+         * the system class loader. While doing so, install the bootstrap
+         * provider to avoid potential recursion.
+         */
+        Policy polFile = new sun.security.provider.PolicyFile();
+        policy.set(new PolicyInfo(polFile, false));
+
+        Policy pol = AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Policy run() {
+                try {
+                    ClassLoader scl = ClassLoader.getSystemClassLoader();
+                    Class<?> c = Class.forName(policyProvider, true, scl);
+                    return (Policy)c.newInstance();
+                } catch (Exception e) {
+                    if (debug != null) {
+                        debug.println("policy provider " + policyProvider +
+                                      " not available");
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
+            }
+        });
+
+        if (pol == null) {
+            // Fallback and use the system default implementation
+            if (debug != null) {
+                debug.println("using " + DEFAULT_POLICY);
+            }
+            pol = polFile;
+        }
+        policy.set(new PolicyInfo(pol, true));
+        return pol;
     }
 
     /**

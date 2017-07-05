@@ -89,7 +89,7 @@ java.datatransfer_COPY := flavormap.properties
 
 ################################################################################
 
-java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-missing,-reference '-Xdoclint/package:java.*,javax.*'
+java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -152,7 +152,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/*.java) \
       $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/opengl/*.java) \
       $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/*.java) \
-      $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/awt/motif/*.java) \
       $(wildcard $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/font/*.java) \
       #
 else

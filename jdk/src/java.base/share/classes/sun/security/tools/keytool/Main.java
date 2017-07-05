@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@ import java.security.cert.CertStoreException;
 import java.security.cert.CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.URICertStoreParameters;
+
+
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
@@ -69,7 +72,7 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.provider.X509Factory;
-import sun.security.provider.certpath.CertStoreHelper;
+import sun.security.provider.certpath.ssl.SSLServerCertStore;
 import sun.security.util.Password;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -2208,14 +2211,10 @@ public final class Main {
                 }
             }
         } else {    // must be LDAP, and uri is not null
-            // Lazily load LDAPCertStoreHelper if present
-            CertStoreHelper helper = CertStoreHelper.getInstance("LDAP");
-            String path = uri.getPath();
-            if (path.charAt(0) == '/') path = path.substring(1);
-            CertStore s = helper.getCertStore(uri);
-            X509CRLSelector sel =
-                    helper.wrap(new X509CRLSelector(), null, path);
-            return s.getCRLs(sel);
+            URICertStoreParameters params =
+                new URICertStoreParameters(uri);
+            CertStore s = CertStore.getInstance("LDAP", params);
+            return s.getCRLs(new X509CRLSelector());
         }
     }
 
@@ -2463,9 +2462,7 @@ public final class Main {
                 out.println(rb.getString("Not.a.signed.jar.file"));
             }
         } else if (sslserver != null) {
-            // Lazily load SSLCertStoreHelper if present
-            CertStoreHelper helper = CertStoreHelper.getInstance("SSLServer");
-            CertStore cs = helper.getCertStore(new URI("https://" + sslserver));
+            CertStore cs = SSLServerCertStore.getInstance(new URI("https://" + sslserver));
             Collection<? extends Certificate> chain;
             try {
                 chain = cs.getCertificates(null);

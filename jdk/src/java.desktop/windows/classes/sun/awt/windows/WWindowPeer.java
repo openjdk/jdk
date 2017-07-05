@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,12 +409,12 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
      @Override
-     @SuppressWarnings("deprecation")
     public void setModalBlocked(Dialog dialog, boolean blocked) {
         synchronized (((Component)getTarget()).getTreeLock()) // State lock should always be after awtLock
         {
             // use WWindowPeer instead of WDialogPeer because of FileDialogs and PrintDialogs
-            WWindowPeer blockerPeer = (WWindowPeer)dialog.getPeer();
+            WWindowPeer blockerPeer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(dialog);
             if (blocked)
             {
                 modalBlocker = blockerPeer;
@@ -609,14 +609,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         super.print(g);
     }
 
-    @SuppressWarnings("deprecation")
     private void replaceSurfaceDataRecursively(Component c) {
         if (c instanceof Container) {
             for (Component child : ((Container)c).getComponents()) {
                 replaceSurfaceDataRecursively(child);
             }
         }
-        ComponentPeer cp = c.getPeer();
+        final Object cp = AWTAccessor.getComponentAccessor().getPeer(c);
         if (cp instanceof WComponentPeer) {
             ((WComponentPeer)cp).replaceSurfaceDataLater();
         }
@@ -818,7 +817,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * updates the list of active windows per AppContext, so the latest active
      * window is always at the end of the list. The list is stored in AppContext.
      */
-    @SuppressWarnings( value = {"deprecation", "unchecked"})
+    @SuppressWarnings("unchecked")
     private static class ActiveWindowListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
@@ -828,7 +827,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             }
             AppContext appContext = SunToolkit.targetToAppContext(w);
             synchronized (appContext) {
-                WWindowPeer wp = (WWindowPeer)w.getPeer();
+                WWindowPeer wp = AWTAccessor.getComponentAccessor().getPeer(w);
                 // add/move wp to the end of the list
                 List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
                 if (l != null) {

@@ -34,7 +34,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
         $(LIBJAVA_HEADER_FLAGS) $(addprefix -I, $(LIBNET_SRC_DIRS)), \
     DISABLED_WARNINGS_gcc := format-nonliteral, \
     DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand, \
-    DISABLED_WARNINGS_microsoft := 4244 4047 4133, \
+    DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnet/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

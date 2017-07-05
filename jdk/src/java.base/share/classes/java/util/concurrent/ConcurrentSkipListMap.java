@@ -58,6 +58,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A scalable concurrent {@link ConcurrentNavigableMap} implementation.
@@ -2492,6 +2493,22 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             else
                 return (Spliterator<E>)((SubMap<?,E>)m).valueIterator();
         }
+        public boolean removeIf(Predicate<? super E> filter) {
+            if (filter == null) throw new NullPointerException();
+            if (m instanceof ConcurrentSkipListMap)
+                return ((ConcurrentSkipListMap<?,E>)m).removeValueIf(filter);
+            // else use iterator
+            @SuppressWarnings("unchecked") Iterator<Map.Entry<Object,E>> it =
+                    ((SubMap<Object,E>)m).entryIterator();
+            boolean removed = false;
+            while (it.hasNext()) {
+                Map.Entry<Object,E> e = it.next();
+                E v = e.getValue();
+                if (filter.test(v) && m.remove(e.getKey(), v))
+                    removed = true;
+            }
+            return removed;
+        }
     }
 
     static final class EntrySet<K1,V1> extends AbstractSet<Map.Entry<K1,V1>> {
@@ -2553,6 +2570,20 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             else
                 return (Spliterator<Map.Entry<K1,V1>>)
                     ((SubMap<K1,V1>)m).entryIterator();
+        }
+        public boolean removeIf(Predicate<? super Entry<K1, V1>> filter) {
+            if (filter == null) throw new NullPointerException();
+            if (m instanceof ConcurrentSkipListMap)
+                return ((ConcurrentSkipListMap<K1,V1>)m).removeEntryIf(filter);
+            // else use iterator
+            Iterator<Map.Entry<K1,V1>> it = ((SubMap<K1,V1>)m).entryIterator();
+            boolean removed = false;
+            while (it.hasNext()) {
+                Map.Entry<K1,V1> e = it.next();
+                if (filter.test(e) && m.remove(e.getKey(), e.getValue()))
+                    removed = true;
+            }
+            return removed;
         }
     }
 
@@ -3264,6 +3295,41 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                     break;
             }
         }
+    }
+
+    /**
+     * Helper method for EntrySet.removeIf
+     */
+    boolean removeEntryIf(Predicate<? super Entry<K, V>> function) {
+        if (function == null) throw new NullPointerException();
+        boolean removed = false;
+        for (Node<K,V> n = findFirst(); n != null; n = n.next) {
+            V v;
+            if ((v = n.getValidValue()) != null) {
+                K k = n.key;
+                Map.Entry<K,V> e = new AbstractMap.SimpleImmutableEntry<>(k, v);
+                if (function.test(e) && remove(k, v))
+                    removed = true;
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Helper method for Values.removeIf
+     */
+    boolean removeValueIf(Predicate<? super V> function) {
+        if (function == null) throw new NullPointerException();
+        boolean removed = false;
+        for (Node<K,V> n = findFirst(); n != null; n = n.next) {
+            V v;
+            if ((v = n.getValidValue()) != null) {
+                K k = n.key;
+                if (function.test(v) && remove(k, v))
+                    removed = true;
+            }
+        }
+        return removed;
     }
 
     /**

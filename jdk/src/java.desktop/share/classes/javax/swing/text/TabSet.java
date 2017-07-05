@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class TabSet implements Serializable
     /**
      * Creates and returns an instance of TabSet. The array of Tabs
      * passed in must be sorted in ascending order.
+     * @param tabs the TabStops to initialize the TabSet
      */
     public TabSet(TabStop[] tabs) {
         // PENDING(sky): If this becomes a problem, make it sort.
@@ -73,6 +74,7 @@ public class TabSet implements Serializable
 
     /**
      * Returns the number of Tab instances the receiver contains.
+     * @return the number of Tab instances the receiver contains
      */
     public int getTabCount() {
         return (tabs == null) ? 0 : tabs.length;
@@ -82,6 +84,8 @@ public class TabSet implements Serializable
      * Returns the TabStop at index <code>index</code>. This will throw an
      * IllegalArgumentException if <code>index</code> is outside the range
      * of tabs.
+     * @param index which TapStop to return
+     * @return the TabStop at index {@code index}
      */
     public TabStop getTab(int index) {
         int          numTabs = getTabCount();
@@ -95,6 +99,8 @@ public class TabSet implements Serializable
     /**
      * Returns the Tab instance after <code>location</code>. This will
      * return null if there are no tabs after <code>location</code>.
+     * @param location location to find a Tab after
+     * @return the Tab instance after {@code location}
      */
     public TabStop getTabAfter(float location) {
         int     index = getTabIndexAfter(location);
@@ -103,6 +109,9 @@ public class TabSet implements Serializable
     }
 
     /**
+     * Returns the index of the TabStop <code>tab</code>, or -1 if
+     * <code>tab</code> is not contained in the receiver.
+     * @param tab the TabStop to find
      * @return the index of the TabStop <code>tab</code>, or -1 if
      * <code>tab</code> is not contained in the receiver.
      */
@@ -117,6 +126,8 @@ public class TabSet implements Serializable
     /**
      * Returns the index of the Tab to be used after <code>location</code>.
      * This will return -1 if there are no tabs after <code>location</code>.
+     * @param location location to find a Tab after
+     * @return the index of the Tab to be used after <code>location</code>
      */
     public int getTabIndexAfter(float location) {
         int     current, min, max;

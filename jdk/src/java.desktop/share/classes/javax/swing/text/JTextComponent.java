@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,6 +536,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Sets the <code>NavigationFilter</code>. <code>NavigationFilter</code>
      * is used by <code>DefaultCaret</code> and the default cursor movement
      * actions as a way to restrict the cursor movement.
+     * @param filter the filter
      *
      * @since 1.4
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import sun.misc.Unsafe;
 
 import javax.accessibility.AccessibleContext;
 import java.awt.*;
-import java.awt.KeyboardFocusManager;
-import java.awt.DefaultKeyboardFocusManager;
+import java.awt.dnd.DragSourceContext;
+import java.awt.dnd.DropTargetContext;
+import java.awt.dnd.peer.DragSourceContextPeer;
+import java.awt.dnd.peer.DropTargetContextPeer;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
@@ -38,6 +40,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import java.awt.peer.ComponentPeer;
 
+import java.awt.peer.MenuComponentPeer;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 
@@ -171,7 +174,7 @@ public final class AWTAccessor {
         /**
          * Returns the peer of the component.
          */
-        ComponentPeer getPeer(Component comp);
+        <T extends ComponentPeer> T getPeer(Component comp);
 
         /**
          * Sets the peer of the component to the specified peer.
@@ -481,6 +484,11 @@ public final class AWTAccessor {
         void setAppContext(MenuComponent menuComp, AppContext appContext);
 
         /**
+         * Returns the peer of the menu component.
+         */
+        <T extends MenuComponentPeer> T getPeer(MenuComponent menuComp);
+
+        /**
          * Returns the menu container of the menu component.
          */
         MenuContainer getParent(MenuComponent menuComp);
@@ -781,6 +789,31 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor object for the DragSourceContext class
+     */
+    public interface DragSourceContextAccessor {
+        /**
+         * Returns the peer of the DragSourceContext.
+         */
+        DragSourceContextPeer getPeer(DragSourceContext dsc);
+    }
+
+    /*
+     * An accessor object for the DropTargetContext class
+     */
+    public interface DropTargetContextAccessor {
+        /**
+         * Resets the DropTargetContext.
+         */
+        void reset(DropTargetContext dtc);
+        /**
+         * Sets the {@code DropTargetContextPeer}
+         */
+        void setDropTargetContextPeer(DropTargetContext dtc,
+                                      DropTargetContextPeer dtcp);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -811,6 +844,8 @@ public final class AWTAccessor {
     private static InvocationEventAccessor invocationEventAccessor;
     private static SystemColorAccessor systemColorAccessor;
     private static AccessibleContextAccessor accessibleContextAccessor;
+    private static DragSourceContextAccessor dragSourceContextAccessor;
+    private static DropTargetContextAccessor dropTargetContextAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1271,4 +1306,39 @@ public final class AWTAccessor {
     public static void setAccessibleContextAccessor(AccessibleContextAccessor accessor) {
         AWTAccessor.accessibleContextAccessor = accessor;
     }
+
+    /*
+     * Get the accessor object for the java.awt.dnd.DragSourceContext class.
+     */
+    public static DragSourceContextAccessor getDragSourceContextAccessor() {
+        if (dragSourceContextAccessor == null) {
+            unsafe.ensureClassInitialized(DragSourceContext.class);
+        }
+        return dragSourceContextAccessor;
+    }
+
+    /*
+     * Set the accessor object for the java.awt.dnd.DragSourceContext class.
+     */
+    public static void setDragSourceContextAccessor(DragSourceContextAccessor accessor) {
+        AWTAccessor.dragSourceContextAccessor = accessor;
+    }
+
+    /*
+     * Get the accessor object for the java.awt.dnd.DropTargetContext class.
+     */
+    public static DropTargetContextAccessor getDropTargetContextAccessor() {
+        if (dropTargetContextAccessor == null) {
+            unsafe.ensureClassInitialized(DropTargetContext.class);
+        }
+        return dropTargetContextAccessor;
+    }
+
+    /*
+     * Set the accessor object for the java.awt.dnd.DropTargetContext class.
+     */
+    public static void setDropTargetContextAccessor(DropTargetContextAccessor accessor) {
+        AWTAccessor.dropTargetContextAccessor = accessor;
+    }
+
 }
