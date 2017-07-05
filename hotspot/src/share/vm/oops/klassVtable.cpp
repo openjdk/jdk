@@ -746,7 +746,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
     while (target != NULL && target->is_static()) {
       // continue with recursive lookup through the superclass
       Klass* super = target->method_holder()->super();
-      target = (super == NULL) ? (Method*)NULL : Klass::cast(super)->uncached_lookup_method(method_name, method_signature);
+      target = (super == NULL) ? (Method*)NULL : super->uncached_lookup_method(method_name, method_signature);
     }
     if (target == NULL || !target->is_public() || target->is_abstract()) {
       // Entry do not resolve. Leave it empty
@@ -852,7 +852,7 @@ void visit_all_interfaces(Array<Klass*>* transitive_intf, InterfaceVisiterClosur
   // Handle array argument
   for(int i = 0; i < transitive_intf->length(); i++) {
     Klass* intf = transitive_intf->at(i);
-    assert(Klass::cast(intf)->is_interface(), "sanity check");
+    assert(intf->is_interface(), "sanity check");
 
     // Find no. of methods excluding a <clinit>
     int method_count = InstanceKlass::cast(intf)->methods()->length();

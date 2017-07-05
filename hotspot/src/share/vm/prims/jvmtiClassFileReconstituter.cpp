@@ -228,7 +228,7 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
 
   write_attribute_name_index("Code");
   write_u4(size);
-  write_u2(method->max_stack());
+  write_u2(method->verifier_max_stack());
   write_u2(method->max_locals());
   write_u4(code_size);
   copy_bytecodes(method, (unsigned char*)writeable_address(code_size));

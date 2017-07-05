@@ -305,7 +305,7 @@ JVM_ENTRY(void, JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src
   assert(s->is_oop(), "JVM_ArrayCopy: src not an oop");
   assert(d->is_oop(), "JVM_ArrayCopy: dst not an oop");
   // Do copy
-  Klass::cast(s->klass())->copy_array(s, src_pos, d, dst_pos, length, thread);
+  s->klass()->copy_array(s, src_pos, d, dst_pos, length, thread);
 JVM_END
 
 
@@ -675,7 +675,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env, int depth))
   JVMWrapper("JVM_GetCallerClass");
   Klass* k = thread->security_get_caller_class(depth);
-  return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+  return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END
 
 
@@ -739,7 +739,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
   if (TraceClassResolution) {
     trace_class_resolution(k);
   }
-  return (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+  return (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END
 
 JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
@@ -785,8 +785,8 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   oop class_loader = NULL;
   oop protection_domain = NULL;
   if (from_class != NULL) {
-    class_loader = Klass::cast(from_class)->class_loader();
-    protection_domain = Klass::cast(from_class)->protection_domain();
+    class_loader = from_class->class_loader();
+    protection_domain = from_class->protection_domain();
   }
   Handle h_loader(THREAD, class_loader);
   Handle h_prot  (THREAD, protection_domain);
@@ -798,11 +798,11 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     ResourceMark rm;
     oop from_mirror = JNIHandles::resolve_non_null(from);
     Klass* from_class = java_lang_Class::as_Klass(from_mirror);
-    const char * from_name = Klass::cast(from_class)->external_name();
+    const char * from_name = from_class->external_name();
 
     oop mirror = JNIHandles::resolve_non_null(result);
     Klass* to_class = java_lang_Class::as_Klass(mirror);
-    const char * to = Klass::cast(to_class)->external_name();
+    const char * to = to_class->external_name();
     tty->print("RESOLVE %s %s (verification)\n", from_name, to);
   }
 
@@ -875,7 +875,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
     trace_class_resolution(k);
   }
 
-  return (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+  return (jclass) JNIHandles::make_local(env, k->java_mirror());
 }
 
 
@@ -936,7 +936,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
                                                               CHECK_NULL);
 
   return (k == NULL) ? NULL :
-            (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+            (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END
 
 
@@ -954,7 +954,7 @@ JVM_ENTRY(jstring, JVM_GetClassName(JNIEnv *env, jclass cls))
     // Consider caching interned string in Klass
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
     assert(k->is_klass(), "just checking");
-    name = Klass::cast(k)->external_name();
+    name = k->external_name();
   }
   oop result = StringTable::intern((char*) name, CHECK_NULL);
   return (jstring) JNIHandles::make_local(env, result);
@@ -991,12 +991,12 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
     // Regular instance klass, fill in all local interfaces
     for (int index = 0; index < size; index++) {
       Klass* k = InstanceKlass::cast(klass())->local_interfaces()->at(index);
-      result->obj_at_put(index, Klass::cast(k)->java_mirror());
+      result->obj_at_put(index, k->java_mirror());
     }
   } else {
     // All arrays implement java.lang.Cloneable and java.io.Serializable
-    result->obj_at_put(0, Klass::cast(SystemDictionary::Cloneable_klass())->java_mirror());
-    result->obj_at_put(1, Klass::cast(SystemDictionary::Serializable_klass())->java_mirror());
+    result->obj_at_put(0, SystemDictionary::Cloneable_klass()->java_mirror());
+    result->obj_at_put(1, SystemDictionary::Serializable_klass()->java_mirror());
   }
   return (jobjectArray) JNIHandles::make_local(env, result());
 JVM_END
@@ -1008,7 +1008,7 @@ JVM_ENTRY(jobject, JVM_GetClassLoader(JNIEnv *env, jclass cls))
     return NULL;
   }
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  oop loader = Klass::cast(k)->class_loader();
+  oop loader = k->class_loader();
   return JNIHandles::make_local(env, loader);
 JVM_END
 
@@ -1020,8 +1020,8 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
     return JNI_FALSE;
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
-  jboolean result = Klass::cast(k)->is_interface();
-  assert(!result || Klass::cast(k)->oop_is_instance(),
+  jboolean result = k->is_interface();
+  assert(!result || k->oop_is_instance(),
          "all interfaces are instance types");
   // The compiler intrinsic for isInterface tests the
   // Klass::_access_flags bits in the same way.
@@ -1039,7 +1039,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassSigners(JNIEnv *env, jclass cls))
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   objArrayOop signers = NULL;
-  if (Klass::cast(k)->oop_is_instance()) {
+  if (k->oop_is_instance()) {
     signers = InstanceKlass::cast(k)->signers();
   }
 
@@ -1066,7 +1066,7 @@ JVM_ENTRY(void, JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signer
     // Signers are only set once, ClassLoader.java, and thus shouldn't
     // be called with an array.  Only the bootstrap loader creates arrays.
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-    if (Klass::cast(k)->oop_is_instance()) {
+    if (k->oop_is_instance()) {
       InstanceKlass::cast(k)->set_signers(objArrayOop(JNIHandles::resolve(signers)));
     }
   }
@@ -1085,7 +1085,7 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
   }
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-  return (jobject) JNIHandles::make_local(env, Klass::cast(k)->protection_domain());
+  return (jobject) JNIHandles::make_local(env, k->protection_domain());
 JVM_END
 
 
@@ -1101,7 +1101,7 @@ JVM_ENTRY(void, JVM_SetProtectionDomain(JNIEnv *env, jclass cls, jobject protect
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
 
     // cls won't be an array, as this called only from ClassLoader.defineClass
-    if (Klass::cast(k)->oop_is_instance()) {
+    if (k->oop_is_instance()) {
       oop pd = JNIHandles::resolve(protection_domain);
       assert(pd == NULL || pd->is_oop(), "just checking");
       InstanceKlass::cast(k)->set_protection_domain(pd);
@@ -1124,7 +1124,7 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   Handle object (THREAD, JNIHandles::resolve(action));
 
   // get run() method
-  Method* m_oop = Klass::cast(object->klass())->uncached_lookup_method(
+  Method* m_oop = object->klass()->uncached_lookup_method(
                                            vmSymbols::run_method_name(),
                                            vmSymbols::void_object_signature());
   methodHandle m (THREAD, m_oop);
@@ -1267,7 +1267,7 @@ JVM_END
 JVM_QUICK_ENTRY(jboolean, JVM_IsArrayClass(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_IsArrayClass");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  return (k != NULL) && Klass::cast(k)->oop_is_array() ? true : false;
+  return (k != NULL) && k->oop_is_array() ? true : false;
 JVM_END
 
 
@@ -1293,7 +1293,7 @@ JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
 
-  Klass* k = Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   debug_only(int computed_modifiers = k->compute_modifier_flags(CHECK_0));
   assert(k->modifier_flags() == computed_modifiers, "modifiers cache is OK");
   return k->modifier_flags();
@@ -1308,7 +1308,7 @@ JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
   // of an InstanceKlass
 
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass)) ||
-      ! Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)))->oop_is_instance()) {
+      ! java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_instance()) {
     oop result = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_NULL);
     return (jobjectArray)JNIHandles::make_local(env, result);
   }
@@ -1372,7 +1372,7 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
 {
   // ofClass is a reference to a java_lang_Class object.
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass)) ||
-      ! Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)))->oop_is_instance()) {
+      ! java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_instance()) {
     return NULL;
   }
 
@@ -1382,7 +1382,7 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
                           )->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == NULL)  return NULL;  // already a top-level class
   if (!inner_is_member)  return NULL;     // an anonymous class (inside a method)
-  return (jclass) JNIHandles::make_local(env, Klass::cast(outer_klass)->java_mirror());
+  return (jclass) JNIHandles::make_local(env, outer_klass->java_mirror());
 }
 JVM_END
 
@@ -1452,7 +1452,7 @@ JVM_ENTRY(jstring, JVM_GetClassSignature(JNIEnv *env, jclass cls))
   // Return null for arrays and primatives
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-    if (Klass::cast(k)->oop_is_instance()) {
+    if (k->oop_is_instance()) {
       Symbol* sym = InstanceKlass::cast(k)->generic_signature();
       if (sym == NULL) return NULL;
       Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
@@ -1470,7 +1470,7 @@ JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
   // Return null for arrays and primitives
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-    if (Klass::cast(k)->oop_is_instance()) {
+    if (k->oop_is_instance()) {
       typeArrayOop a = Annotations::make_java_array(InstanceKlass::cast(k)->class_annotations(), CHECK_NULL);
       return (jbyteArray) JNIHandles::make_local(env, a);
     }
@@ -1583,7 +1583,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass)) ||
-      Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)))->oop_is_array()) {
+      java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
     // Return empty array
     oop res = oopFactory::new_objArray(SystemDictionary::reflect_Field_klass(), 0, CHECK_NULL);
     return (jobjectArray) JNIHandles::make_local(env, res);
@@ -1646,7 +1646,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass,
 
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
-      || Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)))->oop_is_array()) {
+      || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
     // Return empty array
     oop res = oopFactory::new_objArray(SystemDictionary::reflect_Method_klass(), 0, CHECK_NULL);
     return (jobjectArray) JNIHandles::make_local(env, res);
@@ -1698,7 +1698,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofC
 
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
-      || Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)))->oop_is_array()) {
+      || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
     // Return empty array
     oop res = oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), 0 , CHECK_NULL);
     return (jobjectArray) JNIHandles::make_local(env, res);
@@ -1751,7 +1751,7 @@ JVM_ENTRY(jint, JVM_GetClassAccessFlags(JNIEnv *env, jclass cls))
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
 
-  Klass* k = Klass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   return k->access_flags().as_int() & JVM_ACC_WRITTEN_FLAGS;
 }
 JVM_END
@@ -1767,7 +1767,7 @@ JVM_ENTRY(jobject, JVM_GetClassConstantPool(JNIEnv *env, jclass cls))
   // Return null for primitives and arrays
   if (!java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-    if (Klass::cast(k)->oop_is_instance()) {
+    if (k->oop_is_instance()) {
       instanceKlassHandle k_h(THREAD, k);
       Handle jcp = sun_reflect_ConstantPool::create(CHECK_NULL);
       sun_reflect_ConstantPool::set_cp(jcp(), k_h->constants());
@@ -2043,12 +2043,12 @@ JVM_ENTRY(jboolean, JVM_DesiredAssertionStatus(JNIEnv *env, jclass unused, jclas
   if (java_lang_Class::is_primitive(r)) return false;
 
   Klass* k = java_lang_Class::as_Klass(r);
-  assert(Klass::cast(k)->oop_is_instance(), "must be an instance klass");
-  if (! Klass::cast(k)->oop_is_instance()) return false;
+  assert(k->oop_is_instance(), "must be an instance klass");
+  if (! k->oop_is_instance()) return false;
 
   ResourceMark rm(THREAD);
-  const char* name = Klass::cast(k)->name()->as_C_string();
-  bool system_class = Klass::cast(k)->class_loader() == NULL;
+  const char* name = k->name()->as_C_string();
+  bool system_class = k->class_loader() == NULL;
   return JavaAssertions::enabled(name, system_class);
 
 JVM_END
@@ -2079,7 +2079,7 @@ JVM_ENTRY(const char*, JVM_GetClassNameUTF(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassNameUTF");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  return Klass::cast(k)->name()->as_utf8();
+  return k->name()->as_utf8();
 JVM_END
 
 
@@ -2089,7 +2089,7 @@ JVM_QUICK_ENTRY(void, JVM_GetClassCPTypes(JNIEnv *env, jclass cls, unsigned char
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   // types will have length zero if this is not an InstanceKlass
   // (length is determined by call to JVM_GetClassCPEntriesCount)
-  if (Klass::cast(k)->oop_is_instance()) {
+  if (k->oop_is_instance()) {
     ConstantPool* cp = InstanceKlass::cast(k)->constants();
     for (int index = cp->length() - 1; index >= 0; index--) {
       constantTag tag = cp->tag_at(index);
@@ -2103,7 +2103,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetClassCPEntriesCount(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassCPEntriesCount");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  if (!Klass::cast(k)->oop_is_instance())
+  if (!k->oop_is_instance())
     return 0;
   return InstanceKlass::cast(k)->constants()->length();
 JVM_END
@@ -2113,7 +2113,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetClassFieldsCount(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassFieldsCount");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  if (!Klass::cast(k)->oop_is_instance())
+  if (!k->oop_is_instance())
     return 0;
   return InstanceKlass::cast(k)->java_fields_count();
 JVM_END
@@ -2123,7 +2123,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetClassMethodsCount(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassMethodsCount");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  if (!Klass::cast(k)->oop_is_instance())
+  if (!k->oop_is_instance())
     return 0;
   return InstanceKlass::cast(k)->methods()->length();
 JVM_END
@@ -3123,7 +3123,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   // Fill in mirrors corresponding to method holders
   int index = 0;
   while (first != NULL) {
-    result->obj_at_put(index++, Klass::cast(first->klass())->java_mirror());
+    result->obj_at_put(index++, first->klass()->java_mirror());
     first = first->next;
   }
   assert(index == depth, "just checking");
@@ -3217,7 +3217,7 @@ bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessF
 
   if (access.is_protected()) {
     // See if current_class is a subclass of field_class
-    if (Klass::cast(current_class)->is_subclass_of(field_class)) {
+    if (current_class->is_subclass_of(field_class)) {
       return true;
     }
   }
@@ -3241,8 +3241,8 @@ JVM_ENTRY(jobject, JVM_AllocateNewObject(JNIEnv *env, jobject receiver, jclass c
   }
 
   // Arrays not allowed here, must use JVM_AllocateNewArray
-  if (Klass::cast(java_lang_Class::as_Klass(curr_mirror))->oop_is_array() ||
-      Klass::cast(java_lang_Class::as_Klass(init_mirror))->oop_is_array()) {
+  if (java_lang_Class::as_Klass(curr_mirror)->oop_is_array() ||
+      java_lang_Class::as_Klass(init_mirror)->oop_is_array()) {
     ResourceMark rm(THREAD);
     THROW_0(vmSymbols::java_lang_InvalidClassException());
   }
@@ -3264,7 +3264,7 @@ JVM_ENTRY(jobject, JVM_AllocateNewObject(JNIEnv *env, jobject receiver, jclass c
   if (m.is_null()) {
     ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(Klass::cast(init_klass()),
+                Method::name_and_sig_as_C_string(init_klass(),
                                           vmSymbols::object_initializer_name(),
                                           vmSymbols::void_method_signature()));
   }
@@ -4245,7 +4245,7 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
     return NULL;
   }
   Klass* k = java_lang_Class::as_Klass(mirror());
-  if (!Klass::cast(k)->oop_is_instance()) {
+  if (!k->oop_is_instance()) {
     return NULL;
   }
   instanceKlassHandle ik_h(THREAD, k);
@@ -4256,7 +4256,7 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
   objArrayOop dest_o = oopFactory::new_objArray(SystemDictionary::Object_klass(), 3, CHECK_NULL);
   objArrayHandle dest(THREAD, dest_o);
   Klass* enc_k = ik_h->constants()->klass_at(encl_method_class_idx, CHECK_NULL);
-  dest->obj_at_put(0, Klass::cast(enc_k)->java_mirror());
+  dest->obj_at_put(0, enc_k->java_mirror());
   int encl_method_method_idx = ik_h->enclosing_method_method_index();
   if (encl_method_method_idx != 0) {
     Symbol* sym = ik_h->constants()->symbol_at(

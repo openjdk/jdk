@@ -346,7 +346,7 @@ void Universe::genesis(TRAPS) {
   // ---
   // New
   // Have already been initialized.
-  Klass::cast(_objectArrayKlassObj)->append_to_sibling_list();
+  _objectArrayKlassObj->append_to_sibling_list();
 
   // Compute is_jdk version flags.
   // Only 1.3 or later has the java.lang.Shutdown class.
@@ -1304,6 +1304,8 @@ void Universe::verify(bool silent, VerifyOption option) {
   if (!silent) gclog_or_tty->print("cldg ");
   ClassLoaderDataGraph::verify();
 #endif
+  if (!silent) gclog_or_tty->print("metaspace chunks ");
+  MetaspaceAux::verify_free_chunks();
   if (!silent) gclog_or_tty->print("hand ");
   JNIHandles::verify();
   if (!silent) gclog_or_tty->print("C-heap ");

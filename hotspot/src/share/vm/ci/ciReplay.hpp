@@ -22,36 +22,34 @@
  *
  */
 
-package sun.jvm.hotspot.ci;
+#ifndef SHARE_VM_CI_CIREPLAY_HPP
+#define SHARE_VM_CI_CIREPLAY_HPP
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.types.*;
+#include "ci/ciMethod.hpp"
 
-public class ciBaseObject extends VMObject {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
+// ciReplay
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("ciBaseObject");
-    identField = new CIntField(type.getCIntegerField("_ident"), 0);
-  }
+class ciReplay {
+  CI_PACKAGE_ACCESS
 
-  private static CIntField identField;
+#ifdef ASSERT
+ private:
+  static int replay_impl(TRAPS);
 
-  public ciBaseObject(Address addr) {
-    super(addr);
-  }
+ public:
+  static void replay(TRAPS);
 
-  public void dumpReplayData(PrintStream out) {
-    out.println("# Unknown ci type " + getAddress().getAddressAt(0));
-  }
-}
+  // These are used by the CI to fill in the cached data from the
+  // replay file when replaying compiles.
+  static void initialize(ciMethodData* method);
+  static void initialize(ciMethod* method);
+
+  static bool is_loaded(Method* method);
+  static bool is_loaded(Klass* klass);
+
+  static bool should_not_inline(ciMethod* method);
+
+#endif
+};
+
+#endif // SHARE_VM_CI_CIREPLAY_HPP

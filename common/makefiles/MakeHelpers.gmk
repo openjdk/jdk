@@ -142,7 +142,7 @@ endef
 define TargetExit
     $(call RecordEndTime,$(patsubst %-only,%,$@))
     $(BUILD_LOG_WRAPPER) $(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d " "`"
+        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
     $(call CheckIfMakeAtEnd)
 endef
 

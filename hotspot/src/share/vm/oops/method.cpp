@@ -152,11 +152,11 @@ address Method::get_c2i_unverified_entry() {
 }
 
 char* Method::name_and_sig_as_C_string() const {
-  return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature());
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature());
 }
 
 char* Method::name_and_sig_as_C_string(char* buf, int size) const {
-  return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature(), buf, size);
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), buf, size);
 }
 
 char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature) {
@@ -578,8 +578,8 @@ objArrayHandle Method::resolved_checked_exceptions_impl(Method* this_oop, TRAPS)
     for (int i = 0; i < length; i++) {
       CheckedExceptionElement* table = h_this->checked_exceptions_start(); // recompute on each iteration, not gc safe
       Klass* k = h_this->constants()->klass_at(table[i].class_cp_index, CHECK_(objArrayHandle()));
-      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
-      mirrors->obj_at_put(i, Klass::cast(k)->java_mirror());
+      assert(k->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
+      mirrors->obj_at_put(i, k->java_mirror());
     }
     return mirrors;
   }
@@ -618,7 +618,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Thread *thread = Thread::current();
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
-    Handle prot  (thread, Klass::cast(method_holder())->protection_domain());
+    Handle prot  (thread, method_holder()->protection_domain());
     return SystemDictionary::find(klass_name, loader, prot, thread) != NULL;
   } else {
     return true;
@@ -1067,8 +1067,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 }
 
 Klass* Method::check_non_bcp_klass(Klass* klass) {
-  if (klass != NULL && Klass::cast(klass)->class_loader() != NULL) {
-    if (Klass::cast(klass)->oop_is_objArray())
+  if (klass != NULL && klass->class_loader() != NULL) {
+    if (klass->oop_is_objArray())
       klass = ObjArrayKlass::cast(klass)->bottom_klass();
     return klass;
   }

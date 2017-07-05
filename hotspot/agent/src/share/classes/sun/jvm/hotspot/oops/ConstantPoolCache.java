@@ -86,7 +86,7 @@ public class ConstantPoolCache extends Metadata {
 
 
   public void printValueOn(PrintStream tty) {
-    tty.print("ConstantPoolCache for " + getConstants().getPoolHolder().getName().asString());
+    tty.print("ConstantPoolCache for " + getConstants().getPoolHolder().getName().asString() + " address = " + getAddress() + " offset = " + baseOffset);
   }
 
   public int getLength() {

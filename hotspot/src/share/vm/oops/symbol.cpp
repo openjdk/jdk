@@ -153,17 +153,15 @@ char* Symbol::as_C_string_flexible_buffer(Thread* t,
 
 void Symbol::print_symbol_on(outputStream* st) const {
   st = st ? st : tty;
-  int length = UTF8::unicode_length((const char*)bytes(), utf8_length());
-  const char *ptr = (const char *)bytes();
-  jchar value;
-  for (int index = 0; index < length; index++) {
-    ptr = UTF8::next(ptr, &value);
-    if (value >= 32 && value < 127 || value == '\'' || value == '\\') {
-      st->put(value);
-    } else {
-      st->print("\\u%04x", value);
-    }
-  }
+  st->print("%s", as_quoted_ascii());
+}
+
+char* Symbol::as_quoted_ascii() const {
+  const char *ptr = (const char *)&_body[0];
+  int quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
+  char* result = NEW_RESOURCE_ARRAY(char, quoted_length + 1);
+  UTF8::as_quoted_ascii(ptr, result, quoted_length + 1);
+  return result;
 }
 
 jchar* Symbol::as_unicode(int& length) const {

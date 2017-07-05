@@ -1775,7 +1775,7 @@ JRT_ENTRY(void, SharedRuntime::slow_arraycopy_C(oopDesc* src,  jint src_pos,
   // The copy_array mechanism is awkward and could be removed, but
   // the compilers don't call this function except as a last resort,
   // so it probably doesn't matter.
-  Klass::cast(src->klass())->copy_array((arrayOopDesc*)src,  src_pos,
+  src->klass()->copy_array((arrayOopDesc*)src,  src_pos,
                                         (arrayOopDesc*)dest, dest_pos,
                                         length, thread);
 }
@@ -1788,8 +1788,8 @@ char* SharedRuntime::generate_class_cast_message(
   vframeStream vfst(thread, true);
   assert(!vfst.at_end(), "Java frame must exist");
   Bytecode_checkcast cc(vfst.method(), vfst.method()->bcp_from(vfst.bci()));
-  Klass* targetKlass = Klass::cast(vfst.method()->constants()->klass_at(
-    cc.index(), thread));
+  Klass* targetKlass = vfst.method()->constants()->klass_at(
+    cc.index(), thread);
   return generate_class_cast_message(objName, targetKlass->external_name());
 }
 
