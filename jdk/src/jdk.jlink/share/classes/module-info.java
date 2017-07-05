@@ -45,5 +45,6 @@ module jdk.jlink {
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.OptimizationPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
     provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.IncludeLocalesPlugin;
+    provides jdk.tools.jlink.plugin.TransformerPlugin with jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
     provides jdk.tools.jlink.plugin.PostProcessorPlugin with jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin;
 }

@@ -25,33 +25,16 @@
 
 package sun.util.resources.provider;
 
-import java.lang.reflect.Module;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
-import sun.util.locale.provider.ResourceBundleProviderSupport;
 import sun.util.resources.LocaleData;
 
 /**
- * {@code SupplementaryLocaleDataProvider} in module jdk.localedata implements
- * {@code JavaTimeSupplementaryProvider} in module java.base. This class works as a
- * service agent between {@code ResourceBundle.getBundle} callers in java.base
- * and resource bundles in jdk.localedata.
+ * Service Provider for loading JavaTimeSupplementary resource bundles in jdk.localedata.
  */
 public class SupplementaryLocaleDataProvider extends LocaleData.SupplementaryResourceBundleProvider {
     @Override
-    protected boolean isSupportedInModule(String baseName, Locale locale) {
-        // The assumption here is that there are two modules containing
-        // resource bundles for locale support. If resource bundles are split
-        // into more modules, this method will need to be changed to determine
-        // what locales are exactly supported.
-        return !super.isSupportedInModule(baseName, locale);
-    }
-
-    @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
-        Module module = LocaleDataProvider.class.getModule();
-        String bundleName = toBundleName(baseName, locale);
-        return ResourceBundleProviderSupport.loadResourceBundle(module, bundleName);
+        return LocaleDataProvider.loadResourceBundle(toBundleName(baseName, locale));
     }
 }
