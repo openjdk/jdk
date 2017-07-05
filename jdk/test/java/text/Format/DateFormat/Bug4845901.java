@@ -55,6 +55,7 @@ public class Bug4845901 {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static void testParse(SimpleDateFormat sdf, String str, int expectedHour) {
         try {
             Date parsedDate = sdf.parse(str);

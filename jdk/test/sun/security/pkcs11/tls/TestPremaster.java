@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6316539
  * @summary Basic tests for TlsRsaPremasterSecret generator
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
+ *          jdk.crypto.pkcs11
  * @run main/othervm TestPremaster
  * @run main/othervm TestPremaster sm policy
  */

@@ -28,7 +28,6 @@
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "runtime/vm_operations.hpp"
 
@@ -52,19 +51,12 @@
 class CMSCollector;
 
 class VM_CMS_Operation: public VM_Operation {
- private:
-  ReferencePendingListLocker _pending_list_locker;
-
  protected:
   CMSCollector*  _collector;                 // associated collector
   bool           _prologue_succeeded;     // whether doit_prologue succeeded
   uint           _gc_id;
 
   bool lost_race() const;
-
-  // java.lang.ref.Reference support
-  void acquire_pending_list_lock();
-  void release_and_notify_pending_list_lock();
 
  public:
   VM_CMS_Operation(CMSCollector* collector):

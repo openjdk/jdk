@@ -1197,6 +1197,9 @@ public final class Unsafe {
         if (hostClass == null || data == null) {
             throw new NullPointerException();
         }
+        if (hostClass.isArray() || hostClass.isPrimitive()) {
+            throw new IllegalArgumentException();
+        }
 
         return defineAnonymousClass0(hostClass, data, cpPatches);
     }

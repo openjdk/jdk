@@ -293,10 +293,11 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
   verify_up_to_first_dead(space);
 
+  HeapWord* const bottom = space->bottom();
   HeapWord* const end_of_live = space->_end_of_live;
 
   assert(space->_first_dead <= end_of_live, "Invariant. _first_dead: " PTR_FORMAT " <= end_of_live: " PTR_FORMAT, p2i(space->_first_dead), p2i(end_of_live));
-  if (space->_first_dead == end_of_live && !oop(space->bottom())->is_gc_marked()) {
+  if (space->_first_dead == end_of_live && (bottom == end_of_live || !oop(bottom)->is_gc_marked())) {
     // Nothing to compact. The space is either empty or all live object should be left in place.
     clear_empty_region(space);
     return;
@@ -305,8 +306,8 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
   const intx scan_interval = PrefetchScanIntervalInBytes;
   const intx copy_interval = PrefetchCopyIntervalInBytes;
 
-  assert(space->bottom() < end_of_live, "bottom: " PTR_FORMAT " should be < end_of_live: " PTR_FORMAT, p2i(space->bottom()), p2i(end_of_live));
-  HeapWord* cur_obj = space->bottom();
+  assert(bottom < end_of_live, "bottom: " PTR_FORMAT " should be < end_of_live: " PTR_FORMAT, p2i(bottom), p2i(end_of_live));
+  HeapWord* cur_obj = bottom;
   if (space->_first_dead > cur_obj && !oop(cur_obj)->is_gc_marked()) {
     // All object before _first_dead can be skipped. They should not be moved.
     // A pointer to the first live object is stored at the memory location for _first_dead.

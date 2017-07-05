@@ -58,7 +58,7 @@ public class PParser {
     public PParser() {
     }
 
-    public Hashtable parse(Reader r) throws IOException {
+    public Map<String,Object> parse(Reader r) throws IOException {
         this.reader = r;
         bufferedToken = false;
         lineNumber = 0;
@@ -91,23 +91,23 @@ public class PParser {
     }
 
     protected Object parseArray() throws IOException {
-        Vector       array = new Vector();
-        int          token;
+        List<Object> array = new ArrayList<>();
+        int token;
 
         while ((token = getToken()) != CLOSE_ARRAY) {
             if (token == MORE) {
                 token = getToken();
             }
             if (token != CLOSE_ARRAY) {
-                array.addElement(parseValue(token));
+                array.add(parseValue(token));
             }
         }
         return array;
     }
 
-    protected Hashtable parsePair() throws IOException {
-        Hashtable           ht = new Hashtable(11);
-        int                 token;
+    protected Map<String,Object> parsePair() throws IOException {
+        Map<String,Object> ht = new HashMap<>(11);
+        int token;
 
         while ((token = getToken()) != CLOSE_PAIR) {
             if (token != STRING) {
@@ -133,11 +133,12 @@ public class PParser {
     }
 
     protected int getToken() throws IOException {
-        int            token = getToken(false, false);
+        int token = getToken(false, false);
 
         return token;
     }
 
+    @SuppressWarnings("fallthrough")
     protected int getToken(boolean wantsWS, boolean inString)
         throws IOException {
         if (bufferedToken) {
@@ -225,31 +226,26 @@ public class PParser {
         throw new RuntimeException(errorString + " at line " + lineNumber + " column " + column);
     }
 
+    @SuppressWarnings("unchecked")
     public static void dump(Object o) {
         if (o instanceof String) {
             System.out.print(o);
-        } else if(o instanceof Vector) {
-            Enumeration     e = ((Vector)o).elements();
-
+        } else if(o instanceof List) {
             dump(" (");
-            while (e.hasMoreElements()) {
-                dump(e.nextElement());
+            ((List)o).forEach((l) -> {
+                dump(l);
                 dump(" -- ");
-            }
+            });
             dump(" )");
         } else {
-            Hashtable       ht = (Hashtable)o;
-            Enumeration     e = ht.keys();
-
+            Map<String,Object> ht = (Map<String,Object>)o;
             dump(" {");
-            while (e.hasMoreElements()) {
-                Object       key = e.nextElement();
-
-                dump(key);
+            ht.keySet().forEach(l -> {
+                dump(l);
                 dump(" = ");
-                dump(ht.get(key));
+                dump(ht.get(l));
                 dump(";");
-            }
+            });
             dump(" }");
         }
     }
@@ -259,9 +255,9 @@ public class PParser {
             System.out.println("need filename");
         } else {
             try {
-                FileReader          fr = new FileReader(args[0]);
-                PParser             parser = new PParser();
-                Hashtable           ht = parser.parse(fr);
+                FileReader fr = new FileReader(args[0]);
+                PParser parser = new PParser();
+                Map<String,Object> ht = parser.parse(fr);
 
                 dump(ht);
                 System.out.println();

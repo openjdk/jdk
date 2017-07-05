@@ -162,16 +162,18 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
 
         if (predictor ==
             BaselineTIFFTagSet.PREDICTOR_HORIZONTAL_DIFFERENCING) {
+            int step = planar || samplesPerPixel == 1 ? 1 : samplesPerPixel;
 
+            int samplesPerRow = step * srcWidth;
+
+            int off = dstOffset + step;
             for (int j = 0; j < srcHeight; j++) {
-
-                int count = dstOffset + samplesPerPixel * (j * srcWidth + 1);
-
-                for (int i = samplesPerPixel; i < srcWidth * samplesPerPixel; i++) {
-
-                    dstData[count] += dstData[count - samplesPerPixel];
+                int count = off;
+                for (int i = step; i < samplesPerRow; i++) {
+                    dstData[count] += dstData[count - step];
                     count++;
                 }
+                off += samplesPerRow;
             }
         }
 

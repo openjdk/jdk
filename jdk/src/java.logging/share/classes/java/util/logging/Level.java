@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,22 @@
  */
 
 package java.util.logging;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Module;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.Function;
+import jdk.internal.loader.ClassLoaderValue;
 
 /**
  * The Level class defines a set of standard logging levels that
@@ -177,6 +186,10 @@ public class Level implements java.io.Serializable {
      */
     public static final Level ALL = new Level("ALL", Integer.MIN_VALUE, defaultBundle);
 
+    private static final Level[] standardLevels = {
+        OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL
+    };
+
     /**
      * Create a named Level with a given integer value.
      * <p>
@@ -267,7 +280,8 @@ public class Level implements java.io.Serializable {
         // or its defining class loader, if it's unnamed module,
         // of this Level instance that can be a custom Level subclass;
         Module module = this.getClass().getModule();
-        ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName, newLocale, module);
+        ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName,
+                newLocale, module);
 
         final String localizedName = rb.getString(name);
         final boolean isDefaultBundle = defaultBundle.equals(resourceBundleName);
@@ -350,12 +364,12 @@ public class Level implements java.io.Serializable {
             throw new NullPointerException();
         }
 
-        KnownLevel level;
+        Optional<Level> level;
 
         // Look for a known Level with the given non-localized name.
-        level = KnownLevel.findByName(name);
-        if (level != null) {
-            return level.mirroredLevel;
+        level = KnownLevel.findByName(name, KnownLevel::mirrored);
+        if (level.isPresent()) {
+            return level.get();
         }
 
         // Now, check if the given name is an integer.  If so,
@@ -363,21 +377,24 @@ public class Level implements java.io.Serializable {
         // if necessary create one.
         try {
             int x = Integer.parseInt(name);
-            level = KnownLevel.findByValue(x);
-            if (level == null) {
+            level = KnownLevel.findByValue(x, KnownLevel::mirrored);
+            if (!level.isPresent()) {
                 // add new Level
                 Level levelObject = new Level(name, x);
-                level = KnownLevel.findByValue(x);
+                // There's no need to use a reachability fence here because
+                // KnownLevel keeps a strong reference on the level when
+                // level.getClass() == Level.class.
+                return KnownLevel.findByValue(x, KnownLevel::mirrored).get();
             }
-            return level.mirroredLevel;
         } catch (NumberFormatException ex) {
             // Not an integer.
             // Drop through.
         }
 
-        level = KnownLevel.findByLocalizedLevelName(name);
-        if (level != null) {
-            return level.mirroredLevel;
+        level = KnownLevel.findByLocalizedLevelName(name,
+                KnownLevel::mirrored);
+        if (level.isPresent()) {
+            return level.get();
         }
 
         return null;
@@ -408,15 +425,13 @@ public class Level implements java.io.Serializable {
     // Serialization magic to prevent "doppelgangers".
     // This is a performance optimization.
     private Object readResolve() {
-        KnownLevel o = KnownLevel.matches(this);
-        if (o != null) {
-            return o.levelObject;
+        Optional<Level> level = KnownLevel.matches(this);
+        if (level.isPresent()) {
+            return level.get();
         }
-
         // Woops.  Whoever sent us this object knows
         // about a new log level.  Add it to our list.
-        Level level = new Level(this.name, this.value, this.resourceBundleName);
-        return level;
+        return new Level(this.name, this.value, this.resourceBundleName);
     }
 
     /**
@@ -450,12 +465,12 @@ public class Level implements java.io.Serializable {
         // Check that name is not null.
         name.length();
 
-        KnownLevel level;
+        Optional<Level> level;
 
         // Look for a known Level with the given non-localized name.
-        level = KnownLevel.findByName(name);
-        if (level != null) {
-            return level.levelObject;
+        level = KnownLevel.findByName(name, KnownLevel::referent);
+        if (level.isPresent()) {
+            return level.get();
         }
 
         // Now, check if the given name is an integer.  If so,
@@ -463,13 +478,16 @@ public class Level implements java.io.Serializable {
         // if necessary create one.
         try {
             int x = Integer.parseInt(name);
-            level = KnownLevel.findByValue(x);
-            if (level == null) {
-                // add new Level
-                Level levelObject = new Level(name, x);
-                level = KnownLevel.findByValue(x);
+            level = KnownLevel.findByValue(x, KnownLevel::referent);
+            if (level.isPresent()) {
+                return level.get();
             }
-            return level.levelObject;
+            // add new Level.
+            Level levelObject = new Level(name, x);
+            // There's no need to use a reachability fence here because
+            // KnownLevel keeps a strong reference on the level when
+            // level.getClass() == Level.class.
+            return KnownLevel.findByValue(x, KnownLevel::referent).get();
         } catch (NumberFormatException ex) {
             // Not an integer.
             // Drop through.
@@ -478,9 +496,9 @@ public class Level implements java.io.Serializable {
         // Finally, look for a known level with the given localized name,
         // in the current default locale.
         // This is relatively expensive, but not excessively so.
-        level = KnownLevel.findByLocalizedLevelName(name);
-        if (level != null) {
-            return level.levelObject;
+        level = KnownLevel.findByLocalizedLevelName(name, KnownLevel::referent);
+        if (level .isPresent()) {
+            return level.get();
         }
 
         // OK, we've tried everything and failed
@@ -530,22 +548,67 @@ public class Level implements java.io.Serializable {
     // If Level.getName, Level.getLocalizedName, Level.getResourceBundleName methods
     // were final, the following KnownLevel implementation can be removed.
     // Future API change should take this into consideration.
-    static final class KnownLevel {
+    static final class KnownLevel extends WeakReference<Level> {
         private static Map<String, List<KnownLevel>> nameToLevels = new HashMap<>();
         private static Map<Integer, List<KnownLevel>> intToLevels = new HashMap<>();
-        final Level levelObject;     // instance of Level class or Level subclass
+        private static final ReferenceQueue<Level> QUEUE = new ReferenceQueue<>();
+
+        // CUSTOM_LEVEL_CLV is used to register custom level instances with
+        // their defining class loader, so that they are garbage collected
+        // if and only if their class loader is no longer strongly
+        // referenced.
+        private static final ClassLoaderValue<List<Level>> CUSTOM_LEVEL_CLV =
+                    new ClassLoaderValue<>();
+
         final Level mirroredLevel;   // mirror of the custom Level
         KnownLevel(Level l) {
-            this.levelObject = l;
+            super(l, QUEUE);
             if (l.getClass() == Level.class) {
                 this.mirroredLevel = l;
             } else {
                 // this mirrored level object is hidden
-                this.mirroredLevel = new Level(l.name, l.value, l.resourceBundleName, false);
+                this.mirroredLevel = new Level(l.name, l.value,
+                        l.resourceBundleName, false);
             }
         }
 
+        Optional<Level> mirrored() {
+            return Optional.of(mirroredLevel);
+        }
+
+        Optional<Level> referent() {
+            return Optional.ofNullable(get());
+        }
+
+        private void remove() {
+            Optional.ofNullable(nameToLevels.get(mirroredLevel.name))
+                    .ifPresent((x) -> x.remove(this));
+            Optional.ofNullable(intToLevels.get(mirroredLevel.value))
+                    .ifPresent((x) -> x.remove(this));
+        }
+
+        // Remove all stale KnownLevel instances
+        static synchronized void purge() {
+            Reference<? extends Level> ref;
+            while ((ref = QUEUE.poll()) != null) {
+                if (ref instanceof KnownLevel) {
+                    ((KnownLevel)ref).remove();
+                }
+            }
+        }
+
+        private static void registerWithClassLoader(Level customLevel) {
+            PrivilegedAction<ClassLoader> pa =
+                  () -> customLevel.getClass().getClassLoader();
+            PrivilegedAction<String> pn =  customLevel.getClass()::getName;
+            final String name = AccessController.doPrivileged(pn);
+            final ClassLoader cl = AccessController.doPrivileged(pa);
+            CUSTOM_LEVEL_CLV.computeIfAbsent(cl, (c, v) -> new ArrayList<>())
+                .add(customLevel);
+        }
+
         static synchronized void add(Level l) {
+            purge();
             // the mirroredLevel object is always added to the list
             // before the custom Level instance
             KnownLevel o = new KnownLevel(l);
@@ -562,24 +625,36 @@ public class Level implements java.io.Serializable {
                 intToLevels.put(l.value, list);
             }
             list.add(o);
+
+            // keep the custom level reachable from its class loader
+            // This will ensure that custom level values are not GC'ed
+            // until there class loader is GC'ed.
+            if (o.mirroredLevel != l) {
+                registerWithClassLoader(l);
+            }
+
         }
 
         // Returns a KnownLevel with the given non-localized name.
-        static synchronized KnownLevel findByName(String name) {
-            List<KnownLevel> list = nameToLevels.get(name);
-            if (list != null) {
-                return list.get(0);
-            }
-            return null;
+        static synchronized Optional<Level> findByName(String name,
+                Function<KnownLevel, Optional<Level>> selector) {
+            purge();
+            return nameToLevels.getOrDefault(name, Collections.emptyList())
+                        .stream()
+                        .map(selector)
+                        .flatMap(Optional::stream)
+                        .findFirst();
         }
 
         // Returns a KnownLevel with the given value.
-        static synchronized KnownLevel findByValue(int value) {
-            List<KnownLevel> list = intToLevels.get(value);
-            if (list != null) {
-                return list.get(0);
-            }
-            return null;
+        static synchronized Optional<Level> findByValue(int value,
+                Function<KnownLevel, Optional<Level>> selector) {
+            purge();
+            return intToLevels.getOrDefault(value, Collections.emptyList())
+                        .stream()
+                        .map(selector)
+                        .flatMap(Optional::stream)
+                        .findFirst();
         }
 
         // Returns a KnownLevel with the given localized name matching
@@ -587,32 +662,34 @@ public class Level implements java.io.Serializable {
         // from the resourceBundle associated with the Level object).
         // This method does not call Level.getLocalizedName() that may
         // be overridden in a subclass implementation
-        static synchronized KnownLevel findByLocalizedLevelName(String name) {
-            for (List<KnownLevel> levels : nameToLevels.values()) {
-                for (KnownLevel l : levels) {
-                    String lname = l.levelObject.getLocalizedLevelName();
-                    if (name.equals(lname)) {
-                        return l;
-                    }
-                }
-            }
-            return null;
+        static synchronized Optional<Level> findByLocalizedLevelName(String name,
+                Function<KnownLevel, Optional<Level>> selector) {
+            purge();
+            return nameToLevels.values().stream()
+                         .flatMap(List::stream)
+                         .map(selector)
+                         .flatMap(Optional::stream)
+                         .filter(l -> name.equals(l.getLocalizedLevelName()))
+                         .findFirst();
         }
 
-        static synchronized KnownLevel matches(Level l) {
+        static synchronized Optional<Level> matches(Level l) {
+            purge();
             List<KnownLevel> list = nameToLevels.get(l.name);
             if (list != null) {
-                for (KnownLevel level : list) {
-                    Level other = level.mirroredLevel;
+                for (KnownLevel ref : list) {
+                    Level levelObject = ref.get();
+                    if (levelObject == null) continue;
+                    Level other = ref.mirroredLevel;
                     if (l.value == other.value &&
                            (l.resourceBundleName == other.resourceBundleName ||
                                (l.resourceBundleName != null &&
                                 l.resourceBundleName.equals(other.resourceBundleName)))) {
-                        return level;
+                        return Optional.of(levelObject);
                     }
                 }
             }
-            return null;
+            return Optional.empty();
         }
     }
 

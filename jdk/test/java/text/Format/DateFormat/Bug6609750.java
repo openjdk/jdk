@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ public class Bug6609750 {
         Locale defaultLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
 
+        @SuppressWarnings("deprecation")
         Date[] dates = {
             new Date(9-1900,     Calendar.JUNE, 12),
             new Date(99-1900,    Calendar.JUNE, 12),

@@ -2162,6 +2162,25 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 }
 
 JNIEXPORT void JNICALL
+Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_clearNativeReadAbortFlag
+    (JNIEnv *env,
+    jobject this,
+    jlong ptr) {
+
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
+
+    if (data == NULL) {
+        JNU_ThrowByName(env,
+            "java/lang/IllegalStateException",
+            "Attempting to use reader after dispose()");
+        return;
+    }
+
+    data->abortFlag = JNI_FALSE;
+
+}
+
+JNIEXPORT void JNICALL
 Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_abortRead
     (JNIEnv *env,
      jobject this,

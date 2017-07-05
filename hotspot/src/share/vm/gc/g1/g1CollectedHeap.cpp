@@ -1332,6 +1332,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                                 workers()->active_workers(),
                                                 Threads::number_of_non_daemon_threads());
       workers()->update_active_workers(n_workers);
+      log_info(gc,task)("Using %u workers of %u to rebuild remembered set", n_workers, workers()->total_workers());
 
       ParRebuildRSTask rebuild_rs_task(this);
       workers()->run_task(&rebuild_rs_task);
@@ -3068,6 +3069,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                                                   workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
     workers()->update_active_workers(active_workers);
+    log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -4513,6 +4515,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 #if defined(COMPILER2) || INCLUDE_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
+  g1_policy()->print_age_table();
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
