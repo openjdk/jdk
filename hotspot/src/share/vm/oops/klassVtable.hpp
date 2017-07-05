@@ -84,11 +84,16 @@ class klassVtable : public ResourceObj {
   bool is_initialized();
 
   // computes vtable length (in words) and the number of miranda methods
-  static void compute_vtable_size_and_num_mirandas(
-      int* vtable_length, int* num_new_mirandas,
-      GrowableArray<Method*>* all_mirandas, Klass* super,
-      Array<Method*>* methods, AccessFlags class_flags, Handle classloader,
-      Symbol* classname, Array<Klass*>* local_interfaces, TRAPS);
+  static void compute_vtable_size_and_num_mirandas(int* vtable_length,
+                                                   int* num_new_mirandas,
+                                                   GrowableArray<Method*>* all_mirandas,
+                                                   const Klass* super,
+                                                   Array<Method*>* methods,
+                                                   AccessFlags class_flags,
+                                                   Handle classloader,
+                                                   Symbol* classname,
+                                                   Array<Klass*>* local_interfaces,
+                                                   TRAPS);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
@@ -116,7 +121,12 @@ class klassVtable : public ResourceObj {
   int  initialize_from_super(KlassHandle super);
   int  index_of(Method* m, int len) const; // same as index_of, but search only up to len
   void put_method_at(Method* m, int index);
-  static bool needs_new_vtable_entry(methodHandle m, Klass* super, Handle classloader, Symbol* classname, AccessFlags access_flags, TRAPS);
+  static bool needs_new_vtable_entry(methodHandle m,
+                                     const Klass* super,
+                                     Handle classloader,
+                                     Symbol* classname,
+                                     AccessFlags access_flags,
+                                     TRAPS);
 
   bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
  InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method, int vtable_index,
@@ -126,17 +136,18 @@ class klassVtable : public ResourceObj {
   bool is_miranda_entry_at(int i);
   int fill_in_mirandas(int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
-                         Array<Method*>* default_methods, Klass* super);
+                         Array<Method*>* default_methods, const Klass* super);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
       Array<Method*>* current_interface_methods,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      Klass* super);
+      const Klass* super);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
-      GrowableArray<Method*>* all_mirandas, Klass* super,
+      GrowableArray<Method*>* all_mirandas,
+      const Klass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
       Array<Klass*>* local_interfaces);

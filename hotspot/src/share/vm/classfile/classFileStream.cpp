@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,51 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/vmSymbols.hpp"
 
-void ClassFileStream::truncated_file_error(TRAPS) {
+const bool ClassFileStream::verify = true;
+const bool ClassFileStream::no_verification = false;
+
+void ClassFileStream::truncated_file_error(TRAPS) const {
   THROW_MSG(vmSymbols::java_lang_ClassFormatError(), "Truncated class file");
 }
 
-ClassFileStream::ClassFileStream(u1* buffer, int length, const char* source) {
-  _buffer_start = buffer;
-  _buffer_end   = buffer + length;
-  _current      = buffer;
-  _source       = source;
-  _need_verify  = false;
+ClassFileStream::ClassFileStream(const u1* buffer,
+                                 int length,
+                                 const char* source,
+                                 bool verify_stream) :
+  _buffer_start(buffer),
+  _buffer_end(buffer + length),
+  _current(buffer),
+  _source(source),
+  _need_verify(verify_stream) {}
+
+const u1* ClassFileStream::clone_buffer() const {
+  u1* const new_buffer_start = NEW_RESOURCE_ARRAY(u1, length());
+  memcpy(new_buffer_start, _buffer_start, length());
+  return new_buffer_start;
 }
 
-u1 ClassFileStream::get_u1(TRAPS) {
+const char* const ClassFileStream::clone_source() const {
+  const char* const src = source();
+  char* source_copy = NULL;
+  if (src != NULL) {
+    size_t source_len = strlen(src);
+    source_copy = NEW_RESOURCE_ARRAY(char, source_len + 1);
+    strncpy(source_copy, src, source_len + 1);
+  }
+  return source_copy;
+}
+
+// Caller responsible for ResourceMark
+// clone stream with a rewound position
+const ClassFileStream* ClassFileStream::clone() const {
+  const u1* const new_buffer_start = clone_buffer();
+  return new ClassFileStream(new_buffer_start,
+                             length(),
+                             clone_source(),
+                             need_verify());
+}
+
+u1 ClassFileStream::get_u1(TRAPS) const {
   if (_need_verify) {
     guarantee_more(1, CHECK_0);
   } else {
@@ -47,54 +79,54 @@ u1 ClassFileStream::get_u1(TRAPS) {
   return *_current++;
 }
 
-u2 ClassFileStream::get_u2(TRAPS) {
+u2 ClassFileStream::get_u2(TRAPS) const {
   if (_need_verify) {
     guarantee_more(2, CHECK_0);
   } else {
     assert(2 <= _buffer_end - _current, "buffer overflow");
   }
-  u1* tmp = _current;
+  const u1* tmp = _current;
   _current += 2;
-  return Bytes::get_Java_u2(tmp);
+  return Bytes::get_Java_u2((address)tmp);
 }
 
-u4 ClassFileStream::get_u4(TRAPS) {
+u4 ClassFileStream::get_u4(TRAPS) const {
   if (_need_verify) {
     guarantee_more(4, CHECK_0);
   } else {
     assert(4 <= _buffer_end - _current, "buffer overflow");
   }
-  u1* tmp = _current;
+  const u1* tmp = _current;
   _current += 4;
-  return Bytes::get_Java_u4(tmp);
+  return Bytes::get_Java_u4((address)tmp);
 }
 
-u8 ClassFileStream::get_u8(TRAPS) {
+u8 ClassFileStream::get_u8(TRAPS) const {
   if (_need_verify) {
     guarantee_more(8, CHECK_0);
   } else {
     assert(8 <= _buffer_end - _current, "buffer overflow");
   }
-  u1* tmp = _current;
+  const u1* tmp = _current;
   _current += 8;
-  return Bytes::get_Java_u8(tmp);
+  return Bytes::get_Java_u8((address)tmp);
 }
 
-void ClassFileStream::skip_u1(int length, TRAPS) {
+void ClassFileStream::skip_u1(int length, TRAPS) const {
   if (_need_verify) {
     guarantee_more(length, CHECK);
   }
   _current += length;
 }
 
-void ClassFileStream::skip_u2(int length, TRAPS) {
+void ClassFileStream::skip_u2(int length, TRAPS) const {
   if (_need_verify) {
     guarantee_more(length * 2, CHECK);
   }
   _current += length * 2;
 }
 
-void ClassFileStream::skip_u4(int length, TRAPS) {
+void ClassFileStream::skip_u4(int length, TRAPS) const {
   if (_need_verify) {
     guarantee_more(length * 4, CHECK);
   }

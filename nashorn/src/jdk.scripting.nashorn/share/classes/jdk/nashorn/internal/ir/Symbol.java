@@ -82,14 +82,12 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
     public static final int HAS_SLOT                = 1 << 10;
     /** Is this symbol known to store an int value ? */
     public static final int HAS_INT_VALUE           = 1 << 11;
-    /** Is this symbol known to store a long value ? */
-    public static final int HAS_LONG_VALUE          = 1 << 12;
     /** Is this symbol known to store a double value ? */
-    public static final int HAS_DOUBLE_VALUE        = 1 << 13;
+    public static final int HAS_DOUBLE_VALUE        = 1 << 12;
     /** Is this symbol known to store an object value ? */
-    public static final int HAS_OBJECT_VALUE        = 1 << 14;
+    public static final int HAS_OBJECT_VALUE        = 1 << 13;
     /** Is this symbol seen a declaration? Used for block scoped LET and CONST symbols only. */
-    public static final int HAS_BEEN_DECLARED       = 1 << 15;
+    public static final int HAS_BEEN_DECLARED       = 1 << 14;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -256,7 +254,6 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
      */
     public int slotCount() {
         return ((flags & HAS_INT_VALUE)    == 0 ? 0 : 1) +
-               ((flags & HAS_LONG_VALUE)   == 0 ? 0 : 2) +
                ((flags & HAS_DOUBLE_VALUE) == 0 ? 0 : 2) +
                ((flags & HAS_OBJECT_VALUE) == 0 ? 0 : 1);
     }
@@ -278,7 +275,6 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
                 append("slot=").
                 append(firstSlot).append(' ');
             if((flags & HAS_INT_VALUE) != 0) { sb.append('I'); }
-            if((flags & HAS_LONG_VALUE) != 0) { sb.append('J'); }
             if((flags & HAS_DOUBLE_VALUE) != 0) { sb.append('D'); }
             if((flags & HAS_OBJECT_VALUE) != 0) { sb.append('O'); }
             sb.append(')');
@@ -573,11 +569,6 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
             return typeSlot;
         }
         typeSlot += ((flags & HAS_INT_VALUE) == 0 ? 0 : 1);
-        if(type.isLong()) {
-            assert (flags & HAS_LONG_VALUE) != 0;
-            return typeSlot;
-        }
-        typeSlot += ((flags & HAS_LONG_VALUE) == 0 ? 0 : 2);
         if(type.isNumber()) {
             assert (flags & HAS_DOUBLE_VALUE) != 0;
             return typeSlot;
@@ -595,8 +586,6 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
     public boolean hasSlotFor(final Type type) {
         if(type.isBoolean() || type.isInteger()) {
             return (flags & HAS_INT_VALUE) != 0;
-        } else if(type.isLong()) {
-            return (flags & HAS_LONG_VALUE) != 0;
         } else if(type.isNumber()) {
             return (flags & HAS_DOUBLE_VALUE) != 0;
         }
@@ -611,8 +600,6 @@ public final class Symbol implements Comparable<Symbol>, Cloneable, Serializable
     public void setHasSlotFor(final Type type) {
         if(type.isBoolean() || type.isInteger()) {
             setFlag(HAS_INT_VALUE);
-        } else if(type.isLong()) {
-            setFlag(HAS_LONG_VALUE);
         } else if(type.isNumber()) {
             setFlag(HAS_DOUBLE_VALUE);
         } else {

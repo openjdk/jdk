@@ -997,6 +997,24 @@ public final class Duration
      }
 
     /**
+     * Returns number of whole times a specified Duration occurs within this Duration.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param divisor the value to divide the duration by, positive or negative, not null
+     * @return number of whole times, rounded toward zero, a specified
+     *         {@code Duration} occurs within this Duration, may be negative
+     * @throws ArithmeticException if the divisor is zero, or if numeric overflow occurs
+     * @since 9
+     */
+    public long dividedBy(Duration divisor) {
+        Objects.requireNonNull(divisor, "divisor");
+        BigDecimal dividendBigD = toBigDecimalSeconds();
+        BigDecimal divisorBigD = divisor.toBigDecimalSeconds();
+        return dividendBigD.divideToIntegralValue(divisorBigD).longValueExact();
+    }
+
+    /**
      * Converts this duration to the total length in seconds and
      * fractional nanoseconds expressed as a {@code BigDecimal}.
      *

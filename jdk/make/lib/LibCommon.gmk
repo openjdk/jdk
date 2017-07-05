@@ -46,6 +46,12 @@ else
   endif
 endif
 
+# SetupNativeCompilation now supports debug symbols on macosx for hotspot.
+# Disable it here for the jdk libraries until we decide to enable them.
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ENABLE_DEBUG_SYMBOLS := false
+endif
+
 ################################################################################
 # Find the default set of src dirs for a native library.
 # Param 1 - module name

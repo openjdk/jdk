@@ -29,7 +29,6 @@ import sun.misc.Cleaner;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.JavaLangRefAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -128,7 +127,7 @@ public abstract class Reference<T> {
 
     /* High-priority thread to enqueue pending References
      */
-    private static class ReferenceHandler extends ManagedLocalsThread {
+    private static class ReferenceHandler extends Thread {
 
         private static void ensureClassInitialized(Class<?> clazz) {
             try {
@@ -147,7 +146,7 @@ public abstract class Reference<T> {
         }
 
         ReferenceHandler(ThreadGroup g, String name) {
-            super(g, name);
+            super(g, null, name, 0, false);
         }
 
         public void run() {

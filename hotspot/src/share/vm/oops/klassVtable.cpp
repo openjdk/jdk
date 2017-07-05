@@ -54,7 +54,7 @@ inline InstanceKlass* klassVtable::ik() const {
 // treated as any other public method in C for method over-ride purposes.
 void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
-    GrowableArray<Method*>* all_mirandas, Klass* super,
+    GrowableArray<Method*>* all_mirandas, const Klass* super,
     Array<Method*>* methods, AccessFlags class_flags,
     Handle classloader, Symbol* classname, Array<Klass*>* local_interfaces,
     TRAPS) {
@@ -548,7 +548,7 @@ void klassVtable::put_method_at(Method* m, int index) {
 // However, the vtable entries are filled in at link time, and therefore
 // the superclass' vtable may not yet have been filled in.
 bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
-                                         Klass* super,
+                                         const Klass* super,
                                          Handle classloader,
                                          Symbol* classname,
                                          AccessFlags class_flags,
@@ -605,7 +605,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   ResourceMark rm;
   Symbol* name = target_method()->name();
   Symbol* signature = target_method()->signature();
-  Klass* k = super;
+  const Klass* k = super;
   Method* super_method = NULL;
   InstanceKlass *holder = NULL;
   Method* recheck_method =  NULL;
@@ -640,7 +640,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // miranda method in the super, whose entry it should re-use.
   // Actually, to handle cases that javac would not generate, we need
   // this check for all access permissions.
-  InstanceKlass *sk = InstanceKlass::cast(super);
+  const InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
     if (sk->lookup_method_in_all_interfaces(name, signature, Klass::find_defaults) != NULL) {
       return false;  // found a matching miranda; we do not need a new entry
@@ -734,7 +734,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // Part of the Miranda Rights in the US mean that if you do not have
 // an attorney one will be appointed for you.
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
-                             Array<Method*>* default_methods, Klass* super) {
+                             Array<Method*>* default_methods, const Klass* super) {
   if (m->is_static() || m->is_private() || m->is_overpass()) {
     return false;
   }
@@ -760,7 +760,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   // Overpasses may or may not exist for supers for pass 1,
   // they should have been created for pass 2 and later.
 
-  for (Klass* cursuper = super; cursuper != NULL; cursuper = cursuper->super())
+  for (const Klass* cursuper = super; cursuper != NULL; cursuper = cursuper->super())
   {
      if (InstanceKlass::cast(cursuper)->find_local_method(name, signature,
            Klass::find_overpass, Klass::skip_static, Klass::skip_private) != NULL) {
@@ -782,7 +782,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
 void klassVtable::add_new_mirandas_to_lists(
     GrowableArray<Method*>* new_mirandas, GrowableArray<Method*>* all_mirandas,
     Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
-    Array<Method*>* default_methods, Klass* super) {
+    Array<Method*>* default_methods, const Klass* super) {
 
   // iterate thru the current interface's method to see if it a miranda
   int num_methods = current_interface_methods->length();
@@ -802,7 +802,7 @@ void klassVtable::add_new_mirandas_to_lists(
 
     if (!is_duplicate) { // we don't want duplicate miranda entries in the vtable
       if (is_miranda(im, class_methods, default_methods, super)) { // is it a miranda at all?
-        InstanceKlass *sk = InstanceKlass::cast(super);
+        const InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
         if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::find_defaults) == NULL) {
           new_mirandas->append(im);
@@ -817,7 +817,8 @@ void klassVtable::add_new_mirandas_to_lists(
 
 void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
                                GrowableArray<Method*>* all_mirandas,
-                               Klass* super, Array<Method*>* class_methods,
+                               const Klass* super,
+                               Array<Method*>* class_methods,
                                Array<Method*>* default_methods,
                                Array<Klass*>* local_interfaces) {
   assert((new_mirandas->length() == 0) , "current mirandas must be 0");

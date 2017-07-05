@@ -646,6 +646,24 @@ public class ScriptFunction extends ScriptObject {
     }
 
     /**
+     * Get the documentation for this function
+     *
+     * @return the documentation
+     */
+    public final String getDocumentation() {
+        return data.getDocumentation();
+    }
+
+    /**
+     * Set the documentation for this function
+     *
+     * @param doc documentation String for this function
+     */
+    public final void setDocumentation(final String doc) {
+        data.setDocumentation(doc);
+    }
+
+    /**
      * Get the name for this function
      *
      * @return the name
@@ -952,6 +970,13 @@ public class ScriptFunction extends ScriptObject {
             } else {
                 guard = getNonStrictFunctionGuard(this);
             }
+        }
+
+        // Is this an unstable callsite which was earlier apply-to-call optimized?
+        // If so, earlier apply2call would have exploded arguments. We have to convert
+        // that as an array again!
+        if (isUnstable && NashornCallSiteDescriptor.isApplyToCall(desc)) {
+            boundHandle = MH.asCollector(boundHandle, Object[].class, type.parameterCount() - 2);
         }
 
         boundHandle = pairArguments(boundHandle, type);

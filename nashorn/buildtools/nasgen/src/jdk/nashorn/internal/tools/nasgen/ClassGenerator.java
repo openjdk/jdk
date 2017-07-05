@@ -59,6 +59,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_C
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_CREATEBUILTIN_SPECS_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATION;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATION_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SETTER_PREFIX;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_OBJECT;
@@ -290,6 +292,13 @@ public class ClassGenerator {
             mi.dup();
             mi.push(memInfo.getArity());
             mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETARITY, SCRIPTFUNCTION_SETARITY_DESC);
+        }
+
+        String doc = memInfo.getDocumentation();
+        if (doc != null) {
+            mi.dup();
+            mi.loadLiteral(memInfo.getDocumentation());
+            mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETDOCUMENTATION, SCRIPTFUNCTION_SETDOCUMENTATION_DESC);
         }
     }
 

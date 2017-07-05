@@ -42,7 +42,7 @@ import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.CipherType.*;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 
 /**

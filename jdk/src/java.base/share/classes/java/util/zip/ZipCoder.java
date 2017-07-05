@@ -43,7 +43,7 @@ import sun.nio.cs.ArrayEncoder;
 
 final class ZipCoder {
 
-    String toString(byte[] ba, int length) {
+    String toString(byte[] ba, int off, int length) {
         CharsetDecoder cd = decoder().reset();
         int len = (int)(length * cd.maxCharsPerByte());
         char[] ca = new char[len];
@@ -53,12 +53,12 @@ final class ZipCoder {
         // CodingErrorAction.REPLACE mode. ZipCoder uses
         // REPORT mode.
         if (isUTF8 && cd instanceof ArrayDecoder) {
-            int clen = ((ArrayDecoder)cd).decode(ba, 0, length, ca);
+            int clen = ((ArrayDecoder)cd).decode(ba, off, length, ca);
             if (clen == -1)    // malformed
                 throw new IllegalArgumentException("MALFORMED");
             return new String(ca, 0, clen);
         }
-        ByteBuffer bb = ByteBuffer.wrap(ba, 0, length);
+        ByteBuffer bb = ByteBuffer.wrap(ba, off, length);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = cd.decode(bb, cb, true);
         if (!cr.isUnderflow())
@@ -69,8 +69,12 @@ final class ZipCoder {
         return new String(ca, 0, cb.position());
     }
 
+    String toString(byte[] ba, int length) {
+        return toString(ba, 0, length);
+    }
+
     String toString(byte[] ba) {
-        return toString(ba, ba.length);
+        return toString(ba, 0, ba.length);
     }
 
     byte[] getBytes(String s) {
@@ -111,13 +115,16 @@ final class ZipCoder {
         return utf8.getBytes(s);
     }
 
-
     String toStringUTF8(byte[] ba, int len) {
+        return toStringUTF8(ba, 0, len);
+    }
+
+    String toStringUTF8(byte[] ba, int off, int len) {
         if (isUTF8)
-            return toString(ba, len);
+            return toString(ba, off, len);
         if (utf8 == null)
             utf8 = new ZipCoder(StandardCharsets.UTF_8);
-        return utf8.toString(ba, len);
+        return utf8.toString(ba, off, len);
     }
 
     boolean isUTF8() {

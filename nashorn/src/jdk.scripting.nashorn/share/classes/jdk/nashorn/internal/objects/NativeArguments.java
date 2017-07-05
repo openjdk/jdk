@@ -128,12 +128,6 @@ public final class NativeArguments extends ScriptObject {
     }
 
     @Override
-    public boolean delete(final long key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
-    }
-
-    @Override
     public boolean delete(final double key, final boolean strict) {
         final int index = ArrayIndex.getArrayIndex(key);
         return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
