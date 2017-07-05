@@ -110,9 +110,8 @@ final class CompiledFunction {
              */
             this.invoker = MH.insertArguments(invoker, invoker.type().parameterCount() - 1, UnwarrantedOptimismException.FIRST_PROGRAM_POINT);
             throw new AssertionError("Optimistic (UnwarrantedOptimismException throwing) builtin functions are currently not in use");
-        } else {
-            this.invoker = invoker;
         }
+        this.invoker = invoker;
         this.constructor = constructor;
         this.flags = flags;
         this.callSiteType = callSiteType;
@@ -510,8 +509,8 @@ final class CompiledFunction {
         return ((ArrayType)paramTypes[paramTypes.length - 1]).getElementType();
     }
 
-    boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
-        if (callSiteType.equals(this.callSiteType)) {
+    boolean matchesCallSite(final MethodType other, final boolean pickVarArg) {
+        if (other.equals(this.callSiteType)) {
             return true;
         }
         final MethodType type  = type();
@@ -521,7 +520,7 @@ final class CompiledFunction {
             return pickVarArg;
         }
 
-        final int csParamCount = getParamCount(callSiteType);
+        final int csParamCount = getParamCount(other);
         final boolean csIsVarArg = csParamCount == Integer.MAX_VALUE;
         final int thisThisIndex = needsCallee() ? 1 : 0; // Index of "this" parameter in this function's type
 
@@ -530,7 +529,7 @@ final class CompiledFunction {
         // We must match all incoming parameters, except "this". Starting from 1 to skip "this".
         for(int i = 1; i < minParams; ++i) {
             final Type fnType = Type.typeFor(type.parameterType(i + thisThisIndex));
-            final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(callSiteType.parameterType(i + 1));
+            final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(other.parameterType(i + 1));
             if(!fnType.isEquivalentTo(csType)) {
                 return false;
             }
@@ -752,9 +751,9 @@ final class CompiledFunction {
         return sb.toString();
     }
 
-    private void logRecompile(final String reason, final FunctionNode fn, final MethodType callSiteType, final Map<Integer, Type> ipp) {
+    private void logRecompile(final String reason, final FunctionNode fn, final MethodType type, final Map<Integer, Type> ipp) {
         if (log.isEnabled()) {
-            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", callSiteType, " ", toStringInvalidations(ipp));
+            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", type, " ", toStringInvalidations(ipp));
         }
     }
 
@@ -815,8 +814,6 @@ final class CompiledFunction {
             compiler.persistClassInfo(cacheKey, normalFn);
         }
 
-        FunctionNode fn2 = effectiveOptInfo.reparse();
-        fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Done.");
 
         final boolean canBeDeoptimized = normalFn.canBeDeoptimized();

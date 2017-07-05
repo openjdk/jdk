@@ -29,6 +29,7 @@ default: all
 -include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
+include SetupJavaCompilers.gmk
 
 JDK_CLASSES := $(subst $(SPACE),$(PATH_SEP),$(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
       java.base java.logging java.scripting)))
@@ -63,10 +64,10 @@ ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/
 
 # Build nasgen
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
-    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(NASGEN_SRC) $(ASM_SRC), \
     BIN := $(NASHORN_OUTPUTDIR)/nasgen_classes, \
-    ADD_JAVAC_FLAGS := -cp $(NASHORN_OUTPUTDIR)/nashorn_classes))
+    ADD_JAVAC_FLAGS := -bootclasspath "$(BOOT_RTJAR)$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes"))
 
 # Nasgen needs nashorn classes
 $(BUILD_NASGEN): $(BUILD_NASHORN)

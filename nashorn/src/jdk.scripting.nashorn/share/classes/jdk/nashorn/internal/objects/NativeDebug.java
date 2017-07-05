@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -262,8 +261,8 @@ public final class NativeDebug extends ScriptObject {
 
     /**
      * Set the event queue capacity
-     * @param self
-     * @param newCapacity
+     * @param self an event queue
+     * @param newCapacity new capacity
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static void setEventQueueCapacity(final Object self, final Object newCapacity) {

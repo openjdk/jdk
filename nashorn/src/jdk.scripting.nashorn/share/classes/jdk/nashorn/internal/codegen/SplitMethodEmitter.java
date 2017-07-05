@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
-
 import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -34,7 +32,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BreakableNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.SplitNode;
-import jdk.nashorn.internal.runtime.Scope;
 
 /**
  * Emitter used for splitting methods. Needs to keep track of if there are jump targets
@@ -65,15 +62,13 @@ public class SplitMethodEmitter extends MethodEmitter {
         assert splitNode != null;
         final int index = findExternalTarget(lc, label, targetNode);
         if (index >= 0) {
-            loadCompilerConstant(SCOPE);
-            checkcast(Scope.class);
-            load(index + 1);
-            invoke(Scope.SET_SPLIT_STATE);
-            loadUndefined(Type.OBJECT);
-            _return(functionNode.getReturnType());
-            return;
+            setSplitState(index + 1); // 0 is ordinary return
+            final Type retType = functionNode.getReturnType();
+            loadUndefined(retType);
+            _return(retType);
+        } else {
+            super.splitAwareGoto(lc, label, targetNode);
         }
-        super.splitAwareGoto(lc, label, targetNode);
     }
 
     private int findExternalTarget(final LexicalContext lc, final Label label, final BreakableNode targetNode) {
@@ -94,11 +89,7 @@ public class SplitMethodEmitter extends MethodEmitter {
     @Override
     MethodEmitter registerReturn() {
         setHasReturn();
-        loadCompilerConstant(SCOPE);
-        checkcast(Scope.class);
-        load(0);
-        invoke(Scope.SET_SPLIT_STATE);
-        return this;
+        return setSplitState(0);
     }
 
     final List<Label> getExternalTargets() {
