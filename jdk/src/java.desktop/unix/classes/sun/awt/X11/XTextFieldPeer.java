@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import java.awt.im.InputMethodRequests;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 
 final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
@@ -618,13 +617,15 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         void forwardFocusGained( FocusEvent e) {
             isFocused = true;
-            FocusEvent fe = CausedFocusEvent.retarget(e, this);
+            FocusEvent fe = new FocusEvent(this, e.getID(), e.isTemporary(),
+                    e.getOppositeComponent(), e.getCause());
             super.processFocusEvent(fe);
         }
 
         void forwardFocusLost( FocusEvent e) {
             isFocused = false;
-            FocusEvent fe = CausedFocusEvent.retarget(e, this);
+            FocusEvent fe = new FocusEvent(this, e.getID(), e.isTemporary(),
+                    e.getOppositeComponent(), e.getCause());
             super.processFocusEvent(fe);
 
         }

@@ -179,6 +179,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_UNIXToolkit_load_1gtk_1icon;
         Java_sun_awt_UNIXToolkit_nativeSync;
         Java_sun_awt_UNIXToolkit_gtkCheckVersionImpl;
+        Java_sun_awt_UNIXToolkit_get_1gtk_1version;
         Java_java_awt_AWTEvent_initIDs;
         Java_java_awt_event_InputEvent_initIDs;
         Java_java_awt_event_KeyEvent_initIDs;

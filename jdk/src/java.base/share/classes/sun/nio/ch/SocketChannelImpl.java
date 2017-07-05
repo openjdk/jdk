@@ -33,8 +33,7 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
 import sun.net.NetHooks;
-import sun.net.ExtendedOptionsImpl;
-
+import sun.net.ext.ExtendedSocketOptions;
 
 /**
  * An implementation of SocketChannels
@@ -242,9 +241,9 @@ class SocketChannelImpl
             // additional options required by socket adaptor
             set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
-            if (ExtendedOptionsImpl.flowSupported()) {
-                set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
-            }
+            ExtendedSocketOptions extendedOptions =
+                    ExtendedSocketOptions.getInstance();
+            set.addAll(extendedOptions.options());
             return Collections.unmodifiableSet(set);
         }
     }

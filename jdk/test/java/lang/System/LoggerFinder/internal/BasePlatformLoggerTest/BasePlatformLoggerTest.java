@@ -47,6 +47,7 @@ import java.lang.System.Logger.Level;
 import java.security.AccessControlException;
 import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -327,12 +328,12 @@ public class BasePlatformLoggerTest {
             }
         }
 
-        public Logger getLogger(String name, Class<?> caller);
+        public Logger getLogger(String name, Module caller);
     }
 
     public static class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -433,7 +434,7 @@ public class BasePlatformLoggerTest {
         try {
             allowControl.get().set(true);
             appSink = TestLoggerFinder.LoggerImpl.class.cast(
-                        provider.getLogger("foo", BasePlatformLoggerTest.class));
+                        provider.getLogger("foo", BasePlatformLoggerTest.class.getModule()));
         } finally {
             allowControl.get().set(before);
         }
@@ -442,7 +443,8 @@ public class BasePlatformLoggerTest {
         before = allowControl.get().get();
         try {
             allowControl.get().set(true);
-            sysSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", Thread.class));
+            sysSink = TestLoggerFinder.LoggerImpl.class.cast(
+                        provider.getLogger("foo", Thread.class.getModule()));
         } finally {
             allowControl.get().set(before);
         }

@@ -1402,8 +1402,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             format.setParseIntegerOnly(false);
             format.setDecimalSeparatorAlwaysShown(true);
             NumberFormatter nf = new NumberFormatter(format);
-            nf.setMinimum(new Float(0.0f));
-            nf.setMaximum(new Float(999.0f));
+            nf.setMinimum(Float.valueOf(0.0f));
+            nf.setMaximum(Float.valueOf(999.0f));
             nf.setAllowsInvalid(true);
             nf.setCommitsOnValidEdit(true);
 
@@ -1422,13 +1422,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
             topMargin.addActionListener(this);
             topMargin.getAccessibleContext().setAccessibleName(
                                               getMsg("label.topmargin"));
-            topMargin = new JFormattedTextField(nf);
+
             bottomMargin = new JFormattedTextField(nf);
             bottomMargin.addFocusListener(this);
             bottomMargin.addActionListener(this);
             bottomMargin.getAccessibleContext().setAccessibleName(
                                               getMsg("label.bottommargin"));
-            topMargin = new JFormattedTextField(nf);
+
             c.gridwidth = GridBagConstraints.RELATIVE;
             lblLeft = new JLabel(getMsg("label.leftmargin") + " " + unitsMsg,
                                  JLabel.LEADING);
@@ -1836,10 +1836,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
             rmVal = mediaSize.getX(units) - pax - paw;
             bmVal = mediaSize.getY(units) - pay - pah;
 
-            lmObj = new Float(lmVal);
-            rmObj = new Float(rmVal);
-            tmObj = new Float(tmVal);
-            bmObj = new Float(bmVal);
+            lmObj = lmVal;
+            rmObj = rmVal;
+            tmObj = tmVal;
+            bmObj = bmVal;
 
             /* Now we know the values to use, we need to assign them
              * to the fields appropriate for the orientation.

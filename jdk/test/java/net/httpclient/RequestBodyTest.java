@@ -23,10 +23,11 @@
 
 /**
  * @test @bug 8087112
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext ProxyServer
+ * @library /lib/testlibrary/ /
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build LightWeightHttpServer
+ * @build jdk.testlibrary.SimpleSSLContext ProxyServer
  * @run main/othervm RequestBodyTest
  */
 

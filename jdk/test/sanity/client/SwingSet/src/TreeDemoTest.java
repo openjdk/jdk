@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.tree.TreeDemo;
 import static com.sun.swingset3.demos.tree.TreeDemo.DEMO_TITLE;
 import javax.swing.tree.TreePath;
@@ -29,7 +30,7 @@ import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JTreeOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -42,67 +43,67 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          vertically (as ScrollPane allows it).
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tree.TreeDemo
  * @run testng TreeDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class TreeDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(TreeDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        new ClassReference(TreeDemo.class.getCanonicalName()).startApplication();
 
-            JTreeOperator tree = new JTreeOperator(frame);
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
 
-            assertEquals("Initial number of rows in the tree", 4, tree.getRowCount());
+        JTreeOperator tree = new JTreeOperator(frame);
 
-            int initialTreeHeight = tree.getHeight();
+        assertEquals("Initial number of rows in the tree", 4, tree.getRowCount());
 
-            // expand all nodes
-            int expandsCount = 0;
-            for (int i = 0; i < tree.getRowCount(); i++) {
-                TreePath tp = tree.getPathForRow(i);
-                if (tree.getChildCount(tp) > 0 && !tree.isExpanded(tp)) {
-                    tree.expandRow(i);
-                    expandsCount++;
-                }
+        int initialTreeHeight = tree.getHeight();
+
+        // expand all nodes
+        int expandsCount = 0;
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            TreePath tp = tree.getPathForRow(i);
+            if (tree.getChildCount(tp) > 0 && !tree.isExpanded(tp)) {
+                tree.expandRow(i);
+                expandsCount++;
             }
+        }
 
-            assertEquals("Number of rows expanded", 75, expandsCount);
-            assertEquals("Number of rows in the tree after expanding all of them",
-                    616, tree.getRowCount());
+        assertEquals("Number of rows expanded", 75, expandsCount);
+        assertEquals("Number of rows in the tree after expanding all of them",
+                616, tree.getRowCount());
 
-            int expandedTreeHeight = tree.getHeight();
-            assertTrue("Expanded tree height has increased, current "
-                    + expandedTreeHeight + " > initial " + initialTreeHeight,
-                    expandedTreeHeight > initialTreeHeight);
+        int expandedTreeHeight = tree.getHeight();
+        assertTrue("Expanded tree height has increased, current "
+                + expandedTreeHeight + " > initial " + initialTreeHeight,
+                expandedTreeHeight > initialTreeHeight);
 
-            // collapse all nodes
-            int collapsesCount = 0;
-            for (int i = tree.getRowCount() - 1; i >= 0; i--) {
-                TreePath tp = tree.getPathForRow(i);
-                if (tree.getChildCount(tp) > 0 && tree.isExpanded(tp)) {
-                    tree.collapseRow(i);
-                    collapsesCount++;
-                }
+        // collapse all nodes
+        int collapsesCount = 0;
+        for (int i = tree.getRowCount() - 1; i >= 0; i--) {
+            TreePath tp = tree.getPathForRow(i);
+            if (tree.getChildCount(tp) > 0 && tree.isExpanded(tp)) {
+                tree.collapseRow(i);
+                collapsesCount++;
             }
+        }
 
-            assertEquals("Number of rows collapsed", 76, collapsesCount);
-            assertEquals("Number of rows in the tree after collapsing all of them",
-                    1, tree.getRowCount());
+        assertEquals("Number of rows collapsed", 76, collapsesCount);
+        assertEquals("Number of rows in the tree after collapsing all of them",
+                1, tree.getRowCount());
 
-            int collapsedTreeHeight = tree.getHeight();
-            assertTrue("Collpased tree height is not longer than initial, "
-                    + "current " + collapsedTreeHeight + " <= initial "
-                    + initialTreeHeight,
-                    collapsedTreeHeight <= initialTreeHeight);
+        int collapsedTreeHeight = tree.getHeight();
+        assertTrue("Collpased tree height is not longer than initial, "
+                + "current " + collapsedTreeHeight + " <= initial "
+                + initialTreeHeight,
+                collapsedTreeHeight <= initialTreeHeight);
 
-        });
     }
 
 }

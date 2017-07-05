@@ -27,9 +27,7 @@ package java.net;
 import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Collections;
-import jdk.net.*;
-import static sun.net.ExtendedOptionsImpl.*;
+import sun.net.ext.ExtendedSocketOptions;
 
 /*
  * On Unix systems we simply delegate to native methods.
@@ -43,8 +41,11 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         init();
     }
 
+    static final ExtendedSocketOptions extendedOptions =
+            ExtendedSocketOptions.getInstance();
+
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
+        if (!extendedOptions.isOptionSupported(name)) {
             if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
                 super.setOption(name, value);
             } else {
@@ -55,21 +56,16 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
                }
             }
         } else {
-            if (!flowSupported()) {
-                throw new UnsupportedOperationException("unsupported option");
-            }
             if (isClosed()) {
                 throw new SocketException("Socket closed");
             }
-            checkSetOptionPermission(name);
-            checkValueType(value, SocketFlow.class);
-            setFlowOption(getFileDescriptor(), (SocketFlow)value);
+            extendedOptions.setOption(fd, name, value);
         }
     }
 
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
+        if (!extendedOptions.isOptionSupported(name)) {
             if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
                 return super.getOption(name);
             } else {
@@ -79,31 +75,23 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
                     throw new UnsupportedOperationException("unsupported option");
                 }
             }
+        } else {
+            if (isClosed()) {
+                throw new SocketException("Socket closed");
+            }
+            return (T) extendedOptions.getOption(fd, name);
         }
-        if (!flowSupported()) {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-        if (isClosed()) {
-            throw new SocketException("Socket closed");
-        }
-        checkGetOptionPermission(name);
-        SocketFlow flow = SocketFlow.create();
-        getFlowOption(getFileDescriptor(), flow);
-        return (T)flow;
     }
 
     protected Set<SocketOption<?>> supportedOptions() {
-        HashSet<SocketOption<?>> options = new HashSet<>(
-            super.supportedOptions());
-
-        if (flowSupported()) {
-            options.add(ExtendedSocketOptions.SO_FLOW_SLA);
-        }
+        HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
+        options.addAll(extendedOptions.options());
         return options;
     }
 
     protected void socketSetOption(int opt, Object val) throws SocketException {
-        if (opt == SocketOptions.SO_REUSEPORT && !supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {
+        if (opt == SocketOptions.SO_REUSEPORT &&
+            !supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {
             throw new UnsupportedOperationException("unsupported option");
         }
         try {

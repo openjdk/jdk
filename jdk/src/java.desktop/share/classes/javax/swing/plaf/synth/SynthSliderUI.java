@@ -116,17 +116,14 @@ public class SynthSliderUI extends BasicSliderUI
     protected void uninstallDefaults(JSlider slider) {
         SynthContext context = getContext(slider, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         context = getContext(slider, Region.SLIDER_TRACK, ENABLED);
         sliderTrackStyle.uninstallDefaults(context);
-        context.dispose();
         sliderTrackStyle = null;
 
         context = getContext(slider, Region.SLIDER_THUMB, ENABLED);
         sliderThumbStyle.uninstallDefaults(context);
-        context.dispose();
         sliderThumbStyle = null;
     }
 
@@ -190,17 +187,14 @@ public class SynthSliderUI extends BasicSliderUI
                 installKeyboardActions(c);
             }
         }
-        context.dispose();
 
         context = getContext(c, Region.SLIDER_TRACK, ENABLED);
         sliderTrackStyle =
             SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
 
         context = getContext(c, Region.SLIDER_THUMB, ENABLED);
         sliderThumbStyle =
             SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -252,14 +246,12 @@ public class SynthSliderUI extends BasicSliderUI
             SynthContext trackContext = getContext(slider,
                                                    Region.SLIDER_TRACK);
             style.getInsets(trackContext, trackInsets);
-            trackContext.dispose();
             if (slider.getOrientation() == JSlider.HORIZONTAL) {
                 int valueHeight = 0;
                 if (paintValue) {
                     SynthContext context = getContext(slider);
                     valueHeight = context.getStyle().getGraphicsUtils(context).
                             getMaximumCharHeight(context);
-                    context.dispose();
                 }
                 int tickHeight = 0;
                 if (slider.getPaintTicks()) {
@@ -287,7 +279,6 @@ public class SynthSliderUI extends BasicSliderUI
                         SynthContext context = getContext(slider);
                         valueHeight = context.getStyle().getGraphicsUtils(
                                 context).getMaximumCharHeight(context);
-                        context.dispose();
                     }
                     int contentHeight = height - insetCache.top -
                             insetCache.bottom;
@@ -359,7 +350,6 @@ public class SynthSliderUI extends BasicSliderUI
         Insets trackInsets = new Insets(0, 0, 0, 0);
         SynthContext trackContext = getContext(slider, Region.SLIDER_TRACK);
         style.getInsets(trackContext, trackInsets);
-        trackContext.dispose();
 
         if (slider.getOrientation() == JSlider.HORIZONTAL) {
             // Calculate the height of all the subcomponents so we can center
@@ -509,7 +499,6 @@ public class SynthSliderUI extends BasicSliderUI
                 trackRect.x = startX + tickRect.width + trackInsets.left;
             }
         }
-        context.dispose();
         lastSize = slider.getSize();
     }
 
@@ -715,7 +704,6 @@ public class SynthSliderUI extends BasicSliderUI
             insetCache = newInsets;
             calculateGeometry();
         }
-        context.dispose();
     }
 
     /**
@@ -774,7 +762,6 @@ public class SynthSliderUI extends BasicSliderUI
                           g, 0, 0, c.getWidth(), c.getHeight(),
                           slider.getOrientation());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -790,7 +777,6 @@ public class SynthSliderUI extends BasicSliderUI
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -835,13 +821,11 @@ public class SynthSliderUI extends BasicSliderUI
         if (slider.getPaintTrack() && clip.intersects(trackRect)) {
             SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
             paintTrack(subcontext, g, trackRect);
-            subcontext.dispose();
         }
 
         if (clip.intersects(thumbRect)) {
             SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
             paintThumb(subcontext, g, thumbRect);
-            subcontext.dispose();
         }
 
         if (slider.getPaintTicks() && clip.intersects(tickRect)) {

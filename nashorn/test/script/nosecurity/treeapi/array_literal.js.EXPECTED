@@ -74,7 +74,7 @@
         "properties": [
           {
             "getter": "null",
-            "endPosition": "74",
+            "endPosition": "76",
             "kind": "PROPERTY",
             "setter": "null",
             "value": {

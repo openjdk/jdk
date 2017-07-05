@@ -58,7 +58,7 @@ class AquaComboBoxPopup extends BasicComboPopup {
         updateContents(false);
 
         // TODO: CPlatformWindow?
-        putClientProperty(CPlatformWindow.WINDOW_FADE_OUT, new Integer(150));
+        putClientProperty(CPlatformWindow.WINDOW_FADE_OUT, Integer.valueOf(150));
     }
 
     public void updateContents(final boolean remove) {

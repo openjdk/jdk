@@ -147,11 +147,9 @@ public class SynthTreeUI extends BasicTreeUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
 
         context = getContext(tree, Region.TREE_CELL, ENABLED);
         cellStyle = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -223,12 +221,10 @@ public class SynthTreeUI extends BasicTreeUI
         SynthContext context = getContext(tree, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         context = getContext(tree, Region.TREE_CELL, ENABLED);
         cellStyle.uninstallDefaults(context);
-        context.dispose();
         cellStyle = null;
 
 
@@ -266,7 +262,6 @@ public class SynthTreeUI extends BasicTreeUI
         context.getPainter().paintTreeBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -292,7 +287,6 @@ public class SynthTreeUI extends BasicTreeUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -425,7 +419,6 @@ public class SynthTreeUI extends BasicTreeUI
                 row++;
             }
         }
-        cellContext.dispose();
 
         paintDropLine(g);
 
@@ -743,7 +736,6 @@ public class SynthTreeUI extends BasicTreeUI
                     context.getPainter().paintTreeCellFocus(context, g,
                             0, 0, getWidth() - imageOffset, getHeight());
                 }
-                context.dispose();
             }
             SynthLookAndFeel.resetSelectedUI();
         }
@@ -785,7 +777,6 @@ public class SynthTreeUI extends BasicTreeUI
             if (context == null) {
                 context = getContext(tree);
                 SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
-                context.dispose();
             }
             else {
                 SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
@@ -797,7 +788,6 @@ public class SynthTreeUI extends BasicTreeUI
             if (context == null) {
                 context = getContext(tree);
                 width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
-                context.dispose();
             }
             else {
                 width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
@@ -810,7 +800,6 @@ public class SynthTreeUI extends BasicTreeUI
             if (context == null) {
                 context = getContext(tree);
                 height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
-                context.dispose();
             }
             else {
                 height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);

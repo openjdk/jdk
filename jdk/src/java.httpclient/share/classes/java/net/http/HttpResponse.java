@@ -200,8 +200,12 @@ public abstract class HttpResponse {
                 if (n == -1) {
                     throw new IOException("Bad Content-Disposition type");
                 }
-                String disposition = dispoHeader.substring(n + 9,
-                                                           dispoHeader.lastIndexOf(';'));
+                int lastsemi = dispoHeader.lastIndexOf(';');
+                String disposition;
+                if (lastsemi < n)
+                    disposition = dispoHeader.substring(n + 9);
+                else
+                    disposition = dispoHeader.substring(n + 9, lastsemi);
                 file = Paths.get(directory.toString(), disposition);
                 fc = FileChannel.open(file, openOptions);
                 return null;
@@ -727,11 +731,14 @@ public abstract class HttpResponse {
             }
 
             private CompletableFuture<Path> getBody(HttpRequest req,
-                                                    CompletableFuture<HttpResponse> cf) {
+                                                    CompletableFuture<? extends HttpResponse> cf) {
                 URI u = req.uri();
                 String path = u.getPath();
+                if (path.startsWith("/"))
+                    path = path.substring(1);
+                final String fpath = path;
                 return cf.thenCompose((HttpResponse resp) -> {
-                    return resp.bodyAsync(HttpResponse.asFile(destination.resolve(path)));
+                    return resp.bodyAsync(HttpResponse.asFile(destination.resolve(fpath)));
                 });
             }
 

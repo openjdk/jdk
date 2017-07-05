@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,13 @@ public final class AccessNode extends BaseNode {
      * @param property  property
      */
     public AccessNode(final long token, final int finish, final Expression base, final String property) {
-        super(token, finish, base, false);
+        super(token, finish, base, false, false);
         this.property = property;
     }
 
-    private AccessNode(final AccessNode accessNode, final Expression base, final String property, final boolean isFunction, final Type type, final int id) {
-        super(accessNode, base, isFunction, type, id);
+    private AccessNode(final AccessNode accessNode, final Expression base, final String property, final boolean isFunction,
+                       final Type type, final int id, final boolean isSuper) {
+        super(accessNode, base, isFunction, type, id, isSuper);
         this.property = property;
     }
 
@@ -105,7 +106,7 @@ public final class AccessNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), type, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint, isSuper());
     }
 
     @Override
@@ -113,7 +114,7 @@ public final class AccessNode extends BaseNode {
         if (this.type == type) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), type, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint, isSuper());
     }
 
     @Override
@@ -121,7 +122,7 @@ public final class AccessNode extends BaseNode {
         if (this.programPoint == programPoint) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), type, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint, isSuper());
     }
 
     @Override
@@ -129,6 +130,14 @@ public final class AccessNode extends BaseNode {
         if (isFunction()) {
             return this;
         }
-        return new AccessNode(this, base, property, true, type, programPoint);
+        return new AccessNode(this, base, property, true, type, programPoint, isSuper());
+    }
+
+    @Override
+    public AccessNode setIsSuper() {
+        if (isSuper()) {
+            return this;
+        }
+        return new AccessNode(this, base, property, isFunction(), type, programPoint, true);
     }
 }

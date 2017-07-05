@@ -44,6 +44,7 @@ import java.util.logging.LogRecord;
 import java.lang.System.LoggerFinder;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.internal.LoggingProviderImpl;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -244,9 +245,9 @@ public class DefaultPlatformLoggerTest {
         LoggerFinder provider = LoggerFinder.getLoggerFinder();
         java.util.logging.Logger appSink = LoggingProviderImpl.getLogManagerAccess()
                 .demandLoggerFor(LogManager.getLogManager(), "foo",
-                        DefaultPlatformLoggerTest.class);
+                        DefaultPlatformLoggerTest.class.getModule());
         java.util.logging.Logger sysSink = LoggingProviderImpl.getLogManagerAccess()
-                .demandLoggerFor(LogManager.getLogManager(),"foo", Thread.class);
+                .demandLoggerFor(LogManager.getLogManager(),"foo", Thread.class.getModule());
         appSink.addHandler(new MyHandler());
         sysSink.addHandler(new MyHandler());
         appSink.setUseParentHandlers(VERBOSE);
