@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,28 +31,57 @@ package java.lang;
  * <p>
  * Applications can subclass this class to indicate similar exceptions.
  *
- * @author  Frank Yellin
- * @since   1.0
+ * @author Frank Yellin
+ * @since 1.0
  */
-public
-class IndexOutOfBoundsException extends RuntimeException {
+public class IndexOutOfBoundsException extends RuntimeException {
     private static final long serialVersionUID = 234122996006267687L;
 
     /**
-     * Constructs an <code>IndexOutOfBoundsException</code> with no
-     * detail message.
+     * Constructs an {@code IndexOutOfBoundsException} with no detail message.
      */
     public IndexOutOfBoundsException() {
         super();
     }
 
     /**
-     * Constructs an <code>IndexOutOfBoundsException</code> with the
-     * specified detail message.
+     * Constructs an {@code IndexOutOfBoundsException} with the specified detail
+     * message.
      *
-     * @param   s   the detail message.
+     * @param s the detail message
      */
     public IndexOutOfBoundsException(String s) {
         super(s);
     }
+
+    /**
+     * Constructs a new {@code IndexOutOfBoundsException} class with an
+     * argument indicating the illegal index.
+     *
+     * <p>The index is included in this exception's detail message.  The
+     * exact presentation format of the detail message is unspecified.
+     *
+     * @param index the illegal index.
+     * @since 9
+     */
+    public IndexOutOfBoundsException(int index) {
+        super("Index out of range: " + index);
+    }
+
+    /**
+     * Constructs an {@code IndexOutOfBoundsException} with arguments indicating
+     * two out of bound values.
+     *
+     * <p>The out of bound values are included in this exception's detail
+     * message.  The exact presentation format of the detail message is
+     * unspecified.
+     *
+     * @param a the first out of bound value
+     * @param b the second out of bound value
+     * @since 9
+     */
+    public IndexOutOfBoundsException(int a, int b) {
+        super("Indexed access out of bounds: " + a + ", " + b);
+    }
+
 }

@@ -50,9 +50,9 @@ public class PermissionCollectionStreamTest extends OpTestCase {
                 {
                         "FilePermission",
                         new Permission[]{
-                                new FilePermission("/home/foobar", "read"),
-                                new FilePermission("/home/foo", "write"),
-                                new FilePermission("/home/foobar", "read,write"),
+                                new FilePermission("/tmp/foobar", "read"),
+                                new FilePermission("/tmp/foo", "write"),
+                                new FilePermission("/tmp/foobar", "read,write"),
                         }
                 },
         };

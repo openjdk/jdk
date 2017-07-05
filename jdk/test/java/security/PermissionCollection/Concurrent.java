@@ -166,9 +166,9 @@ public class Concurrent {
         new AllPermission(), new AllPermission()};
 
     private static final Permission[] filep = new Permission[]{
-        new FilePermission("/home/foobar", "read"),
-        new FilePermission("/home/foo", "write"),
-        new FilePermission("/home/foobar", "read,write"),
+        new FilePermission("/tmp/foobar", "read"),
+        new FilePermission("/tmp/foo", "write"),
+        new FilePermission("/tmp/foobar", "read,write"),
             };
 
     private static final Permission[] sockp = new Permission[]{

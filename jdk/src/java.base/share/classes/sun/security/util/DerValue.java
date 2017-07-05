@@ -28,7 +28,6 @@ package sun.security.util;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Date;
-import sun.misc.IOUtils;
 
 /**
  * Represents a single DER-encoded value.  DER encoding rules are a subset
