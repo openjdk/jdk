@@ -56,7 +56,7 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   int i;
   for( i=0; i < limit; i++ ) {
     if( def->is_Proj() && def->in(0)->is_Start() &&
-        _matcher.is_save_on_entry(lrgs(n2lidx(def)).reg()) )
+        _matcher.is_save_on_entry(lrgs(_lrg_map.live_range_id(def)).reg()))
       return true;              // Direct use of callee-save proj
     if( def->is_Copy() )        // Copies carry value through
       def = def->in(def->is_Copy());
@@ -83,7 +83,7 @@ int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_
   // Count 1 if deleting an instruction from the current block
   if( oldb == current_block ) blk_adjust++;
   _cfg._bbs.map(old->_idx,NULL);
-  OptoReg::Name old_reg = lrgs(n2lidx(old)).reg();
+  OptoReg::Name old_reg = lrgs(_lrg_map.live_range_id(old)).reg();
   if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
     value->map(old_reg,NULL);  // Yank from value/regnd maps
     regnd->map(old_reg,NULL);  // This register's value is now unknown
@@ -164,7 +164,7 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   // Not every pair of physical registers are assignment compatible,
   // e.g. on sparc floating point registers are not assignable to integer
   // registers.
-  const LRG &def_lrg = lrgs(n2lidx(def));
+  const LRG &def_lrg = lrgs(_lrg_map.live_range_id(def));
   OptoReg::Name def_reg = def_lrg.reg();
   const RegMask &use_mask = n->in_RegMask(idx);
   bool can_use = ( RegMask::can_represent(def_reg) ? (use_mask.Member(def_reg) != 0)
@@ -209,11 +209,12 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
 // Skip through any number of copies (that don't mod oop-i-ness)
 Node *PhaseChaitin::skip_copies( Node *c ) {
   int idx = c->is_Copy();
-  uint is_oop = lrgs(n2lidx(c))._is_oop;
+  uint is_oop = lrgs(_lrg_map.live_range_id(c))._is_oop;
   while (idx != 0) {
     guarantee(c->in(idx) != NULL, "must not resurrect dead copy");
-    if (lrgs(n2lidx(c->in(idx)))._is_oop != is_oop)
+    if (lrgs(_lrg_map.live_range_id(c->in(idx)))._is_oop != is_oop) {
       break;  // casting copy, not the same value
+    }
     c = c->in(idx);
     idx = c->is_Copy();
   }
@@ -225,8 +226,8 @@ Node *PhaseChaitin::skip_copies( Node *c ) {
 int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs ) {
   int blk_adjust = 0;
 
-  uint nk_idx = n2lidx(n->in(k));
-  OptoReg::Name nk_reg = lrgs(nk_idx ).reg();
+  uint nk_idx = _lrg_map.live_range_id(n->in(k));
+  OptoReg::Name nk_reg = lrgs(nk_idx).reg();
 
   // Remove obvious same-register copies
   Node *x = n->in(k);
@@ -234,9 +235,13 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
   while( (idx=x->is_Copy()) != 0 ) {
     Node *copy = x->in(idx);
     guarantee(copy != NULL, "must not resurrect dead copy");
-    if( lrgs(n2lidx(copy)).reg() != nk_reg ) break;
+    if(lrgs(_lrg_map.live_range_id(copy)).reg() != nk_reg) {
+      break;
+    }
     blk_adjust += use_prior_register(n,k,copy,current_block,value,regnd);
-    if( n->in(k) != copy ) break; // Failed for some cutout?
+    if (n->in(k) != copy) {
+      break; // Failed for some cutout?
+    }
     x = copy;                   // Progress, try again
   }
 
@@ -256,7 +261,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
 
   if (val == x && nk_idx != 0 &&
       regnd[nk_reg] != NULL && regnd[nk_reg] != x &&
-      n2lidx(x) == n2lidx(regnd[nk_reg])) {
+      _lrg_map.live_range_id(x) == _lrg_map.live_range_id(regnd[nk_reg])) {
     // When rematerialzing nodes and stretching lifetimes, the
     // allocator will reuse the original def for multidef LRG instead
     // of the current reaching def because it can't know it's safe to
@@ -270,7 +275,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
   if (val == x) return blk_adjust; // No progress?
 
   int n_regs = RegMask::num_registers(val->ideal_reg());
-  uint val_idx = n2lidx(val);
+  uint val_idx = _lrg_map.live_range_id(val);
   OptoReg::Name val_reg = lrgs(val_idx).reg();
 
   // See if it happens to already be in the correct register!
@@ -499,12 +504,12 @@ void PhaseChaitin::post_allocate_copy_removal() {
     for( j = 1; j < phi_dex; j++ ) {
       uint k;
       Node *phi = b->_nodes[j];
-      uint pidx = n2lidx(phi);
-      OptoReg::Name preg = lrgs(n2lidx(phi)).reg();
+      uint pidx = _lrg_map.live_range_id(phi);
+      OptoReg::Name preg = lrgs(_lrg_map.live_range_id(phi)).reg();
 
       // Remove copies remaining on edges.  Check for junk phi.
       Node *u = NULL;
-      for( k=1; k<phi->req(); k++ ) {
+      for (k = 1; k < phi->req(); k++) {
         Node *x = phi->in(k);
         if( phi != x && u != x ) // Found a different input
           u = u ? NodeSentinel : x; // Capture unique input, or NodeSentinel for 2nd input
@@ -555,10 +560,10 @@ void PhaseChaitin::post_allocate_copy_removal() {
       // alive and well at the use (or else the allocator fubar'd).  Take
       // advantage of this info to set a reaching def for the use-reg.
       uint k;
-      for( k = 1; k < n->req(); k++ ) {
+      for (k = 1; k < n->req(); k++) {
         Node *def = n->in(k);   // n->in(k) is a USE; def is the DEF for this USE
         guarantee(def != NULL, "no disconnected nodes at this point");
-        uint useidx = n2lidx(def); // useidx is the live range index for this USE
+        uint useidx = _lrg_map.live_range_id(def); // useidx is the live range index for this USE
 
         if( useidx ) {
           OptoReg::Name ureg = lrgs(useidx).reg();
@@ -566,7 +571,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
             int idx;            // Skip occasional useless copy
             while( (idx=def->is_Copy()) != 0 &&
                    def->in(idx) != NULL &&  // NULL should not happen
-                   ureg == lrgs(n2lidx(def->in(idx))).reg() )
+                   ureg == lrgs(_lrg_map.live_range_id(def->in(idx))).reg())
               def = def->in(idx);
             Node *valdef = skip_copies(def); // tighten up val through non-useless copies
             value.map(ureg,valdef); // record improved reaching-def info
@@ -594,8 +599,10 @@ void PhaseChaitin::post_allocate_copy_removal() {
         j -= elide_copy( n, k, b, value, regnd, two_adr!=k );
 
       // Unallocated Nodes define no registers
-      uint lidx = n2lidx(n);
-      if( !lidx ) continue;
+      uint lidx = _lrg_map.live_range_id(n);
+      if (!lidx) {
+        continue;
+      }
 
       // Update the register defined by this instruction
       OptoReg::Name nreg = lrgs(lidx).reg();

@@ -31,11 +31,7 @@ COMMONSRC=$(WorkSpace)\src
 ALTSRC=$(WorkSpace)\src\closed
 
 !ifdef RELEASE
-!ifdef DEVELOP
-CXX_FLAGS=$(CXX_FLAGS) /D "DEBUG"
-!else
 CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT"
-!endif
 !else
 CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
 !endif
@@ -186,7 +182,7 @@ VM_PATH={$(VM_PATH)}
 
 # Special case files not using precompiled header files.
 
-c1_RInfo_$(Platform_arch).obj: $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp 
+c1_RInfo_$(Platform_arch).obj: $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
 	 $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
 
 os_windows.obj: $(WorkSpace)\src\os\windows\vm\os_windows.cpp
