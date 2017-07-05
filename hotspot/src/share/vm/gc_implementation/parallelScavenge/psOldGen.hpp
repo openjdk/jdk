@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,6 @@ class PSOldGen : public CHeapObj {
   virtual void precompact();
   void adjust_pointers();
   void compact();
-
-  // Parallel old
-  virtual void move_and_update(ParCompactionManager* cm);
 
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }

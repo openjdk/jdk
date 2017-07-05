@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,10 +174,6 @@ void PSOldGen::adjust_pointers() {
 
 void PSOldGen::compact() {
   object_mark_sweep()->compact(ZapUnusedHeapArea);
-}
-
-void PSOldGen::move_and_update(ParCompactionManager* cm) {
-  PSParallelCompact::move_and_update(cm, PSParallelCompact::old_space_id);
 }
 
 size_t PSOldGen::contiguous_available() const {

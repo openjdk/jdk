@@ -75,7 +75,15 @@ class klassVtable : public ResourceObj {
 
   void initialize_vtable(bool checkconstraints, TRAPS);   // initialize vtable of a new klass
 
-  // conputes vtable length (in words) and the number of miranda methods
+  // CDS/RedefineClasses support - clear vtables so they can be reinitialized
+  // at dump time.  Clearing gives us an easy way to tell if the vtable has
+  // already been reinitialized at dump time (see dump.cpp).  Vtables can
+  // be initialized at run time by RedefineClasses so dumping the right order
+  // is necessary.
+  void clear_vtable();
+  bool is_initialized();
+
+  // computes vtable length (in words) and the number of miranda methods
   static void compute_vtable_size_and_num_mirandas(int &vtable_length, int &num_miranda_methods,
                                                    klassOop super, objArrayOop methods,
                                                    AccessFlags class_flags, Handle classloader,

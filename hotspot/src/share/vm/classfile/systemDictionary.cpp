@@ -1255,6 +1255,16 @@ instanceKlassHandle SystemDictionary::load_shared_class(
         methodHandle m(THREAD, methodOop(methods->obj_at(index2)));
         m()->link_method(m, CHECK_(nh));
       }
+      if (JvmtiExport::has_redefined_a_class()) {
+        // Reinitialize vtable because RedefineClasses may have changed some
+        // entries in this vtable for super classes so the CDS vtable might
+        // point to old or obsolete entries.  RedefineClasses doesn't fix up
+        // vtables in the shared system dictionary, only the main one.
+        // It also redefines the itable too so fix that too.
+        ResourceMark rm(THREAD);
+        ik->vtable()->initialize_vtable(false, CHECK_(nh));
+        ik->itable()->initialize_itable(false, CHECK_(nh));
+      }
     }
 
     if (TraceClassLoading) {
