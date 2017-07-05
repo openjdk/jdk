@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ void VM_Version::initialize() {
 #ifdef COMPILER2
   // T4 and newer Sparc cpus have fast RDPC.
   if (has_fast_rdpc() && FLAG_IS_DEFAULT(UseRDPCForConstantTableBase)) {
-//    FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
+    FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
   }
 
   // Currently not supported anywhere.

@@ -1518,9 +1518,16 @@ public final class KeyTool {
         keypair.generate(keysize);
         PrivateKey privKey = keypair.getPrivateKey();
 
+        CertificateExtensions ext = createV3Extensions(
+                null,
+                null,
+                v3ext,
+                keypair.getPublicKeyAnyway(),
+                null);
+
         X509Certificate[] chain = new X509Certificate[1];
         chain[0] = keypair.getSelfCertificate(
-                x500Name, getStartDate(startDate), validity*24L*60L*60L);
+                x500Name, getStartDate(startDate), validity*24L*60L*60L, ext);
 
         if (verbose) {
             MessageFormat form = new MessageFormat(rb.getString
@@ -1537,9 +1544,6 @@ public final class KeyTool {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
         keyStore.setKeyEntry(alias, privKey, keyPass, chain);
-
-        // resign so that -ext are applied.
-        doSelfCert(alias, null, sigAlgName);
     }
 
     /**

@@ -1447,7 +1447,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
 
+    case deoptimize_id:
+      {
+        StubFrame f(sasm, "deoptimize", dont_gc_arguments);
+        const int num_rt_args = 1;  // thread
+        OopMap* oop_map = save_live_registers(sasm, num_rt_args);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize));
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, oop_map);
+        restore_live_registers(sasm);
+        DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
+        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        __ leave();
+        __ jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
       }
       break;
 

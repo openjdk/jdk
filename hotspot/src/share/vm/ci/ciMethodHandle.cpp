@@ -86,12 +86,12 @@ ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) {
 }
 
 
-#ifndef PRODUCT
+#ifdef ASSERT
 // ------------------------------------------------------------------
 // ciMethodHandle::print_chain_impl
 //
 // Implementation of the print method.
-void ciMethodHandle::print_chain_impl(outputStream* st) {
+void ciMethodHandle::print_chain_impl() {
   ASSERT_IN_VM;
   MethodHandleChain::print(get_oop());
 }
@@ -101,7 +101,7 @@ void ciMethodHandle::print_chain_impl(outputStream* st) {
 // ciMethodHandle::print_chain
 //
 // Implementation of the print_chain method.
-void ciMethodHandle::print_chain(outputStream* st) {
-  GUARDED_VM_ENTRY(print_chain_impl(st););
+void ciMethodHandle::print_chain() {
+  GUARDED_VM_ENTRY(print_chain_impl(););
 }
 #endif

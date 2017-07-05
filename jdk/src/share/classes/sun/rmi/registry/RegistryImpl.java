@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.io.FilePermission;
 import java.io.IOException;
 import java.net.*;
 import java.rmi.*;
@@ -54,7 +55,6 @@ import sun.rmi.server.UnicastServerRef2;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.ObjectTable;
 import sun.rmi.transport.Target;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A "registry" exists on every node that allows RMI connections to
@@ -335,19 +335,6 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             URL[] urls = sun.misc.URLClassPath.pathToURLs(envcp);
             ClassLoader cl = new URLClassLoader(urls);
 
-            String codebaseProperty = null;
-            String prop = java.security.AccessController.doPrivileged(
-                new GetPropertyAction("java.rmi.server.codebase"));
-            if (prop != null && prop.trim().length() > 0) {
-                codebaseProperty = prop;
-            }
-            URL[] codebaseURLs = null;
-            if (codebaseProperty != null) {
-                codebaseURLs = sun.misc.URLClassPath.pathToURLs(codebaseProperty);
-            } else {
-                codebaseURLs = new URL[0];
-            }
-
             /*
              * Fix bugid 4242317: Classes defined by this class loader should
              * be annotated with the value of the "java.rmi.server.codebase"
@@ -365,7 +352,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                         public RegistryImpl run() throws RemoteException {
                             return new RegistryImpl(regPort);
                         }
-                    }, getAccessControlContext(codebaseURLs));
+                    }, getAccessControlContext());
             } catch (PrivilegedActionException ex) {
                 throw (RemoteException) ex.getException();
             }
@@ -391,11 +378,11 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     }
 
     /**
-     * Generates an AccessControlContext from several URLs.
+     * Generates an AccessControlContext with minimal permissions.
      * The approach used here is taken from the similar method
      * getAccessControlContext() in the sun.applet.AppletPanel class.
      */
-    private static AccessControlContext getAccessControlContext(URL[] urls) {
+    private static AccessControlContext getAccessControlContext() {
         // begin with permissions granted to all code in current policy
         PermissionCollection perms = AccessController.doPrivileged(
             new java.security.PrivilegedAction<PermissionCollection>() {
@@ -420,17 +407,15 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
 
         perms.add(new RuntimePermission("accessClassInPackage.sun.*"));
 
-        // add permissions required to load from codebase URL path
-        LoaderHandler.addPermissionsForURLs(urls, perms, false);
+        perms.add(new FilePermission("<<ALL FILES>>", "read"));
 
         /*
          * Create an AccessControlContext that consists of a single
          * protection domain with only the permissions calculated above.
          */
         ProtectionDomain pd = new ProtectionDomain(
-            new CodeSource((urls.length > 0 ? urls[0] : null),
-                (java.security.cert.Certificate[]) null),
-            perms);
+            new CodeSource(null,
+                (java.security.cert.Certificate[]) null), perms);
         return new AccessControlContext(new ProtectionDomain[] { pd });
     }
 }

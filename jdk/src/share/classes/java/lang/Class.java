@@ -3008,7 +3008,7 @@ public final
 
     /**
      * Casts this {@code Class} object to represent a subclass of the class
-     * represented by the specified class object.  Checks that that the cast
+     * represented by the specified class object.  Checks that the cast
      * is valid, and throws a {@code ClassCastException} if it is not.  If
      * this method succeeds, it always returns a reference to this class object.
      *

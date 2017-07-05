@@ -71,7 +71,7 @@ public class AssertionError extends Error {
      * @see   Throwable#getCause()
      */
     public AssertionError(Object detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
         if (detailMessage instanceof Throwable)
             initCause((Throwable) detailMessage);
     }
@@ -85,7 +85,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(boolean detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
@@ -97,7 +97,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(char detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
@@ -109,7 +109,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(int detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
@@ -121,7 +121,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(long detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
@@ -133,7 +133,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(float detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
@@ -145,7 +145,7 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      */
     public AssertionError(double detailMessage) {
-        this("" +  detailMessage);
+        this(String.valueOf(detailMessage));
     }
 
     /**
