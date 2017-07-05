@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,11 +129,11 @@ struct WildcardIterator_
     HANDLE handle;
     char *firstFile; /* Stupid FindFirstFile...FindNextFile */
 };
-
+// since this is used repeatedly we keep it here.
+static WIN32_FIND_DATA find_data;
 static WildcardIterator
 WildcardIterator_for(const char *wildcard)
 {
-    WIN32_FIND_DATA find_data;
     WildcardIterator it = NEW_(WildcardIterator);
     HANDLE handle = FindFirstFile(wildcard, &find_data);
     if (handle == INVALID_HANDLE_VALUE)
@@ -146,7 +146,6 @@ WildcardIterator_for(const char *wildcard)
 static char *
 WildcardIterator_next(WildcardIterator it)
 {
-    WIN32_FIND_DATA find_data;
     if (it->firstFile != NULL) {
         char *firstFile = it->firstFile;
         it->firstFile = NULL;
@@ -412,7 +411,7 @@ JLI_WildcardExpandClasspath(const char *classpath)
     FileList_expandWildcards(fl);
     expanded = FileList_join(fl, PATH_SEPARATOR);
     FileList_free(fl);
-    if (getenv("_JAVA_LAUNCHER_DEBUG") != 0)
+    if (getenv(JLDEBUG_ENV_ENTRY) != 0)
         printf("Expanded wildcards:\n"
                "    before: \"%s\"\n"
                "    after : \"%s\"\n",

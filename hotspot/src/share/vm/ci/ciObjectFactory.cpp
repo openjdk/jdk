@@ -28,6 +28,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciInstanceKlassKlass.hpp"
+#include "ci/ciMemberName.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -344,6 +345,8 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
     instanceHandle h_i(THREAD, (instanceOop)o);
     if (java_lang_invoke_CallSite::is_instance(o))
       return new (arena()) ciCallSite(h_i);
+    else if (java_lang_invoke_MemberName::is_instance(o))
+      return new (arena()) ciMemberName(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else

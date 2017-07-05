@@ -44,10 +44,11 @@ protected:
     fmaf_instructions    = 10,
     fmau_instructions    = 11,
     vis3_instructions    = 12,
-    sparc64_family       = 13,
-    T_family             = 14,
-    T1_model             = 15,
-    cbcond_instructions  = 16
+    cbcond_instructions  = 13,
+    sparc64_family       = 14,
+    M_family             = 15,
+    T_family             = 16,
+    T1_model             = 17
   };
 
   enum Feature_Flag_Set {
@@ -67,10 +68,11 @@ protected:
     fmaf_instructions_m     = 1 << fmaf_instructions,
     fmau_instructions_m     = 1 << fmau_instructions,
     vis3_instructions_m     = 1 << vis3_instructions,
+    cbcond_instructions_m   = 1 << cbcond_instructions,
     sparc64_family_m        = 1 << sparc64_family,
+    M_family_m              = 1 << M_family,
     T_family_m              = 1 << T_family,
     T1_model_m              = 1 << T1_model,
-    cbcond_instructions_m   = 1 << cbcond_instructions,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -89,6 +91,7 @@ protected:
   static int  platform_features(int features);
 
   // Returns true if the platform is in the niagara line (T series)
+  static bool is_M_family(int features) { return (features & M_family_m) != 0; }
   static bool is_T_family(int features) { return (features & T_family_m) != 0; }
   static bool is_niagara() { return is_T_family(_features); }
   DEBUG_ONLY( static bool is_niagara(int features)  { return (features & sun4v_m) != 0; } )

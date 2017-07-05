@@ -678,6 +678,14 @@ public final class Unsafe {
     public native Object staticFieldBase(Field f);
 
     /**
+     * Detect if the given class may need to be initialized. This is often
+     * needed in conjunction with obtaining the static field base of a
+     * class.
+     * @return false only if a call to {@code ensureClassInitialized} would have no effect
+     */
+    public native boolean shouldBeInitialized(Class<?> c);
+
+    /**
      * Ensure the given class has been initialized. This is often
      * needed in conjunction with obtaining the static field base of a
      * class.

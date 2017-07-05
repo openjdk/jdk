@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,21 @@
 #include <string.h>
 #include <stdio.h>
 #include <jni.h>
+#define JLDEBUG_ENV_ENTRY "_JAVA_LAUNCHER_DEBUG"
 
 void *JLI_MemAlloc(size_t size);
 void *JLI_MemRealloc(void *ptr, size_t size);
 char *JLI_StringDup(const char *s1);
 void  JLI_MemFree(void *ptr);
 int   JLI_StrCCmp(const char *s1, const char* s2);
+
+typedef struct {
+    char *arg;
+    jboolean has_wildcard;
+} StdArg;
+
+StdArg *JLI_GetStdArgs();
+int     JLI_GetStdArgc();
 
 #define JLI_StrLen(p1)          strlen((p1))
 #define JLI_StrChr(p1, p2)      strchr((p1), (p2))
@@ -58,6 +67,7 @@ int   JLI_StrCCmp(const char *s1, const char* s2);
 #define JLI_StrCaseCmp(p1, p2)          stricmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
 #define JLI_Snprintf                    _snprintf
+void JLI_CmdToArgs(char *cmdline);
 #else
 #include <unistd.h>
 #include <strings.h>

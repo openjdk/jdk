@@ -238,9 +238,11 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
   // some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial.
-  if (target->is_loaded() && !target->is_abstract() &&
-      target->can_be_statically_bound() && code == Bytecodes::_invokevirtual) {
-    code = Bytecodes::_invokespecial;
+  if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
+    switch (code) {
+    case Bytecodes::_invokevirtual:  code = Bytecodes::_invokespecial;  break;
+    case Bytecodes::_invokehandle:   code = Bytecodes::_invokestatic;   break;
+    }
   }
 
   // compute size of arguments
@@ -866,7 +868,12 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         { bool will_link;
           ciMethod* target = s.get_method(will_link);
           ciKlass* holder = s.get_declared_method_holder();
-          invoke(state, s.cur_bc(), target, holder);
+          // Push appendix argument, if one.
+          if (s.has_appendix()) {
+            state.apush(unknown_obj);
+          }
+          // Pass in raw bytecode because we need to see invokehandle instructions.
+          invoke(state, s.cur_bc_raw(), target, holder);
           ciType* return_type = target->return_type();
           if (!return_type->is_primitive_type()) {
             state.apush(unknown_obj);

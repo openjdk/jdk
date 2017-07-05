@@ -71,17 +71,23 @@ public class Restart {
         testRestart(group, 100);
         group.shutdown();
 
-        // group with custom thread pool
+        // group with cached thread pool
         ExecutorService pool = Executors.newCachedThreadPool(factory);
         group = AsynchronousChannelGroup.withCachedThreadPool(pool, rand.nextInt(5));
+        testRestart(group, 100);
+        group.shutdown();
+
+        // group with custom thread pool
+        group = AsynchronousChannelGroup
+                .withThreadPool(Executors.newFixedThreadPool(1+rand.nextInt(5), factory));
         testRestart(group, 100);
         group.shutdown();
 
         // give time for threads to terminate
         Thread.sleep(3000);
         int actual = exceptionCount.get();
-        if (actual != 200)
-            throw new RuntimeException(actual + " exceptions, expected: " + 200);
+        if (actual != 300)
+            throw new RuntimeException(actual + " exceptions, expected: " + 300);
     }
 
     static void testRestart(AsynchronousChannelGroup group, int count)

@@ -282,6 +282,9 @@ class Bytecodes: AllStatic {
 
     _return_register_finalizer    ,
 
+    // special handling of signature-polymorphic methods:
+    _invokehandle         ,
+
     _shouldnotreachhere,      // For debugging
 
     // Platform specific JVM bytecodes
@@ -356,8 +359,8 @@ class Bytecodes: AllStatic {
 
  public:
   // Conversion
-  static void        check          (Code code)    { assert(is_defined(code), "illegal code"); }
-  static void        wide_check     (Code code)    { assert(wide_is_defined(code), "illegal code"); }
+  static void        check          (Code code)    { assert(is_defined(code),      err_msg("illegal code: %d", (int)code)); }
+  static void        wide_check     (Code code)    { assert(wide_is_defined(code), err_msg("illegal code: %d", (int)code)); }
   static Code        cast           (int  code)    { return (Code)code; }
 
 

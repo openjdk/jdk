@@ -92,7 +92,6 @@ CallingConvention* FrameMap::java_calling_convention(const BasicTypeArray* signa
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];
     assert(t != T_VOID, "should be skipping these");
-
     LIR_Opr opr = map_to_opr(t, regs + i, outgoing);
     args->append(opr);
     if (opr->is_address()) {

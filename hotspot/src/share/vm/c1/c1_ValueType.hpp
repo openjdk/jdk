@@ -297,7 +297,8 @@ class ObjectType: public ValueType {
   virtual const char tchar() const               { return 'a'; }
   virtual const char* name() const               { return "object"; }
   virtual ObjectType* as_ObjectType()            { return this; }
-  virtual ciObject* constant_value() const       { ShouldNotReachHere(); return NULL;  }
+  virtual ciObject* constant_value() const       { ShouldNotReachHere(); return NULL; }
+  virtual ciType* exact_type() const             { return NULL; }
   bool is_loaded() const;
   jobject encoding() const;
 };
@@ -315,6 +316,7 @@ class ObjectConstant: public ObjectType {
   virtual bool is_constant() const               { return true; }
   virtual ObjectConstant* as_ObjectConstant()    { return this; }
   virtual ciObject* constant_value() const;
+  virtual ciType* exact_type() const;
 };
 
 
@@ -334,9 +336,9 @@ class ArrayConstant: public ArrayType {
   ciArray* value() const                         { return _value; }
 
   virtual bool is_constant() const               { return true; }
-
   virtual ArrayConstant* as_ArrayConstant()      { return this; }
   virtual ciObject* constant_value() const;
+  virtual ciType* exact_type() const;
 };
 
 
@@ -356,9 +358,9 @@ class InstanceConstant: public InstanceType {
   ciInstance* value() const                      { return _value; }
 
   virtual bool is_constant() const               { return true; }
-
   virtual InstanceConstant* as_InstanceConstant(){ return this; }
   virtual ciObject* constant_value() const;
+  virtual ciType* exact_type() const;
 };
 
 
@@ -378,9 +380,9 @@ class ClassConstant: public ClassType {
   ciInstanceKlass* value() const                 { return _value; }
 
   virtual bool is_constant() const               { return true; }
-
   virtual ClassConstant* as_ClassConstant()      { return this; }
   virtual ciObject* constant_value() const;
+  virtual ciType* exact_type() const;
 };
 
 

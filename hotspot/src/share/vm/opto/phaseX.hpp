@@ -193,6 +193,7 @@ public:
   // If you want the type of a very new (untransformed) node,
   // you must use type_or_null, and test the result for NULL.
   const Type* type(const Node* n) const {
+    assert(n != NULL, "must not be null");
     const Type* t = _types.fast_lookup(n->_idx);
     assert(t != NULL, "must set before get");
     return t;
