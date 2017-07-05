@@ -700,23 +700,7 @@ JVM_END
 
 // Returns a class loaded by the bootstrap class loader; or null
 // if not found.  ClassNotFoundException is not thrown.
-//
-// Rationale behind JVM_FindClassFromBootLoader
-// a> JVM_FindClassFromClassLoader was never exported in the export tables.
-// b> because of (a) java.dll has a direct dependecy on the  unexported
-//    private symbol "_JVM_FindClassFromClassLoader@20".
-// c> the launcher cannot use the private symbol as it dynamically opens
-//    the entry point, so if something changes, the launcher will fail
-//    unexpectedly at runtime, it is safest for the launcher to dlopen a
-//    stable exported interface.
-// d> re-exporting JVM_FindClassFromClassLoader as public, will cause its
-//    signature to change from _JVM_FindClassFromClassLoader@20 to
-//    JVM_FindClassFromClassLoader and will not be backward compatible
-//    with older JDKs.
-// Thus a public/stable exported entry point is the right solution,
-// public here means public in linker semantics, and is exported only
-// to the JDK, and is not intended to be a public API.
-
+// FindClassFromBootLoader is exported to the launcher for windows.
 JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
                                               const char* name))
   JVMWrapper2("JVM_FindClassFromBootLoader %s", name);
@@ -738,33 +722,6 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     trace_class_resolution(k);
   }
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
-JVM_END
-
-// Not used; JVM_FindClassFromCaller replaces this.
-JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
-                                               jboolean init, jobject loader,
-                                               jboolean throwError))
-  JVMWrapper3("JVM_FindClassFromClassLoader %s throw %s", name,
-               throwError ? "error" : "exception");
-  // Java libraries should ensure that name is never null...
-  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
-    // It's impossible to create this class;  the name cannot fit
-    // into the constant pool.
-    if (throwError) {
-      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
-    }
-  }
-  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
-  Handle h_loader(THREAD, JNIHandles::resolve(loader));
-  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
-                                               Handle(), throwError, THREAD);
-
-  if (TraceClassResolution && result != NULL) {
-    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
-  }
-  return result;
 JVM_END
 
 // Find a class with this name in this loader, using the caller's protection domain.

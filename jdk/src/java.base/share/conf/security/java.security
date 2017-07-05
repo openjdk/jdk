@@ -183,7 +183,17 @@ policy.ignoreIdentityScope=false
 #
 # Default keystore type.
 #
-keystore.type=jks
+keystore.type=pkcs12
+
+#
+# Controls compatibility mode for JKS and PKCS12 keystore types.
+#
+# When set to 'true', both JKS and PKCS12 keystore types support loading
+# keystore files in either JKS or PKCS12 format. When set to 'false' the
+# JKS keystore type supports loading only JKS keystore files and the PKCS12
+# keystore type supports loading only PKCS12 keystore files.
+#
+keystore.type.compat=true
 
 #
 # List of comma-separated packages that start with or equal this string

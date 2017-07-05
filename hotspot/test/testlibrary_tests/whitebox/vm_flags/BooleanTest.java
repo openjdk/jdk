@@ -24,7 +24,7 @@
 /*
  * @test BooleanTest
  * @bug 8028756
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build BooleanTest ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -335,15 +335,6 @@ JNIEXPORT jclass JNICALL
 JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
 /*
- * Find a class from a given class loader. Throw ClassNotFoundException
- * or NoClassDefFoundError depending on the value of the last
- * argument.
- */
-JNIEXPORT jclass JNICALL
-JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
-                             jobject loader, jboolean throwError);
-
-/*
  * Find a class from a boot class loader. Returns NULL if class not found.
  */
 JNIEXPORT jclass JNICALL

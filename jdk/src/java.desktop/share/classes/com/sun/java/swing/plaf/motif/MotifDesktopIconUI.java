@@ -245,6 +245,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
                 e.isPopupTrigger(), MouseEvent.NOBUTTON));
         }
 
+        @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }
@@ -336,6 +337,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
                 e.getClickCount(), e.isPopupTrigger(), MouseEvent.NOBUTTON ));
         }
 
+        @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }

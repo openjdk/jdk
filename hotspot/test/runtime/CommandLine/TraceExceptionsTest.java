@@ -33,11 +33,6 @@ import com.oracle.java.testlibrary.*;
 public class TraceExceptionsTest {
     public static void main(String[] args) throws Exception {
 
-        if (!Platform.isDebugBuild()) {
-          System.out.println("Skip the test on product builds since XX:+TraceExceptions is not available on product builds");
-          return;
-        }
-
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+TraceExceptions", "NoClassFound");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

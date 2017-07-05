@@ -792,7 +792,8 @@ const int SpaceManager::_expand_lock_rank = Monitor::leaf - 1;
 Mutex* const SpaceManager::_expand_lock =
   new Mutex(SpaceManager::_expand_lock_rank,
             SpaceManager::_expand_lock_name,
-            Mutex::_allow_vm_block_flag);
+            Mutex::_allow_vm_block_flag,
+            Monitor::_safepoint_check_never);
 
 void VirtualSpaceNode::inc_container_count() {
   assert_lock_strong(SpaceManager::expand_lock());

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,13 @@ esac
 # Choose 1024-bit RSA to make sure it runs fine and fast on all platforms. In
 # fact, every keyalg/keysize combination is OK for this test.
 
-KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore js.jks -keyalg rsa -keysize 1024"
+KS=js.ks
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa -keysize 1024"
 JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
 JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 JAVAC="$TESTJAVA${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS}"
 
-rm js.jks
+rm $KS
 
 echo class A1 {} > A1.java
 echo class A2 {} > A2.java
@@ -73,9 +74,9 @@ $KT -genkeypair -alias a2 -dname CN=a2 -validity 365
 
 # a.jar includes 8 unsigned, 2 signed by a1 and a2, 2 signed by a3
 $JAR cvf a.jar A1.class A2.class
-$JARSIGNER -keystore js.jks -storepass changeit a.jar a1
+$JARSIGNER -keystore $KS -storepass changeit a.jar a1
 $JAR uvf a.jar A3.class A4.class
-$JARSIGNER -keystore js.jks -storepass changeit a.jar a2
+$JARSIGNER -keystore $KS -storepass changeit a.jar a2
 $JAR uvf a.jar A5.class A6.class
 
 # Verify OK
@@ -87,15 +88,15 @@ $JARSIGNER -verify a.jar -strict
 [ $? = 20 ] || exit $LINENO
 
 # 16(hasUnsignedEntry)
-$JARSIGNER -verify a.jar -strict -keystore js.jks
+$JARSIGNER -verify a.jar -strict -keystore $KS -storepass changeit
 [ $? = 16 ] || exit $LINENO
 
 # 16(hasUnsignedEntry)+32(notSignedByAlias)
-$JARSIGNER -verify a.jar a1 -strict -keystore js.jks
+$JARSIGNER -verify a.jar a1 -strict -keystore $KS -storepass changeit
 [ $? = 48 ] || exit $LINENO
 
 # 16(hasUnsignedEntry)
-$JARSIGNER -verify a.jar a1 a2 -strict -keystore js.jks
+$JARSIGNER -verify a.jar a1 a2 -strict -keystore $KS -storepass changeit
 [ $? = 16 ] || exit $LINENO
 
 # 12 entries all together
@@ -153,25 +154,25 @@ $KT -certreq -alias badchain | $KT -gencert -alias ca -validity 365 | \
         $KT -importcert -alias badchain
 $KT -delete -alias ca
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar expired
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar expired
 [ $? = 4 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar notyetvalid
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar notyetvalid
 [ $? = 4 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar badku
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar badku
 [ $? = 8 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar badeku
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar badeku
 [ $? = 8 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar goodku
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodku
 [ $? = 0 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar goodeku
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodeku
 [ $? = 0 ] || exit $LINENO
 
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar badchain
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar badchain
 [ $? = 4 ] || exit $LINENO
 
 $JARSIGNER -verify a.jar
@@ -189,11 +190,11 @@ $KT -exportcert -alias ca2 -rfc >> certchain
 $KT -delete -alias ca2
 
 # Now altchain is still self-signed
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar altchain
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar altchain
 [ $? = 0 ] || exit $LINENO
 
 # If -certchain is used, then it's bad
-$JARSIGNER -strict -keystore js.jks -storepass changeit -certchain certchain a.jar altchain
+$JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
 [ $? = 4 ] || exit $LINENO
 
 $JARSIGNER -verify a.jar
