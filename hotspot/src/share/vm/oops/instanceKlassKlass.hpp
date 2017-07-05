@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ class instanceKlassKlass : public klassKlass {
   // Allocation
   DEFINE_ALLOCATE_PERMANENT(instanceKlassKlass);
   static klassOop create_klass(TRAPS);
-  klassOop allocate_instance_klass(int vtable_len,
+  klassOop allocate_instance_klass(Symbol* name,
+                                   int vtable_len,
                                    int itable_len,
                                    int static_field_size,
                                    unsigned int nonstatic_oop_map_count,

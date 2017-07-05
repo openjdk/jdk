@@ -910,7 +910,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
       ciObject* con = field->constant_value().as_object();
       // Do not "join" in the previous type; it doesn't add value,
       // and may yield a vacuous result if the field is of interface type.
-      type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+      type = TypeOopPtr::make_from_constant(con, true)->isa_oopptr();
       assert(type != NULL, "field singleton type must be consistent");
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());
@@ -969,6 +969,10 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     // for (int i=0; ; i++)
     //   if (x <= sizeTable[i])
     //     return i+1;
+
+    // Add loop predicate first.
+    kit.add_predicate();
+
     RegionNode *loop = new (C, 3) RegionNode(3);
     loop->init_req(1, kit.control());
     kit.gvn().set_type(loop, Type::CONTROL);
@@ -1086,6 +1090,9 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
   // }
 
   {
+    // Add loop predicate first.
+    kit.add_predicate();
+
     RegionNode *head = new (C, 3) RegionNode(3);
     head->init_req(1, kit.control());
     kit.gvn().set_type(head, Type::CONTROL);
