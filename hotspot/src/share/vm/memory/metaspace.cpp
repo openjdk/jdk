@@ -2254,10 +2254,11 @@ ChunkIndex ChunkManager::list_index(size_t size) {
 
 void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
   assert_lock_strong(_lock);
+  size_t raw_word_size = get_raw_word_size(word_size);
   size_t min_size = TreeChunk<Metablock, FreeList>::min_size();
-  assert(word_size >= min_size,
+  assert(raw_word_size >= min_size,
     err_msg("Should not deallocate dark matter " SIZE_FORMAT, word_size));
-  block_freelists()->return_block(p, word_size);
+  block_freelists()->return_block(p, raw_word_size);
 }
 
 // Adds a chunk to the list of chunks in use.
