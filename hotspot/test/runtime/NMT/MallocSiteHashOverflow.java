@@ -22,10 +22,9 @@
  */
 
 /*
- * @key stress
  * @test
  * @summary Test corner case that overflows malloc site hashtable bucket
- * @key nmt jcmd
+ * @key nmt jcmd stress
  * @library /testlibrary /testlibrary/whitebox
  * @ignore - This test is disabled since it will stress NMT and timeout during normal testing
  * @build MallocSiteHashOverflow

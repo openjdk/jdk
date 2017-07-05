@@ -927,6 +927,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
+        if (f != null) {
+            return f.createDragSourceContextPeer(dge);
+        }
+
         return XDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
@@ -938,6 +943,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     int srcActions,
                     DragGestureListener dgl)
     {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(c);
+        if (f != null) {
+            return f.createDragGestureRecognizer(recognizerClass, ds, c, srcActions, dgl);
+        }
+
         if (MouseDragGestureRecognizer.class.equals(recognizerClass))
             return (T)new XMouseDragGestureRecognizer(ds, c, srcActions, dgl);
         else

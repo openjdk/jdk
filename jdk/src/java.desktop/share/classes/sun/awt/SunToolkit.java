@@ -2014,6 +2014,19 @@ public abstract class SunToolkit extends Toolkit
         return isInstanceOf(cls.getSuperclass(), type);
     }
 
+    protected static LightweightFrame getLightweightFrame(Component c) {
+        for (; c != null; c = c.getParent()) {
+            if (c instanceof LightweightFrame) {
+                return (LightweightFrame)c;
+            }
+            if (c instanceof Window) {
+                // Don't traverse owner windows
+                return null;
+            }
+        }
+        return null;
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // The following methods help set and identify whether a particular

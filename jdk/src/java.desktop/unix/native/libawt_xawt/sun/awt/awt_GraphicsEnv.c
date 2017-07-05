@@ -1348,7 +1348,9 @@ JNIEnv *env, jobject this)
     }
 
     /* Make Color Model object for this GraphicsConfiguration */
-    colorModel = awtJNI_GetColorModel (env, adata);
+    colorModel = (*env)->ExceptionCheck(env)
+                 ? NULL : awtJNI_GetColorModel (env, adata);
+
     AWT_UNLOCK ();
 
     return colorModel;
@@ -2052,7 +2054,7 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
 
     AWT_FLUSH_UNLOCK();
 
-    if (!success) {
+    if (!success && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowInternalError(env, "Could not set display mode");
     }
 #endif /* !HEADLESS */
