@@ -43,10 +43,11 @@ import java.util.Set;
 
 /**
  * @test
- * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603 7044019
+ * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
+ *    7044019 8008577
  * @summary test API changes to Locale
  * @compile LocaleEnhanceTest.java
- * @run main/othervm -esa LocaleEnhanceTest
+ * @run main/othervm -Djava.locale.providers=JRE,SPI -esa LocaleEnhanceTest
  */
 public class LocaleEnhanceTest extends LocaleTestFmwk {
 

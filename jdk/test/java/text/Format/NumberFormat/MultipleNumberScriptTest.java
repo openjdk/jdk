@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 7073852
+ * @bug 7073852 8008577
  * @summary Support multiple scripts for digits and decimal symbols per locale
+ * @run main/othervm -Djava.locale.providers=JRE,SPI MultipleNumberScriptTest
  */
 
 import java.text.*;

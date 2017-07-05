@@ -737,7 +737,7 @@ public class Base64 {
             // anything left is invalid, if is not MIME.
             // if MIME, ignore all non-base64 character
             while (sp < sl) {
-                if (isMIME && base64[src[sp++]] < 0)
+                if (isMIME && base64[src[sp++] & 0xff] < 0)
                     continue;
                 throw new IllegalArgumentException(
                     "Input byte array has incorrect ending byte at " + sp);

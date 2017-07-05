@@ -38,6 +38,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -3735,6 +3736,7 @@ public final class Files {
         }
     }
 
+
     /**
      * Read all lines from a file as a {@code Stream}. Unlike {@link
      * #readAllLines(Path, Charset) readAllLines}, this method does not read
@@ -3748,6 +3750,10 @@ public final class Files {
      * <p> The returned stream contains a reference to an open file. The file
      * is closed by closing the stream.
      *
+     * <p> The file contents should not be modified during the execution of the
+     * terminal stream operation. Otherwise, the result of the terminal stream
+     * operation is undefined.
+     *
      * <p> After this method returns, then any subsequent I/O exception that
      * occurs while reading from the file or when a malformed or unmappable byte
      * sequence is read, is wrapped in an {@link UncheckedIOException} that will
@@ -3760,6 +3766,30 @@ public final class Files {
      * This method must be used within a try-with-resources statement or similar
      * control structure to ensure that the stream's open file is closed promptly
      * after the stream's operations have completed.
+     *
+     * @implNote
+     * This implementation supports good parallel stream performance for the
+     * standard charsets {@link StandardCharsets#UTF_8 UTF-8},
+     * {@link StandardCharsets#US_ASCII US-ASCII} and
+     * {@link StandardCharsets#ISO_8859_1 ISO-8859-1}.  Such
+     * <em>line-optimal</em> charsets have the property that the encoded bytes
+     * of a line feed ('\n') or a carriage return ('\r') are efficiently
+     * identifiable from other encoded characters when randomly accessing the
+     * bytes of the file.
+     *
+     * <p> For non-<em>line-optimal</em> charsets the stream source's
+     * spliterator has poor splitting properties, similar to that of a
+     * spliterator associated with an iterator or that associated with a stream
+     * returned from {@link BufferedReader#lines()}.  Poor splitting properties
+     * can result in poor parallel stream performance.
+     *
+     * <p> For <em>line-optimal</em> charsets the stream source's spliterator
+     * has good splitting properties, assuming the file contains a regular
+     * sequence of lines.  Good splitting properties can result in good parallel
+     * stream performance.  The spliterator for a <em>line-optimal</em> charset
+     * takes advantage of the charset properties (a line feed or a carriage
+     * return being efficient identifiable) such that when splitting it can
+     * approximately divide the number of covered lines in half.
      *
      * @param   path
      *          the path to the file
@@ -3781,7 +3811,50 @@ public final class Files {
      * @since   1.8
      */
     public static Stream<String> lines(Path path, Charset cs) throws IOException {
-        BufferedReader br = Files.newBufferedReader(path, cs);
+        // Use the good splitting spliterator if:
+        // 1) the path is associated with the default file system;
+        // 2) the character set is supported; and
+        // 3) the file size is such that all bytes can be indexed by int values
+        //    (this limitation is imposed by ByteBuffer)
+        if (path.getFileSystem() == FileSystems.getDefault() &&
+            FileChannelLinesSpliterator.SUPPORTED_CHARSET_NAMES.contains(cs.name())) {
+            FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
+
+            Stream<String> fcls = createFileChannelLinesStream(fc, cs);
+            if (fcls != null) {
+                return fcls;
+            }
+            fc.close();
+        }
+
+        return createBufferedReaderLinesStream(Files.newBufferedReader(path, cs));
+    }
+
+    private static Stream<String> createFileChannelLinesStream(FileChannel fc, Charset cs) throws IOException {
+        try {
+            // Obtaining the size from the FileChannel is much faster
+            // than obtaining using path.toFile().length()
+            long length = fc.size();
+            if (length <= Integer.MAX_VALUE) {
+                Spliterator<String> s = new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
+                return StreamSupport.stream(s, false)
+                        .onClose(Files.asUncheckedRunnable(fc));
+            }
+        } catch (Error|RuntimeException|IOException e) {
+            try {
+                fc.close();
+            } catch (IOException ex) {
+                try {
+                    e.addSuppressed(ex);
+                } catch (Throwable ignore) {
+                }
+            }
+            throw e;
+        }
+        return null;
+    }
+
+    private static Stream<String> createBufferedReaderLinesStream(BufferedReader br) {
         try {
             return br.lines().onClose(asUncheckedRunnable(br));
         } catch (Error|RuntimeException e) {
@@ -3790,7 +3863,8 @@ public final class Files {
             } catch (IOException ex) {
                 try {
                     e.addSuppressed(ex);
-                } catch (Throwable ignore) {}
+                } catch (Throwable ignore) {
+                }
             }
             throw e;
         }
@@ -3803,6 +3877,10 @@ public final class Files {
      *
      * <p> The returned stream contains a reference to an open file. The file
      * is closed by closing the stream.
+     *
+     * <p> The file contents should not be modified during the execution of the
+     * terminal stream operation. Otherwise, the result of the terminal stream
+     * operation is undefined.
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
