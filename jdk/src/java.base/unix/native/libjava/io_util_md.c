@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
@@ -218,4 +217,15 @@ handleSetLength(FD fd, jlong length)
     int result;
     RESTARTABLE(ftruncate64(fd, length), result);
     return result;
+}
+
+jlong
+handleGetLength(FD fd)
+{
+    struct stat64 sb;
+    if (fstat64(fd, &sb) == 0) {
+        return sb.st_size;
+    } else {
+        return -1;
+    }
 }

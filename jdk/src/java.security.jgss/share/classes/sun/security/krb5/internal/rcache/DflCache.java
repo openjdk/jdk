@@ -60,7 +60,7 @@ import sun.security.krb5.internal.ReplayCache;
  *
  *    service_euid
  *
- * in which euid is available as sun.misc.VM.geteuid().
+ * in which euid is available as jdk.internal.misc.VM.geteuid().
  *
  * The file has a header:
  *
@@ -107,7 +107,7 @@ public class DflCache extends ReplayCache {
     private static long uid;
     static {
         // Available on Solaris, Linux and Mac. Otherwise, -1 and no _euid suffix
-        uid = sun.misc.VM.geteuid();
+        uid = jdk.internal.misc.VM.geteuid();
     }
 
     public DflCache (String source) {

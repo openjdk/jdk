@@ -1836,7 +1836,7 @@ return mh1;
                 return false;
             }
             ClassLoader loader = defc.getClassLoader();
-            if (!sun.misc.VM.isSystemDomainLoader(loader)) {
+            if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
                 ClassLoader sysl = ClassLoader.getSystemClassLoader();
                 boolean found = false;
                 while (sysl != null) {

@@ -33,7 +33,6 @@ package com.sun.jdi;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public class VMDisconnectedException extends RuntimeException {
 
     private static final long serialVersionUID = 2892975269768351637L;

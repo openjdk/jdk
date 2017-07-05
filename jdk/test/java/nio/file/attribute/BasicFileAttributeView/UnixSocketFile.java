@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  */
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -49,6 +50,17 @@ public class UnixSocketFile {
     public static void main(String[] args)
         throws InterruptedException, IOException {
 
+        // Use 'which' to verify that 'nc' is available and skip the test
+        // if it is not.
+        Process proc = Runtime.getRuntime().exec("which nc");
+        InputStream stdout = proc.getInputStream();
+        int b = stdout.read();
+        proc.destroy();
+        if (b == -1) {
+            System.err.println("Netcat command unavailable; skipping test.");
+            return;
+        }
+
         // Create a new sub-directory of the nominal test directory in which
         // 'nc' will create the socket file.
         String testSubDir = System.getProperty("test.dir", ".")
@@ -62,7 +74,6 @@ public class UnixSocketFile {
 
         // Create a process which executes the nc (netcat) utility to create
         // a socket file at the indicated location.
-        Process proc;
         FileSystem fs = FileSystems.getDefault();
         try (WatchService ws = fs.newWatchService()) {
             // Watch the test sub-directory to receive notification when an

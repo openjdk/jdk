@@ -30,7 +30,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface LoopTree extends StatementTree {
     /**
      * Returns the statement contained in this 'loop' statement.

@@ -30,7 +30,6 @@ package com.sun.security.auth;
  * and provides a mechanism to do same-process security impersonation.
  */
 
-@jdk.Exported
 public class NTNumericCredential {
 
     private long impersonationToken;

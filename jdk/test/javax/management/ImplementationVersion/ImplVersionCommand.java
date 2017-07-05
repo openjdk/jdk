@@ -53,21 +53,13 @@ public class ImplVersionCommand {
 
         // Check JMX implementation version vs. JVM implementation version
         //
-        if (Boolean.valueOf(args[1]).booleanValue()) {
-            if (!mbsdVersion.equals(args[0]))
-                throw new IllegalArgumentException(
-                  "JMX and Java Runtime implementation versions do not match!");
-            // Test OK!
-            //
-            System.out.println("JMX and Java Runtime implementation " +
-                               "versions match!");
-        } else {
-            // Test OK!
-            //
-            System.out.println("JMX and Java Runtime implementation " +
-                               "versions do not match because the test " +
-                               "is using an unbundled version of JMX!");
-        }
+        if (!mbsdVersion.equals(args[0]))
+            throw new IllegalArgumentException(
+              "JMX and Java Runtime implementation versions do not match!");
+        // Test OK!
+        //
+        System.out.println("JMX and Java Runtime implementation " +
+                           "versions match!");
         System.out.println("Bye! Bye!");
     }
 }
