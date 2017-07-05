@@ -130,8 +130,12 @@ public abstract class ProviderSkeleton implements InvocationHandler, Provider {
      */
     @SuppressWarnings("unchecked")
     public <T extends Provider> T newProxyInstance() {
-        return (T)Proxy.newProxyInstance(providerType.getClassLoader(),
-               new Class<?>[] { providerType }, this);
+        final InvocationHandler ih = this;
+        return AccessController.doPrivileged(new PrivilegedAction<T>() {
+            public T run() {
+               return (T)Proxy.newProxyInstance(providerType.getClassLoader(),
+                   new Class<?>[] { providerType }, ih);
+            }});
     }
 
     /**

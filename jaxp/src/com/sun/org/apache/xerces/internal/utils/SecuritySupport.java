@@ -29,6 +29,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 
 /**
  * This class is duplicated for each subpackage so keep it in sync.
@@ -137,6 +141,38 @@ public final class SecuritySupport {
                     ris = cl.getResourceAsStream(name);
                 }
                 return ris;
+            }
+        });
+    }
+
+    /**
+     * Gets a resource bundle using the specified base name, the default locale, and the caller's class loader.
+     * @param bundle the base name of the resource bundle, a fully qualified class name
+     * @return a resource bundle for the given base name and the default locale
+     */
+    public static ResourceBundle getResourceBundle(String bundle) {
+        return getResourceBundle(bundle, Locale.getDefault());
+    }
+
+    /**
+     * Gets a resource bundle using the specified base name and locale, and the caller's class loader.
+     * @param bundle the base name of the resource bundle, a fully qualified class name
+     * @param locale the locale for which a resource bundle is desired
+     * @return a resource bundle for the given base name and locale
+     */
+    public static ResourceBundle getResourceBundle(final String bundle, final Locale locale) {
+        return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
+            public ResourceBundle run() {
+                try {
+                    return PropertyResourceBundle.getBundle(bundle, locale);
+                } catch (MissingResourceException e) {
+                    try {
+                        return PropertyResourceBundle.getBundle(bundle, new Locale("en", "US"));
+                    } catch (MissingResourceException e2) {
+                        throw new MissingResourceException(
+                                "Could not load any resource bundle by " + bundle, bundle, "");
+                    }
+                }
             }
         });
     }

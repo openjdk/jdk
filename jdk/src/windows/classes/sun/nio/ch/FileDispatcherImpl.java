@@ -49,18 +49,21 @@ class FileDispatcherImpl extends FileDispatcher
         this(false);
     }
 
+    @Override
+    boolean needsPositionLock() {
+        return true;
+    }
+
     int read(FileDescriptor fd, long address, int len)
         throws IOException
     {
         return read0(fd, address, len);
     }
 
-    int pread(FileDescriptor fd, long address, int len,
-                             long position, Object lock) throws IOException
+    int pread(FileDescriptor fd, long address, int len, long position)
+        throws IOException
     {
-        synchronized(lock) {
-            return pread0(fd, address, len, position);
-        }
+        return pread0(fd, address, len, position);
     }
 
     long readv(FileDescriptor fd, long address, int len) throws IOException {
@@ -71,12 +74,10 @@ class FileDispatcherImpl extends FileDispatcher
         return write0(fd, address, len, append);
     }
 
-    int pwrite(FileDescriptor fd, long address, int len,
-                             long position, Object lock) throws IOException
+    int pwrite(FileDescriptor fd, long address, int len, long position)
+        throws IOException
     {
-        synchronized(lock) {
-            return pwrite0(fd, address, len, position);
-        }
+        return pwrite0(fd, address, len, position);
     }
 
     long writev(FileDescriptor fd, long address, int len) throws IOException {

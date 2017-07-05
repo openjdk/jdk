@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -186,13 +186,15 @@ static const IndicClassTable::CharClass tamlCharClasses[] =
 };
 
 // FIXME: Should some of the bb's be pb's? (KA, NA, MA, YA, VA, etc. (approx 13))
+// U+C43 and U+C44 are _lm here not _dr.  Similar to the situation with U+CC3 and
+// U+CC4 in Kannada below.
 static const IndicClassTable::CharClass teluCharClasses[] =
 {
     _xx, _mp, _mp, _mp, _xx, _iv, _iv, _iv, _iv, _iv, _iv, _iv, _iv, _xx, _iv, _iv, // 0C00 - 0C0F
     _iv, _xx, _iv, _iv, _iv, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, // 0C10 - 0C1F
     _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _bb, _xx, _bb, _bb, _bb, _bb, _bb, _bb, // 0C20 - 0C2F
     _bb, _bb, _bb, _bb, _xx, _bb, _bb, _bb, _bb, _bb, _xx, _xx, _xx, _xx, _da, _da, // 0C30 - 0C3F
-    _da, _dr, _dr, _dr, _dr, _xx, _a1, _da, _s1, _xx, _da, _da, _da, _vr, _xx, _xx, // 0C40 - 0C4F
+    _da, _dr, _dr, _lm, _lm, _xx, _a1, _da, _s1, _xx, _da, _da, _da, _vr, _xx, _xx, // 0C40 - 0C4F
     _xx, _xx, _xx, _xx, _xx, _da, _m2, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, // 0C50 - 0C5F
     _iv, _iv, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx, _xx  // 0C60 - 0C6F
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,14 @@ public interface WindowPeer extends ContainerPeer {
     void toBack();
 
     /**
-     * Sets if the window should always stay on top of all other windows or
-     * not.
+     * Updates the window's always-on-top state.
+     * Sets if the window should always stay
+     * on top of all other windows or not.
      *
-     * @param alwaysOnTop if the window should always stay on top of all other
-     *        windows or not
-     *
+     * @see Window#getAlwaysOnTop()
      * @see Window#setAlwaysOnTop(boolean)
      */
-    void setAlwaysOnTop(boolean alwaysOnTop);
+    void updateAlwaysOnTopState();
 
     /**
      * Updates the window's focusable state.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@
 
 package sun.text.resources.no;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_no extends ListResourceBundle {
+public class FormatData_no extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -65,6 +65,23 @@ public class FormatData_no extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "standalone.MonthNames",
+                new String[] {
+                    "januar",
+                    "februar",
+                    "mars",
+                    "april",
+                    "mai",
+                    "juni",
+                    "juli",
+                    "august",
+                    "september",
+                    "oktober",
+                    "november",
+                    "desember",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "jan", // abb january
@@ -82,6 +99,57 @@ public class FormatData_no extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "jan",
+                    "feb",
+                    "mar",
+                    "apr",
+                    "mai",
+                    "jun",
+                    "jul",
+                    "aug",
+                    "sep",
+                    "okt",
+                    "nov",
+                    "des",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "s\u00f8ndag", // Sunday
@@ -93,6 +161,17 @@ public class FormatData_no extends ListResourceBundle {
                     "l\u00f8rdag" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "s\u00f8ndag",
+                    "mandag",
+                    "tirsdag",
+                    "onsdag",
+                    "torsdag",
+                    "fredag",
+                    "l\u00f8rdag",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "s\u00f8", // abb Sunday
@@ -102,6 +181,39 @@ public class FormatData_no extends ListResourceBundle {
                     "to", // abb Thursday
                     "fr", // abb Friday
                     "l\u00f8" // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "s\u00f8.",
+                    "ma.",
+                    "ti.",
+                    "on.",
+                    "to.",
+                    "fr.",
+                    "l\u00f8.",
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "O",
+                    "T",
+                    "F",
+                    "L",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "O",
+                    "T",
+                    "F",
+                    "L",
                 }
             },
             { "NumberElements",

@@ -69,13 +69,19 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 
-import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
+import java.time.format.ResolverStyle;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.ResourceBundle;
+
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleResources;
 
 /**
  * Fields and units specific to the ISO-8601 calendar system,
@@ -162,6 +168,27 @@ public final class IsoFields {
      * value from 1 to 92. If the quarter has less than 92 days, then day 92, and
      * potentially day 91, is in the following quarter.
      * <p>
+     * In the resolving phase of parsing, a date can be created from a year,
+     * quarter-of-year and day-of-quarter.
+     * <p>
+     * In {@linkplain ResolverStyle#STRICT strict mode}, all three fields are
+     * validated against their range of valid values. The day-of-quarter field
+     * is validated from 1 to 90, 91 or 92 depending on the year and quarter.
+     * <p>
+     * In {@linkplain ResolverStyle#SMART smart mode}, all three fields are
+     * validated against their range of valid values. The day-of-quarter field is
+     * validated between 1 and 92, ignoring the actual range based on the year and quarter.
+     * If the day-of-quarter exceeds the actual range by one day, then the resulting date
+     * is one day later. If the day-of-quarter exceeds the actual range by two days,
+     * then the resulting date is two days later.
+     * <p>
+     * In {@linkplain ResolverStyle#LENIENT lenient mode}, only the year is validated
+     * against the range of valid values. The resulting date is calculated equivalent to
+     * the following three stage approach. First, create a date on the first of January
+     * in the requested year. Then take the quarter-of-year, subtract one, and add the
+     * amount in quarters to the date. Finally, take the day-of-quarter, subtract one,
+     * and add the amount in days to the date.
+     * <p>
      * This unit is an immutable and thread-safe singleton.
      */
     public static final TemporalField DAY_OF_QUARTER = Field.DAY_OF_QUARTER;
@@ -171,7 +198,11 @@ public final class IsoFields {
      * This field allows the quarter-of-year value to be queried and set.
      * The quarter-of-year has values from 1 to 4.
      * <p>
-     * The day-of-quarter can only be calculated if the month-of-year is available.
+     * The quarter-of-year can only be calculated if the month-of-year is available.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a year,
+     * quarter-of-year and day-of-quarter.
+     * See {@link #DAY_OF_QUARTER} for details.
      * <p>
      * This unit is an immutable and thread-safe singleton.
      */
@@ -180,6 +211,28 @@ public final class IsoFields {
      * The field that represents the week-of-week-based-year.
      * <p>
      * This field allows the week of the week-based-year value to be queried and set.
+     * The week-of-week-based-year has values from 1 to 52, or 53 if the
+     * week-based-year has 53 weeks.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a
+     * week-based-year, week-of-week-based-year and day-of-week.
+     * <p>
+     * In {@linkplain ResolverStyle#STRICT strict mode}, all three fields are
+     * validated against their range of valid values. The week-of-week-based-year
+     * field is validated from 1 to 52 or 53 depending on the week-based-year.
+     * <p>
+     * In {@linkplain ResolverStyle#SMART smart mode}, all three fields are
+     * validated against their range of valid values. The week-of-week-based-year
+     * field is validated between 1 and 53, ignoring the week-based-year.
+     * If the week-of-week-based-year is 53, but the week-based-year only has
+     * 52 weeks, then the resulting date is in week 1 of the following week-based-year.
+     * <p>
+     * In {@linkplain ResolverStyle#LENIENT lenient mode}, only the week-based-year
+     * is validated against the range of valid values. If the day-of-week is outside
+     * the range 1 to 7, then the resulting date is adjusted by a suitable number of
+     * weeks to reduce the day-of-week to the range 1 to 7. If the week-of-week-based-year
+     * value is outside the range 1 to 52, then any excess weeks are added or subtracted
+     * from the resulting date.
      * <p>
      * This unit is an immutable and thread-safe singleton.
      */
@@ -188,6 +241,12 @@ public final class IsoFields {
      * The field that represents the week-based-year.
      * <p>
      * This field allows the week-based-year value to be queried and set.
+     * <p>
+     * The field has a range that matches {@link LocalDate#MAX} and {@link LocalDate#MIN}.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a
+     * week-based-year, week-of-week-based-year and day-of-week.
+     * See {@link #WEEK_OF_WEEK_BASED_YEAR} for details.
      * <p>
      * This unit is an immutable and thread-safe singleton.
      */
@@ -253,7 +312,7 @@ public final class IsoFields {
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: DayOfQuarter");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
                 long qoy = temporal.getLong(QUARTER_OF_YEAR);
                 if (qoy == 1) {
@@ -269,7 +328,7 @@ public final class IsoFields {
             @Override
             public long getFrom(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: DayOfQuarter");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
                 int doy = temporal.get(DAY_OF_YEAR);
                 int moy = temporal.get(MONTH_OF_YEAR);
@@ -285,16 +344,29 @@ public final class IsoFields {
                 return (R) temporal.with(DAY_OF_YEAR, temporal.getLong(DAY_OF_YEAR) + (newValue - curValue));
             }
             @Override
-            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value) {
-                if ((temporal.isSupported(YEAR) && temporal.isSupported(DAY_OF_QUARTER)) == false) {
+            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long doq, ResolverStyle resolverStyle) {
+                if ((temporal.isSupported(YEAR) && temporal.isSupported(QUARTER_OF_YEAR)) == false) {
                     return null;
                 }
-                int y = temporal.get(YEAR);
-                int qoy = temporal.get(QUARTER_OF_YEAR);
-                range().checkValidValue(value, this);  // leniently check from 1 to 92 TODO: check
-                LocalDate date = LocalDate.of(y, ((qoy - 1) * 3) + 1, 1).plusDays(value - 1);
+                int y = temporal.get(YEAR);  // validated
+                LocalDate date;
+                if (resolverStyle == ResolverStyle.LENIENT) {
+                    long qoy = temporal.getLong(QUARTER_OF_YEAR);  // unvalidated
+                    date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoy, 1), 3));
+                } else {
+                    int qoy = temporal.get(QUARTER_OF_YEAR);  // validated
+                    date = LocalDate.of(y, ((qoy - 1) * 3) + 1, 1);
+                    if (doq < 1 || doq > 90) {
+                        if (resolverStyle == ResolverStyle.STRICT) {
+                            rangeRefinedBy(date).checkValidValue(doq, this);  // only allow exact range
+                        } else {  // SMART
+                            range().checkValidValue(doq, this);  // allow 1-92 rolling into next quarter
+                        }
+                    }
+                }
+                long epochDay = Math.addExact(date.toEpochDay(), Math.subtractExact(doq, 1));
                 Map<TemporalField, Long> result = new HashMap<>(4, 1.0f);
-                result.put(EPOCH_DAY, date.toEpochDay());
+                result.put(EPOCH_DAY, epochDay);
                 result.put(YEAR, null);
                 result.put(QUARTER_OF_YEAR, null);
                 return result;
@@ -324,7 +396,7 @@ public final class IsoFields {
             @Override
             public long getFrom(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: QuarterOfYear");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: QuarterOfYear");
                 }
                 long moy = temporal.getLong(MONTH_OF_YEAR);
                 return ((moy + 2) / 3);
@@ -343,6 +415,16 @@ public final class IsoFields {
             public String getName() {
                 return "WeekOfWeekBasedYear";
             }
+
+            @Override
+            public String getDisplayName(Locale locale) {
+                Objects.requireNonNull(locale, "locale");
+                LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
+                                            .getLocaleResources(locale);
+                ResourceBundle rb = lr.getJavaTimeFormatData();
+                return rb.containsKey("field.week") ? rb.getString("field.week") : getName();
+            }
+
             @Override
             public TemporalUnit getBaseUnit() {
                 return WEEKS;
@@ -362,14 +444,14 @@ public final class IsoFields {
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: WeekOfWeekBasedYear");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeekRange(LocalDate.from(temporal));
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: WeekOfWeekBasedYear");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeek(LocalDate.from(temporal));
             }
@@ -381,14 +463,33 @@ public final class IsoFields {
                 return (R) temporal.plus(Math.subtractExact(newValue, getFrom(temporal)), WEEKS);
             }
             @Override
-            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value) {
+            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long wowby, ResolverStyle resolverStyle) {
                 if ((temporal.isSupported(WEEK_BASED_YEAR) && temporal.isSupported(DAY_OF_WEEK)) == false) {
                     return null;
                 }
-                int wby = temporal.get(WEEK_BASED_YEAR);
-                int dow = temporal.get(DAY_OF_WEEK);
-                range().checkValidValue(value, this);  // lenient range
-                LocalDate date = LocalDate.of(wby, 1, 4).plusWeeks(value - 1).with(DAY_OF_WEEK, dow);
+                int wby = temporal.get(WEEK_BASED_YEAR);  // validated
+                LocalDate date = LocalDate.of(wby, 1, 4);
+                if (resolverStyle == ResolverStyle.LENIENT) {
+                    long dow = temporal.getLong(DAY_OF_WEEK);  // unvalidated
+                    if (dow > 7) {
+                        date = date.plusWeeks((dow - 1) / 7);
+                        dow = ((dow - 1) % 7) + 1;
+                    } else if (dow < 1) {
+                        date = date.plusWeeks(Math.subtractExact(dow,  7) / 7);
+                        dow = ((dow + 6) % 7) + 1;
+                    }
+                    date = date.plusWeeks(Math.subtractExact(wowby, 1)).with(DAY_OF_WEEK, dow);
+                } else {
+                    int dow = temporal.get(DAY_OF_WEEK);  // validated
+                    if (wowby < 1 || wowby > 52) {
+                        if (resolverStyle == ResolverStyle.STRICT) {
+                            getWeekRange(date).checkValidValue(wowby, this);  // only allow exact range
+                        } else {  // SMART
+                            range().checkValidValue(wowby, this);  // allow 1-53 rolling into next year
+                        }
+                    }
+                    date = date.plusWeeks(wowby - 1).with(DAY_OF_WEEK, dow);
+                }
                 Map<TemporalField, Long> result = new HashMap<>(2, 1.0f);
                 result.put(EPOCH_DAY, date.toEpochDay());
                 result.put(WEEK_BASED_YEAR, null);
@@ -420,7 +521,7 @@ public final class IsoFields {
             @Override
             public long getFrom(TemporalAccessor temporal) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: WeekBasedYear");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 return getWeekBasedYear(LocalDate.from(temporal));
             }
@@ -428,7 +529,7 @@ public final class IsoFields {
             @Override
             public <R extends Temporal> R adjustInto(R temporal, long newValue) {
                 if (isSupportedBy(temporal) == false) {
-                    throw new DateTimeException("Unsupported field: WeekBasedYear");
+                    throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 int newVal = range().checkValidIntValue(newValue, WEEK_BASED_YEAR);  // strict check
                 LocalDate date = LocalDate.from(temporal);
@@ -437,6 +538,11 @@ public final class IsoFields {
                 return (R) date.with(date);
             }
         };
+
+        @Override
+        public boolean isDateBased() {
+            return true;
+        }
 
         @Override
         public ValueRange rangeRefinedBy(TemporalAccessor temporal) {

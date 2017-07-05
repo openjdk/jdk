@@ -60,6 +60,8 @@
 package tck.java.time.format;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
@@ -71,29 +73,37 @@ import static org.testng.Assert.fail;
 import java.text.Format;
 import java.text.ParseException;
 import java.text.ParsePosition;
-import java.util.Locale;
-
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.DateTimeFormatSymbols;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
-import java.time.chrono.Chronology;
-import java.time.chrono.IsoChronology;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.temporal.Temporal;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -102,7 +112,7 @@ import org.testng.annotations.Test;
 /**
  * Test DateTimeFormatter.
  */
-@Test(groups={"tck"})
+@Test
 public class TCKDateTimeFormatter {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
@@ -160,87 +170,241 @@ public class TCKDateTimeFormatter {
     }
 
     //-----------------------------------------------------------------------
-    // print
+    @Test
+    public void test_resolverFields_selectOneDateResolveYMD() throws Exception {
+        DateTimeFormatter base = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral('-').appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                .appendValue(DAY_OF_MONTH).appendLiteral('-').appendValue(DAY_OF_YEAR).toFormatter();
+        DateTimeFormatter f = base.withResolverFields(YEAR, MONTH_OF_YEAR, DAY_OF_MONTH);
+        try {
+            base.parse("2012-6-30-321", LocalDate::from);  // wrong day-of-year
+            fail();
+        } catch (DateTimeException ex) {
+            // expected, fails as it produces two different dates
+        }
+        LocalDate parsed = f.parse("2012-6-30-321", LocalDate::from);  // ignored day-of-year
+        assertEquals(parsed, LocalDate.of(2012, 6, 30));
+    }
+
+    @Test
+    public void test_resolverFields_selectOneDateResolveYD() throws Exception {
+        DateTimeFormatter base = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral('-').appendValue(MONTH_OF_YEAR).appendLiteral('-')
+                .appendValue(DAY_OF_MONTH).appendLiteral('-').appendValue(DAY_OF_YEAR).toFormatter();
+        DateTimeFormatter f = base.withResolverFields(YEAR, DAY_OF_YEAR);
+        assertEquals(f.getResolverFields(), new HashSet<>(Arrays.asList(YEAR, DAY_OF_YEAR)));
+        try {
+            base.parse("2012-6-30-321", LocalDate::from);  // wrong month/day-of-month
+            fail();
+        } catch (DateTimeException ex) {
+            // expected, fails as it produces two different dates
+        }
+        LocalDate parsed = f.parse("2012-6-30-321", LocalDate::from);  // ignored month/day-of-month
+        assertEquals(parsed, LocalDate.of(2012, 11, 16));
+    }
+
+    @Test
+    public void test_resolverFields_ignoreCrossCheck() throws Exception {
+        DateTimeFormatter base = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral('-').appendValue(DAY_OF_YEAR).appendLiteral('-')
+                .appendValue(DAY_OF_WEEK).toFormatter();
+        DateTimeFormatter f = base.withResolverFields(YEAR, DAY_OF_YEAR);
+        try {
+            base.parse("2012-321-1", LocalDate::from);  // wrong day-of-week
+            fail();
+        } catch (DateTimeException ex) {
+            // expected, should fail in cross-check of day-of-week
+        }
+        LocalDate parsed = f.parse("2012-321-1", LocalDate::from);  // ignored wrong day-of-week
+        assertEquals(parsed, LocalDate.of(2012, 11, 16));
+    }
+
+    @Test
+    public void test_resolverFields_emptyList() throws Exception {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).toFormatter().withResolverFields();
+        TemporalAccessor parsed = f.parse("2012");
+        assertEquals(parsed.isSupported(YEAR), false);  // not in the list of resolverFields
+    }
+
+    @Test
+    public void test_resolverFields_listOfOneMatching() throws Exception {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).toFormatter().withResolverFields(YEAR);
+        TemporalAccessor parsed = f.parse("2012");
+        assertEquals(parsed.isSupported(YEAR), true);
+    }
+
+    @Test
+    public void test_resolverFields_listOfOneNotMatching() throws Exception {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).toFormatter().withResolverFields(MONTH_OF_YEAR);
+        TemporalAccessor parsed = f.parse("2012");
+        assertEquals(parsed.isSupported(YEAR), false);  // not in the list of resolverFields
+        assertEquals(parsed.isSupported(MONTH_OF_YEAR), false);
+    }
+
+    @Test
+    public void test_resolverFields_listOfOneNull() throws Exception {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).toFormatter().withResolverFields((TemporalField) null);
+        TemporalAccessor parsed = f.parse("2012");
+        assertEquals(parsed.isSupported(YEAR), false);  // not in the list of resolverFields
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_resolverFields_Array_null() throws Exception {
+        DateTimeFormatter.ISO_DATE.withResolverFields((TemporalField[]) null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_resolverFields_Set_null() throws Exception {
+        DateTimeFormatter.ISO_DATE.withResolverFields((Set<TemporalField>) null);
+    }
+
     //-----------------------------------------------------------------------
-    @DataProvider(name="print")
-    Object[][] data_format() {
+    // format
+    //-----------------------------------------------------------------------
+    @DataProvider(name="formatWithZoneWithChronology")
+    Object[][] data_format_withZone_withChronology() {
+        YearMonth ym = YearMonth.of(2008, 6);
         LocalDate ld = LocalDate.of(2008, 6, 30);
         LocalTime lt = LocalTime.of(11, 30);
         LocalDateTime ldt = LocalDateTime.of(2008, 6, 30, 11, 30);
         OffsetTime ot = OffsetTime.of(LocalTime.of(11, 30), OFFSET_PONE);
         OffsetDateTime odt = OffsetDateTime.of(LocalDateTime.of(2008, 6, 30, 11, 30), OFFSET_PONE);
         ZonedDateTime zdt = ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 11, 30), ZONE_PARIS);
+        ChronoZonedDateTime<ThaiBuddhistDate> thaiZdt = ThaiBuddhistChronology.INSTANCE.zonedDateTime(zdt);
         Instant instant = Instant.ofEpochSecond(3600);
         return new Object[][] {
-                {null, null, ld, "2008::"},
-                {null, null, lt, ":11:"},
-                {null, null, ldt, "2008:11:"},
-                {null, null, ot, ":11:+01:00"},
-                {null, null, odt, "2008:11:+01:00"},
-                {null, null, zdt, "2008:11:+02:00Europe/Paris"},
-                {null, null, instant, "::"},
+                {null, null, DayOfWeek.MONDAY, "::::"},
+                {null, null, ym, "2008::::ISO"},
+                {null, null, ld, "2008::::ISO"},
+                {null, null, lt, ":11:::"},
+                {null, null, ldt, "2008:11:::ISO"},
+                {null, null, ot, ":11:+01:00::"},
+                {null, null, odt, "2008:11:+01:00::ISO"},
+                {null, null, zdt, "2008:11:+02:00:Europe/Paris:ISO"},
+                {null, null, instant, "::::"},
 
-                {null, ZONE_PARIS, ld, "2008::"},
-                {null, ZONE_PARIS, lt, ":11:"},
-                {null, ZONE_PARIS, ldt, "2008:11:"},
-                {null, ZONE_PARIS, ot, ":11:+01:00"},
-                {null, ZONE_PARIS, odt, "2008:12:+02:00Europe/Paris"},
-                {null, ZONE_PARIS, zdt, "2008:11:+02:00Europe/Paris"},
-                {null, ZONE_PARIS, instant, "1970:02:+01:00Europe/Paris"},
+                {IsoChronology.INSTANCE, null, DayOfWeek.MONDAY, "::::ISO"},
+                {IsoChronology.INSTANCE, null, ym, "2008::::ISO"},
+                {IsoChronology.INSTANCE, null, ld, "2008::::ISO"},
+                {IsoChronology.INSTANCE, null, lt, ":11:::ISO"},
+                {IsoChronology.INSTANCE, null, ldt, "2008:11:::ISO"},
+                {IsoChronology.INSTANCE, null, ot, ":11:+01:00::ISO"},
+                {IsoChronology.INSTANCE, null, odt, "2008:11:+01:00::ISO"},
+                {IsoChronology.INSTANCE, null, zdt, "2008:11:+02:00:Europe/Paris:ISO"},
+                {IsoChronology.INSTANCE, null, instant, "::::ISO"},
 
-                {null, OFFSET_PTHREE, ld, "2008::"},
-                {null, OFFSET_PTHREE, lt, ":11:"},
-                {null, OFFSET_PTHREE, ldt, "2008:11:"},
-                {null, OFFSET_PTHREE, ot, ":11:+01:00"},
-                {null, OFFSET_PTHREE, odt, "2008:13:+03:00"},
-                {null, OFFSET_PTHREE, zdt, "2008:12:+03:00"},
-                {null, OFFSET_PTHREE, instant, "1970:04:+03:00"},
+                {null, ZONE_PARIS, DayOfWeek.MONDAY, ":::Europe/Paris:"},
+                {null, ZONE_PARIS, ym, "2008:::Europe/Paris:ISO"},
+                {null, ZONE_PARIS, ld, "2008:::Europe/Paris:ISO"},
+                {null, ZONE_PARIS, lt, ":11::Europe/Paris:"},
+                {null, ZONE_PARIS, ldt, "2008:11::Europe/Paris:ISO"},
+                {null, ZONE_PARIS, ot, ":11:+01:00:Europe/Paris:"},
+                {null, ZONE_PARIS, odt, "2008:12:+02:00:Europe/Paris:ISO"},
+                {null, ZONE_PARIS, zdt, "2008:11:+02:00:Europe/Paris:ISO"},
+                {null, ZONE_PARIS, instant, "1970:02:+01:00:Europe/Paris:ISO"},
 
-                {ThaiBuddhistChronology.INSTANCE, null, ld, "2551::"},
-                {ThaiBuddhistChronology.INSTANCE, null, lt, ":11:"},
-                {ThaiBuddhistChronology.INSTANCE, null, ldt, "2551:11:"},
-                {ThaiBuddhistChronology.INSTANCE, null, ot, ":11:+01:00"},
-                {ThaiBuddhistChronology.INSTANCE, null, odt, "2551:11:+01:00"},
-                {ThaiBuddhistChronology.INSTANCE, null, zdt, "2551:11:+02:00Europe/Paris"},
-                {ThaiBuddhistChronology.INSTANCE, null, instant, "::"},
+                {null, OFFSET_PTHREE, DayOfWeek.MONDAY, ":::+03:00:"},
+                {null, OFFSET_PTHREE, ym, "2008:::+03:00:ISO"},
+                {null, OFFSET_PTHREE, ld, "2008:::+03:00:ISO"},
+                {null, OFFSET_PTHREE, lt, ":11::+03:00:"},
+                {null, OFFSET_PTHREE, ldt, "2008:11::+03:00:ISO"},
+                {null, OFFSET_PTHREE, ot, null},  // offset and zone clash
+                {null, OFFSET_PTHREE, odt, "2008:13:+03:00:+03:00:ISO"},
+                {null, OFFSET_PTHREE, zdt, "2008:12:+03:00:+03:00:ISO"},
+                {null, OFFSET_PTHREE, instant, "1970:04:+03:00:+03:00:ISO"},
 
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ld, "2551::"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, lt, ":11:"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ldt, "2551:11:"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ot, ":11:+01:00"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, odt, "2551:12:+02:00Europe/Paris"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, zdt, "2551:11:+02:00Europe/Paris"},
-                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, instant, "1970:02:+01:00Europe/Paris"},
+                {ThaiBuddhistChronology.INSTANCE, null, DayOfWeek.MONDAY, null},  // not a complete date
+                {ThaiBuddhistChronology.INSTANCE, null, ym, null},  // not a complete date
+                {ThaiBuddhistChronology.INSTANCE, null, ld, "2551::::ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, lt, ":11:::ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, ldt, "2551:11:::ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, ot, ":11:+01:00::ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, odt, "2551:11:+01:00::ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, zdt, "2551:11:+02:00:Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, null, instant, "::::ThaiBuddhist"},
+
+                {ThaiBuddhistChronology.INSTANCE, null, DayOfWeek.MONDAY, null},  // not a complete date
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ym, null},  // not a complete date
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ld, "2551:::Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, lt, ":11::Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ldt, "2551:11::Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, ot, ":11:+01:00:Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, odt, "2551:12:+02:00:Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, zdt, "2551:11:+02:00:Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, instant, "2513:02:+01:00:Europe/Paris:ThaiBuddhist"},
+
+                {null, ZONE_PARIS, thaiZdt, "2551:11:+02:00:Europe/Paris:ThaiBuddhist"},
+                {ThaiBuddhistChronology.INSTANCE, ZONE_PARIS, thaiZdt, "2551:11:+02:00:Europe/Paris:ThaiBuddhist"},
+                {IsoChronology.INSTANCE, ZONE_PARIS, thaiZdt, "2008:11:+02:00:Europe/Paris:ISO"},
         };
     }
 
-    @Test(dataProvider="print")
-    public void test_print_Temporal(Chronology overrideChrono, ZoneId overrideZone, Temporal temporal, String expected) {
+    @Test(dataProvider="formatWithZoneWithChronology")
+    public void test_format_withZone_withChronology(Chronology overrideChrono, ZoneId overrideZone, TemporalAccessor temporal, String expected) {
         DateTimeFormatter test = new DateTimeFormatterBuilder()
                 .optionalStart().appendValue(YEAR, 4).optionalEnd()
                 .appendLiteral(':').optionalStart().appendValue(HOUR_OF_DAY, 2).optionalEnd()
-                .appendLiteral(':').optionalStart().appendOffsetId().optionalStart().appendZoneRegionId().optionalEnd().optionalEnd()
+                .appendLiteral(':').optionalStart().appendOffsetId().optionalEnd()
+                .appendLiteral(':').optionalStart().appendZoneId().optionalEnd()
+                .appendLiteral(':').optionalStart().appendChronologyId().optionalEnd()
                 .toFormatter(Locale.ENGLISH)
                 .withChronology(overrideChrono).withZone(overrideZone);
-        String result = test.format(temporal);
-        assertEquals(result, expected);
+        if (expected != null) {
+            String result = test.format(temporal);
+            assertEquals(result, expected);
+        } else {
+            try {
+                test.format(temporal);
+                fail("Formatting should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
     }
 
     @Test
-    public void test_print_Temporal_simple() throws Exception {
+    public void test_format_withChronology_nonChronoFieldMapLink() {
+        TemporalAccessor temporal = new TemporalAccessor() {
+            @Override
+            public boolean isSupported(TemporalField field) {
+                return field == IsoFields.WEEK_BASED_YEAR;
+            }
+            @Override
+            public long getLong(TemporalField field) {
+                if (field == IsoFields.WEEK_BASED_YEAR) {
+                    return 2345;
+                }
+                throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            }
+        };
+        DateTimeFormatter test = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR, 4)
+                .toFormatter(Locale.ENGLISH)
+                .withChronology(IsoChronology.INSTANCE);
+        String result = test.format(temporal);
+        assertEquals(result, "2345");
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_format_TemporalAccessor_simple() {
         DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
         String result = test.format(LocalDate.of(2008, 6, 30));
         assertEquals(result, "ONE30");
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
-    public void test_print_Temporal_noSuchField() throws Exception {
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_format_TemporalAccessor_noSuchField() {
         DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
         test.format(LocalTime.of(11, 30));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
-    public void test_print_Temporal_null() throws Exception {
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_format_TemporalAccessor_null() {
         DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
         test.format((TemporalAccessor) null);
     }

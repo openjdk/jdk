@@ -68,11 +68,12 @@ cp "${TESTSRC}"/RedefineMethodWithAnnotationsAnnotations.java \
     RedefineMethodWithAnnotationsAnnotations.java
 
 "${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodWithAnnotationsAgent.jar \
+    -XX:+StressLdcRewrite -XX:+IgnoreUnrecognizedVMOptions \
     -cp "${TESTCLASSES}" RedefineMethodWithAnnotationsApp > output.log 2>&1
 cat output.log
 
-MESG="Exception"
-grep "$MESG" output.log
+MESG="Exception|fatal"
+egrep "$MESG" output.log
 result=$?
 if [ "$result" = 0 ]; then
     echo "FAIL: found '$MESG' in the test output"

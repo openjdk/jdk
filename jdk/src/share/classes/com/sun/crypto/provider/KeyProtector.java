@@ -81,8 +81,6 @@ final class KeyProtector {
     // key protector
     private char[] password;
 
-    private static final Provider PROV = Security.getProvider("SunJCE");
-
     KeyProtector(char[] password) {
         if (password == null) {
            throw new IllegalArgumentException("password can't be null");
@@ -119,7 +117,7 @@ final class KeyProtector {
         // wrap encrypted private key in EncryptedPrivateKeyInfo
         // (as defined in PKCS#8)
         AlgorithmParameters pbeParams =
-            AlgorithmParameters.getInstance("PBE", PROV);
+            AlgorithmParameters.getInstance("PBE", SunJCE.getInstance());
         pbeParams.init(pbeSpec);
 
         AlgorithmId encrAlg = new AlgorithmId
@@ -299,7 +297,7 @@ final class KeyProtector {
 
         PBEWithMD5AndTripleDESCipher cipherSpi;
         cipherSpi = new PBEWithMD5AndTripleDESCipher();
-        cipher = new CipherForKeyProtector(cipherSpi, PROV,
+        cipher = new CipherForKeyProtector(cipherSpi, SunJCE.getInstance(),
                                            "PBEWithMD5AndTripleDES");
         cipher.init(Cipher.ENCRYPT_MODE, sKey, pbeSpec);
         return new SealedObjectForKeyProtector(key, cipher);
@@ -330,8 +328,9 @@ final class KeyProtector {
             }
             PBEWithMD5AndTripleDESCipher cipherSpi;
             cipherSpi = new PBEWithMD5AndTripleDESCipher();
-            Cipher cipher = new CipherForKeyProtector(cipherSpi, PROV,
-                                                   "PBEWithMD5AndTripleDES");
+            Cipher cipher = new CipherForKeyProtector(cipherSpi,
+                                                      SunJCE.getInstance(),
+                                                      "PBEWithMD5AndTripleDES");
             cipher.init(Cipher.DECRYPT_MODE, skey, params);
             return (Key)soForKeyProtector.getObject(cipher);
         } catch (NoSuchAlgorithmException ex) {

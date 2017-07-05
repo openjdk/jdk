@@ -121,365 +121,365 @@ public class TestLocalDateTime extends AbstractTest {
         };
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withYear_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withYear(2007);
         assertSame(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate());
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMonth_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withMonth(7);
         assertSame(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate());
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withDayOfMonth_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withDayOfMonth(15);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withDayOfYear_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withDayOfYear(31 + 28 + 31 + 30 + 31 + 30 + 15);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withHour_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withHour(12);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withHour_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(1, 0)).withHour(0);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withHour_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(1, 0)).withHour(12);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMinute_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withMinute(30);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMinute_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 1)).withMinute(0);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMinute_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 1)).withMinute(0);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withSecond_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withSecond(40);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withSecond_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 0, 1)).withSecond(0);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withSecond_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 0, 1)).withSecond(0);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withNanoOfSecond_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.withNano(987654321);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withNanoOfSecond_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 0, 0, 1)).withNano(0);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withNanoOfSecond_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 0, 0, 1)).withNano(0);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plus_adjuster_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plus(Period.ZERO);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plus_Period_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plus(MockSimplePeriod.ZERO_DAYS);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plus_longPeriodUnit_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plus(0, ChronoUnit.DAYS);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusYears_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusYears(0);
         assertSame(TEST_2007_07_15_12_30_40_987654321, t);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMonths_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusMonths(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusWeeks_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusWeeks(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusDays_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusDays(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusHours_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusHours(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusHours_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(23, 0)).plusHours(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusHours_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(11, 0)).plusHours(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMinutes_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusMinutes(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMinutes_noChange_oneDay_same() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusMinutes(24 * 60);
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMinutes_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(23, 59)).plusMinutes(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMinutes_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(11, 59)).plusMinutes(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusSeconds_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusSeconds(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusSeconds_noChange_oneDay_same() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusSeconds(24 * 60 * 60);
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusSeconds_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(23, 59, 59)).plusSeconds(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusSeconds_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(11, 59, 59)).plusSeconds(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusNanos_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusNanos(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusNanos_noChange_oneDay_same() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.plusNanos(24 * 60 * 60 * 1000000000L);
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusNanos_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(23, 59, 59, 999999999)).plusNanos(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusNanos_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(11, 59, 59, 999999999)).plusNanos(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minus_adjuster_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minus(Period.ZERO);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minus_Period_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minus(MockSimplePeriod.ZERO_DAYS);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minus_longPeriodUnit_zero() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minus(0, ChronoUnit.DAYS);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusYears_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusYears(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMonths_int_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusMonths(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusWeeks_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusWeeks(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusDays_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusDays(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusHours_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusHours(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusHours_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(1, 0)).minusHours(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusHours_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(13, 0)).minusHours(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMinutes_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusMinutes(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMinutes_noChange_oneDay_same() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusMinutes(24 * 60);
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMinutes_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 1)).minusMinutes(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMinutes_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 1)).minusMinutes(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusSeconds_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusSeconds(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusSeconds_noChange_oneDay() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusSeconds(24 * 60 * 60);
         assertEquals(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1));
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusSeconds_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 0, 1)).minusSeconds(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusSeconds_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 0, 1)).minusSeconds(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusNanos_noChange() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusNanos(0);
         assertSame(t, TEST_2007_07_15_12_30_40_987654321);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusNanos_noChange_oneDay() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusNanos(24 * 60 * 60 * 1000000000L);
         assertEquals(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1));
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusNanos_toMidnight() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(0, 0, 0, 1)).minusNanos(1);
         assertSame(t.toLocalTime(), LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusNanos_toMidday() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.with(LocalTime.of(12, 0, 0, 1)).minusNanos(1);
         assertSame(t.toLocalTime(), LocalTime.NOON);
@@ -488,7 +488,7 @@ public class TestLocalDateTime extends AbstractTest {
     //-----------------------------------------------------------------------
     // toLocalDate()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleDates", groups={"implementation"})
+    @Test(dataProvider="sampleDates")
     public void test_getDate(int year, int month, int day) {
         LocalDate d = LocalDate.of(year, month, day);
         LocalDateTime dt = LocalDateTime.of(d, LocalTime.MIDNIGHT);
@@ -498,7 +498,7 @@ public class TestLocalDateTime extends AbstractTest {
     //-----------------------------------------------------------------------
     // toLocalTime()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleTimes", groups={"implementation"})
+    @Test(dataProvider="sampleTimes")
     public void test_getTime(int h, int m, int s, int ns) {
         LocalTime t = LocalTime.of(h, m, s, ns);
         LocalDateTime dt = LocalDateTime.of(LocalDate.of(2011, 7, 30), t);

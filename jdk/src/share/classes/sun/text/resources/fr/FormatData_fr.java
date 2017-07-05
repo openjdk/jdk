@@ -76,11 +76,11 @@
 
 package sun.text.resources.fr;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_fr extends ListResourceBundle {
+public class FormatData_fr extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -118,6 +118,23 @@ public class FormatData_fr extends ListResourceBundle {
                     "" // abb mo month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "dimanche", // Sunday
@@ -140,6 +157,17 @@ public class FormatData_fr extends ListResourceBundle {
                     "sam." // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "dim.",
+                    "lun.",
+                    "mar.",
+                    "mer.",
+                    "jeu.",
+                    "ven.",
+                    "sam.",
+                }
+            },
             { "DayNarrows",
                 new String[] {
                     "D",
@@ -155,6 +183,30 @@ public class FormatData_fr extends ListResourceBundle {
                 new String[] { // era strings
                     "BC",
                     "ap. J.-C."
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "av. J.-C.",
+                    "ap. J.-C.",
+                }
+            },
+            { "buddhist.Eras",
+                new String[] {
+                    "BC",
+                    "\u00e8re bouddhiste",
+                }
+            },
+            { "buddhist.short.Eras",
+                new String[] {
+                    "BC",
+                    "\u00e8re b.",
+                }
+            },
+            { "buddhist.narrow.Eras",
+                new String[] {
+                    "BC",
+                    "E.B.",
                 }
             },
             { "NumberPatterns",
@@ -201,112 +253,6 @@ public class FormatData_fr extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GaMjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM, y G",
-                    "d/M/yyyy",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM, y G",
-                    "d/M/y GGGGG",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM, y G",
-                    "d/M/y GGGGG",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM, y GGGG",
-                    "d/M/y G",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "Mouharram",
-                    "Safar",
-                    "Rabi\u02bb-oul-Aououal",
-                    "Rabi\u02bb-out-Tani",
-                    "Djoumada-l-Oula",
-                    "Djoumada-t-Tania",
-                    "Radjab",
-                    "Cha\u02bbban",
-                    "Ramadan",
-                    "Chaououal",
-                    "Dou-l-Qa\u02bbda",
-                    "Dou-l-Hidjja",
-                    "",
-                }
-            },
-            { "islamic.MonthAbbreviations",
-                new String[] {
-                    "Mouh.",
-                    "Saf.",
-                    "Rabi\u02bb-oul-A.",
-                    "Rabi\u02bb-out-T.",
-                    "Djoum.-l-O.",
-                    "Djoum.-t-T.",
-                    "Radj.",
-                    "Cha.",
-                    "Ram.",
-                    "Chaou.",
-                    "Dou-l-Q.",
-                    "Dou-l-H.",
-                    "",
-                }
-            },
-            { "islamic.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM, y G",
-                    "d/M/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM, y GGGG",
-                    "d/M/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "Calendrier civil musulman" },
-            { "calendarname.islamicc", "Calendrier civil musulman" },
-            { "calendarname.islamic", "Calendrier musulman" },
-            { "calendarname.japanese", "Calendrier japonais" },
-            { "calendarname.gregorian", "Calendrier gr\u00e9gorien" },
-            { "calendarname.gregory", "Calendrier gr\u00e9gorien" },
-            { "calendarname.roc", "Calendrier r\u00e9publicain chinois" },
-            { "calendarname.buddhist", "Calendrier bouddhiste" },
-            { "field.era", "\u00e8re" },
-            { "field.year", "ann\u00e9e" },
-            { "field.month", "mois" },
-            { "field.week", "semaine" },
-            { "field.weekday", "jour de la semaine" },
-            { "field.dayperiod", "cadran" },
-            { "field.hour", "heure" },
-            { "field.minute", "minute" },
-            { "field.second", "seconde" },
-            { "field.zone", "fuseau horaire" },
         };
     }
 }

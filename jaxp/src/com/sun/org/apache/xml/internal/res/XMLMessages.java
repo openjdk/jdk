@@ -22,10 +22,9 @@
  */
 package com.sun.org.apache.xml.internal.res;
 
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import java.util.ListResourceBundle;
 import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 /**
  * A utility class for issuing XML error messages.
@@ -82,8 +81,9 @@ public class XMLMessages
    */
   public static final String createXMLMessage(String msgKey, Object args[])
   {
-    if (XMLBundle == null)
-      XMLBundle = loadResourceBundle(XML_ERROR_RESOURCES);
+    if (XMLBundle == null) {
+        XMLBundle = SecuritySupport.getResourceBundle(XML_ERROR_RESOURCES);
+    }
 
     if (XMLBundle != null)
     {
@@ -156,61 +156,4 @@ public class XMLMessages
     return fmsg;
   }
 
-  /**
-   * Return a named ResourceBundle for a particular locale.  This method mimics the behavior
-   * of ResourceBundle.getBundle().
-   *
-   * @param className The class name of the resource bundle.
-   * @return the ResourceBundle
-   * @throws MissingResourceException
-   */
-  public static ListResourceBundle loadResourceBundle(String className)
-          throws MissingResourceException
-  {
-    Locale locale = Locale.getDefault();
-
-    try
-    {
-      return (ListResourceBundle)ResourceBundle.getBundle(className, locale);
-    }
-    catch (MissingResourceException e)
-    {
-      try  // try to fall back to en_US if we can't load
-      {
-
-        // Since we can't find the localized property file,
-        // fall back to en_US.
-        return (ListResourceBundle)ResourceBundle.getBundle(
-          className, new Locale("en", "US"));
-      }
-      catch (MissingResourceException e2)
-      {
-
-        // Now we are really in trouble.
-        // very bad, definitely very bad...not going to get very far
-        throw new MissingResourceException(
-          "Could not load any resource bundles." + className, className, "");
-      }
-    }
-  }
-
-  /**
-   * Return the resource file suffic for the indicated locale
-   * For most locales, this will be based the language code.  However
-   * for Chinese, we do distinguish between Taiwan and PRC
-   *
-   * @param locale the locale
-   * @return an String suffix which can be appended to a resource name
-   */
-  protected static String getResourceSuffix(Locale locale)
-  {
-
-    String suffix = "_" + locale.getLanguage();
-    String country = locale.getCountry();
-
-    if (country.equals("TW"))
-      suffix += "_" + country;
-
-    return suffix;
-  }
 }

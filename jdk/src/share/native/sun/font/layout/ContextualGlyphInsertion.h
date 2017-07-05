@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -49,6 +49,11 @@ struct ContextualGlyphInsertionHeader : MorphStateTableHeader
 {
 };
 
+struct ContextualGlyphInsertionHeader2 : MorphStateTableHeader2
+{
+    le_uint32 insertionTableOffset;
+};
+
 enum ContextualGlyphInsertionFlags
 {
     cgiSetMark                  = 0x8000,
@@ -61,10 +66,16 @@ enum ContextualGlyphInsertionFlags
     cgiMarkedInsertCountMask    = 0x001F
 };
 
-struct LigatureSubstitutionStateEntry : StateEntry
+struct ContextualGlyphInsertionStateEntry : StateEntry
 {
     ByteOffset currentInsertionListOffset;
     ByteOffset markedInsertionListOffset;
+};
+
+struct ContextualGlyphInsertionStateEntry2 : StateEntry2
+{
+    le_uint16 currentInsertionListIndex;
+    le_uint16 markedInsertionListIndex;
 };
 
 U_NAMESPACE_END

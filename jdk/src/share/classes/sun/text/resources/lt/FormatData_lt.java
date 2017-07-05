@@ -76,11 +76,11 @@
 
 package sun.text.resources.lt;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_lt extends ListResourceBundle {
+public class FormatData_lt extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -135,6 +135,40 @@ public class FormatData_lt extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "Saus.",
+                    "Vas.",
+                    "Kov.",
+                    "Bal.",
+                    "Geg.",
+                    "Bir.",
+                    "Liep.",
+                    "Rugp.",
+                    "Rugs.",
+                    "Spal.",
+                    "Lapkr.",
+                    "Gruod.",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "S",
+                    "V",
+                    "K",
+                    "B",
+                    "G",
+                    "B",
+                    "L",
+                    "R",
+                    "R",
+                    "S",
+                    "L",
+                    "G",
+                    "",
+                }
+            },
             { "standalone.MonthNarrows",
                 new String[] {
                     "S",
@@ -163,6 +197,17 @@ public class FormatData_lt extends ListResourceBundle {
                     "\u0160e\u0161tadienis" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "sekmadienis",
+                    "pirmadienis",
+                    "antradienis",
+                    "tre\u010diadienis",
+                    "ketvirtadienis",
+                    "penktadienis",
+                    "\u0161e\u0161tadienis",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "Sk", // abb Sunday
@@ -172,6 +217,17 @@ public class FormatData_lt extends ListResourceBundle {
                     "Kt", // abb Thursday
                     "Pn", // abb Friday
                     "\u0160t" // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "Sk",
+                    "Pr",
+                    "An",
+                    "Tr",
+                    "Kt",
+                    "Pn",
+                    "\u0160t",
                 }
             },
             { "DayNarrows",
@@ -200,6 +256,12 @@ public class FormatData_lt extends ListResourceBundle {
                 new String[] { // era strings
                     "pr.Kr.",
                     "po.Kr."
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "pr. Kr.",
+                    "po Kr.",
                 }
             },
             { "NumberElements",
@@ -239,32 +301,6 @@ public class FormatData_lt extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "y G, MMMM d, EEEE",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "GGGGG yyyy-MM-dd",
-                }
-            },
-            { "calendarname.islamic-civil", "Pilietinis islamo kalendorius" },
-            { "calendarname.islamicc", "Pilietinis islamo kalendorius" },
-            { "calendarname.islamic", "Islamo kalendorius" },
-            { "calendarname.japanese", "Japon\u0173 kalendorius" },
-            { "calendarname.gregorian", "Grigaliaus kalendorius" },
-            { "calendarname.gregory", "Grigaliaus kalendorius" },
-            { "calendarname.roc", "Kinijos Respublikos kalendorius" },
-            { "calendarname.buddhist", "Budist\u0173 kalendorius" },
-            { "field.era", "era" },
-            { "field.year", "metai" },
-            { "field.month", "m\u0117nuo" },
-            { "field.week", "savait\u0117" },
-            { "field.weekday", "savait\u0117s diena" },
-            { "field.dayperiod", "dienos metas" },
-            { "field.hour", "valanda" },
-            { "field.minute", "minut\u0117" },
-            { "field.second", "sekund\u0117" },
-            { "field.zone", "laiko juosta" },
         };
     }
 }

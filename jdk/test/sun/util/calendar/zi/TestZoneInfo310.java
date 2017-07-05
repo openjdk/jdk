@@ -68,8 +68,8 @@ public class TestZoneInfo310 {
         }
         System.out.println("Compiling tz files!");
         Main.main(alist.toArray(new String[alist.size()]));
-        //////////////////////////////////
 
+        //////////////////////////////////
         System.out.println("testing!");
         ZoneInfoFile.ziDir = zidir;
         long t0, t1;
@@ -97,10 +97,26 @@ public class TestZoneInfo310 {
         Arrays.sort(zids_old);
 
         t0 = System.nanoTime();
+        String[] alias_old = ZoneInfoOld.getAliasTable()
+                                 .keySet().toArray(new String[0]);
+        t1 = System.nanoTime();
+        System.out.printf("OLD.getAliasTable()=%d, total=%d%n",
+                          (t1 - t0) / 1000, alias_old.length);
+        Arrays.sort(alias_old);
+
+        t0 = System.currentTimeMillis();
+        for (String zid : zids_old) {
+            ZoneInfoOld.getTimeZone(zid);
+        }
+        t1 = System.currentTimeMillis();
+        System.out.printf("OLD.TotalTZ()=%d (ms)%n", t1 - t0);
+
+/*
+        t0 = System.nanoTime();
         ZoneId.of("America/Los_Angeles").getRules();
         t1 = System.nanoTime();
-        System.out.printf("NEW.getTimeZone()[1]=%d%n", (t1 - t0) / 1000);
-
+        System.out.printf("NEW.ZoneId.of()[1]=%d%n", (t1 - t0) / 1000);
+*/
         t0 = System.nanoTime();
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
         t1 = System.nanoTime();
@@ -123,6 +139,14 @@ public class TestZoneInfo310 {
                           (t1 - t0) / 1000, zids_new.length);
         Arrays.sort(zids_new);
 
+        t0 = System.nanoTime();
+        String[] alias_new = sun.util.calendar.ZoneInfo.getAliasTable()
+                                 .keySet().toArray(new String[0]);
+        t1 = System.nanoTime();
+        System.out.printf("NEW.getAliasTable()=%d, total=%d%n",
+                          (t1 - t0) / 1000, alias_new.length);
+        Arrays.sort(alias_new);
+
         t0 = System.currentTimeMillis();
         for (String zid : zids_new) {
             TimeZone.getTimeZone(zid);
@@ -130,16 +154,14 @@ public class TestZoneInfo310 {
         t1 = System.currentTimeMillis();
         System.out.printf("NEW.TotalTZ()=%d (ms)%n", t1 - t0);
 
-        t0 = System.currentTimeMillis();
-        for (String zid : zids_old) {
-            ZoneInfoOld.getTimeZone(zid);
-        }
-        t1 = System.currentTimeMillis();
-        System.out.printf("OLD.TotalTZ()=%d (ms)%n", t1 - t0);
-
         if (!Arrays.equals(zids_old, zids_new)) {
             throw new RuntimeException("  FAILED:  availableIds don't match");
         }
+
+        if (!Arrays.equals(alias_old, alias_new)) {
+            throw new RuntimeException("  FAILED:  aliases don't match");
+        }
+
         for (String zid : zids_new) {
             ZoneInfoOld zi = toZoneInfoOld(TimeZone.getTimeZone(zid));
             ZoneInfoOld ziOLD = (ZoneInfoOld)ZoneInfoOld.getTimeZone(zid);

@@ -106,7 +106,21 @@ FILES_cpp_shared = \
         OpenTypeLayoutEngine.cpp \
         ThaiLayoutEngine.cpp \
         ScriptAndLanguageTags.cpp \
-        FontInstanceAdapter.cpp
+        FontInstanceAdapter.cpp \
+        ContextualGlyphInsertionProc2.cpp \
+        ContextualGlyphSubstProc2.cpp \
+        GXLayoutEngine2.cpp \
+        IndicRearrangementProcessor2.cpp \
+        LigatureSubstProc2.cpp \
+        MorphTables2.cpp \
+        NonContextualGlyphSubstProc2.cpp \
+        SegmentArrayProcessor2.cpp \
+        SegmentSingleProcessor2.cpp \
+        SimpleArrayProcessor2.cpp \
+        SingleTableProcessor2.cpp \
+        StateTableProcessor2.cpp \
+        SubtableProcessor2.cpp \
+        TrimmedArrayProcessor2.cpp
 
 
 ifeq ($(PLATFORM),windows)

@@ -104,6 +104,8 @@ public final class DOMImplementationRegistry {
      */
     private static final String FALLBACK_CLASS =
             "com.sun.org.apache.xerces.internal.dom.DOMXSImplementationSourceImpl";
+    private static final String DEFAULT_PACKAGE =
+            "com.sun.org.apache.xerces.internal.dom";
     /**
      * Private constructor.
      * @param srcs Vector List of DOMImplementationSources
@@ -168,10 +170,15 @@ public final class DOMImplementationRegistry {
             StringTokenizer st = new StringTokenizer(p);
             while (st.hasMoreTokens()) {
                 String sourceName = st.nextToken();
-                // Use context class loader, falling back to Class.forName
-                // if and only if this fails...
+                // make sure we have access to restricted packages
+                boolean internal = false;
+                if (System.getSecurityManager() != null) {
+                    if (sourceName != null && sourceName.startsWith(DEFAULT_PACKAGE)) {
+                        internal = true;
+                    }
+                }
                 Class sourceClass = null;
-                if (classLoader != null) {
+                if (classLoader != null && !internal) {
                     sourceClass = classLoader.loadClass(sourceName);
                 } else {
                     sourceClass = Class.forName(sourceName);

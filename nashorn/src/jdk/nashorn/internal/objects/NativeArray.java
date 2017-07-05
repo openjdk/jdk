@@ -76,7 +76,7 @@ public final class NativeArray extends ScriptObject {
 
     private static final MethodHandle REDUCE_CALLBACK_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
             Object.class, Undefined.class, Object.class, Object.class, int.class, Object.class);
-    private static final MethodHandle CALL_CMP                = Bootstrap.createDynamicInvoker("dyn:call", int.class,
+    private static final MethodHandle CALL_CMP                = Bootstrap.createDynamicInvoker("dyn:call", double.class,
             ScriptFunction.class, Object.class, Object.class, Object.class);
 
     private static final InvokeByName TO_LOCALE_STRING = new InvokeByName("toLocaleString", ScriptObject.class, String.class);
@@ -793,11 +793,15 @@ public final class NativeArray extends ScriptObject {
     }
 
     private static ScriptFunction compareFunction(final Object comparefn) {
-        try {
-            return (ScriptFunction)comparefn;
-        } catch (final ClassCastException e) {
-            return null; //undefined or null
+        if (comparefn == ScriptRuntime.UNDEFINED) {
+            return null;
         }
+
+        if (! (comparefn instanceof ScriptFunction)) {
+            throw typeError("not.a.function", ScriptRuntime.safeToString(comparefn));
+        }
+
+        return (ScriptFunction)comparefn;
     }
 
     private static Object[] sort(final Object[] array, final Object comparefn) {
@@ -819,7 +823,7 @@ public final class NativeArray extends ScriptObject {
 
                 if (cmp != null) {
                     try {
-                        return (int)CALL_CMP.invokeExact(cmp, cmpThis, x, y);
+                        return (int)Math.signum((double)CALL_CMP.invokeExact(cmp, cmpThis, x, y));
                     } catch (final RuntimeException | Error e) {
                         throw e;
                     } catch (final Throwable t) {

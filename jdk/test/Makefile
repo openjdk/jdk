@@ -478,7 +478,7 @@ jdk_io: $(call TestDirs, java/io)
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_lang
 JDK_DEFAULT_TARGETS += jdk_lang
-jdk_lang: $(call TestDirs, java/lang sun/invoke sun/misc vm)
+jdk_lang: $(call TestDirs, java/lang sun/invoke sun/misc sun/reflect vm)
 	$(call RunAgentvmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
@@ -513,8 +513,9 @@ jdk_other: $(call TestDirs, \
           javax/script \
 	  java/sql javax/sql \
           javax/smartcardio \
+          javax/xml/jaxp \
 	  javax/xml/soap \
-	  javax/xml/ws com/sun/internal/ws \
+	  javax/xml/ws com/sun/internal/ws com/sun/org/glassfish \
 	  jdk/asm \
 	  com/sun/org/apache/xerces \
           com/sun/corba \

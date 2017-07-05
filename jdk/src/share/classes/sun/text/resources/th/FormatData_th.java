@@ -76,11 +76,11 @@
 
 package sun.text.resources.th;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_th extends ListResourceBundle {
+public class FormatData_th extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         String[] timePatterns = new String[] {
@@ -133,6 +133,23 @@ public class FormatData_th extends ListResourceBundle {
                     "\u0e1e.\u0e22.", // abb november
                     "\u0e18.\u0e04.", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "\u0e21.\u0e04.",
+                    "\u0e01.\u0e1e.",
+                    "\u0e21\u0e35.\u0e04.",
+                    "\u0e40\u0e21.\u0e22.",
+                    "\u0e1e.\u0e04.",
+                    "\u0e21\u0e34.\u0e22",
+                    "\u0e01.\u0e04.",
+                    "\u0e2a.\u0e04.",
+                    "\u0e01.\u0e22.",
+                    "\u0e15.\u0e04.",
+                    "\u0e1e.\u0e22.",
+                    "\u0e18.\u0e04.",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -209,22 +226,38 @@ public class FormatData_th extends ListResourceBundle {
                     "\u0e04.\u0e28."
                 }
             },
+            { "short.Eras",
+                new String[] {
+                    "\u0e01\u0e48\u0e2d\u0e19 \u0e04.\u0e28.",
+                    "\u0e04.\u0e28.",
+                }
+            },
             { "narrow.Eras",
                 new String[] {
                     "\u0e01\u0e48\u0e2d\u0e19 \u0e04.\u0e28.",
                     "\u0e04.\u0e28.",
                 }
             },
+            { "japanese.Eras",
+                new String[] {
+                    "\u0e04.\u0e28.",
+                    "\u0e40\u0e21\u0e08\u0e34",
+                    "\u0e17\u0e30\u0e2d\u0e34\u0e42\u0e0a",
+                    "\u0e42\u0e0a\u0e27\u0e30",
+                    "\u0e40\u0e2e\u0e40\u0e0b",
+                }
+            },
+            { "japanese.short.Eras",
+                new String[] {
+                    "\u0e04.\u0e28.",
+                    "\u0e21",
+                    "\u0e17",
+                    "\u0e0a",
+                    "\u0e2e",
+                }
+            },
             { "buddhist.TimePatterns",
                 timePatterns
-            },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE\u0e17\u0e35\u0e48 d MMMM G y",
-                    "d MMMM y",
-                    "d MMM y",
-                    "d/M/yyyy",
-                }
             },
             { "buddhist.DatePatterns",
                 datePatterns
@@ -242,77 +275,6 @@ public class FormatData_th extends ListResourceBundle {
                 dateTimePatterns
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE\u0e17\u0e35\u0e48 d MMMM \u0e1b\u0e35G\u0e17\u0e35\u0e48 y",
-                    "d MMMM \u0e1b\u0e35G y",
-                    "d MMM G y",
-                    "d/M/yy",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE\u0e17\u0e35\u0e48 d MMMM \u0e1b\u0e35G\u0e17\u0e35\u0e48 y",
-                    "d MMMM \u0e1b\u0e35G y",
-                    "d MMM G y",
-                    "d/M/yy",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE\u0e17\u0e35\u0e48 d MMMM \u0e1b\u0e35GGGG\u0e17\u0e35\u0e48 y",
-                    "d MMMM \u0e1b\u0e35GGGG y",
-                    "d MMM GGGG y",
-                    "d/M/yy",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "\u0e21\u0e38\u0e2e\u0e30\u0e23\u0e4c\u0e23\u0e2d\u0e21",
-                    "\u0e0b\u0e2d\u0e1f\u0e32\u0e23\u0e4c",
-                    "\u0e23\u0e2d\u0e1a\u0e35 I",
-                    "\u0e23\u0e2d\u0e1a\u0e35 II",
-                    "\u0e08\u0e38\u0e21\u0e32\u0e14\u0e32 I",
-                    "\u0e08\u0e38\u0e21\u0e32\u0e14\u0e32 II",
-                    "\u0e23\u0e2d\u0e08\u0e31\u0e1a",
-                    "\u0e0a\u0e30\u0e2d\u0e30\u0e1a\u0e32\u0e19",
-                    "\u0e23\u0e2d\u0e21\u0e30\u0e14\u0e2d\u0e19",
-                    "\u0e40\u0e0a\u0e32\u0e27\u0e31\u0e25",
-                    "\u0e14\u0e2e\u0e38\u0e38\u0e2d\u0e31\u0e25\u0e01\u0e34\u0e14\u0e30\u0e2b\u0e4c",
-                    "\u0e14\u0e2e\u0e38\u0e2d\u0e31\u0e25\u0e2e\u0e34\u0e08\u0e08\u0e30\u0e2b\u0e4c",
-                    "",
-                }
-            },
-            { "islamic.long.Eras",
-                new String[] {
-                    "",
-                    "\u0e2e\u0e34\u0e08\u0e40\u0e23\u0e32\u0e30\u0e2b\u0e4c\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a",
-                }
-            },
-            { "islamic.Eras",
-                new String[] {
-                    "",
-                    "\u0e2e.\u0e28.",
-                }
-            },
-            { "calendarname.islamic-civil", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e2d\u0e34\u0e2a\u0e25\u0e32\u0e21\u0e0b\u0e35\u0e27\u0e34\u0e25" },
-            { "calendarname.islamicc", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e2d\u0e34\u0e2a\u0e25\u0e32\u0e21\u0e0b\u0e35\u0e27\u0e34\u0e25" },
-            { "calendarname.islamic", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e2d\u0e34\u0e2a\u0e25\u0e32\u0e21" },
-            { "calendarname.japanese", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e0d\u0e35\u0e48\u0e1b\u0e38\u0e48\u0e19" },
-            { "calendarname.gregorian", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e40\u0e01\u0e23\u0e01\u0e2d\u0e40\u0e23\u0e35\u0e22\u0e19" },
-            { "calendarname.gregory", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e40\u0e01\u0e23\u0e01\u0e2d\u0e40\u0e23\u0e35\u0e22\u0e19" },
-            { "calendarname.roc", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e44\u0e15\u0e49\u0e2b\u0e27\u0e31\u0e19" },
-            { "calendarname.buddhist", "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e1e\u0e38\u0e17\u0e18" },
-            { "field.era", "\u0e2a\u0e21\u0e31\u0e22" },
-            { "field.year", "\u0e1b\u0e35" },
-            { "field.month", "\u0e40\u0e14\u0e37\u0e2d\u0e19" },
-            { "field.week", "\u0e2a\u0e31\u0e1b\u0e14\u0e32\u0e2b\u0e4c" },
-            { "field.weekday", "\u0e27\u0e31\u0e19\u0e43\u0e19\u0e2a\u0e31\u0e1b\u0e14\u0e32\u0e2b\u0e4c" },
-            { "field.dayperiod", "\u0e0a\u0e48\u0e27\u0e07\u0e27\u0e31\u0e19" },
-            { "field.hour", "\u0e0a\u0e31\u0e48\u0e27\u0e42\u0e21\u0e07" },
-            { "field.minute", "\u0e19\u0e32\u0e17\u0e35" },
-            { "field.second", "\u0e27\u0e34\u0e19\u0e32\u0e17\u0e35" },
-            { "field.zone", "\u0e40\u0e02\u0e15" },
         };
     }
 }

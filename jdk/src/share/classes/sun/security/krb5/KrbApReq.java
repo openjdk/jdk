@@ -204,7 +204,7 @@ public class KrbApReq {
         int usage)
         throws KrbException, IOException {
 
-        ctime = new KerberosTime(KerberosTime.NOW);
+        ctime = KerberosTime.now();
         init(options,
              tgs_creds.ticket,
              tgs_creds.key,
@@ -287,14 +287,14 @@ public class KrbApReq {
         authenticator = new Authenticator(temp2);
         ctime = authenticator.ctime;
         cusec = authenticator.cusec;
-        authenticator.ctime.setMicroSeconds(authenticator.cusec);
+        authenticator.ctime =
+                authenticator.ctime.withMicroSeconds(authenticator.cusec);
 
         if (!authenticator.cname.equals(enc_ticketPart.cname)) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
         }
 
-        KerberosTime currTime = new KerberosTime(KerberosTime.NOW);
-        if (!authenticator.ctime.inClockSkew(currTime))
+        if (!authenticator.ctime.inClockSkew())
             throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
 
         // start to check if it is a replay attack.
@@ -304,7 +304,7 @@ public class KrbApReq {
         if (table.get(time, authenticator.cname.toString()) != null) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_REPEAT);
         } else {
-            table.put(client, time, currTime.getTime());
+            table.put(client, time, System.currentTimeMillis());
         }
 
         if (initiator != null) {
@@ -329,7 +329,7 @@ public class KrbApReq {
         // else
         //    save authenticator to check for later
 
-        KerberosTime now = new KerberosTime(KerberosTime.NOW);
+        KerberosTime now = KerberosTime.now();
 
         if ((enc_ticketPart.starttime != null &&
              enc_ticketPart.starttime.greaterThanWRTClockSkew(now)) ||

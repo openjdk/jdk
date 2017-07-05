@@ -48,6 +48,7 @@ import java.util.Properties;
  * @since 1.5
  */
 class XPathFactoryFinder  {
+    private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xpath.internal";
 
     private static SecuritySupport ss = new SecuritySupport() ;
     /** debug support code. */
@@ -246,18 +247,25 @@ class XPathFactoryFinder  {
      */
     private Class createClass(String className) {
             Class clazz;
-
-            // use approprite ClassLoader
-            try {
-                    if (classLoader != null) {
-                            clazz = classLoader.loadClass(className);
-                    } else {
-                            clazz = Class.forName(className);
-                    }
-            } catch (Throwable t) {
-                if(debug)   t.printStackTrace();
-                    return null;
+        // make sure we have access to restricted packages
+        boolean internal = false;
+        if (System.getSecurityManager() != null) {
+            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
+                internal = true;
             }
+        }
+
+        // use approprite ClassLoader
+        try {
+            if (classLoader != null && !internal) {
+                    clazz = classLoader.loadClass(className);
+            } else {
+                    clazz = Class.forName(className);
+            }
+        } catch (Throwable t) {
+            if(debug)   t.printStackTrace();
+                return null;
+        }
 
             return clazz;
     }
