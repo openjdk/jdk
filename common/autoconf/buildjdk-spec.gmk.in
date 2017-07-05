@@ -1,0 +1,148 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This spec file is used to compile a BUILD_JDK while cross compiling. The
+# BUILD_JDK runs on the build/host platform and is of the same version as
+# the main build.
+
+# First include the real base spec.gmk file
+include @SPEC@
+
+CC := @BUILD_CC@
+CXX := @BUILD_CXX@
+LD := @BUILD_LD@
+AS := @BUILD_AS@
+NM := @BUILD_NM@
+AR := @BUILD_AR@
+OBJCOPY := @BUILD_OBJCOPY@
+STRIP := @BUILD_STRIP@
+SYSROOT_CFLAGS := @BUILD_SYSROOT_CFLAGS@
+SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
+
+# These directories should not be moved to BUILDJDK_OUTPUTDIR
+HOTSPOT_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(HOTSPOT_OUTPUTDIR))
+HOTSPOT_DIST := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(HOTSPOT_DIST))
+SUPPORT_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(SUPPORT_OUTPUTDIR))
+JDK_OUTPUTDIR := $(patsubst $(BUILD_OUTPUT)%,$(BUILDJDK_OUTPUTDIR)%,$(JDK_OUTPUTDIR))
+
+OPENJDK_BUILD_CPU_LEGACY := @OPENJDK_BUILD_CPU_LEGACY@
+OPENJDK_BUILD_CPU_LEGACY_LIB := @OPENJDK_BUILD_CPU_LEGACY_LIB@
+OPENJDK_BUILD_CPU_LIBDIR := @OPENJDK_BUILD_CPU_LIBDIR@
+OPENJDK_TARGET_CPU_LIBDIR := @OPENJDK_BUILD_CPU_LIBDIR@
+OPENJDK_TARGET_CPU := @OPENJDK_BUILD_CPU@
+OPENJDK_TARGET_CPU_ARCH := @OPENJDK_BUILD_CPU_ARCH@
+OPENJDK_TARGET_CPU_BITS := @OPENJDK_BUILD_CPU_BITS@
+OPENJDK_TARGET_CPU_ENDIAN := @OPENJDK_BUILD_CPU_ENDIAN@
+OPENJDK_TARGET_CPU_LEGACY := @OPENJDK_BUILD_CPU_LEGACY@
+
+CFLAGS_JDKLIB := @OPENJDK_BUILD_CFLAGS_JDKLIB@
+CXXFLAGS_JDKLIB := @OPENJDK_BUILD_CXXFLAGS_JDKLIB@
+LDFLAGS_JDKLIB := @OPENJDK_BUILD_LDFLAGS_JDKLIB@
+CFLAGS_JDKEXE := @OPENJDK_BUILD_CFLAGS_JDKEXE@
+CXXFLAGS_JDKEXE := @OPENJDK_BUILD_CXXFLAGS_JDKEXE@
+LDFLAGS_JDKEXE := @OPENJDK_BUILD_LDFLAGS_JDKEXE@
+OPENJDK_TARGET_CPU_JLI_CFLAGS := @OPENJDK_BUILD_CPU_JLI_CFLAGS@
+
+# The compiler for the build platform is likely not warning compatible with the official
+# compiler.
+WARNINGS_AS_ERRORS := false
+DISABLE_WARNING_PREFIX := @BUILD_CC_DISABLE_WARNING_PREFIX@
+
+# Save speed and disk space by not enabling debug symbols for the buildjdk
+ENABLE_DEBUG_SYMBOLS := false
+
+####################################################
+#
+# Legacy Hotspot support
+
+# Legacy setting: OPT or DBG
+VARIANT := OPT
+# Legacy setting: true or false
+FASTDEBUG := false
+# Legacy setting: debugging the class files?
+DEBUG_CLASSFILES := false
+
+# Some users still set EXTRA_*FLAGS on the make command line. Must
+# make sure to override that when building buildjdk.
+override EXTRA_CFLAGS :=
+override EXTRA_CXXFLAGS :=
+override EXTRA_LDFLAGS :=
+
+# The HOSTCC/HOSTCXX is Hotspot terminology for the BUILD_CC/BUILD_CXX, i.e. the
+# compiler that produces code that can be run on the build platform.
+HOSTCC := $(BUILD_CC)
+HOSTCXX := $(BUILD_CXX)
+
+# Old name for OPENJDK_TARGET_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
+PLATFORM := $(OPENJDK_BUILD_OS)
+# 32 or 64 bit
+ARCH_DATA_MODEL := $(OPENJDK_BUILD_CPU_BITS)
+
+ALT_BOOTDIR := $(BOOT_JDK)
+# Yet another name for arch used for an extra subdir below the jvm lib.
+# Uses i386 and amd64, instead of x86 and x86_64.
+LIBARCH := @OPENJDK_BUILD_CPU_LEGACY_LIB@
+# Set the cpu architecture. Some users still set ARCH on the make command line. Must
+# make sure to override that when building buildjdk.
+override ARCH := $(OPENJDK_BUILD_CPU_ARCH)
+# Legacy setting for building for a 64 bit machine.
+# If yes then this expands to _LP64 := 1
+ifeq ($(OPENJDK_BUILD_CPU_BITS), 64)
+  _LP64 := 1
+endif
+
+ALT_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)
+ALT_EXPORT_PATH := $(HOTSPOT_DIST)
+
+JVM_INTERPRETER := @JVM_INTERPRETER@
+ifeq ($(JVM_INTERPRETER), cpp)
+  CC_INTERP=true
+endif
+
+HOTSPOT_MAKE_ARGS := product docs export_product
+# Control wether Hotspot runs Queens test after building
+TEST_IN_BUILD := false
+
+USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
+
+# Hotspot expects the variable FULL_DEBUG_SYMBOLS=1/0 to control debug symbols
+# creation.
+FULL_DEBUG_SYMBOLS := 0
+ZIP_DEBUGINFO_FILES := 0
+# Disable stripping
+STRIP_POLICY := none
+
+JVM_VARIANTS := server
+JVM_VARIANT_SERVER := true
+JVM_VARIANT_CLIENT := false
+JVM_VARIANT_MINIMAL1 := false
+JVM_VARIANT_KERNEL := false
+JVM_VARIANT_ZERO := false
+JVM_VARIANT_ZEROSHARK := false
+JVM_VARIANT_CORE := false
+
+# Sneak this in via the spec.gmk file, since we don't want to mess around too much with the Hotspot make files.
+# This is needed to get the LOG setting to work properly.
+include $(SRC_ROOT)/make/common/MakeBase.gmk

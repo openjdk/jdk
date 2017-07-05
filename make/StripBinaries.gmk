@@ -57,25 +57,29 @@ endif
 NO_STRIP_CMDS_FILTER += %.cgi
 
 # Don't include debug info for executables.
+ifneq ($(wildcard $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE)), )
+  # OS X stores symbol information in a .dylib file inside a .dSYM directory -
+  # that file should not be stripped, so we prune the tree at the .dSYM directory.
+  ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
+      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE) \( -type f -o -type l \) \
+      -print -o -name "*.dSYM" -prune))
+  COPY_CMDS_SRC := $(filter $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
+  STRIP_CMDS_SRC := $(filter-out $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
+endif
 
-# OS X stores symbol information in a .dylib file inside a .dSYM directory -
-# that file should not be stripped, so we prune the tree at the .dSYM directory.
-ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
-    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds \( -type f -o -type l \) \
-    -print -o -name "*.dSYM" -prune))
-COPY_CMDS_SRC := $(filter $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
-STRIP_CMDS_SRC := $(filter-out $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
-
-# OS X stores symbol information in a .dylib file inside a .dSYM directory -
-# that file should not be stripped, so we prune the tree at the .dSYM directory.
-# Example: support/modules_libs/java.base/libjsig.dylib.dSYM/Contents/Resources/DWARF/libjsig.dylib
-STRIP_LIBS_SRC := \
-    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs \
+ifneq ($(wildcard $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)), )
+  # OS X stores symbol information in a .dylib file inside a .dSYM directory -
+  # that file should not be stripped, so we prune the tree at the .dSYM directory.
+  # Example: support/modules_libs/java.base/libjsig.dylib.dSYM/Contents/Resources/DWARF/libjsig.dylib
+  STRIP_LIBS_SRC := \
+      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE) \
         -name '*$(SHARED_LIBRARY_SUFFIX)' -type f -print -o -name "*.dSYM" -prune)
-# Make sure symbolic links are copied and not stripped.
-COPY_LIBS_SRC := \
-    $(filter-out $(STRIP_LIBS_SRC), \
-    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs -type f -o -type l))
+
+  # Make sure symbolic links are copied and not stripped.
+  COPY_LIBS_SRC := \
+      $(filter-out $(STRIP_LIBS_SRC), \
+      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE) -type f -o -type l))
+endif
 
 $(eval $(call SetupCopyFiles,STRIP_MODULES_CMDS, \
     SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds, \

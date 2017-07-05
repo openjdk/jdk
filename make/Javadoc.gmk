@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -138,25 +138,47 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 # to $(PATH_SEP) being interpreted as an end of
 # command (newline or shell ; character)
 ALL_SOURCE_DIRS := $(wildcard \
-      $(JDK_TOPDIR)/src/*/share/classes \
+      $(SUPPORT_OUTPUTDIR)/gensrc/j* \
+      $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
+      $(JDK_TOPDIR)/src/*/share/classes \
+      $(HOTSPOT_TOPDIR)/src/*/share/classes \
       $(LANGTOOLS_TOPDIR)/src/*/share/classes \
       $(NASHORN_TOPDIR)/src/*/share/classes \
       $(CORBA_TOPDIR)/src/*/share/classes \
       $(JAXP_TOPDIR)/src/*/share/classes \
       $(JAXWS_TOPDIR)/src/*/share/classes \
-      $(SUPPORT_OUTPUTDIR)/gensrc/j* \
       $(SUPPORT_OUTPUTDIR)/rmic/j* \
       $(JDK_TOPDIR)/src/*/share/doc/stub \
       ) \
       #
+
+ALL_MODULE_SOURCE_DIRS := \
+      $(SUPPORT_OUTPUTDIR)/gensrc/* \
+      $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
+      $(JDK_TOPDIR)/src/*/share/classes \
+      $(HOTSPOT_TOPDIR)/src/*/share/classes \
+      $(LANGTOOLS_TOPDIR)/src/*/share/classes \
+      $(NASHORN_TOPDIR)/src/*/share/classes \
+      $(CORBA_TOPDIR)/src/*/share/classes \
+      $(JAXP_TOPDIR)/src/*/share/classes \
+      $(JAXWS_TOPDIR)/src/*/share/classes \
+      $(SUPPORT_OUTPUTDIR)/rmic/* \
+      $(JDK_TOPDIR)/src/*/share/doc/stub \
+      #
+
 
 # List with classpath separator between them
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
 RELEASEDOCS_SOURCEPATH = \
     $(subst $(SPACE),$(PATH_SEP),$(strip $(ALL_SOURCE_DIRS)))
+
+RELEASEDOCS_MODULESOURCEPATH = \
+    $(subst $(SPACE),$(PATH_SEP),$(strip $(ALL_MODULE_SOURCE_DIRS)))
 
 define prep-target
 	$(MKDIR) -p $(@D)
@@ -372,6 +394,9 @@ COREAPI_OVERVIEW = $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
 COREAPI_OPTIONS_FILE = $(DOCSTMPDIR)/coredocs.options
 COREAPI_PACKAGES_FILE = $(DOCSTMPDIR)/coredocs.packages
 
+# The modules required to be documented
+COREAPI_MODULES = java.se.ee
+
 coredocs: $(COREAPI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -391,7 +416,9 @@ $(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
           $(call COMMON_JAVADOCTAGS) ; \
           $(call OptionOnly,-Xdoclint:reference) ; \
           $(call OptionOnly,-Xdoclint/package:-org.omg.*) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(COREAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ISO-8859-1) ; \
 	  $(call OptionOnly,-splitIndex) ; \
 	  $(call OptionPair,-overview,$(COREAPI_OVERVIEW)) ; \
@@ -431,6 +458,9 @@ DOCLETAPI_INDEX_FILE = $(DOCLETAPI_DOCDIR)/index.html
 DOCLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/docletapi.options
 DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/docletapi.packages
 
+# The modules required to be documented
+DOCLETAPI_MODULES = jdk.javadoc
+
 docletapidocs: $(DOCLETAPI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -449,7 +479,9 @@ $(DOCLETAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(DOCLETAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-breakiterator) ; \
 	  $(call OptionPair,-doctitle,$(DOCLETAPI_DOCTITLE)) ; \
@@ -488,6 +520,9 @@ OLD_DOCLETAPI_INDEX_FILE = $(OLD_DOCLETAPI_DOCDIR)/index.html
 OLD_DOCLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/old-docletapi.options
 OLD_DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/old-docletapi.packages
 
+# The modules required to be documented
+OLD_DOCLETAPI_MODULES = jdk.javadoc
+
 olddocletapidocs: $(OLD_DOCLETAPI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -506,7 +541,9 @@ $(OLD_DOCLETAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(OLD_DOCLETAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-breakiterator) ; \
 	  $(call OptionPair,-doctitle,$(OLD_DOCLETAPI_DOCTITLE)) ; \
@@ -541,6 +578,9 @@ TAGLETAPI_INDEX_FILE = $(TAGLETAPI_DOCDIR)/com/sun/tools/doclets/Taglet.html
 TAGLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/tagletapi.options
 TAGLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/tagletapi.packages
 
+# The modules required to be documented
+TAGLETAPI_MODULES = jdk.javadoc
+
 tagletapidocs: $(TAGLETAPI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -564,7 +604,9 @@ $(TAGLETAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(TAGLETAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nonavbar) ; \
 	  $(call OptionOnly,-noindex) ; \
@@ -599,6 +641,9 @@ DOMAPI_INDEX_FILE = $(DOMAPI_DOCDIR)/index.html
 DOMAPI_OPTIONS_FILE = $(DOCSTMPDIR)/domapi.options
 DOMAPI_PACKAGES_FILE = $(DOCSTMPDIR)/domapi.packages
 
+# The modules required to be documented
+DOMAPI_MODULES = java.xml,jdk.xml.dom
+
 domapidocs: $(DOMAPI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -617,7 +662,9 @@ $(DOMAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(DOMAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-splitIndex) ; \
 	  $(call OptionPair,-doctitle,$(DOMAPI_DOCTITLE)) ; \
@@ -663,6 +710,9 @@ JDI_INDEX_FILE = $(JDI_DOCDIR)/index.html
 JDI_OPTIONS_FILE = $(DOCSTMPDIR)/jdi.options
 JDI_PACKAGES_FILE = $(DOCSTMPDIR)/jdi.packages
 
+# The modules required to be documented
+JDI_MODULES = jdk.jdi
+
 jdidocs: $(JDI_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -681,7 +731,9 @@ $(JDI_OPTIONS_FILE): $(JDI_OVERVIEW)
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JDI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-overview,$(JDI_OVERVIEW)) ; \
 	  $(call OptionPair,-doctitle,$(JDI_DOCTITLE)) ; \
@@ -751,6 +803,9 @@ JAAS_INDEX_FILE = $(JAAS_DOCDIR)/index.html
 JAAS_OPTIONS_FILE = $(DOCSTMPDIR)/jaas.options
 JAAS_PACKAGES_FILE = $(DOCSTMPDIR)/jaas.packages
 
+# The modules required to be documented
+JAAS_MODULES = jdk.security.auth
+
 jaasdocs: $(JAAS_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -769,7 +824,9 @@ $(JAAS_OPTIONS_FILE): $(JAAS_OVERVIEW)
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JAAS_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-overview,$(JAAS_OVERVIEW)) ; \
 	  $(call OptionPair,-doctitle,$(JAAS_DOCTITLE)) ; \
@@ -805,6 +862,9 @@ JGSS_INDEX_FILE = $(JGSS_DOCDIR)/index.html
 JGSS_OPTIONS_FILE = $(DOCSTMPDIR)/jgss.options
 JGSS_PACKAGES_FILE = $(DOCSTMPDIR)/jgss.packages
 
+# The modules required to be documented
+JGSS_MODULES = jdk.security.jgss
+
 jgssdocs: $(JGSS_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -823,7 +883,9 @@ $(JGSS_OPTIONS_FILE): $(JGSS_OVERVIEW)
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JGSS_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-overview,$(JGSS_OVERVIEW)) ; \
@@ -859,6 +921,9 @@ SMARTCARDIO_INDEX_FILE = $(SMARTCARDIO_DOCDIR)/index.html
 SMARTCARDIO_OPTIONS_FILE = $(DOCSTMPDIR)/smartcardio.options
 SMARTCARDIO_PACKAGES_FILE = $(DOCSTMPDIR)/smartcardio.packages
 
+# The modules required to be documented
+SMARTCARDIO_MODULES = java.smartcardio
+
 smartcardiodocs: $(SMARTCARDIO_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -877,7 +942,9 @@ $(SMARTCARDIO_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(SMARTCARDIO_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(SMARTCARDIO_DOCTITLE)) ; \
@@ -911,6 +978,9 @@ HTTPSERVER_INDEX_HTML = $(HTTPSERVER_DOCDIR)/index.html
 HTTPSERVER_OPTIONS_FILE = $(DOCSTMPDIR)/httpserver.options
 HTTPSERVER_PACKAGES_FILE = $(DOCSTMPDIR)/httpserver.packages
 
+# The modules required to be documented
+HTTPSERVER_MODULES = jdk.httpserver
+
 httpserverdocs: $(HTTPSERVER_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -929,7 +999,9 @@ $(HTTPSERVER_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(HTTPSERVER_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(HTTPSERVER_DOCTITLE)) ; \
@@ -967,6 +1039,9 @@ MGMT_INDEX_FILE = $(MGMT_DOCDIR)/index.html
 MGMT_OPTIONS_FILE = $(DOCSTMPDIR)/mgmt.options
 MGMT_PACKAGES_FILE = $(DOCSTMPDIR)/mgmt.packages
 
+# The modules required to be documented
+MGMT_MODULES = jdk.management
+
 mgmtdocs: $(MGMT_INDEX_FILE)
 
 # Set relative location to core api document root
@@ -990,7 +1065,9 @@ $(MGMT_OPTIONS_FILE): $(MGMT_OVERVIEW)
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(MGMT_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-overview,$(MGMT_OVERVIEW)) ; \
@@ -1025,6 +1102,9 @@ ATTACH_INDEX_HTML = $(ATTACH_DOCDIR)/index.html
 ATTACH_OPTIONS_FILE = $(DOCSTMPDIR)/attach.options
 ATTACH_PACKAGES_FILE = $(DOCSTMPDIR)/attach.packages
 
+# The modules required to be documented
+ATTACH_MODULES = jdk.attach
+
 attachdocs: $(ATTACH_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1043,7 +1123,9 @@ $(ATTACH_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(ATTACH_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(ATTACH_DOCTITLE)) ; \
@@ -1077,6 +1159,9 @@ JCONSOLE_INDEX_HTML = $(JCONSOLE_DOCDIR)/index.html
 JCONSOLE_OPTIONS_FILE = $(DOCSTMPDIR)/jconsole.options
 JCONSOLE_PACKAGES_FILE = $(DOCSTMPDIR)/jconsole.packages
 
+# The modules required to be documented
+JCONSOLE_MODULES = jdk.jconsole
+
 jconsoledocs: $(JCONSOLE_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1095,7 +1180,9 @@ $(JCONSOLE_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JCONSOLE_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(JCONSOLE_DOCTITLE)) ; \
@@ -1131,6 +1218,9 @@ TREEAPI_INDEX_HTML = $(TREEAPI_DOCDIR)/index.html
 TREEAPI_OPTIONS_FILE = $(DOCSTMPDIR)/treeapi.options
 TREEAPI_PACKAGES_FILE = $(DOCSTMPDIR)/treeapi.packages
 
+# The modules required to be documented
+TREEAPI_MODULES = jdk.compiler
+
 treeapidocs: $(TREEAPI_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1149,7 +1239,9 @@ $(TREEAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(TREEAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-doctitle,$(TREEAPI_DOCTITLE)) ; \
 	  $(call OptionPair,-windowtitle,$(TREEAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
@@ -1185,6 +1277,9 @@ NASHORNAPI_INDEX_HTML = $(NASHORNAPI_DOCDIR)/index.html
 NASHORNAPI_OPTIONS_FILE = $(DOCSTMPDIR)/nashornapi.options
 NASHORNAPI_PACKAGES_FILE = $(DOCSTMPDIR)/nashornapi.packages
 
+# The modules required to be documented
+NASHORNAPI_MODULES = jdk.scripting.nashorn
+
 nashornapidocs: $(NASHORNAPI_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1203,7 +1298,9 @@ $(NASHORNAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(NASHORNAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-doctitle,$(NASHORNAPI_DOCTITLE)) ; \
 	  $(call OptionPair,-windowtitle,$(NASHORNAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
@@ -1239,6 +1336,9 @@ DYNALINKAPI_INDEX_HTML = $(DYNALINKAPI_DOCDIR)/index.html
 DYNALINKAPI_OPTIONS_FILE = $(DOCSTMPDIR)/dynalinkapi.options
 DYNALINKAPI_PACKAGES_FILE = $(DOCSTMPDIR)/dynalinkapi.packages
 
+# The modules required to be documented
+DYNALINKAPI_MODULES = jdk.dynalink
+
 dynalinkapidocs: $(DYNALINKAPI_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1257,7 +1357,9 @@ $(DYNALINKAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(DYNALINKAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-doctitle,$(DYNALINKAPI_DOCTITLE)) ; \
 	  $(call OptionPair,-windowtitle,$(DYNALINKAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
@@ -1291,6 +1393,9 @@ SCTPAPI_INDEX_HTML = $(SCTPAPI_DOCDIR)/index.html
 SCTPAPI_OPTIONS_FILE = $(DOCSTMPDIR)/sctp.options
 SCTPAPI_PACKAGES_FILE = $(DOCSTMPDIR)/sctp.packages
 
+# The modules required to be documented
+SCTPAPI_MODULES = jdk.sctp
+
 sctpdocs: $(SCTPAPI_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1309,7 +1414,9 @@ $(SCTPAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(SCTPAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(SCTPAPI_DOCTITLE)) ; \
@@ -1343,6 +1450,9 @@ JACCESSAPI_INDEX_HTML = $(JACCESSAPI_DOCDIR)/index.html
 JACCESSAPI_OPTIONS_FILE = $(DOCSTMPDIR)/jaccess.options
 JACCESSAPI_PACKAGES_FILE = $(DOCSTMPDIR)/jaccess.packages
 
+# The modules required to be documented
+JACCESSAPI_MODULES = jdk.accessibility
+
 jaccessdocs: $(JACCESSAPI_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1361,7 +1471,9 @@ $(JACCESSAPI_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
 	  $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:all) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JACCESSAPI_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(JACCESSAPI_DOCTITLE)) ; \
@@ -1395,6 +1507,9 @@ JDKNET_INDEX_HTML = $(JDKNET_DOCDIR)/index.html
 JDKNET_OPTIONS_FILE = $(DOCSTMPDIR)/jdknet.options
 JDKNET_PACKAGES_FILE = $(DOCSTMPDIR)/jdknet.packages
 
+# The modules required to be documented
+JDKNET_MODULES = java.base
+
 jdknetdocs: $(JDKNET_INDEX_HTML)
 
 # Set relative location to core api document root
@@ -1413,7 +1528,9 @@ $(JDKNET_OPTIONS_FILE):
 	@($(call COMMON_JAVADOCFLAGS) ; \
           $(call COMMON_JAVADOCTAGS) ; \
 	  $(call OptionOnly,-Xdoclint:none) ; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JDKNET_MODULES)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
 	  $(call OptionPair,-doctitle,$(JDKNET_DOCTITLE)) ; \
@@ -1427,6 +1544,69 @@ $(JDKNET_OPTIONS_FILE):
 $(JDKNET_PACKAGES_FILE): $(call PackageDependencies,$(JDKNET_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JDKNET_PKGS))
+
+#############################################################
+#
+# jlink plugin API docs
+#
+# TODO: Need to decide when the plugin API is ready to publish as experimental API.
+# This target is temporarily added for internal use for now.
+#        
+
+ALL_OTHER_TARGETS += jlinkdocs
+
+JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR = 2015
+JLINK_PLUGIN_DOCDIR := $(JDK_API_DOCSDIR)/jlink
+JLINK_PLUGIN2COREAPI := ../$(JDKJRE2COREAPI)
+JLINK_PLUGIN_DOCTITLE := JLink Plugin API - EXPERIMENTAL
+JLINK_PLUGIN_WINDOWTITLE := JLink Plugin API - EXPERIMENTAL
+JLINK_PLUGIN_HEADER := <strong>JLink Plugin API - EXPERIMENTAL</strong>
+JLINK_PLUGIN_BOTTOM := $(call CommonBottom,$(JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR))
+JLINK_PLUGIN_PKGS = jdk.tools.jlink \
+    jdk.tools.jlink.builder \
+    jdk.tools.jlink.plugin
+
+JLINK_PLUGIN_INDEX_HTML = $(JLINK_PLUGIN_DOCDIR)/index.html
+JLINK_PLUGIN_OPTIONS_FILE = $(DOCSTMPDIR)/jlinkplugins.options
+JLINK_PLUGIN_PACKAGES_FILE = $(DOCSTMPDIR)/jlinkplugins.packages
+
+# The modules required to be documented
+JLINK_PLUGIN_MODULES = jdk.jlink
+
+jlinkdocs: $(JLINK_PLUGIN_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JLINK_PLUGIN_INDEX_HTML): GET2DOCSDIR=$(JLINK_PLUGIN2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JLINK_PLUGIN_INDEX_HTML): $(JLINK_PLUGIN_OPTIONS_FILE) $(JLINK_PLUGIN_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JLINK_PLUGIN_OPTIONS_FILE),$(JLINK_PLUGIN_PACKAGES_FILE))
+	$(JAVADOC_CMD_SMALL) -d $(@D) \
+	    @$(JLINK_PLUGIN_OPTIONS_FILE) @$(JLINK_PLUGIN_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JLINK_PLUGIN_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+          $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JLINK_PLUGIN_MODULES)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionOnly,-nodeprecatedlist) ; \
+	  $(call OptionPair,-doctitle,$(JLINK_PLUGIN_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(JLINK_PLUGIN_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(JLINK_PLUGIN_HEADER)$(DRAFT_HEADER)); \
+	  $(call OptionPair,-bottom,$(JLINK_PLUGIN_BOTTOM)$(DRAFT_BOTTOM)); \
+	  $(call OptionTrip,-linkoffline,$(JLINK_PLUGIN2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(JLINK_PLUGIN_PACKAGES_FILE): $(call PackageDependencies,$(JLINK_PLUGIN_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JLINK_PLUGIN_PKGS))
 
 
 otherdocs: $(ALL_OTHER_TARGETS)
