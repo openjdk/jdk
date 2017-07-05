@@ -682,8 +682,6 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is an IP
      *         multicast address
-     *
-     * @since 1.1
      */
     @Override
     public boolean isMulticastAddress() {
@@ -695,8 +693,6 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the Inetaddress is
      *         a wildcard address.
-     *
-     * @since 1.4
      */
     @Override
     public boolean isAnyLocalAddress() {
@@ -708,8 +704,6 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is a loopback
      *         address; or false otherwise.
-     *
-     * @since 1.4
      */
     @Override
     public boolean isLoopbackAddress() {
@@ -721,8 +715,6 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is a link local
      *         address; or false if address is not a link local unicast address.
-     *
-     * @since 1.4
      */
     @Override
     public boolean isLinkLocalAddress() {
@@ -740,8 +732,6 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is a site local
      *         address; or false if address is not a site local unicast address.
-     *
-     * @since 1.4
      */
     @Override
     public boolean isSiteLocalAddress() {
@@ -760,8 +750,6 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has is a multicast
      *         address of global scope, false if it is not of global scope or
      *         it is not a multicast address
-     *
-     * @since 1.4
      */
     @Override
     public boolean isMCGlobal() {
@@ -774,8 +762,6 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has is a multicast
      *         address of node-local scope, false if it is not of node-local
      *         scope or it is not a multicast address
-     *
-     * @since 1.4
      */
     @Override
     public boolean isMCNodeLocal() {
@@ -788,8 +774,6 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has is a multicast
      *         address of link-local scope, false if it is not of link-local
      *         scope or it is not a multicast address
-     *
-     * @since 1.4
      */
     @Override
     public boolean isMCLinkLocal() {
@@ -802,8 +786,6 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has is a multicast
      *         address of site-local scope, false if it is not  of site-local
      *         scope or it is not a multicast address
-     *
-     * @since 1.4
      */
     @Override
     public boolean isMCSiteLocal() {
@@ -816,8 +798,6 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the address has is a multicast
      *         address of organization-local scope, false if it is not of
      *         organization-local scope or it is not a multicast address
-     *
-     * @since 1.4
      */
     @Override
     public boolean isMCOrgLocal() {
@@ -914,23 +894,21 @@ class Inet6Address extends InetAddress {
      *
      * @return a {@code boolean} indicating if the InetAddress is an IPv4
      *         compatible IPv6 address; or false if address is IPv4 address.
-     *
-     * @since 1.4
      */
     public boolean isIPv4CompatibleAddress() {
         return holder6.isIPv4CompatibleAddress();
     }
 
     // Utilities
+
     private static final int INT16SZ = 2;
 
-    /*
+    /**
      * Convert IPv6 binary address into presentation (printable) format.
      *
      * @param src a byte array representing the IPv6 numeric address
      * @return a String representing an IPv6 address in
      *         textual representation format
-     * @since 1.4
      */
     static String numericToTextFormat(byte[] src) {
         StringBuilder sb = new StringBuilder(39);

@@ -24,38 +24,38 @@
 /*
  * @test
  * @bug 8087112
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build jdk.testlibrary.SimpleSSLContext EchoHandler
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 -Djava.net.http.HttpClient.log=ssl ManyRequests
+ * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl ManyRequests
  * @summary Send a large number of requests asynchronously
  */
-
-//package javaapplication16;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import jdk.testlibrary.SimpleSSLContext;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromByteArray;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asByteArray;
 
 public class ManyRequests {
 
@@ -72,7 +72,7 @@ public class ManyRequests {
         HttpsServer server = HttpsServer.create(addr, 0);
         server.setHttpsConfigurator(new Configurator(ctx));
 
-        HttpClient client = HttpClient.create()
+        HttpClient client = HttpClient.newBuilder()
                                       .sslContext(ctx)
                                       .build();
         try {
@@ -80,7 +80,7 @@ public class ManyRequests {
             System.out.println("OK");
         } finally {
             server.stop(0);
-            client.executorService().shutdownNow();
+            ((ExecutorService)client.executor()).shutdownNow();
         }
     }
 
@@ -95,53 +95,62 @@ public class ManyRequests {
 
         RequestLimiter limiter = new RequestLimiter(40);
         Random rand = new Random();
-        CompletableFuture<Void>[] results = new CompletableFuture[REQUESTS];
+        CompletableFuture<?>[] results = new CompletableFuture<?>[REQUESTS];
         HashMap<HttpRequest,byte[]> bodies = new HashMap<>();
 
         for (int i=0; i<REQUESTS; i++) {
             byte[] buf = new byte[i+1];  // different size bodies
             rand.nextBytes(buf);
-            HttpRequest r = client.request(uri)
-                                  .body(HttpRequest.fromByteArray(buf))
-                                  .POST();
+            HttpRequest r = HttpRequest.newBuilder(uri)
+                                       .POST(fromByteArray(buf))
+                                       .build();
             bodies.put(r, buf);
 
             results[i] =
                 limiter.whenOkToSend()
-                       .thenCompose((v) -> r.responseAsync())
+                       .thenCompose((v) -> client.sendAsync(r, asByteArray()))
                        .thenCompose((resp) -> {
                            limiter.requestComplete();
                            if (resp.statusCode() != 200) {
-                               resp.bodyAsync(HttpResponse.ignoreBody());
                                String s = "Expected 200, got: " + resp.statusCode();
                                return completedWithIOException(s);
                            } else {
                                counter++;
                                System.out.println("Result from " + counter);
                            }
-                           return resp.bodyAsync(HttpResponse.asByteArray())
+                           return CompletableFuture.completedStage(resp.body())
                                       .thenApply((b) -> new Pair<>(resp, b));
                        })
                       .thenAccept((pair) -> {
                           HttpRequest request = pair.t.request();
                           byte[] requestBody = bodies.get(request);
                           check(Arrays.equals(requestBody, pair.u),
-                                "bodies not equal");
+                                "bodies not equal:[" + bytesToHexString(requestBody)
+                                + "] [" + bytesToHexString(pair.u) + "]");
 
                       });
         }
 
         // wait for them all to complete and throw exception in case of error
-        //try {
-            CompletableFuture.allOf(results).join();
-        //} catch (Exception  e) {
-            //e.printStackTrace();
-            //throw e;
-        //}
+        CompletableFuture.allOf(results).join();
     }
 
     static <T> CompletableFuture<T> completedWithIOException(String message) {
         return CompletableFuture.failedFuture(new IOException(message));
+    }
+
+    static String bytesToHexString(byte[] bytes) {
+        if (bytes == null)
+            return "null";
+
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+
+        Formatter formatter = new Formatter(sb);
+        for (byte b : bytes) {
+            formatter.format("%02x", b);
+        }
+
+        return sb.toString();
     }
 
     static final class Pair<T,U> {
@@ -211,15 +220,14 @@ public class ManyRequests {
             sb.append(o);
         throw new RuntimeException(sb.toString());
     }
-}
 
-class Configurator extends HttpsConfigurator {
-    public Configurator(SSLContext ctx) {
-        super(ctx);
+    static class Configurator extends HttpsConfigurator {
+        public Configurator(SSLContext ctx) {
+            super(ctx);
+        }
+
+        public void configure(HttpsParameters params) {
+            params.setSSLParameters(getSSLContext().getSupportedSSLParameters());
+        }
     }
-
-    public void configure (HttpsParameters params) {
-        params.setSSLParameters (getSSLContext().getSupportedSSLParameters());
-    }
 }
-

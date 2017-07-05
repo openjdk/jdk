@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import jdk.internal.jmod.JmodFile;
 
 import static jdk.internal.jmod.JmodFile.*;
 
@@ -57,7 +58,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
     private JmodOutputStream(OutputStream out) {
         this.zos = new ZipOutputStream(out);
         try {
-            out.write(JMOD_MAGIC_NUMBER);
+            JmodFile.writeMagicNumber(out);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
