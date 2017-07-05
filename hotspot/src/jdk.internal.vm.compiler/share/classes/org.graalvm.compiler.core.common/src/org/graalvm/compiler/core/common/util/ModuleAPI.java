@@ -53,11 +53,6 @@ public final class ModuleAPI {
     public static final ModuleAPI getModule;
 
     /**
-     * {@code jdk.internal.module.Modules.addExports(Module, String, Module)}.
-     */
-    public static final ModuleAPI addExports;
-
-    /**
      * {@code java.lang.Module.getResourceAsStream(String)}.
      */
     public static final ModuleAPI getResourceAsStream;
@@ -116,13 +111,11 @@ public final class ModuleAPI {
             try {
                 getModule = new ModuleAPI(Class.class.getMethod("getModule"));
                 Class<?> moduleClass = getModule.method.getReturnType();
-                Class<?> modulesClass = Class.forName("jdk.internal.module.Modules");
                 getResourceAsStream = new ModuleAPI(moduleClass.getMethod("getResourceAsStream", String.class));
                 canRead = new ModuleAPI(moduleClass.getMethod("canRead", moduleClass));
                 isExported = new ModuleAPI(moduleClass.getMethod("isExported", String.class));
                 isExportedTo = new ModuleAPI(moduleClass.getMethod("isExported", String.class, moduleClass));
-                addExports = new ModuleAPI(modulesClass.getDeclaredMethod("addExports", moduleClass, String.class, moduleClass));
-            } catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+            } catch (NoSuchMethodException | SecurityException e) {
                 throw new InternalError(e);
             }
         } else {
@@ -132,8 +125,6 @@ public final class ModuleAPI {
             canRead = unavailable;
             isExported = unavailable;
             isExportedTo = unavailable;
-            addExports = unavailable;
         }
-
     }
 }

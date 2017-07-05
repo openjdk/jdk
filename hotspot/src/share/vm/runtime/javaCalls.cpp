@@ -221,7 +221,7 @@ void JavaCalls::call_virtual(JavaValue* result, Handle receiver, KlassHandle spe
 void JavaCalls::call_special(JavaValue* result, KlassHandle klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   LinkInfo link_info(klass, name, signature);
-  LinkResolver::resolve_special_call(callinfo, link_info, CHECK);
+  LinkResolver::resolve_special_call(callinfo, args->receiver(), link_info, CHECK);
   methodHandle method = callinfo.selected_method();
   assert(method.not_null(), "should have thrown exception");
 

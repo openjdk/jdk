@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8170859
  * @summary Basic test for incubator modules in jmods and images
  * @library /lib/testlibrary
+ * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
  * @build CompilerUtils
  * @run testng/othervm ImageModules

@@ -801,8 +801,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
         if (elementType.getName().startsWith("Ljava/")) {
             // Classes in a java.* package can only be defined by the
-            // boot class loader. This is enforced by ClassLoader.preDefineClass()
-            assert mirror().getClassLoader() == null;
+            // boot or platform class loader.
             return true;
         }
         ClassLoader thisCl = mirror().getClassLoader();

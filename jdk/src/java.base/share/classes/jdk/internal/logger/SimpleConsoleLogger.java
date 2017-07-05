@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.function.Function;
 import java.lang.System.Logger;
@@ -106,7 +107,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void log(Level level, ResourceBundle bundle, String key, Throwable thrown) {
         if (isLoggable(level)) {
             if (bundle != null) {
-                key = bundle.getString(key);
+                key = getString(bundle, key);
             }
             publish(getCallerInfo(), logLevel(level), key, thrown);
         }
@@ -116,7 +117,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void log(Level level, ResourceBundle bundle, String format, Object... params) {
         if (isLoggable(level)) {
             if (bundle != null) {
-                format = bundle.getString(format);
+                format = getString(bundle, format);
             }
             publish(getCallerInfo(), logLevel(level), format, params);
         }
@@ -364,7 +365,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void logrb(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, ResourceBundle bundle, String key, Object... params) {
         if (isLoggable(level)) {
-            String msg = bundle == null ? key : bundle.getString(key);
+            String msg = bundle == null ? key : getString(bundle, key);
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msg, params);
         }
     }
@@ -373,7 +374,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void logrb(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, ResourceBundle bundle, String key, Throwable thrown) {
         if (isLoggable(level)) {
-            String msg = bundle == null ? key : bundle.getString(key);
+            String msg = bundle == null ? key : getString(bundle, key);
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msg, thrown);
         }
     }
@@ -382,7 +383,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void logrb(PlatformLogger.Level level, ResourceBundle bundle,
             String key, Object... params) {
         if (isLoggable(level)) {
-            String msg = bundle == null ? key : bundle.getString(key);
+            String msg = bundle == null ? key : getString(bundle,key);
             publish(getCallerInfo(), logLevel(level), msg, params);
         }
     }
@@ -391,8 +392,20 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     public final void logrb(PlatformLogger.Level level, ResourceBundle bundle,
             String key, Throwable thrown) {
         if (isLoggable(level)) {
-            String msg = bundle == null ? key : bundle.getString(key);
+            String msg = bundle == null ? key : getString(bundle,key);
             publish(getCallerInfo(), logLevel(level), msg, thrown);
+        }
+    }
+
+    static String getString(ResourceBundle bundle, String key) {
+        if (bundle == null || key == null) return key;
+        try {
+            return bundle.getString(key);
+        } catch (MissingResourceException x) {
+            // Emulate what java.util.logging Formatters do
+            // We don't want unchecked exception to propagate up to
+            // the caller's code.
+            return key;
         }
     }
 
