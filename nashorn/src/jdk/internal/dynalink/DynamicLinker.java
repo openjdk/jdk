@@ -144,6 +144,9 @@ public class DynamicLinker {
     private static final String CLASS_NAME = DynamicLinker.class.getName();
     private static final String RELINK_METHOD_NAME = "relink";
 
+    private static final String INITIAL_LINK_CLASS_NAME = "java.lang.invoke.MethodHandleNatives";
+    private static final String INITIAL_LINK_METHOD_NAME = "linkCallSite";
+
     private final LinkerServices linkerServices;
     private final int runtimeContextArgCount;
     private final boolean syncOnRelink;
@@ -262,20 +265,54 @@ public class DynamicLinker {
     }
 
     /**
-     * Returns a stack trace element describing the location of the call site currently being relinked on the current
+     * Returns a stack trace element describing the location of the call site currently being linked on the current
      * thread. The operation internally creates a Throwable object and inspects its stack trace, so it's potentially
      * expensive. The recommended usage for it is in writing diagnostics code.
-     * @return a stack trace element describing the location of the call site currently being relinked, or null if it is
-     * not invoked while a call site is being relinked.
+     * @return a stack trace element describing the location of the call site currently being linked, or null if it is
+     * not invoked while a call site is being linked.
      */
-    public static StackTraceElement getRelinkedCallSiteLocation() {
+    public static StackTraceElement getLinkedCallSiteLocation() {
         final StackTraceElement[] trace = new Throwable().getStackTrace();
         for(int i = 0; i < trace.length - 1; ++i) {
             final StackTraceElement frame = trace[i];
-            if(RELINK_METHOD_NAME.equals(frame.getMethodName()) && CLASS_NAME.equals(frame.getClassName())) {
+            if(isRelinkFrame(frame) || isInitialLinkFrame(frame)) {
                 return trace[i + 1];
             }
         }
         return null;
+    }
+
+    /**
+     * Deprecated because of not precise name.
+     * @deprecated Use {@link #getLinkedCallSiteLocation()} instead.
+     * @return see non-deprecated method
+     */
+    @Deprecated
+    public static StackTraceElement getRelinkedCallSiteLocation() {
+        return getLinkedCallSiteLocation();
+    }
+
+    /**
+     * Returns true if the frame represents {@code MethodHandleNatives.linkCallSite()}, the frame immediately on top of
+     * the call site frame when the call site is being linked for the first time.
+     * @param frame the frame
+     * @return true if this frame represents {@code MethodHandleNatives.linkCallSite()}
+     */
+    private static boolean isInitialLinkFrame(final StackTraceElement frame) {
+        return testFrame(frame, INITIAL_LINK_METHOD_NAME, INITIAL_LINK_CLASS_NAME);
+    }
+
+    /**
+     * Returns true if the frame represents {@code DynamicLinker.relink()}, the frame immediately on top of the call
+     * site frame when the call site is being relinked (linked for second and subsequent times).
+     * @param frame the frame
+     * @return true if this frame represents {@code DynamicLinker.relink()}
+     */
+    private static boolean isRelinkFrame(final StackTraceElement frame) {
+        return testFrame(frame, RELINK_METHOD_NAME, CLASS_NAME);
+    }
+
+    private static boolean testFrame(final StackTraceElement frame, final String methodName, final String className) {
+        return methodName.equals(frame.getMethodName()) && className.equals(frame.getClassName());
     }
 }

@@ -160,6 +160,10 @@ public class JMX {
      * example, then the return type is {@code MyMBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a <a href="package-summary.html#mgIface">compliant MBean
+     * interface</a>
      */
     public static <T> T newMBeanProxy(MBeanServerConnection connection,
                                       ObjectName objectName,
@@ -200,6 +204,10 @@ public class JMX {
      * example, then the return type is {@code MyMBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a <a href="package-summary.html#mgIface">compliant MBean
+     * interface</a>
      */
     public static <T> T newMBeanProxy(MBeanServerConnection connection,
                                       ObjectName objectName,
@@ -298,6 +306,9 @@ public class JMX {
      * example, then the return type is {@code MyMXBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a {@link javax.management.MXBean compliant MXBean interface}
      */
     public static <T> T newMXBeanProxy(MBeanServerConnection connection,
                                        ObjectName objectName,
@@ -338,6 +349,9 @@ public class JMX {
      * example, then the return type is {@code MyMXBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a {@link javax.management.MXBean compliant MXBean interface}
      */
     public static <T> T newMXBeanProxy(MBeanServerConnection connection,
                                        ObjectName objectName,
@@ -348,21 +362,25 @@ public class JMX {
 
     /**
      * <p>Test whether an interface is an MXBean interface.
-     * An interface is an MXBean interface if it is annotated
-     * {@link MXBean &#64;MXBean} or {@code @MXBean(true)}
+     * An interface is an MXBean interface if it is public,
+     * annotated {@link MXBean &#64;MXBean} or {@code @MXBean(true)}
      * or if it does not have an {@code @MXBean} annotation
      * and its name ends with "{@code MXBean}".</p>
      *
      * @param interfaceClass The candidate interface.
      *
-     * @return true if {@code interfaceClass} is an interface and
-     * meets the conditions described.
+     * @return true if {@code interfaceClass} is a
+     * {@link javax.management.MXBean compliant MXBean interface}
      *
      * @throws NullPointerException if {@code interfaceClass} is null.
      */
     public static boolean isMXBeanInterface(Class<?> interfaceClass) {
         if (!interfaceClass.isInterface())
             return false;
+        if (!Modifier.isPublic(interfaceClass.getModifiers()) &&
+            !Introspector.ALLOW_NONPUBLIC_MBEAN) {
+            return false;
+        }
         MXBean a = interfaceClass.getAnnotation(MXBean.class);
         if (a != null)
             return a.value();
@@ -389,9 +407,6 @@ public class JMX {
                                      boolean notificationEmitter,
                                      boolean isMXBean) {
 
-        if (System.getSecurityManager() != null) {
-            checkProxyInterface(interfaceClass);
-        }
         try {
             if (isMXBean) {
                 // Check interface for MXBean compliance
@@ -418,18 +433,5 @@ public class JMX {
                 interfaces,
                 handler);
         return interfaceClass.cast(proxy);
-    }
-
-    /**
-     * Checks for the M(X)Bean proxy interface being public and not restricted
-     * @param interfaceClass MBean proxy interface
-     * @throws SecurityException when the proxy interface comes from a restricted
-     *                           package or is not public
-     */
-    private static void checkProxyInterface(Class<?> interfaceClass) {
-        if (!Modifier.isPublic(interfaceClass.getModifiers())) {
-            throw new SecurityException("mbean proxy interface non-public");
-        }
-        ReflectUtil.checkPackageAccess(interfaceClass);
     }
 }

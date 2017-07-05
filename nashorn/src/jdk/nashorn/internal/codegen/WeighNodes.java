@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -36,7 +35,7 @@ import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.ExecuteNode;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
@@ -158,8 +157,8 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveExecuteNode(final ExecuteNode executeNode) {
-        return executeNode;
+    public Node leaveExpressionStatement(final ExpressionStatement expressionStatement) {
+        return expressionStatement;
     }
 
     @Override

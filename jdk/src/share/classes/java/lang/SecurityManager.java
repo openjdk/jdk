@@ -1675,10 +1675,18 @@ class SecurityManager {
      *             permission to access members.
      * @exception  NullPointerException if the <code>clazz</code> argument is
      *             <code>null</code>.
+     *
+     * @deprecated This method relies on the caller being at a stack depth
+     *             of 4 which is error-prone and cannot be enforced by the runtime.
+     *             Users of this method should instead invoke {@link #checkPermission}
+     *             directly.  This method will be changed in a future release
+     *             to check the permission {@code java.security.AllPermission}.
+     *
      * @see java.lang.reflect.Member
      * @since JDK1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
+    @Deprecated
     @CallerSensitive
     public void checkMemberAccess(Class<?> clazz, int which) {
         if (clazz == null) {

@@ -47,9 +47,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 
@@ -548,19 +547,19 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @return the Type representing this class
      */
     public static Type typeFor(final Class<?> clazz) {
-        Type type = cache.get(clazz);
-
-        if (type == null) {
-            assert !clazz.isPrimitive() || clazz == void.class;
-            if (clazz.isArray()) {
-                type = new ArrayType(clazz);
-            } else {
-                type = new ObjectType(clazz);
-            }
-            cache.put(clazz, type);
+        final Type type = cache.get(clazz);
+        if(type != null) {
+            return type;
         }
-
-        return type;
+        assert !clazz.isPrimitive() || clazz == void.class;
+        final Type newType;
+        if (clazz.isArray()) {
+            newType = new ArrayType(clazz);
+        } else {
+            newType = new ObjectType(clazz);
+        }
+        final Type existingType = cache.putIfAbsent(clazz, newType);
+        return existingType == null ? newType : existingType;
     }
 
     @Override
@@ -663,35 +662,38 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         }
     }
 
+    /** Mappings between java classes and their Type singletons */
+    private static final ConcurrentMap<Class<?>, Type> cache = new ConcurrentHashMap<>();
+
     /**
      * This is the boolean singleton, used for all boolean types
      */
-    public static final Type BOOLEAN = new BooleanType();
+    public static final Type BOOLEAN = putInCache(new BooleanType());
 
     /**
      * This is an integer type, i.e INT, INT32.
      */
-    public static final Type INT = new IntType();
+    public static final Type INT = putInCache(new IntType());
 
     /**
      * This is the number singleton, used for all number types
      */
-    public static final Type NUMBER = new NumberType();
+    public static final Type NUMBER = putInCache(new NumberType());
 
     /**
      * This is the long singleton, used for all long types
      */
-    public static final Type LONG = new LongType();
+    public static final Type LONG = putInCache(new LongType());
 
     /**
      * A string singleton
      */
-    public static final Type STRING = new ObjectType(String.class);
+    public static final Type STRING = putInCache(new ObjectType(String.class));
 
     /**
      * This is the object singleton, used for all object types
      */
-    public static final Type OBJECT = new ObjectType();
+    public static final Type OBJECT = putInCache(new ObjectType());
 
     /**
      * This is the singleton for integer arrays
@@ -775,13 +777,13 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     };
 
     /** Singleton for method handle arrays used for properties etc. */
-    public static final ArrayType METHODHANDLE_ARRAY = new ArrayType(MethodHandle[].class);
+    public static final ArrayType METHODHANDLE_ARRAY = putInCache(new ArrayType(MethodHandle[].class));
 
     /** This is the singleton for string arrays */
-    public static final ArrayType STRING_ARRAY = new ArrayType(String[].class);
+    public static final ArrayType STRING_ARRAY = putInCache(new ArrayType(String[].class));
 
     /** This is the singleton for object arrays */
-    public static final ArrayType OBJECT_ARRAY = new ArrayType(Object[].class);
+    public static final ArrayType OBJECT_ARRAY = putInCache(new ArrayType(Object[].class));
 
     /** This type, always an object type, just a toString override */
     public static final Type THIS = new ObjectType() {
@@ -855,18 +857,8 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         }
     };
 
-    /** Mappings between java classes and their Type singletons */
-    private static final Map<Class<?>, Type> cache = Collections.synchronizedMap(new HashMap<Class<?>, Type>());
-
-    //TODO may need to be cleared, as all types are retained throughout code generation
-    static {
-        cache.put(BOOLEAN.getTypeClass(), BOOLEAN);
-        cache.put(INT.getTypeClass(),     INT);
-        cache.put(LONG.getTypeClass(),    LONG);
-        cache.put(NUMBER.getTypeClass(),  NUMBER);
-        cache.put(STRING.getTypeClass(),  STRING);
-        cache.put(OBJECT.getTypeClass(),  OBJECT);
-        cache.put(OBJECT_ARRAY.getTypeClass(), OBJECT_ARRAY);
+    private static <T extends Type> T putInCache(T type) {
+        cache.put(type.getTypeClass(), type);
+        return type;
     }
-
 }

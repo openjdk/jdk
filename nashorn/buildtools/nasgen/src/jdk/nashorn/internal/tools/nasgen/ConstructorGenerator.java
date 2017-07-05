@@ -32,11 +32,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.CONSTRUCTOR_SUFFIX;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.DEFAULT_INIT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.INIT;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_DUPLICATE;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_DUPLICATE_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_FIELD_NAME;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_TYPE;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DUPLICATE;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DUPLICATE_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_FIELD_NAME;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_SETCONSTRUCTOR;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC;
@@ -129,7 +129,7 @@ public class ConstructorGenerator extends ClassGenerator {
 
     private void emitStaticInitializer() {
         final MethodGenerator mi = makeStaticInitializer();
-        emitStaticInitPrefix(mi, className);
+        emitStaticInitPrefix(mi, className, memberCount);
 
         for (final MemberInfo memInfo : scriptClassInfo.getMembers()) {
             if (memInfo.isConstructorFunction() || memInfo.isConstructorProperty()) {
@@ -170,10 +170,10 @@ public class ConstructorGenerator extends ClassGenerator {
 
     private void loadMap(final MethodGenerator mi) {
         if (memberCount > 0) {
-            mi.getStatic(className, MAP_FIELD_NAME, MAP_DESC);
+            mi.getStatic(className, PROPERTYMAP_FIELD_NAME, PROPERTYMAP_DESC);
             // make sure we use duplicated PropertyMap so that original map
-            // stays intact and so can be used for many globals in same context
-            mi.invokeVirtual(MAP_TYPE, MAP_DUPLICATE, MAP_DUPLICATE_DESC);
+            // stays intact and so can be used for many globals.
+            mi.invokeVirtual(PROPERTYMAP_TYPE, PROPERTYMAP_DUPLICATE, PROPERTYMAP_DUPLICATE_DESC);
         }
     }
 

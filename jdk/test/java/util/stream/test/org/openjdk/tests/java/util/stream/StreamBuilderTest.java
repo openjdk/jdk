@@ -35,7 +35,6 @@ import java.util.stream.LambdaTestHelpers;
 import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamBuilder;
 import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
@@ -89,7 +88,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test(dataProvider = "sizes")
     public void testAfterBuilding(int size) {
-        StreamBuilder<Integer> sb = Stream.builder();
+        Stream.Builder<Integer> sb = Stream.builder();
         IntStream.range(0, size).boxed().forEach(sb);
         sb.build();
 
@@ -101,15 +100,15 @@ public class StreamBuilderTest extends OpTestCase {
     @Test(dataProvider = "sizes")
     public void testStreamBuilder(int size) {
         testStreamBuilder(size, (s) -> {
-            StreamBuilder<Integer> sb = Stream.builder();
+            Stream.Builder<Integer> sb = Stream.builder();
             IntStream.range(0, s).boxed().forEach(sb);
             return sb.build();
         });
 
         testStreamBuilder(size, (s) -> {
-            StreamBuilder<Integer> sb = Stream.builder();
+            Stream.Builder<Integer> sb = Stream.builder();
             IntStream.range(0, s).boxed().forEach(i -> {
-                StreamBuilder<Integer> _sb = sb.add(i);
+                Stream.Builder<Integer> _sb = sb.add(i);
                 assertTrue(sb == _sb);
             });
             return sb.build();
@@ -151,7 +150,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test(dataProvider = "sizes")
     public void testIntAfterBuilding(int size) {
-        StreamBuilder.OfInt sb = IntStream.builder();
+        IntStream.Builder sb = IntStream.builder();
         IntStream.range(0, size).forEach(sb);
         sb.build();
 
@@ -163,15 +162,15 @@ public class StreamBuilderTest extends OpTestCase {
     @Test(dataProvider = "sizes")
     public void testIntStreamBuilder(int size) {
         testIntStreamBuilder(size, (s) -> {
-            StreamBuilder.OfInt sb = IntStream.builder();
+            IntStream.Builder sb = IntStream.builder();
             IntStream.range(0, s).forEach(sb);
             return sb.build();
         });
 
         testIntStreamBuilder(size, (s) -> {
-            StreamBuilder.OfInt sb = IntStream.builder();
+            IntStream.Builder sb = IntStream.builder();
             IntStream.range(0, s).forEach(i -> {
-                StreamBuilder.OfInt _sb = sb.add(i);
+                IntStream.Builder _sb = sb.add(i);
                 assertTrue(sb == _sb);
             });
             return sb.build();
@@ -213,7 +212,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test(dataProvider = "sizes")
     public void testLongAfterBuilding(int size) {
-        StreamBuilder.OfLong sb = LongStream.builder();
+        LongStream.Builder sb = LongStream.builder();
         LongStream.range(0, size).forEach(sb);
         sb.build();
 
@@ -225,15 +224,15 @@ public class StreamBuilderTest extends OpTestCase {
     @Test(dataProvider = "sizes")
     public void testLongStreamBuilder(int size) {
         testLongStreamBuilder(size, (s) -> {
-            StreamBuilder.OfLong sb = LongStream.builder();
+            LongStream.Builder sb = LongStream.builder();
             LongStream.range(0, s).forEach(sb);
             return sb.build();
         });
 
         testLongStreamBuilder(size, (s) -> {
-            StreamBuilder.OfLong sb = LongStream.builder();
+            LongStream.Builder sb = LongStream.builder();
             LongStream.range(0, s).forEach(i -> {
-                StreamBuilder.OfLong _sb = sb.add(i);
+                LongStream.Builder _sb = sb.add(i);
                 assertTrue(sb == _sb);
             });
             return sb.build();
@@ -274,7 +273,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test(dataProvider = "sizes")
     public void testDoubleAfterBuilding(int size) {
-        StreamBuilder.OfDouble sb = DoubleStream.builder();
+        DoubleStream.Builder sb = DoubleStream.builder();
         IntStream.range(0, size).asDoubleStream().forEach(sb);
         sb.build();
 
@@ -286,15 +285,15 @@ public class StreamBuilderTest extends OpTestCase {
     @Test(dataProvider = "sizes")
     public void testDoubleStreamBuilder(int size) {
         testDoubleStreamBuilder(size, (s) -> {
-            StreamBuilder.OfDouble sb = DoubleStream.builder();
+            DoubleStream.Builder sb = DoubleStream.builder();
             IntStream.range(0, s).asDoubleStream().forEach(sb);
             return sb.build();
         });
 
         testDoubleStreamBuilder(size, (s) -> {
-            StreamBuilder.OfDouble sb = DoubleStream.builder();
+            DoubleStream.Builder sb = DoubleStream.builder();
             IntStream.range(0, s).asDoubleStream().forEach(i -> {
-                StreamBuilder.OfDouble _sb = sb.add(i);
+                DoubleStream.Builder _sb = sb.add(i);
                 assertTrue(sb == _sb);
             });
             return sb.build();

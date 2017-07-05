@@ -46,28 +46,6 @@
 
 	.text
 
-        .globl SYMBOL(SafeFetch32), SYMBOL(Fetch32PFI), SYMBOL(Fetch32Resume)
-        .p2align 4,,15
-        ELF_TYPE(SafeFetch32,@function)
-        // Prototype: int SafeFetch32 (int * Adr, int ErrValue) 
-SYMBOL(SafeFetch32):
-        movl    %esi, %eax
-SYMBOL(Fetch32PFI):
-        movl    (%rdi), %eax
-SYMBOL(Fetch32Resume):
-        ret
-
-        .globl SYMBOL(SafeFetchN), SYMBOL(FetchNPFI), SYMBOL(FetchNResume)
-        .p2align 4,,15
-        ELF_TYPE(SafeFetchN,@function)
-        // Prototype: intptr_t SafeFetchN (intptr_t * Adr, intptr_t ErrValue) 
-SYMBOL(SafeFetchN):
-        movq    %rsi, %rax
-SYMBOL(FetchNPFI):
-        movq    (%rdi), %rax
-SYMBOL(FetchNResume):
-        ret
-
         .globl SYMBOL(SpinPause)
         .p2align 4,,15
         ELF_TYPE(SpinPause,@function)

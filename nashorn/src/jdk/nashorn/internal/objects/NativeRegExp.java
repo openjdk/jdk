@@ -68,9 +68,20 @@ public final class NativeRegExp extends ScriptObject {
     private Global globalObject;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
-    NativeRegExp(final String input, final String flagString) {
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    private NativeRegExp(final Global global) {
+        super(global.getRegExpPrototype(), global.getRegExpMap());
+        this.globalObject = global;
+    }
+
+    NativeRegExp(final String input, final String flagString, final Global global) {
+        this(global);
         try {
             this.regexp = RegExpFactory.create(input, flagString);
         } catch (final ParserException e) {
@@ -80,17 +91,24 @@ public final class NativeRegExp extends ScriptObject {
         }
 
         this.setLastIndex(0);
-        init();
+    }
+
+    NativeRegExp(final String input, final String flagString) {
+        this(input, flagString, Global.instance());
+    }
+
+    NativeRegExp(final String string, final Global global) {
+        this(string, "", global);
     }
 
     NativeRegExp(final String string) {
-        this(string, "");
+        this(string, Global.instance());
     }
 
     NativeRegExp(final NativeRegExp regExp) {
+        this(Global.instance());
         this.lastIndex  = regExp.getLastIndexObject();
         this.regexp      = regExp.getRegExp();
-        init();
     }
 
     @Override
@@ -614,7 +632,7 @@ public final class NativeRegExp extends ScriptObject {
             return null;
         }
 
-        return new NativeRegExpExecResult(match);
+        return new NativeRegExpExecResult(match, globalObject);
     }
 
     /**
@@ -883,12 +901,6 @@ public final class NativeRegExp extends ScriptObject {
      */
     public void setLastIndex(final int lastIndex) {
         this.lastIndex = JSType.toObject(lastIndex);
-    }
-
-    private void init() {
-        // Keep reference to global object to support "static" properties of RegExp
-        this.globalObject = Global.instance();
-        this.setProto(globalObject.getRegExpPrototype());
     }
 
     private static NativeRegExp checkRegExp(final Object self) {

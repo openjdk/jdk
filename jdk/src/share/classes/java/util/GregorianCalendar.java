@@ -94,7 +94,7 @@ import sun.util.calendar.ZoneInfo;
  * adjustment may be made if desired for dates that are prior to the Gregorian
  * changeover and which fall between January 1 and March 24.
  *
- * <h4><a name="week_and_year">Week Of Year and Week Year</a></h4>
+ * <h3><a name="week_and_year">Week Of Year and Week Year</a></h3>
  *
  * <p>Values calculated for the {@link Calendar#WEEK_OF_YEAR
  * WEEK_OF_YEAR} field range from 1 to 53. The first week of a

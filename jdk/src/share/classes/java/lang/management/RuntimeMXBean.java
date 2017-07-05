@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>List<String></tt> is <tt>String[]</tt>.
+     * The mapped type of {@code List<String>} is <tt>String[]</tt>.
      *
      * @return a list of <tt>String</tt> objects; each element
      * is an argument passed to the Java virtual machine.
@@ -312,7 +312,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      * {@link javax.management.openmbean.TabularData TabularData}
      * with two items in each row as follows:
      * <blockquote>
-     * <table border>
+     * <table border summary="Name and Type for each item">
      * <tr>
      *   <th>Item Name</th>
      *   <th>Item Type</th>

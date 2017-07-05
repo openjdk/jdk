@@ -2,26 +2,27 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
 import org.w3c.dom.Attr;
-
 
 /**
  * <code>CipherReference</code> identifies a source which, when processed,
@@ -29,7 +30,6 @@ import org.w3c.dom.Attr;
  * <p>
  * The actual value is obtained as follows. The <code>CipherReference URI</code>
  * contains an identifier that is dereferenced. Should the
- * <code>CipherReference</code> element contain an OPTIONAL sequence of
  * Transforms, the data resulting from dereferencing the <code>URI</code> is
  * transformed as specified so as to yield the intended cipher value. For
  * example, if the value is base64 encoded within an XML document; the
@@ -62,20 +62,21 @@ public interface CipherReference {
     /**
      * Returns an <code>URI</code> that contains an identifier that should be
      * dereferenced.
-     * @return
+     * @return an <code>URI</code> that contains an identifier that should be
+     * dereferenced.
      */
     String getURI();
 
-        /**
-         * Gets the URI as an Attribute node.  Used to meld the CipherREference
-         * with the XMLSignature ResourceResolvers
-     * @return
-         */
-        public Attr getURIAsAttr();
+    /**
+     * Gets the URI as an Attribute node.  Used to meld the CipherReference
+     * with the XMLSignature ResourceResolvers
+     * @return the URI as an Attribute node
+     */
+    Attr getURIAsAttr();
 
     /**
      * Returns the <code>Transforms</code> that specifies how to transform the
-     * <code>URI</code> to yield the appropiate cipher value.
+     * <code>URI</code> to yield the appropriate cipher value.
      *
      * @return the transform that specifies how to transform the reference to
      *   yield the intended cipher value.
@@ -84,10 +85,11 @@ public interface CipherReference {
 
     /**
      * Sets the <code>Transforms</code> that specifies how to transform the
-     * <code>URI</code> to yield the appropiate cipher value.
+     * <code>URI</code> to yield the appropriate cipher value.
      *
      * @param transforms the set of <code>Transforms</code> that specifies how
      *   to transform the reference to yield the intended cipher value.
      */
     void setTransforms(Transforms transforms);
 }
+

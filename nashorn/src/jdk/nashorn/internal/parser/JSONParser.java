@@ -35,6 +35,7 @@ import static jdk.nashorn.internal.parser.TokenType.STRING;
 
 import java.util.ArrayList;
 import java.util.List;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -274,7 +275,7 @@ public class JSONParser extends AbstractParser {
      * Parse a JSON literal from the token stream
      * @return the JSON literal as a Node
      */
-    private Node jsonLiteral() {
+    private Expression jsonLiteral() {
         final long literalToken = token;
 
         switch (type) {
@@ -326,7 +327,7 @@ public class JSONParser extends AbstractParser {
      * Parse an array literal from the token stream
      * @return the array literal as a Node
      */
-    private Node arrayLiteral() {
+    private LiteralNode<Expression[]> arrayLiteral() {
         // Unlike JavaScript array literals, elison is not permitted in JSON.
 
         // Capture LBRACKET token.
@@ -334,9 +335,9 @@ public class JSONParser extends AbstractParser {
         // LBRACKET tested in caller.
         next();
 
-        Node result = null;
+        LiteralNode<Expression[]> result = null;
         // Prepare to accummulating elements.
-        final List<Node> elements = new ArrayList<>();
+        final List<Expression> elements = new ArrayList<>();
 
 loop:
         while (true) {
@@ -368,7 +369,7 @@ loop:
      * Parse an object literal from the token stream
      * @return the object literal as a Node
      */
-    private Node objectLiteral() {
+    private ObjectNode objectLiteral() {
         // Capture LBRACE token.
         final long objectToken = token;
         // LBRACE tested in caller.
@@ -423,7 +424,7 @@ loop:
 
         if (name != null) {
             expect(COLON);
-            final Node value = jsonLiteral();
+            final Expression value = jsonLiteral();
             return new PropertyNode(propertyToken, value.getFinish(), name, value, null, null);
         }
 

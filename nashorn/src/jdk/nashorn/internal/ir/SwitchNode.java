@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -37,9 +36,9 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation of a SWITCH statement.
  */
 @Immutable
-public final class SwitchNode extends BreakableNode {
+public final class SwitchNode extends BreakableStatement {
     /** Switch expression. */
-    private final Node expression;
+    private final Expression expression;
 
     /** Switch cases. */
     private final List<CaseNode> cases;
@@ -60,14 +59,14 @@ public final class SwitchNode extends BreakableNode {
      * @param cases       cases
      * @param defaultCase the default case node - null if none, otherwise has to be present in cases list
      */
-    public SwitchNode(final int lineNumber, final long token, final int finish, final Node expression, final List<CaseNode> cases, final CaseNode defaultCase) {
+    public SwitchNode(final int lineNumber, final long token, final int finish, final Expression expression, final List<CaseNode> cases, final CaseNode defaultCase) {
         super(lineNumber, token, finish, new Label("switch_break"));
         this.expression       = expression;
         this.cases            = cases;
         this.defaultCaseIndex = defaultCase == null ? -1 : cases.indexOf(defaultCase);
     }
 
-    private SwitchNode(final SwitchNode switchNode, final Node expression, final List<CaseNode> cases, final int defaultCase) {
+    private SwitchNode(final SwitchNode switchNode, final Expression expression, final List<CaseNode> cases, final int defaultCase) {
         super(switchNode);
         this.expression       = expression;
         this.cases            = cases;
@@ -103,7 +102,7 @@ public final class SwitchNode extends BreakableNode {
     public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterSwitchNode(this)) {
             return visitor.leaveSwitchNode(
-                setExpression(lc, expression.accept(visitor)).
+                setExpression(lc, (Expression)expression.accept(visitor)).
                 setCases(lc, Node.accept(visitor, CaseNode.class, cases), defaultCaseIndex));
         }
 
@@ -167,7 +166,7 @@ public final class SwitchNode extends BreakableNode {
      * Return the expression to switch on
      * @return switch expression
      */
-    public Node getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
@@ -177,7 +176,7 @@ public final class SwitchNode extends BreakableNode {
      * @param expression switch expression
      * @return new switch node or same if no state was changed
      */
-    public SwitchNode setExpression(final LexicalContext lc, final Node expression) {
+    public SwitchNode setExpression(final LexicalContext lc, final Expression expression) {
         if (this.expression == expression) {
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
     private byte[] asn1Encoding;
 
     /**
-     *<code>KeyImpl</code> is serialized by writing out the ASN1 Encoded bytes
+     *{@code KeyImpl} is serialized by writing out the ASN1 Encoded bytes
      * of the encryption key. The ASN1 encoding is defined in RFC4120 and as
      * follows:
      * <pre>
@@ -667,7 +667,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
     /**
      * Returns a hashcode for this KerberosTicket.
      *
-     * @return a hashCode() for the <code>KerberosTicket</code>
+     * @return a hashCode() for the {@code KerberosTicket}
      * @since 1.6
      */
     public int hashCode() {
@@ -704,8 +704,8 @@ public class KerberosTicket implements Destroyable, Refreshable,
     /**
      * Compares the specified Object with this KerberosTicket for equality.
      * Returns true if the given object is also a
-     * <code>KerberosTicket</code> and the two
-     * <code>KerberosTicket</code> instances are equivalent.
+     * {@code KerberosTicket} and the two
+     * {@code KerberosTicket} instances are equivalent.
      *
      * @param other the Object to compare to
      * @return true if the specified object is equal to this KerberosTicket,

@@ -26,13 +26,11 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.OPSize;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 
 class ByteCodePrinter {
-    final int[]code;
+    final int[] code;
     final int codeLength;
     final char[][] templates;
 
-    Object[]operands;
-    int operantCount;
-    WarnCallback warnings;
+    Object[] operands;
 
     private final static String OpCodeNames[] = new String[] {
             "finish", /*OP_FINISH*/
@@ -123,32 +121,6 @@ class ByteCodePrinter {
             "state-check-anychar-ml*", /*OP_STATE_CHECK_ANYCHAR_ML_STAR*/
             "set-option-push", /*OP_SET_OPTION_PUSH*/
             "set-option", /*OP_SET_OPTION*/
-
-            // single byte versions
-            "anychar-sb", /*OP_ANYCHAR*/
-            "anychar-ml-sb", /*OP_ANYCHAR_ML*/
-            "anychar*-sb", /*OP_ANYCHAR_STAR*/
-            "anychar-ml*-sb", /*OP_ANYCHAR_ML_STAR*/
-            "anychar*-peek-next-sb", /*OP_ANYCHAR_STAR_PEEK_NEXT*/
-            "anychar-ml*-peek-next-sb", /*OP_ANYCHAR_ML_STAR_PEEK_NEXT*/
-            "state-check-anychar*-sb", /*OP_STATE_CHECK_ANYCHAR_STAR*/
-            "state-check-anychar-ml*-sb", /*OP_STATE_CHECK_ANYCHAR_ML_STAR*/
-
-            "cclass-sb", /*OP_CCLASS*/
-            "cclass-not-sb", /*OP_CCLASS_NOT*/
-
-            "word-sb", /*OP_WORD*/
-            "not-word-sb", /*OP_NOT_WORD*/
-            "word-bound-sb", /*OP_WORD_BOUND*/
-            "not-word-bound-sb", /*OP_NOT_WORD_BOUND*/
-            "word-begin-sb", /*OP_WORD_BEGIN*/
-            "word-end-sb", /*OP_WORD_END*/
-
-            "look-behind-sb", /*OP_LOOK_BEHIND*/
-
-            "exact1-ic-sb", /*OP_EXACT1_IC*/
-            "exactn-ic-sb", /*OP_EXACTN_IC*/
-
     };
 
     private final static int OpCodeArgTypes[] = new int[] {
@@ -240,41 +212,14 @@ class ByteCodePrinter {
             Arguments.STATE_CHECK, /*OP_STATE_CHECK_ANYCHAR_ML_STAR*/
             Arguments.OPTION, /*OP_SET_OPTION_PUSH*/
             Arguments.OPTION, /*OP_SET_OPTION*/
-
-            // single byte versions
-            Arguments.NON, /*OP_ANYCHAR*/
-            Arguments.NON, /*OP_ANYCHAR_ML*/
-            Arguments.NON, /*OP_ANYCHAR_STAR*/
-            Arguments.NON, /*OP_ANYCHAR_ML_STAR*/
-            Arguments.SPECIAL, /*OP_ANYCHAR_STAR_PEEK_NEXT*/
-            Arguments.SPECIAL, /*OP_ANYCHAR_ML_STAR_PEEK_NEXT*/
-            Arguments.STATE_CHECK, /*OP_STATE_CHECK_ANYCHAR_STAR*/
-            Arguments.STATE_CHECK, /*OP_STATE_CHECK_ANYCHAR_ML_STAR*/
-
-            Arguments.SPECIAL, /*OP_CCLASS*/
-            Arguments.SPECIAL, /*OP_CCLASS_NOT*/
-
-            Arguments.NON, /*OP_WORD*/
-            Arguments.NON, /*OP_NOT_WORD*/
-            Arguments.NON, /*OP_WORD_BOUND*/
-            Arguments.NON, /*OP_NOT_WORD_BOUND*/
-            Arguments.NON, /*OP_WORD_BEGIN*/
-            Arguments.NON, /*OP_WORD_END*/
-
-            Arguments.SPECIAL, /*OP_LOOK_BEHIND*/
-
-            Arguments.SPECIAL, /*OP_EXACT1_IC*/
-            Arguments.SPECIAL, /*OP_EXACTN_IC*/
     };
 
     public ByteCodePrinter(Regex regex) {
         code = regex.code;
         codeLength = regex.codeLength;
         operands = regex.operands;
-        operantCount = regex.operandLength;
 
         templates = regex.templates;
-        warnings = regex.warnings;
     }
 
     public String byteCodeListToString() {
@@ -283,24 +228,17 @@ class ByteCodePrinter {
 
     private void pString(StringBuilder sb, int len, int s) {
         sb.append(":");
-        while (len-- > 0) sb.append(new String(new byte[]{(byte)code[s++]}));
+        sb.append(new String(code, s, len));
     }
 
-    private void pStringFromTemplate(StringBuilder sb, int len, byte[]tm, int idx) {
-        sb.append(":T:");
-        while (len-- > 0) sb.append(new String(new byte[]{tm[idx++]}));
+    private void pLenString(StringBuilder sb, int len, int s) {
+        sb.append(":").append(len).append(":");
+        sb.append(new String(code, s, len));
     }
 
-    private void pLenString(StringBuilder sb, int len, int mbLen, int s) {
-        int x = len * mbLen;
-        sb.append(":" + len + ":");
-        while (x-- > 0) sb.append(new String(new byte[]{(byte)code[s++]}));
-    }
-
-    private void pLenStringFromTemplate(StringBuilder sb, int len, int mbLen, char[] tm, int idx) {
-        int x = len * mbLen;
-        sb.append(":T:" + len + ":");
-        while (x-- > 0) sb.append(new String(new byte[]{(byte)tm[idx++]}));
+    private void pLenStringFromTemplate(StringBuilder sb, int len, char[] tm, int idx) {
+        sb.append(":T:").append(len).append(":");
+        sb.append(tm, idx, len);
     }
 
     public int compiledByteCodeToString(StringBuilder sb, int bp) {
@@ -309,7 +247,7 @@ class ByteCodePrinter {
         CClassNode cc;
         int tm, idx;
 
-        sb.append("[" + OpCodeNames[code[bp]]);
+        sb.append("[").append(OpCodeNames[code[bp]]);
         int argType = OpCodeArgTypes[code[bp]];
         int ip = bp;
         if (argType != Arguments.SPECIAL) {
@@ -319,32 +257,32 @@ class ByteCodePrinter {
                 break;
 
             case Arguments.RELADDR:
-                sb.append(":(" + code[bp] + ")");
+                sb.append(":(").append(code[bp]).append(")");
                 bp += OPSize.RELADDR;
                 break;
 
             case Arguments.ABSADDR:
-                sb.append(":(" + code[bp] + ")");
+                sb.append(":(").append(code[bp]).append(")");
                 bp += OPSize.ABSADDR;
                 break;
 
             case Arguments.LENGTH:
-                sb.append(":" + code[bp]);
+                sb.append(":").append(code[bp]);
                 bp += OPSize.LENGTH;
                 break;
 
             case Arguments.MEMNUM:
-                sb.append(":" + code[bp]);
+                sb.append(":").append(code[bp]);
                 bp += OPSize.MEMNUM;
                 break;
 
             case Arguments.OPTION:
-                sb.append(":" + code[bp]);
+                sb.append(":").append(code[bp]);
                 bp += OPSize.OPTION;
                 break;
 
             case Arguments.STATE_CHECK:
-                sb.append(":" + code[bp]);
+                sb.append(":").append(code[bp]);
                 bp += OPSize.STATE_CHECK;
                 break;
             }
@@ -353,8 +291,6 @@ class ByteCodePrinter {
             case OPCode.EXACT1:
             case OPCode.ANYCHAR_STAR_PEEK_NEXT:
             case OPCode.ANYCHAR_ML_STAR_PEEK_NEXT:
-            case OPCode.ANYCHAR_STAR_PEEK_NEXT_SB:
-            case OPCode.ANYCHAR_ML_STAR_PEEK_NEXT_SB:
                 pString(sb, 1, bp++);
                 break;
 
@@ -386,92 +322,19 @@ class ByteCodePrinter {
                     bp += OPSize.INDEX;
                     idx = code[bp];
                     bp += OPSize.INDEX;
-                    pLenStringFromTemplate(sb, len, 1, templates[tm], idx);
+                    pLenStringFromTemplate(sb, len, templates[tm], idx);
                 } else {
-                    pLenString(sb, len, 1, bp);
+                    pLenString(sb, len, bp);
                     bp += len;
                 }
                 break;
 
-            case OPCode.EXACTMB2N1:
-                pString(sb, 2, bp);
-                bp += 2;
-                break;
-
-            case OPCode.EXACTMB2N2:
-                pString(sb, 4, bp);
-                bp += 4;
-                break;
-
-            case OPCode.EXACTMB2N3:
-                pString(sb, 6, bp);
-                bp += 6;
-                break;
-
-            case OPCode.EXACTMB2N:
-                len = code[bp];
-                bp += OPSize.LENGTH;
-                if (Config.USE_STRING_TEMPLATES) {
-                    tm = code[bp];
-                    bp += OPSize.INDEX;
-                    idx = code[bp];
-                    bp += OPSize.INDEX;
-                    pLenStringFromTemplate(sb, len, 2, templates[tm], idx);
-                } else {
-                    pLenString(sb, len, 2, bp);
-                    bp += len * 2;
-                }
-                break;
-
-            case OPCode.EXACTMB3N:
-                len = code[bp];
-                bp += OPSize.LENGTH;
-                if (Config.USE_STRING_TEMPLATES) {
-                    tm = code[bp];
-                    bp += OPSize.INDEX;
-                    idx = code[bp];
-                    bp += OPSize.INDEX;
-                    pLenStringFromTemplate(sb, len, 3, templates[tm], idx);
-                } else {
-                    pLenString(sb, len, 3, bp);
-                    bp += len * 3;
-                }
-                break;
-
-            case OPCode.EXACTMBN:
-                int mbLen = code[bp];
-                bp += OPSize.LENGTH;
-                len = code[bp];
-                bp += OPSize.LENGTH;
-                n = len * mbLen;
-
-                if (Config.USE_STRING_TEMPLATES) {
-                    tm = code[bp];
-                    bp += OPSize.INDEX;
-                    idx = code[bp];
-                    bp += OPSize.INDEX;
-                    sb.append(":T:" + mbLen + ":" + len + ":");
-
-                    while (n-- > 0) sb.append(new String(new char[]{templates[tm][idx++]}));
-                } else {
-                    sb.append(":" + mbLen + ":" + len + ":");
-
-                    while (n-- > 0) sb.append(new String(new byte[]{(byte)code[bp++]}));
-                }
-
-                break;
-
             case OPCode.EXACT1_IC:
-            case OPCode.EXACT1_IC_SB:
-                final int MAX_CHAR_LENGTH = 6;
-                byte[]bytes = new byte[MAX_CHAR_LENGTH];
-                for (int i = 0; bp + i < code.length && i < MAX_CHAR_LENGTH; i++) bytes[i] = (byte)code[bp + i];
                 pString(sb, 1, bp);
                 bp++;
                 break;
 
             case OPCode.EXACTN_IC:
-            case OPCode.EXACTN_IC_SB:
                 len = code[bp];
                 bp += OPSize.LENGTH;
                 if (Config.USE_STRING_TEMPLATES) {
@@ -479,29 +342,27 @@ class ByteCodePrinter {
                     bp += OPSize.INDEX;
                     idx = code[bp];
                     bp += OPSize.INDEX;
-                    pLenStringFromTemplate(sb, len, 1, templates[tm], idx);
+                    pLenStringFromTemplate(sb, len, templates[tm], idx);
                 } else {
-                    pLenString(sb, len, 1, bp);
+                    pLenString(sb, len, bp);
                     bp += len;
                 }
                 break;
 
             case OPCode.CCLASS:
-            case OPCode.CCLASS_SB:
                 bs = new BitSet();
                 System.arraycopy(code, bp, bs.bits, 0, BitSet.BITSET_SIZE);
                 n = bs.numOn();
                 bp += BitSet.BITSET_SIZE;
-                sb.append(":" + n);
+                sb.append(":").append(n);
                 break;
 
             case OPCode.CCLASS_NOT:
-            case OPCode.CCLASS_NOT_SB:
                 bs = new BitSet();
                 System.arraycopy(code, bp, bs.bits, 0, BitSet.BITSET_SIZE);
                 n = bs.numOn();
                 bp += BitSet.BITSET_SIZE;
-                sb.append(":" + n);
+                sb.append(":").append(n);
                 break;
 
             case OPCode.CCLASS_MB:
@@ -511,7 +372,7 @@ class ByteCodePrinter {
                 cod = code[bp];
                 //bp += OPSize.CODE_POINT;
                 bp += len;
-                sb.append(":" + cod + ":" + len);
+                sb.append(":").append(cod).append(":").append(len);
                 break;
 
             case OPCode.CCLASS_MIX:
@@ -525,20 +386,20 @@ class ByteCodePrinter {
                 cod = code[bp];
                 //bp += OPSize.CODE_POINT;
                 bp += len;
-                sb.append(":" + n + ":" + cod + ":" + len);
+                sb.append(":").append(n).append(":").append(cod).append(":").append(len);
                 break;
 
             case OPCode.CCLASS_NODE:
                 cc = (CClassNode)operands[code[bp]];
                 bp += OPSize.POINTER;
                 n = cc.bs.numOn();
-                sb.append(":" + cc + ":" + n);
+                sb.append(":").append(cc).append(":").append(n);
                 break;
 
             case OPCode.BACKREFN_IC:
                 mem = code[bp];
                 bp += OPSize.MEMNUM;
-                sb.append(":" + mem);
+                sb.append(":").append(mem);
                 break;
 
             case OPCode.BACKREF_MULTI_IC:
@@ -557,10 +418,10 @@ class ByteCodePrinter {
             case OPCode.BACKREF_WITH_LEVEL: {
                 int option = code[bp];
                 bp += OPSize.OPTION;
-                sb.append(":" + option);
+                sb.append(":").append(option);
                 int level = code[bp];
                 bp += OPSize.LENGTH;
-                sb.append(":" + level);
+                sb.append(":").append(level);
                 sb.append(" ");
                 len = code[bp];
                 bp += OPSize.LENGTH;
@@ -579,23 +440,22 @@ class ByteCodePrinter {
                 bp += OPSize.MEMNUM;
                 addr = code[bp];
                 bp += OPSize.RELADDR;
-                sb.append(":" + mem + ":" + addr);
+                sb.append(":").append(mem).append(":").append(addr);
                 break;
 
             case OPCode.PUSH_OR_JUMP_EXACT1:
             case OPCode.PUSH_IF_PEEK_NEXT:
                 addr = code[bp];
                 bp += OPSize.RELADDR;
-                sb.append(":(" + addr + ")");
+                sb.append(":(").append(addr).append(")");
                 pString(sb, 1, bp);
                 bp++;
                 break;
 
             case OPCode.LOOK_BEHIND:
-            case OPCode.LOOK_BEHIND_SB:
                 len = code[bp];
                 bp += OPSize.LENGTH;
-                sb.append(":" + len);
+                sb.append(":").append(len);
                 break;
 
             case OPCode.PUSH_LOOK_BEHIND_NOT:
@@ -603,7 +463,7 @@ class ByteCodePrinter {
                 bp += OPSize.RELADDR;
                 len = code[bp];
                 bp += OPSize.LENGTH;
-                sb.append(":" + len + ":(" + addr + ")");
+                sb.append(":").append(len).append(":(").append(addr).append(")");
                 break;
 
             case OPCode.STATE_CHECK_PUSH:
@@ -612,7 +472,7 @@ class ByteCodePrinter {
                 bp += OPSize.STATE_CHECK_NUM;
                 addr = code[bp];
                 bp += OPSize.RELADDR;
-                sb.append(":" + scn + ":(" + addr + ")");
+                sb.append(":").append(scn).append(":(").append(addr).append(")");
                 break;
 
             default:
@@ -623,14 +483,16 @@ class ByteCodePrinter {
         sb.append("]");
 
         // @opcode_address(opcode_size)
-        if (Config.DEBUG_COMPILE_BYTE_CODE_INFO) sb.append("@" + ip + "(" + (bp - ip) + ")");
+        if (Config.DEBUG_COMPILE_BYTE_CODE_INFO) {
+            sb.append("@").append(ip).append("(").append((bp - ip)).append(")");
+        }
 
         return bp;
     }
 
     private String compiledByteCodeListToString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("code length: " + codeLength + "\n");
+        sb.append("code length: ").append(codeLength).append("\n");
 
         int ncode = 0;
         int bp = 0;

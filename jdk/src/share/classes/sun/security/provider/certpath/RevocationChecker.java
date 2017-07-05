@@ -675,12 +675,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                                       responderURI, respCert, params.date(),
                                       ocspExtensions);
             }
-        } catch (Exception e) {
-            if (e instanceof CertPathValidatorException) {
-                throw (CertPathValidatorException) e;
-            } else {
-                throw new CertPathValidatorException(e);
-            }
+        } catch (IOException e) {
+            throw new CertPathValidatorException(e);
         }
 
         RevocationStatus rs =

@@ -23,76 +23,83 @@
 
 /*
  * @test
- * @bug     4904067 5023830
+ * @bug     4904067 5023830 7129185
  * @summary Unit test for Collections.checkedMap
  * @author  Josh Bloch
+ * @run testng CheckedMapBash
  */
 
 import java.util.*;
+import java.util.function.Supplier;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+
+import static org.testng.Assert.fail;
+import static org.testng.Assert.assertTrue;
 
 public class CheckedMapBash {
-    static Random rnd = new Random();
-    static Object nil = new Integer(0);
+    static final Random rnd = new Random();
+    static final Object nil = new Integer(0);
+    static final int numItr = 100;
+    static final int mapSize = 100;
 
-    public static void main(String[] args) {
-        int numItr = 100;
-        int mapSize = 100;
+    @Test(dataProvider = "Bash.Supplier<Map<Integer,Integer>>")
+    public static void testCheckedMap(String description, Supplier<Map<Integer,Integer>> supplier) {
+        Map m = supplier.get();
+        Object head = nil;
 
-        // Linked List test
-        for (int i=0; i<numItr; i++) {
-            Map m = newMap();
-            Object head = nil;
+        for (int j=0; j<mapSize; j++) {
+            Object newHead;
+            do {
+                newHead = new Integer(rnd.nextInt());
+            } while (m.containsKey(newHead));
+            m.put(newHead, head);
+            head = newHead;
+        }
+        if (m.size() != mapSize)
+            fail("Size not as expected.");
 
-            for (int j=0; j<mapSize; j++) {
-                Object newHead;
-                do {
-                    newHead = new Integer(rnd.nextInt());
-                } while (m.containsKey(newHead));
-                m.put(newHead, head);
-                head = newHead;
-            }
-            if (m.size() != mapSize)
-                fail("Size not as expected.");
+        {
+            HashMap hm = new HashMap(m);
+            if (! (hm.hashCode() == m.hashCode() &&
+                   hm.entrySet().hashCode() == m.entrySet().hashCode() &&
+                   hm.keySet().hashCode() == m.keySet().hashCode()))
+                fail("Incorrect hashCode computation.");
 
-            {
-                HashMap hm = new HashMap(m);
-                if (! (hm.hashCode() == m.hashCode() &&
-                       hm.entrySet().hashCode() == m.entrySet().hashCode() &&
-                       hm.keySet().hashCode() == m.keySet().hashCode()))
-                    fail("Incorrect hashCode computation.");
-
-                if (! (hm.equals(m) &&
-                       hm.entrySet().equals(m.entrySet()) &&
-                       hm.keySet().equals(m.keySet()) &&
-                       m.equals(hm) &&
-                       m.entrySet().equals(hm.entrySet()) &&
-                       m.keySet().equals(hm.keySet())))
-                    fail("Incorrect equals computation.");
-            }
-
-            Map m2 = newMap(); m2.putAll(m);
-            m2.values().removeAll(m.keySet());
-            if (m2.size()!= 1 || !m2.containsValue(nil))
-                fail("Collection views test failed.");
-
-            int j=0;
-            while (head != nil) {
-                if (!m.containsKey(head))
-                    fail("Linked list doesn't contain a link.");
-                Object newHead = m.get(head);
-                if (newHead == null)
-                    fail("Could not retrieve a link.");
-                m.remove(head);
-                head = newHead;
-                j++;
-            }
-            if (!m.isEmpty())
-                fail("Map nonempty after removing all links.");
-            if (j != mapSize)
-                fail("Linked list size not as expected.");
+            if (! (hm.equals(m) &&
+                   hm.entrySet().equals(m.entrySet()) &&
+                   hm.keySet().equals(m.keySet()) &&
+                   m.equals(hm) &&
+                   m.entrySet().equals(hm.entrySet()) &&
+                   m.keySet().equals(hm.keySet())))
+                fail("Incorrect equals computation.");
         }
 
-        Map m = newMap();
+        Map m2 = supplier.get(); m2.putAll(m);
+        m2.values().removeAll(m.keySet());
+        if (m2.size()!= 1 || !m2.containsValue(nil))
+            fail("Collection views test failed.");
+
+        int j=0;
+        while (head != nil) {
+            if (!m.containsKey(head))
+                fail("Linked list doesn't contain a link.");
+            Object newHead = m.get(head);
+            if (newHead == null)
+                fail("Could not retrieve a link.");
+            m.remove(head);
+            head = newHead;
+            j++;
+        }
+        if (!m.isEmpty())
+            fail("Map nonempty after removing all links.");
+        if (j != mapSize)
+            fail("Linked list size not as expected.");
+    }
+
+    @Test(dataProvider = "Supplier<Map<Integer,Integer>>")
+    public static void testCheckeMap2(String description, Supplier<Map<Integer,Integer>> supplier) {
+        Map m = supplier.get();
         for (int i=0; i<mapSize; i++)
             if (m.put(new Integer(i), new Integer(2*i)) != null)
                 fail("put returns a non-null value erroenously.");
@@ -101,7 +108,7 @@ public class CheckedMapBash {
                 fail("contains value "+i);
         if (m.put(nil, nil) == null)
             fail("put returns a null value erroenously.");
-        Map m2 = newMap(); m2.putAll(m);
+        Map m2 = supplier.get(); m2.putAll(m);
         if (!m.equals(m2))
             fail("Clone not equal to original. (1)");
         if (!m2.equals(m))
@@ -134,16 +141,36 @@ public class CheckedMapBash {
             fail("Iterator.remove() failed");
     }
 
-    static Map newMap() {
-        Map m = Collections.checkedMap(new HashMap(),
-                                       Integer.class, Integer.class);
 
-        if (!m.isEmpty())
-            fail("New instance non empty.");
-        return m;
+    @DataProvider(name = "Bash.Supplier<Map<Integer,Integer>>", parallel = true)
+    public static Iterator<Object[]> bashNavigableMapProvider() {
+        ArrayList<Object[]> iters = new ArrayList<>(makeCheckedMaps());
+        iters.ensureCapacity(numItr * iters.size());
+        for(int each=1; each < numItr; each++) {
+            iters.addAll( makeCheckedMaps());
+        }
+        return iters.iterator();
     }
 
-    static void fail(String s) {
-        throw new RuntimeException(s);
+    @DataProvider(name = "Supplier<Map<Integer,Integer>>", parallel = true)
+    public static Iterator<Object[]> navigableMapProvider() {
+        return makeCheckedMaps().iterator();
+    }
+
+    public static Collection<Object[]> makeCheckedMaps() {
+        return Arrays.asList(
+            new Object[]{"Collections.checkedMap(HashMap)",
+                (Supplier) () -> {return Collections.checkedMap(new HashMap(), Integer.class, Integer.class);}},
+            new Object[]{"Collections.checkedMap(TreeSet(reverseOrder)",
+                (Supplier) () -> {return Collections.checkedMap(new TreeMap(Collections.reverseOrder()), Integer.class, Integer.class);}},
+            new Object[]{"Collections.checkedMap(TreeSet).descendingSet()",
+                (Supplier) () -> {return Collections.checkedMap(new TreeMap().descendingMap(), Integer.class, Integer.class);}},
+            new Object[]{"Collections.checkedNavigableMap(TreeSet)",
+                (Supplier) () -> {return Collections.checkedNavigableMap(new TreeMap(), Integer.class, Integer.class);}},
+            new Object[]{"Collections.checkedNavigableMap(TreeSet(reverseOrder)",
+                (Supplier) () -> {return Collections.checkedNavigableMap(new TreeMap(Collections.reverseOrder()), Integer.class, Integer.class);}},
+            new Object[]{"Collections.checkedNavigableMap().descendingSet()",
+                (Supplier) () -> {return Collections.checkedNavigableMap(new TreeMap().descendingMap(), Integer.class, Integer.class);}}
+            );
     }
 }

@@ -36,16 +36,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
+import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -55,6 +52,7 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -96,6 +94,11 @@ public final class Context {
         public void verify(final byte[] code) {
             context.verify(code);
         }
+
+        @Override
+        public long getUniqueScriptId() {
+            return context.getUniqueScriptId();
+        }
     }
 
     /** Is Context global debug mode enabled ? */
@@ -123,8 +126,8 @@ public final class Context {
             sm.checkPermission(new RuntimePermission("nashorn.setGlobal"));
         }
 
-        if (global != null && !(global instanceof GlobalObject)) {
-            throw new IllegalArgumentException("global does not implement GlobalObject!");
+        if (global != null && !(global instanceof Global)) {
+            throw new IllegalArgumentException("global is not an instance of Global!");
         }
 
         setGlobalTrusted(global);
@@ -197,6 +200,9 @@ public final class Context {
     /** Current error manager. */
     private final ErrorManager errors;
 
+    /** Unique id for script. Used only when --loader-per-compile=false */
+    private final AtomicLong uniqueScriptId;
+
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
@@ -253,14 +259,13 @@ public final class Context {
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
-        this.scriptLoader = (ScriptLoader)AccessController.doPrivileged(
-             new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    final StructureLoader structureLoader = new StructureLoader(sharedLoader, Context.this);
-                    return new ScriptLoader(structureLoader, Context.this);
-                }
-             });
+        if (env._loader_per_compile) {
+            this.scriptLoader = null;
+            this.uniqueScriptId = null;
+        } else {
+            this.scriptLoader = createNewLoader();
+            this.uniqueScriptId = new AtomicLong();
+        }
         this.errors    = errors;
 
         // if user passed -classpath option, make a class loader with that and set it as
@@ -521,11 +526,13 @@ public final class Context {
         });
         setGlobalTrusted(newGlobal);
 
-        final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, newGlobal);
+        final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, oldGlobal);
         newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped));
 
         try {
-            return ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal);
+            // wrap objects from newGlobal's world as mirrors - but if result
+            // is from oldGlobal's world, unwrap it!
+            return ScriptObjectMirror.unwrap(ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal), oldGlobal);
         } finally {
             setGlobalTrusted(oldGlobal);
         }
@@ -550,6 +557,21 @@ public final class Context {
     }
 
     /**
+     * Checks that the given package can be accessed from current call stack.
+     *
+     * @param fullName fully qualified package name
+     */
+    public static void checkPackageAccess(final String fullName) {
+        final int index = fullName.lastIndexOf('.');
+        if (index != -1) {
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPackageAccess(fullName.substring(0, index));
+            }
+        }
+    }
+
+    /**
      * Lookup a Java class. This is used for JSR-223 stuff linking in from
      * {@code jdk.nashorn.internal.objects.NativeJava} and {@code jdk.nashorn.internal.runtime.NativeJavaPackage}
      *
@@ -561,19 +583,7 @@ public final class Context {
      */
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
         // check package access as soon as possible!
-        final int index = fullName.lastIndexOf('.');
-        if (index != -1) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        sm.checkPackageAccess(fullName.substring(0, index));
-                        return null;
-                    }
-                }, createNoPermissionsContext());
-            }
-        }
+        checkPackageAccess(fullName);
 
         // try the script -classpath loader, if that is set
         if (classPathLoader != null) {
@@ -714,10 +724,6 @@ public final class Context {
         return (context != null) ? context : Context.getContextTrusted();
     }
 
-    private static AccessControlContext createNoPermissionsContext() {
-        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
-    }
-
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
         ScriptFunction script = null;
 
@@ -817,25 +823,16 @@ public final class Context {
              new PrivilegedAction<ScriptLoader>() {
                 @Override
                 public ScriptLoader run() {
-                    // Generated code won't refer to any class generated by context
-                    // script loader and so parent loader can be the structure
-                    // loader -- which is parent of the context script loader.
-                    return new ScriptLoader((StructureLoader)scriptLoader.getParent(), Context.this);
+                    return new ScriptLoader(sharedLoader, Context.this);
                 }
              });
     }
 
     private ScriptObject newGlobalTrusted() {
-        try {
-            final Class<?> clazz = Class.forName("jdk.nashorn.internal.objects.Global", true, scriptLoader);
-            final Constructor<?> cstr = clazz.getConstructor(Context.class);
-            return (ScriptObject) cstr.newInstance(this);
-        } catch (final Exception e) {
-            printStackTrace(e);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException)e;
-            }
-            throw new RuntimeException(e);
-        }
+        return new Global(this);
+    }
+
+    private long getUniqueScriptId() {
+        return uniqueScriptId.getAndIncrement();
     }
 }

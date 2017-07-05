@@ -122,6 +122,18 @@ public class Lookup {
      * @return the unreflected method handle.
      */
     public MethodHandle unreflect(Method m) {
+        return unreflect(lookup, m);
+    }
+
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)}, converting any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param lookup the lookup used to unreflect
+     * @param m the method to unreflect
+     * @return the unreflected method handle.
+     */
+    public static MethodHandle unreflect(MethodHandles.Lookup lookup, Method m) {
         try {
             return lookup.unreflect(m);
         } catch(IllegalAccessException e) {
@@ -130,7 +142,6 @@ public class Lookup {
             throw ee;
         }
     }
-
 
     /**
      * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter(Field)}, converting any encountered
@@ -202,6 +213,18 @@ public class Lookup {
      * @return the unreflected constructor handle.
      */
     public MethodHandle unreflectConstructor(Constructor<?> c) {
+        return unreflectConstructor(lookup, c);
+    }
+
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)}, converting any
+     * encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param lookup the lookup used to unreflect
+     * @param c the constructor to unreflect
+     * @return the unreflected constructor handle.
+     */
+    public static MethodHandle unreflectConstructor(MethodHandles.Lookup lookup, Constructor<?> c) {
         try {
             return lookup.unreflectConstructor(c);
         } catch(IllegalAccessException e) {

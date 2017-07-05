@@ -69,6 +69,7 @@ public class WithoutParameters {
 
         for(int i = 0; i < parameters.length; i++) {
             Parameter p = parameters[i];
+            errorIfTrue(p.isNamePresent(), p + ".isNamePresent == true");
             errorIfTrue(!p.getDeclaringExecutable().equals(e), p + ".getDeclaringExecutable != " + e);
             Objects.requireNonNull(p.getType(), "getType() should not be null");
             Objects.requireNonNull(p.getParameterizedType(), "getParameterizedType() should not be null");

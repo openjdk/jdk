@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,14 @@
  * questions.
  */
 
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+
 /*
  * @test
  * @bug 1234567
  * @summary Use this template to help speed your client/server tests.
  * @run main/othervm SSLSocketTemplate
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
@@ -180,6 +180,7 @@ public class SSLSocketTemplate {
      * Fork off the other side, then do your work.
      */
     SSLSocketTemplate() throws Exception {
+        Exception startException = null;
         try {
             if (separateServerThread) {
                 startServer(true);
@@ -189,16 +190,20 @@ public class SSLSocketTemplate {
                 startServer(false);
             }
         } catch (Exception e) {
-            // swallow for now.  Show later
+            startException = e;
         }
 
         /*
          * Wait for other side to close down.
          */
         if (separateServerThread) {
-            serverThread.join();
+            if (serverThread != null) {
+                serverThread.join();
+            }
         } else {
-            clientThread.join();
+            if (clientThread != null) {
+                clientThread.join();
+            }
         }
 
         /*
@@ -207,36 +212,44 @@ public class SSLSocketTemplate {
          */
         Exception local;
         Exception remote;
-        String whichRemote;
 
         if (separateServerThread) {
             remote = serverException;
             local = clientException;
-            whichRemote = "server";
         } else {
             remote = clientException;
             local = serverException;
-            whichRemote = "client";
+        }
+
+        Exception exception = null;
+
+        /*
+         * Check various exception conditions.
+         */
+        if ((local != null) && (remote != null)) {
+            // If both failed, return the curthread's exception.
+            local.initCause(remote);
+            exception = local;
+        } else if (local != null) {
+            exception = local;
+        } else if (remote != null) {
+            exception = remote;
+        } else if (startException != null) {
+            exception = startException;
         }
 
         /*
-         * If both failed, return the curthread's exception, but also
-         * print the remote side Exception
+         * If there was an exception *AND* a startException,
+         * output it.
          */
-        if ((local != null) && (remote != null)) {
-            System.out.println(whichRemote + " also threw:");
-            remote.printStackTrace();
-            System.out.println();
-            throw local;
+        if (exception != null) {
+            if (exception != startException) {
+                exception.addSuppressed(startException);
+            }
+            throw exception;
         }
 
-        if (remote != null) {
-            throw remote;
-        }
-
-        if (local != null) {
-            throw local;
-        }
+        // Fall-through: no exception to throw!
     }
 
     void startServer(boolean newThread) throws Exception {

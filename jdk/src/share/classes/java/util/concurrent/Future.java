@@ -36,19 +36,19 @@
 package java.util.concurrent;
 
 /**
- * A <tt>Future</tt> represents the result of an asynchronous
+ * A {@code Future} represents the result of an asynchronous
  * computation.  Methods are provided to check if the computation is
  * complete, to wait for its completion, and to retrieve the result of
  * the computation.  The result can only be retrieved using method
- * <tt>get</tt> when the computation has completed, blocking if
+ * {@code get} when the computation has completed, blocking if
  * necessary until it is ready.  Cancellation is performed by the
- * <tt>cancel</tt> method.  Additional methods are provided to
+ * {@code cancel} method.  Additional methods are provided to
  * determine if the task completed normally or was cancelled. Once a
  * computation has completed, the computation cannot be cancelled.
- * If you would like to use a <tt>Future</tt> for the sake
+ * If you would like to use a {@code Future} for the sake
  * of cancellability but not provide a usable result, you can
  * declare types of the form {@code Future<?>} and
- * return <tt>null</tt> as a result of the underlying task.
+ * return {@code null} as a result of the underlying task.
  *
  * <p>
  * <b>Sample Usage</b> (Note that the following classes are all
@@ -72,9 +72,9 @@ package java.util.concurrent;
  *   }
  * }}</pre>
  *
- * The {@link FutureTask} class is an implementation of <tt>Future</tt> that
- * implements <tt>Runnable</tt>, and so may be executed by an <tt>Executor</tt>.
- * For example, the above construction with <tt>submit</tt> could be replaced by:
+ * The {@link FutureTask} class is an implementation of {@code Future} that
+ * implements {@code Runnable}, and so may be executed by an {@code Executor}.
+ * For example, the above construction with {@code submit} could be replaced by:
  *  <pre> {@code
  * FutureTask<String> future =
  *   new FutureTask<String>(new Callable<String>() {
@@ -91,7 +91,7 @@ package java.util.concurrent;
  * @see Executor
  * @since 1.5
  * @author Doug Lea
- * @param <V> The result type returned by this Future's <tt>get</tt> method
+ * @param <V> The result type returned by this Future's {@code get} method
  */
 public interface Future<V> {
 
@@ -99,41 +99,41 @@ public interface Future<V> {
      * Attempts to cancel execution of this task.  This attempt will
      * fail if the task has already completed, has already been cancelled,
      * or could not be cancelled for some other reason. If successful,
-     * and this task has not started when <tt>cancel</tt> is called,
+     * and this task has not started when {@code cancel} is called,
      * this task should never run.  If the task has already started,
-     * then the <tt>mayInterruptIfRunning</tt> parameter determines
+     * then the {@code mayInterruptIfRunning} parameter determines
      * whether the thread executing this task should be interrupted in
      * an attempt to stop the task.
      *
      * <p>After this method returns, subsequent calls to {@link #isDone} will
-     * always return <tt>true</tt>.  Subsequent calls to {@link #isCancelled}
-     * will always return <tt>true</tt> if this method returned <tt>true</tt>.
+     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
+     * will always return {@code true} if this method returned {@code true}.
      *
-     * @param mayInterruptIfRunning <tt>true</tt> if the thread executing this
+     * @param mayInterruptIfRunning {@code true} if the thread executing this
      * task should be interrupted; otherwise, in-progress tasks are allowed
      * to complete
-     * @return <tt>false</tt> if the task could not be cancelled,
+     * @return {@code false} if the task could not be cancelled,
      * typically because it has already completed normally;
-     * <tt>true</tt> otherwise
+     * {@code true} otherwise
      */
     boolean cancel(boolean mayInterruptIfRunning);
 
     /**
-     * Returns <tt>true</tt> if this task was cancelled before it completed
+     * Returns {@code true} if this task was cancelled before it completed
      * normally.
      *
-     * @return <tt>true</tt> if this task was cancelled before it completed
+     * @return {@code true} if this task was cancelled before it completed
      */
     boolean isCancelled();
 
     /**
-     * Returns <tt>true</tt> if this task completed.
+     * Returns {@code true} if this task completed.
      *
      * Completion may be due to normal termination, an exception, or
      * cancellation -- in all of these cases, this method will return
-     * <tt>true</tt>.
+     * {@code true}.
      *
-     * @return <tt>true</tt> if this task completed
+     * @return {@code true} if this task completed
      */
     boolean isDone();
 

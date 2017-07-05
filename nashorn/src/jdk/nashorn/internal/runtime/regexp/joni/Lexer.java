@@ -28,6 +28,8 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.MetaChar;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TokenType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
+import jdk.nashorn.internal.runtime.regexp.joni.exception.SyntaxException;
+import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 class Lexer extends ScannerSupport {
     protected final ScanEnvironment env;
@@ -52,20 +54,24 @@ class Lexer extends ScannerSupport {
             if (synAllow) {
                 return 1; /* "....{" : OK! */
             } else {
-                newSyntaxException(ERR_END_PATTERN_AT_LEFT_BRACE);
+                throw new SyntaxException(ERR_END_PATTERN_AT_LEFT_BRACE);
             }
         }
 
         if (!synAllow) {
             c = peek();
             if (c == ')' || c == '(' || c == '|') {
-                newSyntaxException(ERR_END_PATTERN_AT_LEFT_BRACE);
+                throw new SyntaxException(ERR_END_PATTERN_AT_LEFT_BRACE);
             }
         }
 
         int low = scanUnsignedNumber();
-        if (low < 0) newSyntaxException(ErrorMessages.ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
-        if (low > Config.MAX_REPEAT_NUM) newSyntaxException(ErrorMessages.ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+        if (low < 0) {
+            throw new SyntaxException(ErrorMessages.ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+        }
+        if (low > Config.MAX_REPEAT_NUM) {
+            throw new SyntaxException(ErrorMessages.ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+        }
 
         boolean nonLow = false;
         if (p == _p) { /* can't read low */
@@ -85,8 +91,12 @@ class Lexer extends ScannerSupport {
         if (c == ',') {
             int prev = p; // ??? last
             up = scanUnsignedNumber();
-            if (up < 0) newValueException(ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
-            if (up > Config.MAX_REPEAT_NUM) newValueException(ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+            if (up < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+            }
+            if (up > Config.MAX_REPEAT_NUM) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
+            }
 
             if (p == prev) {
                 if (nonLow) return invalidRangeQuantifier(synAllow);
@@ -110,7 +120,7 @@ class Lexer extends ScannerSupport {
         if (c != '}') return invalidRangeQuantifier(synAllow);
 
         if (!isRepeatInfinite(up) && low > up) {
-            newValueException(ERR_UPPER_SMALLER_THAN_LOWER_IN_REPEAT_RANGE);
+            throw new ValueException(ERR_UPPER_SMALLER_THAN_LOWER_IN_REPEAT_RANGE);
         }
 
         token.type = TokenType.INTERVAL;
@@ -125,24 +135,31 @@ class Lexer extends ScannerSupport {
             restore();
             return 1;
         } else {
-            newSyntaxException(ERR_INVALID_REPEAT_RANGE_PATTERN);
-            return 0; // not reached
+            throw new SyntaxException(ERR_INVALID_REPEAT_RANGE_PATTERN);
         }
     }
 
     /* \M-, \C-, \c, or \... */
     private int fetchEscapedValue() {
-        if (!left()) newSyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+        if (!left()) {
+            throw new SyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+        }
         fetch();
 
         switch(c) {
 
         case 'M':
             if (syntax.op2EscCapitalMBarMeta()) {
-                if (!left()) newSyntaxException(ERR_END_PATTERN_AT_META);
+                if (!left()) {
+                    throw new SyntaxException(ERR_END_PATTERN_AT_META);
+                }
                 fetch();
-                if (c != '-') newSyntaxException(ERR_META_CODE_SYNTAX);
-                if (!left()) newSyntaxException(ERR_END_PATTERN_AT_META);
+                if (c != '-') {
+                    throw new SyntaxException(ERR_META_CODE_SYNTAX);
+                }
+                if (!left()) {
+                    throw new SyntaxException(ERR_END_PATTERN_AT_META);
+                }
                 fetch();
                 if (c == syntax.metaCharTable.esc) {
                     c = fetchEscapedValue();
@@ -155,9 +172,13 @@ class Lexer extends ScannerSupport {
 
         case 'C':
             if (syntax.op2EscCapitalCBarControl()) {
-                if (!left()) newSyntaxException(ERR_END_PATTERN_AT_CONTROL);
+                if (!left()) {
+                    throw new SyntaxException(ERR_END_PATTERN_AT_CONTROL);
+                }
                 fetch();
-                if (c != '-') newSyntaxException(ERR_CONTROL_CODE_SYNTAX);
+                if (c != '-') {
+                    throw new SyntaxException(ERR_CONTROL_CODE_SYNTAX);
+                }
                 fetchEscapedValueControl();
             } else {
                 fetchEscapedValueBackSlash();
@@ -182,7 +203,9 @@ class Lexer extends ScannerSupport {
     }
 
     private void fetchEscapedValueControl() {
-        if (!left()) newSyntaxException(ERR_END_PATTERN_AT_CONTROL);
+        if (!left()) {
+            throw new SyntaxException(ERR_END_PATTERN_AT_CONTROL);
+        }
         fetch();
         if (c == '?') {
             c = 0177;
@@ -205,115 +228,6 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    // USE_NAMED_GROUP && USE_BACKREF_AT_LEVEL
-    /*
-        \k<name+n>, \k<name-n>
-        \k<num+n>,  \k<num-n>
-        \k<-num+n>, \k<-num-n>
-     */
-
-    // #else USE_NAMED_GROUP
-    // make it return nameEnd!
-    private final int fetchNameForNoNamedGroup(int startCode, boolean ref) {
-        int src = p;
-        value = 0;
-
-        int isNum = 0;
-        int sign = 1;
-
-        int endCode = nameEndCodePoint(startCode);
-        int pnumHead = p;
-        int nameEnd = stop;
-
-        String err = null;
-        if (!left()) {
-            newValueException(ERR_EMPTY_GROUP_NAME);
-        } else {
-            fetch();
-            if (c == endCode) newValueException(ERR_EMPTY_GROUP_NAME);
-
-            if (EncodingHelper.isDigit(c)) {
-                isNum = 1;
-            } else if (c == '-') {
-                isNum = 2;
-                sign = -1;
-                pnumHead = p;
-            } else {
-                err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-            }
-        }
-
-        while(left()) {
-            nameEnd = p;
-
-            fetch();
-            if (c == endCode || c == ')') break;
-            if (!EncodingHelper.isDigit(c)) err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-        }
-
-        if (err == null && c != endCode) {
-            err = ERR_INVALID_GROUP_NAME;
-            nameEnd = stop;
-        }
-
-        if (err == null) {
-            mark();
-            p = pnumHead;
-            int backNum = scanUnsignedNumber();
-            restore();
-            if (backNum < 0) {
-                newValueException(ERR_TOO_BIG_NUMBER);
-            } else if (backNum == 0){
-                newValueException(ERR_INVALID_GROUP_NAME, src, nameEnd);
-            }
-            backNum *= sign;
-
-            value = nameEnd;
-            return backNum;
-        } else {
-            newValueException(err, src, nameEnd);
-            return 0; // not reached
-        }
-    }
-
-    protected final int fetchName(int startCode, boolean ref) {
-        return fetchNameForNoNamedGroup(startCode, ref);
-    }
-
-    private boolean strExistCheckWithEsc(int[]s, int n, int bad) {
-        int p = this.p;
-        int to = this.stop;
-
-        boolean inEsc = false;
-        int i=0;
-        while(p < to) {
-            if (inEsc) {
-                inEsc = false;
-                p ++;
-            } else {
-                int x = chars[p];
-                int q = p + 1;
-                if (x == s[0]) {
-                    for (i=1; i<n && q < to; i++) {
-                        x = chars[q];
-                        if (x != s[i]) break;
-                        q++;
-                    }
-                    if (i >= n) return true;
-                    p++;
-                } else {
-                    x = chars[p];
-                    if (x == bad) return false;
-                    else if (x == syntax.metaCharTable.esc) inEsc = true;
-                    p = q;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static final int send[] = new int[]{':', ']'};
-
     private void fetchTokenInCCFor_charType(boolean flag, int type) {
         token.type = TokenType.CHAR_TYPE;
         token.setPropCType(type);
@@ -327,16 +241,19 @@ class Lexer extends ScannerSupport {
         if (peekIs('{') && syntax.opEscXBraceHex8()) {
             inc();
             int num = scanUnsignedHexadecimalNumber(8);
-            if (num < 0) newValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
+            }
             if (left()) {
                 int c2 = peek();
-                if (EncodingHelper.isXDigit(c2)) newValueException(ERR_TOO_LONG_WIDE_CHAR_VALUE);
+                if (EncodingHelper.isXDigit(c2)) {
+                    throw new ValueException(ERR_TOO_LONG_WIDE_CHAR_VALUE);
+                }
             }
 
             if (p > last + 1 && left() && peekIs('}')) {
                 inc();
                 token.type = TokenType.CODE_POINT;
-                token.base = 16;
                 token.setCode(num);
             } else {
                 /* can't read nothing or invalid format */
@@ -344,12 +261,13 @@ class Lexer extends ScannerSupport {
             }
         } else if (syntax.opEscXHex2()) {
             int num = scanUnsignedHexadecimalNumber(2);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) { /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.RAW_BYTE;
-            token.base = 16;
             token.setC(num);
         }
     }
@@ -360,12 +278,13 @@ class Lexer extends ScannerSupport {
 
         if (syntax.op2EscUHex4()) {
             int num = scanUnsignedHexadecimalNumber(4);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) {  /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.CODE_POINT;
-            token.base = 16;
             token.setCode(num);
         }
     }
@@ -375,12 +294,13 @@ class Lexer extends ScannerSupport {
             unfetch();
             int last = p;
             int num = scanUnsignedOctalNumber(3);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) {  /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.RAW_BYTE;
-            token.base = 8;
             token.setC(num);
         }
     }
@@ -400,7 +320,6 @@ class Lexer extends ScannerSupport {
 
         fetch();
         token.type = TokenType.CHAR;
-        token.base = 0;
         token.setC(c);
         token.escaped = false;
 
@@ -410,7 +329,9 @@ class Lexer extends ScannerSupport {
             token.type = TokenType.CC_RANGE;
         } else if (c == syntax.metaCharTable.esc) {
             if (!syntax.backSlashEscapeInCC()) return token.type;
-            if (!left()) newSyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+            if (!left()) {
+                throw new SyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+            }
             fetch();
             token.escaped = true;
             token.setC(c);
@@ -508,9 +429,13 @@ class Lexer extends ScannerSupport {
         if (peekIs('{') && syntax.opEscXBraceHex8()) {
             inc();
             int num = scanUnsignedHexadecimalNumber(8);
-            if (num < 0) newValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
+            }
             if (left()) {
-                if (EncodingHelper.isXDigit(peek())) newValueException(ERR_TOO_LONG_WIDE_CHAR_VALUE);
+                if (EncodingHelper.isXDigit(peek())) {
+                    throw new ValueException(ERR_TOO_LONG_WIDE_CHAR_VALUE);
+                }
             }
 
             if (p > last + 1 && left() && peekIs('}')) {
@@ -523,12 +448,13 @@ class Lexer extends ScannerSupport {
             }
         } else if (syntax.opEscXHex2()) {
             int num = scanUnsignedHexadecimalNumber(2);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) { /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.RAW_BYTE;
-            token.base = 16;
             token.setC(num);
         }
     }
@@ -539,12 +465,13 @@ class Lexer extends ScannerSupport {
 
         if (syntax.op2EscUHex4()) {
             int num = scanUnsignedHexadecimalNumber(4);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) { /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.CODE_POINT;
-            token.base = 16;
             token.setCode(num);
         }
     }
@@ -556,12 +483,12 @@ class Lexer extends ScannerSupport {
         if (num < 0 || num > Config.MAX_BACKREF_NUM) { // goto skip_backref
         } else if (syntax.opDecimalBackref() && (num <= env.numMem || num <= 9)) { /* This spec. from GNU regex */
             if (syntax.strictCheckBackref()) {
-                if (num > env.numMem || env.memNodes == null || env.memNodes[num] == null) newValueException(ERR_INVALID_BACKREF);
+                if (num > env.numMem || env.memNodes == null || env.memNodes[num] == null) {
+                    throw new ValueException(ERR_INVALID_BACKREF);
+                }
             }
             token.type = TokenType.BACKREF;
-            token.setBackrefNum(1);
-            token.setBackrefRef1(num);
-            token.setBackrefByName(false);
+            token.setBackrefRef(num);
             return;
         }
 
@@ -579,37 +506,16 @@ class Lexer extends ScannerSupport {
         if (syntax.opEscOctal3()) {
             int last = p;
             int num = scanUnsignedOctalNumber(c == '0' ? 2 : 3);
-            if (num < 0) newValueException(ERR_TOO_BIG_NUMBER);
+            if (num < 0) {
+                throw new ValueException(ERR_TOO_BIG_NUMBER);
+            }
             if (p == last) { /* can't read nothing. */
                 num = 0; /* but, it's not error */
             }
             token.type = TokenType.RAW_BYTE;
-            token.base = 8;
             token.setC(num);
         } else if (c != '0') {
             inc();
-        }
-    }
-
-    private void fetchTokenFor_subexpCall() {
-        if (syntax.op2EscGSubexpCall()) {
-            if (left()) {
-                fetch();
-                if (c == '<' || c == '\'') {
-                    int last = p;
-                    int gNum = fetchName(c, true);
-                    int nameEnd = value;
-                    token.type = TokenType.CALL;
-                    token.setCallNameP(last);
-                    token.setCallNameEnd(nameEnd);
-                    token.setCallGNum(gNum);
-                } else {
-                    unfetch();
-                    syntaxWarn(Warnings.INVALID_SUBEXP_CALL);
-                }
-            } else {
-                syntaxWarn(Warnings.INVALID_SUBEXP_CALL);
-            }
         }
     }
 
@@ -638,13 +544,14 @@ class Lexer extends ScannerSupport {
             }
 
             token.type = TokenType.STRING;
-            token.base = 0;
             token.backP = p;
 
             fetch();
 
             if (c == syntax.metaCharTable.esc && !syntax.op2IneffectiveEscape()) { // IS_MC_ESC_CODE(code, syn)
-                if (!left()) newSyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+                if (!left()) {
+                    throw new SyntaxException(ERR_END_PATTERN_AT_ESCAPE);
+                }
 
                 token.backP = p;
                 fetch();
@@ -800,7 +707,9 @@ class Lexer extends ScannerSupport {
                             if (peekIs('#')) {
                                 fetch();
                                 while (true) {
-                                    if (!left()) newSyntaxException(ERR_END_PATTERN_IN_GROUP);
+                                    if (!left()) {
+                                        throw new SyntaxException(ERR_END_PATTERN_IN_GROUP);
+                                    }
                                     fetch();
                                     if (c == syntax.metaCharTable.esc) {
                                         if (left()) fetch();

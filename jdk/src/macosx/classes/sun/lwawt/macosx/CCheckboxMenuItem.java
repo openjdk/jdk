@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer
 
     public void handleAction(final boolean state) {
         final CheckboxMenuItem target = (CheckboxMenuItem)getTarget();
-        EventQueue.invokeLater(new Runnable() {
+        SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
             public void run() {
                 target.setState(state);
             }
