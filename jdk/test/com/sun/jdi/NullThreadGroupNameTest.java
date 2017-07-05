@@ -22,13 +22,12 @@
  */
 
 /**
- *  @test
- *  @bug 7105883
- *  @summary Ensure that JDWP doesn't crash with a null thread group name
+ * @test
+ * @bug 7105883
+ * @summary Ensure that JDWP doesn't crash with a null thread group name
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run driver NullThreadGroupNameTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run driver NullThreadGroupNameTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

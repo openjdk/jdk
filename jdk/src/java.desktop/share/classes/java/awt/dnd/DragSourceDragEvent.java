@@ -281,6 +281,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      * The mouse modifiers have higher priority than overlaying key
      * modifiers.
      */
+    @SuppressWarnings("deprecation")
     private void setNewModifiers() {
         if ((gestureModifiers & InputEvent.BUTTON1_MASK) != 0) {
             gestureModifiers |= InputEvent.BUTTON1_DOWN_MASK;
@@ -305,6 +306,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
     /**
      * Sets old modifiers by the new ones.
      */
+    @SuppressWarnings("deprecation")
     private void setOldModifiers() {
         if ((gestureModifiers & InputEvent.BUTTON1_DOWN_MASK) != 0) {
             gestureModifiers |= InputEvent.BUTTON1_MASK;

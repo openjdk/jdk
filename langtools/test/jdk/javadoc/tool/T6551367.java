@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ import java.io.File;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 
-import static jdk.javadoc.internal.tool.Main.execute;
-
 public class T6551367 {
     public T6551367() {}
     public boolean run(DocletEnvironment root) {
@@ -59,7 +57,7 @@ public class T6551367 {
                 destDir.getAbsolutePath()
             };
 
-            int rc = execute(array);
+            int rc = jdk.javadoc.internal.tool.Main.execute(array);
             if (rc != 0)
                 throw new Error("unexpected exit from javadoc: " + rc);
         }
