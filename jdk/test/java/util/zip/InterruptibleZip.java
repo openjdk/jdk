@@ -30,32 +30,14 @@ import java.io.*;
 import java.util.zip.*;
 
 public class InterruptibleZip {
-    private static String rtJar() {
-        String bcp = System.getProperty("sun.boot.class.path");
-        for (String pathElement : bcp.split(File.pathSeparator)) {
-            if (pathElement.endsWith(File.separator + "rt.jar") &&
-                new File(pathElement).exists()) {
-                System.out.println("rtJar="+pathElement);
-                return pathElement;
-            }
-            if (pathElement.endsWith(File.separator + "classes") &&
-                new File(pathElement).isDirectory()) {
-                System.out.println("rt.jar not available");
-                return null;
-            }
-        }
-        throw new Error("Can't find rt.jar or classes directory");
-    }
 
     public static void main(String[] args) throws Exception {
         /* Interrupt the current thread. The is.read call below
-           should continue reading rt.jar.
+           should continue reading input.jar.
         */
-        String rtJar = rtJar();
-        if (rtJar == null) return;
         Thread.currentThread().interrupt();
-        ZipFile zf = new ZipFile(rtJar);
-        ZipEntry ze = zf.getEntry("java/lang/Object.class");
+        ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."), "input.jar"));
+        ZipEntry ze = zf.getEntry("Available.java");
         InputStream is = zf.getInputStream(ze);
         byte[] buf = new byte[512];
         int n = is.read(buf);

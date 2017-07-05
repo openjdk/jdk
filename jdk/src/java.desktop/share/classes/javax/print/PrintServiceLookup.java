@@ -245,7 +245,7 @@ public abstract class PrintServiceLookup {
 
     public static boolean registerService(PrintService service) {
         synchronized (PrintServiceLookup.class) {
-            if (service instanceof StreamPrintService) {
+            if (service == null || service instanceof StreamPrintService) {
                 return false;
             }
             ArrayList<PrintService> registeredServices = getRegisteredServices();

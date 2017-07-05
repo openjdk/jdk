@@ -61,7 +61,7 @@ private:
 
   bool  _file_open;
   int   _fd;
-  long  _file_offset;
+  size_t  _file_offset;
 
 private:
   static SharedClassPathEntry* _classpath_entry_table;
@@ -87,12 +87,14 @@ public:
     }
 
     int    _magic;                    // identify file type.
+    int    _crc;                      // header crc checksum.
     int    _version;                  // (from enum, above.)
     size_t _alignment;                // how shared archive should be aligned
     int    _obj_alignment;            // value of ObjectAlignmentInBytes
 
     struct space_info {
-      int    _file_offset;   // sizeof(this) rounded to vm page size
+      int    _crc;           // crc checksum of the current space
+      size_t _file_offset;   // sizeof(this) rounded to vm page size
       char*  _base;          // copy-on-write base address
       size_t _capacity;      // for validity checking
       size_t _used;          // for setting space top on read
@@ -135,6 +137,7 @@ public:
 
     virtual bool validate();
     virtual void populate(FileMapInfo* info, size_t alignment);
+    int compute_crc();
   };
 
   FileMapHeader * _header;
@@ -153,6 +156,8 @@ public:
   ~FileMapInfo();
 
   static int current_version()        { return _current_version; }
+  int    compute_header_crc()         { return _header->compute_crc(); }
+  void   set_header_crc(int crc)      { _header->_crc = crc; }
   void   populate_header(size_t alignment);
   bool   validate_header();
   void   invalidate();
@@ -181,6 +186,7 @@ public:
   void  write_bytes_aligned(const void* buffer, int count);
   char* map_region(int i);
   void  unmap_region(int i);
+  bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();

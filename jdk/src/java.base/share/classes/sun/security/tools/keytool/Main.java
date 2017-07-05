@@ -64,6 +64,7 @@ import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
 
+import sun.security.util.KeyUtil;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -1103,8 +1104,13 @@ public final class Main {
             doChangeKeyPasswd(alias);
             kssave = true;
         } else if (command == LIST) {
+            if (storePass == null
+                    && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
+                printWarning();
+            }
+
             if (alias != null) {
-                doPrintEntry(alias, out, true);
+                doPrintEntry(alias, out);
             } else {
                 doPrintEntries(out);
             }
@@ -1765,15 +1771,9 @@ public final class Main {
     /**
      * Prints a single keystore entry.
      */
-    private void doPrintEntry(String alias, PrintStream out,
-                              boolean printWarning)
+    private void doPrintEntry(String alias, PrintStream out)
         throws Exception
     {
-        if (storePass == null && printWarning
-                && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
-            printWarning();
-        }
-
         if (keyStore.containsAlias(alias) == false) {
             MessageFormat form = new MessageFormat
                 (rb.getString("Alias.alias.does.not.exist"));
@@ -2090,13 +2090,6 @@ public final class Main {
     private void doPrintEntries(PrintStream out)
         throws Exception
     {
-        if (storePass == null
-                && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
-            printWarning();
-        } else {
-            out.println();
-        }
-
         out.println(rb.getString("Keystore.type.") + keyStore.getType());
         out.println(rb.getString("Keystore.provider.") +
                 keyStore.getProvider().getName());
@@ -2115,7 +2108,7 @@ public final class Main {
         for (Enumeration<String> e = keyStore.aliases();
                                         e.hasMoreElements(); ) {
             String alias = e.nextElement();
-            doPrintEntry(alias, out, false);
+            doPrintEntry(alias, out);
             if (verbose || rfc) {
                 out.println(rb.getString("NEWLINE"));
                 out.println(rb.getString
@@ -2922,6 +2915,7 @@ public final class Main {
 
         MessageFormat form = new MessageFormat
                 (rb.getString(".PATTERN.printX509Cert"));
+        PublicKey pkey = cert.getPublicKey();
         Object[] source = {cert.getSubjectDN().toString(),
                         cert.getIssuerDN().toString(),
                         cert.getSerialNumber().toString(16),
@@ -2931,7 +2925,9 @@ public final class Main {
                         getCertFingerPrint("SHA1", cert),
                         getCertFingerPrint("SHA-256", cert),
                         cert.getSigAlgName(),
-                        cert.getVersion()
+                        pkey.getAlgorithm(),
+                        KeyUtil.getKeySize(pkey),
+                        cert.getVersion(),
                         };
         out.println(form.format(source));
 
