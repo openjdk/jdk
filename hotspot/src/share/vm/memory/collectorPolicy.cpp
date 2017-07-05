@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,7 +597,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
   HeapWord* result = NULL;
 
   // Loop until the allocation is satisfied, or unsatisfied after GC.
-  for (int try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
+  for (uint try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
     HandleMark hm; // Discard any handles allocated in each iteration.
 
     // First allocation attempt is lock-free.
@@ -611,7 +611,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         return result;
       }
     }
-    unsigned int gc_count_before;  // Read inside the Heap_lock locked region.
+    uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
       if (PrintGC && Verbose) {
