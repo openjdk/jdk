@@ -369,7 +369,7 @@ public class RelationNotification extends Notification {
      * @return a {@link List} of {@link ObjectName}.
      */
     public List<ObjectName> getMBeansToUnregister() {
-        List<ObjectName> result = null;
+        List<ObjectName> result;
         if (unregisterMBeanList != null) {
             result = new ArrayList<ObjectName>(unregisterMBeanList);
         } else {
@@ -397,7 +397,7 @@ public class RelationNotification extends Notification {
      * @return the old value of the updated role.
      */
     public List<ObjectName> getOldRoleValue() {
-        List<ObjectName> result = null;
+        List<ObjectName> result;
         if (oldRoleValue != null) {
             result = new ArrayList<ObjectName>(oldRoleValue);
         } else {
@@ -412,7 +412,7 @@ public class RelationNotification extends Notification {
      * @return the new value of the updated role.
      */
     public List<ObjectName> getNewRoleValue() {
-        List<ObjectName> result = null;
+        List<ObjectName> result;
         if (newRoleValue != null) {
             result = new ArrayList<ObjectName>(newRoleValue);
         } else {

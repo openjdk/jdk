@@ -240,14 +240,12 @@ class MLetParser {
                                 MLET_LOGGER.logp(Level.FINER,
                                         MLetParser.class.getName(),
                                         mth, requiresCodeWarning);
-                                atts = null;
                                 throw new IOException(requiresCodeWarning);
                             }
                             if (atts.get("archive") == null) {
                                 MLET_LOGGER.logp(Level.FINER,
                                         MLetParser.class.getName(),
                                         mth, requiresJarsWarning);
-                                atts = null;
                                 throw new IOException(requiresJarsWarning);
                             }
                         }
@@ -265,7 +263,7 @@ class MLetParser {
     public List<MLetContent> parseURL(String urlname) throws IOException {
         // Parse the document
         //
-        URL url = null;
+        URL url;
         if (urlname.indexOf(':') <= 1) {
             String userDir = System.getProperty("user.dir");
             String prot;

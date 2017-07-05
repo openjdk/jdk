@@ -34,6 +34,8 @@
 typedef jint    FourByteAbgrPixelType;
 typedef jubyte  FourByteAbgrDataType;
 
+#define FourByteAbgrIsOpaque 0
+
 #define FourByteAbgrPixelStride         4
 
 #define DeclareFourByteAbgrLoadVars(PREFIX)

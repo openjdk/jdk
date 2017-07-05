@@ -34,6 +34,8 @@
 typedef jint    ThreeByteBgrPixelType;
 typedef jubyte  ThreeByteBgrDataType;
 
+#define ThreeByteBgrIsOpaque 1
+
 #define ThreeByteBgrPixelStride         3
 
 #define DeclareThreeByteBgrLoadVars(PREFIX)

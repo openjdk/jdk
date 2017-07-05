@@ -432,7 +432,7 @@ public class ModelMBeanAttributeInfo
          */
         private Descriptor validDescriptor(final Descriptor in) throws RuntimeOperationsException {
 
-            Descriptor clone = null;
+            Descriptor clone;
             if (in == null) {
                 clone = new DescriptorSupport();
                 MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");

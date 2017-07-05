@@ -37,6 +37,8 @@
 typedef jushort Index12GrayPixelType;
 typedef jushort Index12GrayDataType;
 
+#define Index12GrayIsOpaque 1
+
 #define Index12GrayPixelStride          2
 #define Index12GrayBitsPerPixel        12
 
