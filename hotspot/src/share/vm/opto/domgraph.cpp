@@ -105,8 +105,8 @@ void PhaseCFG::Dominators( ) {
 
     // Step 2:
     Node *whead = w->_block->head();
-    for( uint j=1; j < whead->req(); j++ ) {
-      Block *b = _bbs[whead->in(j)->_idx];
+    for (uint j = 1; j < whead->req(); j++) {
+      Block* b = get_block_for_node(whead->in(j));
       Tarjan *vx = &tarjan[b->_pre_order];
       Tarjan *u = vx->EVAL();
       if( u->_semi < w->_semi )
