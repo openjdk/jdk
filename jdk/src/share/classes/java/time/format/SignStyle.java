@@ -68,7 +68,7 @@ package java.time.format;
  * to be controlled using this enum.
  * See {@link DateTimeFormatterBuilder} for usage.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is an immutable and thread-safe enum.
  *
  * @since 1.8

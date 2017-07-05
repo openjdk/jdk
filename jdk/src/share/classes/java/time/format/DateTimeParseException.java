@@ -68,7 +68,7 @@ import java.time.DateTimeException;
  * <p>
  * This exception includes the text being parsed and the error index.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is intended for use in a single thread.
  *
  * @since 1.8

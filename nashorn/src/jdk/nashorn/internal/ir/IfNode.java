@@ -27,13 +27,12 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an IF statement.
  */
 @Immutable
-public final class IfNode extends Node {
+public final class IfNode extends Statement {
     /** Test expression. */
     private final Node test;
 
@@ -46,15 +45,15 @@ public final class IfNode extends Node {
     /**
      * Constructor
      *
-     * @param source  the source
-     * @param token   token
-     * @param finish  finish
-     * @param test    test
-     * @param pass    block to execute when test passes
-     * @param fail    block to execute when test fails or null
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param test       test
+     * @param pass       block to execute when test passes
+     * @param fail       block to execute when test fails or null
      */
-    public IfNode(final Source source, final long token, final int finish, final Node test, final Block pass, final Block fail) {
-        super(source, token, finish);
+    public IfNode(final int lineNumber, final long token, final int finish, final Node test, final Block pass, final Block fail) {
+        super(lineNumber, token, finish);
         this.test = test;
         this.pass = pass;
         this.fail = fail;

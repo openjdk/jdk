@@ -81,7 +81,7 @@ import java.time.temporal.ValueRange;
  * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code HijrahEra}.
  * Use {@code getValue()} instead.</b>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is an immutable and thread-safe enum.
  *
  * @since 1.8

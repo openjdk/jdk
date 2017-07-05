@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,33 +37,30 @@
  * this sample code.
  */
 
-
 /*
  * This function uses new Swing Desktop API in JDK 6.
  * To use this with scriptpad, open this in scriptpad
  * and use "Tools->Run Script" menu.
  */
 function browse() {
-    with (guiPkgs) {
-        var desktop = null;
-        // Before more Desktop API is used, first check 
-        // whether the API is supported by this particular 
-        // virtual machine (VM) on this particular host.
-        if (Desktop.isDesktopSupported()) {
-            desktop = Desktop.getDesktop();
-        } else {
-            alert("no desktop support");
-            return;
-        }
+    var desktop = null;
+    // Before more Desktop API is used, first check
+    // whether the API is supported by this particular
+    // virtual machine (VM) on this particular host.
+    if (java.awt.Desktop.isDesktopSupported()) {
+        desktop = java.awt.Desktop.getDesktop();
+    } else {
+        alert("no desktop support");
+        return;
+    }
 
-        if (desktop.isSupported(Desktop.Action.BROWSE)) {
-            var url = prompt("Address:");
-            if (url != null) {
-                desktop.browse(new java.net.URI(url));
-            }
-        } else {
-            alert("no browser support");
+    if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+        var url = prompt("Address:");
+        if (url != null) {
+            desktop.browse(new java.net.URI(url));
         }
+    } else {
+        alert("no browser support");
     }
 }
 
@@ -71,4 +68,3 @@ if (this.application != undefined) {
     // add "Browse" menu item under "Tools" menu
     this.application.addTool("Browse", browse);
 }
-

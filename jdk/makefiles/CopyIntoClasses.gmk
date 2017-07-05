@@ -172,10 +172,6 @@ ifneq ($(ALL_META-INF_DIRS_targetapi),)
 else
     ALL_META-INF_DIRS:=$(ALL_META-INF_DIRS_share)
 endif
-# Filter out META-INF dirs that shouldn't be included
-ifdef OPENJDK
-  ALL_META-INF_DIRS:=$(filter-out %com/sun/script/javascript/META-INF,$(ALL_META-INF_DIRS))
-endif
 
 ifndef OPENJDK
     ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/java2d/cmm/kcms/META-INF

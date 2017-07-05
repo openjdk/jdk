@@ -32,15 +32,12 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
-import sun.security.ec.ECPublicKeyImpl;
-import sun.security.ec.ECParameters;
-import sun.security.ec.NamedCurve;
-
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 import sun.security.util.DerValue;
+import sun.security.util.ECUtil;
 
 /**
  * EC KeyFactory implemenation.
@@ -49,46 +46,56 @@ import sun.security.util.DerValue;
  * @since   1.6
  */
 final class P11ECKeyFactory extends P11KeyFactory {
+    private static Provider sunECprovider;
+
+    private static Provider getSunECProvider() {
+        if (sunECprovider == null) {
+            sunECprovider = Security.getProvider("SunEC");
+            if (sunECprovider == null) {
+                throw new RuntimeException("Cannot load SunEC provider");
+            }
+        }
+
+        return sunECprovider;
+    }
 
     P11ECKeyFactory(Token token, String algorithm) {
         super(token, algorithm);
     }
 
     static ECParameterSpec getECParameterSpec(String name) {
-        return NamedCurve.getECParameterSpec(name);
+        return ECUtil.getECParameterSpec(getSunECProvider(), name);
     }
 
     static ECParameterSpec getECParameterSpec(int keySize) {
-        return NamedCurve.getECParameterSpec(keySize);
+        return ECUtil.getECParameterSpec(getSunECProvider(), keySize);
     }
 
     // Check that spec is a known supported curve and convert it to our
     // ECParameterSpec subclass. If not possible, return null.
     static ECParameterSpec getECParameterSpec(ECParameterSpec spec) {
-        return ECParameters.getNamedCurve(spec);
+        return ECUtil.getECParameterSpec(getSunECProvider(), spec);
     }
 
     static ECParameterSpec decodeParameters(byte[] params) throws IOException {
-        return ECParameters.decodeParameters(params);
+        return ECUtil.getECParameterSpec(getSunECProvider(), params);
     }
 
     static byte[] encodeParameters(ECParameterSpec params) {
-        return ECParameters.encodeParameters(params);
+        return ECUtil.encodeECParameterSpec(getSunECProvider(), params);
     }
 
     static ECPoint decodePoint(byte[] encoded, EllipticCurve curve) throws IOException {
-        return ECParameters.decodePoint(encoded, curve);
+        return ECUtil.decodePoint(encoded, curve);
     }
 
     // Used by ECDH KeyAgreement
     static byte[] getEncodedPublicValue(PublicKey key) throws InvalidKeyException {
-        if (key instanceof ECPublicKeyImpl) {
-            return ((ECPublicKeyImpl)key).getEncodedPublicValue();
-        } else if (key instanceof ECPublicKey) {
+        if (key instanceof ECPublicKey) {
             ECPublicKey ecKey = (ECPublicKey)key;
             ECPoint w = ecKey.getW();
             ECParameterSpec params = ecKey.getParams();
-            return ECParameters.encodePoint(w, params.getCurve());
+            return ECUtil.encodePoint(w, params.getCurve());
         } else {
             // should never occur
             throw new InvalidKeyException
@@ -107,7 +114,13 @@ final class P11ECKeyFactory extends P11KeyFactory {
             } else if ("X.509".equals(key.getFormat())) {
                 // let Sun provider parse for us, then recurse
                 byte[] encoded = key.getEncoded();
-                key = new sun.security.ec.ECPublicKeyImpl(encoded);
+
+                try {
+                    key = ECUtil.decodeX509ECPublicKey(encoded);
+                } catch (InvalidKeySpecException ikse) {
+                    throw new InvalidKeyException(ikse);
+                }
+
                 return implTranslatePublicKey(key);
             } else {
                 throw new InvalidKeyException("PublicKey must be instance "
@@ -130,7 +143,13 @@ final class P11ECKeyFactory extends P11KeyFactory {
             } else if ("PKCS#8".equals(key.getFormat())) {
                 // let Sun provider parse for us, then recurse
                 byte[] encoded = key.getEncoded();
-                key = new sun.security.ec.ECPrivateKeyImpl(encoded);
+
+                try {
+                    key = ECUtil.decodePKCS8ECPrivateKey(encoded);
+                } catch (InvalidKeySpecException ikse) {
+                    throw new InvalidKeyException(ikse);
+                }
+
                 return implTranslatePrivateKey(key);
             } else {
                 throw new InvalidKeyException("PrivateKey must be instance "
@@ -148,7 +167,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
         if (keySpec instanceof X509EncodedKeySpec) {
             try {
                 byte[] encoded = ((X509EncodedKeySpec)keySpec).getEncoded();
-                PublicKey key = new sun.security.ec.ECPublicKeyImpl(encoded);
+                PublicKey key = ECUtil.decodeX509ECPublicKey(encoded);
                 return implTranslatePublicKey(key);
             } catch (InvalidKeyException e) {
                 throw new InvalidKeySpecException
@@ -178,7 +197,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
             try {
                 byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-                PrivateKey key = new sun.security.ec.ECPrivateKeyImpl(encoded);
+                PrivateKey key = ECUtil.decodePKCS8ECPrivateKey(encoded);
                 return implTranslatePrivateKey(key);
             } catch (GeneralSecurityException e) {
                 throw new InvalidKeySpecException
@@ -201,10 +220,12 @@ final class P11ECKeyFactory extends P11KeyFactory {
         }
     }
 
-    private PublicKey generatePublic(ECPoint point, ECParameterSpec params) throws PKCS11Exception {
-        byte[] encodedParams = ECParameters.encodeParameters(params);
+    private PublicKey generatePublic(ECPoint point, ECParameterSpec params)
+            throws PKCS11Exception {
+        byte[] encodedParams =
+            ECUtil.encodeECParameterSpec(getSunECProvider(), params);
         byte[] encodedPoint =
-            ECParameters.encodePoint(point, params.getCurve());
+            ECUtil.encodePoint(point, params.getCurve());
 
         // Check whether the X9.63 encoding of an EC point shall be wrapped
         // in an ASN.1 OCTET STRING
@@ -238,8 +259,10 @@ final class P11ECKeyFactory extends P11KeyFactory {
         }
     }
 
-    private PrivateKey generatePrivate(BigInteger s, ECParameterSpec params) throws PKCS11Exception {
-        byte[] encodedParams = ECParameters.encodeParameters(params);
+    private PrivateKey generatePrivate(BigInteger s, ECParameterSpec params)
+            throws PKCS11Exception {
+        byte[] encodedParams =
+            ECUtil.encodeECParameterSpec(getSunECProvider(), params);
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PRIVATE_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_EC),
@@ -304,7 +327,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
     }
 
     KeyFactory implGetSoftwareFactory() throws GeneralSecurityException {
-        return KeyFactory.getInstance("EC", "SunEC");
+        return KeyFactory.getInstance("EC", getSunECProvider());
     }
 
 }

@@ -1794,6 +1794,19 @@ void nmethod::metadata_do(void f(Metadata*)) {
           Metadata* md = r->metadata_value();
           f(md);
         }
+      } else if (iter.type() == relocInfo::virtual_call_type) {
+        // Check compiledIC holders associated with this nmethod
+        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        if (ic->is_icholder_call()) {
+          CompiledICHolder* cichk = ic->cached_icholder();
+          f(cichk->holder_method());
+          f(cichk->holder_klass());
+        } else {
+          Metadata* ic_oop = ic->cached_metadata();
+          if (ic_oop != NULL) {
+            f(ic_oop);
+          }
+        }
       }
     }
   }
@@ -1804,6 +1817,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
     Metadata* md = *p;
     f(md);
   }
+
   // Call function Method*, not embedded in these other places.
   if (_method != NULL) f(_method);
 }

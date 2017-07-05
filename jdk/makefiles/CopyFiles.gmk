@@ -458,24 +458,6 @@ endif # OPENJDK
 
 ifndef OPENJDK
 
-JS_RESOURCES_FILES := Messages.properties Messages_fr.properties
-JS_RESOURCES_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/classes/sun/org/mozilla/javascript/internal/resources
-JS_RESOURCES_DST_DIR := $(JDK_OUTPUTDIR)/classes/sun/org/mozilla/javascript/internal/resources
-
-JS_RESOURCES_SRC := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_SRC_DIR)/$(F))
-JS_RESOURCES_DST := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_DST_DIR)/$(F))
-
-$(JS_RESOURCES_DST_DIR)/% : $(JS_RESOURCES_SRC_DIR)/%
-	$(call install-file)
-
-COPY_FILES += $(JS_RESOURCES_DST)
-
-endif
-
-##########################################################################################
-
-ifndef OPENJDK
-
 #
 # Solaris X11 Direct Graphics Access library
 #

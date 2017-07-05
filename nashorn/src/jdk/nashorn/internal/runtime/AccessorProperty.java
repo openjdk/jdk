@@ -50,8 +50,6 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
 /**
  * An AccessorProperty is the most generic property type. An AccessorProperty is
  * represented as fields in a ScriptObject class.
- *
- * @see SpillProperty
  */
 public class AccessorProperty extends Property {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -77,6 +75,7 @@ public class AccessorProperty extends Property {
 
     private static final MethodType[] ACCESSOR_GETTER_TYPES = new MethodType[NOOF_TYPES];
     private static final MethodType[] ACCESSOR_SETTER_TYPES = new MethodType[NOOF_TYPES];
+    private static final MethodHandle SPILLGETTER = MH.asType(MH.getter(MethodHandles.lookup(), ScriptObject.class, "spill", Object[].class), Lookup.GET_OBJECT_TYPE);
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
     private MethodHandle primitiveGetter;
@@ -285,7 +284,7 @@ public class AccessorProperty extends Property {
                 "get");
         }
 
-        return getters[i];
+        return isSpill() ? MH.filterArguments(getters[i], 0, SPILLGETTER) : getters[i];
     }
 
     private Property getWiderProperty(final Class<?> type) {
@@ -327,6 +326,7 @@ public class AccessorProperty extends Property {
         final Class<?> forType = currentType == null ? type : currentType;
 
         //if we are asking for an object setter, but are still a primitive type, we might try to box it
+        MethodHandle mh;
 
         if (needsInvalidator(i, ci)) {
             final Property     newProperty = getWiderProperty(type);
@@ -335,12 +335,15 @@ public class AccessorProperty extends Property {
             final MethodHandle explodeTypeSetter = MH.filterArguments(widerSetter, 0, MH.insertArguments(REPLACE_MAP, 1, newMap, getKey(), currentType, type));
             if (currentType != null && currentType.isPrimitive() && type == Object.class) {
                 //might try a box check on this to avoid widening field to object storage
-                return createGuardBoxedPrimitiveSetter(currentType, generateSetter(currentType, currentType), explodeTypeSetter);
+                mh = createGuardBoxedPrimitiveSetter(currentType, generateSetter(currentType, currentType), explodeTypeSetter);
+            } else {
+                mh = explodeTypeSetter;
             }
-            return explodeTypeSetter;
+        } else {
+            mh = generateSetter(forType, type);
         }
 
-        return generateSetter(forType, type);
+        return isSpill() ? MH.filterArguments(mh, 0, SPILLGETTER) : mh;
     }
 
     @Override

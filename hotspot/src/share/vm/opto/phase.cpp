@@ -64,6 +64,7 @@ elapsedTimer Phase::_t_idealLoopVerify;
 // Subtimers for _t_optimizer
 elapsedTimer   Phase::_t_iterGVN;
 elapsedTimer   Phase::_t_iterGVN2;
+elapsedTimer   Phase::_t_incrInline;
 
 // Subtimers for _t_registerAllocation
 elapsedTimer   Phase::_t_ctorChaitin;
@@ -110,6 +111,7 @@ void Phase::print_timers() {
       tty->print_cr ("      macroEliminate : %3.3f sec", Phase::_t_macroEliminate.seconds());
     }
     tty->print_cr ("      iterGVN        : %3.3f sec", Phase::_t_iterGVN.seconds());
+    tty->print_cr ("      incrInline     : %3.3f sec", Phase::_t_incrInline.seconds());
     tty->print_cr ("      idealLoop      : %3.3f sec", Phase::_t_idealLoop.seconds());
     tty->print_cr ("      idealLoopVerify: %3.3f sec", Phase::_t_idealLoopVerify.seconds());
     tty->print_cr ("      ccp            : %3.3f sec", Phase::_t_ccp.seconds());

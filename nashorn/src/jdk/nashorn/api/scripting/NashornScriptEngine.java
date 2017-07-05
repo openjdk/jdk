@@ -78,7 +78,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         this(factory, DEFAULT_OPTIONS, appLoader);
     }
 
-    @SuppressWarnings("LeakingThisInConstructor")
     NashornScriptEngine(final NashornScriptEngineFactory factory, final String[] args, final ClassLoader appLoader) {
         this.factory = factory;
         final Options options = new Options("nashorn");
@@ -102,7 +101,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         });
 
         // create new global object
-        this.global =  createNashornGlobal();
+        this.global = createNashornGlobal();
         // set the default engine scope for the default context
         context.setBindings(new ScriptObjectMirror(global, global), ScriptContext.ENGINE_SCOPE);
 

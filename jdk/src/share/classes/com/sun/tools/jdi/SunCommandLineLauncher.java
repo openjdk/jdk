@@ -213,7 +213,7 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
                 exePath = exe;
             }
             // Quote only if necessary in case the quote arg value is bogus
-            if (hasWhitespace(exe)) {
+            if (hasWhitespace(exePath)) {
                 exePath = quote + exePath + quote;
             }
 

@@ -1,5 +1,0 @@
-
-#script engines supported
-
-com.sun.script.javascript.RhinoScriptEngineFactory #javascript
-

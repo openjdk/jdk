@@ -282,10 +282,10 @@ public class TypeAnnotationParser {
         AnnotatedElement boundsDecl;
         TypeAnnotationTarget target;
         if (decl instanceof Class) {
-            target = TypeAnnotationTarget.CLASS_PARAMETER_BOUND;
+            target = TypeAnnotationTarget.CLASS_TYPE_PARAMETER_BOUND;
             boundsDecl = (Class)decl;
         } else {
-            target = TypeAnnotationTarget.METHOD_PARAMETER_BOUND;
+            target = TypeAnnotationTarget.METHOD_TYPE_PARAMETER_BOUND;
             boundsDecl = (Executable)decl;
         }
         return TypeAnnotation.filter(TypeAnnotationParser.parseAllTypeAnnotations(boundsDecl), target);
@@ -371,14 +371,15 @@ public class TypeAnnotationParser {
     private static final byte LOCAL_VARIABLE = (byte)0x40;
     private static final byte RESOURCE_VARIABLE = (byte)0x41;
     private static final byte EXCEPTION_PARAMETER = (byte)0x42;
-    private static final byte CAST = (byte)0x43;
-    private static final byte INSTANCEOF = (byte)0x44;
-    private static final byte NEW = (byte)0x45;
-    private static final byte CONSTRUCTOR_REFERENCE_RECEIVER = (byte)0x46;
-    private static final byte METHOD_REFERENCE_RECEIVER = (byte)0x47;
-    private static final byte LAMBDA_FORMAL_PARAMETER = (byte)0x48;
-    private static final byte METHOD_REFERENCE = (byte)0x49;
-    private static final byte METHOD_REFERENCE_TYPE_ARGUMENT = (byte)0x50;
+    private static final byte INSTANCEOF = (byte)0x43;
+    private static final byte NEW = (byte)0x44;
+    private static final byte CONSTRUCTOR_REFERENCE = (byte)0x45;
+    private static final byte METHOD_REFERENCE = (byte)0x46;
+    private static final byte CAST = (byte)0x47;
+    private static final byte CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = (byte)0x48;
+    private static final byte METHOD_INVOCATION_TYPE_ARGUMENT = (byte)0x49;
+    private static final byte CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = (byte)0x4A;
+    private static final byte METHOD_REFERENCE_TYPE_ARGUMENT = (byte)0x4B;
 
     private static TypeAnnotation parseTypeAnnotation(ByteBuffer buf,
             ConstantPool cp,
@@ -417,19 +418,20 @@ public class TypeAnnotationParser {
                 return res;
             }} break;
         case CLASS_TYPE_PARAMETER_BOUND:
-            return parse2ByteTarget(TypeAnnotationTarget.CLASS_PARAMETER_BOUND, buf);
+            return parse2ByteTarget(TypeAnnotationTarget.CLASS_TYPE_PARAMETER_BOUND, buf);
         case METHOD_TYPE_PARAMETER_BOUND:
-            return parse2ByteTarget(TypeAnnotationTarget.METHOD_PARAMETER_BOUND, buf);
+            return parse2ByteTarget(TypeAnnotationTarget.METHOD_TYPE_PARAMETER_BOUND, buf);
         case FIELD:
-            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.FIELD_TYPE);
+            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.FIELD);
         case METHOD_RETURN:
-            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_RETURN_TYPE);
+            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_RETURN);
         case METHOD_RECEIVER:
-            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_RECEIVER_TYPE);
+            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_RECEIVER);
         case METHOD_FORMAL_PARAMETER: {
-            // Todo
             byte index = buf.get();
-            } break;
+            return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_FORMAL_PARAMETER,
+                    index);
+            } //unreachable break;
         case THROWS:
             return parseShortTarget(TypeAnnotationTarget.THROWS, buf);
 
@@ -445,30 +447,27 @@ public class TypeAnnotationParser {
                 short varLength = buf.getShort();
                 short index = buf.getShort();
             }
-            break;
+            return null;
         case EXCEPTION_PARAMETER: {
             byte index = buf.get();
-            } break;
-        case CAST:
+            }
+            return null;
         case INSTANCEOF:
-        case NEW: {
+        case NEW:
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE: {
             short offset = buf.getShort();
-            } break;
-        case CONSTRUCTOR_REFERENCE_RECEIVER:
-        case METHOD_REFERENCE_RECEIVER: {
-            short offset = buf.getShort();
-            byte index = buf.get();
-            } break;
-        case LAMBDA_FORMAL_PARAMETER: {
-            byte index = buf.get();
-            } break;
-        case METHOD_REFERENCE:
-            // This one isn't in the spec yet
-            break;
+            }
+            return null;
+        case CAST:
+        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
+        case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT: {
             short offset = buf.getShort();
             byte index = buf.get();
-            } break;
+            }
+            return null;
 
         default:
             // will throw error below

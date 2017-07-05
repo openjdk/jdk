@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import java.security.Principal;
+import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import javax.management.MBeanServer;
@@ -239,6 +240,18 @@ public class ConnectionTest {
         return true;
     }
 
+    private static final String IPV4_PTN = "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(\\:[1-9][0-9]{3})?$";
+
+    /**
+     * Checks the connection id for validity.
+     * The {@link
+     * javax.management.remote package description} describes the
+     * conventions for connection IDs.
+     * @param proto Connection protocol
+     * @param clientConnId The connection ID
+     * @return Returns {@code true} if the connection id conforms to the specification; {@code false} otherwise.
+     * @throws Exception
+     */
     private static boolean checkConnectionId(String proto, String clientConnId)
             throws Exception {
         StringTokenizer tok = new StringTokenizer(clientConnId, " ", true);
@@ -248,6 +261,17 @@ public class ConnectionTest {
             System.out.println("Expected \"" + proto + ":\", found \"" + s +
                                "\"");
             return false;
+        }
+
+        int hostAddrInd = s.indexOf("//");
+        if (hostAddrInd > -1) {
+            s = s.substring(hostAddrInd + 2);
+            if (!Pattern.matches(IPV4_PTN, s)) {
+                if (!s.startsWith("[") || !s.endsWith("]")) {
+                    System.out.println("IPv6 address must be enclosed in \"[]\"");
+                    return false;
+                }
+            }
         }
         s = tok.nextToken();
         if (!s.equals(" ")) {

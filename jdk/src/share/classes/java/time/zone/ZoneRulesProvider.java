@@ -111,7 +111,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Each provider will provide the latest rules for each zone ID, but they
  * may also provide the history of how the rules changed.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface is a service provider that can be called by multiple threads.
  * Implementations must be immutable and thread-safe.
  * <p>

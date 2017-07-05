@@ -80,18 +80,21 @@ public class InstructionAdapter extends MethodVisitor {
      * constructor</i>. Instead, they must use the
      * {@link #InstructionAdapter(int, MethodVisitor)} version.
      *
-     * @param mv the method visitor to which this adapter delegates calls.
+     * @param mv
+     *            the method visitor to which this adapter delegates calls.
      */
     public InstructionAdapter(final MethodVisitor mv) {
-        this(Opcodes.ASM4, mv);
+        this(Opcodes.ASM5, mv);
     }
 
     /**
      * Creates a new {@link InstructionAdapter}.
      *
-     * @param api the ASM API version implemented by this visitor. Must be one
-     *        of {@link Opcodes#ASM4}.
-     * @param mv the method visitor to which this adapter delegates calls.
+     * @param api
+     *            the ASM API version implemented by this visitor. Must be one
+     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     * @param mv
+     *            the method visitor to which this adapter delegates calls.
      */
     protected InstructionAdapter(final int api, final MethodVisitor mv) {
         super(api, mv);
@@ -100,394 +103,394 @@ public class InstructionAdapter extends MethodVisitor {
     @Override
     public void visitInsn(final int opcode) {
         switch (opcode) {
-            case Opcodes.NOP:
-                nop();
-                break;
-            case Opcodes.ACONST_NULL:
-                aconst(null);
-                break;
-            case Opcodes.ICONST_M1:
-            case Opcodes.ICONST_0:
-            case Opcodes.ICONST_1:
-            case Opcodes.ICONST_2:
-            case Opcodes.ICONST_3:
-            case Opcodes.ICONST_4:
-            case Opcodes.ICONST_5:
-                iconst(opcode - Opcodes.ICONST_0);
-                break;
-            case Opcodes.LCONST_0:
-            case Opcodes.LCONST_1:
-                lconst(opcode - Opcodes.LCONST_0);
-                break;
-            case Opcodes.FCONST_0:
-            case Opcodes.FCONST_1:
-            case Opcodes.FCONST_2:
-                fconst(opcode - Opcodes.FCONST_0);
-                break;
-            case Opcodes.DCONST_0:
-            case Opcodes.DCONST_1:
-                dconst(opcode - Opcodes.DCONST_0);
-                break;
-            case Opcodes.IALOAD:
-                aload(Type.INT_TYPE);
-                break;
-            case Opcodes.LALOAD:
-                aload(Type.LONG_TYPE);
-                break;
-            case Opcodes.FALOAD:
-                aload(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DALOAD:
-                aload(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.AALOAD:
-                aload(OBJECT_TYPE);
-                break;
-            case Opcodes.BALOAD:
-                aload(Type.BYTE_TYPE);
-                break;
-            case Opcodes.CALOAD:
-                aload(Type.CHAR_TYPE);
-                break;
-            case Opcodes.SALOAD:
-                aload(Type.SHORT_TYPE);
-                break;
-            case Opcodes.IASTORE:
-                astore(Type.INT_TYPE);
-                break;
-            case Opcodes.LASTORE:
-                astore(Type.LONG_TYPE);
-                break;
-            case Opcodes.FASTORE:
-                astore(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DASTORE:
-                astore(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.AASTORE:
-                astore(OBJECT_TYPE);
-                break;
-            case Opcodes.BASTORE:
-                astore(Type.BYTE_TYPE);
-                break;
-            case Opcodes.CASTORE:
-                astore(Type.CHAR_TYPE);
-                break;
-            case Opcodes.SASTORE:
-                astore(Type.SHORT_TYPE);
-                break;
-            case Opcodes.POP:
-                pop();
-                break;
-            case Opcodes.POP2:
-                pop2();
-                break;
-            case Opcodes.DUP:
-                dup();
-                break;
-            case Opcodes.DUP_X1:
-                dupX1();
-                break;
-            case Opcodes.DUP_X2:
-                dupX2();
-                break;
-            case Opcodes.DUP2:
-                dup2();
-                break;
-            case Opcodes.DUP2_X1:
-                dup2X1();
-                break;
-            case Opcodes.DUP2_X2:
-                dup2X2();
-                break;
-            case Opcodes.SWAP:
-                swap();
-                break;
-            case Opcodes.IADD:
-                add(Type.INT_TYPE);
-                break;
-            case Opcodes.LADD:
-                add(Type.LONG_TYPE);
-                break;
-            case Opcodes.FADD:
-                add(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DADD:
-                add(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.ISUB:
-                sub(Type.INT_TYPE);
-                break;
-            case Opcodes.LSUB:
-                sub(Type.LONG_TYPE);
-                break;
-            case Opcodes.FSUB:
-                sub(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DSUB:
-                sub(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.IMUL:
-                mul(Type.INT_TYPE);
-                break;
-            case Opcodes.LMUL:
-                mul(Type.LONG_TYPE);
-                break;
-            case Opcodes.FMUL:
-                mul(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DMUL:
-                mul(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.IDIV:
-                div(Type.INT_TYPE);
-                break;
-            case Opcodes.LDIV:
-                div(Type.LONG_TYPE);
-                break;
-            case Opcodes.FDIV:
-                div(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DDIV:
-                div(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.IREM:
-                rem(Type.INT_TYPE);
-                break;
-            case Opcodes.LREM:
-                rem(Type.LONG_TYPE);
-                break;
-            case Opcodes.FREM:
-                rem(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DREM:
-                rem(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.INEG:
-                neg(Type.INT_TYPE);
-                break;
-            case Opcodes.LNEG:
-                neg(Type.LONG_TYPE);
-                break;
-            case Opcodes.FNEG:
-                neg(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DNEG:
-                neg(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.ISHL:
-                shl(Type.INT_TYPE);
-                break;
-            case Opcodes.LSHL:
-                shl(Type.LONG_TYPE);
-                break;
-            case Opcodes.ISHR:
-                shr(Type.INT_TYPE);
-                break;
-            case Opcodes.LSHR:
-                shr(Type.LONG_TYPE);
-                break;
-            case Opcodes.IUSHR:
-                ushr(Type.INT_TYPE);
-                break;
-            case Opcodes.LUSHR:
-                ushr(Type.LONG_TYPE);
-                break;
-            case Opcodes.IAND:
-                and(Type.INT_TYPE);
-                break;
-            case Opcodes.LAND:
-                and(Type.LONG_TYPE);
-                break;
-            case Opcodes.IOR:
-                or(Type.INT_TYPE);
-                break;
-            case Opcodes.LOR:
-                or(Type.LONG_TYPE);
-                break;
-            case Opcodes.IXOR:
-                xor(Type.INT_TYPE);
-                break;
-            case Opcodes.LXOR:
-                xor(Type.LONG_TYPE);
-                break;
-            case Opcodes.I2L:
-                cast(Type.INT_TYPE, Type.LONG_TYPE);
-                break;
-            case Opcodes.I2F:
-                cast(Type.INT_TYPE, Type.FLOAT_TYPE);
-                break;
-            case Opcodes.I2D:
-                cast(Type.INT_TYPE, Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.L2I:
-                cast(Type.LONG_TYPE, Type.INT_TYPE);
-                break;
-            case Opcodes.L2F:
-                cast(Type.LONG_TYPE, Type.FLOAT_TYPE);
-                break;
-            case Opcodes.L2D:
-                cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.F2I:
-                cast(Type.FLOAT_TYPE, Type.INT_TYPE);
-                break;
-            case Opcodes.F2L:
-                cast(Type.FLOAT_TYPE, Type.LONG_TYPE);
-                break;
-            case Opcodes.F2D:
-                cast(Type.FLOAT_TYPE, Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.D2I:
-                cast(Type.DOUBLE_TYPE, Type.INT_TYPE);
-                break;
-            case Opcodes.D2L:
-                cast(Type.DOUBLE_TYPE, Type.LONG_TYPE);
-                break;
-            case Opcodes.D2F:
-                cast(Type.DOUBLE_TYPE, Type.FLOAT_TYPE);
-                break;
-            case Opcodes.I2B:
-                cast(Type.INT_TYPE, Type.BYTE_TYPE);
-                break;
-            case Opcodes.I2C:
-                cast(Type.INT_TYPE, Type.CHAR_TYPE);
-                break;
-            case Opcodes.I2S:
-                cast(Type.INT_TYPE, Type.SHORT_TYPE);
-                break;
-            case Opcodes.LCMP:
-                lcmp();
-                break;
-            case Opcodes.FCMPL:
-                cmpl(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.FCMPG:
-                cmpg(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DCMPL:
-                cmpl(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.DCMPG:
-                cmpg(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.IRETURN:
-                areturn(Type.INT_TYPE);
-                break;
-            case Opcodes.LRETURN:
-                areturn(Type.LONG_TYPE);
-                break;
-            case Opcodes.FRETURN:
-                areturn(Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DRETURN:
-                areturn(Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.ARETURN:
-                areturn(OBJECT_TYPE);
-                break;
-            case Opcodes.RETURN:
-                areturn(Type.VOID_TYPE);
-                break;
-            case Opcodes.ARRAYLENGTH:
-                arraylength();
-                break;
-            case Opcodes.ATHROW:
-                athrow();
-                break;
-            case Opcodes.MONITORENTER:
-                monitorenter();
-                break;
-            case Opcodes.MONITOREXIT:
-                monitorexit();
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.NOP:
+            nop();
+            break;
+        case Opcodes.ACONST_NULL:
+            aconst(null);
+            break;
+        case Opcodes.ICONST_M1:
+        case Opcodes.ICONST_0:
+        case Opcodes.ICONST_1:
+        case Opcodes.ICONST_2:
+        case Opcodes.ICONST_3:
+        case Opcodes.ICONST_4:
+        case Opcodes.ICONST_5:
+            iconst(opcode - Opcodes.ICONST_0);
+            break;
+        case Opcodes.LCONST_0:
+        case Opcodes.LCONST_1:
+            lconst(opcode - Opcodes.LCONST_0);
+            break;
+        case Opcodes.FCONST_0:
+        case Opcodes.FCONST_1:
+        case Opcodes.FCONST_2:
+            fconst(opcode - Opcodes.FCONST_0);
+            break;
+        case Opcodes.DCONST_0:
+        case Opcodes.DCONST_1:
+            dconst(opcode - Opcodes.DCONST_0);
+            break;
+        case Opcodes.IALOAD:
+            aload(Type.INT_TYPE);
+            break;
+        case Opcodes.LALOAD:
+            aload(Type.LONG_TYPE);
+            break;
+        case Opcodes.FALOAD:
+            aload(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DALOAD:
+            aload(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.AALOAD:
+            aload(OBJECT_TYPE);
+            break;
+        case Opcodes.BALOAD:
+            aload(Type.BYTE_TYPE);
+            break;
+        case Opcodes.CALOAD:
+            aload(Type.CHAR_TYPE);
+            break;
+        case Opcodes.SALOAD:
+            aload(Type.SHORT_TYPE);
+            break;
+        case Opcodes.IASTORE:
+            astore(Type.INT_TYPE);
+            break;
+        case Opcodes.LASTORE:
+            astore(Type.LONG_TYPE);
+            break;
+        case Opcodes.FASTORE:
+            astore(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DASTORE:
+            astore(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.AASTORE:
+            astore(OBJECT_TYPE);
+            break;
+        case Opcodes.BASTORE:
+            astore(Type.BYTE_TYPE);
+            break;
+        case Opcodes.CASTORE:
+            astore(Type.CHAR_TYPE);
+            break;
+        case Opcodes.SASTORE:
+            astore(Type.SHORT_TYPE);
+            break;
+        case Opcodes.POP:
+            pop();
+            break;
+        case Opcodes.POP2:
+            pop2();
+            break;
+        case Opcodes.DUP:
+            dup();
+            break;
+        case Opcodes.DUP_X1:
+            dupX1();
+            break;
+        case Opcodes.DUP_X2:
+            dupX2();
+            break;
+        case Opcodes.DUP2:
+            dup2();
+            break;
+        case Opcodes.DUP2_X1:
+            dup2X1();
+            break;
+        case Opcodes.DUP2_X2:
+            dup2X2();
+            break;
+        case Opcodes.SWAP:
+            swap();
+            break;
+        case Opcodes.IADD:
+            add(Type.INT_TYPE);
+            break;
+        case Opcodes.LADD:
+            add(Type.LONG_TYPE);
+            break;
+        case Opcodes.FADD:
+            add(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DADD:
+            add(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.ISUB:
+            sub(Type.INT_TYPE);
+            break;
+        case Opcodes.LSUB:
+            sub(Type.LONG_TYPE);
+            break;
+        case Opcodes.FSUB:
+            sub(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DSUB:
+            sub(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.IMUL:
+            mul(Type.INT_TYPE);
+            break;
+        case Opcodes.LMUL:
+            mul(Type.LONG_TYPE);
+            break;
+        case Opcodes.FMUL:
+            mul(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DMUL:
+            mul(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.IDIV:
+            div(Type.INT_TYPE);
+            break;
+        case Opcodes.LDIV:
+            div(Type.LONG_TYPE);
+            break;
+        case Opcodes.FDIV:
+            div(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DDIV:
+            div(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.IREM:
+            rem(Type.INT_TYPE);
+            break;
+        case Opcodes.LREM:
+            rem(Type.LONG_TYPE);
+            break;
+        case Opcodes.FREM:
+            rem(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DREM:
+            rem(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.INEG:
+            neg(Type.INT_TYPE);
+            break;
+        case Opcodes.LNEG:
+            neg(Type.LONG_TYPE);
+            break;
+        case Opcodes.FNEG:
+            neg(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DNEG:
+            neg(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.ISHL:
+            shl(Type.INT_TYPE);
+            break;
+        case Opcodes.LSHL:
+            shl(Type.LONG_TYPE);
+            break;
+        case Opcodes.ISHR:
+            shr(Type.INT_TYPE);
+            break;
+        case Opcodes.LSHR:
+            shr(Type.LONG_TYPE);
+            break;
+        case Opcodes.IUSHR:
+            ushr(Type.INT_TYPE);
+            break;
+        case Opcodes.LUSHR:
+            ushr(Type.LONG_TYPE);
+            break;
+        case Opcodes.IAND:
+            and(Type.INT_TYPE);
+            break;
+        case Opcodes.LAND:
+            and(Type.LONG_TYPE);
+            break;
+        case Opcodes.IOR:
+            or(Type.INT_TYPE);
+            break;
+        case Opcodes.LOR:
+            or(Type.LONG_TYPE);
+            break;
+        case Opcodes.IXOR:
+            xor(Type.INT_TYPE);
+            break;
+        case Opcodes.LXOR:
+            xor(Type.LONG_TYPE);
+            break;
+        case Opcodes.I2L:
+            cast(Type.INT_TYPE, Type.LONG_TYPE);
+            break;
+        case Opcodes.I2F:
+            cast(Type.INT_TYPE, Type.FLOAT_TYPE);
+            break;
+        case Opcodes.I2D:
+            cast(Type.INT_TYPE, Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.L2I:
+            cast(Type.LONG_TYPE, Type.INT_TYPE);
+            break;
+        case Opcodes.L2F:
+            cast(Type.LONG_TYPE, Type.FLOAT_TYPE);
+            break;
+        case Opcodes.L2D:
+            cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.F2I:
+            cast(Type.FLOAT_TYPE, Type.INT_TYPE);
+            break;
+        case Opcodes.F2L:
+            cast(Type.FLOAT_TYPE, Type.LONG_TYPE);
+            break;
+        case Opcodes.F2D:
+            cast(Type.FLOAT_TYPE, Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.D2I:
+            cast(Type.DOUBLE_TYPE, Type.INT_TYPE);
+            break;
+        case Opcodes.D2L:
+            cast(Type.DOUBLE_TYPE, Type.LONG_TYPE);
+            break;
+        case Opcodes.D2F:
+            cast(Type.DOUBLE_TYPE, Type.FLOAT_TYPE);
+            break;
+        case Opcodes.I2B:
+            cast(Type.INT_TYPE, Type.BYTE_TYPE);
+            break;
+        case Opcodes.I2C:
+            cast(Type.INT_TYPE, Type.CHAR_TYPE);
+            break;
+        case Opcodes.I2S:
+            cast(Type.INT_TYPE, Type.SHORT_TYPE);
+            break;
+        case Opcodes.LCMP:
+            lcmp();
+            break;
+        case Opcodes.FCMPL:
+            cmpl(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.FCMPG:
+            cmpg(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DCMPL:
+            cmpl(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.DCMPG:
+            cmpg(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.IRETURN:
+            areturn(Type.INT_TYPE);
+            break;
+        case Opcodes.LRETURN:
+            areturn(Type.LONG_TYPE);
+            break;
+        case Opcodes.FRETURN:
+            areturn(Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DRETURN:
+            areturn(Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.ARETURN:
+            areturn(OBJECT_TYPE);
+            break;
+        case Opcodes.RETURN:
+            areturn(Type.VOID_TYPE);
+            break;
+        case Opcodes.ARRAYLENGTH:
+            arraylength();
+            break;
+        case Opcodes.ATHROW:
+            athrow();
+            break;
+        case Opcodes.MONITORENTER:
+            monitorenter();
+            break;
+        case Opcodes.MONITOREXIT:
+            monitorexit();
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
     public void visitIntInsn(final int opcode, final int operand) {
         switch (opcode) {
-            case Opcodes.BIPUSH:
-                iconst(operand);
+        case Opcodes.BIPUSH:
+            iconst(operand);
+            break;
+        case Opcodes.SIPUSH:
+            iconst(operand);
+            break;
+        case Opcodes.NEWARRAY:
+            switch (operand) {
+            case Opcodes.T_BOOLEAN:
+                newarray(Type.BOOLEAN_TYPE);
                 break;
-            case Opcodes.SIPUSH:
-                iconst(operand);
+            case Opcodes.T_CHAR:
+                newarray(Type.CHAR_TYPE);
                 break;
-            case Opcodes.NEWARRAY:
-                switch (operand) {
-                    case Opcodes.T_BOOLEAN:
-                        newarray(Type.BOOLEAN_TYPE);
-                        break;
-                    case Opcodes.T_CHAR:
-                        newarray(Type.CHAR_TYPE);
-                        break;
-                    case Opcodes.T_BYTE:
-                        newarray(Type.BYTE_TYPE);
-                        break;
-                    case Opcodes.T_SHORT:
-                        newarray(Type.SHORT_TYPE);
-                        break;
-                    case Opcodes.T_INT:
-                        newarray(Type.INT_TYPE);
-                        break;
-                    case Opcodes.T_FLOAT:
-                        newarray(Type.FLOAT_TYPE);
-                        break;
-                    case Opcodes.T_LONG:
-                        newarray(Type.LONG_TYPE);
-                        break;
-                    case Opcodes.T_DOUBLE:
-                        newarray(Type.DOUBLE_TYPE);
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
-                }
+            case Opcodes.T_BYTE:
+                newarray(Type.BYTE_TYPE);
+                break;
+            case Opcodes.T_SHORT:
+                newarray(Type.SHORT_TYPE);
+                break;
+            case Opcodes.T_INT:
+                newarray(Type.INT_TYPE);
+                break;
+            case Opcodes.T_FLOAT:
+                newarray(Type.FLOAT_TYPE);
+                break;
+            case Opcodes.T_LONG:
+                newarray(Type.LONG_TYPE);
+                break;
+            case Opcodes.T_DOUBLE:
+                newarray(Type.DOUBLE_TYPE);
                 break;
             default:
                 throw new IllegalArgumentException();
+            }
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
     public void visitVarInsn(final int opcode, final int var) {
         switch (opcode) {
-            case Opcodes.ILOAD:
-                load(var, Type.INT_TYPE);
-                break;
-            case Opcodes.LLOAD:
-                load(var, Type.LONG_TYPE);
-                break;
-            case Opcodes.FLOAD:
-                load(var, Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DLOAD:
-                load(var, Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.ALOAD:
-                load(var, OBJECT_TYPE);
-                break;
-            case Opcodes.ISTORE:
-                store(var, Type.INT_TYPE);
-                break;
-            case Opcodes.LSTORE:
-                store(var, Type.LONG_TYPE);
-                break;
-            case Opcodes.FSTORE:
-                store(var, Type.FLOAT_TYPE);
-                break;
-            case Opcodes.DSTORE:
-                store(var, Type.DOUBLE_TYPE);
-                break;
-            case Opcodes.ASTORE:
-                store(var, OBJECT_TYPE);
-                break;
-            case Opcodes.RET:
-                ret(var);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.ILOAD:
+            load(var, Type.INT_TYPE);
+            break;
+        case Opcodes.LLOAD:
+            load(var, Type.LONG_TYPE);
+            break;
+        case Opcodes.FLOAD:
+            load(var, Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DLOAD:
+            load(var, Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.ALOAD:
+            load(var, OBJECT_TYPE);
+            break;
+        case Opcodes.ISTORE:
+            store(var, Type.INT_TYPE);
+            break;
+        case Opcodes.LSTORE:
+            store(var, Type.LONG_TYPE);
+            break;
+        case Opcodes.FSTORE:
+            store(var, Type.FLOAT_TYPE);
+            break;
+        case Opcodes.DSTORE:
+            store(var, Type.DOUBLE_TYPE);
+            break;
+        case Opcodes.ASTORE:
+            store(var, OBJECT_TYPE);
+            break;
+        case Opcodes.RET:
+            ret(var);
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
@@ -495,142 +498,130 @@ public class InstructionAdapter extends MethodVisitor {
     public void visitTypeInsn(final int opcode, final String type) {
         Type t = Type.getObjectType(type);
         switch (opcode) {
-            case Opcodes.NEW:
-                anew(t);
-                break;
-            case Opcodes.ANEWARRAY:
-                newarray(t);
-                break;
-            case Opcodes.CHECKCAST:
-                checkcast(t);
-                break;
-            case Opcodes.INSTANCEOF:
-                instanceOf(t);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.NEW:
+            anew(t);
+            break;
+        case Opcodes.ANEWARRAY:
+            newarray(t);
+            break;
+        case Opcodes.CHECKCAST:
+            checkcast(t);
+            break;
+        case Opcodes.INSTANCEOF:
+            instanceOf(t);
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
-    public void visitFieldInsn(
-        final int opcode,
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void visitFieldInsn(final int opcode, final String owner,
+            final String name, final String desc) {
         switch (opcode) {
-            case Opcodes.GETSTATIC:
-                getstatic(owner, name, desc);
-                break;
-            case Opcodes.PUTSTATIC:
-                putstatic(owner, name, desc);
-                break;
-            case Opcodes.GETFIELD:
-                getfield(owner, name, desc);
-                break;
-            case Opcodes.PUTFIELD:
-                putfield(owner, name, desc);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.GETSTATIC:
+            getstatic(owner, name, desc);
+            break;
+        case Opcodes.PUTSTATIC:
+            putstatic(owner, name, desc);
+            break;
+        case Opcodes.GETFIELD:
+            getfield(owner, name, desc);
+            break;
+        case Opcodes.PUTFIELD:
+            putfield(owner, name, desc);
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
-    public void visitMethodInsn(
-        final int opcode,
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc) {
         switch (opcode) {
-            case Opcodes.INVOKESPECIAL:
-                invokespecial(owner, name, desc);
-                break;
-            case Opcodes.INVOKEVIRTUAL:
-                invokevirtual(owner, name, desc);
-                break;
-            case Opcodes.INVOKESTATIC:
-                invokestatic(owner, name, desc);
-                break;
-            case Opcodes.INVOKEINTERFACE:
-                invokeinterface(owner, name, desc);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.INVOKESPECIAL:
+            invokespecial(owner, name, desc);
+            break;
+        case Opcodes.INVOKEVIRTUAL:
+            invokevirtual(owner, name, desc);
+            break;
+        case Opcodes.INVOKESTATIC:
+            invokestatic(owner, name, desc);
+            break;
+        case Opcodes.INVOKEINTERFACE:
+            invokeinterface(owner, name, desc);
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
-    public void visitInvokeDynamicInsn(
-        String name,
-        String desc,
-        Handle bsm,
-        Object... bsmArgs)
-    {
-       invokedynamic(name, desc, bsm, bsmArgs);
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
+            Object... bsmArgs) {
+        invokedynamic(name, desc, bsm, bsmArgs);
     }
 
     @Override
     public void visitJumpInsn(final int opcode, final Label label) {
         switch (opcode) {
-            case Opcodes.IFEQ:
-                ifeq(label);
-                break;
-            case Opcodes.IFNE:
-                ifne(label);
-                break;
-            case Opcodes.IFLT:
-                iflt(label);
-                break;
-            case Opcodes.IFGE:
-                ifge(label);
-                break;
-            case Opcodes.IFGT:
-                ifgt(label);
-                break;
-            case Opcodes.IFLE:
-                ifle(label);
-                break;
-            case Opcodes.IF_ICMPEQ:
-                ificmpeq(label);
-                break;
-            case Opcodes.IF_ICMPNE:
-                ificmpne(label);
-                break;
-            case Opcodes.IF_ICMPLT:
-                ificmplt(label);
-                break;
-            case Opcodes.IF_ICMPGE:
-                ificmpge(label);
-                break;
-            case Opcodes.IF_ICMPGT:
-                ificmpgt(label);
-                break;
-            case Opcodes.IF_ICMPLE:
-                ificmple(label);
-                break;
-            case Opcodes.IF_ACMPEQ:
-                ifacmpeq(label);
-                break;
-            case Opcodes.IF_ACMPNE:
-                ifacmpne(label);
-                break;
-            case Opcodes.GOTO:
-                goTo(label);
-                break;
-            case Opcodes.JSR:
-                jsr(label);
-                break;
-            case Opcodes.IFNULL:
-                ifnull(label);
-                break;
-            case Opcodes.IFNONNULL:
-                ifnonnull(label);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        case Opcodes.IFEQ:
+            ifeq(label);
+            break;
+        case Opcodes.IFNE:
+            ifne(label);
+            break;
+        case Opcodes.IFLT:
+            iflt(label);
+            break;
+        case Opcodes.IFGE:
+            ifge(label);
+            break;
+        case Opcodes.IFGT:
+            ifgt(label);
+            break;
+        case Opcodes.IFLE:
+            ifle(label);
+            break;
+        case Opcodes.IF_ICMPEQ:
+            ificmpeq(label);
+            break;
+        case Opcodes.IF_ICMPNE:
+            ificmpne(label);
+            break;
+        case Opcodes.IF_ICMPLT:
+            ificmplt(label);
+            break;
+        case Opcodes.IF_ICMPGE:
+            ificmpge(label);
+            break;
+        case Opcodes.IF_ICMPGT:
+            ificmpgt(label);
+            break;
+        case Opcodes.IF_ICMPLE:
+            ificmple(label);
+            break;
+        case Opcodes.IF_ACMPEQ:
+            ifacmpeq(label);
+            break;
+        case Opcodes.IF_ACMPNE:
+            ifacmpne(label);
+            break;
+        case Opcodes.GOTO:
+            goTo(label);
+            break;
+        case Opcodes.JSR:
+            jsr(label);
+            break;
+        case Opcodes.IFNULL:
+            ifnull(label);
+            break;
+        case Opcodes.IFNONNULL:
+            ifnonnull(label);
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
     }
 
@@ -682,21 +673,14 @@ public class InstructionAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitTableSwitchInsn(
-        final int min,
-        final int max,
-        final Label dflt,
-        final Label... labels)
-    {
+    public void visitTableSwitchInsn(final int min, final int max,
+            final Label dflt, final Label... labels) {
         tableswitch(min, max, dflt, labels);
     }
 
     @Override
-    public void visitLookupSwitchInsn(
-        final Label dflt,
-        final int[] keys,
-        final Label[] labels)
-    {
+    public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
+            final Label[] labels) {
         lookupswitch(dflt, keys, labels);
     }
 
@@ -996,20 +980,13 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitVarInsn(Opcodes.RET, var);
     }
 
-    public void tableswitch(
-        final int min,
-        final int max,
-        final Label dflt,
-        final Label... labels)
-    {
+    public void tableswitch(final int min, final int max, final Label dflt,
+            final Label... labels) {
         mv.visitTableSwitchInsn(min, max, dflt, labels);
     }
 
-    public void lookupswitch(
-        final Label dflt,
-        final int[] keys,
-        final Label[] labels)
-    {
+    public void lookupswitch(final Label dflt, final int[] keys,
+            final Label[] labels) {
         mv.visitLookupSwitchInsn(dflt, keys, labels);
     }
 
@@ -1017,76 +994,48 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitInsn(t.getOpcode(Opcodes.IRETURN));
     }
 
-    public void getstatic(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void getstatic(final String owner, final String name,
+            final String desc) {
         mv.visitFieldInsn(Opcodes.GETSTATIC, owner, name, desc);
     }
 
-    public void putstatic(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void putstatic(final String owner, final String name,
+            final String desc) {
         mv.visitFieldInsn(Opcodes.PUTSTATIC, owner, name, desc);
     }
 
-    public void getfield(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void getfield(final String owner, final String name,
+            final String desc) {
         mv.visitFieldInsn(Opcodes.GETFIELD, owner, name, desc);
     }
 
-    public void putfield(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void putfield(final String owner, final String name,
+            final String desc) {
         mv.visitFieldInsn(Opcodes.PUTFIELD, owner, name, desc);
     }
 
-    public void invokevirtual(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void invokevirtual(final String owner, final String name,
+            final String desc) {
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc);
     }
 
-    public void invokespecial(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void invokespecial(final String owner, final String name,
+            final String desc) {
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, name, desc);
     }
 
-    public void invokestatic(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void invokestatic(final String owner, final String name,
+            final String desc) {
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, desc);
     }
 
-    public void invokeinterface(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void invokeinterface(final String owner, final String name,
+            final String desc) {
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, owner, name, desc);
     }
 
-    public void invokedynamic(
-        String name,
-        String desc,
-        Handle bsm,
-        Object[] bsmArgs)
-    {
+    public void invokedynamic(String name, String desc, Handle bsm,
+            Object[] bsmArgs) {
         mv.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
     }
 
@@ -1097,33 +1046,33 @@ public class InstructionAdapter extends MethodVisitor {
     public void newarray(final Type type) {
         int typ;
         switch (type.getSort()) {
-            case Type.BOOLEAN:
-                typ = Opcodes.T_BOOLEAN;
-                break;
-            case Type.CHAR:
-                typ = Opcodes.T_CHAR;
-                break;
-            case Type.BYTE:
-                typ = Opcodes.T_BYTE;
-                break;
-            case Type.SHORT:
-                typ = Opcodes.T_SHORT;
-                break;
-            case Type.INT:
-                typ = Opcodes.T_INT;
-                break;
-            case Type.FLOAT:
-                typ = Opcodes.T_FLOAT;
-                break;
-            case Type.LONG:
-                typ = Opcodes.T_LONG;
-                break;
-            case Type.DOUBLE:
-                typ = Opcodes.T_DOUBLE;
-                break;
-            default:
-                mv.visitTypeInsn(Opcodes.ANEWARRAY, type.getInternalName());
-                return;
+        case Type.BOOLEAN:
+            typ = Opcodes.T_BOOLEAN;
+            break;
+        case Type.CHAR:
+            typ = Opcodes.T_CHAR;
+            break;
+        case Type.BYTE:
+            typ = Opcodes.T_BYTE;
+            break;
+        case Type.SHORT:
+            typ = Opcodes.T_SHORT;
+            break;
+        case Type.INT:
+            typ = Opcodes.T_INT;
+            break;
+        case Type.FLOAT:
+            typ = Opcodes.T_FLOAT;
+            break;
+        case Type.LONG:
+            typ = Opcodes.T_LONG;
+            break;
+        case Type.DOUBLE:
+            typ = Opcodes.T_DOUBLE;
+            break;
+        default:
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, type.getInternalName());
+            return;
         }
         mv.visitIntInsn(Opcodes.NEWARRAY, typ);
     }

@@ -98,11 +98,6 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
             tagV(cfg.getV("LinkerFlags"));
             endTag();
 
-            startTag("PostBuildEvent");
-            tagData("Message", BuildConfig.getFieldString(null, "PostbuildDescription"));
-            tagData("Command", cfg.expandFormat(BuildConfig.getFieldString(null, "PostbuildCommand").replace("\t", "\r\n")));
-            endTag();
-
             startTag("PreLinkEvent");
             tagData("Message", BuildConfig.getFieldString(null, "PrelinkDescription"));
             tagData("Command", cfg.expandFormat(BuildConfig.getFieldString(null, "PrelinkCommand").replace("\t", "\r\n")));
@@ -141,7 +136,9 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
 
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "PropertyGroup");
-            tagData("LocalDebuggerCommand", "$(TargetDir)/hotspot.exe");
+            tagData("LocalDebuggerCommand", cfg.get("JdkTargetRoot") + "\\bin\\java.exe");
+            tagData("LocalDebuggerCommandArguments", "-XXaltjvm=$(TargetDir) -Dsun.java.launcher=gamma");
+            tagData("LocalDebuggerEnvironment", "JAVA_HOME=" + cfg.get("JdkTargetRoot"));
             endTag();
         }
 

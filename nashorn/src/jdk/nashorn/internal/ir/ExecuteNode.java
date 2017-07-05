@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for executing bare expressions. Basically, an expression
@@ -35,35 +34,25 @@ import jdk.nashorn.internal.runtime.Source;
  * statements being added to the IR
  */
 @Immutable
-public final class ExecuteNode extends Node {
+public final class ExecuteNode extends Statement {
     /** Expression to execute. */
     private final Node expression;
 
     /**
      * Constructor
      *
-     * @param source     the source
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param expression the expression to execute
      */
-    public ExecuteNode(final Source source, final long token, final int finish, final Node expression) {
-        super(source, token, finish);
+    public ExecuteNode(final int lineNumber, final long token, final int finish, final Node expression) {
+        super(lineNumber, token, finish);
         this.expression = expression;
     }
 
     private ExecuteNode(final ExecuteNode executeNode, final Node expression) {
         super(executeNode);
-        this.expression = expression;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param expression an expression to wrap, from which source, tokens and finish are also inherited
-     */
-    public ExecuteNode(final Node expression) {
-        super(expression.getSource(), expression.getToken(), expression.getFinish());
         this.expression = expression;
     }
 

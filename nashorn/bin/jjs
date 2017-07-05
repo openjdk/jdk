@@ -26,4 +26,4 @@
 
 [ -z "$JAVA_HOME" ] && echo "Please set JAVA_HOME" && exit 1;
 
-$JAVA_HOME/bin/java -server -XX:-TieredCompilation -Xms2G -Xmx2G -esa -ea -Djava.ext.dirs=`dirname $0`/../dist:$JAVA_HOME/jre/lib/ext -XX:+HeapDumpOnOutOfMemoryError -Djava.lang.invoke.MethodHandle.DEBUG_NAMES=false -Dnashorn.debug=true jdk.nashorn.tools.Shell $*
+$JAVA_HOME/bin/java -server -XX:+TieredCompilation -Xms2G -Xmx2G -esa -ea -Djava.ext.dirs=`dirname $0`/../dist:$JAVA_HOME/jre/lib/ext -XX:+HeapDumpOnOutOfMemoryError -Djava.lang.invoke.MethodHandle.DEBUG_NAMES=false -Dnashorn.debug=true jdk.nashorn.tools.Shell $*

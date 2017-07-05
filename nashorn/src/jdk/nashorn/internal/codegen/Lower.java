@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -49,16 +50,15 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
-import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TryNode;
-import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
@@ -93,21 +93,25 @@ final class Lower extends NodeOperatorVisitor {
         super(new BlockLexicalContext() {
 
             @Override
-            public List<Node> popStatements() {
-                List<Node> newStatements = new ArrayList<>();
+            public List<Statement> popStatements() {
+                final List<Statement> newStatements = new ArrayList<>();
                 boolean terminated = false;
 
-                final List<Node> statements = super.popStatements();
-                for (final Node statement : statements) {
+                final List<Statement> statements = super.popStatements();
+                for (final Statement statement : statements) {
                     if (!terminated) {
                         newStatements.add(statement);
-                        if (statement.isTerminal()) {
+                        if (statement.isTerminal() || statement instanceof BreakNode || statement instanceof ContinueNode) { //TODO hasGoto? But some Loops are hasGoto too - why?
                             terminated = true;
                         }
                     } else {
-                        if (statement instanceof VarNode) {
-                            newStatements.add(((VarNode)statement).setInit(null));
-                        }
+                        statement.accept(new NodeVisitor() {
+                            @Override
+                            public boolean enterVarNode(final VarNode varNode) {
+                                newStatements.add(varNode.setInit(null));
+                                return false;
+                            }
+                        });
                     }
                 }
                 return newStatements;
@@ -118,8 +122,9 @@ final class Lower extends NodeOperatorVisitor {
     @Override
     public boolean enterBlock(final Block block) {
         final LexicalContext lc = getLexicalContext();
-        if (lc.isFunctionBody() && lc.getCurrentFunction().isProgram() && !lc.getCurrentFunction().hasDeclaredFunctions()) {
-            new ExecuteNode(block.getSource(), block.getToken(), block.getFinish(), LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED)).accept(this);
+        final FunctionNode   function = lc.getCurrentFunction();
+        if (lc.isFunctionBody() && function.isProgram() && !function.hasDeclaredFunctions()) {
+            new ExecuteNode(block.getLineNumber(), block.getToken(), block.getFinish(), LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED)).accept(this);
         }
         return true;
     }
@@ -131,20 +136,20 @@ final class Lower extends NodeOperatorVisitor {
 
         final BlockLexicalContext lc = (BlockLexicalContext)getLexicalContext();
 
-        Node last = lc.getLastStatement();
+        Statement last = lc.getLastStatement();
 
         if (lc.isFunctionBody()) {
             final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
             final boolean isProgram = currentFunction.isProgram();
             final ReturnNode returnNode = new ReturnNode(
-                currentFunction.getSource(),
+                last == null ? block.getLineNumber() : last.getLineNumber(), //TODO?
                 currentFunction.getToken(),
                 currentFunction.getFinish(),
                 isProgram ?
                     compilerConstant(RETURN) :
                     LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED));
 
-            last = returnNode.accept(this);
+            last = (Statement)returnNode.accept(this);
         }
 
         if (last != null && last.isTerminal()) {
@@ -193,7 +198,6 @@ final class Lower extends NodeOperatorVisitor {
                 if (!isInternalExpression(expr) && !isEvalResultAssignment(expr)) {
                     node = executeNode.setExpression(
                         new BinaryNode(
-                            executeNode.getSource(),
                             Token.recast(
                                 executeNode.getToken(),
                                 TokenType.ASSIGN),
@@ -240,12 +244,6 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        addStatement(lineNumberNode); // don't put it in lastStatement cache
-        return false;
-    }
-
-    @Override
     public Node leaveReturnNode(final ReturnNode returnNode) {
         addStatement(returnNode); //ReturnNodes are always terminal, marked as such in constructor
         return returnNode;
@@ -272,10 +270,10 @@ final class Lower extends NodeOperatorVisitor {
         });
     }
 
-    private static List<Node> copyFinally(final Block finallyBody) {
-        final List<Node> newStatements = new ArrayList<>();
-        for (final Node statement : finallyBody.getStatements()) {
-            newStatements.add(ensureUniqueLabelsIn(statement));
+    private static List<Statement> copyFinally(final Block finallyBody) {
+        final List<Statement> newStatements = new ArrayList<>();
+        for (final Statement statement : finallyBody.getStatements()) {
+            newStatements.add((Statement)ensureUniqueLabelsIn(statement));
             if (statement.hasTerminalFlags()) {
                 return newStatements;
             }
@@ -284,17 +282,17 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     private Block catchAllBlock(final TryNode tryNode) {
-        final Source source = tryNode.getSource();
-        final long   token  = tryNode.getToken();
-        final int    finish = tryNode.getFinish();
+        final int  lineNumber = tryNode.getLineNumber();
+        final long token      = tryNode.getToken();
+        final int  finish     = tryNode.getFinish();
 
-        final IdentNode exception = new IdentNode(source, token, finish, getLexicalContext().getCurrentFunction().uniqueName("catch_all"));
+        final IdentNode exception = new IdentNode(token, finish, getLexicalContext().getCurrentFunction().uniqueName("catch_all"));
 
-        final Block catchBody = new Block(source, token, finish, new ThrowNode(source, token, finish, new IdentNode(exception))).
+        final Block catchBody = new Block(lineNumber, token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception))).
                 setIsTerminal(getLexicalContext(), true); //ends with throw, so terminal
 
-        final CatchNode catchAllNode  = new CatchNode(source, token, finish, new IdentNode(exception), null, catchBody);
-        final Block     catchAllBlock = new Block(source, token, finish, catchAllNode);
+        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody);
+        final Block     catchAllBlock = new Block(lineNumber, token, finish, catchAllNode);
 
         //catchallblock -> catchallnode (catchnode) -> exception -> throw
 
@@ -303,10 +301,10 @@ final class Lower extends NodeOperatorVisitor {
 
     private IdentNode compilerConstant(final CompilerConstants cc) {
         final FunctionNode functionNode = getLexicalContext().getCurrentFunction();
-        return new IdentNode(functionNode.getSource(), functionNode.getToken(), functionNode.getFinish(), cc.symbolName());
+        return new IdentNode(functionNode.getToken(), functionNode.getFinish(), cc.symbolName());
     }
 
-    private static boolean isTerminal(final List<Node> statements) {
+    private static boolean isTerminal(final List<Statement> statements) {
         return !statements.isEmpty() && statements.get(statements.size() - 1).hasTerminalFlags();
     }
 
@@ -318,8 +316,7 @@ final class Lower extends NodeOperatorVisitor {
      * @return new try node after splicing finally code (same if nop)
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
-        final Source source = tryNode.getSource();
-        final int    finish = tryNode.getFinish();
+        final int finish = tryNode.getFinish();
 
         assert tryNode.getFinallyBody() == null;
 
@@ -341,11 +338,11 @@ final class Lower extends NodeOperatorVisitor {
             @Override
             public Node leaveThrowNode(final ThrowNode throwNode) {
                 if (rethrows.contains(throwNode)) {
-                    final List<Node> newStatements = copyFinally(finallyBody);
+                    final List<Statement> newStatements = copyFinally(finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(throwNode);
                     }
-                    return new Block(source, throwNode.getToken(), throwNode.getFinish(), newStatements);
+                    return new Block(throwNode.getLineNumber(), throwNode.getToken(), throwNode.getFinish(), newStatements);
                 }
                 return throwNode;
             }
@@ -363,14 +360,14 @@ final class Lower extends NodeOperatorVisitor {
             @Override
             public Node leaveReturnNode(final ReturnNode returnNode) {
                 final Node  expr  = returnNode.getExpression();
-                final List<Node> newStatements = new ArrayList<>();
+                final List<Statement> newStatements = new ArrayList<>();
 
                 final Node resultNode;
                 if (expr != null) {
                     //we need to evaluate the result of the return in case it is complex while
                     //still in the try block, store it in a result value and return it afterwards
                     resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
-                    newStatements.add(new ExecuteNode(new BinaryNode(source, Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
+                    newStatements.add(new ExecuteNode(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
                 } else {
                     resultNode = null;
                 }
@@ -380,16 +377,16 @@ final class Lower extends NodeOperatorVisitor {
                     newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
                 }
 
-                return new ExecuteNode(new Block(source, returnNode.getToken(), getLexicalContext().getCurrentBlock().getFinish(), newStatements));
+                return new ExecuteNode(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new Block(returnNode.getLineNumber(), returnNode.getToken(), getLexicalContext().getCurrentBlock().getFinish(), newStatements));
             }
 
-            private Node copy(final Node endpoint, final Node targetNode) {
+            private Node copy(final Statement endpoint, final Node targetNode) {
                 if (!insideTry.contains(targetNode)) {
-                    final List<Node> newStatements = copyFinally(finallyBody);
+                    final List<Statement> newStatements = copyFinally(finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(endpoint);
                     }
-                    return new ExecuteNode(new Block(source, endpoint.getToken(), finish, newStatements));
+                    return new ExecuteNode(endpoint.getLineNumber(), endpoint.getToken(), endpoint.getFinish(), new Block(endpoint.getLineNumber(), endpoint.getToken(), finish, newStatements));
                 }
                 return endpoint;
             }
@@ -397,7 +394,7 @@ final class Lower extends NodeOperatorVisitor {
 
         addStatement(newTryNode);
         for (final Node statement : finallyBody.getStatements()) {
-            addStatement(statement);
+            addStatement((Statement)statement);
         }
 
         return newTryNode;
@@ -451,7 +448,7 @@ final class Lower extends NodeOperatorVisitor {
         if (tryNode.getCatchBlocks().isEmpty()) {
             newTryNode = tryNode.setFinallyBody(null);
         } else {
-            Block outerBody = new Block(tryNode.getSource(), tryNode.getToken(), tryNode.getFinish(), new ArrayList<Node>(Arrays.asList(tryNode.setFinallyBody(null))));
+            Block outerBody = new Block(tryNode.getLineNumber(), tryNode.getToken(), tryNode.getFinish(), new ArrayList<Statement>(Arrays.asList(tryNode.setFinallyBody(null))));
             newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
         }
 
@@ -468,19 +465,19 @@ final class Lower extends NodeOperatorVisitor {
     public Node leaveVarNode(final VarNode varNode) {
         addStatement(varNode);
         if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION) && getLexicalContext().getCurrentFunction().isProgram()) {
-            new ExecuteNode(varNode.getSource(), varNode.getToken(), varNode.getFinish(), new IdentNode(varNode.getName())).accept(this);
+            new ExecuteNode(varNode.getLineNumber(), varNode.getToken(), varNode.getFinish(), new IdentNode(varNode.getName())).accept(this);
         }
         return varNode;
     }
 
     @Override
     public Node leaveWhileNode(final WhileNode whileNode) {
-        final Node test = whileNode.getTest();
+        final Node test  = whileNode.getTest();
         final Block body = whileNode.getBody();
 
         if (conservativeAlwaysTrue(test)) {
             //turn it into a for node without a test.
-            final ForNode forNode = (ForNode)new ForNode(whileNode.getSource(), whileNode.getToken(), whileNode.getFinish(), null, null, body, null, ForNode.IS_FOR).accept(this);
+            final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), null, null, body, null, ForNode.IS_FOR).accept(this);
             getLexicalContext().replace(whileNode, forNode);
             return forNode;
         }
@@ -491,16 +488,6 @@ final class Lower extends NodeOperatorVisitor {
     @Override
     public Node leaveWithNode(final WithNode withNode) {
         return addStatement(withNode);
-    }
-
-    @Override
-    public Node leaveDELETE(final UnaryNode unaryNode) {
-        final Node rhs = unaryNode.rhs();
-        if (rhs instanceof IdentNode || rhs instanceof BaseNode) {
-            return unaryNode;
-        }
-        addStatement(new ExecuteNode(rhs));
-        return LiteralNode.newInstance(unaryNode, true);
     }
 
     /**
@@ -525,11 +512,12 @@ final class Lower extends NodeOperatorVisitor {
      * @param node a node
      * @return eval location
      */
-    private static String evalLocation(final IdentNode node) {
+    private String evalLocation(final IdentNode node) {
+        final Source source = getLexicalContext().getCurrentFunction().getSource();
         return new StringBuilder().
-            append(node.getSource().getName()).
+            append(source.getName()).
             append('#').
-            append(node.getSource().getLine(node.position())).
+            append(source.getLine(node.position())).
             append("<eval>").
             toString();
     }
@@ -618,7 +606,7 @@ final class Lower extends NodeOperatorVisitor {
     }
 
 
-    private Node addStatement(final Node statement) {
+    private Node addStatement(final Statement statement) {
         ((BlockLexicalContext)getLexicalContext()).appendStatement(statement);
         return statement;
     }

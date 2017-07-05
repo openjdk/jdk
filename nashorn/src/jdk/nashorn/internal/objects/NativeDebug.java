@@ -87,66 +87,6 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
-     * Nashorn extension: get embed0 from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the embed0 property value for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object embed0(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).embed0;
-        }
-        return UNDEFINED;
-    }
-
-    /**
-     * Nashorn extension: get embed1 from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the embed1 property value for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object embed1(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).embed1;
-        }
-        return UNDEFINED;
-    }
-
-    /**
-     * Nashorn extension: get embed2 from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the embed2 property value for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object embed2(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).embed2;
-        }
-        return UNDEFINED;
-    }
-
-    /**
-     * Nashorn extension: get embed3 from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the embed3 property value for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object embed3(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).embed3;
-        }
-        return UNDEFINED;
-    }
-
-    /**
      * Nashorn extension: get spill vector from {@link ScriptObject}
      *
      * @param self self reference

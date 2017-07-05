@@ -29,7 +29,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * BinaryNode nodes represent two operand operations.
@@ -44,13 +43,12 @@ public final class BinaryNode extends Node implements Assignment<Node> {
     /**
      * Constructor
      *
-     * @param source source code
      * @param token  token
      * @param lhs    left hand side
      * @param rhs    right hand side
      */
-    public BinaryNode(final Source source, final long token, final Node lhs, final Node rhs) {
-        super(source, token, lhs.getStart(), rhs.getFinish());
+    public BinaryNode(final long token, final Node lhs, final Node rhs) {
+        super(token, lhs.getStart(), rhs.getFinish());
         this.lhs   = lhs;
         this.rhs   = rhs;
     }

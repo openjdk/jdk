@@ -85,7 +85,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  * Only Meiji (1865-04-07 - 1868-09-07) and later eras are supported.
  * Older eras are handled as an unknown era where the year-of-era is the ISO year.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -197,7 +197,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
      */
     @Override
     public JapaneseDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+        return JapaneseDate.ofYearDay((JapaneseEra) era, yearOfEra, dayOfYear);
     }
 
     /**
@@ -251,16 +251,19 @@ public final class JapaneseChronology extends Chronology implements Serializable
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoLocalDateTime<JapaneseDate> localDateTime(TemporalAccessor temporal) {
         return (ChronoLocalDateTime<JapaneseDate>)super.localDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<JapaneseDate> zonedDateTime(TemporalAccessor temporal) {
         return (ChronoZonedDateTime<JapaneseDate>)super.zonedDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<JapaneseDate> zonedDateTime(Instant instant, ZoneId zone) {
         return (ChronoZonedDateTime<JapaneseDate>)super.zonedDateTime(instant, zone);
     }
@@ -286,19 +289,27 @@ public final class JapaneseChronology extends Chronology implements Serializable
         if (era instanceof JapaneseEra == false) {
             throw new ClassCastException("Era must be JapaneseEra");
         }
+
+        if (era == JapaneseEra.SEIREKI) {
+            JapaneseEra nextEra = JapaneseEra.values()[1];
+            int nextEraYear = nextEra.getPrivateEra().getSinceDate().getYear();
+            if (yearOfEra >= nextEraYear || yearOfEra < Year.MIN_VALUE) {
+                throw new DateTimeException("Invalid yearOfEra value");
+            }
+            return yearOfEra;
+        }
+
         JapaneseEra jera = (JapaneseEra) era;
         int gregorianYear = jera.getPrivateEra().getSinceDate().getYear() + yearOfEra - 1;
         if (yearOfEra == 1) {
             return gregorianYear;
         }
-        LocalGregorianCalendar.Date jdate = JCAL.newCalendarDate(null);
-        jdate.setEra(jera.getPrivateEra()).setDate(yearOfEra, 1, 1);
-        if (!JapaneseChronology.JCAL.validate(jdate)) {
-            throw new DateTimeException("Invalid yearOfEra value");
-        }
-        JCAL.normalize(jdate);
-        if (jdate.getNormalizedYear() == gregorianYear) {
-            return gregorianYear;
+        if (gregorianYear >= Year.MIN_VALUE && gregorianYear <= Year.MAX_VALUE) {
+            LocalGregorianCalendar.Date jdate = JCAL.newCalendarDate(null);
+            jdate.setEra(jera.getPrivateEra()).setDate(yearOfEra, 1, 1);
+            if (JapaneseChronology.JCAL.validate(jdate)) {
+                return gregorianYear;
+            }
         }
         throw new DateTimeException("Invalid yearOfEra value");
     }
@@ -322,13 +333,20 @@ public final class JapaneseChronology extends Chronology implements Serializable
 
     @Override
     public List<Era> eras() {
-        return Arrays.asList(JapaneseEra.values());
+        return Arrays.<Era>asList(JapaneseEra.values());
+    }
+
+    JapaneseEra getCurrentEra() {
+        // Assume that the last JapaneseEra is the current one.
+        JapaneseEra[] eras = JapaneseEra.values();
+        return eras[eras.length - 1];
     }
 
     //-----------------------------------------------------------------------
     @Override
     public ValueRange range(ChronoField field) {
         switch (field) {
+            case YEAR:
             case DAY_OF_MONTH:
             case DAY_OF_WEEK:
             case MICRO_OF_DAY:
@@ -345,27 +363,23 @@ public final class JapaneseChronology extends Chronology implements Serializable
             case NANO_OF_SECOND:
             case CLOCK_HOUR_OF_DAY:
             case CLOCK_HOUR_OF_AMPM:
-            case EPOCH_DAY:  // TODO: if year is restricted, then so is epoch-day
+            case EPOCH_DAY:
+            case PROLEPTIC_MONTH:
+            case MONTH_OF_YEAR:
                 return field.range();
+            case ERA:
+                return ValueRange.of(JapaneseEra.SEIREKI.getValue(),
+                                     getCurrentEra().getValue());
         }
         Calendar jcal = Calendar.getInstance(LOCALE);
         int fieldIndex;
         switch (field) {
-            case ERA:
-                return ValueRange.of(JapaneseEra.SEIREKI.getValue(),
-                        jcal.getMaximum(Calendar.ERA) - JapaneseEra.ERA_OFFSET);
-            case YEAR:
-            case YEAR_OF_ERA:
-                // TODO: this is not right
+            case YEAR_OF_ERA: {
+                int startYear = getCurrentEra().getPrivateEra().getSinceDate().getYear();
                 return ValueRange.of(Year.MIN_VALUE, jcal.getGreatestMinimum(Calendar.YEAR),
-                        jcal.getLeastMaximum(Calendar.YEAR), Year.MAX_VALUE);
-            case PROLEPTIC_MONTH:
-                // TODO: should be the range of months bound by the valid range of years
-                return ValueRange.of((jcal.getGreatestMinimum(Calendar.YEAR) - 1) * 12,
-                        (jcal.getLeastMaximum(Calendar.YEAR)) * 12);
-            case MONTH_OF_YEAR:
-                return ValueRange.of(jcal.getMinimum(Calendar.MONTH) + 1, jcal.getGreatestMinimum(Calendar.MONTH) + 1,
-                        jcal.getLeastMaximum(Calendar.MONTH) + 1, jcal.getMaximum(Calendar.MONTH) + 1);
+                        jcal.getLeastMaximum(Calendar.YEAR) + 1, // +1 due to the different definitions
+                        Year.MAX_VALUE - startYear);
+            }
             case DAY_OF_YEAR:
                 fieldIndex = Calendar.DAY_OF_YEAR;
                 break;

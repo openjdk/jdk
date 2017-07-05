@@ -105,25 +105,25 @@ public enum CompilerConstants {
     ARGUMENTS("arguments", Object.class, 2),
 
     /** prefix for iterators for for (x in ...) */
-    ITERATOR_PREFIX(":iter"),
+    ITERATOR_PREFIX(":i"),
 
     /** prefix for tag variable used for switch evaluation */
-    SWITCH_TAG_PREFIX(":tag"),
+    SWITCH_TAG_PREFIX(":s"),
 
     /** prefix for all exceptions */
-    EXCEPTION_PREFIX(":exception"),
+    EXCEPTION_PREFIX(":e"),
 
     /** prefix for quick slots generated in Store */
-    QUICK_PREFIX(":quick"),
+    QUICK_PREFIX(":q"),
 
     /** prefix for temporary variables */
-    TEMP_PREFIX(":temp"),
+    TEMP_PREFIX(":t"),
 
     /** prefix for literals */
-    LITERAL_PREFIX(":lit"),
+    LITERAL_PREFIX(":l"),
 
     /** prefix for regexps */
-    REGEX_PREFIX(":regex"),
+    REGEX_PREFIX(":r"),
 
     /** "this" used in non-static Java methods; always in slot 0 */
     JAVA_THIS(null, 0),
