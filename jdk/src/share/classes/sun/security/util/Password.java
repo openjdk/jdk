@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,14 @@ import java.util.Arrays;
 public class Password {
     /** Reads user password from given input stream. */
     public static char[] readPassword(InputStream in) throws IOException {
+        return readPassword(in, false);
+    }
+
+    /** Reads user password from given input stream.
+     * @param isEchoOn true if the password should be echoed on the screen
+     */
+    public static char[] readPassword(InputStream in, boolean isEchoOn)
+            throws IOException {
 
         char[] consoleEntered = null;
         byte[] consoleBytes = null;
@@ -44,7 +52,7 @@ public class Password {
         try {
             // Use the new java.io.Console class
             Console con = null;
-            if (in == System.in && ((con = System.console()) != null)) {
+            if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
                 consoleEntered = con.readPassword();
                 // readPassword returns "" if you just print ENTER,
                 // to be compatible with old Password class, change to null

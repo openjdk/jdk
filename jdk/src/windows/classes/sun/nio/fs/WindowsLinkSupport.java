@@ -63,6 +63,30 @@ class WindowsLinkSupport {
     }
 
     /**
+     * Returns the final path (all symbolic links resolved) or null if this
+     * operation is not supported.
+     */
+    private static String getFinalPath(WindowsPath input) throws IOException {
+        long h = 0;
+        try {
+            h = input.openForReadAttributeAccess(true);
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(input);
+        }
+        try {
+            return stripPrefix(GetFinalPathNameByHandle(h));
+        } catch (WindowsException x) {
+            // ERROR_INVALID_LEVEL is the error returned when not supported
+            // (a sym link to file on FAT32 or Samba server for example)
+            if (x.lastError() != ERROR_INVALID_LEVEL)
+                x.rethrowAsIOException(input);
+        } finally {
+            CloseHandle(h);
+        }
+        return null;
+    }
+
+    /**
      * Returns the final path of a given path as a String. This should be used
      * prior to calling Win32 system calls that do not follow links.
      */
@@ -70,7 +94,6 @@ class WindowsLinkSupport {
         throws IOException
     {
         WindowsFileSystem fs = input.getFileSystem();
-
         try {
             // if not following links then don't need final path
             if (!followLinks || !fs.supportsLinks())
@@ -84,25 +107,10 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(input);
         }
 
-        // The file is a symbolic link so we open it and try to get the
-        // normalized path. This should succeed on NTFS but may fail if there
-        // is a link to a non-NFTS file system.
-        long h = 0;
-        try {
-            h = input.openForReadAttributeAccess(true);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(input);
-        }
-        try {
-            return stripPrefix(GetFinalPathNameByHandle(h));
-        } catch (WindowsException x) {
-            // ERROR_INVALID_LEVEL is the error returned when not supported by
-            // the file system
-            if (x.lastError() != ERROR_INVALID_LEVEL)
-                x.rethrowAsIOException(input);
-        } finally {
-            CloseHandle(h);
-        }
+        // The file is a symbolic link so attempt to get the final path
+        String result = getFinalPath(input);
+        if (result != null)
+            return result;
 
         // Fallback: read target of link, resolve against parent, and repeat
         // until file is not a link.
@@ -149,30 +157,8 @@ class WindowsLinkSupport {
         throws IOException
     {
         WindowsFileSystem fs = input.getFileSystem();
-        if (!fs.supportsLinks())
+        if (resolveLinks && !fs.supportsLinks())
             resolveLinks = false;
-
-        // On Vista use GetFinalPathNameByHandle. This should succeed on NTFS
-        // but may fail if there is a link to a non-NFTS file system.
-        if (resolveLinks) {
-            long h = 0;
-            try {
-                h = input.openForReadAttributeAccess(true);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(input);
-            }
-            try {
-                return stripPrefix(GetFinalPathNameByHandle(h));
-            } catch (WindowsException x) {
-                if (x.lastError() != ERROR_INVALID_LEVEL)
-                    x.rethrowAsIOException(input);
-            } finally {
-                CloseHandle(h);
-            }
-        }
-
-        // Not resolving links or we are on Windows Vista (or newer) with a
-        // link to non-NFTS file system.
 
         // Start with absolute path
         String path = null;
@@ -183,15 +169,12 @@ class WindowsLinkSupport {
         }
 
         // Collapse "." and ".."
-        try {
-            path = GetFullPathName(path);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(input);
-        }
-
-        // eliminate all symbolic links
-        if (resolveLinks) {
-            path = resolveAllLinks(WindowsPath.createFromNormalizedPath(fs, path));
+        if (path.indexOf('.') >= 0) {
+            try {
+                path = GetFullPathName(path);
+            } catch (WindowsException x) {
+                x.rethrowAsIOException(input);
+            }
         }
 
         // string builder to build up components of path
@@ -229,12 +212,15 @@ class WindowsLinkSupport {
             throw new AssertionError("path type not recognized");
         }
 
-        // check root directory exists
-        try {
-            FirstFile fileData = FindFirstFile(sb.toString() + "*");
-            FindClose(fileData.handle());
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(path);
+        // if the result is only a root component then we simply check it exists
+        if (start >= path.length()) {
+            String result = sb.toString();
+            try {
+                GetFileAttributes(result);
+            } catch (WindowsException x) {
+                x.rethrowAsIOException(path);
+            }
+            return result;
         }
 
         // iterate through each component to get its actual name in the
@@ -246,13 +232,28 @@ class WindowsLinkSupport {
             String search = sb.toString() + path.substring(curr, end);
             try {
                 FirstFile fileData = FindFirstFile(addLongPathPrefixIfNeeded(search));
-                try {
-                    sb.append(fileData.name());
-                    if (next != -1) {
-                        sb.append('\\');
+                FindClose(fileData.handle());
+
+                // if a reparse point is encountered then we must return the
+                // final path.
+                if (resolveLinks &&
+                    WindowsFileAttributes.isReparsePoint(fileData.attributes()))
+                {
+                    String result = getFinalPath(input);
+                    if (result == null) {
+                        // Fallback to slow path, usually because there is a sym
+                        // link to a file system that doesn't support sym links.
+                        WindowsPath resolved = resolveAllLinks(
+                            WindowsPath.createFromNormalizedPath(fs, path));
+                        result = getRealPath(resolved, false);
                     }
-                } finally {
-                    FindClose(fileData.handle());
+                    return result;
+                }
+
+                // add the name to the result
+                sb.append(fileData.name());
+                if (next != -1) {
+                    sb.append('\\');
                 }
             } catch (WindowsException e) {
                 e.rethrowAsIOException(path);
@@ -342,7 +343,7 @@ class WindowsLinkSupport {
     /**
      * Resolve all symbolic-links in a given absolute and normalized path
      */
-    private static String resolveAllLinks(WindowsPath path)
+    private static WindowsPath resolveAllLinks(WindowsPath path)
         throws IOException
     {
         assert path.isAbsolute();
@@ -401,7 +402,7 @@ class WindowsLinkSupport {
             }
         }
 
-        return path.toString();
+        return path;
     }
 
     /**

@@ -422,7 +422,7 @@ ec_GenerateRandomPrivateKey(const unsigned char *order, int len,
      */
     if ((privKeyBytes = PORT_Alloc(2*len, kmflag)) == NULL) goto cleanup;
     if (randomlen != 2 * len) {
-        goto cleanup;
+        randomlen = 2 * len;
     }
     /* No need to generate - random bytes are now supplied */
     /* CHECK_SEC_OK( RNG_GenerateGlobalRandomBytes(privKeyBytes, 2*len) );*/
