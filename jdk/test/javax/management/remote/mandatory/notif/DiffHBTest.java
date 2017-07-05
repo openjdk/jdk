@@ -26,7 +26,7 @@
  * @bug 4911721
  * @summary test on add/remove NotificationListener
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean DiffHBTest
  * @run build DiffHBTest
  * @run main DiffHBTest

@@ -132,24 +132,24 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * write to, the file specified by the {@link File} argument.  A new {@link
      * FileDescriptor} object is created to represent this file connection.
      *
-     * <p>The <a name="mode">{@code mode}</a> argument specifies the access mode
+     * <p>The <a id="mode">{@code mode}</a> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their
      * meanings are:
      *
      * <table summary="Access mode permitted values and meanings">
-     * <tr><th align="left">Value</th><th align="left">Meaning</th></tr>
-     * <tr><td valign="top">{@code "r"}</td>
+     * <tr><th style="text-align:left">Value</th><th style="text-align:left">Meaning</th></tr>
+     * <tr><td style="vertical-align:top">{@code "r"}</td>
      *     <td> Open for reading only. Invoking any of the {@code write}
      *     methods of the resulting object will cause an
      *     {@link java.io.IOException} to be thrown.</td></tr>
-     * <tr><td valign="top">{@code "rw"}</td>
+     * <tr><td style="vertical-align:top">{@code "rw"}</td>
      *     <td> Open for reading and writing.  If the file does not already
      *     exist then an attempt will be made to create it.</td></tr>
-     * <tr><td valign="top">{@code "rws"}</td>
+     * <tr><td style="vertical-align:top">{@code "rws"}</td>
      *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content or metadata be
      *     written synchronously to the underlying storage device.</td></tr>
-     * <tr><td valign="top">{@code "rwd"}</td>
+     * <tr><td style="vertical-align:top">{@code "rwd"}</td>
      *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content be written
      *     synchronously to the underlying storage device.</td></tr>
