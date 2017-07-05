@@ -25,7 +25,7 @@
  * @test CorrectnessTest
  * @bug 8038418
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @ignore 8066173
  * @compile execution/TypeConflict.java execution/TypeProfile.java

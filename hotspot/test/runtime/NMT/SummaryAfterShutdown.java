@@ -26,7 +26,7 @@
  * @key nmt jcmd
  * @summary Verify that jcmd correctly reports that NMT is not enabled after a shutdown
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:NativeMemoryTracking=detail SummaryAfterShutdown
  */

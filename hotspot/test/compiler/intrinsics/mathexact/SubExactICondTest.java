@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test subtractExact as condition
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile SubExactICondTest.java Verify.java
  * @run main SubExactICondTest

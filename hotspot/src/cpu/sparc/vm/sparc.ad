@@ -10168,6 +10168,22 @@ instruct array_equalsC(o0RegP ary1, o1RegP ary2, g3RegI tmp1, notemp_iRegI resul
   ins_pipe(long_memory_op);
 %}
 
+instruct has_negatives(o0RegP pAryR, g3RegI iSizeR, notemp_iRegI resultR,
+                       iRegL tmp1L, iRegL tmp2L, iRegL tmp3L, iRegL tmp4L,
+                       flagsReg ccr) 
+%{
+  match(Set resultR (HasNegatives pAryR iSizeR));
+  effect(TEMP resultR, TEMP tmp1L, TEMP tmp2L, TEMP tmp3L, TEMP tmp4L, USE pAryR, USE iSizeR, KILL ccr);
+  format %{ "has negatives byte[] $pAryR,$iSizeR -> $resultR // KILL $tmp1L,$tmp2L,$tmp3L,$tmp4L" %}
+  ins_encode %{
+    __ has_negatives($pAryR$$Register, $iSizeR$$Register, 
+                     $resultR$$Register,
+                     $tmp1L$$Register, $tmp2L$$Register, 
+                     $tmp3L$$Register, $tmp4L$$Register);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
 // char[] to byte[] compression
 instruct string_compress(o0RegP src, o1RegP dst, g3RegI len, notemp_iRegI result, iRegL tmp, flagsReg ccr) %{
   predicate(UseVIS < 3);

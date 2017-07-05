@@ -27,7 +27,7 @@
  * @summary Verify processing of UseCountLeadingZerosInstruction option
  *          on CPU with LZCNT support.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseCountLeadingZerosInstructionOnSupportedCPU
  *        BMISupportedCPUTest

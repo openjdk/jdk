@@ -1001,6 +1001,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Klass::_modifier_flags", type = "jint", get = HotSpotVMField.Type.OFFSET) @Stable public int klassModifierFlagsOffset;
     @HotSpotVMField(name = "Klass::_access_flags", type = "AccessFlags", get = HotSpotVMField.Type.OFFSET) @Stable public int klassAccessFlagsOffset;
     @HotSpotVMField(name = "Klass::_layout_helper", type = "jint", get = HotSpotVMField.Type.OFFSET) @Stable public int klassLayoutHelperOffset;
+    @HotSpotVMField(name = "Klass::_name", type = "Symbol*", get = HotSpotVMField.Type.OFFSET) @Stable public int klassNameOffset;
 
     @HotSpotVMConstant(name = "Klass::_lh_neutral_value") @Stable public int klassLayoutHelperNeutralValue;
     @HotSpotVMConstant(name = "Klass::_lh_instance_slow_path_bit") @Stable public int klassLayoutHelperInstanceSlowPathBit;
@@ -1536,8 +1537,9 @@ public class HotSpotVMConfig {
     @HotSpotVMAddress(name = "JVMCIRuntime::exception_handler_for_pc") @Stable public long exceptionHandlerForPcAddress;
     @HotSpotVMAddress(name = "JVMCIRuntime::monitorenter") @Stable public long monitorenterAddress;
     @HotSpotVMAddress(name = "JVMCIRuntime::monitorexit") @Stable public long monitorexitAddress;
-    @HotSpotVMAddress(name = "JVMCIRuntime::create_null_exception") @Stable public long createNullPointerExceptionAddress;
-    @HotSpotVMAddress(name = "JVMCIRuntime::create_out_of_bounds_exception") @Stable public long createOutOfBoundsExceptionAddress;
+    @HotSpotVMAddress(name = "JVMCIRuntime::throw_and_post_jvmti_exception") @Stable public long throwAndPostJvmtiExceptionAddress;
+    @HotSpotVMAddress(name = "JVMCIRuntime::throw_klass_external_name_exception") @Stable public long throwKlassExternalNameExceptionAddress;
+    @HotSpotVMAddress(name = "JVMCIRuntime::throw_class_cast_exception") @Stable public long throwClassCastExceptionAddress;
     @HotSpotVMAddress(name = "JVMCIRuntime::log_primitive") @Stable public long logPrimitiveAddress;
     @HotSpotVMAddress(name = "JVMCIRuntime::log_object") @Stable public long logObjectAddress;
     @HotSpotVMAddress(name = "JVMCIRuntime::log_printf") @Stable public long logPrintfAddress;

@@ -99,14 +99,14 @@ class ValueStack: public CompilationResourceObj {
   void clear_locals();                           // sets all locals to NULL;
 
   void invalidate_local(int i) {
-    assert(_locals.at(i)->type()->is_single_word() ||
+    assert(!_locals.at(i)->type()->is_double_word() ||
            _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     _locals.at_put(i, NULL);
   }
 
   Value local_at(int i) const {
     Value x = _locals.at(i);
-    assert(x == NULL || x->type()->is_single_word() ||
+    assert(x == NULL || !x->type()->is_double_word() ||
            _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     return x;
   }
@@ -131,7 +131,7 @@ class ValueStack: public CompilationResourceObj {
   // stack access
   Value stack_at(int i) const {
     Value x = _stack.at(i);
-    assert(x->type()->is_single_word() ||
+    assert(!x->type()->is_double_word() ||
            _stack.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
     return x;
   }
