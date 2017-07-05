@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "\u6839\u636E\u8BC1\u4E66\u8BF7\u6C42\u751F\u6210\u8BC1\u4E66"}, //-gencert
         {"Generates.CRL", "\u751F\u6210 CRL"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "\u5DF2\u751F\u6210{0}\u5BC6\u94A5"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "\u5DF2\u751F\u6210 {0} \u4F4D{1}\u5BC6\u94A5"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "\u4ECE JDK 1.1.x \u6837\u5F0F\u7684\u8EAB\u4EFD\u6570\u636E\u5E93\u5BFC\u5165\u6761\u76EE"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "\u5BFC\u5165\u8BC1\u4E66\u6216\u8BC1\u4E66\u94FE"}, //-importcert
+        {"Imports.a.password",
+                "\u5BFC\u5165\u53E3\u4EE4"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "\u4ECE\u5176\u4ED6\u5BC6\u94A5\u5E93\u5BFC\u5165\u4E00\u4E2A\u6216\u6240\u6709\u6761\u76EE"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Must.specify.alias", "\u5FC5\u987B\u6307\u5B9A\u522B\u540D"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "\u5BC6\u94A5\u5E93\u53E3\u4EE4\u81F3\u5C11\u5FC5\u987B\u4E3A 6 \u4E2A\u5B57\u7B26"},
+        {"Enter.the.password.to.be.stored.",
+                "\u8F93\u5165\u8981\u5B58\u50A8\u7684\u53E3\u4EE4:  "},
         {"Enter.keystore.password.", "\u8F93\u5165\u5BC6\u94A5\u5E93\u53E3\u4EE4:  "},
         {"Enter.source.keystore.password.", "\u8F93\u5165\u6E90\u5BC6\u94A5\u5E93\u53E3\u4EE4:  "},
         {"Enter.destination.keystore.password.", "\u8F93\u5165\u76EE\u6807\u5BC6\u94A5\u5E93\u53E3\u4EE4:  "},
@@ -328,6 +336,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"New.prompt.", "\u65B0{0}: "},
         {"Passwords.must.differ", "\u53E3\u4EE4\u4E0D\u80FD\u76F8\u540C"},
         {"Re.enter.new.prompt.", "\u91CD\u65B0\u8F93\u5165\u65B0{0}: "},
+        {"Re.enter.passpword.", "\u518D\u6B21\u8F93\u5165\u53E3\u4EE4: "},
         {"Re.enter.new.password.", "\u518D\u6B21\u8F93\u5165\u65B0\u53E3\u4EE4: "},
         {"They.don.t.match.Try.again", "\u5B83\u4EEC\u4E0D\u5339\u914D\u3002\u8BF7\u91CD\u8BD5"},
         {"Enter.prompt.alias.name.", "\u8F93\u5165{0}\u522B\u540D:  "},

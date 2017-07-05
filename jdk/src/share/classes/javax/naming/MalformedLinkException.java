@@ -42,7 +42,7 @@ package javax.naming;
 
 public class MalformedLinkException extends LinkException {
     /**
-      * Constructs a new instance of MalformedLinkException with an explanation
+      * Constructs a new instance of MalformedLinkException with an explanation.
       * All the other fields are initialized to null.
       * @param  explanation     A possibly null string containing additional
       *                         detail about this exception.

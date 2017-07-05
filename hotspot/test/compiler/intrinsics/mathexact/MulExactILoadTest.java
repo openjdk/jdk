@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test multiplyExact
  * @compile MulExactILoadTest.java Verify.java
- * @run main MulExactILoadTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main MulExactILoadTest
  *
  */
 

@@ -30,6 +30,12 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = (2*wordSize);
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are properly extended to 64 bits.
+// If set, SharedRuntime::c_calling_convention() must adapt
+// signatures accordingly.
+const bool CCallingConventionRequiresIntsAsLongs = false;
+
 #define SUPPORTS_NATIVE_CX8
 
 #endif // CPU_SPARC_VM_GLOBALDEFINITIONS_SPARC_HPP

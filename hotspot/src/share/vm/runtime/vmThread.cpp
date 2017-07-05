@@ -40,12 +40,6 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL3(hotspot, vmops__request, char *, uintptr_t, int);
-HS_DTRACE_PROBE_DECL3(hotspot, vmops__begin, char *, uintptr_t, int);
-HS_DTRACE_PROBE_DECL3(hotspot, vmops__end, char *, uintptr_t, int);
-#endif /* !USDT2 */
-
 // Dummy VM operation to act as first element in our circular double-linked list
 class VM_Dummy: public VM_Operation {
   VMOp_Type type() const { return VMOp_Dummy; }
@@ -154,14 +148,9 @@ void VMOperationQueue::drain_list_oops_do(OopClosure* f) {
 // High-level interface
 bool VMOperationQueue::add(VM_Operation *op) {
 
-#ifndef USDT2
-  HS_DTRACE_PROBE3(hotspot, vmops__request, op->name(), strlen(op->name()),
-                   op->evaluation_mode());
-#else /* USDT2 */
   HOTSPOT_VMOPS_REQUEST(
                    (char *) op->name(), strlen(op->name()),
                    op->evaluation_mode());
-#endif /* USDT2 */
 
   // Encapsulates VM queue policy. Currently, that
   // only involves putting them on the right list
@@ -358,14 +347,9 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
-#ifndef USDT2
-    HS_DTRACE_PROBE3(hotspot, vmops__begin, op->name(), strlen(op->name()),
-                     op->evaluation_mode());
-#else /* USDT2 */
     HOTSPOT_VMOPS_BEGIN(
                      (char *) op->name(), strlen(op->name()),
                      op->evaluation_mode());
-#endif /* USDT2 */
 
     EventExecuteVMOperation event;
 
@@ -383,14 +367,9 @@ void VMThread::evaluate_operation(VM_Operation* op) {
       event.commit();
     }
 
-#ifndef USDT2
-    HS_DTRACE_PROBE3(hotspot, vmops__end, op->name(), strlen(op->name()),
-                     op->evaluation_mode());
-#else /* USDT2 */
     HOTSPOT_VMOPS_END(
                      (char *) op->name(), strlen(op->name()),
                      op->evaluation_mode());
-#endif /* USDT2 */
   }
 
   // Last access of info in _cur_vm_operation!
@@ -677,7 +656,7 @@ void VMThread::execute(VM_Operation* op) {
 }
 
 
-void VMThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void VMThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   Thread::oops_do(f, cld_f, cf);
   _vm_queue->oops_do(f);
 }

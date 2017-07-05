@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "Genera un certificado a partir de una solicitud de certificado"}, //-gencert
         {"Generates.CRL", "Genera CRL"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "Clave secreta {0} generada"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "Clave secreta {1} de {0} bits generada"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Importa entradas desde una base de datos de identidades JDK 1.1.x-style"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "Importa un certificado o una cadena de certificados"}, //-importcert
+        {"Imports.a.password",
+                "Importa una contrase\u00F1a"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "Importa una o todas las entradas desde otro almac\u00E9n de claves"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Must.specify.alias", "Se debe especificar un alias"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "La contrase\u00F1a del almac\u00E9n de claves debe tener al menos 6 caracteres"},
+        {"Enter.the.password.to.be.stored.",
+                "Introduzca la contrase\u00F1a que se va a almacenar:  "},
         {"Enter.keystore.password.", "Introduzca la contrase\u00F1a del almac\u00E9n de claves:  "},
         {"Enter.source.keystore.password.", "Introduzca la contrase\u00F1a de almac\u00E9n de claves de origen:  "},
         {"Enter.destination.keystore.password.", "Introduzca la contrase\u00F1a de almac\u00E9n de claves de destino:  "},
@@ -328,6 +336,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"New.prompt.", "Nuevo {0}: "},
         {"Passwords.must.differ", "Las contrase\u00F1as deben ser distintas"},
         {"Re.enter.new.prompt.", "Vuelva a escribir el nuevo {0}: "},
+        {"Re.enter.passpword.", "Vuelva a introducir la contrase\u00F1a: "},
         {"Re.enter.new.password.", "Volver a escribir la contrase\u00F1a nueva: "},
         {"They.don.t.match.Try.again", "No coinciden. Int\u00E9ntelo de nuevo"},
         {"Enter.prompt.alias.name.", "Escriba el nombre de alias de {0}:  "},

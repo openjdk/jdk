@@ -90,6 +90,8 @@ define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 
+define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on sparc.
+
 // Heap related flags
 define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(16*M));
 

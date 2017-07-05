@@ -90,9 +90,9 @@ public:
 class CFGElement : public ResourceObj {
   friend class VMStructs;
  public:
-  float _freq; // Execution frequency (estimate)
+  double _freq; // Execution frequency (estimate)
 
-  CFGElement() : _freq(0.0f) {}
+  CFGElement() : _freq(0.0) {}
   virtual bool is_block() { return false; }
   virtual bool is_loop()  { return false; }
   Block*   as_Block() { assert(is_block(), "must be block"); return (Block*)this; }
@@ -202,7 +202,7 @@ public:
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.
   // It is currently also used to scale such frequencies relative to
   // FreqCountInvocations relative to the old value of 1500.
-#define BLOCK_FREQUENCY(f) ((f * (float) 1500) / FreqCountInvocations)
+#define BLOCK_FREQUENCY(f) ((f * (double) 1500) / FreqCountInvocations)
 
   // Register Pressure (estimate) for Splitting heuristic
   uint _reg_pressure;
@@ -313,10 +313,12 @@ public:
   // Add an instruction to an existing block.  It must go after the head
   // instruction and before the end instruction.
   void add_inst( Node *n ) { insert_node(n, end_idx()); }
-  // Find node in block
+  // Find node in block. Fails if node not in block.
   uint find_node( const Node *n ) const;
   // Find and remove n from block list
   void find_remove( const Node *n );
+  // Check wether the node is in the block.
+  bool contains (const Node *n) const;
 
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
@@ -391,7 +393,7 @@ class PhaseCFG : public Phase {
   CFGLoop* _root_loop;
 
   // Outmost loop frequency
-  float _outer_loop_frequency;
+  double _outer_loop_frequency;
 
   // Per node latency estimation, valid only during GCM
   GrowableArray<uint>* _node_latency;
@@ -506,7 +508,7 @@ class PhaseCFG : public Phase {
   }
 
   // Get the outer most frequency
-  float get_outer_loop_frequency() const {
+  double get_outer_loop_frequency() const {
     return _outer_loop_frequency;
   }
 
@@ -588,6 +590,7 @@ class PhaseCFG : public Phase {
 
   // Remove empty basic blocks
   void remove_empty_blocks();
+  Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
 
   // Insert a node into a block at index and map the node to the block
@@ -595,6 +598,9 @@ class PhaseCFG : public Phase {
     b->insert_node(n , idx);
     map_node_to_block(n, b);
   }
+
+  // Check all nodes and postalloc_expand them if necessary.
+  void postalloc_expand(PhaseRegAlloc* _ra);
 
 #ifndef PRODUCT
   bool trace_opto_pipelining() const { return _trace_opto_pipelining; }
@@ -650,13 +656,13 @@ public:
 class BlockProbPair VALUE_OBJ_CLASS_SPEC {
 protected:
   Block* _target;      // block target
-  float  _prob;        // probability of edge to block
+  double  _prob;        // probability of edge to block
 public:
   BlockProbPair() : _target(NULL), _prob(0.0) {}
-  BlockProbPair(Block* b, float p) : _target(b), _prob(p) {}
+  BlockProbPair(Block* b, double p) : _target(b), _prob(p) {}
 
   Block* get_target() const { return _target; }
-  float get_prob() const { return _prob; }
+  double get_prob() const { return _prob; }
 };
 
 //------------------------------CFGLoop-------------------------------------------
@@ -669,8 +675,8 @@ class CFGLoop : public CFGElement {
   CFGLoop *_child;       // first child, use child's sibling to visit all immediately nested loops
   GrowableArray<CFGElement*> _members; // list of members of loop
   GrowableArray<BlockProbPair> _exits; // list of successor blocks and their probabilities
-  float _exit_prob;       // probability any loop exit is taken on a single loop iteration
-  void update_succ_freq(Block* b, float freq);
+  double _exit_prob;       // probability any loop exit is taken on a single loop iteration
+  void update_succ_freq(Block* b, double freq);
 
  public:
   CFGLoop(int id) :
@@ -696,9 +702,9 @@ class CFGLoop : public CFGElement {
   void compute_loop_depth(int depth);
   void compute_freq(); // compute frequency with loop assuming head freq 1.0f
   void scale_freq();   // scale frequency by loop trip count (including outer loops)
-  float outer_loop_freq() const; // frequency of outer loop
+  double outer_loop_freq() const; // frequency of outer loop
   bool in_loop_nest(Block* b);
-  float trip_count() const { return 1.0f / _exit_prob; }
+  double trip_count() const { return 1.0 / _exit_prob; }
   virtual bool is_loop()  { return true; }
   int id() { return _id; }
 
@@ -717,7 +723,7 @@ class CFGEdge : public ResourceObj {
  private:
   Block * _from;        // Source basic block
   Block * _to;          // Destination basic block
-  float _freq;          // Execution frequency (estimate)
+  double _freq;          // Execution frequency (estimate)
   int   _state;
   bool  _infrequent;
   int   _from_pct;
@@ -736,13 +742,13 @@ class CFGEdge : public ResourceObj {
     interior            // edge is interior to trace (could be backedge)
   };
 
-  CFGEdge(Block *from, Block *to, float freq, int from_pct, int to_pct) :
+  CFGEdge(Block *from, Block *to, double freq, int from_pct, int to_pct) :
     _from(from), _to(to), _freq(freq),
     _from_pct(from_pct), _to_pct(to_pct), _state(open) {
     _infrequent = from_infrequent() || to_infrequent();
   }
 
-  float  freq() const { return _freq; }
+  double  freq() const { return _freq; }
   Block* from() const { return _from; }
   Block* to  () const { return _to;   }
   int  infrequent() const { return _infrequent; }
