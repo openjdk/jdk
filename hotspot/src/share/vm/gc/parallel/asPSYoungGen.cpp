@@ -111,13 +111,12 @@ size_t ASPSYoungGen::available_for_contraction() {
     PSAdaptiveSizePolicy* policy = heap->size_policy();
     size_t result = policy->eden_increment_aligned_down(max_contraction);
     size_t result_aligned = align_size_down(result, gen_alignment);
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("ASPSYoungGen::available_for_contraction: " SIZE_FORMAT " K",
-        result_aligned/K);
-      gclog_or_tty->print_cr("  max_contraction " SIZE_FORMAT " K", max_contraction/K);
-      gclog_or_tty->print_cr("  eden_avail " SIZE_FORMAT " K", eden_avail/K);
-      gclog_or_tty->print_cr("  gen_avail " SIZE_FORMAT " K", gen_avail/K);
-    }
+
+    log_trace(gc, ergo)("ASPSYoungGen::available_for_contraction: " SIZE_FORMAT " K", result_aligned/K);
+    log_trace(gc, ergo)("  max_contraction " SIZE_FORMAT " K", max_contraction/K);
+    log_trace(gc, ergo)("  eden_avail " SIZE_FORMAT " K", eden_avail/K);
+    log_trace(gc, ergo)("  gen_avail " SIZE_FORMAT " K", gen_avail/K);
+
     return result_aligned;
   }
 
@@ -199,25 +198,17 @@ bool ASPSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
     virtual_space()->shrink_by(change);
     size_changed = true;
   } else {
-    if (Verbose && PrintGC) {
-      if (orig_size == gen_size_limit()) {
-        gclog_or_tty->print_cr("ASPSYoung generation size at maximum: "
-          SIZE_FORMAT "K", orig_size/K);
-      } else if (orig_size == min_gen_size()) {
-        gclog_or_tty->print_cr("ASPSYoung generation size at minium: "
-          SIZE_FORMAT "K", orig_size/K);
-      }
+    if (orig_size == gen_size_limit()) {
+      log_trace(gc)("ASPSYoung generation size at maximum: " SIZE_FORMAT "K", orig_size/K);
+    } else if (orig_size == min_gen_size()) {
+      log_trace(gc)("ASPSYoung generation size at minium: " SIZE_FORMAT "K", orig_size/K);
     }
   }
 
   if (size_changed) {
     reset_after_change();
-    if (Verbose && PrintGC) {
-      size_t current_size  = virtual_space()->committed_size();
-      gclog_or_tty->print_cr("ASPSYoung generation size changed: "
-        SIZE_FORMAT "K->" SIZE_FORMAT "K",
-        orig_size/K, current_size/K);
-    }
+    log_trace(gc)("ASPSYoung generation size changed: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
+                  orig_size/K, virtual_space()->committed_size()/K);
   }
 
   guarantee(eden_plus_survivors <= virtual_space()->committed_size() ||
@@ -245,41 +236,31 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     return;
   }
 
-  if (PrintAdaptiveSizePolicy && Verbose) {
-    gclog_or_tty->print_cr("PSYoungGen::resize_spaces(requested_eden_size: "
-                  SIZE_FORMAT
-                  ", requested_survivor_size: " SIZE_FORMAT ")",
-                  requested_eden_size, requested_survivor_size);
-    gclog_or_tty->print_cr("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") "
-                  SIZE_FORMAT,
-                  p2i(eden_space()->bottom()),
-                  p2i(eden_space()->end()),
-                  pointer_delta(eden_space()->end(),
-                                eden_space()->bottom(),
-                                sizeof(char)));
-    gclog_or_tty->print_cr("    from: [" PTR_FORMAT ".." PTR_FORMAT ") "
-                  SIZE_FORMAT,
-                  p2i(from_space()->bottom()),
-                  p2i(from_space()->end()),
-                  pointer_delta(from_space()->end(),
-                                from_space()->bottom(),
-                                sizeof(char)));
-    gclog_or_tty->print_cr("      to: [" PTR_FORMAT ".." PTR_FORMAT ") "
-                  SIZE_FORMAT,
-                  p2i(to_space()->bottom()),
-                  p2i(to_space()->end()),
-                  pointer_delta(  to_space()->end(),
-                                  to_space()->bottom(),
-                                  sizeof(char)));
-  }
+  log_trace(gc, ergo)("PSYoungGen::resize_spaces(requested_eden_size: "
+                      SIZE_FORMAT
+                      ", requested_survivor_size: " SIZE_FORMAT ")",
+                      requested_eden_size, requested_survivor_size);
+  log_trace(gc, ergo)("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") "
+                      SIZE_FORMAT,
+                      p2i(eden_space()->bottom()),
+                      p2i(eden_space()->end()),
+                      pointer_delta(eden_space()->end(), eden_space()->bottom(), sizeof(char)));
+  log_trace(gc, ergo)("    from: [" PTR_FORMAT ".." PTR_FORMAT ") "
+                      SIZE_FORMAT,
+                      p2i(from_space()->bottom()),
+                      p2i(from_space()->end()),
+                      pointer_delta(from_space()->end(), from_space()->bottom(), sizeof(char)));
+  log_trace(gc, ergo)("      to: [" PTR_FORMAT ".." PTR_FORMAT ") "
+                      SIZE_FORMAT,
+                      p2i(to_space()->bottom()),
+                      p2i(to_space()->end()),
+                      pointer_delta(  to_space()->end(), to_space()->bottom(), sizeof(char)));
 
   // There's nothing to do if the new sizes are the same as the current
   if (requested_survivor_size == to_space()->capacity_in_bytes() &&
       requested_survivor_size == from_space()->capacity_in_bytes() &&
       requested_eden_size == eden_space()->capacity_in_bytes()) {
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("    capacities are the right sizes, returning");
-    }
+    log_trace(gc, ergo)("    capacities are the right sizes, returning");
     return;
   }
 
@@ -302,9 +283,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   if (eden_from_to_order) {
     // Eden, from, to
 
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("  Eden, from, to:");
-    }
+    log_trace(gc, ergo)("  Eden, from, to:");
 
     // Set eden
     // "requested_eden_size" is a goal for the size of eden
@@ -368,28 +347,24 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
     guarantee(to_start != to_end, "to space is zero sized");
 
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("    [eden_start .. eden_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(eden_start),
-                    p2i(eden_end),
-                    pointer_delta(eden_end, eden_start, sizeof(char)));
-      gclog_or_tty->print_cr("    [from_start .. from_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(from_start),
-                    p2i(from_end),
-                    pointer_delta(from_end, from_start, sizeof(char)));
-      gclog_or_tty->print_cr("    [  to_start ..   to_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(to_start),
-                    p2i(to_end),
-                    pointer_delta(  to_end,   to_start, sizeof(char)));
-    }
+    log_trace(gc, ergo)("    [eden_start .. eden_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(eden_start),
+                        p2i(eden_end),
+                        pointer_delta(eden_end, eden_start, sizeof(char)));
+    log_trace(gc, ergo)("    [from_start .. from_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(from_start),
+                        p2i(from_end),
+                        pointer_delta(from_end, from_start, sizeof(char)));
+    log_trace(gc, ergo)("    [  to_start ..   to_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(to_start),
+                        p2i(to_end),
+                        pointer_delta(  to_end,   to_start, sizeof(char)));
   } else {
     // Eden, to, from
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("  Eden, to, from:");
-    }
+    log_trace(gc, ergo)("  Eden, to, from:");
 
     // To space gets priority over eden resizing. Note that we position
     // to space as if we were able to resize from space, even though from
@@ -422,23 +397,21 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     eden_end = MAX2(eden_end, eden_start + alignment);
     to_start = MAX2(to_start, eden_end);
 
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("    [eden_start .. eden_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(eden_start),
-                    p2i(eden_end),
-                    pointer_delta(eden_end, eden_start, sizeof(char)));
-      gclog_or_tty->print_cr("    [  to_start ..   to_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(to_start),
-                    p2i(to_end),
-                    pointer_delta(  to_end,   to_start, sizeof(char)));
-      gclog_or_tty->print_cr("    [from_start .. from_end): "
-                    "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    p2i(from_start),
-                    p2i(from_end),
-                    pointer_delta(from_end, from_start, sizeof(char)));
-    }
+    log_trace(gc, ergo)("    [eden_start .. eden_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(eden_start),
+                        p2i(eden_end),
+                        pointer_delta(eden_end, eden_start, sizeof(char)));
+    log_trace(gc, ergo)("    [  to_start ..   to_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(to_start),
+                        p2i(to_end),
+                        pointer_delta(  to_end,   to_start, sizeof(char)));
+    log_trace(gc, ergo)("    [from_start .. from_end): "
+                        "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+                        p2i(from_start),
+                        p2i(from_end),
+                        pointer_delta(from_end, from_start, sizeof(char)));
   }
 
 
@@ -457,7 +430,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   // Let's make sure the call to initialize doesn't reset "top"!
   DEBUG_ONLY(HeapWord* old_from_top = from_space()->top();)
 
-  // For PrintAdaptiveSizePolicy block  below
+  // For logging block  below
   size_t old_from = from_space()->capacity_in_bytes();
   size_t old_to   = to_space()->capacity_in_bytes();
 
@@ -506,19 +479,16 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
   assert(from_space()->top() == old_from_top, "from top changed!");
 
-  if (PrintAdaptiveSizePolicy) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    gclog_or_tty->print("AdaptiveSizePolicy::survivor space sizes: "
-                  "collection: %d "
-                  "(" SIZE_FORMAT ", " SIZE_FORMAT ") -> "
-                  "(" SIZE_FORMAT ", " SIZE_FORMAT ") ",
-                  heap->total_collections(),
-                  old_from, old_to,
-                  from_space()->capacity_in_bytes(),
-                  to_space()->capacity_in_bytes());
-    gclog_or_tty->cr();
-  }
-  space_invariants();
+  log_trace(gc, ergo)("AdaptiveSizePolicy::survivor space sizes: "
+                "collection: %d "
+                "(" SIZE_FORMAT ", " SIZE_FORMAT ") -> "
+                "(" SIZE_FORMAT ", " SIZE_FORMAT ") ",
+                ParallelScavengeHeap::heap()->total_collections(),
+                old_from, old_to,
+                from_space()->capacity_in_bytes(),
+                to_space()->capacity_in_bytes());
+
+    space_invariants();
 }
 void ASPSYoungGen::reset_after_change() {
   assert_locked_or_safepoint(Heap_lock);

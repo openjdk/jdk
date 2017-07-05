@@ -32,8 +32,6 @@ import java.security.cert.*;
 import java.util.*;
 import java.io.*;
 
-import sun.security.provider.*;
-
 public class EntryMethods
     extends Provider
     implements KeyStore.Entry

@@ -154,7 +154,7 @@ import java.util.function.Consumer;
  *
  * @param <T> the published item type
  * @author Doug Lea
- * @since 1.9
+ * @since 9
  */
 public class SubmissionPublisher<T> implements Flow.Publisher<T>,
                                                AutoCloseable {

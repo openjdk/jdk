@@ -49,7 +49,7 @@ package java.sql;
  *                       .build();
  * }</pre>
  *
- * @since 1.9
+ * @since 9
  *
  */
 public interface ConnectionBuilder  {

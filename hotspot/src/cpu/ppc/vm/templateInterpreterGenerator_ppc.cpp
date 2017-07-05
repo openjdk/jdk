@@ -24,13 +24,12 @@
  */
 
 #include "precompiled.hpp"
-#ifndef CC_INTERP
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -255,34 +254,33 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
 
   if (TieredCompilation) {
     const int increment = InvocationCounter::count_increment;
-    const int mask = ((1 << Tier0InvokeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
     Label no_mdo;
     if (ProfileInterpreter) {
-      const Register Rmdo = Rscratch1;
+      const Register Rmdo = R3_counters;
       // If no method data exists, go to profile_continue.
       __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
       __ cmpdi(CCR0, Rmdo, 0);
       __ beq(CCR0, no_mdo);
 
-      // Increment backedge counter in the MDO.
-      const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
+      // Increment invocation counter in the MDO.
+      const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+      __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
+      __ lwz(Rscratch1, in_bytes(MethodData::invoke_mask_offset()), Rmdo);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mdo_bc_offs, Rmdo);
-      __ load_const_optimized(Rscratch1, mask, R0);
+      __ stw(Rscratch2, mdo_ic_offs, Rmdo);
       __ and_(Rscratch1, Rscratch2, Rscratch1);
       __ bne(CCR0, done);
       __ b(*overflow);
     }
 
     // Increment counter in MethodCounters*.
-    const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
     __ bind(no_mdo);
     __ get_method_counters(R19_method, R3_counters, done);
-    __ lwz(Rscratch2, mo_bc_offs, R3_counters);
+    __ lwz(Rscratch2, mo_ic_offs, R3_counters);
+    __ lwz(Rscratch1, in_bytes(MethodCounters::invoke_mask_offset()), R3_counters);
     __ addi(Rscratch2, Rscratch2, increment);
-    __ stw(Rscratch2, mo_bc_offs, R3_counters);
-    __ load_const_optimized(Rscratch1, mask, R0);
+    __ stw(Rscratch2, mo_ic_offs, R3_counters);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
     __ beq(CCR0, *overflow);
 
@@ -303,8 +301,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     // Check if we must create a method data obj.
     if (ProfileInterpreter && profile_method != NULL) {
       const Register profile_limit = Rscratch1;
-      int pl_offs = __ load_const_optimized(profile_limit, &InvocationCounter::InterpreterProfileLimit, R0, true);
-      __ lwz(profile_limit, pl_offs, profile_limit);
+      __ lwz(profile_limit, in_bytes(MethodCounters::interpreter_profile_limit_offset()), R3_counters);
       // Test to see if we should create a method data oop.
       __ cmpw(CCR0, Rsum_ivc_bec, profile_limit);
       __ blt(CCR0, *profile_method_continue);
@@ -314,9 +311,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     // Finally check for counter overflow.
     if (overflow) {
       const Register invocation_limit = Rscratch1;
-      int il_offs = __ load_const_optimized(invocation_limit, &InvocationCounter::InterpreterInvocationLimit, R0, true);
-      __ lwz(invocation_limit, il_offs, invocation_limit);
-      assert(4 == sizeof(InvocationCounter::InterpreterInvocationLimit), "unexpected field size");
+      __ lwz(invocation_limit, in_bytes(MethodCounters::interpreter_invocation_limit_offset()), R3_counters);
       __ cmpw(CCR0, Rsum_ivc_bec, invocation_limit);
       __ bge(CCR0, *overflow);
     }
@@ -1246,7 +1241,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
@@ -1306,7 +1301,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
@@ -1389,6 +1384,11 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     return start;
   }
 
+  return NULL;
+}
+
+// Not supported
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   return NULL;
 }
 
@@ -1644,16 +1644,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 }
 
 //-----------------------------------------------------------------------------
-// Generation of individual instructions
-
-// helpers for generate_and_dispatch
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
-  : TemplateInterpreterGenerator(code) {
-  generate_all(); // Down here so it can be "virtual".
-}
-
-//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
@@ -1799,4 +1789,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
-#endif // !CC_INTERP

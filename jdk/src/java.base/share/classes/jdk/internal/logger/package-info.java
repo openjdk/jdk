@@ -63,6 +63,6 @@
  * @see sun.util.logging.PlatformLogger.Bridge
  * @see sun.util.logging.internal
  *
- * @since 1.9
+ * @since 9
  */
 package jdk.internal.logger;

@@ -89,4 +89,4 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
                                               MemoryType type);
 };
 
-#endif /* SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP */
+#endif // SHARE_VM_GC_G1_G1REGIONTOSPACEMAPPER_HPP

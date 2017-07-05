@@ -378,9 +378,8 @@ int AttachListener::pd_init() {
   return Win32AttachListener::init();
 }
 
-// always startup on Windows NT/2000/XP
 bool AttachListener::init_at_startup() {
-  return os::win32::is_nt();
+  return true;
 }
 
 // no trigger mechanism on Windows to start Attach Listener lazily

@@ -199,9 +199,8 @@ void SATBMarkQueue::print(const char* name) {
 
 void SATBMarkQueue::print(const char* name,
                           void** buf, size_t index, size_t sz) {
-  gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " "
-                         "index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
-                         name, p2i(buf), index, sz);
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
+                name, p2i(buf), index, sz);
 }
 #endif // PRODUCT
 
@@ -222,16 +221,13 @@ void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
 
 #ifdef ASSERT
 void SATBMarkQueueSet::dump_active_states(bool expected_active) {
-  gclog_or_tty->print_cr("Expected SATB active state: %s",
-                         expected_active ? "ACTIVE" : "INACTIVE");
-  gclog_or_tty->print_cr("Actual SATB active states:");
-  gclog_or_tty->print_cr("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
+  log_info(gc, verify)("Expected SATB active state: %s", expected_active ? "ACTIVE" : "INACTIVE");
+  log_info(gc, verify)("Actual SATB active states:");
+  log_info(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
   for (JavaThread* t = Threads::first(); t; t = t->next()) {
-    gclog_or_tty->print_cr("  Thread \"%s\" queue: %s", t->name(),
-                           t->satb_mark_queue().is_active() ? "ACTIVE" : "INACTIVE");
+    log_info(gc, verify)("  Thread \"%s\" queue: %s", t->name(), t->satb_mark_queue().is_active() ? "ACTIVE" : "INACTIVE");
   }
-  gclog_or_tty->print_cr("  Shared queue: %s",
-                         shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
+  log_info(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
 }
 
 void SATBMarkQueueSet::verify_active_states(bool expected_active) {
@@ -318,8 +314,8 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   char buffer[SATB_PRINTER_BUFFER_SIZE];
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
 
-  gclog_or_tty->cr();
-  gclog_or_tty->print_cr("SATB BUFFERS [%s]", msg);
+  tty->cr();
+  tty->print_cr("SATB BUFFERS [%s]", msg);
 
   BufferNode* nd = _completed_buffers_head;
   int i = 0;
@@ -338,7 +334,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 
   shared_satb_queue()->print("Shared");
 
-  gclog_or_tty->cr();
+  tty->cr();
 }
 #endif // PRODUCT
 

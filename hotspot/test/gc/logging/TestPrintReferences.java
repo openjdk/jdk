@@ -37,18 +37,18 @@ import jdk.test.lib.OutputAnalyzer;
 public class TestPrintReferences {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb_enabled =
-      ProcessTools.createJavaProcessBuilder("-XX:+PrintGCDetails", "-XX:+PrintReferenceGC", "-Xmx10M", GCTest.class.getName());
+      ProcessTools.createJavaProcessBuilder("-Xlog:gc+ref=debug", "-Xmx10M", GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
     String countRegex = "[0-9]+ refs";
-    String timeRegex = "[0-9]+[.,][0-9]+ secs";
+    String timeRegex = "\\([0-9]+[.,][0-9]+s, [0-9]+[.,][0-9]+s\\) [0-9]+[.,][0-9]+ms";
 
-    output.shouldMatch(
-      "#[0-9]+: \\[SoftReference, " + countRegex + ", " + timeRegex + "\\]" +
-      "#[0-9]+: \\[WeakReference, " + countRegex + ", " + timeRegex + "\\]" +
-      "#[0-9]+: \\[FinalReference, " + countRegex + ", " + timeRegex + "\\]" +
-      "#[0-9]+: \\[PhantomReference, " + countRegex + ", " + timeRegex + "\\]" +
-      "#[0-9]+: \\[JNI Weak Reference, (" + countRegex + ", )?" + timeRegex + "\\]");
+    output.shouldMatch(".* GC\\([0-9]+\\) SoftReference " + timeRegex + "\n" +
+                       ".* GC\\([0-9]+\\) WeakReference " + timeRegex + "\n" +
+                       ".* GC\\([0-9]+\\) FinalReference " + timeRegex + "\n" +
+                       ".* GC\\([0-9]+\\) PhantomReference " + timeRegex + "\n" +
+                       ".* GC\\([0-9]+\\) JNI Weak Reference " + timeRegex + "\n" +
+                       ".* GC\\([0-9]+\\) Ref Counts: Soft: [0-9]+ Weak: [0-9]+ Final: [0-9]+ Phantom: [0-9]+\n");
 
     output.shouldHaveExitValue(0);
   }

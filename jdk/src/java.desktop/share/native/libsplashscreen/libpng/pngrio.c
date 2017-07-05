@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.15 [November 20, 2014]
- * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.17 [March 26, 2015]
+ * Copyright (c) 1998-2015 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -54,7 +54,7 @@
  * reads from a file pointer.  Note that this routine sometimes gets called
  * with very small lengths, so you should implement some kind of simple
  * buffering if you are using unbuffered reads.  This should never be asked
- * to read more then 64K on a 16 bit machine.
+ * to read more than 64K on a 16-bit machine.
  */
 void /* PRIVATE */
 png_read_data(png_structrp png_ptr, png_bytep data, png_size_t length)

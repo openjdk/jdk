@@ -118,7 +118,7 @@ USE_PRECOMPILED_HEADER=@USE_PRECOMPILED_HEADER@
 
 # Hotspot expects the variable FULL_DEBUG_SYMBOLS=1/0 to control debug symbols
 # creation.
-ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+ifeq ($(COPY_DEBUG_SYMBOLS), true)
   FULL_DEBUG_SYMBOLS=1
   # Ensure hotspot uses the objcopy that configure located
   ALT_OBJCOPY:=$(OBJCOPY)
@@ -127,11 +127,14 @@ else
 endif
 
 # Hotspot expects the variable ZIP_DEBUGINFO_FILES=1/0 and not true/false.
-ifeq ($(ZIP_DEBUGINFO_FILES)$(ENABLE_DEBUG_SYMBOLS), truetrue)
+ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
   ZIP_DEBUGINFO_FILES:=1
 else
   ZIP_DEBUGINFO_FILES:=0
 endif
+
+DEBUG_BINARIES := @DEBUG_BINARIES@
+STRIP_POLICY := @STRIP_POLICY@
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   # On Windows, the Visual Studio toolchain needs the LIB and INCLUDE

@@ -60,7 +60,7 @@ public class TestVerifySilently {
                                              "-XX:+VerifyDuringStartup",
                                              "-XX:+VerifyBeforeGC",
                                              "-XX:+VerifyAfterGC",
-                                             "-XX:" + (verifySilently ? "+":"-") + "VerifySilently",
+                                             (verifySilently ? "-Xlog:gc":"-Xlog:gc+verify=debug"),
                                              RunSystemGC.class.getName()});
     ProcessBuilder pb =
       ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
@@ -76,11 +76,11 @@ public class TestVerifySilently {
     OutputAnalyzer output;
 
     output = runTest(false);
-    output.shouldContain("[Verifying");
+    output.shouldContain("Verifying");
     output.shouldHaveExitValue(0);
 
     output = runTest(true);
-    output.shouldNotContain("[Verifying");
+    output.shouldNotContain("Verifying");
     output.shouldHaveExitValue(0);
   }
 }

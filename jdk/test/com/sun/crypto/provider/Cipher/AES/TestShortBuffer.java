@@ -35,7 +35,6 @@ import java.math.BigInteger;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.security.Provider;
-import com.sun.crypto.provider.*;
 
 public class TestShortBuffer {
     private static final String ALGO = "AES";

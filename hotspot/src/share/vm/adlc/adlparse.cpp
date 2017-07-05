@@ -48,9 +48,11 @@ ADLParser::~ADLParser() {
   if (!_AD._quiet_mode)
     fprintf(stderr,"---------------------------- Errors and Warnings ----------------------------\n");
 #ifndef ASSERT
-  fprintf(stderr, "**************************************************************\n");
-  fprintf(stderr, "***** WARNING: ASSERT is undefined, assertions disabled. *****\n");
-  fprintf(stderr, "**************************************************************\n");
+  if (!_AD._quiet_mode) {
+    fprintf(stderr, "**************************************************************\n");
+    fprintf(stderr, "***** WARNING: ASSERT is undefined, assertions disabled. *****\n");
+    fprintf(stderr, "**************************************************************\n");
+  }
 #endif
   if( _AD._syntax_errs + _AD._semantic_errs + _AD._warnings == 0 ) {
     if (!_AD._quiet_mode)

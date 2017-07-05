@@ -61,7 +61,7 @@ class Verifier : AllStatic {
   // Relax certain verifier checks to enable some broken 1.1 apps to run on 1.2.
   static bool relax_verify_for(oop class_loader);
 
-  // Print output for -XX:+TraceClassResolution
+  // Print output for classresolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
  private:
@@ -264,7 +264,7 @@ class ClassVerifier : public StackObj {
   ErrorContext _error_context;  // contains information about an error
 
   void verify_method(const methodHandle& method, TRAPS);
-  char* generate_code_data(methodHandle m, u4 code_length, TRAPS);
+  char* generate_code_data(const methodHandle& m, u4 code_length, TRAPS);
   void verify_exception_handler_table(u4 code_length, char* code_data,
                                       int& min, int& max, TRAPS);
   void verify_local_variable_table(u4 code_length, char* code_data, TRAPS);
@@ -378,7 +378,7 @@ class ClassVerifier : public StackObj {
   ~ClassVerifier();
 
   Thread* thread()             { return _thread; }
-  methodHandle method()        { return _method; }
+  const methodHandle& method() { return _method; }
   instanceKlassHandle current_class() const { return _klass; }
   VerificationType current_type() const { return _this_type; }
 

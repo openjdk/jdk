@@ -39,11 +39,11 @@ import jdk.test.lib.*;
 
 public class HeapChangeLogging {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-XX:+PrintGC", "HeapFiller");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128m", "-Xmn100m", "-XX:+UseSerialGC", "-Xlog:gc", "HeapFiller");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     String stdout = output.getStdout();
     System.out.println(stdout);
-    Matcher stdoutMatcher = Pattern.compile("\\[GC .Allocation Failure.*K->.*K\\(.*K\\), .* secs\\]", Pattern.MULTILINE).matcher(stdout);
+    Matcher stdoutMatcher = Pattern.compile(".*\\(Allocation Failure\\) [0-9]+[KMG]->[0-9]+[KMG]\\([0-9]+[KMG]\\)", Pattern.MULTILINE).matcher(stdout);
     if (!stdoutMatcher.find()) {
       throw new RuntimeException("No proper GC log line found");
     }
