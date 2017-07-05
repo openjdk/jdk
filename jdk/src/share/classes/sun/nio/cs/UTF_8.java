@@ -334,7 +334,7 @@ class UTF_8 extends Unicode
         }
 
         public boolean canEncode(char c) {
-            return !Surrogate.is(c);
+            return !Character.isSurrogate(c);
         }
 
         public boolean isLegalReplacement(byte[] repl) {
@@ -370,7 +370,7 @@ class UTF_8 extends Unicode
             while (dp < dlASCII && sa[sp] < '\u0080')
                 da[dp++] = (byte) sa[sp++];
             while (sp < sl) {
-                int c = sa[sp];
+                char c = sa[sp];
                 if (c < 0x80) {
                     // Have at most seven bits
                     if (dp >= dl)
@@ -382,11 +382,11 @@ class UTF_8 extends Unicode
                         return overflow(src, sp, dst, dp);
                     da[dp++] = (byte)(0xc0 | ((c >> 06)));
                     da[dp++] = (byte)(0x80 | (c & 0x3f));
-                } else if (Surrogate.is(c)) {
+                } else if (Character.isSurrogate(c)) {
                     // Have a surrogate pair
                     if (sgp == null)
                         sgp = new Surrogate.Parser();
-                    int uc = sgp.parse((char)c, sa, sp, sl);
+                    int uc = sgp.parse(c, sa, sp, sl);
                     if (uc < 0) {
                         updatePositions(src, sp, dst, dp);
                         return sgp.error();
@@ -417,7 +417,7 @@ class UTF_8 extends Unicode
         {
             int mark = src.position();
             while (src.hasRemaining()) {
-                int c = src.get();
+                char c = src.get();
                 if (c < 0x80) {
                     // Have at most seven bits
                     if (!dst.hasRemaining())
@@ -429,11 +429,11 @@ class UTF_8 extends Unicode
                         return overflow(src, mark);
                     dst.put((byte)(0xc0 | ((c >> 06))));
                     dst.put((byte)(0x80 | (c & 0x3f)));
-                } else if (Surrogate.is(c)) {
+                } else if (Character.isSurrogate(c)) {
                     // Have a surrogate pair
                     if (sgp == null)
                         sgp = new Surrogate.Parser();
-                    int uc = sgp.parse((char)c, src);
+                    int uc = sgp.parse(c, src);
                     if (uc < 0) {
                         src.position(mark);
                         return sgp.error();

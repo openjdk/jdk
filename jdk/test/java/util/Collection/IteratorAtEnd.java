@@ -49,6 +49,7 @@ public class IteratorAtEnd {
         testCollection(new LinkedBlockingQueue());
         testCollection(new ArrayBlockingQueue(100));
         testCollection(new ConcurrentLinkedQueue());
+//         testCollection(new LinkedTransferQueue());
 
         testMap(new HashMap());
         testMap(new Hashtable());

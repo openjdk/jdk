@@ -409,8 +409,6 @@ codeBlob.cpp                            c1_Runtime1.hpp
 
 compileBroker.cpp                       c1_Compiler.hpp
 
-frame.hpp                               c1_Defs.hpp
-
 frame_<arch>.cpp                        c1_Runtime1.hpp
 
 globals.cpp                             c1_globals.hpp
@@ -432,8 +430,6 @@ oopMap.cpp                              c1_Defs.hpp
 os_<os_family>.cpp                      c1_Runtime1.hpp
 
 os_<os_arch>.cpp                        c1_Runtime1.hpp
-
-registerMap.hpp                         c1_Defs.hpp
 
 safepoint.cpp                           c1_globals.hpp
 

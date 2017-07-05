@@ -54,7 +54,7 @@ SUBDIRS =                   \
   CharsetMapping
 
 ifndef DISABLE_NIMBUS
-  SUBDIRS += swing-nimbus
+  SUBDIRS += generate_nimbus
 endif
 
 all build clean clobber::

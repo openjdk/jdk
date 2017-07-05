@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ protected:
   static elapsedTimer _t_registerMethod;
   static elapsedTimer _t_temporaryTimer1;
   static elapsedTimer _t_temporaryTimer2;
+  static elapsedTimer _t_idealLoopVerify;
 
 // Subtimers for _t_optimizer
   static elapsedTimer   _t_iterGVN;

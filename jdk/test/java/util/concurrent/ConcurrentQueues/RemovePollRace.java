@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+// import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,20 +67,10 @@ public class RemovePollRace {
         queues.add(new ArrayBlockingQueue<Boolean>(count, true));
         queues.add(new LinkedBlockingQueue<Boolean>());
         queues.add(new LinkedBlockingDeque<Boolean>());
-
-        try {
-            queues.add((Queue<Boolean>)
-                       Class.forName("java.util.concurrent.LinkedTransferQueue")
-                       .newInstance());
-        } catch (IllegalAccessException e) {
-        } catch (InstantiationException e) {
-        } catch (ClassNotFoundException e) {
-            // OK; not yet added to JDK
-        }
+//         queues.add(new LinkedTransferQueue<Boolean>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
-        // queues.add(new LinkedTransferQueue<Boolean>());
         // queues.add(new SynchronizedLinkedListQueue<Boolean>());
 
         // Avoid "first fast, second slow" benchmark effect.

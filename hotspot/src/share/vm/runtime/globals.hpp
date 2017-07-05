@@ -1707,6 +1707,9 @@ class CommandLineFlags {
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
                                                                             \
+  product(bool, PrintRevisitStats, false,                                   \
+          "Print revisit (klass and MDO) stack related information")        \
+                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \

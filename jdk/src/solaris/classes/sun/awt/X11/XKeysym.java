@@ -354,6 +354,7 @@ public class XKeysym {
         keysym2UCSHash.put( (long)0xFFB7, (char)0x0037); // XK_KP_7 --> DIGIT SEVEN
         keysym2UCSHash.put( (long)0xFFB8, (char)0x0038); // XK_KP_8 --> DIGIT EIGHT
         keysym2UCSHash.put( (long)0xFFB9, (char)0x0039); // XK_KP_9 --> DIGIT NINE
+        keysym2UCSHash.put( (long)0xFE20, (char)0x0009); // XK_ISO_Left_Tab --> <control>
         keysym2UCSHash.put( (long)0x1a1, (char)0x0104); // XK_Aogonek --> LATIN CAPITAL LETTER A WITH OGONEK
         keysym2UCSHash.put( (long)0x1a2, (char)0x02d8); // XK_breve --> BREVE
         keysym2UCSHash.put( (long)0x1a3, (char)0x0141); // XK_Lstroke --> LATIN CAPITAL LETTER L WITH STROKE

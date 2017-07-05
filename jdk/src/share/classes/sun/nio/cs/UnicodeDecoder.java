@@ -97,12 +97,12 @@ abstract class UnicodeDecoder extends CharsetDecoder {
                 }
 
                 // Surrogates
-                if (Surrogate.is(c)) {
-                    if (Surrogate.isHigh(c)) {
+                if (Character.isSurrogate(c)) {
+                    if (Character.isHighSurrogate(c)) {
                         if (src.remaining() < 2)
                             return CoderResult.UNDERFLOW;
                         char c2 = decode(src.get() & 0xff, src.get() & 0xff);
-                        if (!Surrogate.isLow(c2))
+                        if (!Character.isLowSurrogate(c2))
                             return CoderResult.malformedForLength(4);
                         if (dst.remaining() < 2)
                             return CoderResult.OVERFLOW;

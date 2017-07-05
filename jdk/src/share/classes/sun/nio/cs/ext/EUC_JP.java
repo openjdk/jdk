@@ -318,7 +318,7 @@ public class EUC_JP
                     outputByte = tmpBuf;
                     char c = sa[sp];
 
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if (sgp.parse(c, sa, sp, sl) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();
@@ -372,7 +372,7 @@ public class EUC_JP
                 while (src.hasRemaining()) {
                     outputByte = tmpBuf;
                     char c = src.get();
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if (sgp.parse(c, src) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();

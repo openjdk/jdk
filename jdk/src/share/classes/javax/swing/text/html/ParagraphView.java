@@ -150,7 +150,7 @@ public class ParagraphView extends javax.swing.text.ParagraphView {
      * @param axis  the minor axis
      * @param r     the input {@code SizeRequirements} object
      * @return      the new or adjusted {@code SizeRequirements} object
-     * @throw IllegalArgumentException  if the {@code axis} parameter is invalid
+     * @throws IllegalArgumentException  if the {@code axis} parameter is invalid
      */
     protected SizeRequirements calculateMinorAxisRequirements(
                                                 int axis, SizeRequirements r) {

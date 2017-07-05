@@ -214,7 +214,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-link \
 	sane-cacerts \
 	sane-alsa-headers \
-	sane-jibx \
 	sane-ant_version \
 	sane-zip_version \
 	sane-unzip_version \
@@ -1515,22 +1514,6 @@ ifeq ($(PLATFORM), solaris)
   endif
 endif
 
-
-######################################################
-# JIBX_LIBS_PATH must be valid
-######################################################
-sane-jibx:
-ifdef DISABLE_NIMBUS	
-	$(call SanityWarning,Disabling Nimbus will remove public API in javax.swing.plaf.nimbus.)
-else
-	@if [ ! -r $(subst \,/,$(JIBX_LIBS_PATH))/jibx-run.jar ]; then \
-	  $(ECHO) "ERROR: You do not have access to valid JIBX library files. \n" \
-	    "      Please check your access to \n" \
-	    "          $(subst \,/,$(JIBX_LIBS_PATH))/jibx-run.jar \n" \
-	    "      and/or check your value of ALT_JDK_DEVTOOLS_DIR, ALT_JIBX_LIBS_PATH \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-endif
 
 ######################################################
 # MOZILLA_HEADERS_PATH must be valid

@@ -901,7 +901,8 @@ class PSParallelCompact : AllStatic {
   static void marking_phase(ParCompactionManager* cm,
                             bool maximum_heap_compaction);
   static void follow_stack(ParCompactionManager* cm);
-  static void follow_weak_klass_links(ParCompactionManager* cm);
+  static void follow_weak_klass_links();
+  static void follow_mdo_weak_refs();
 
   template <class T> static inline void adjust_pointer(T* p, bool is_root);
   static void adjust_root_pointer(oop* p) { adjust_pointer(p, true); }
@@ -1220,6 +1221,9 @@ class PSParallelCompact : AllStatic {
   // Call backs for class unloading
   // Update subklass/sibling/implementor links at end of marking.
   static void revisit_weak_klass_link(ParCompactionManager* cm, Klass* k);
+
+  // Clear unmarked oops in MDOs at the end of marking.
+  static void revisit_mdo(ParCompactionManager* cm, DataLayout* p);
 
 #ifndef PRODUCT
   // Debugging support.
