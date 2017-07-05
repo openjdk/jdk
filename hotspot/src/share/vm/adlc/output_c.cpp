@@ -1698,7 +1698,75 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     fprintf(fp,"\n");
   } // done generating expand rule
 
-  else if( node->_matrule != NULL ) {
+  // Generate projections for instruction's additional DEFs and KILLs
+  if( ! node->expands() && (node->needs_projections() || node->has_temps())) {
+    // Get string representing the MachNode that projections point at
+    const char *machNode = "this";
+    // Generate the projections
+    fprintf(fp,"  // Add projection edges for additional defs or kills\n");
+
+    // Examine each component to see if it is a DEF or KILL
+    node->_components.reset();
+    // Skip the first component, if already handled as (SET dst (...))
+    Component *comp = NULL;
+    // For kills, the choice of projection numbers is arbitrary
+    int proj_no = 1;
+    bool declared_def  = false;
+    bool declared_kill = false;
+
+    while( (comp = node->_components.iter()) != NULL ) {
+      // Lookup register class associated with operand type
+      Form        *form = (Form*)_globalNames[comp->_type];
+      assert( form, "component type must be a defined form");
+      OperandForm *op   = form->is_operand();
+
+      if (comp->is(Component::TEMP)) {
+        fprintf(fp, "  // TEMP %s\n", comp->_name);
+        if (!declared_def) {
+          // Define the variable "def" to hold new MachProjNodes
+          fprintf(fp, "  MachTempNode *def;\n");
+          declared_def = true;
+        }
+        if (op && op->_interface && op->_interface->is_RegInterface()) {
+          fprintf(fp,"  def = new (C) MachTempNode(state->MachOperGenerator( %s, C ));\n",
+                  machOperEnum(op->_ident));
+          fprintf(fp,"  add_req(def);\n");
+          // The operand for TEMP is already constructed during
+          // this mach node construction, see buildMachNode().
+          //
+          // int idx  = node->operand_position_format(comp->_name);
+          // fprintf(fp,"  set_opnd_array(%d, state->MachOperGenerator( %s, C ));\n",
+          //         idx, machOperEnum(op->_ident));
+        } else {
+          assert(false, "can't have temps which aren't registers");
+        }
+      } else if (comp->isa(Component::KILL)) {
+        fprintf(fp, "  // DEF/KILL %s\n", comp->_name);
+
+        if (!declared_kill) {
+          // Define the variable "kill" to hold new MachProjNodes
+          fprintf(fp, "  MachProjNode *kill;\n");
+          declared_kill = true;
+        }
+
+        assert( op, "Support additional KILLS for base operands");
+        const char *regmask    = reg_mask(*op);
+        const char *ideal_type = op->ideal_type(_globalNames, _register);
+
+        if (!op->is_bound_register()) {
+          syntax_err(node->_linenum, "In %s only bound registers can be killed: %s %s\n",
+                     node->_ident, comp->_type, comp->_name);
+        }
+
+        fprintf(fp,"  kill = ");
+        fprintf(fp,"new (C, 1) MachProjNode( %s, %d, (%s), Op_%s );\n",
+                machNode, proj_no++, regmask, ideal_type);
+        fprintf(fp,"  proj_list.push(kill);\n");
+      }
+    }
+  }
+
+  if( !node->expands() && node->_matrule != NULL ) {
     // Remove duplicated operands and inputs which use the same name.
     // Seach through match operands for the same name usage.
     uint cur_num_opnds = node->num_opnds();
@@ -1749,72 +1817,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       fprintf(fp,"  }\n");
       fprintf(fp,"  _num_opnds = %d;\n", new_num_opnds);
       assert(new_num_opnds == node->num_unique_opnds(), "what?");
-    }
-  }
-
-
-  // Generate projections for instruction's additional DEFs and KILLs
-  if( ! node->expands() && (node->needs_projections() || node->has_temps())) {
-    // Get string representing the MachNode that projections point at
-    const char *machNode = "this";
-    // Generate the projections
-    fprintf(fp,"  // Add projection edges for additional defs or kills\n");
-
-    // Examine each component to see if it is a DEF or KILL
-    node->_components.reset();
-    // Skip the first component, if already handled as (SET dst (...))
-    Component *comp = NULL;
-    // For kills, the choice of projection numbers is arbitrary
-    int proj_no = 1;
-    bool declared_def  = false;
-    bool declared_kill = false;
-
-    while( (comp = node->_components.iter()) != NULL ) {
-      // Lookup register class associated with operand type
-      Form        *form = (Form*)_globalNames[comp->_type];
-      assert( form, "component type must be a defined form");
-      OperandForm *op   = form->is_operand();
-
-      if (comp->is(Component::TEMP)) {
-        fprintf(fp, "  // TEMP %s\n", comp->_name);
-        if (!declared_def) {
-          // Define the variable "def" to hold new MachProjNodes
-          fprintf(fp, "  MachTempNode *def;\n");
-          declared_def = true;
-        }
-        if (op && op->_interface && op->_interface->is_RegInterface()) {
-          fprintf(fp,"  def = new (C) MachTempNode(state->MachOperGenerator( %s, C ));\n",
-                  machOperEnum(op->_ident));
-          fprintf(fp,"  add_req(def);\n");
-          int idx  = node->operand_position_format(comp->_name);
-          fprintf(fp,"  set_opnd_array(%d, state->MachOperGenerator( %s, C ));\n",
-                  idx, machOperEnum(op->_ident));
-        } else {
-          assert(false, "can't have temps which aren't registers");
-        }
-      } else if (comp->isa(Component::KILL)) {
-        fprintf(fp, "  // DEF/KILL %s\n", comp->_name);
-
-        if (!declared_kill) {
-          // Define the variable "kill" to hold new MachProjNodes
-          fprintf(fp, "  MachProjNode *kill;\n");
-          declared_kill = true;
-        }
-
-        assert( op, "Support additional KILLS for base operands");
-        const char *regmask    = reg_mask(*op);
-        const char *ideal_type = op->ideal_type(_globalNames, _register);
-
-        if (!op->is_bound_register()) {
-          syntax_err(node->_linenum, "In %s only bound registers can be killed: %s %s\n",
-                     node->_ident, comp->_type, comp->_name);
-        }
-
-        fprintf(fp,"  kill = ");
-        fprintf(fp,"new (C, 1) MachProjNode( %s, %d, (%s), Op_%s );\n",
-                machNode, proj_no++, regmask, ideal_type);
-        fprintf(fp,"  proj_list.push(kill);\n");
-      }
     }
   }
 
@@ -3776,12 +3778,10 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
       }
       dont_care = true;
       // For each operand not in the match rule, call MachOperGenerator
-      // with the enum for the opcode that needs to be built
-      // and the node just built, the parent of the operand.
+      // with the enum for the opcode that needs to be built.
       ComponentList clist = inst->_components;
       int         index  = clist.operand_position(comp->_name, comp->_usedef);
       const char *opcode = machOperEnum(comp->_type);
-      const char *parent = "node";
       fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, index);
       fprintf(fp_cpp, "MachOperGenerator(%s, C));\n", opcode);
       }

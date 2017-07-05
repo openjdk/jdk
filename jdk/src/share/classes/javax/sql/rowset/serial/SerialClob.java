@@ -57,10 +57,10 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     private char buf[];
 
     /**
-     * Internal Clob representation if SerialClob is intialized with a
-     * Clob
+     * Internal Clob representation if SerialClob is initialized with a
+     * Clob. Null if SerialClob is initialized with a char[].
      */
-    private Clob clob;
+    private final Clob clob;
 
     /**
      * The length in characters of this <code>SerialClob</code> object's
@@ -71,12 +71,12 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     private long len;
 
     /**
-     * The original length in characters of tgus <code>SerialClob</code>
-     * objects internal array of characters.
+     * The original length in characters of this <code>SerialClob</code>
+     * object's internal array of characters.
      *
      * @serial
      */
-    private long origLen;
+    private final long origLen;
 
     /**
      * Constructs a <code>SerialClob</code> object that is a serialized version of
@@ -104,6 +104,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
            buf[i] = ch[i];
         }
         origLen = len;
+        clob = null;
     }
 
     /**
@@ -117,19 +118,19 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      * the database. Otherwise, the new <code>SerialClob</code> object
      * object will contain no data.
      * <p>
-     * Note: The <code>Clob</code> object supplied to this constructor cannot
-     * return <code>null</code> for the <code>Clob.getCharacterStream()</code>
+     * Note: The <code>Clob</code> object supplied to this constructor must
+     * return non-null for both the <code>Clob.getCharacterStream()</code>
      * and <code>Clob.getAsciiStream</code> methods. This <code>SerialClob</code>
-     * constructor cannot  serialize a <code>Clob</code> object in this instance
+     * constructor cannot serialize a <code>Clob</code> object in this instance
      * and will throw an <code>SQLException</code> object.
      *
      * @param  clob the <code>Clob</code> object from which this
      *     <code>SerialClob</code> object is to be constructed; cannot be null
      * @throws SerialException if an error occurs during serialization
      * @throws SQLException if a SQL error occurs in capturing the CLOB;
-     *     if the <code>Clob</code> object is a null; or if both the
+     *     if the <code>Clob</code> object is a null; or if either of the
      *     <code>Clob.getCharacterStream()</code> and <code>Clob.getAsciiStream()</code>
-     *     methods on the <code>Clob</code> return a null
+     *     methods on the <code>Clob</code> returns a null
      * @see java.sql.Clob
      */
     public SerialClob(Clob clob) throws SerialException, SQLException {
@@ -144,19 +145,27 @@ public class SerialClob implements Clob, Serializable, Cloneable {
         int read = 0;
         int offset = 0;
 
-        BufferedReader reader;
-        if ( (((reader = new BufferedReader(clob.getCharacterStream())) == null)) &&
-            (clob.getAsciiStream() == null)) {
-            throw new SQLException("Invalid Clob object. Calls to getCharacterStream " +
-                "and getAsciiStream return null which cannot be serialized.");
-        }
+        try (Reader charStream = clob.getCharacterStream()) {
+            if (charStream == null) {
+                throw new SQLException("Invalid Clob object. The call to getCharacterStream " +
+                    "returned null which cannot be serialized.");
+            }
 
-        try {
-            do {
-                read = reader.read(buf, offset, (int)(len - offset));
-                offset += read;
-            } while (read > 0);
+            // Note: get an ASCII stream in order to null-check it,
+            // even though we don't do anything with it.
+            try (InputStream asciiStream = clob.getAsciiStream()) {
+                if (asciiStream == null) {
+                    throw new SQLException("Invalid Clob object. The call to getAsciiStream " +
+                        "returned null which cannot be serialized.");
+                }
+            }
 
+            try (Reader reader = new BufferedReader(charStream)) {
+                do {
+                    read = reader.read(buf, offset, (int)(len - offset));
+                    offset += read;
+                } while (read > 0);
+            }
         } catch (java.io.IOException ex) {
             throw new SerialException("SerialClob: " + ex.getMessage());
         }
@@ -207,13 +216,13 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      *     used to create this <code>SerialClob</code> object
      */
     public java.io.InputStream getAsciiStream() throws SerialException, SQLException {
-       if (this.clob != null) {
-             return this.clob.getAsciiStream();
-         } else {
-             throw new SerialException("Unsupported operation. SerialClob cannot " +
+        if (this.clob != null) {
+            return this.clob.getAsciiStream();
+        } else {
+            throw new SerialException("Unsupported operation. SerialClob cannot " +
                 "return a the CLOB value as an ascii stream, unless instantiated " +
                 "with a fully implemented Clob object.");
-         }
+        }
     }
 
     /**

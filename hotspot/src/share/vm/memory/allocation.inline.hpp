@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,20 @@
 void trace_heap_malloc(size_t size, const char* name, void *p);
 void trace_heap_free(void *p);
 
+#ifndef PRODUCT
+// Increments unsigned long value for statistics (not atomic on MP).
+inline void inc_stat_counter(volatile julong* dest, julong add_value) {
+#if defined(SPARC) || defined(X86)
+  // Sparc and X86 have atomic jlong (8 bytes) instructions
+  julong value = Atomic::load((volatile jlong*)dest);
+  value += add_value;
+  Atomic::store((jlong)value, (volatile jlong*)dest);
+#else
+  // possible word-tearing during load/store
+  *dest += add_value;
+#endif
+}
+#endif
 
 // allocate using malloc; will fail if no memory available
 inline char* AllocateHeap(size_t size, const char* name = NULL) {

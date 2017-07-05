@@ -125,15 +125,21 @@ struct _X11SDOps {
 #define X11SD_LOCK_BY_SHMEM     4       /* surface locked by ShMemExt */
 
 #ifdef MITSHM
-XImage * X11SD_GetSharedImage       (X11SDOps *xsdo, jint width, jint height, jboolean readBits);
+XImage * X11SD_GetSharedImage       (X11SDOps *xsdo,
+                                     jint width, jint height,
+                                     jint maxWidth, jint maxHeight,
+                                     jboolean readBits);
 XImage * X11SD_CreateSharedImage    (X11SDOps *xsdo, jint width, jint height);
 Drawable X11SD_CreateSharedPixmap   (X11SDOps *xsdo);
 void     X11SD_DropSharedSegment    (XShmSegmentInfo *shminfo);
 void     X11SD_PuntPixmap           (X11SDOps *xsdo, jint width, jint height);
 void     X11SD_UnPuntPixmap         (X11SDOps *xsdo);
-jboolean X11SD_CachedXImageFits     (jint width, jint height, jint depth, jboolean readBits);
+jboolean X11SD_CachedXImageFits     (jint width, jint height,
+                                     jint maxWidth, jint maxHeight,
+                                     jint depth, jboolean readBits);
 XImage * X11SD_GetCachedXImage      (jint width, jint height, jboolean readBits);
 #endif /* MITSHM */
+jint     X11SD_InitWindow(JNIEnv *env, X11SDOps *xsdo);
 void     X11SD_DisposeOrCacheXImage (XImage * image);
 void     X11SD_DisposeXImage(XImage * image);
 void     X11SD_DirectRenderNotify(JNIEnv *env, X11SDOps *xsdo);

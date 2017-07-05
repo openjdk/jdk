@@ -1532,6 +1532,17 @@ public class SwingUtilities implements SwingConstants
         return applet;
     }
 
+    static JComponent getPaintingOrigin(JComponent c) {
+        Container p = c;
+        while ((p = p.getParent()) instanceof JComponent) {
+            JComponent jp = (JComponent) p;
+            if (jp.isPaintingOrigin()) {
+                return jp;
+            }
+        }
+        return null;
+    }
+
     /**
      * Process the key bindings for the <code>Component</code> associated with
      * <code>event</code>. This method is only useful if

@@ -71,7 +71,7 @@ public class ServiceDialogTest {
                         if (factories.length > 0) {
                                 services[0] = factories[0].getPrintService(fos);
                         } else {
-                                throw new RuntimeException("No StreamPrintService available which would support "+flavor");
+                                throw new RuntimeException("No StreamPrintService available which would support "+flavor);
                         }
 
                         services[2] = new TestPrintService("Test Printer");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,9 @@ public:
   uint Size(void) const;            // Number of elements in the Set.
   void Sort(void);                  // Sort before iterating
   int hash() const;                 // Hash function
+  void Reset(void) {                // Reset a set
+    memset( data, 0, size*sizeof(uint32) );
+  }
 
   /* Removed for MCC BUG
      operator const VectorSet* (void) const { return this; } */
@@ -148,8 +151,7 @@ public:
 
 
 private:
-  friend class VSetI_;
-  SetI_ *iterate(uint&) const;
+  SetI_ *iterate(uint&) const { ShouldNotCallThis(); return NULL; } // Removed
 };
 
 //------------------------------Iteration--------------------------------------
@@ -158,22 +160,26 @@ private:
 // or may not be iterated over; untouched elements will be affected once.
 // Usage:  for( VectorSetI i(s); i.test(); i++ ) { body = i.elem; }
 
-class VSetI_ : public SetI_ {
+class VectorSetI : public StackObj {
   friend class VectorSet;
-  friend class VectorSetI;
   const VectorSet *s;
   uint i, j;
   uint32 mask;
-  VSetI_(const VectorSet *vset);
   uint next(void);
-  int test(void) { return i < s->size; }
-};
 
-class VectorSetI : public SetI {
 public:
-  VectorSetI( const VectorSet *s ) : SetI(s) { }
-  void operator ++(void) { elem = ((VSetI_*)impl)->next(); }
-  int test(void) { return ((VSetI_*)impl)->test(); }
+  uint elem;                    // The publically accessible element
+
+  VectorSetI( const VectorSet *vset ) :
+    s(vset),
+    i((uint)-1L),
+    j((uint)-1L),
+    mask((unsigned)(1L<<31)) {
+    elem = next();
+  }
+
+  void operator ++(void) { elem = next(); }
+  int test(void) { return i < s->size; }
 };
 
 #endif // SHARE_VM_LIBADT_VECTSET_HPP
