@@ -198,7 +198,7 @@ public final class NativeJavaPackage extends ScriptObject {
         final String propertyName = desc.getNameToken(2);
         final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
 
-        final Context context = getContext();
+        final Context context = Context.getContextTrusted();
 
         Class<?> javaClass = null;
         try {

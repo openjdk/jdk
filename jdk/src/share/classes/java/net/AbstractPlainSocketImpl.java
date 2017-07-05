@@ -719,7 +719,3 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     public final static int SHUT_RD = 0;
     public final static int SHUT_WR = 1;
 }
-
-class InetAddressContainer {
-    InetAddress addr;
-}

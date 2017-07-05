@@ -77,7 +77,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -1205,9 +1205,10 @@ public final class YearMonth
     //-----------------------------------------------------------------------
     /**
      * Writes the object using a
-     * <a href="../../../serialized-form.html#java.time.temporal.Ser">dedicated serialized form</a>.
+     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(12);  // identifies this as a YearMonth
+     *  out.writeByte(12);  // identifies a YearMonth
      *  out.writeInt(year);
      *  out.writeByte(month);
      * </pre>
@@ -1223,7 +1224,7 @@ public final class YearMonth
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

@@ -179,6 +179,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     private static final int SET_RES_LOW = 0x00000080;
     private static final int SET_COLOR = 0x00000200;
     private static final int SET_ORIENTATION = 0x00004000;
+    private static final int SET_COLLATED    = 0x00008000;
 
     /**
      * Values must match those defined in wingdi.h & commdlg.h
@@ -189,10 +190,33 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     private static final int PD_NOSELECTION = 0x00000004;
     private static final int PD_COLLATE = 0x00000010;
     private static final int PD_PRINTTOFILE = 0x00000020;
-    private static final int DM_ORIENTATION = 0x00000001;
-    private static final int DM_PRINTQUALITY = 0x00000400;
-    private static final int DM_COLOR = 0x00000800;
-    private static final int DM_DUPLEX = 0x00001000;
+    private static final int DM_ORIENTATION   = 0x00000001;
+    private static final int DM_PAPERSIZE     = 0x00000002;
+    private static final int DM_COPIES        = 0x00000100;
+    private static final int DM_DEFAULTSOURCE = 0x00000200;
+    private static final int DM_PRINTQUALITY  = 0x00000400;
+    private static final int DM_COLOR         = 0x00000800;
+    private static final int DM_DUPLEX        = 0x00001000;
+    private static final int DM_YRESOLUTION   = 0x00002000;
+    private static final int DM_COLLATE       = 0x00008000;
+
+    private static final short DMCOLLATE_FALSE  = 0;
+    private static final short DMCOLLATE_TRUE   = 1;
+
+    private static final short DMORIENT_PORTRAIT  = 1;
+    private static final short DMORIENT_LANDSCAPE = 2;
+
+    private static final short DMCOLOR_MONOCHROME = 1;
+    private static final short DMCOLOR_COLOR      = 2;
+
+    private static final short DMRES_DRAFT  = -1;
+    private static final short DMRES_LOW    = -2;
+    private static final short DMRES_MEDIUM = -3;
+    private static final short DMRES_HIGH   = -4;
+
+    private static final short DMDUP_SIMPLEX    = 1;
+    private static final short DMDUP_VERTICAL   = 2;
+    private static final short DMDUP_HORIZONTAL = 3;
 
     /**
      * Pageable MAX pages
@@ -592,12 +616,22 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
         driverDoesMultipleCopies = false;
         driverDoesCollation = false;
-        setNativePrintService(service.getName());
+        setNativePrintServiceIfNeeded(service.getName());
     }
 
     /* associates this job with the specified native service */
     private native void setNativePrintService(String name)
         throws PrinterException;
+
+    private String lastNativeService = null;
+    private void setNativePrintServiceIfNeeded(String name)
+        throws PrinterException {
+
+        if (name != null && !(name.equals(lastNativeService))) {
+            setNativePrintService(name);
+            lastNativeService = name;
+        }
+    }
 
     public PrintService getPrintService() {
         if (myService == null) {
@@ -616,7 +650,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             myService = PrintServiceLookup.lookupDefaultPrintService();
             if (myService != null) {
                 try {
-                    setNativePrintService(myService.getName());
+                    setNativePrintServiceIfNeeded(myService.getName());
                 } catch (Exception e) {
                     myService = null;
                 }
@@ -1754,8 +1788,13 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         mAttMediaSizeName = ((Win32PrintService)myService).findPaperID(msn);
     }
 
-    private void setWin32MediaAttrib(int dmIndex, int width, int length) {
-       MediaSizeName msn =
+    private void addPaperSize(PrintRequestAttributeSet aset,
+                              int dmIndex, int width, int length) {
+
+        if (aset == null) {
+            return;
+        }
+        MediaSizeName msn =
            ((Win32PrintService)myService).findWin32Media(dmIndex);
         if (msn == null) {
             msn = ((Win32PrintService)myService).
@@ -1763,10 +1802,12 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
 
         if (msn != null) {
-            if (attributes != null) {
-                attributes.add(msn);
-            }
+            aset.add(msn);
         }
+    }
+
+    private void setWin32MediaAttrib(int dmIndex, int width, int length) {
+        addPaperSize(attributes, dmIndex, width, length);
         mAttMediaSizeName = dmIndex;
     }
 
@@ -1788,7 +1829,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             // no equivalent predefined value
             mAttMediaTray = 7;              // DMBIN_AUTO
         } else if (attr == MediaTray.TOP) {
-            mAttMediaTray =1;               // DMBIN_UPPER
+            mAttMediaTray = 1;              // DMBIN_UPPER
         } else {
             if (attr instanceof Win32MediaTray) {
                 mAttMediaTray = ((Win32MediaTray)attr).winID;
@@ -1914,6 +1955,254 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     }
 
+    private static final class DevModeValues {
+        int dmFields;
+        short copies;
+        short collate;
+        short color;
+        short duplex;
+        short orient;
+        short paper;
+        short bin;
+        short xres_quality;
+        short yres;
+    }
+
+    private void getDevModeValues(PrintRequestAttributeSet aset,
+                                  DevModeValues info) {
+
+        Copies c = (Copies)aset.get(Copies.class);
+        if (c != null) {
+            info.dmFields |= DM_COPIES;
+            info.copies = (short)c.getValue();
+        }
+
+        SheetCollate sc = (SheetCollate)aset.get(SheetCollate.class);
+        if (sc != null) {
+            info.dmFields |= DM_COLLATE;
+            info.collate = (sc == SheetCollate.COLLATED) ?
+                DMCOLLATE_TRUE : DMCOLLATE_FALSE;
+        }
+
+        Chromaticity ch = (Chromaticity)aset.get(Chromaticity.class);
+        if (ch != null) {
+            info.dmFields |= DM_COLOR;
+            if (ch == Chromaticity.COLOR) {
+                info.color = DMCOLOR_COLOR;
+            } else {
+                info.color = DMCOLOR_MONOCHROME;
+            }
+        }
+
+        Sides s = (Sides)aset.get(Sides.class);
+        if (s != null) {
+            info.dmFields |= DM_DUPLEX;
+            if (s == Sides.TWO_SIDED_LONG_EDGE) {
+                info.duplex = DMDUP_VERTICAL;
+            } else if (s == Sides.TWO_SIDED_SHORT_EDGE) {
+                info.duplex = DMDUP_HORIZONTAL;
+            } else { // Sides.ONE_SIDED
+                info.duplex = DMDUP_SIMPLEX;
+            }
+        }
+
+        OrientationRequested or =
+            (OrientationRequested)aset.get(OrientationRequested.class);
+        if (or != null) {
+            info.dmFields |= DM_ORIENTATION;
+            info.orient = (or == OrientationRequested.LANDSCAPE)
+                ? DMORIENT_LANDSCAPE : DMORIENT_PORTRAIT;
+        }
+
+        Media m = (Media)aset.get(Media.class);
+        if (m instanceof MediaSizeName) {
+            info.dmFields |= DM_PAPERSIZE;
+            MediaSizeName msn = (MediaSizeName)m;
+            info.paper =
+                (short)((Win32PrintService)myService).findPaperID(msn);
+        }
+
+        MediaTray mt = null;
+        if (m instanceof MediaTray) {
+            mt = (MediaTray)m;
+        }
+        if (mt == null) {
+            SunAlternateMedia sam =
+                (SunAlternateMedia)aset.get(SunAlternateMedia.class);
+            if (sam != null && (sam.getMedia() instanceof MediaTray)) {
+                mt = (MediaTray)sam.getMedia();
+            }
+        }
+
+        if (mt != null) {
+            info.dmFields |= DM_DEFAULTSOURCE;
+            info.bin = (short)(((Win32PrintService)myService).findTrayID(mt));
+        }
+
+        PrintQuality q = (PrintQuality)aset.get(PrintQuality.class);
+        if (q != null) {
+            info.dmFields |= DM_PRINTQUALITY;
+            if (q == PrintQuality.DRAFT) {
+                info.xres_quality = DMRES_DRAFT;
+            } else if (q == PrintQuality.HIGH) {
+                info.xres_quality = DMRES_HIGH;
+            } else {
+                info.xres_quality = DMRES_MEDIUM;
+            }
+        }
+
+        PrinterResolution r =
+            (PrinterResolution)aset.get(PrinterResolution.class);
+        if (r != null) {
+            info.dmFields |= DM_PRINTQUALITY | DM_YRESOLUTION;
+            info.xres_quality =
+                (short)r.getCrossFeedResolution(PrinterResolution.DPI);
+            info.yres = (short)r.getFeedResolution(PrinterResolution.DPI);
+        }
+    }
+
+    /* This method is called from native to update the values in the
+     * attribute set which originates from the cross-platform dialog,
+     * but updated by the native DocumentPropertiesUI which updates the
+     * devmode. This syncs the devmode back in to the attributes so that
+     * we can update the cross-platform dialog.
+     * The attribute set here is a temporary one installed whilst this
+     * happens,
+     */
+    private final void setJobAttributes(PrintRequestAttributeSet attributes,
+                                        int fields, int values,
+                                        short copies,
+                                        short dmPaperSize,
+                                        short dmPaperWidth,
+                                        short dmPaperLength,
+                                        short dmDefaultSource,
+                                        short xRes,
+                                        short yRes) {
+
+        if (attributes == null) {
+            return;
+        }
+
+        if ((fields & DM_COPIES) != 0) {
+            attributes.add(new Copies(copies));
+        }
+
+        if ((fields & DM_COLLATE) != 0) {
+            if ((values & SET_COLLATED) != 0) {
+                attributes.add(SheetCollate.COLLATED);
+            } else {
+                attributes.add(SheetCollate.UNCOLLATED);
+            }
+        }
+
+        if ((fields & DM_ORIENTATION) != 0) {
+            if ((values & SET_ORIENTATION) != 0) {
+                attributes.add(OrientationRequested.LANDSCAPE);
+            } else {
+                attributes.add(OrientationRequested.PORTRAIT);
+            }
+        }
+
+        if ((fields & DM_COLOR) != 0) {
+            if ((values & SET_COLOR) != 0) {
+                attributes.add(Chromaticity.COLOR);
+            } else {
+                attributes.add(Chromaticity.MONOCHROME);
+            }
+        }
+
+        if ((fields & DM_PRINTQUALITY) != 0) {
+            /* value < 0 indicates quality setting.
+             * value > 0 indicates X resolution. In that case
+             * hopefully we will also find y-resolution specified.
+             * If its not, assume its the same as x-res.
+             * Maybe Java code should try to reconcile this against
+             * the printers claimed set of supported resolutions.
+             */
+            if (xRes < 0) {
+                PrintQuality quality;
+                if ((values & SET_RES_LOW) != 0) {
+                    quality = PrintQuality.DRAFT;
+                } else if ((fields & SET_RES_HIGH) != 0) {
+                    quality = PrintQuality.HIGH;
+                } else {
+                    quality = PrintQuality.NORMAL;
+                }
+                attributes.add(quality);
+            } else if (xRes > 0 && yRes > 0) {
+                attributes.add(
+                    new PrinterResolution(xRes, yRes, PrinterResolution.DPI));
+            }
+        }
+
+        if ((fields & DM_DUPLEX) != 0) {
+            Sides sides;
+            if ((values & SET_DUP_VERTICAL) != 0) {
+                sides = Sides.TWO_SIDED_LONG_EDGE;
+            } else if ((values & SET_DUP_HORIZONTAL) != 0) {
+                sides = Sides.TWO_SIDED_SHORT_EDGE;
+            } else {
+                sides = Sides.ONE_SIDED;
+            }
+            attributes.add(sides);
+        }
+
+        if ((fields & DM_PAPERSIZE) != 0) {
+            addPaperSize(attributes, dmPaperSize, dmPaperWidth, dmPaperLength);
+        }
+
+        if ((fields & DM_DEFAULTSOURCE) != 0) {
+            MediaTray tray =
+                ((Win32PrintService)myService).findMediaTray(dmDefaultSource);
+            attributes.add(new SunAlternateMedia(tray));
+        }
+    }
+
+    private native boolean showDocProperties(long hWnd,
+                                             PrintRequestAttributeSet aset,
+                                             int dmFields,
+                                             short copies,
+                                             short collate,
+                                             short color,
+                                             short duplex,
+                                             short orient,
+                                             short paper,
+                                             short bin,
+                                             short xres_quality,
+                                             short yres);
+
+    @SuppressWarnings("deprecation")
+    public PrintRequestAttributeSet
+        showDocumentProperties(Window owner,
+                               PrintService service,
+                               PrintRequestAttributeSet aset)
+    {
+        try {
+            setNativePrintServiceIfNeeded(service.getName());
+        } catch (PrinterException e) {
+        }
+        long hWnd = ((WWindowPeer)(owner.getPeer())).getHWnd();
+        DevModeValues info = new DevModeValues();
+        getDevModeValues(aset, info);
+        boolean ok =
+            showDocProperties(hWnd, aset,
+                              info.dmFields,
+                              info.copies,
+                              info.collate,
+                              info.color,
+                              info.duplex,
+                              info.orient,
+                              info.paper,
+                              info.bin,
+                              info.xres_quality,
+                              info.yres);
+
+        if (ok) {
+            return aset;
+        } else {
+            return null;
+        }
+    }
 
     /* Printer Resolution. See also getXRes() and getYRes() */
     private final void setResolutionDPI(int xres, int yres) {
@@ -1956,7 +2245,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     //** END Functions called by native code for querying/updating attributes
 
-   }
+    }
 
 class PrintToFileErrorDialog extends Dialog implements ActionListener{
     public PrintToFileErrorDialog(Frame parent, String title, String message,

@@ -119,9 +119,20 @@ final class Ser implements Externalizable {
     //-----------------------------------------------------------------------
     /**
      * Implements the {@code Externalizable} interface to write the object.
+     * @serialData
+     * Each serializable class is mapped to a type that is the first byte
+     * in the stream.  Refer to each class {@code writeReplace}
+     * serialized form for the value of the type and sequence of values for the type.
+     *
+     * <ul>
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneRules">ZoneRules.writeReplace</a>
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneOffsetTransition">ZoneOffsetTransition.writeReplace</a>
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneOffsetTransitionRule">ZoneOffsetTransitionRule.writeReplace</a>
+     * </ul>
      *
      * @param out  the data stream to write to, not null
      */
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         writeInternal(type, object, out);
     }
@@ -150,9 +161,23 @@ final class Ser implements Externalizable {
     //-----------------------------------------------------------------------
     /**
      * Implements the {@code Externalizable} interface to read the object.
+     * @serialData
+     * The streamed type and parameters defined by the type's {@code writeReplace}
+     * method are read and passed to the corresponding static factory for the type
+     * to create a new instance.  That instance is returned as the de-serialized
+     * {@code Ser} object.
      *
+     * <ul>
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneRules">ZoneRules</a>
+     * - {@code ZoneRules.of(standardTransitions, standardOffsets, savingsInstantTransitions, wallOffsets, lastRules);}
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneOffsetTransition">ZoneOffsetTransition</a>
+     * - {@code ;}
+     * <li><a href="../../../serialized-form.html#java.time.zone.ZoneOffsetTransitionRule">ZoneOffsetTransitionRule</a>
+     * - {@code ;}
+     * </ul>
      * @param in  the data to read, not null
      */
+    @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         type = in.readByte();
         object = readInternal(type, in);

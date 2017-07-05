@@ -137,17 +137,6 @@ Object.defineProperty(Object.prototype, "__lookupSetter__", {
     }
 });
 
-// Object.prototype.__proto__ (read-only)
-Object.defineProperty(Object.prototype, "__proto__", {
-    configurable: true, enumerable: false,
-    get: function() {
-        return Object.getPrototypeOf(this);
-    },
-    set: function(x) {
-        Object.setPrototypeOf(this, x);
-    }
-});
-
 // Object.prototype.toSource
 Object.defineProperty(Object.prototype, "toSource", {
     configurable: true, enumerable: false, writable: true,

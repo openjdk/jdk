@@ -47,12 +47,20 @@ import java.io.UnsupportedEncodingException;
 
 public abstract class Handler {
     private static final int offValue = Level.OFF.intValue();
-    private LogManager manager = LogManager.getLogManager();
-    private Filter filter;
-    private Formatter formatter;
-    private Level logLevel = Level.ALL;
-    private ErrorManager errorManager = new ErrorManager();
-    private String encoding;
+    private final LogManager manager = LogManager.getLogManager();
+
+    // We're using volatile here to avoid synchronizing getters, which
+    // would prevent other threads from calling isLoggable()
+    // while publish() is executing.
+    // On the other hand, setters will be synchronized to exclude concurrent
+    // execution with more complex methods, such as StreamHandler.publish().
+    // We wouldn't want 'level' to be changed by another thread in the middle
+    // of the execution of a 'publish' call.
+    private volatile Filter filter;
+    private volatile Formatter formatter;
+    private volatile Level logLevel = Level.ALL;
+    private volatile ErrorManager errorManager = new ErrorManager();
+    private volatile String encoding;
 
     // Package private support for security checking.  When sealed
     // is true, we access check updates to the class.
@@ -110,7 +118,7 @@ public abstract class Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
-    public void setFormatter(Formatter newFormatter) throws SecurityException {
+    public synchronized void setFormatter(Formatter newFormatter) throws SecurityException {
         checkPermission();
         // Check for a null pointer:
         newFormatter.getClass();
@@ -138,7 +146,7 @@ public abstract class Handler {
      * @exception  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
-    public void setEncoding(String encoding)
+    public synchronized void setEncoding(String encoding)
                         throws SecurityException, java.io.UnsupportedEncodingException {
         checkPermission();
         if (encoding != null) {
@@ -174,7 +182,7 @@ public abstract class Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
-    public void setFilter(Filter newFilter) throws SecurityException {
+    public synchronized void setFilter(Filter newFilter) throws SecurityException {
         checkPermission();
         filter = newFilter;
     }
@@ -198,7 +206,7 @@ public abstract class Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
-    public void setErrorManager(ErrorManager em) {
+    public synchronized void setErrorManager(ErrorManager em) {
         checkPermission();
         if (em == null) {
            throw new NullPointerException();
@@ -264,7 +272,7 @@ public abstract class Handler {
      * than this level will be discarded.
      * @return  the level of messages being logged.
      */
-    public synchronized Level getLevel() {
+    public Level getLevel() {
         return logLevel;
     }
 
@@ -282,11 +290,11 @@ public abstract class Handler {
      *
      */
     public boolean isLoggable(LogRecord record) {
-        int levelValue = getLevel().intValue();
+        final int levelValue = getLevel().intValue();
         if (record.getLevel().intValue() < levelValue || levelValue == offValue) {
             return false;
         }
-        Filter filter = getFilter();
+        final Filter filter = getFilter();
         if (filter == null) {
             return true;
         }
