@@ -29,6 +29,10 @@
 #include "incls/_precompiled.incl"
 #include "incls/_unsafe.cpp.incl"
 
+HS_DTRACE_PROBE_DECL3(hotspot, thread__park__begin, uintptr_t, int, long long);
+HS_DTRACE_PROBE_DECL1(hotspot, thread__park__end, uintptr_t);
+HS_DTRACE_PROBE_DECL1(hotspot, thread__unpark, uintptr_t);
+
 #define MAX_OBJECT_SIZE \
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
     + ((julong)max_jint * sizeof(double)) )
@@ -1083,8 +1087,10 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
   UnsafeWrapper("Unsafe_Park");
+  HS_DTRACE_PROBE3(hotspot, thread__park__begin, thread->parker(), (int) isAbsolute, time);
   JavaThreadParkedState jtps(thread, time != 0);
   thread->parker()->park(isAbsolute != 0, time);
+  HS_DTRACE_PROBE1(hotspot, thread__park__end, thread->parker());
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
@@ -1116,6 +1122,7 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
     }
   }
   if (p != NULL) {
+    HS_DTRACE_PROBE1(hotspot, thread__unpark, p);
     p->unpark();
   }
 UNSAFE_END
