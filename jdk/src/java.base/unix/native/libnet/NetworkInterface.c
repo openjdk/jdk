@@ -219,6 +219,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     netif *ifs, *curr;
     jboolean isCopy;
     const char* name_utf;
+    char *colonP;
+    char searchName[IFNAMESIZE];
     jobject obj = NULL;
 
     if (name != NULL) {
@@ -239,13 +241,31 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
         return NULL;
     }
 
-    // search the list of interfaces based on name
+    // search the list of interfaces based on name,
+    // if it is virtual sub interface search with parent first.
+    strncpy(searchName, name_utf, IFNAMESIZE);
+    searchName[IFNAMESIZE - 1] = '\0';
+    colonP = strchr(searchName, ':');
+    if (colonP != NULL) {
+        *colonP = '\0';
+    }
     curr = ifs;
     while (curr != NULL) {
-        if (strcmp(name_utf, curr->name) == 0) {
+        if (strcmp(searchName, curr->name) == 0) {
             break;
         }
         curr = curr->next;
+    }
+
+    // search the child list
+    if (colonP != NULL && curr != NULL) {
+        curr = curr->childs;
+        while (curr != NULL) {
+            if (strcmp(name_utf, curr->name) == 0) {
+                break;
+            }
+            curr = curr->next;
+        }
     }
 
     // if found create a NetworkInterface

@@ -64,7 +64,7 @@ endif
 BASE_LOCALES := en en-US
 
 # Locales that don't have any resource files should be included here.
-ALL_NON_BASE_LOCALES := ja-JP-JP nb-NO nn-NO th-TH-TH
+ALL_NON_BASE_LOCALES := ja-JP-JP th-TH-TH
 
 SED_BASEARGS := -e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
 SED_NONBASEARGS := $(SED_BASEARGS)
@@ -88,6 +88,10 @@ define CaptureLocale
   $1_NON_BASE_LOCALES := $$(subst zh-HK,zh-HK$$(SPACE)zh-Hant-HK, $$($1_NON_BASE_LOCALES))
   $1_NON_BASE_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_BASE_LOCALES))
   $1_NON_BASE_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_BASE_LOCALES))
+
+# Adding implict locales nn-NO and nb-NO
+  $1_NON_BASE_LOCALES += nn-NO  nb-NO
+  $1_NON_BASE_LOCALES := $$(sort $$($1_NON_BASE_LOCALES))
 
   ALL_BASE_LOCALES += $$($1_BASE_LOCALES)
   ALL_NON_BASE_LOCALES += $$($1_NON_BASE_LOCALES)
