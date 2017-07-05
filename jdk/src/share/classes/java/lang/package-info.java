@@ -66,6 +66,6 @@
  * that must be supported by every implementation of the Java
  * platform.
  *
- * @since JDK1.0
+ * @since 1.0
  */
 package java.lang;

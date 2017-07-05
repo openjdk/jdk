@@ -45,7 +45,7 @@ import java.security.AccessController;
  * through the method <code>processEvent</code>.
  *
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public abstract class MenuComponent implements java.io.Serializable {
 
@@ -175,7 +175,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * Gets the name of the menu component.
      * @return        the name of the menu component
      * @see           java.awt.MenuComponent#setName(java.lang.String)
-     * @since         JDK1.1
+     * @since         1.1
      */
     public String getName() {
         if (name == null && !nameExplicitlySet) {
@@ -191,7 +191,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * Sets the name of the component to the specified string.
      * @param         name    the name of the menu component
      * @see           java.awt.MenuComponent#getName
-     * @since         JDK1.1
+     * @since         1.1
      */
     public void setName(String name) {
         synchronized(this) {
@@ -373,7 +373,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * exception.
      *
      * @param e the event
-     * @since JDK1.1
+     * @since 1.1
      */
     protected void processEvent(AWTEvent e) {
     }

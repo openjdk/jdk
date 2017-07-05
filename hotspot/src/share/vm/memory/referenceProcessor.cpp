@@ -96,12 +96,10 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      atomic_discovery,
-                                       BoolObjectClosure* is_alive_non_header,
-                                       bool      discovered_list_needs_post_barrier)  :
+                                       BoolObjectClosure* is_alive_non_header)  :
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _is_alive_non_header(is_alive_non_header),
-  _discovered_list_needs_post_barrier(discovered_list_needs_post_barrier),
   _processing_is_mt(mt_processing),
   _next_id(0)
 {
@@ -340,10 +338,18 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
   // (java.lang.ref.Reference.discovered), self-loop their "next" field
   // thus distinguishing them from active References, then
   // prepend them to the pending list.
+  //
+  // The Java threads will see the Reference objects linked together through
+  // the discovered field. Instead of trying to do the write barrier updates
+  // in all places in the reference processor where we manipulate the discovered
+  // field we make sure to do the barrier here where we anyway iterate through
+  // all linked Reference objects. Note that it is important to not dirty any
+  // cards during reference processing since this will cause card table
+  // verification to fail for G1.
+  //
   // BKWRD COMPATIBILITY NOTE: For older JDKs (prior to the fix for 4956777),
   // the "next" field is used to chain the pending list, not the discovered
   // field.
-
   if (TraceReferenceGC && PrintGCDetails) {
     gclog_or_tty->print_cr("ReferenceProcessor::enqueue_discovered_reflist list "
                            INTPTR_FORMAT, (address)refs_list.head());
@@ -365,15 +371,15 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "Reference not active; should not be discovered");
       // Self-loop next, so as to make Ref not active.
-      // Post-barrier not needed when looping to self.
       java_lang_ref_Reference::set_next_raw(obj, obj);
-      if (next_d == obj) {  // obj is last
+      if (next_d != obj) {
+        oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), next_d);
+      } else {
+        // This is the last object.
         // Swap refs_list into pending_list_addr and
         // set obj's discovered to what we read from pending_list_addr.
         oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
-        // Need post-barrier on pending_list_addr above;
-        // see special post-barrier code at the end of
-        // enqueue_discovered_reflists() further below.
+        // Need post-barrier on pending_list_addr. See enqueue_discovered_ref_helper() above.
         java_lang_ref_Reference::set_discovered_raw(obj, old); // old may be NULL
         oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
       }
@@ -496,20 +502,15 @@ void DiscoveredListIterator::remove() {
   // pre-barrier here because we know the Reference has already been found/marked,
   // that's how it ended up in the discovered list in the first place.
   oop_store_raw(_prev_next, new_next);
-  if (_discovered_list_needs_post_barrier && _prev_next != _refs_list.adr_head()) {
-    // Needs post-barrier and this is not the list head (which is not on the heap)
-    oopDesc::bs()->write_ref_field(_prev_next, new_next);
-  }
   NOT_PRODUCT(_removed++);
   _refs_list.dec_length(1);
 }
 
 // Make the Reference object active again.
 void DiscoveredListIterator::make_active() {
-  // For G1 we don't want to use set_next - it
-  // will dirty the card for the next field of
-  // the reference object and will fail
-  // CT verification.
+  // The pre barrier for G1 is probably just needed for the old
+  // reference processing behavior. Should we guard this with
+  // ReferenceProcessor::pending_list_uses_discovered_field() ?
   if (UseG1GC) {
     HeapWord* next_addr = java_lang_ref_Reference::next_addr(_ref);
     if (UseCompressedOops) {
@@ -517,10 +518,8 @@ void DiscoveredListIterator::make_active() {
     } else {
       oopDesc::bs()->write_ref_field_pre((oop*)next_addr, NULL);
     }
-    java_lang_ref_Reference::set_next_raw(_ref, NULL);
-  } else {
-    java_lang_ref_Reference::set_next(_ref, NULL);
   }
+  java_lang_ref_Reference::set_next_raw(_ref, NULL);
 }
 
 void DiscoveredListIterator::clear_referent() {
@@ -546,7 +545,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc) {
   assert(policy != NULL, "Must have a non-NULL policy");
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   // Decide which softly reachable refs should be kept alive.
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
@@ -586,7 +585,7 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
                              BoolObjectClosure* is_alive,
                              OopClosure*        keep_alive) {
   assert(discovery_is_atomic(), "Error");
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
     DEBUG_ONLY(oop next = java_lang_ref_Reference::next(iter.obj());)
@@ -623,7 +622,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
                                                   OopClosure*        keep_alive,
                                                   VoidClosure*       complete_gc) {
   assert(!discovery_is_atomic(), "Error");
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     HeapWord* next_addr = java_lang_ref_Reference::next_addr(iter.obj());
@@ -666,7 +665,7 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc) {
   ResourceMark rm;
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
     iter.update_discovered();
     iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
@@ -782,13 +781,6 @@ private:
   bool _clear_referent;
 };
 
-void ReferenceProcessor::set_discovered(oop ref, oop value) {
-  java_lang_ref_Reference::set_discovered_raw(ref, value);
-  if (_discovered_list_needs_post_barrier) {
-    oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(ref), value);
-  }
-}
-
 // Balances reference queues.
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
 // queues[0, 1, ..., _num_q-1] because only the first _num_q
@@ -846,9 +838,9 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
         // Add the chain to the to list.
         if (ref_lists[to_idx].head() == NULL) {
           // to list is empty. Make a loop at the end.
-          set_discovered(move_tail, move_tail);
+          java_lang_ref_Reference::set_discovered_raw(move_tail, move_tail);
         } else {
-          set_discovered(move_tail, ref_lists[to_idx].head());
+          java_lang_ref_Reference::set_discovered_raw(move_tail, ref_lists[to_idx].head());
         }
         ref_lists[to_idx].set_head(move_head);
         ref_lists[to_idx].inc_length(refs_to_move);
@@ -982,7 +974,7 @@ void ReferenceProcessor::clean_up_discovered_references() {
 
 void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) {
   assert(!discovery_is_atomic(), "Else why call this method?");
-  DiscoveredListIterator iter(refs_list, NULL, NULL, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, NULL, NULL);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop next = java_lang_ref_Reference::next(iter.obj());
@@ -1071,16 +1063,6 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   // The last ref must have its discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  // Note: In the case of G1, this specific pre-barrier is strictly
-  // not necessary because the only case we are interested in
-  // here is when *discovered_addr is NULL (see the CAS further below),
-  // so this will expand to nothing. As a result, we have manually
-  // elided this out for G1, but left in the test for some future
-  // collector that might have need for a pre-barrier here, e.g.:-
-  // oopDesc::bs()->write_ref_field_pre((oop* or narrowOop*)discovered_addr, next_discovered);
-  assert(!_discovered_list_needs_post_barrier || UseG1GC,
-         "Need to check non-G1 collector: "
-         "may need a pre-write-barrier for CAS from NULL below");
   oop retest = oopDesc::atomic_compare_exchange_oop(next_discovered, discovered_addr,
                                                     NULL);
   if (retest == NULL) {
@@ -1089,9 +1071,6 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     // is necessary.
     refs_list.set_head(obj);
     refs_list.inc_length(1);
-    if (_discovered_list_needs_post_barrier) {
-      oopDesc::bs()->write_ref_field((void*)discovered_addr, next_discovered);
-    }
 
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
@@ -1242,24 +1221,14 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   if (_discovery_is_mt) {
     add_to_discovered_list_mt(*list, obj, discovered_addr);
   } else {
-    // If "_discovered_list_needs_post_barrier", we do write barriers when
-    // updating the discovered reference list.  Otherwise, we do a raw store
-    // here: the field will be visited later when processing the discovered
-    // references.
+    // We do a raw store here: the field will be visited later when processing
+    // the discovered references.
     oop current_head = list->head();
     // The last ref must have its discovered field pointing to itself.
     oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-    // As in the case further above, since we are over-writing a NULL
-    // pre-value, we can safely elide the pre-barrier here for the case of G1.
-    // e.g.:- oopDesc::bs()->write_ref_field_pre((oop* or narrowOop*)discovered_addr, next_discovered);
     assert(discovered == NULL, "control point invariant");
-    assert(!_discovered_list_needs_post_barrier || UseG1GC,
-           "For non-G1 collector, may need a pre-write-barrier for CAS from NULL below");
     oop_store_raw(discovered_addr, next_discovered);
-    if (_discovered_list_needs_post_barrier) {
-      oopDesc::bs()->write_ref_field((void*)discovered_addr, next_discovered);
-    }
     list->set_head(obj);
     list->inc_length(1);
 
@@ -1353,7 +1322,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                 OopClosure*        keep_alive,
                                                 VoidClosure*       complete_gc,
                                                 YieldClosure*      yield) {
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, _discovered_list_needs_post_barrier);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop obj = iter.obj();

@@ -303,7 +303,7 @@ class AppletSecurity extends AWTSecurityManager {
      * This method calls <code>checkPermission</code> with the
      * <code>AWTPermission("accessEventQueue")</code> permission.
      *
-     * @since   JDK1.1
+     * @since   1.1
      * @exception  SecurityException  if the caller does not have
      *             permission to access the AWT event queue.
      */
@@ -347,7 +347,7 @@ class AppletSecurity extends AWTSecurityManager {
       * @return  the AppContext corresponding to the current context.
       * @see     sun.awt.AppContext
       * @see     java.lang.SecurityManager
-      * @since   JDK1.2.1
+      * @since   1.2.1
       */
     public AppContext getAppContext() {
         AppletClassLoader appletLoader = currentAppletClassLoader();

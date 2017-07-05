@@ -57,7 +57,7 @@ package java.util;
  * @see     java.util.Observable#notifyObservers(java.lang.Object)
  * @see     java.util.Observer
  * @see     java.util.Observer#update(java.util.Observable, java.lang.Object)
- * @since   JDK1.0
+ * @since   1.0
  */
 public class Observable {
     private boolean changed = false;

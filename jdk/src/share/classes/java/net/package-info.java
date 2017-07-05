@@ -156,6 +156,6 @@
  *            Networking System Properties</a></li>
  * </ul>
  *
- * @since JDK1.0
+ * @since 1.0
  */
 package java.net;

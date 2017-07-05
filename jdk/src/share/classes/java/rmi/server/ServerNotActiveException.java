@@ -32,7 +32,7 @@ package java.rmi.server;
  * method call.
  *
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  * @see java.rmi.server.RemoteServer#getClientHost()
  */
 public class ServerNotActiveException extends java.lang.Exception {
@@ -43,7 +43,7 @@ public class ServerNotActiveException extends java.lang.Exception {
     /**
      * Constructs an <code>ServerNotActiveException</code> with no specified
      * detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public ServerNotActiveException() {}
 
@@ -52,7 +52,7 @@ public class ServerNotActiveException extends java.lang.Exception {
      * detail message.
      *
      * @param s the detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public ServerNotActiveException(String s)
     {

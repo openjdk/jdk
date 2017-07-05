@@ -44,7 +44,7 @@ package java.lang;
  * @author  Frank Yellin
  * @see     java.lang.ThreadDeath
  * @jls 11.2 Compile-Time Checking of Exceptions
- * @since   JDK1.0
+ * @since   1.0
  */
 public class Error extends Throwable {
     static final long serialVersionUID = 4980196508277280342L;

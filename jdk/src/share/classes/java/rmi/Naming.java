@@ -64,7 +64,7 @@ import java.net.URISyntaxException;
  *
  * @author  Ann Wollrath
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  * @see     java.rmi.registry.Registry
  * @see     java.rmi.registry.LocateRegistry
  * @see     java.rmi.registry.LocateRegistry#createRegistry(int)
@@ -86,7 +86,7 @@ public final class Naming {
      * @exception AccessException if this operation is not permitted
      * @exception MalformedURLException if the name is not an appropriately
      *  formatted URL
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Remote lookup(String name)
         throws NotBoundException,
@@ -112,7 +112,7 @@ public final class Naming {
      * @exception RemoteException if registry could not be contacted
      * @exception AccessException if this operation is not permitted (if
      * originating from a non-local host, for example)
-     * @since JDK1.1
+     * @since 1.1
      */
     public static void bind(String name, Remote obj)
         throws AlreadyBoundException,
@@ -139,7 +139,7 @@ public final class Naming {
      * @exception RemoteException if registry could not be contacted
      * @exception AccessException if this operation is not permitted (if
      * originating from a non-local host, for example)
-     * @since JDK1.1
+     * @since 1.1
      */
     public static void unbind(String name)
         throws RemoteException,
@@ -163,7 +163,7 @@ public final class Naming {
      * @exception RemoteException if registry could not be contacted
      * @exception AccessException if this operation is not permitted (if
      * originating from a non-local host, for example)
-     * @since JDK1.1
+     * @since 1.1
      */
     public static void rebind(String name, Remote obj)
         throws RemoteException, java.net.MalformedURLException
@@ -190,7 +190,7 @@ public final class Naming {
      * @exception MalformedURLException if the name is not an appropriately
      *  formatted URL
      * @exception RemoteException if registry could not be contacted.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static String[] list(String name)
         throws RemoteException, java.net.MalformedURLException

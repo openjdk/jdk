@@ -161,7 +161,7 @@ import javax.accessibility.*;
  * @author      Sami Shaio
  * @see         java.awt.event.AdjustmentEvent
  * @see         java.awt.event.AdjustmentListener
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Scrollbar extends Component implements Adjustable, Accessible {
 
@@ -460,7 +460,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @exception   IllegalArgumentException  if the value supplied
      *                   for <code>orientation</code> is not a
      *                   legal value
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setOrientation(int orientation) {
         synchronized (getTreeLock()) {
@@ -566,7 +566,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @param       newMinimum   the new minimum value for this scroll bar
      * @see         java.awt.Scrollbar#setValues
      * @see         java.awt.Scrollbar#setMaximum
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setMinimum(int newMinimum) {
         // No checks are necessary in this method since minimum is
@@ -611,7 +611,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *                     for this scroll bar
      * @see         java.awt.Scrollbar#setValues
      * @see         java.awt.Scrollbar#setMinimum
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setMaximum(int newMaximum) {
         // minimum is checked first in setValues, so we need to
@@ -649,7 +649,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *
      * @return      the visible amount of this scroll bar
      * @see         java.awt.Scrollbar#setVisibleAmount
-     * @since       JDK1.1
+     * @since       1.1
      */
     public int getVisibleAmount() {
         return getVisible();
@@ -697,7 +697,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @param       newAmount the new visible amount
      * @see         java.awt.Scrollbar#getVisibleAmount
      * @see         java.awt.Scrollbar#setValues
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setVisibleAmount(int newAmount) {
         // Use setValues so that a consistent policy relating
@@ -722,7 +722,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @param        v  the amount by which to increment or decrement
      *                         the scroll bar's value
      * @see          java.awt.Scrollbar#getUnitIncrement
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setUnitIncrement(int v) {
         setLineIncrement(v);
@@ -761,7 +761,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *
      * @return      the unit increment of this scroll bar
      * @see         java.awt.Scrollbar#setUnitIncrement
-     * @since       JDK1.1
+     * @since       1.1
      */
     public int getUnitIncrement() {
         return getLineIncrement();
@@ -790,7 +790,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @param        v  the amount by which to increment or decrement
      *                         the scroll bar's value
      * @see          java.awt.Scrollbar#getBlockIncrement
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setBlockIncrement(int v) {
         setPageIncrement(v);
@@ -826,7 +826,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *
      * @return      the block increment of this scroll bar
      * @see         java.awt.Scrollbar#setBlockIncrement
-     * @since       JDK1.1
+     * @since       1.1
      */
     public int getBlockIncrement() {
         return getPageIncrement();
@@ -972,7 +972,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see          #getAdjustmentListeners
      * @see          java.awt.event.AdjustmentEvent
      * @see          java.awt.event.AdjustmentListener
-     * @since        JDK1.1
+     * @since        1.1
      */
     public synchronized void addAdjustmentListener(AdjustmentListener l) {
         if (l == null) {
@@ -995,7 +995,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see             #getAdjustmentListeners
      * @see             java.awt.event.AdjustmentEvent
      * @see             java.awt.event.AdjustmentListener
-     * @since           JDK1.1
+     * @since           1.1
      */
     public synchronized void removeAdjustmentListener(AdjustmentListener l) {
         if (l == null) {
@@ -1086,7 +1086,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @param        e the event
      * @see          java.awt.event.AdjustmentEvent
      * @see          java.awt.Scrollbar#processAdjustmentEvent
-     * @since        JDK1.1
+     * @since        1.1
      */
     protected void processEvent(AWTEvent e) {
         if (e instanceof AdjustmentEvent) {
@@ -1118,7 +1118,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see         java.awt.event.AdjustmentListener
      * @see         java.awt.Scrollbar#addAdjustmentListener
      * @see         java.awt.Component#enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processAdjustmentEvent(AdjustmentEvent e) {
         AdjustmentListener listener = adjustmentListener;

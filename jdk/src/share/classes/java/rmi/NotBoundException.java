@@ -29,7 +29,7 @@ package java.rmi;
  * is made to lookup or unbind in the registry a name that has
  * no associated binding.
  *
- * @since   JDK1.1
+ * @since   1.1
  * @author  Ann Wollrath
  * @author  Roger Riggs
  * @see     java.rmi.Naming#lookup(String)
@@ -45,7 +45,7 @@ public class NotBoundException extends java.lang.Exception {
     /**
      * Constructs a <code>NotBoundException</code> with no
      * specified detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public NotBoundException() {
         super();
@@ -56,7 +56,7 @@ public class NotBoundException extends java.lang.Exception {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public NotBoundException(String s) {
         super(s);

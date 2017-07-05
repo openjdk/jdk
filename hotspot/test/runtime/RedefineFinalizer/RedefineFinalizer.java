@@ -22,15 +22,43 @@
  */
 
 /*
- * @test TestStringDeduplicationMemoryUsage
- * @summary Test string deduplication memory usage
- * @bug 8029075
- * @key gc
+ * @test
+ * @bug 6904403
+ * @summary Don't assert if we redefine finalize method
  * @library /testlibrary
+ * @build RedefineClassHelper
+ * @run main RedefineClassHelper
+ * @run main/othervm -javaagent:redefineagent.jar RedefineFinalizer
  */
 
-public class TestStringDeduplicationMemoryUsage {
+/*
+ * Regression test for hitting:
+ *
+ * assert(f == k->has_finalizer()) failed: inconsistent has_finalizer
+ *
+ * when redefining finalizer method
+ */
+public class RedefineFinalizer {
+
+    public static String newB =
+                "class RedefineFinalizer$B {" +
+                "   protected void finalize() { " +
+                "       System.out.println(\"Finalizer called\");" +
+                "   }" +
+                "}";
+
     public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testMemoryUsage();
+        RedefineClassHelper.redefineClass(B.class, newB);
+
+        A a = new A();
+    }
+
+    static class A extends B {
+    }
+
+    static class B {
+        protected void finalize() {
+            // should be empty
+        }
     }
 }

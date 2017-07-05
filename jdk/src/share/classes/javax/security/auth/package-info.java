@@ -33,6 +33,6 @@
  * based on code location, code signers and code executors
  * (Subjects).
  *
- * @since JDK1.4
+ * @since 1.4
  */
 package javax.security.auth;

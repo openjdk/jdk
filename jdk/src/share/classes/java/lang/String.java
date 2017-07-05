@@ -105,7 +105,7 @@ import java.util.regex.PatternSyntaxException;
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
  * @see     java.nio.charset.Charset
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public final class String
@@ -404,7 +404,7 @@ public final class String
      *          If the {@code offset} and {@code length} arguments index
      *          characters outside the bounds of the {@code bytes} array
      *
-     * @since  JDK1.1
+     * @since  1.1
      */
     public String(byte bytes[], int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
@@ -472,7 +472,7 @@ public final class String
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      *
-     * @since  JDK1.1
+     * @since  1.1
      */
     public String(byte bytes[], String charsetName)
             throws UnsupportedEncodingException {
@@ -527,7 +527,7 @@ public final class String
      *          If the {@code offset} and the {@code length} arguments index
      *          characters outside the bounds of the {@code bytes} array
      *
-     * @since  JDK1.1
+     * @since  1.1
      */
     public String(byte bytes[], int offset, int length) {
         checkBounds(bytes, offset, length);
@@ -548,7 +548,7 @@ public final class String
      * @param  bytes
      *         The bytes to be decoded into characters
      *
-     * @since  JDK1.1
+     * @since  1.1
      */
     public String(byte bytes[]) {
         this(bytes, 0, bytes.length);
@@ -898,7 +898,7 @@ public final class String
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      *
-     * @since  JDK1.1
+     * @since  1.1
      */
     public byte[] getBytes(String charsetName)
             throws UnsupportedEncodingException {
@@ -940,7 +940,7 @@ public final class String
      *
      * @return  The resultant byte array
      *
-     * @since      JDK1.1
+     * @since      1.1
      */
     public byte[] getBytes() {
         return StringCoding.encode(value, 0, value.length);
@@ -1415,7 +1415,7 @@ public final class String
      *          argument is an empty string or is equal to this
      *          {@code String} object as determined by the
      *          {@link #equals(Object)} method.
-     * @since   1. 0
+     * @since   1.0
      */
     public boolean startsWith(String prefix) {
         return startsWith(prefix, 0);

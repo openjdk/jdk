@@ -48,7 +48,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * TBC
  * </p>
  *
- * @since JDK1.2
+ * @since 1.2
  *
  */
 
