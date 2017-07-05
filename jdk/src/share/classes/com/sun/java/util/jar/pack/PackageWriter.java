@@ -458,9 +458,9 @@ class PackageWriter extends BandStructure {
                 Utils.log.info("Writing "+cpMap.length+" "+ConstantPool.tagName(tag)+" entries...");
 
             if (optDumpBands) {
-                PrintStream ps = new PrintStream(getDumpStream(index, ".idx"));
-                printArrayTo(ps, cpMap, 0, cpMap.length);
-                ps.close();
+                try (PrintStream ps = new PrintStream(getDumpStream(index, ".idx"))) {
+                    printArrayTo(ps, cpMap, 0, cpMap.length);
+                }
             }
 
             switch (tag) {
@@ -923,33 +923,34 @@ class PackageWriter extends BandStructure {
             }
         });
         attrDefsWritten = new Attribute.Layout[numAttrDefs];
-        PrintStream dump = !optDumpBands ? null
-            : new PrintStream(getDumpStream(attr_definition_headers, ".def"));
-        int[] indexForDebug = Arrays.copyOf(attrIndexLimit, ATTR_CONTEXT_LIMIT);
-        for (int i = 0; i < defs.length; i++) {
-            int header = ((Integer)defs[i][0]).intValue();
-            Attribute.Layout def = (Attribute.Layout) defs[i][1];
-            attrDefsWritten[i] = def;
-            assert((header & ADH_CONTEXT_MASK) == def.ctype());
-            attr_definition_headers.putByte(header);
-            attr_definition_name.putRef(ConstantPool.getUtf8Entry(def.name()));
-            String layout = def.layoutForPackageMajver(getPackageMajver());
-            attr_definition_layout.putRef(ConstantPool.getUtf8Entry(layout));
-            // Check that we are transmitting that correct attribute index:
-            boolean debug = false;
-            assert(debug = true);
-            if (debug) {
-                int hdrIndex = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
-                if (hdrIndex < 0)  hdrIndex = indexForDebug[def.ctype()]++;
-                int realIndex = (attrIndexTable.get(def)).intValue();
-                assert(hdrIndex == realIndex);
-            }
-            if (dump != null) {
-                int index = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
-                dump.println(index+" "+def);
+        try (PrintStream dump = !optDumpBands ? null
+                 : new PrintStream(getDumpStream(attr_definition_headers, ".def")))
+        {
+            int[] indexForDebug = Arrays.copyOf(attrIndexLimit, ATTR_CONTEXT_LIMIT);
+            for (int i = 0; i < defs.length; i++) {
+                int header = ((Integer)defs[i][0]).intValue();
+                Attribute.Layout def = (Attribute.Layout) defs[i][1];
+                attrDefsWritten[i] = def;
+                assert((header & ADH_CONTEXT_MASK) == def.ctype());
+                attr_definition_headers.putByte(header);
+                attr_definition_name.putRef(ConstantPool.getUtf8Entry(def.name()));
+                String layout = def.layoutForPackageMajver(getPackageMajver());
+                attr_definition_layout.putRef(ConstantPool.getUtf8Entry(layout));
+                // Check that we are transmitting that correct attribute index:
+                boolean debug = false;
+                assert(debug = true);
+                if (debug) {
+                    int hdrIndex = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
+                    if (hdrIndex < 0)  hdrIndex = indexForDebug[def.ctype()]++;
+                    int realIndex = (attrIndexTable.get(def)).intValue();
+                    assert(hdrIndex == realIndex);
+                }
+                if (dump != null) {
+                    int index = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
+                    dump.println(index+" "+def);
+                }
             }
         }
-        if (dump != null)  dump.close();
     }
 
     void writeAttrCounts() throws IOException {

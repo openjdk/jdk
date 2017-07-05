@@ -540,9 +540,9 @@ class PackageReader extends BandStructure {
             Index index = initCPIndex(tag, cpMap);
 
             if (optDumpBands) {
-                PrintStream ps = new PrintStream(getDumpStream(index, ".idx"));
-                printArrayTo(ps, index.cpMap, 0, index.cpMap.length);
-                ps.close();
+                try (PrintStream ps = new PrintStream(getDumpStream(index, ".idx"))) {
+                    printArrayTo(ps, index.cpMap, 0, index.cpMap.length);
+                }
             }
         }
 
@@ -828,26 +828,27 @@ class PackageReader extends BandStructure {
         attr_definition_headers.readFrom(in);
         attr_definition_name.readFrom(in);
         attr_definition_layout.readFrom(in);
-        PrintStream dump = !optDumpBands ? null
-            : new PrintStream(getDumpStream(attr_definition_headers, ".def"));
-        for (int i = 0; i < numAttrDefs; i++) {
-            int       header = attr_definition_headers.getByte();
-            Utf8Entry name   = (Utf8Entry) attr_definition_name.getRef();
-            Utf8Entry layout = (Utf8Entry) attr_definition_layout.getRef();
-            int       ctype  = (header &  ADH_CONTEXT_MASK);
-            int       index  = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
-            Attribute.Layout def = new Attribute.Layout(ctype,
-                                                        name.stringValue(),
-                                                        layout.stringValue());
-            // Check layout string for Java 6 extensions.
-            String pvLayout = def.layoutForPackageMajver(getPackageMajver());
-            if (!pvLayout.equals(def.layout())) {
-                throw new IOException("Bad attribute layout in version 150 archive: "+def.layout());
+        try (PrintStream dump = !optDumpBands ? null
+                 : new PrintStream(getDumpStream(attr_definition_headers, ".def")))
+        {
+            for (int i = 0; i < numAttrDefs; i++) {
+                int       header = attr_definition_headers.getByte();
+                Utf8Entry name   = (Utf8Entry) attr_definition_name.getRef();
+                Utf8Entry layout = (Utf8Entry) attr_definition_layout.getRef();
+                int       ctype  = (header &  ADH_CONTEXT_MASK);
+                int       index  = (header >> ADH_BIT_SHIFT) - ADH_BIT_IS_LSB;
+                Attribute.Layout def = new Attribute.Layout(ctype,
+                                                            name.stringValue(),
+                                                            layout.stringValue());
+                // Check layout string for Java 6 extensions.
+                String pvLayout = def.layoutForPackageMajver(getPackageMajver());
+                if (!pvLayout.equals(def.layout())) {
+                    throw new IOException("Bad attribute layout in version 150 archive: "+def.layout());
+                }
+                this.setAttributeLayoutIndex(def, index);
+                if (dump != null)  dump.println(index+" "+def);
             }
-            this.setAttributeLayoutIndex(def, index);
-            if (dump != null)  dump.println(index+" "+def);
         }
-        if (dump != null)  dump.close();
         attr_definition_headers.doneDisbursing();
         attr_definition_name.doneDisbursing();
         attr_definition_layout.doneDisbursing();

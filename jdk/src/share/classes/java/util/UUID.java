@@ -26,8 +26,6 @@
 package java.util;
 
 import java.security.*;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -91,36 +89,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     private final long leastSigBits;
 
     /*
-     * The version number associated with this UUID. Computed on demand.
-     */
-    private transient int version = -1;
-
-    /*
-     * The variant number associated with this UUID. Computed on demand.
-     */
-    private transient int variant = -1;
-
-    /*
-     * The timestamp associated with this UUID. Computed on demand.
-     */
-    private transient volatile long timestamp = -1;
-
-    /*
-     * The clock sequence associated with this UUID. Computed on demand.
-     */
-    private transient int sequence = -1;
-
-    /*
-     * The node number associated with this UUID. Computed on demand.
-     */
-    private transient long node = -1;
-
-    /*
-     * The hashcode of this UUID. Computed on demand.
-     */
-    private transient int hashCode = -1;
-
-    /*
      * The random number generator used by this class to create random
      * based UUIDs.
      */
@@ -134,7 +102,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     private UUID(byte[] data) {
         long msb = 0;
         long lsb = 0;
-        assert data.length == 16;
+        assert data.length == 16 : "data must be 16 bytes in length";
         for (int i=0; i<8; i++)
             msb = (msb << 8) | (data[i] & 0xff);
         for (int i=8; i<16; i++)
@@ -276,11 +244,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  The version number of this {@code UUID}
      */
     public int version() {
-        if (version < 0) {
-            // Version is bits masked by 0x000000000000F000 in MS long
-            version = (int)((mostSigBits >> 12) & 0x0f);
-        }
-        return version;
+        // Version is bits masked by 0x000000000000F000 in MS long
+        return (int)((mostSigBits >> 12) & 0x0f);
     }
 
     /**
@@ -298,17 +263,13 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  The variant number of this {@code UUID}
      */
     public int variant() {
-        if (variant < 0) {
-            // This field is composed of a varying number of bits
-            if ((leastSigBits >>> 63) == 0) {
-                variant = 0;
-            } else if ((leastSigBits >>> 62) == 2) {
-                variant = 2;
-            } else {
-                variant = (int)(leastSigBits >>> 61);
-            }
-        }
-        return variant;
+        // This field is composed of a varying number of bits.
+        // 0    -    -    Reserved for NCS backward compatibility
+        // 1    0    -    The Leach-Salz variant (used by this class)
+        // 1    1    0    Reserved, Microsoft backward compatibility
+        // 1    1    1    Reserved for future definition.
+        return (int) ((leastSigBits >>> (64 - (leastSigBits >>> 62)))
+                      & (leastSigBits >> 63));
     }
 
     /**
@@ -330,14 +291,10 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         if (version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-        long result = timestamp;
-        if (result < 0) {
-            result = (mostSigBits & 0x0000000000000FFFL) << 48;
-            result |= ((mostSigBits >> 16) & 0xFFFFL) << 32;
-            result |= mostSigBits >>> 32;
-            timestamp = result;
-        }
-        return result;
+
+        return (mostSigBits & 0x0FFFL) << 48
+             | ((mostSigBits >> 16) & 0x0FFFFL) << 32
+             | mostSigBits >>> 32;
     }
 
     /**
@@ -360,10 +317,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         if (version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-        if (sequence < 0) {
-            sequence = (int)((leastSigBits & 0x3FFF000000000000L) >>> 48);
-        }
-        return sequence;
+
+        return (int)((leastSigBits & 0x3FFF000000000000L) >>> 48);
     }
 
     /**
@@ -386,10 +341,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         if (version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-        if (node < 0) {
-            node = leastSigBits & 0x0000FFFFFFFFFFFFL;
-        }
-        return node;
+
+        return leastSigBits & 0x0000FFFFFFFFFFFFL;
     }
 
     // Object Inherited Methods
@@ -438,13 +391,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A hash code value for this {@code UUID}
      */
     public int hashCode() {
-        if (hashCode == -1) {
-            hashCode = (int)((mostSigBits >> 32) ^
-                             mostSigBits ^
-                             (leastSigBits >> 32) ^
-                             leastSigBits);
-        }
-        return hashCode;
+        long hilo = mostSigBits ^ leastSigBits;
+        return ((int)(hilo >> 32)) ^ (int) hilo;
     }
 
     /**
@@ -460,9 +408,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *          otherwise
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof UUID))
-            return false;
-        if (((UUID)obj).variant() != this.variant())
+        if ((null == obj) || (obj.getClass() != UUID.class))
             return false;
         UUID id = (UUID)obj;
         return (mostSigBits == id.mostSigBits &&
@@ -493,24 +439,5 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                  (this.leastSigBits < val.leastSigBits ? -1 :
                   (this.leastSigBits > val.leastSigBits ? 1 :
                    0))));
-    }
-
-    /**
-     * Reconstitute the {@code UUID} instance from a stream (that is,
-     * deserialize it).  This is necessary to set the transient fields to their
-     * correct uninitialized value so they will be recomputed on demand.
-     */
-    private void readObject(java.io.ObjectInputStream in)
-        throws java.io.IOException, ClassNotFoundException {
-
-        in.defaultReadObject();
-
-        // Set "cached computation" fields to their initial values
-        version = -1;
-        variant = -1;
-        timestamp = -1;
-        sequence = -1;
-        node = -1;
-        hashCode = -1;
     }
 }

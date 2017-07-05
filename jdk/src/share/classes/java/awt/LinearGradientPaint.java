@@ -57,8 +57,14 @@ import java.beans.ConstructorProperties;
  * </pre>
  *
  * <p>
- * The user may also select what action the {@code LinearGradientPaint}
- * should take when filling color outside the start and end points.
+ * The user may also select what action the {@code LinearGradientPaint} object
+ * takes when it is filling the space outside the start and end points by
+ * setting {@code CycleMethod} to either {@code REFLECTION} or {@code REPEAT}.
+ * The distances between any two colors in any of the reflected or repeated
+ * copies of the gradient are the same as the distance between those same two
+ * colors between the start and end points.
+ * Note that some minor variations in distances may occur due to sampling at
+ * the granularity of a pixel.
  * If no cycle method is specified, {@code NO_CYCLE} will be chosen by
  * default, which means the endpoint colors will be used to fill the
  * remaining area.

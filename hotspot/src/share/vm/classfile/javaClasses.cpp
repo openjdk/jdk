@@ -33,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/methodOop.hpp"
@@ -161,7 +162,7 @@ Handle java_lang_String::create_from_unicode(jchar* unicode, int length, TRAPS) 
 }
 
 Handle java_lang_String::create_tenured_from_unicode(jchar* unicode, int length, TRAPS) {
-  return basic_create_from_unicode(unicode, length, true, CHECK_NH);
+  return basic_create_from_unicode(unicode, length, JavaObjectsInPerm, CHECK_NH);
 }
 
 oop java_lang_String::create_oop_from_unicode(jchar* unicode, int length, TRAPS) {
@@ -391,6 +392,75 @@ void java_lang_String::print(Handle java_string, outputStream* st) {
   }
 }
 
+static void initialize_static_field(fieldDescriptor* fd, TRAPS) {
+  Handle mirror (THREAD, fd->field_holder()->java_mirror());
+  assert(mirror.not_null() && fd->is_static(), "just checking");
+  if (fd->has_initial_value()) {
+    BasicType t = fd->field_type();
+    switch (t) {
+      case T_BYTE:
+        mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
+              break;
+      case T_BOOLEAN:
+        mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
+              break;
+      case T_CHAR:
+        mirror()->char_field_put(fd->offset(), fd->int_initial_value());
+              break;
+      case T_SHORT:
+        mirror()->short_field_put(fd->offset(), fd->int_initial_value());
+              break;
+      case T_INT:
+        mirror()->int_field_put(fd->offset(), fd->int_initial_value());
+        break;
+      case T_FLOAT:
+        mirror()->float_field_put(fd->offset(), fd->float_initial_value());
+        break;
+      case T_DOUBLE:
+        mirror()->double_field_put(fd->offset(), fd->double_initial_value());
+        break;
+      case T_LONG:
+        mirror()->long_field_put(fd->offset(), fd->long_initial_value());
+        break;
+      case T_OBJECT:
+        {
+          #ifdef ASSERT
+          TempNewSymbol sym = SymbolTable::new_symbol("Ljava/lang/String;", CHECK);
+          assert(fd->signature() == sym, "just checking");
+          #endif
+          oop string = fd->string_initial_value(CHECK);
+          mirror()->obj_field_put(fd->offset(), string);
+        }
+        break;
+      default:
+        THROW_MSG(vmSymbols::java_lang_ClassFormatError(),
+                  "Illegal ConstantValue attribute in class file");
+    }
+  }
+}
+
+
+// During bootstrap, java.lang.Class wasn't loaded so static field
+// offsets were computed without the size added it.  Go back and
+// update all the static field offsets to included the size.
+static void fixup_static_field(fieldDescriptor* fd, TRAPS) {
+  if (fd->is_static()) {
+    int real_offset = fd->offset() + instanceMirrorKlass::offset_of_static_fields();
+    typeArrayOop fields = instanceKlass::cast(fd->field_holder())->fields();
+    fields->short_at_put(fd->index() + instanceKlass::low_offset,  extract_low_short_from_int(real_offset));
+    fields->short_at_put(fd->index() + instanceKlass::high_offset, extract_high_short_from_int(real_offset));
+  }
+}
+
+void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
+  assert(instanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
+
+  if (k->oop_is_instance()) {
+    // Fixup the offsets
+    instanceKlass::cast(k())->do_local_static_fields(&fixup_static_field, CHECK);
+  }
+  create_mirror(k, CHECK);
+}
 
 oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
   assert(k->java_mirror() == NULL, "should only assign mirror once");
@@ -400,12 +470,17 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
   // class is put into the system dictionary.
   int computed_modifiers = k->compute_modifier_flags(CHECK_0);
   k->set_modifier_flags(computed_modifiers);
-  if (SystemDictionary::Class_klass_loaded()) {
+  if (SystemDictionary::Class_klass_loaded() && (k->oop_is_instance() || k->oop_is_javaArray())) {
     // Allocate mirror (java.lang.Class instance)
-    Handle mirror = instanceKlass::cast(SystemDictionary::Class_klass())->allocate_permanent_instance(CHECK_0);
+    Handle mirror = instanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK_0);
     // Setup indirections
     mirror->obj_field_put(klass_offset,  k());
     k->set_java_mirror(mirror());
+
+    instanceMirrorKlass* mk = instanceMirrorKlass::cast(mirror->klass());
+    java_lang_Class::set_oop_size(mirror(), mk->instance_size(k));
+    java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
+
     // It might also have a component mirror.  This mirror must already exist.
     if (k->oop_is_javaArray()) {
       Handle comp_mirror;
@@ -428,6 +503,9 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
         arrayKlass::cast(k->as_klassOop())->set_component_mirror(comp_mirror());
         set_array_klass(comp_mirror(), k->as_klassOop());
       }
+    } else if (k->oop_is_instance()) {
+      // Initialize static fields
+      instanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, CHECK_NULL);
     }
     return mirror();
   } else {
@@ -436,21 +514,46 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
 }
 
 
+
+int  java_lang_Class::oop_size(oop java_class) {
+  assert(oop_size_offset != 0, "must be set");
+  return java_class->int_field(oop_size_offset);
+}
+void java_lang_Class::set_oop_size(oop java_class, int size) {
+  assert(oop_size_offset != 0, "must be set");
+  java_class->int_field_put(oop_size_offset, size);
+}
+int  java_lang_Class::static_oop_field_count(oop java_class) {
+  assert(static_oop_field_count_offset != 0, "must be set");
+  return java_class->int_field(static_oop_field_count_offset);
+}
+void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
+  assert(static_oop_field_count_offset != 0, "must be set");
+  java_class->int_field_put(static_oop_field_count_offset, size);
+}
+
+
+
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
-  oop java_class = instanceKlass::cast(SystemDictionary::Class_klass())->allocate_permanent_instance(CHECK_0);
+  oop java_class = instanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance((oop)NULL, CHECK_0);
   if (type != T_VOID) {
     klassOop aklass = Universe::typeArrayKlassObj(type);
     assert(aklass != NULL, "correct bootstrap");
     set_array_klass(java_class, aklass);
   }
+  instanceMirrorKlass* mk = instanceMirrorKlass::cast(SystemDictionary::Class_klass());
+  java_lang_Class::set_oop_size(java_class, mk->instance_size(oop(NULL)));
+  java_lang_Class::set_static_oop_field_count(java_class, 0);
   return java_class;
 }
 
 
 klassOop java_lang_Class::as_klassOop(oop java_class) {
   //%note memory_2
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   klassOop k = klassOop(java_class->obj_field(klass_offset));
   assert(k == NULL || k->is_klass(), "type check");
   return k;
@@ -2152,7 +2255,7 @@ void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream*
 // Support for java_lang_ref_Reference
 oop java_lang_ref_Reference::pending_list_lock() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::Reference_klass());
-  char *addr = (((char *)ik->start_of_static_fields()) + static_lock_offset);
+  address addr = ik->static_field_addr(static_lock_offset);
   if (UseCompressedOops) {
     return oopDesc::load_decode_heap_oop((narrowOop *)addr);
   } else {
@@ -2162,7 +2265,7 @@ oop java_lang_ref_Reference::pending_list_lock() {
 
 HeapWord *java_lang_ref_Reference::pending_list_addr() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::Reference_klass());
-  char *addr = (((char *)ik->start_of_static_fields()) + static_pending_offset);
+  address addr = ik->static_field_addr(static_pending_offset);
   // XXX This might not be HeapWord aligned, almost rather be char *.
   return (HeapWord*)addr;
 }
@@ -2185,16 +2288,14 @@ jlong java_lang_ref_SoftReference::timestamp(oop ref) {
 
 jlong java_lang_ref_SoftReference::clock() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::SoftReference_klass());
-  int offset = ik->offset_of_static_fields() + static_clock_offset;
-
-  return SystemDictionary::SoftReference_klass()->long_field(offset);
+  jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
+  return *offset;
 }
 
 void java_lang_ref_SoftReference::set_clock(jlong value) {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::SoftReference_klass());
-  int offset = ik->offset_of_static_fields() + static_clock_offset;
-
-  SystemDictionary::SoftReference_klass()->long_field_put(offset, value);
+  jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
+  *offset = value;
 }
 
 
@@ -2625,26 +2726,18 @@ oop java_lang_ClassLoader::non_reflection_class_loader(oop loader) {
 
 
 // Support for java_lang_System
-
-void java_lang_System::compute_offsets() {
-  assert(offset_of_static_fields == 0, "offsets should be initialized only once");
-
-  instanceKlass* ik = instanceKlass::cast(SystemDictionary::System_klass());
-  offset_of_static_fields = ik->offset_of_static_fields();
-}
-
 int java_lang_System::in_offset_in_bytes() {
-  return (offset_of_static_fields + static_in_offset);
+  return (instanceMirrorKlass::offset_of_static_fields() + static_in_offset);
 }
 
 
 int java_lang_System::out_offset_in_bytes() {
-  return (offset_of_static_fields + static_out_offset);
+  return (instanceMirrorKlass::offset_of_static_fields() + static_out_offset);
 }
 
 
 int java_lang_System::err_offset_in_bytes() {
-  return (offset_of_static_fields + static_err_offset);
+  return (instanceMirrorKlass::offset_of_static_fields() + static_err_offset);
 }
 
 
@@ -2657,6 +2750,8 @@ int java_lang_Class::klass_offset;
 int java_lang_Class::array_klass_offset;
 int java_lang_Class::resolved_constructor_offset;
 int java_lang_Class::number_of_fake_oop_fields;
+int java_lang_Class::oop_size_offset;
+int java_lang_Class::static_oop_field_count_offset;
 int java_lang_Throwable::backtrace_offset;
 int java_lang_Throwable::detailMessage_offset;
 int java_lang_Throwable::cause_offset;
@@ -2700,7 +2795,6 @@ int java_lang_ref_Reference::number_of_fake_oop_fields;
 int java_lang_ref_SoftReference::timestamp_offset;
 int java_lang_ref_SoftReference::static_clock_offset;
 int java_lang_ClassLoader::parent_offset;
-int java_lang_System::offset_of_static_fields;
 int java_lang_System::static_in_offset;
 int java_lang_System::static_out_offset;
 int java_lang_System::static_err_offset;
@@ -2817,10 +2911,19 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_String::count_offset  = java_lang_String::offset_offset + sizeof (jint);
   java_lang_String::hash_offset   = java_lang_String::count_offset + sizeof (jint);
 
-  // Do the Class Class
-  java_lang_Class::klass_offset = java_lang_Class::hc_klass_offset * x + header;
-  java_lang_Class::array_klass_offset = java_lang_Class::hc_array_klass_offset * x + header;
-  java_lang_Class::resolved_constructor_offset = java_lang_Class::hc_resolved_constructor_offset * x + header;
+  {
+    // Do the Class Class
+    int offset = header;
+    java_lang_Class::oop_size_offset = header;
+    offset += BytesPerInt;
+    java_lang_Class::static_oop_field_count_offset = offset;
+    offset = align_size_up(offset + BytesPerInt, x);
+    java_lang_Class::klass_offset = offset;
+    offset += x;
+    java_lang_Class::array_klass_offset = offset;
+    offset += x;
+    java_lang_Class::resolved_constructor_offset = offset;
+  }
 
   // This is NOT an offset
   java_lang_Class::number_of_fake_oop_fields = java_lang_Class::hc_number_of_fake_oop_fields;
@@ -2877,7 +2980,6 @@ void JavaClasses::compute_hard_coded_offsets() {
 void JavaClasses::compute_offsets() {
 
   java_lang_Class::compute_offsets();
-  java_lang_System::compute_offsets();
   java_lang_Thread::compute_offsets();
   java_lang_ThreadGroup::compute_offsets();
   if (EnableMethodHandles) {
@@ -2961,10 +3063,10 @@ bool JavaClasses::check_static_offset(const char *klass_name, int hardcoded_offs
     tty->print_cr("Static field %s.%s appears to be nonstatic", klass_name, field_name);
     return false;
   }
-  if (fd.offset() == hardcoded_offset + h_klass->offset_of_static_fields()) {
+  if (fd.offset() == hardcoded_offset + instanceMirrorKlass::offset_of_static_fields()) {
     return true;
   } else {
-    tty->print_cr("Offset of static field %s.%s is hardcoded as %d but should really be %d.", klass_name, field_name, hardcoded_offset, fd.offset() - h_klass->offset_of_static_fields());
+    tty->print_cr("Offset of static field %s.%s is hardcoded as %d but should really be %d.", klass_name, field_name, hardcoded_offset, fd.offset() - instanceMirrorKlass::offset_of_static_fields());
     return false;
   }
 }
