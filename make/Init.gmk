@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ ifeq ($(HAS_SPEC),)
 
   # Targets provided by Init.gmk.
   ALL_INIT_TARGETS := print-modules print-targets print-configuration \
-      reconfigure pre-compare-build post-compare-build
+      print-tests reconfigure pre-compare-build post-compare-build
 
   # CALLED_TARGETS is the list of targets that the user provided,
   # or "default" if unspecified.
@@ -251,6 +251,11 @@ else # HAS_SPEC=true
 	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	    NO_RECIPES=true print-targets )
 
+  print-tests:
+	( cd $(TOPDIR) && \
+	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	    NO_RECIPES=true print-tests )
+
   print-configuration:
 	  $(ECHO) $(CONFIGURE_COMMAND_LINE)
 
@@ -310,6 +315,9 @@ else # HAS_SPEC=true
 	    $(call StopGlobalTimer)
 	    $(call ReportBuildTimes)
           endif
+	  if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
+	    exit 1 ; \
+	  fi
 	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
         endif
 

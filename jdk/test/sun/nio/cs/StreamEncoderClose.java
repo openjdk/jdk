@@ -22,10 +22,11 @@
  */
 
 /* @test
-   @bug 5005426
-   @summary Check if StreamEncoder close() method works correctly from
-            error recovery after the underneath OutputStream failed to
-            close the first time.
+ * @bug 5005426
+ * @summary Check if StreamEncoder close() method works correctly from
+ *          error recovery after the underneath OutputStream failed to
+ *          close the first time.
+ * @modules jdk.charsets
  */
 
 import java.io.*;
