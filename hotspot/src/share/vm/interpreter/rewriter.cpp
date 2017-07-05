@@ -273,6 +273,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
   compute_index_maps();
 
   if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+    bool did_rewrite = false;
     int i = _methods->length();
     while (i-- > 0) {
       methodOop method = (methodOop)_methods->obj_at(i);
@@ -281,9 +282,11 @@ Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
         // object for finalization if needed.
         methodHandle m(THREAD, method);
         rewrite_Object_init(m, CHECK);
+        did_rewrite = true;
         break;
       }
     }
+    assert(did_rewrite, "must find Object::<init> to rewrite it");
   }
 
   // rewrite methods, in two passes
