@@ -40,23 +40,9 @@
 // Closures used to scan dirty cards should take these
 // considerations into account.
 
-class Generation;
-class OopsInGenClosure;
-class DirtyCardToOopClosure;
-class ClearNoncleanCardWrapper;
-class CardTableRS;
-
 class CardTableModRefBS: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
-  friend class BytecodeInterpreter;
   friend class VMStructs;
-  friend class CardTableRS;
-  friend class CheckForUnmarkedOops; // Needs access to raw card bytes.
-  friend class SharkBuilder;
-#ifndef PRODUCT
-  // For debugging.
-  friend class GuaranteeNotModClosure;
-#endif
  protected:
 
   enum CardValues {
@@ -74,24 +60,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
 
   // a word's worth (row) of clean card values
   static const intptr_t clean_card_row = (intptr_t)(-1);
-
-  // dirty and precleaned are equivalent wrt younger_refs_iter.
-  static bool card_is_dirty_wrt_gen_iter(jbyte cv) {
-    return cv == dirty_card || cv == precleaned_card;
-  }
-
-  // Returns "true" iff the value "cv" will cause the card containing it
-  // to be scanned in the current traversal.  May be overridden by
-  // subtypes.
-  virtual bool card_will_be_scanned(jbyte cv) {
-    return CardTableModRefBS::card_is_dirty_wrt_gen_iter(cv);
-  }
-
-  // Returns "true" iff the value "cv" may have represented a dirty card at
-  // some point.
-  virtual bool card_may_have_been_dirty(jbyte cv) {
-    return card_is_dirty_wrt_gen_iter(cv);
-  }
 
   // The declaration order of these const fields is important; see the
   // constructor before changing.
@@ -174,20 +142,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
     return byte_for(p) + 1;
   }
 
-  // Iterate over the portion of the card-table which covers the given
-  // region mr in the given space and apply cl to any dirty sub-regions
-  // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
-                                                OopsInGenClosure* cl, CardTableRS* ct,
-                                                uint n_threads);
-
- private:
-  // Work method used to implement non_clean_card_iterate_possibly_parallel()
-  // above in the parallel case.
-  void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                            OopsInGenClosure* cl, CardTableRS* ct,
-                                            uint n_threads);
-
  protected:
   // Dirty the bytes corresponding to "mr" (not all of which must be
   // covered.)
@@ -196,65 +150,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // Clear (to clean_card) the bytes entirely contained within "mr" (not
   // all of which must be covered.)
   void clear_MemRegion(MemRegion mr);
-
-  // *** Support for parallel card scanning.
-
-  // This is an array, one element per covered region of the card table.
-  // Each entry is itself an array, with one element per chunk in the
-  // covered region.  Each entry of these arrays is the lowest non-clean
-  // card of the corresponding chunk containing part of an object from the
-  // previous chunk, or else NULL.
-  typedef jbyte*  CardPtr;
-  typedef CardPtr* CardArr;
-  CardArr* _lowest_non_clean;
-  size_t*  _lowest_non_clean_chunk_size;
-  uintptr_t* _lowest_non_clean_base_chunk_index;
-  int* _last_LNC_resizing_collection;
-
-  // Initializes "lowest_non_clean" to point to the array for the region
-  // covering "sp", and "lowest_non_clean_base_chunk_index" to the chunk
-  // index of the corresponding to the first element of that array.
-  // Ensures that these arrays are of sufficient size, allocating if necessary.
-  // May be called by several threads concurrently.
-  void get_LNC_array_for_space(Space* sp,
-                               jbyte**& lowest_non_clean,
-                               uintptr_t& lowest_non_clean_base_chunk_index,
-                               size_t& lowest_non_clean_chunk_size);
-
-  // Returns the number of chunks necessary to cover "mr".
-  size_t chunks_to_cover(MemRegion mr) {
-    return (size_t)(addr_to_chunk_index(mr.last()) -
-                    addr_to_chunk_index(mr.start()) + 1);
-  }
-
-  // Returns the index of the chunk in a stride which
-  // covers the given address.
-  uintptr_t addr_to_chunk_index(const void* addr) {
-    uintptr_t card = (uintptr_t) byte_for(addr);
-    return card / ParGCCardsPerStrideChunk;
-  }
-
-  // Apply cl, which must either itself apply dcto_cl or be dcto_cl,
-  // to the cards in the stride (of n_strides) within the given space.
-  void process_stride(Space* sp,
-                      MemRegion used,
-                      jint stride, int n_strides,
-                      OopsInGenClosure* cl,
-                      CardTableRS* ct,
-                      jbyte** lowest_non_clean,
-                      uintptr_t lowest_non_clean_base_chunk_index,
-                      size_t lowest_non_clean_chunk_size);
-
-  // Makes sure that chunk boundaries are handled appropriately, by
-  // adjusting the min_done of dcto_cl, and by using a special card-table
-  // value to indicate how min_done should be set.
-  void process_chunk_boundaries(Space* sp,
-                                DirtyCardToOopClosure* dcto_cl,
-                                MemRegion chunk_mr,
-                                MemRegion used,
-                                jbyte** lowest_non_clean,
-                                uintptr_t lowest_non_clean_base_chunk_index,
-                                size_t    lowest_non_clean_chunk_size);
 
 public:
   // Constants
@@ -434,35 +329,6 @@ public:
 template<>
 struct BarrierSet::GetName<CardTableModRefBS> {
   static const BarrierSet::Name value = BarrierSet::CardTableModRef;
-};
-
-class CardTableRS;
-
-// A specialization for the CardTableRS gen rem set.
-class CardTableModRefBSForCTRS: public CardTableModRefBS {
-  CardTableRS* _rs;
-protected:
-  bool card_will_be_scanned(jbyte cv);
-  bool card_may_have_been_dirty(jbyte cv);
-public:
-  CardTableModRefBSForCTRS(MemRegion whole_heap) :
-    CardTableModRefBS(
-      whole_heap,
-      // Concrete tag should be BarrierSet::CardTableForRS.
-      // That will presently break things in a bunch of places though.
-      // The concrete tag is used as a dispatch key in many places, and
-      // CardTableForRS does not correctly dispatch in some of those
-      // uses. This will be addressed as part of a reorganization of the
-      // BarrierSet hierarchy.
-      BarrierSet::FakeRtti(BarrierSet::CardTableModRef, 0).add_tag(BarrierSet::CardTableForRS))
-    {}
-
-  void set_CTRS(CardTableRS* rs) { _rs = rs; }
-};
-
-template<>
-struct BarrierSet::GetName<CardTableModRefBSForCTRS> {
-  static const BarrierSet::Name value = BarrierSet::CardTableForRS;
 };
 
 

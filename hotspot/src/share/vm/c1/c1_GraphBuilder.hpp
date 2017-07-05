@@ -339,6 +339,8 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void inline_sync_entry(Value lock, BlockBegin* sync_handler);
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
+  void build_graph_for_intrinsic(ciMethod* callee);
+
   // inliners
   bool try_inline(           ciMethod* callee, bool holder_known, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
   bool try_inline_intrinsics(ciMethod* callee);
@@ -364,12 +366,12 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void pop_scope();
   void pop_scope_for_jsr();
 
-  bool append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  bool append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  bool append_unsafe_get_raw(ciMethod* callee, BasicType t);
-  bool append_unsafe_put_raw(ciMethod* callee, BasicType t);
+  void append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_get_raw(ciMethod* callee, BasicType t);
+  void append_unsafe_put_raw(ciMethod* callee, BasicType t);
   void append_unsafe_CAS(ciMethod* callee);
-  bool append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
+  void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
 
   void print_inlining(ciMethod* callee, const char* msg = NULL, bool success = true);
 

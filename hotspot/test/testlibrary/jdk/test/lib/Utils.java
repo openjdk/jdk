@@ -24,9 +24,6 @@
 package jdk.test.lib;
 
 import static jdk.test.lib.Asserts.assertTrue;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
@@ -58,12 +55,12 @@ public final class Utils {
     public static final String NEW_LINE = System.getProperty("line.separator");
 
     /**
-     * Returns the value of 'test.vm.opts'system property.
+     * Returns the value of 'test.vm.opts' system property.
      */
     public static final String VM_OPTIONS = System.getProperty("test.vm.opts", "").trim();
 
     /**
-     * Returns the value of 'test.java.opts'system property.
+     * Returns the value of 'test.java.opts' system property.
      */
     public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
 
@@ -129,7 +126,7 @@ public final class Utils {
     /**
      * Returns the default JTReg arguments for a jvm running a test.
      * This is the combination of JTReg arguments test.vm.opts and test.java.opts.
-     * @return An array of options, or an empty array if no opptions.
+     * @return An array of options, or an empty array if no options.
      */
     public static String[] getTestJavaOpts() {
         List<String> opts = new ArrayList<String>();
@@ -276,7 +273,7 @@ public final class Utils {
      * 12254 /tmp/jdk8/tl/jdk/JTwork/classes/com/sun/tools/attach/Application.jar
      *
      * @param key A regular expression to search for.
-     * @return The found pid, or -1 if Enot found.
+     * @return The found pid, or -1 if not found.
      * @throws Exception If multiple matching jvms are found.
      */
     public static int tryFindJvmPid(String key) throws Throwable {
@@ -392,7 +389,7 @@ public final class Utils {
      * @param condition, a condition to wait for
      * @param timeout a time in milliseconds to wait for condition to be true
      * specifying -1 will wait forever
-     * @return condition value, to determine if wait was successfull
+     * @return condition value, to determine if wait was successful
      */
     public static final boolean waitForCondition(BooleanSupplier condition,
             long timeout) {
@@ -406,7 +403,7 @@ public final class Utils {
      * @param timeout a time in milliseconds to wait for condition to be true,
      * specifying -1 will wait forever
      * @param sleepTime a time to sleep value in milliseconds
-     * @return condition value, to determine if wait was successfull
+     * @return condition value, to determine if wait was successful
      */
     public static final boolean waitForCondition(BooleanSupplier condition,
             long timeout, long sleepTime) {

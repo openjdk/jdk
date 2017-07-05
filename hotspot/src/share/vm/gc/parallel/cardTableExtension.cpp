@@ -40,7 +40,6 @@ class CheckForUnmarkedOops : public OopClosure {
   PSYoungGen*         _young_gen;
   CardTableExtension* _card_table;
   HeapWord*           _unmarked_addr;
-  jbyte*              _unmarked_card;
 
  protected:
   template <class T> void do_oop_work(T* p) {
@@ -50,7 +49,6 @@ class CheckForUnmarkedOops : public OopClosure {
       // Don't overwrite the first missing card mark
       if (_unmarked_addr == NULL) {
         _unmarked_addr = (HeapWord*)p;
-        _unmarked_card = _card_table->byte_for(p);
       }
     }
   }
