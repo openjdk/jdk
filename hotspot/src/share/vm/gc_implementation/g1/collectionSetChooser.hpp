@@ -153,4 +153,47 @@ public:
   void verify() PRODUCT_RETURN;
 };
 
+class CSetChooserParUpdater : public StackObj {
+private:
+  CollectionSetChooser* _chooser;
+  bool _parallel;
+  uint _chunk_size;
+  uint _cur_chunk_idx;
+  uint _cur_chunk_end;
+  uint _regions_added;
+  size_t _reclaimable_bytes_added;
+
+public:
+  CSetChooserParUpdater(CollectionSetChooser* chooser,
+                        bool parallel, uint chunk_size) :
+    _chooser(chooser), _parallel(parallel), _chunk_size(chunk_size),
+    _cur_chunk_idx(0), _cur_chunk_end(0),
+    _regions_added(0), _reclaimable_bytes_added(0) { }
+
+  ~CSetChooserParUpdater() {
+    if (_parallel && _regions_added > 0) {
+      _chooser->update_totals(_regions_added, _reclaimable_bytes_added);
+    }
+  }
+
+  void add_region(HeapRegion* hr) {
+    if (_parallel) {
+      if (_cur_chunk_idx == _cur_chunk_end) {
+        _cur_chunk_idx = _chooser->claim_array_chunk(_chunk_size);
+        _cur_chunk_end = _cur_chunk_idx + _chunk_size;
+      }
+      assert(_cur_chunk_idx < _cur_chunk_end, "invariant");
+      _chooser->set_region(_cur_chunk_idx, hr);
+      _cur_chunk_idx += 1;
+    } else {
+      _chooser->add_region(hr);
+    }
+    _regions_added += 1;
+    _reclaimable_bytes_added += hr->reclaimable_bytes();
+  }
+
+  bool should_add(HeapRegion* hr) { return _chooser->should_add(hr); }
+};
+
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_COLLECTIONSETCHOOSER_HPP
+
