@@ -96,11 +96,14 @@ private:
 
 protected:
   // Constructor and desctructor: only construct subclasses.
-  AbstractGangTask(const char* name) {
+  AbstractGangTask(const char* name)
+  {
     NOT_PRODUCT(_name = name);
     _counter = 0;
   }
   virtual ~AbstractGangTask() { }
+
+public:
 };
 
 class AbstractGangTaskWOopQueues : public AbstractGangTask {
@@ -116,6 +119,7 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
   OopTaskQueueSet* queues() { return _queues; }
 };
 
+
 // Class AbstractWorkGang:
 // An abstract class representing a gang of workers.
 // You subclass this to supply an implementation of run_task().
@@ -130,6 +134,8 @@ public:
   virtual void run_task(AbstractGangTask* task) = 0;
   // Stop and terminate all workers.
   virtual void stop();
+  // Return true if more workers should be applied to the task.
+  virtual bool needs_more_workers() const { return true; }
 public:
   // Debugging.
   const char* name() const;
@@ -287,20 +293,62 @@ public:
   AbstractWorkGang* gang() const { return _gang; }
 };
 
+// Dynamic number of worker threads
+//
+// This type of work gang is used to run different numbers of
+// worker threads at different times.  The
+// number of workers run for a task is "_active_workers"
+// instead of "_total_workers" in a WorkGang.  The method
+// "needs_more_workers()" returns true until "_active_workers"
+// have been started and returns false afterwards.  The
+// implementation of "needs_more_workers()" in WorkGang always
+// returns true so that all workers are started.  The method
+// "loop()" in GangWorker was modified to ask "needs_more_workers()"
+// in its loop to decide if it should start working on a task.
+// A worker in "loop()" waits for notification on the WorkGang
+// monitor and execution of each worker as it checks for work
+// is serialized via the same monitor.  The "needs_more_workers()"
+// call is serialized and additionally the calculation for the
+// "part" (effectively the worker id for executing the task) is
+// serialized to give each worker a unique "part".  Workers that
+// are not needed for this tasks (i.e., "_active_workers" have
+// been started before it, continue to wait for work.
+
 class FlexibleWorkGang: public WorkGang {
+  // The currently active workers in this gang.
+  // This is a number that is dynamically adjusted
+  // and checked in the run_task() method at each invocation.
+  // As described above _active_workers determines the number
+  // of threads started on a task.  It must also be used to
+  // determine completion.
+
  protected:
   int _active_workers;
  public:
   // Constructor and destructor.
+  // Initialize active_workers to a minimum value.  Setting it to
+  // the parameter "workers" will initialize it to a maximum
+  // value which is not desirable.
   FlexibleWorkGang(const char* name, int workers,
                    bool are_GC_task_threads,
                    bool  are_ConcurrentGC_threads) :
-    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads) {
-    _active_workers = ParallelGCThreads;
-  };
+    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
+    _active_workers(UseDynamicNumberOfGCThreads ? 1 : ParallelGCThreads) {};
   // Accessors for fields
   virtual int active_workers() const { return _active_workers; }
-  void set_active_workers(int v) { _active_workers = v; }
+  void set_active_workers(int v) {
+    assert(v <= _total_workers,
+           "Trying to set more workers active than there are");
+    _active_workers = MIN2(v, _total_workers);
+    assert(v != 0, "Trying to set active workers to 0");
+    _active_workers = MAX2(1, _active_workers);
+    assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
+           "Unless dynamic should use total workers");
+  }
+  virtual void run_task(AbstractGangTask* task);
+  virtual bool needs_more_workers() const {
+    return _started_workers < _active_workers;
+  }
 };
 
 // Work gangs in garbage collectors: 2009-06-10
@@ -357,6 +405,11 @@ public:
 class SubTasksDone: public CHeapObj {
   jint* _tasks;
   int _n_tasks;
+  // _n_threads is used to determine when a sub task is done.
+  // It does not control how many threads will execute the subtask
+  // but must be initialized to the number that do execute the task
+  // in order to correctly decide when the subtask is done (all the
+  // threads working on the task have finished).
   int _n_threads;
   jint _threads_completed;
 #ifdef ASSERT

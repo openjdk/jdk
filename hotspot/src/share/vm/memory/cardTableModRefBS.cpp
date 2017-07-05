@@ -460,9 +460,43 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
                                                                  OopsInGenClosure* cl,
                                                                  CardTableRS* ct) {
   if (!mr.is_empty()) {
-    int n_threads = SharedHeap::heap()->n_par_threads();
-    if (n_threads > 0) {
+    // Caller (process_strong_roots()) claims that all GC threads
+    // execute this call.  With UseDynamicNumberOfGCThreads now all
+    // active GC threads execute this call.  The number of active GC
+    // threads needs to be passed to par_non_clean_card_iterate_work()
+    // to get proper partitioning and termination.
+    //
+    // This is an example of where n_par_threads() is used instead
+    // of workers()->active_workers().  n_par_threads can be set to 0 to
+    // turn off parallelism.  For example when this code is called as
+    // part of verification and SharedHeap::process_strong_roots() is being
+    // used, then n_par_threads() may have been set to 0.  active_workers
+    // is not overloaded with the meaning that it is a switch to disable
+    // parallelism and so keeps the meaning of the number of
+    // active gc workers.  If parallelism has not been shut off by
+    // setting n_par_threads to 0, then n_par_threads should be
+    // equal to active_workers.  When a different mechanism for shutting
+    // off parallelism is used, then active_workers can be used in
+    // place of n_par_threads.
+    //  This is an example of a path where n_par_threads is
+    // set to 0 to turn off parallism.
+    //  [7] CardTableModRefBS::non_clean_card_iterate()
+    //  [8] CardTableRS::younger_refs_in_space_iterate()
+    //  [9] Generation::younger_refs_in_space_iterate()
+    //  [10] OneContigSpaceCardGeneration::younger_refs_iterate()
+    //  [11] CompactingPermGenGen::younger_refs_iterate()
+    //  [12] CardTableRS::younger_refs_iterate()
+    //  [13] SharedHeap::process_strong_roots()
+    //  [14] G1CollectedHeap::verify()
+    //  [15] Universe::verify()
+    //  [16] G1CollectedHeap::do_collection_pause_at_safepoint()
+    //
+    int n_threads =  SharedHeap::heap()->n_par_threads();
+    bool is_par = n_threads > 0;
+    if (is_par) {
 #ifndef SERIALGC
+      assert(SharedHeap::heap()->n_par_threads() ==
+             SharedHeap::heap()->workers()->active_workers(), "Mismatch");
       non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
 #else  // SERIALGC
       fatal("Parallel gc not supported here.");
@@ -489,6 +523,10 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
 // change their values in any manner.
 void CardTableModRefBS::non_clean_card_iterate_serial(MemRegion mr,
                                                       MemRegionClosure* cl) {
+  bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
+  assert(!is_par ||
+          (SharedHeap::heap()->n_par_threads() ==
+          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (mri.word_size() > 0) {
@@ -622,23 +660,6 @@ MemRegion CardTableModRefBS::dirty_card_range_after_reset(MemRegion mr,
     }
   }
   return MemRegion(mr.end(), mr.end());
-}
-
-// Set all the dirty cards in the given region to "precleaned" state.
-void CardTableModRefBS::preclean_dirty_cards(MemRegion mr) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) {
-      jbyte *cur_entry, *limit;
-      for (cur_entry = byte_for(mri.start()), limit = byte_for(mri.last());
-           cur_entry <= limit;
-           cur_entry++) {
-        if (*cur_entry == dirty_card) {
-          *cur_entry = precleaned_card;
-        }
-      }
-    }
-  }
 }
 
 uintx CardTableModRefBS::ct_max_alignment_constraint() {

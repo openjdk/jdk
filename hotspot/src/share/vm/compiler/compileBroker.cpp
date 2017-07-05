@@ -1748,7 +1748,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     tty->print("%4d ", compile_id);    // print compilation number
     tty->print("%s ", (is_osr ? "%" : " "));
     int code_size = (task->code() == NULL) ? 0 : task->code()->total_size();
-    tty->print_cr("size: %d time: %d inlined: %d bytes", code_size, time.milliseconds(), task->num_inlined_bytecodes());
+    tty->print_cr("size: %d time: %d inlined: %d bytes", code_size, (int)time.milliseconds(), task->num_inlined_bytecodes());
   }
 
   if (compilable == ciEnv::MethodCompilable_never) {

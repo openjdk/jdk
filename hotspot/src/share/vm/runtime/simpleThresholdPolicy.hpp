@@ -55,7 +55,7 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   CompLevel loop_event(methodOop method, CompLevel cur_level);
-
+  void print_counters(const char* prefix, methodHandle mh);
 protected:
   int c1_count() const     { return _c1_count; }
   int c2_count() const     { return _c2_count; }
