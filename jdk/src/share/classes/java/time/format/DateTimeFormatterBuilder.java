@@ -77,6 +77,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -142,7 +143,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * can be used, see {@link #appendPattern(String)}.
  * In practice, this simply parses the pattern and calls other methods on the builder.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is a mutable builder intended for use from a single thread.
  *
  * @since 1.8
@@ -185,6 +186,44 @@ public final class DateTimeFormatterBuilder {
      * The index of the last variable width value parser.
      */
     private int valueParserIndex = -1;
+
+    /**
+     * Gets the formatting pattern for date and time styles for a locale and chronology.
+     * The locale and chronology are used to lookup the locale specific format
+     * for the requested dateStyle and/or timeStyle.
+     *
+     * @param dateStyle  the FormatStyle for the date
+     * @param timeStyle  the FormatStyle for the time
+     * @param chrono  the Chronology, non-null
+     * @param locale  the locale, non-null
+     * @return the locale and Chronology specific formatting pattern
+     * @throws IllegalArgumentException if both dateStyle and timeStyle are null
+     */
+    public static String getLocalizedDateTimePattern(FormatStyle dateStyle, FormatStyle timeStyle,
+            Chronology chrono, Locale locale) {
+        Objects.requireNonNull(locale, "locale");
+        Objects.requireNonNull(chrono, "chrono");
+        if (dateStyle == null && timeStyle == null) {
+            throw new IllegalArgumentException("Either dateStyle or timeStyle must be non-null");
+        }
+        LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
+        String pattern = lr.getJavaTimeDateTimePattern(
+                convertStyle(timeStyle), convertStyle(dateStyle), chrono.getCalendarType());
+        return pattern;
+    }
+
+    /**
+     * Converts the given FormatStyle to the java.text.DateFormat style.
+     *
+     * @param style  the FormatStyle style
+     * @return the int style, or -1 if style is null, indicating un-required
+     */
+    private static int convertStyle(FormatStyle style) {
+        if (style == null) {
+            return -1;
+        }
+        return style.ordinal();  // indices happen to align
+    }
 
     /**
      * Constructs a new instance of the builder.
@@ -344,7 +383,7 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendValue(TemporalField field) {
         Objects.requireNonNull(field, "field");
-        active.valueParserIndex = appendInternal(new NumberPrinterParser(field, 1, 19, SignStyle.NORMAL));
+        appendValue(new NumberPrinterParser(field, 1, 19, SignStyle.NORMAL));
         return this;
     }
 
@@ -360,15 +399,15 @@ public final class DateTimeFormatterBuilder {
      * If the value of the field is negative then an exception is thrown during formatting.
      * <p>
      * This method supports a special technique of parsing known as 'adjacent value parsing'.
-     * This technique solves the problem where a variable length value is followed by one or more
+     * This technique solves the problem where a value, variable or fixed width, is followed by one or more
      * fixed length values. The standard parser is greedy, and thus it would normally
      * steal the digits that are needed by the fixed width value parsers that follow the
      * variable width one.
      * <p>
      * No action is required to initiate 'adjacent value parsing'.
-     * When a call to {@code appendValue} with a variable width is made, the builder
+     * When a call to {@code appendValue} is made, the builder
      * enters adjacent value parsing setup mode. If the immediately subsequent method
-     * call or calls on the same builder are to this method, then the parser will reserve
+     * call or calls on the same builder are for a fixed width value, then the parser will reserve
      * space so that the fixed width values can be parsed.
      * <p>
      * For example, consider {@code builder.appendValue(YEAR).appendValue(MONTH_OF_YEAR, 2);}
@@ -381,7 +420,7 @@ public final class DateTimeFormatterBuilder {
      * nothing for the month.
      * <p>
      * Adjacent value parsing applies to each set of fixed width not-negative values in the parser
-     * that immediately follow any kind of variable width value.
+     * that immediately follow any kind of value, variable or fixed width.
      * Calling any other append method will end the setup of adjacent value parsing.
      * Thus, in the unlikely event that you need to avoid adjacent value parsing behavior,
      * simply add the {@code appendValue} to another {@code DateTimeFormatterBuilder}
@@ -402,7 +441,8 @@ public final class DateTimeFormatterBuilder {
             throw new IllegalArgumentException("The width must be from 1 to 19 inclusive but was " + width);
         }
         NumberPrinterParser pp = new NumberPrinterParser(field, width, width, SignStyle.NOT_NEGATIVE);
-        return appendFixedWidth(width, pp);
+        appendValue(pp);
+        return this;
     }
 
     /**
@@ -420,8 +460,10 @@ public final class DateTimeFormatterBuilder {
      * This behavior can be affected by 'adjacent value parsing'.
      * See {@link #appendValue(java.time.temporal.TemporalField, int)} for full details.
      * <p>
-     * In strict parsing mode, the minimum number of parsed digits is {@code minWidth}.
-     * In lenient parsing mode, the minimum number of parsed digits is one.
+     * In strict parsing mode, the minimum number of parsed digits is {@code minWidth}
+     * and the maximum is {@code maxWidth}.
+     * In lenient parsing mode, the minimum number of parsed digits is one
+     * and the maximum is 19 (except as limited by adjacent value parsing).
      * <p>
      * If this method is invoked with equal minimum and maximum widths and a sign style of
      * {@code NOT_NEGATIVE} then it delegates to {@code appendValue(TemporalField,int)}.
@@ -452,17 +494,13 @@ public final class DateTimeFormatterBuilder {
                     maxWidth + " < " + minWidth);
         }
         NumberPrinterParser pp = new NumberPrinterParser(field, minWidth, maxWidth, signStyle);
-        if (minWidth == maxWidth) {
-            appendInternal(pp);
-        } else {
-            active.valueParserIndex = appendInternal(pp);
-        }
+        appendValue(pp);
         return this;
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Appends the reduced value of a date-time field to the formatter.
+     * Appends the reduced value of a date-time field with fixed width to the formatter.
      * <p>
      * This is typically used for formatting and parsing a two digit year.
      * The {@code width} is the printed and parsed width.
@@ -471,51 +509,116 @@ public final class DateTimeFormatterBuilder {
      * For formatting, the width is used to determine the number of characters to format.
      * The rightmost characters are output to match the width, left padding with zero.
      * <p>
-     * For parsing, exactly the number of characters specified by the width are parsed.
-     * This is incomplete information however, so the base value is used to complete the parse.
-     * The base value is the first valid value in a range of ten to the power of width.
+     * For strict parsing, the number of characters allowed by the width are parsed.
+     * For lenient parsing, the number of characters must be at least 1 and less than 10.
+     * If the number of digits parsed is equal to {@code width} and the value is positive,
+     * the value of the field is computed to be the first number greater than
+     * or equal to the {@code baseValue} with the same least significant characters,
+     * otherwise the value parsed is the field value.
+     * This allows a reduced value to be entered for values in range of the baseValue
+     * and width and absolute values can be entered for values outside the range.
      * <p>
      * For example, a base value of {@code 1980} and a width of {@code 2} will have
      * valid values from {@code 1980} to {@code 2079}.
      * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
-     * is the value within the range where the last two digits are "12".
-     * <p>
-     * This is a fixed width parser operating using 'adjacent value parsing'.
-     * See {@link #appendValue(java.time.temporal.TemporalField, int)} for full details.
+     * is the value within the range where the last two characters are "12".
+     * Compare with lenient parsing the text {@code "1915"} that will result in the
+     * value {@code 1915}.
      *
      * @param field  the field to append, not null
-     * @param width  the width of the printed and parsed field, from 1 to 18
+     * @param width  the field width of the printed and parsed field, from 1 to 10
+     * @param baseValue  the base value of the range of valid values
+     * @return this, for chaining, not null
+     * @throws IllegalArgumentException if the width or base value is invalid
+     * @see #appendValueReduced(java.time.temporal.TemporalField, int, int, int)
+     */
+    public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
+            int width, int baseValue) {
+        return appendValueReduced(field, width, width, baseValue);
+    }
+
+    /**
+     * Appends the reduced value of a date-time field with a flexible width to the formatter.
+     * <p>
+     * This is typically used for formatting and parsing a two digit year
+     * but allowing for the year value to be up to maxWidth.
+     * <p>
+     * For formatting, the {@code width} and {@code maxWidth} are used to
+     * determine the number of characters to format.
+     * If the value of the field is within the range of the {@code baseValue} using
+     * {@code width} characters then the reduced value is formatted otherwise the value is
+     * truncated to fit {@code maxWidth}.
+     * The rightmost characters are output to match the width, left padding with zero.
+     * <p>
+     * For strict parsing, the number of characters allowed by {@code width} to {@code maxWidth} are parsed.
+     * For lenient parsing, the number of characters must be at least 1 and less than 10.
+     * If the number of digits parsed is equal to {@code width} and the value is positive,
+     * the value of the field is computed to be the first number greater than
+     * or equal to the {@code baseValue} with the same least significant characters,
+     * otherwise the value parsed is the field value.
+     * This allows a reduced value to be entered for values in range of the baseValue
+     * and width and absolute values can be entered for values outside the range.
+     * <p>
+     * For example, a base value of {@code 1980} and a width of {@code 2} will have
+     * valid values from {@code 1980} to {@code 2079}.
+     * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
+     * is the value within the range where the last two characters are "12".
+     * Compare with parsing the text {@code "1915"} that will result in the
+     * value {@code 1915}.
+     *
+     * @param field  the field to append, not null
+     * @param width  the field width of the printed and parsed field, from 1 to 10
+     * @param maxWidth  the maximum field width of the printed field, from 1 to 10
      * @param baseValue  the base value of the range of valid values
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if the width or base value is invalid
      */
-    public DateTimeFormatterBuilder appendValueReduced(
-            TemporalField field, int width, int baseValue) {
+    public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
+            int width, int maxWidth, int baseValue) {
         Objects.requireNonNull(field, "field");
-        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, baseValue);
-        appendFixedWidth(width, pp);
+        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue);
+        appendValue(pp);
         return this;
     }
 
     /**
-     * Appends a fixed width printer-parser.
+     * Appends a fixed or variable width printer-parser handling adjacent value mode.
+     * If a PrinterParser is not active then the new PrinterParser becomes
+     * the active PrinterParser.
+     * Otherwise, the active PrinterParser is modified depending on the new PrinterParser.
+     * If the new PrinterParser is fixed width and has sign style {@code NOT_NEGATIVE}
+     * then its width is added to the active PP and
+     * the new PrinterParser is forced to be fixed width.
+     * If the new PrinterParser is variable width, the active PrinterParser is changed
+     * to be fixed width and the new PrinterParser becomes the active PP.
      *
-     * @param width  the width
      * @param pp  the printer-parser, not null
      * @return this, for chaining, not null
      */
-    private DateTimeFormatterBuilder appendFixedWidth(int width, NumberPrinterParser pp) {
+    private DateTimeFormatterBuilder appendValue(NumberPrinterParser pp) {
         if (active.valueParserIndex >= 0) {
+            final int activeValueParser = active.valueParserIndex;
+
             // adjacent parsing mode, update setting in previous parsers
-            NumberPrinterParser basePP = (NumberPrinterParser) active.printerParsers.get(active.valueParserIndex);
-            basePP = basePP.withSubsequentWidth(width);
-            int activeValueParser = active.valueParserIndex;
-            active.printerParsers.set(active.valueParserIndex, basePP);
-            appendInternal(pp.withFixedWidth());
-            active.valueParserIndex = activeValueParser;
+            NumberPrinterParser basePP = (NumberPrinterParser) active.printerParsers.get(activeValueParser);
+            if (pp.minWidth == pp.maxWidth && pp.signStyle == SignStyle.NOT_NEGATIVE) {
+                // Append the width to the subsequentWidth of the active parser
+                basePP = basePP.withSubsequentWidth(pp.maxWidth);
+                // Append the new parser as a fixed width
+                appendInternal(pp.withFixedWidth());
+                // Retain the previous active parser
+                active.valueParserIndex = activeValueParser;
+            } else {
+                // Modify the active parser to be fixed width
+                basePP = basePP.withFixedWidth();
+                // The new parser becomes the mew active parser
+                active.valueParserIndex = appendInternal(pp);
+            }
+            // Replace the modified parser with the updated one
+            active.printerParsers.set(activeValueParser, basePP);
         } else {
-            // not adjacent parsing
-            appendInternal(pp);
+            // The new Parser becomes the active parser
+            active.valueParserIndex = appendInternal(pp);
         }
         return this;
     }
@@ -657,11 +760,24 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends an instant using ISO-8601 to the formatter.
+     * Appends an instant using ISO-8601 to the formatter, formatting fractional
+     * digits in groups of three.
      * <p>
      * Instants have a fixed output format.
-     * They are converted to a date-time with a zone-offset of UTC and printed
+     * They are converted to a date-time with a zone-offset of UTC and formatted
      * using the standard ISO-8601 format.
+     * With this method, formatting nano-of-second outputs zero, three, six
+     * or nine digits digits as necessary.
+     * The localized decimal style is not used.
+     * <p>
+     * The instant is obtained using {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS}
+     * and optionally (@code NANO_OF_SECOND). The value of {@code INSTANT_SECONDS}
+     * may be outside the maximum range of {@code LocalDateTime}.
+     * <p>
+     * The {@linkplain ResolverStyle resolver style} has no effect on instant parsing.
+     * The end-of-day time of '24:00' is handled as midnight at the start of the following day.
+     * The leap-second time of '23:59:59' is handled to some degree, see
+     * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
      * <p>
      * An alternative to this method is to format/parse the instant as a single
      * epoch-seconds value. That is achieved using {@code appendValue(INSTANT_SECONDS)}.
@@ -669,10 +785,54 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendInstant() {
-        appendInternal(new InstantPrinterParser());
+        appendInternal(new InstantPrinterParser(-2));
         return this;
     }
 
+    /**
+     * Appends an instant using ISO-8601 to the formatter with control over
+     * the number of fractional digits.
+     * <p>
+     * Instants have a fixed output format, although this method provides some
+     * control over the fractional digits. They are converted to a date-time
+     * with a zone-offset of UTC and printed using the standard ISO-8601 format.
+     * The localized decimal style is not used.
+     * <p>
+     * The {@code fractionalDigits} parameter allows the output of the fractional
+     * second to be controlled. Specifying zero will cause no fractional digits
+     * to be output. From 1 to 9 will output an increasing number of digits, using
+     * zero right-padding if necessary. The special value -1 is used to output as
+     * many digits as necessary to avoid any trailing zeroes.
+     * <p>
+     * When parsing in strict mode, the number of parsed digits must match the
+     * fractional digits. When parsing in lenient mode, any number of fractional
+     * digits from zero to nine are accepted.
+     * <p>
+     * The instant is obtained using {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS}
+     * and optionally (@code NANO_OF_SECOND). The value of {@code INSTANT_SECONDS}
+     * may be outside the maximum range of {@code LocalDateTime}.
+     * <p>
+     * The {@linkplain ResolverStyle resolver style} has no effect on instant parsing.
+     * The end-of-day time of '24:00' is handled as midnight at the start of the following day.
+     * The leap-second time of '23:59:59' is handled to some degree, see
+     * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
+     * <p>
+     * An alternative to this method is to format/parse the instant as a single
+     * epoch-seconds value. That is achieved using {@code appendValue(INSTANT_SECONDS)}.
+     *
+     * @param fractionalDigits  the number of fractional second digits to format with,
+     *  from 0 to 9, or -1 to use as many digits as necessary
+     * @return this, for chaining, not null
+     */
+    public DateTimeFormatterBuilder appendInstant(int fractionalDigits) {
+        if (fractionalDigits < -1 || fractionalDigits > 9) {
+            throw new IllegalArgumentException("The fractional digits must be from -1 to 9 inclusive but was " + fractionalDigits);
+        }
+        appendInternal(new InstantPrinterParser(fractionalDigits));
+        return this;
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Appends the zone offset, such as '+01:00', to the formatter.
      * <p>
@@ -1049,7 +1209,7 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The calendar system name will be output during a format.
      * If the chronology cannot be obtained then an exception will be thrown.
-     * The calendar system name is obtained from the formatting symbols.
+     * The calendar system name is obtained from the Chronology.
      *
      * @param textStyle  the text style to use, not null
      * @return this, for chaining, not null
@@ -1838,7 +1998,7 @@ public final class DateTimeFormatterBuilder {
      * using the default locale.
      * <p>
      * This will create a formatter with the {@linkplain Locale#getDefault(Locale.Category) default FORMAT locale}.
-     * Numbers will be printed and parsed using the standard non-localized set of symbols.
+     * Numbers will be printed and parsed using the standard DecimalStyle.
      * The resolver style will be {@link ResolverStyle#SMART SMART}.
      * <p>
      * Calling this method will end any open optional sections by repeatedly
@@ -1858,7 +2018,7 @@ public final class DateTimeFormatterBuilder {
      * using the specified locale.
      * <p>
      * This will create a formatter with the specified locale.
-     * Numbers will be printed and parsed using the standard non-localized set of symbols.
+     * Numbers will be printed and parsed using the standard DecimalStyle.
      * The resolver style will be {@link ResolverStyle#SMART SMART}.
      * <p>
      * Calling this method will end any open optional sections by repeatedly
@@ -1898,7 +2058,7 @@ public final class DateTimeFormatterBuilder {
             optionalEnd();
         }
         CompositePrinterParser pp = new CompositePrinterParser(printerParsers, false);
-        return new DateTimeFormatter(pp, locale, DateTimeFormatSymbols.STANDARD,
+        return new DateTimeFormatter(pp, locale, DecimalStyle.STANDARD,
                 resolverStyle, null, chrono, null);
     }
 
@@ -1921,7 +2081,7 @@ public final class DateTimeFormatterBuilder {
      * for the next parser. If an error occurs, the returned index will be negative
      * and will have the error position encoded using the complement operator.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * This interface must be implemented with care to ensure other classes operate correctly.
      * All implementations that can be instantiated must be final, immutable and thread-safe.
      * <p>
@@ -2282,24 +2442,25 @@ public final class DateTimeFormatterBuilder {
         /**
          * Array of 10 to the power of n.
          */
-        static final int[] EXCEED_POINTS = new int[] {
-            0,
-            10,
-            100,
-            1000,
-            10000,
-            100000,
-            1000000,
-            10000000,
-            100000000,
-            1000000000,
+        static final long[] EXCEED_POINTS = new long[] {
+            0L,
+            10L,
+            100L,
+            1000L,
+            10000L,
+            100000L,
+            1000000L,
+            10000000L,
+            100000000L,
+            1000000000L,
+            10000000000L,
         };
 
         final TemporalField field;
         final int minWidth;
-        private final int maxWidth;
+        final int maxWidth;
         private final SignStyle signStyle;
-        private final int subsequentWidth;
+        final int subsequentWidth;
 
         /**
          * Constructor.
@@ -2328,7 +2489,7 @@ public final class DateTimeFormatterBuilder {
          * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
          *  -1 if fixed width due to active adjacent parsing
          */
-        private NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
+        protected NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
@@ -2343,6 +2504,9 @@ public final class DateTimeFormatterBuilder {
          * @return a new updated printer-parser, not null
          */
         NumberPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, -1);
         }
 
@@ -2363,24 +2527,24 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             long value = getValue(valueLong);
-            DateTimeFormatSymbols symbols = context.getSymbols();
+            DecimalStyle decimalStyle = context.getDecimalStyle();
             String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
             if (str.length() > maxWidth) {
                 throw new DateTimeException("Field " + field.getName() +
                     " cannot be printed as the value " + value +
                     " exceeds the maximum print width of " + maxWidth);
             }
-            str = symbols.convertNumberToI18N(str);
+            str = decimalStyle.convertNumberToI18N(str);
 
             if (value >= 0) {
                 switch (signStyle) {
                     case EXCEEDS_PAD:
                         if (minWidth < 19 && value >= EXCEED_POINTS[minWidth]) {
-                            buf.append(symbols.getPositiveSign());
+                            buf.append(decimalStyle.getPositiveSign());
                         }
                         break;
                     case ALWAYS:
-                        buf.append(symbols.getPositiveSign());
+                        buf.append(decimalStyle.getPositiveSign());
                         break;
                 }
             } else {
@@ -2388,7 +2552,7 @@ public final class DateTimeFormatterBuilder {
                     case NORMAL:
                     case EXCEEDS_PAD:
                     case ALWAYS:
-                        buf.append(symbols.getNegativeSign());
+                        buf.append(decimalStyle.getNegativeSign());
                         break;
                     case NOT_NEGATIVE:
                         throw new DateTimeException("Field " + field.getName() +
@@ -2397,7 +2561,7 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             for (int i = 0; i < minWidth - str.length(); i++) {
-                buf.append(symbols.getZeroDigit());
+                buf.append(decimalStyle.getZeroDigit());
             }
             buf.append(str);
             return true;
@@ -2426,13 +2590,13 @@ public final class DateTimeFormatterBuilder {
             char sign = text.charAt(position);  // IOOBE if invalid position
             boolean negative = false;
             boolean positive = false;
-            if (sign == context.getSymbols().getPositiveSign()) {
+            if (sign == context.getDecimalStyle().getPositiveSign()) {
                 if (signStyle.parse(true, context.isStrict(), minWidth == maxWidth) == false) {
                     return ~position;
                 }
                 positive = true;
                 position++;
-            } else if (sign == context.getSymbols().getNegativeSign()) {
+            } else if (sign == context.getDecimalStyle().getNegativeSign()) {
                 if (signStyle.parse(false, context.isStrict(), minWidth == maxWidth) == false) {
                     return ~position;
                 }
@@ -2448,7 +2612,7 @@ public final class DateTimeFormatterBuilder {
             if (minEndPos > length) {
                 return ~position;
             }
-            int effMaxWidth = maxWidth + Math.max(subsequentWidth, 0);
+            int effMaxWidth = (context.isStrict() || isFixedWidth() ? maxWidth : 9) + Math.max(subsequentWidth, 0);
             long total = 0;
             BigInteger totalBig = null;
             int pos = position;
@@ -2456,7 +2620,7 @@ public final class DateTimeFormatterBuilder {
                 int maxEndPos = Math.min(pos + effMaxWidth, length);
                 while (pos < maxEndPos) {
                     char ch = text.charAt(pos++);
-                    int digit = context.getSymbols().convertToDigit(ch);
+                    int digit = context.getDecimalStyle().convertToDigit(ch);
                     if (digit < 0) {
                         pos--;
                         if (pos < minEndPos) {
@@ -2550,62 +2714,110 @@ public final class DateTimeFormatterBuilder {
      */
     static final class ReducedPrinterParser extends NumberPrinterParser {
         private final int baseValue;
-        private final int range;
 
         /**
          * Constructor.
          *
          * @param field  the field to format, validated not null
-         * @param width  the field width, from 1 to 18
+         * @param minWidth  the minimum field width, from 1 to 10
+         * @param maxWidth  the maximum field width, from 1 to 10
          * @param baseValue  the base value
          */
-        ReducedPrinterParser(TemporalField field, int width, int baseValue) {
-            super(field, width, width, SignStyle.NOT_NEGATIVE);
-            if (width < 1 || width > 18) {
-                throw new IllegalArgumentException("The width must be from 1 to 18 inclusive but was " + width);
+        ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
+                int baseValue) {
+            this(field, minWidth, maxWidth, baseValue, 0);
+            if (minWidth < 1 || minWidth > 10) {
+                throw new IllegalArgumentException("The minWidth must be from 1 to 10 inclusive but was " + minWidth);
+            }
+            if (maxWidth < 1 || maxWidth > 10) {
+                throw new IllegalArgumentException("The maxWidth must be from 1 to 10 inclusive but was " + minWidth);
+            }
+            if (maxWidth < minWidth) {
+                throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
+                        maxWidth + " < " + minWidth);
             }
             if (field.range().isValidValue(baseValue) == false) {
                 throw new IllegalArgumentException("The base value must be within the range of the field");
             }
-            this.baseValue = baseValue;
-            this.range = EXCEED_POINTS[width];
-            if ((((long) baseValue) + range) > Integer.MAX_VALUE) {
+            if ((((long) baseValue) + EXCEED_POINTS[maxWidth]) > Integer.MAX_VALUE) {
                 throw new DateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
             }
         }
 
+        /**
+         * Constructor.
+         * The arguments have already been checked.
+         *
+         * @param field  the field to format, validated not null
+         * @param minWidth  the minimum field width, from 1 to 10
+         * @param maxWidth  the maximum field width, from 1 to 10
+         * @param baseValue  the base value
+         * @param subsequentWidth the subsequentWidth for this instance
+         */
+        private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
+                int baseValue, int subsequentWidth) {
+            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+            this.baseValue = baseValue;
+        }
+
         @Override
         long getValue(long value) {
-            return Math.abs(value % range);
+            long absValue = Math.abs(value);
+            if (value >= baseValue && value < baseValue + EXCEED_POINTS[minWidth]) {
+                // Use the reduced value if it fits in minWidth
+                return absValue % EXCEED_POINTS[minWidth];
+            }
+            // Otherwise truncate to fit in maxWidth
+            return absValue % EXCEED_POINTS[maxWidth];
         }
 
         @Override
         int setValue(DateTimeParseContext context, long value, int errorPos, int successPos) {
-            int lastPart = baseValue % range;
-            if (baseValue > 0) {
-                value = baseValue - lastPart + value;
-            } else {
-                value = baseValue - lastPart - value;
-            }
-            if (value < baseValue) {
-                value += range;
+            int parseLen = successPos - errorPos;
+            if (parseLen == minWidth && value >= 0) {
+                long range = EXCEED_POINTS[minWidth];
+                long lastPart = baseValue % range;
+                long basePart = baseValue - lastPart;
+                if (baseValue > 0) {
+                    value = basePart + value;
+                } else {
+                    value = basePart - value;
+                }
+                if (basePart != 0 && value < baseValue) {
+                    value += range;
+                }
             }
             return context.setParsedField(field, value, errorPos, successPos);
         }
 
+        /**
+         * Returns a new instance with fixed width flag set.
+         *
+         * @return a new updated printer-parser, not null
+         */
         @Override
-        NumberPrinterParser withFixedWidth() {
-            return this;
+        ReducedPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, -1);
         }
 
+        /**
+         * Returns a new instance with an updated subsequent width.
+         *
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater
+         * @return a new updated printer-parser, not null
+         */
         @Override
-        boolean isFixedWidth() {
-            return true;
+        ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue,
+                    this.subsequentWidth + subsequentWidth);
         }
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field.getName() + "," + minWidth + "," + baseValue + ")";
+            return "ReducedValue(" + field.getName() + "," + minWidth + "," + maxWidth + "," + baseValue + ")";
         }
     }
 
@@ -2654,24 +2866,24 @@ public final class DateTimeFormatterBuilder {
             if (value == null) {
                 return false;
             }
-            DateTimeFormatSymbols symbols = context.getSymbols();
+            DecimalStyle decimalStyle = context.getDecimalStyle();
             BigDecimal fraction = convertToFraction(value);
             if (fraction.scale() == 0) {  // scale is zero if value is zero
                 if (minWidth > 0) {
                     if (decimalPoint) {
-                        buf.append(symbols.getDecimalSeparator());
+                        buf.append(decimalStyle.getDecimalSeparator());
                     }
                     for (int i = 0; i < minWidth; i++) {
-                        buf.append(symbols.getZeroDigit());
+                        buf.append(decimalStyle.getZeroDigit());
                     }
                 }
             } else {
                 int outputScale = Math.min(Math.max(fraction.scale(), minWidth), maxWidth);
                 fraction = fraction.setScale(outputScale, RoundingMode.FLOOR);
                 String str = fraction.toPlainString().substring(2);
-                str = symbols.convertNumberToI18N(str);
+                str = decimalStyle.convertNumberToI18N(str);
                 if (decimalPoint) {
-                    buf.append(symbols.getDecimalSeparator());
+                    buf.append(decimalStyle.getDecimalSeparator());
                 }
                 buf.append(str);
             }
@@ -2688,7 +2900,7 @@ public final class DateTimeFormatterBuilder {
                 return (effectiveMin > 0 ? ~position : position);
             }
             if (decimalPoint) {
-                if (text.charAt(position) != context.getSymbols().getDecimalSeparator()) {
+                if (text.charAt(position) != context.getDecimalStyle().getDecimalSeparator()) {
                     // valid if whole field is optional, invalid if minimum width
                     return (effectiveMin > 0 ? ~position : position);
                 }
@@ -2703,7 +2915,7 @@ public final class DateTimeFormatterBuilder {
             int pos = position;
             while (pos < maxEndPos) {
                 char ch = text.charAt(pos++);
-                int digit = context.getSymbols().convertToDigit(ch);
+                int digit = context.getDecimalStyle().convertToDigit(ch);
                 if (digit < 0) {
                     if (pos < minEndPos) {
                         return ~position;  // need at least min width digits
@@ -2883,43 +3095,50 @@ public final class DateTimeFormatterBuilder {
         // seconds per day = 86400
         private static final long SECONDS_PER_10000_YEARS = 146097L * 25L * 86400L;
         private static final long SECONDS_0000_TO_1970 = ((146097L * 5L) - (30L * 365L + 7L)) * 86400L;
-        private static final CompositePrinterParser PARSER = new DateTimeFormatterBuilder()
-                    .parseCaseInsensitive()
-                    .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
-                    .append(DateTimeFormatter.ISO_LOCAL_TIME).appendLiteral('Z')
-                    .toFormatter().toPrinterParser(false);
+        private final int fractionalDigits;
 
-        InstantPrinterParser() {
+        InstantPrinterParser(int fractionalDigits) {
+            this.fractionalDigits = fractionalDigits;
         }
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
             Long inSecs = context.getValue(INSTANT_SECONDS);
-            Long inNanos = context.getValue(NANO_OF_SECOND);
-            if (inSecs == null || inNanos == null) {
+            Long inNanos = null;
+            if (context.getTemporal().isSupported(NANO_OF_SECOND)) {
+                inNanos = context.getTemporal().getLong(NANO_OF_SECOND);
+            }
+            if (inSecs == null) {
                 return false;
             }
             long inSec = inSecs;
-            int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos);
+            int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
+            // format mostly using LocalDateTime.toString
             if (inSec >= -SECONDS_0000_TO_1970) {
                 // current era
                 long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
                 long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
                 long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
                 if (hi > 0) {
                     buf.append('+').append(hi);
                 }
-                buf.append(ldt).append('Z');
+                buf.append(ldt);
+                if (ldt.getSecond() == 0) {
+                    buf.append(":00");
+                }
             } else {
                 // before current era
                 long zeroSecs = inSec + SECONDS_0000_TO_1970;
                 long hi = zeroSecs / SECONDS_PER_10000_YEARS;
                 long lo = zeroSecs % SECONDS_PER_10000_YEARS;
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
                 int pos = buf.length();
-                buf.append(ldt).append('Z');
+                buf.append(ldt);
+                if (ldt.getSecond() == 0) {
+                    buf.append(":00");
+                }
                 if (hi < 0) {
                     if (ldt.getYear() == -10_000) {
                         buf.replace(pos, pos + 2, Long.toString(hi - 1));
@@ -2930,14 +3149,38 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
             }
+            // add fraction
+            if ((fractionalDigits < 0 && inNano > 0) || fractionalDigits > 0) {
+                buf.append('.');
+                int div = 100_000_000;
+                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
+                                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
+                                    i < fractionalDigits); i++) {
+                    int digit = inNano / div;
+                    buf.append((char) (digit + '0'));
+                    inNano = inNano - (digit * div);
+                    div = div / 10;
+                }
+            }
+            buf.append('Z');
             return true;
         }
 
         @Override
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             // new context to avoid overwriting fields like year/month/day
+            int minDigits = (fractionalDigits < 0 ? 0 : fractionalDigits);
+            int maxDigits = (fractionalDigits < 0 ? 9 : fractionalDigits);
+            CompositePrinterParser parser = new DateTimeFormatterBuilder()
+                    .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
+                    .appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
+                    .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
+                    .appendValue(SECOND_OF_MINUTE, 2)
+                    .appendFraction(NANO_OF_SECOND, minDigits, maxDigits, true)
+                    .appendLiteral('Z')
+                    .toFormatter().toPrinterParser(false);
             DateTimeParseContext newContext = context.copy();
-            int pos = PARSER.parse(newContext, text, position);
+            int pos = parser.parse(newContext, text, position);
             if (pos < 0) {
                 return pos;
             }
@@ -2952,10 +3195,18 @@ public final class DateTimeFormatterBuilder {
             Long nanoVal = newContext.getParsed(NANO_OF_SECOND);
             int sec = (secVal != null ? secVal.intValue() : 0);
             int nano = (nanoVal != null ? nanoVal.intValue() : 0);
+            int days = 0;
+            if (hour == 24 && min == 0 && sec == 0 && nano == 0) {
+                hour = 0;
+                days = 1;
+            } else if (hour == 23 && min == 59 && sec == 60) {
+                context.setParsedLeapSecond();
+                sec = 59;
+            }
             int year = (int) yearParsed % 10_000;
             long instantSecs;
             try {
-                LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, min, sec, 0);
+                LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, min, sec, 0).plusDays(days);
                 instantSecs = ldt.toEpochSecond(ZoneOffset.UTC);
                 instantSecs += Math.multiplyExact(yearParsed / 10_000L, SECONDS_PER_10000_YEARS);
             } catch (RuntimeException ex) {
@@ -4017,9 +4268,7 @@ public final class DateTimeFormatterBuilder {
             String key = chrono.getId() + '|' + locale.toString() + '|' + dateStyle + timeStyle;
             DateTimeFormatter formatter = FORMATTER_CACHE.get(key);
             if (formatter == null) {
-                LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-                String pattern = lr.getJavaTimeDateTimePattern(
-                        convertStyle(timeStyle), convertStyle(dateStyle), chrono.getCalendarType());
+                String pattern = getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale);
                 formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
                 DateTimeFormatter old = FORMATTER_CACHE.putIfAbsent(key, formatter);
                 if (old != null) {
@@ -4027,19 +4276,6 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             return formatter;
-        }
-
-        /**
-         * Converts the given FormatStyle to the java.text.DateFormat style.
-         *
-         * @param style  the FormatStyle style
-         * @return the int style, or -1 if style is null, indicating unrequired
-         */
-        private int convertStyle(FormatStyle style) {
-            if (style == null) {
-                return -1;
-            }
-            return style.ordinal();  // indices happen to align
         }
 
         @Override
@@ -4096,7 +4332,7 @@ public final class DateTimeFormatterBuilder {
                 case 'Y':
                     field = weekDef.weekBasedYear();
                     if (count == 2) {
-                        return new ReducedPrinterParser(field, 2, 2000);
+                        return new ReducedPrinterParser(field, 2, 2, 2000, 0);
                     } else {
                         return new NumberPrinterParser(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD, -1);

@@ -924,7 +924,8 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
+     * Enable/disable {@link SocketOptions#TCP_NODELAY TCP_NODELAY}
+     * (disable/enable Nagle's algorithm).
      *
      * @param on <code>true</code> to enable TCP_NODELAY,
      * <code>false</code> to disable.
@@ -943,9 +944,10 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if TCP_NODELAY is enabled.
+     * Tests if {@link SocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
      *
-     * @return a <code>boolean</code> indicating whether or not TCP_NODELAY is enabled.
+     * @return a <code>boolean</code> indicating whether or not
+     *         {@link SocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   JDK1.1
@@ -958,8 +960,9 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable SO_LINGER with the specified linger time in seconds.
-     * The maximum timeout value is platform specific.
+     * Enable/disable {@link SocketOptions#SO_LINGER SO_LINGER} with the
+     * specified linger time in seconds. The maximum timeout value is platform
+     * specific.
      *
      * The setting only affects socket close.
      *
@@ -987,12 +990,13 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns setting for SO_LINGER. -1 returns implies that the
+     * Returns setting for {@link SocketOptions#SO_LINGER SO_LINGER}.
+     * -1 returns implies that the
      * option is disabled.
      *
      * The setting only affects socket close.
      *
-     * @return the setting for SO_LINGER.
+     * @return the setting for {@link SocketOptions#SO_LINGER SO_LINGER}.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   JDK1.1
@@ -1027,7 +1031,8 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable OOBINLINE (receipt of TCP urgent data)
+     * Enable/disable {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE}
+     * (receipt of TCP urgent data)
      *
      * By default, this option is disabled and TCP urgent data received on a
      * socket is silently discarded. If the user wishes to receive urgent data, then
@@ -1039,8 +1044,9 @@ class Socket implements java.io.Closeable {
      * and there is no capability to distinguish between normal data and urgent
      * data unless provided by a higher level protocol.
      *
-     * @param on <code>true</code> to enable OOBINLINE,
-     * <code>false</code> to disable.
+     * @param on <code>true</code> to enable
+     *           {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE},
+     *           <code>false</code> to disable.
      *
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1056,9 +1062,11 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if OOBINLINE is enabled.
+     * Tests if {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE} is enabled.
      *
-     * @return a <code>boolean</code> indicating whether or not OOBINLINE is enabled.
+     * @return a <code>boolean</code> indicating whether or not
+     *         {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE}is enabled.
+     *
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4
@@ -1071,15 +1079,16 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     *  Enable/disable SO_TIMEOUT with the specified timeout, in
-     *  milliseconds.  With this option set to a non-zero timeout,
-     *  a read() call on the InputStream associated with this Socket
-     *  will block for only this amount of time.  If the timeout expires,
-     *  a <B>java.net.SocketTimeoutException</B> is raised, though the
+     *  Enable/disable {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}
+     *  with the specified timeout, in milliseconds. With this option set
+     *  to a non-zero timeout, a read() call on the InputStream associated with
+     *  this Socket will block for only this amount of time.  If the timeout
+     *  expires, a <B>java.net.SocketTimeoutException</B> is raised, though the
      *  Socket is still valid. The option <B>must</B> be enabled
      *  prior to entering the blocking operation to have effect. The
      *  timeout must be > 0.
      *  A timeout of zero is interpreted as an infinite timeout.
+     *
      * @param timeout the specified timeout, in milliseconds.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1096,11 +1105,13 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns setting for SO_TIMEOUT.  0 returns implies that the
-     * option is disabled (i.e., timeout of infinity).
-     * @return the setting for SO_TIMEOUT
+     * Returns setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}.
+     * 0 returns implies that the option is disabled (i.e., timeout of infinity).
+     *
+     * @return the setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
+     *
      * @since   JDK1.1
      * @see #setSoTimeout(int)
      */
@@ -1117,14 +1128,15 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Sets the SO_SNDBUF option to the specified value for this
-     * <tt>Socket</tt>. The SO_SNDBUF option is used by the platform's
-     * networking code as a hint for the size to set
-     * the underlying network I/O buffers.
+     * Sets the {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option to the
+     * specified value for this <tt>Socket</tt>.
+     * The {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option is used by the
+     * platform's networking code as a hint for the size to set the underlying
+     * network I/O buffers.
      *
-     * <p>Because SO_SNDBUF is a hint, applications that want to
-     * verify what size the buffers were set to should call
-     * {@link #getSendBufferSize()}.
+     * <p>Because {@link SocketOptions#SO_SNDBUF SO_SNDBUF} is a hint,
+     * applications that want to verify what size the buffers were set to
+     * should call {@link #getSendBufferSize()}.
      *
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1149,10 +1161,11 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Get value of the SO_SNDBUF option for this <tt>Socket</tt>,
-     * that is the buffer size used by the platform
+     * Get value of the {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option
+     * for this <tt>Socket</tt>, that is the buffer size used by the platform
      * for output on this <tt>Socket</tt>.
-     * @return the value of the SO_SNDBUF option for this <tt>Socket</tt>.
+     * @return the value of the {@link SocketOptions#SO_SNDBUF SO_SNDBUF}
+     *         option for this <tt>Socket</tt>.
      *
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1172,25 +1185,26 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Sets the SO_RCVBUF option to the specified value for this
-     * <tt>Socket</tt>. The SO_RCVBUF option is used by the platform's
-     * networking code as a hint for the size to set
+     * Sets the {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option to the
+     * specified value for this <tt>Socket</tt>. The
+     * {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option is
+     * used by the platform's networking code as a hint for the size to set
      * the underlying network I/O buffers.
      *
      * <p>Increasing the receive buffer size can increase the performance of
      * network I/O for high-volume connection, while decreasing it can
      * help reduce the backlog of incoming data.
      *
-     * <p>Because SO_RCVBUF is a hint, applications that want to
-     * verify what size the buffers were set to should call
-     * {@link #getReceiveBufferSize()}.
+     * <p>Because {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is a hint,
+     * applications that want to verify what size the buffers were set to
+     * should call {@link #getReceiveBufferSize()}.
      *
-     * <p>The value of SO_RCVBUF is also used to set the TCP receive window
-     * that is advertized to the remote peer. Generally, the window size
-     * can be modified at any time when a socket is connected. However, if
-     * a receive window larger than 64K is required then this must be requested
-     * <B>before</B> the socket is connected to the remote peer. There are two
-     * cases to be aware of:<p>
+     * <p>The value of {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is also used
+     * to set the TCP receive window that is advertized to the remote peer.
+     * Generally, the window size can be modified at any time when a socket is
+     * connected. However, if a receive window larger than 64K is required then
+     * this must be requested <B>before</B> the socket is connected to the
+     * remote peer. There are two cases to be aware of:<p>
      * <ol>
      * <li>For sockets accepted from a ServerSocket, this must be done by calling
      * {@link ServerSocket#setReceiveBufferSize(int)} before the ServerSocket
@@ -1221,11 +1235,12 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Gets the value of the SO_RCVBUF option for this <tt>Socket</tt>,
-     * that is the buffer size used by the platform for
-     * input on this <tt>Socket</tt>.
+     * Gets the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option
+     * for this <tt>Socket</tt>, that is the buffer size used by the platform
+     * for input on this <tt>Socket</tt>.
      *
-     * @return the value of the SO_RCVBUF option for this <tt>Socket</tt>.
+     * @return the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF}
+     *         option for this <tt>Socket</tt>.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)
@@ -1244,9 +1259,9 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable SO_KEEPALIVE.
+     * Enable/disable {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE}.
      *
-     * @param on     whether or not to have socket keep alive turned on.
+     * @param on  whether or not to have socket keep alive turned on.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since 1.3
@@ -1259,9 +1274,10 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if SO_KEEPALIVE is enabled.
+     * Tests if {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
      *
-     * @return a <code>boolean</code> indicating whether or not SO_KEEPALIVE is enabled.
+     * @return a <code>boolean</code> indicating whether or not
+     *         {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.3
@@ -1317,6 +1333,7 @@ class Socket implements java.io.Closeable {
      * traffic class or type-of-service
      * @since 1.4
      * @see #getTrafficClass
+     * @see SocketOptions#IP_TOS
      */
     public void setTrafficClass(int tc) throws SocketException {
         if (tc < 0 || tc > 255)
@@ -1341,13 +1358,15 @@ class Socket implements java.io.Closeable {
      * traffic class or type-of-service value.
      * @since 1.4
      * @see #setTrafficClass(int)
+     * @see SocketOptions#IP_TOS
      */
     public int getTrafficClass() throws SocketException {
         return ((Integer) (getImpl().getOption(SocketOptions.IP_TOS))).intValue();
     }
 
     /**
-     * Enable/disable the SO_REUSEADDR socket option.
+     * Enable/disable the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     * socket option.
      * <p>
      * When a TCP connection is closed the connection may remain
      * in a timeout state for a period of time after the connection
@@ -1358,22 +1377,22 @@ class Socket implements java.io.Closeable {
      * <tt>SocketAddress</tt> if there is a connection in the
      * timeout state involving the socket address or port.
      * <p>
-     * Enabling <tt>SO_REUSEADDR</tt> prior to binding the socket
-     * using {@link #bind(SocketAddress)} allows the socket to be
-     * bound even though a previous connection is in a timeout
+     * Enabling {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     * prior to binding the socket using {@link #bind(SocketAddress)} allows
+     * the socket to be bound even though a previous connection is in a timeout
      * state.
      * <p>
      * When a <tt>Socket</tt> is created the initial setting
-     * of <tt>SO_REUSEADDR</tt> is disabled.
+     * of {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is disabled.
      * <p>
-     * The behaviour when <tt>SO_REUSEADDR</tt> is enabled or
-     * disabled after a socket is bound (See {@link #isBound()})
+     * The behaviour when {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is
+     * enabled or disabled after a socket is bound (See {@link #isBound()})
      * is not defined.
      *
      * @param on  whether to enable or disable the socket option
      * @exception SocketException if an error occurs enabling or
-     *            disabling the <tt>SO_RESUEADDR</tt> socket option,
-     *            or the socket is closed.
+     *            disabling the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     *            socket option, or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()
      * @see #bind(SocketAddress)
@@ -1387,9 +1406,10 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if SO_REUSEADDR is enabled.
+     * Tests if {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      *
-     * @return a <code>boolean</code> indicating whether or not SO_REUSEADDR is enabled.
+     * @return a <code>boolean</code> indicating whether or not
+     *         {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      * @exception SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4

@@ -77,8 +77,8 @@ public class SourceValue implements Value {
 
     /**
      * The instructions that can produce this value. For example, for the Java
-     * code below, the instructions that can produce the value of <tt>i</tt>
-     * at line 5 are the txo ISTORE instructions at line 1 and 3:
+     * code below, the instructions that can produce the value of <tt>i</tt> at
+     * line 5 are the txo ISTORE instructions at line 1 and 3:
      *
      * <pre>
      * 1: i = 0;
@@ -93,7 +93,7 @@ public class SourceValue implements Value {
     public final Set<AbstractInsnNode> insns;
 
     public SourceValue(final int size) {
-        this(size, SmallSet.<AbstractInsnNode>emptySet());
+        this(size, SmallSet.<AbstractInsnNode> emptySet());
     }
 
     public SourceValue(final int size, final AbstractInsnNode insn) {

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +46,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.nio.file.StandardCopyOption.*;
+import static java.nio.file.StandardOpenOption.*;
 
 /**
  *
@@ -70,6 +72,7 @@ class Utils {
     static final String JAR_FILE_EXT    = ".jar";
 
     static final File   TEST_SRC_DIR = new File(System.getProperty("test.src"));
+    static final File   TEST_CLS_DIR = new File(System.getProperty("test.classes"));
     static final String VERIFIER_DIR_NAME = "pack200-verifier";
     static final File   VerifierJar = new File(VERIFIER_DIR_NAME + JAR_FILE_EXT);
 
@@ -86,6 +89,10 @@ class Utils {
             return;
         }
         File srcDir = new File(TEST_SRC_DIR, VERIFIER_DIR_NAME);
+        if (!srcDir.exists()) {
+            // if not available try one level above
+            srcDir = new File(TEST_SRC_DIR.getParentFile(), VERIFIER_DIR_NAME);
+        }
         List<File> javaFileList = findFiles(srcDir, createFilter(JAVA_FILE_EXT));
         File tmpFile = File.createTempFile("javac", ".tmp");
         File classesDir = new File("xclasses");
@@ -204,6 +211,10 @@ class Utils {
                 ? name.substring(0, cut)
                 : name;
 
+    }
+   static void createFile(File outFile, List<String> content) throws IOException {
+        Files.write(outFile.getAbsoluteFile().toPath(), content,
+                Charset.defaultCharset(), CREATE_NEW, TRUNCATE_EXISTING);
     }
 
     /*

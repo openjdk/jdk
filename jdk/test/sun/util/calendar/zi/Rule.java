@@ -106,6 +106,7 @@ class Rule {
         final int y = year;
         RuleRec[] recs = new RuleRec[rules.size()];
         rules.toArray(recs);
+
         Arrays.sort(recs, new Comparator<RuleRec>() {
                 public int compare(RuleRec r1, RuleRec r2) {
                     int n = r1.getMonthNum() - r2.getMonthNum();
@@ -117,7 +118,7 @@ class Rule {
                                                 r1.getDay(), r1.getTime().getTime());
                     long t2 = Time.getLocalTime(y, r2.getMonth(),
                                                 r2.getDay(), r2.getTime().getTime());
-                    return (int)(t1 - t2);
+                    return Long.compare(t1, t2);
                 }
                 public boolean equals(Object o) {
                     return this == o;

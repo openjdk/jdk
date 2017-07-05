@@ -201,7 +201,6 @@ RT_JAR_EXCLUDES += \
 	META-INF/services/com.sun.jdi.connect.spi.TransportService \
 	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
 	META-INF/services/com.sun.tools.xjc.Plugin \
-	META-INF/services/java.nio.charset.spi.CharsetProvider \
 	META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
 	org/relaxng/datatype \
 	sun/awt/HKSCS.class \
@@ -217,19 +216,7 @@ RT_JAR_EXCLUDES += \
 	sun/net/spi/nameservice/dns \
 	sun/nio/cs/ext \
 	sun/rmi/rmic \
-	sun/security/ec/ECDHKeyAgreement.class \
-	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECDSASignature\$$$$Raw.class \
-	sun/security/ec/ECDSASignature\$$$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$$$SHA512.class \
-	sun/security/ec/ECKeyFactory.class \
-	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$$$1.class \
-	sun/security/ec/SunEC.class \
-	sun/security/ec/SunECEntries.class \
+	sun/security/ec \
 	sun/security/internal \
 	sun/security/mscapi \
 	sun/security/pkcs11 \
@@ -428,8 +415,7 @@ $(eval $(call SetupArchive,BUILD_CHARSETS_JAR,,\
 		SUFFIXES:=.class .dat,\
 		INCLUDES:=sun/nio/cs/ext,\
 		EXTRA_FILES := sun/awt/HKSCS.class \
-			       $(CHARSETS_EXTRA_FILES) \
-                               META-INF/services/java.nio.charset.spi.CharsetProvider, \
+			       $(CHARSETS_EXTRA_FILES), \
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/charsets.jar, \
 		SKIP_METAINF := true, \
                 CHECK_COMPRESS_JAR:=true))

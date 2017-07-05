@@ -354,7 +354,7 @@ class ConstantPool : public Metadata {
 
   Symbol* klass_name_at(int which);  // Returns the name, w/o resolving.
 
-  Klass* resolved_klass_at(int which) {  // Used by Compiler
+  Klass* resolved_klass_at(int which) const {  // Used by Compiler
     guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.

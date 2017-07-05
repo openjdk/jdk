@@ -1425,25 +1425,25 @@ ActiveMethodOopsCache::~ActiveMethodOopsCache() {
 }
 
 
-void ActiveMethodOopsCache::add_previous_version(Method* const method) {
+void ActiveMethodOopsCache::add_previous_version(Method* method) {
   assert(Thread::current()->is_VM_thread(),
     "only VMThread can add previous versions");
 
   // Only append the previous method if it is executing on the stack.
   if (method->on_stack()) {
 
-  if (_prev_methods == NULL) {
-    // This is the first previous version so make some space.
-    // Start with 2 elements under the assumption that the class
-    // won't be redefined much.
+    if (_prev_methods == NULL) {
+      // This is the first previous version so make some space.
+      // Start with 2 elements under the assumption that the class
+      // won't be redefined much.
       _prev_methods = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Method*>(2, true);
-  }
+    }
 
-  // RC_TRACE macro has an embedded ResourceMark
-  RC_TRACE(0x00000100,
-    ("add: %s(%s): adding prev version ref for cached method @%d",
-    method->name()->as_C_string(), method->signature()->as_C_string(),
-    _prev_methods->length()));
+    // RC_TRACE macro has an embedded ResourceMark
+    RC_TRACE(0x00000100,
+      ("add: %s(%s): adding prev version ref for cached method @%d",
+        method->name()->as_C_string(), method->signature()->as_C_string(),
+        _prev_methods->length()));
 
     _prev_methods->append(method);
   }
@@ -1464,16 +1464,17 @@ void ActiveMethodOopsCache::add_previous_version(Method* const method) {
       MetadataFactory::free_metadata(method->method_holder()->class_loader_data(), method);
     } else {
       // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00000400, ("add: %s(%s): previous cached method @%d is alive",
-        method->name()->as_C_string(), method->signature()->as_C_string(), i));
+      RC_TRACE(0x00000400,
+        ("add: %s(%s): previous cached method @%d is alive",
+         method->name()->as_C_string(), method->signature()->as_C_string(), i));
     }
   }
 } // end add_previous_version()
 
 
-bool ActiveMethodOopsCache::is_same_method(Method* const method) const {
+bool ActiveMethodOopsCache::is_same_method(const Method* method) const {
   InstanceKlass* ik = InstanceKlass::cast(klass());
-  Method* check_method = ik->method_with_idnum(method_idnum());
+  const Method* check_method = ik->method_with_idnum(method_idnum());
   assert(check_method != NULL, "sanity check");
   if (check_method == method) {
     // done with the easy case

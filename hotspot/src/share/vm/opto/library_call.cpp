@@ -2783,7 +2783,7 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
 
 #ifdef _LP64
   if (type == T_OBJECT && adr->bottom_type()->is_ptr_to_narrowoop() && kind == LS_xchg) {
-    load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->bottom_type()->make_ptr()));
+    load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->get_ptr_type()));
   }
 #endif
 
@@ -3703,7 +3703,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
   CallJavaNode* slow_call;
   if (is_static) {
     assert(!is_virtual, "");
-    slow_call = new(C) CallStaticJavaNode(tf,
+    slow_call = new(C) CallStaticJavaNode(C, tf,
                            SharedRuntime::get_resolve_static_call_stub(),
                            method, bci());
   } else if (is_virtual) {
@@ -3722,7 +3722,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
                           method, vtable_index, bci());
   } else {  // neither virtual nor static:  opt_virtual
     null_check_receiver();
-    slow_call = new(C) CallStaticJavaNode(tf,
+    slow_call = new(C) CallStaticJavaNode(C, tf,
                                 SharedRuntime::get_resolve_opt_virtual_call_stub(),
                                 method, bci());
     slow_call->set_optimized_virtual(true);

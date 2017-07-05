@@ -134,7 +134,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallStaticJavaNode *call = new (kit.C) CallStaticJavaNode(tf(), target, method(), kit.bci());
+  CallStaticJavaNode *call = new (kit.C) CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
   _call_node = call;  // Save the call node in case we need it later
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
@@ -304,29 +304,34 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
 void LateInlineCallGenerator::do_late_inline() {
   // Can't inline it
-  if (call_node() == NULL || call_node()->outcnt() == 0 ||
-      call_node()->in(0) == NULL || call_node()->in(0)->is_top()) {
+  CallStaticJavaNode* call = call_node();
+  if (call == NULL || call->outcnt() == 0 ||
+      call->in(0) == NULL || call->in(0)->is_top()) {
     return;
   }
 
-  const TypeTuple *r = call_node()->tf()->domain();
+  const TypeTuple *r = call->tf()->domain();
   for (int i1 = 0; i1 < method()->arg_size(); i1++) {
-    if (call_node()->in(TypeFunc::Parms + i1)->is_top() && r->field_at(TypeFunc::Parms + i1) != Type::HALF) {
+    if (call->in(TypeFunc::Parms + i1)->is_top() && r->field_at(TypeFunc::Parms + i1) != Type::HALF) {
       assert(Compile::current()->inlining_incrementally(), "shouldn't happen during parsing");
       return;
     }
   }
 
-  if (call_node()->in(TypeFunc::Memory)->is_top()) {
+  if (call->in(TypeFunc::Memory)->is_top()) {
     assert(Compile::current()->inlining_incrementally(), "shouldn't happen during parsing");
     return;
   }
 
-  CallStaticJavaNode* call = call_node();
+  Compile* C = Compile::current();
+  // Remove inlined methods from Compiler's lists.
+  if (call->is_macro()) {
+    C->remove_macro_node(call);
+  }
 
   // Make a clone of the JVMState that appropriate to use for driving a parse
-  Compile* C = Compile::current();
-  JVMState* jvms     = call->jvms()->clone_shallow(C);
+  JVMState* old_jvms = call->jvms();
+  JVMState* jvms = old_jvms->clone_shallow(C);
   uint size = call->req();
   SafePointNode* map = new (C) SafePointNode(size, jvms);
   for (uint i1 = 0; i1 < size; i1++) {
@@ -340,16 +345,23 @@ void LateInlineCallGenerator::do_late_inline() {
     map->set_req(TypeFunc::Memory, mem);
   }
 
-  // Make enough space for the expression stack and transfer the incoming arguments
-  int nargs    = method()->arg_size();
+  uint nargs = method()->arg_size();
+  // blow away old call arguments
+  Node* top = C->top();
+  for (uint i1 = 0; i1 < nargs; i1++) {
+    map->set_req(TypeFunc::Parms + i1, top);
+  }
   jvms->set_map(map);
+
+  // Make enough space in the expression stack to transfer
+  // the incoming arguments and return value.
   map->ensure_stack(jvms, jvms->method()->max_stack());
-  if (nargs > 0) {
-    for (int i1 = 0; i1 < nargs; i1++) {
-      map->set_req(i1 + jvms->argoff(), call->in(TypeFunc::Parms + i1));
-    }
+  for (uint i1 = 0; i1 < nargs; i1++) {
+    map->set_argument(jvms, i1, call->in(TypeFunc::Parms + i1));
   }
 
+  // This check is done here because for_method_handle_inline() method
+  // needs jvms for inlined state.
   if (!do_late_inline_check(jvms)) {
     map->disconnect_inputs(NULL, C);
     return;
@@ -480,6 +492,26 @@ CallGenerator* CallGenerator::for_string_late_inline(ciMethod* method, CallGener
   return new LateInlineStringCallGenerator(method, inline_cg);
 }
 
+class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
+
+ public:
+  LateInlineBoxingCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
+    LateInlineCallGenerator(method, inline_cg) {}
+
+  virtual JVMState* generate(JVMState* jvms) {
+    Compile *C = Compile::current();
+    C->print_inlining_skip(this);
+
+    C->add_boxing_late_inline(this);
+
+    JVMState* new_jvms =  DirectCallGenerator::generate(jvms);
+    return new_jvms;
+  }
+};
+
+CallGenerator* CallGenerator::for_boxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
+  return new LateInlineBoxingCallGenerator(method, inline_cg);
+}
 
 //---------------------------WarmCallGenerator--------------------------------
 // Internal class which handles initial deferral of inlining decisions.
