@@ -93,7 +93,7 @@
  * structure, this check will add little overhead to the hashtable
  * access methods.
  *
- * <a name="reachability"></a>
+ * <a id="reachability"></a>
  * <h3>Reachability</h3>
  *
  * Going from strongest to weakest, the different levels of

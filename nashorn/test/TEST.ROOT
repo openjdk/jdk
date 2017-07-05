@@ -8,7 +8,10 @@ keys=intermittent randomness
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=4.2 b04
+requiredVersion=4.2 b07
 
 # Use new module options
 useNewOptions=true
+
+# Use --patch-module instead of -Xmodule:
+useNewPatchModule=true

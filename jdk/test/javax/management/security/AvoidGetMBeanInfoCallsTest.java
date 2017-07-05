@@ -27,7 +27,7 @@
  * @summary Test that MBeanServer.queryNames doesn't call getMBeanInfo on every
  *          resultant MBean when there is no security manager installed.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean AvoidGetMBeanInfoCallsTest
  * @run build AvoidGetMBeanInfoCallsTest
  * @run main AvoidGetMBeanInfoCallsTest

@@ -33,8 +33,6 @@ import jdk.internal.module.ModuleReferenceImpl;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,6 +90,8 @@ public final class StackTraceElement implements java.io.Serializable {
      * @throws NullPointerException if {@code declaringClass} or
      *         {@code methodName} is null
      * @since 1.5
+     * @revised 9
+     * @spec JPMS
      */
     public StackTraceElement(String declaringClass, String methodName,
                              String fileName, int lineNumber) {
@@ -128,6 +128,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         or {@code methodName} is {@code null}
      *
      * @since 9
+     * @spec JPMS
      */
     public StackTraceElement(String classLoaderName,
                              String moduleName, String moduleVersion,
@@ -187,7 +188,8 @@ public final class StackTraceElement implements java.io.Serializable {
      *         point represented by this stack trace element; {@code null}
      *         if the module name is not available.
      * @since 9
-     * @see java.lang.reflect.Module#getName()
+     * @spec JPMS
+     * @see Module#getName()
      */
     public String getModuleName() {
         return moduleName;
@@ -201,6 +203,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         point represented by this stack trace element; {@code null}
      *         if the module version is not available.
      * @since 9
+     * @spec JPMS
      * @see java.lang.module.ModuleDescriptor.Version
      */
     public String getModuleVersion() {
@@ -216,6 +219,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         if the class loader is not named.
      *
      * @since 9
+     * @spec JPMS
      * @see java.lang.ClassLoader#getName()
      */
     public String getClassLoaderName() {
@@ -329,6 +333,8 @@ public final class StackTraceElement implements java.io.Serializable {
      * {@link java.lang.StackWalker.StackFrame}, where an implementation may
      * choose to omit some element in the returned string.
      *
+     * @revised 9
+     * @spec JPMS
      * @see    Throwable#printStackTrace()
      */
     public String toString() {
@@ -376,6 +382,9 @@ public final class StackTraceElement implements java.io.Serializable {
      * @return true if the specified object is another
      *         {@code StackTraceElement} instance representing the same
      *         execution point as this instance.
+     *
+     * @revised 9
+     * @spec JPMS
      */
     public boolean equals(Object obj) {
         if (obj==this)
@@ -469,7 +478,7 @@ public final class StackTraceElement implements java.io.Serializable {
         if (!VM.isModuleSystemInited())
             return true;
 
-        return Layer.boot() == m.getLayer() && HashedModules.contains(m);
+        return ModuleLayer.boot() == m.getLayer() && HashedModules.contains(m);
     }
 
     /*
@@ -481,7 +490,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         static Set<String> hashedModules() {
 
-            Optional<ResolvedModule> resolvedModule = Layer.boot()
+            Optional<ResolvedModule> resolvedModule = ModuleLayer.boot()
                     .configuration()
                     .findModule("java.base");
             assert resolvedModule.isPresent();
