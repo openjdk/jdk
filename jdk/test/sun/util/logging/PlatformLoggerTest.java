@@ -38,7 +38,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.logging.*;
 import sun.util.logging.PlatformLogger;
-import sun.util.logging.LoggingSupport;
 import static sun.util.logging.PlatformLogger.Level.*;
 
 public class PlatformLoggerTest {
@@ -195,7 +194,9 @@ public class PlatformLoggerTest {
         System.out.println("Testing Java Level with: " + level.getName());
 
         // create a brand new java logger
-        Logger javaLogger = (Logger) LoggingSupport.getLogger(logger.getName()+"."+level.getName());
+        Logger javaLogger = sun.util.logging.internal.LoggingProviderImpl.getLogManagerAccess()
+                     .demandLoggerFor(LogManager.getLogManager(),
+                          logger.getName()+"."+level.getName(), Thread.class);
 
         // Set a non standard java.util.logging.Level on the java logger
         // (except for OFF & ALL - which will remain unchanged)

@@ -27,9 +27,24 @@
 
 #include "gc/g1/heapRegion.hpp"
 
-// Large buffer for some cases where the output might be larger than normal.
-#define HRS_ERR_MSG_BUFSZ 512
-typedef FormatBuffer<HRS_ERR_MSG_BUFSZ> hrs_err_msg;
+#define assert_heap_region_set(p, message)                        \
+  do {                                                            \
+    assert((p), "[%s] %s ln: %u cy: " SIZE_FORMAT,                \
+           name(), message, length(), total_capacity_bytes());    \
+  } while (0)
+
+#define guarantee_heap_region_set(p, message)                     \
+  do {                                                            \
+    guarantee((p), "[%s] %s ln: %u cy: " SIZE_FORMAT,             \
+              name(), message, length(), total_capacity_bytes()); \
+  } while (0)
+
+#define assert_free_region_list(p, message)                                              \
+  do {                                                                                   \
+    assert((p), "[%s] %s ln: %u cy: " SIZE_FORMAT " hd: " PTR_FORMAT " tl: " PTR_FORMAT, \
+           name(), message, length(), total_capacity_bytes(), p2i(_head), p2i(_tail));   \
+  } while (0)
+
 
 // Set verification will be forced either if someone defines
 // HEAP_REGION_SET_FORCE_VERIFY to be 1, or in builds in which
@@ -37,8 +52,6 @@ typedef FormatBuffer<HRS_ERR_MSG_BUFSZ> hrs_err_msg;
 #ifndef HEAP_REGION_SET_FORCE_VERIFY
 #define HEAP_REGION_SET_FORCE_VERIFY defined(ASSERT)
 #endif // HEAP_REGION_SET_FORCE_VERIFY
-
-class hrs_ext_msg;
 
 class HRSMtSafeChecker : public CHeapObj<mtGC> {
 public:
@@ -112,8 +125,6 @@ protected:
     }
   }
 
-  virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg) { }
-
   HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker);
 
 public:
@@ -135,11 +146,6 @@ public:
   // from the set and tags the region appropriately.
   inline void remove(HeapRegion* hr);
 
-  // fill_in_ext_msg() writes the the values of the set's attributes
-  // in the custom err_msg (hrs_ext_msg). fill_in_ext_msg_extra()
-  // allows subclasses to append further information.
-  void fill_in_ext_msg(hrs_ext_msg* msg, const char* message);
-
   virtual void verify();
   void verify_start();
   void verify_next_region(HeapRegion* hr);
@@ -156,24 +162,13 @@ public:
   virtual void print_on(outputStream* out, bool print_contents = false);
 };
 
-// Customized err_msg for heap region sets. Apart from a
-// assert/guarantee-specific message it also prints out the values of
-// the fields of the associated set. This can be very helpful in
-// diagnosing failures.
-class hrs_ext_msg : public hrs_err_msg {
-public:
-  hrs_ext_msg(HeapRegionSetBase* set, const char* message) : hrs_err_msg("%s", "") {
-    set->fill_in_ext_msg(this, message);
-  }
-};
-
-#define hrs_assert_sets_match(_set1_, _set2_)                                 \
-  do {                                                                        \
-    assert(((_set1_)->regions_humongous() ==                                  \
-                                            (_set2_)->regions_humongous()) && \
-           ((_set1_)->regions_free() == (_set2_)->regions_free()),            \
-           hrs_err_msg("the contents of set %s and set %s should match",      \
-                       (_set1_)->name(), (_set2_)->name()));                  \
+#define hrs_assert_sets_match(_set1_, _set2_)                                  \
+  do {                                                                         \
+    assert(((_set1_)->regions_humongous() == (_set2_)->regions_humongous()) && \
+           ((_set1_)->regions_free() == (_set2_)->regions_free()),             \
+           "the contents of set %s and set %s should match",                   \
+           (_set1_)->name(),                                                   \
+           (_set2_)->name());                                                  \
   } while (0)
 
 // This class represents heap region sets whose members are not
@@ -215,8 +210,6 @@ private:
   inline HeapRegion* remove_from_tail_impl();
 
 protected:
-  virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg);
-
   // See the comment for HeapRegionSetBase::clear()
   virtual void clear();
 

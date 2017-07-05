@@ -674,10 +674,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   return nm;
 }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4355) //  warning C4355: 'this' : used in base member initializer list
-#endif
 // For native wrappers
 nmethod::nmethod(
   Method* method,
@@ -766,10 +762,6 @@ nmethod::nmethod(
     }
   }
 }
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
@@ -2303,7 +2295,7 @@ void nmethod::oops_do_marking_epilogue() {
     assert(cur != NULL, "not NULL-terminated");
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
-    cur->verify_oop_relocations();
+    DEBUG_ONLY(cur->verify_oop_relocations());
     NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark"));
     cur = next;
   }

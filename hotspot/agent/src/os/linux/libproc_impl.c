@@ -38,6 +38,7 @@ int pathmap_open(const char* name) {
   int fd;
   char alt_path[PATH_MAX + 1], *alt_path_end;
   const char *s;
+  int free_space;
 
   if (!alt_root_initialized) {
     alt_root_initialized = -1;
@@ -48,14 +49,22 @@ int pathmap_open(const char* name) {
     return open(name, O_RDONLY);
   }
 
-  strcpy(alt_path, alt_root);
-  alt_path_end = alt_path + strlen(alt_path);
 
-  // Strip path items one by one and try to open file with alt_root prepended
+  if (strlen(alt_root) + strlen(name) < PATH_MAX) {
+    // Buffer too small.
+    return -1;
+  }
+
+  strncpy(alt_path, alt_root, PATH_MAX);
+  alt_path[PATH_MAX] = '\0';
+  alt_path_end = alt_path + strlen(alt_path);
+  free_space = PATH_MAX + 1 - (alt_path_end-alt_path);
+
+  // Strip path items one by one and try to open file with alt_root prepended.
   s = name;
   while (1) {
-    strcat(alt_path, s);
-    s += 1;
+    strncat(alt_path, s, free_space);
+    s += 1;  // Skip /.
 
     fd = open(alt_path, O_RDONLY);
     if (fd >= 0) {
@@ -70,7 +79,8 @@ int pathmap_open(const char* name) {
       break;
     }
 
-    *alt_path_end = 0;
+    // Cut off what we appended above.
+    *alt_path_end = '\0';
   }
 
   return -1;
