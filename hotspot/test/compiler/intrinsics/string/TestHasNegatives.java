@@ -30,7 +30,6 @@
  * @library /compiler/patches
  *
  * @build java.base/java.lang.Helper
- * @build compiler.intrinsics.string.TestHasNegatives
  * @run main compiler.intrinsics.string.TestHasNegatives
  */
 

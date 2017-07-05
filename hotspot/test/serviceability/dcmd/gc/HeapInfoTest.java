@@ -28,18 +28,16 @@ import java.io.IOException;
 
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 
 
 /*
  * @test
  * @summary Test of diagnostic command GC.heap_info
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.xml
  *          java.management
- * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
  * @run testng HeapInfoTest
  */
 public class HeapInfoTest {

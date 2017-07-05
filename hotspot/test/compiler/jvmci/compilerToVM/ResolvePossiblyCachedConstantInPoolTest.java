@@ -26,7 +26,7 @@
  * @test
  * @bug 8138708
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
@@ -36,9 +36,7 @@
  *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build sun.hotspot.WhiteBox
- *        compiler.jvmci.compilerToVM.ResolvePossiblyCachedConstantInPoolTest
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

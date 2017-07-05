@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,17 @@
 
 /*
  * @test
- * @library /testlibrary
+ * @library /test/lib
  * @summary Proof of concept test for RedefineClassHelper
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
- * @build RedefineClassHelper
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar RedefineClassTest
  */
 
 import static jdk.test.lib.Asserts.*;
-import jdk.test.lib.*;
 
 /*
  * Proof of concept test for the test utility class RedefineClassHelper

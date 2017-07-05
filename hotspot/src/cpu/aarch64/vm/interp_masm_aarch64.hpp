@@ -201,7 +201,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 // #endif
     MacroAssembler::null_check(reg, offset);
 // #ifdef ASSERT
-//     reset_last_Java_frame(true, false);
+//     reset_last_Java_frame(true);
 // #endif
   }
 

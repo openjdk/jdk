@@ -27,7 +27,6 @@
  * generate IncompatibleClassChangeError
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /runtime/SelectionResolution/classes
- * @build selectionresolution.*
  * @run main/othervm/timeout=1200 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeVirtualICCE
  */
 

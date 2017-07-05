@@ -26,7 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 

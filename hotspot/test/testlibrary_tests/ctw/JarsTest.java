@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8012447
- * @library /testlibrary /test/lib /testlibrary/ctw/src
+ * @library /test/lib /testlibrary/ctw/src
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller jdk.test.lib.* sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
+ * @build sun.hotspot.WhiteBox Foo Bar
  * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main JarsTest prepare
@@ -41,7 +41,7 @@
  * @author igor.ignatyev@oracle.com
  */
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class JarsTest extends CtwTest {
     private static final String[] SHOULD_CONTAIN

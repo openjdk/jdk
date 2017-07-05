@@ -28,11 +28,10 @@
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
  * @requires vm.gc.G1
  * @requires vm.opt.AggressiveOpts=="false" | vm.opt.AggressiveOpts=="null"
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.* sun.hotspot.WhiteBox
- * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData15
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/timeout=720 TestShrinkAuxiliaryData15

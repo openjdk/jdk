@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 5049012
+ * @bug 5049012 8163922
  * @summary Verify if PrintToFile option is disabled for flavors that do not
  *          support Destination
  * @requires (os.family == "linux")
@@ -30,6 +30,8 @@
  */
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -72,6 +74,9 @@ public class ServiceDialogValidateTest {
         defService = ServiceUI.printDialog(null, 100, 100, service, defService,
                 flavor, prSet);
 
+        ServiceUI.printDialog(null, 100, 100, service, defService,
+                DocFlavor.SERVICE_FORMATTED.PAGEABLE,
+                new HashPrintRequestAttributeSet());
     }
 
     /**
@@ -87,7 +92,8 @@ public class ServiceDialogValidateTest {
         } catch (InterruptedException e) {
             if (!testPassed && testGeneratedInterrupt) {
                 throw new RuntimeException("PrintToFile option is not disabled "
-                        + "for flavors that do not support destination");
+                        + "for flavors that do not support destination and/or"
+                        + " disabled for flavors that supports destination");
             }
         }
         if (!testGeneratedInterrupt) {
@@ -110,10 +116,15 @@ public class ServiceDialogValidateTest {
     private static void doTest(Runnable action) {
         String description
                 = " Visual inspection of print dialog is required.\n"
-                + " A print dialog will be shown.\n "
-                + " Please verify Print-To-File option is disabled.\n"
+                + " 2 print dialog will be shown.\n "
+                + " Please verify Print-To-File option is disabled "
+                + " in the 1st print dialog.\n"
                 + " Press Cancel to close the print dialog.\n"
-                + " If Print-To-File option is disabled, press PASS else press FAIL";
+                + " Please verify Print-To-File option is enabled "
+                + " in 2nd print dialog\n"
+                + " Press Cancel to close the print dialog.\n"
+                + " If the print dialog's Print-to-File behaves as mentioned, "
+                + " press PASS else press FAIL";
 
         final JDialog dialog = new JDialog();
         dialog.setTitle("printSelectionTest");
@@ -148,6 +159,14 @@ public class ServiceDialogValidateTest {
         dialog.add(mainPanel);
         dialog.pack();
         dialog.setVisible(true);
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.out.println("main dialog closing");
+                testGeneratedInterrupt = false;
+                mainThread.interrupt();
+            }
+        });
     }
 }
 

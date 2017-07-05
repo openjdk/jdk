@@ -462,10 +462,13 @@ public final class ImageIO {
             return new String[0];
         }
 
-        HashSet<String> s = new HashSet<String>();
+        HashSet<String> s = new HashSet<>();
         while (iter.hasNext()) {
             ImageReaderWriterSpi spi = iter.next();
-            Collections.addAll(s, spiInfo.info(spi));
+            String[] info = spiInfo.info(spi);
+            if (info != null) {
+                Collections.addAll(s, info);
+            }
         }
 
         return s.toArray(new String[s.size()]);

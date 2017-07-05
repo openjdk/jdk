@@ -26,10 +26,11 @@
  * @bug 8162415
  * @summary Test warnings for ignored properties.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 // Test that the VM behaves correctly when processing command line module system properties.
 public class ModuleOptionsWarn {

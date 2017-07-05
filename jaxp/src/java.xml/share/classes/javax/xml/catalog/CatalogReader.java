@@ -259,15 +259,6 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
         CatalogEntryType type = CatalogEntryType.getType(localName);
         if (type == CatalogEntryType.GROUP) {
             inGroup = false;
-        } else if (type == CatalogEntryType.CATALOGENTRY) {
-            /*
-             Done reading the catalog file.
-             Load delegate and alternative catalogs if defer is false.
-             */
-            if (!catalog.isDeferred()) {
-                catalog.loadDelegateCatalogs();
-                catalog.loadNextCatalogs();
-            }
         }
     }
 

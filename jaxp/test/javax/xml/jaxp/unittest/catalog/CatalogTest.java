@@ -92,6 +92,34 @@ public class CatalogTest extends CatalogSupportBase {
         super.setUp();
     }
 
+    /*
+     * @bug 8162431
+     * Verifies that circular references are caught and
+     * CatalogException is thrown.
+     */
+    @Test(dataProvider = "getFeatures", expectedExceptions = CatalogException.class)
+    public void testCircularRef(CatalogFeatures cf, String xml) {
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(
+                cf,
+                getClass().getResource(xml).getFile());
+        catalogResolver.resolve("anyuri", "");
+    }
+
+    /*
+       DataProvider: used to verify circular reference
+        Data columns: CatalogFeatures, catalog
+     */
+    @DataProvider(name = "getFeatures")
+    public Object[][] getFeatures() {
+
+        return new Object[][]{
+            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(),
+                "catalogReferCircle-itself.xml"},
+            {CatalogFeatures.defaults(), "catalogReferCircle-itself.xml"},
+            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(),
+                "catalogReferCircle-left.xml"},
+            {CatalogFeatures.defaults(), "catalogReferCircle-left.xml"},};
+    }
 
     /*
      * @bug 8163232

@@ -24,12 +24,11 @@
 /*
  * @test
  * @summary Test VM Options with ranges
- * @library /testlibrary /runtime/CommandLine/OptionsValidation/common
+ * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.* TestOptionsWithRanges
  * @run main/othervm/timeout=900 TestOptionsWithRanges
  */
 

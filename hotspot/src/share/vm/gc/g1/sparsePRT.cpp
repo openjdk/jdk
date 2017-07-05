@@ -30,7 +30,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // Check that the size of the SparsePRTEntry is evenly divisible by the maximum

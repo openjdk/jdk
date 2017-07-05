@@ -81,6 +81,7 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
         return 0;
     }
     fadv = env->GetFloatField(pt, sunFontIDs.xFID);
+    fadv *= jdkFontInfo->devScale;
     env->DeleteLocalRef(pt);
 
     return FloatToF26Dot6(fadv); // should this round ?
@@ -324,8 +325,8 @@ static hb_font_t* _hb_jdk_font_create(JDKFontInfo *jdkFontInfo,
                        _hb_jdk_get_font_funcs (),
                        jdkFontInfo, (hb_destroy_func_t) _do_nothing);
     hb_font_set_scale (font,
-                      FloatToF26Dot6(jdkFontInfo->xPtSize),
-                      FloatToF26Dot6(jdkFontInfo->yPtSize));
+                      FloatToF26Dot6(jdkFontInfo->ptSize*jdkFontInfo->devScale),
+                      FloatToF26Dot6(jdkFontInfo->ptSize*jdkFontInfo->devScale));
   return font;
 }
 

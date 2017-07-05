@@ -30,7 +30,7 @@
 #include "compiler/compileBroker.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -485,7 +485,7 @@ void NMethodSweeper::sweep_code_cache() {
   if (event.should_commit()) {
     event.set_starttime(sweep_start_counter);
     event.set_endtime(sweep_end_counter);
-    event.set_sweepIndex(_traversals);
+    event.set_sweepId(_traversals);
     event.set_sweptCount(swept_count);
     event.set_flushedCount(flushed_count);
     event.set_zombifiedCount(zombified_count);

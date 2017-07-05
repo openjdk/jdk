@@ -64,12 +64,12 @@ public class DeferFeatureTest {
     public Object[][] data() {
         return new Object[][]{
             // By default, alternative catalogs are not loaded.
-            {createCatalog(CatalogFeatures.defaults()), 0},
+            {createCatalog(CatalogFeatures.defaults()), 1},
             // Alternative catalogs are not loaded when DEFER is set to true.
-            {createCatalog(createDeferFeature(DEFER_TRUE)), 0},
-            // The 3 alternative catalogs are not pre-loaded
+            {createCatalog(createDeferFeature(DEFER_TRUE)), 1},
+            // The 3 alternative catalogs are pre-loaded along with the parent
             //when DEFER is set to false.
-            {createCatalog(createDeferFeature(DEFER_FALSE)), 3}};
+            {createCatalog(createDeferFeature(DEFER_FALSE)), 4}};
     }
 
     private CatalogFeatures createDeferFeature(String defer) {

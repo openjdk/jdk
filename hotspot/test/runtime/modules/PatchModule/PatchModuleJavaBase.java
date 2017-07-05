@@ -26,12 +26,14 @@
  * @bug 8130399
  * @summary Make sure --patch-module works for java.base.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @compile PatchModuleMain.java
  * @run main PatchModuleJavaBase
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleJavaBase {
 

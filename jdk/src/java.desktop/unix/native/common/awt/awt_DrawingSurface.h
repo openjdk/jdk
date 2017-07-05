@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 
 #include <jawt.h>
 #include <jni.h>
-#include <jni_util.h>
 
 _JNI_IMPORT_OR_EXPORT_ JAWT_DrawingSurface* JNICALL
     awt_GetDrawingSurface(JNIEnv* env, jobject target);
@@ -45,4 +44,14 @@ _JNI_IMPORT_OR_EXPORT_ void JNICALL
 _JNI_IMPORT_OR_EXPORT_ jobject JNICALL
     awt_GetComponent(JNIEnv* env, void* platformInfo);
 
+_JNI_IMPORT_OR_EXPORT_ jobject JNICALL
+    awt_CreateEmbeddedFrame(JNIEnv* env, void* platformInfo);
+
+_JNI_IMPORT_OR_EXPORT_ void JNICALL
+    awt_SetBounds(JNIEnv *env, jobject embeddedFrame, jint x, jint y,
+                  jint w, jint h);
+
+_JNI_IMPORT_OR_EXPORT_ void JNICALL
+    awt_SynthesizeWindowActivation(JNIEnv *env, jobject embeddedFrame,
+                                   jboolean doActivate);
 #endif /* !_AWT_DRAWING_SURFACE_H_ */
