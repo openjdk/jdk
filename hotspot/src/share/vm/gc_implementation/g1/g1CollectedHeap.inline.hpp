@@ -77,6 +77,38 @@ G1CollectedHeap::attempt_allocation(size_t word_size,
   return result;
 }
 
+inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
+                                                              word_size) {
+  assert(!isHumongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = _survivor_gc_alloc_region.attempt_allocation(word_size,
+                                                      false /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = _survivor_gc_alloc_region.attempt_allocation_locked(word_size,
+                                                      false /* bot_updates */);
+  }
+  if (result != NULL) {
+    dirty_young_block(result, word_size);
+  }
+  return result;
+}
+
+inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size) {
+  assert(!isHumongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = _old_gc_alloc_region.attempt_allocation(word_size,
+                                                       true /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = _old_gc_alloc_region.attempt_allocation_locked(word_size,
+                                                       true /* bot_updates */);
+  }
+  return result;
+}
+
 // It dirties the cards that cover the block so that so that the post
 // write barrier never queues anything when updating objects on this
 // block. It is assumed (and in fact we assert) that the block
