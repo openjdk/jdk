@@ -30,6 +30,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Function;
 
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
@@ -713,15 +714,139 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         LambdaForm form = makeGuardWithTestForm(basicType);
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         BoundMethodHandle mh;
+
         try {
             mh = (BoundMethodHandle)
                     data.constructor().invokeBasic(type, form,
-                        (Object) test, (Object) target, (Object) fallback);
+                        (Object) test, (Object) profile(target), (Object) profile(fallback));
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
         assert(mh.type() == type);
         return mh;
+    }
+
+
+    static
+    MethodHandle profile(MethodHandle target) {
+        if (DONT_INLINE_THRESHOLD >= 0) {
+            return makeBlockInlningWrapper(target);
+        } else {
+            return target;
+        }
+    }
+
+    /**
+     * Block inlining during JIT-compilation of a target method handle if it hasn't been invoked enough times.
+     * Corresponding LambdaForm has @DontInline when compiled into bytecode.
+     */
+    static
+    MethodHandle makeBlockInlningWrapper(MethodHandle target) {
+        LambdaForm lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+        return new CountingWrapper(target, lform,
+                PRODUCE_BLOCK_INLINING_FORM, PRODUCE_REINVOKER_FORM,
+                                   DONT_INLINE_THRESHOLD);
+    }
+
+    /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
+    private static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
+        @Override
+        public LambdaForm apply(MethodHandle target) {
+            return DelegatingMethodHandle.makeReinvokerForm(target,
+                               MethodTypeForm.LF_DELEGATE_BLOCK_INLINING, CountingWrapper.class, "reinvoker.dontInline", false,
+                               DelegatingMethodHandle.NF_getTarget, CountingWrapper.NF_maybeStopCounting);
+        }
+    };
+
+    /** Constructs simple reinvoker lambda form for a particular method handle */
+    private static final Function<MethodHandle, LambdaForm> PRODUCE_REINVOKER_FORM = new Function<MethodHandle, LambdaForm>() {
+        @Override
+        public LambdaForm apply(MethodHandle target) {
+            return DelegatingMethodHandle.makeReinvokerForm(target,
+                    MethodTypeForm.LF_DELEGATE, DelegatingMethodHandle.class, DelegatingMethodHandle.NF_getTarget);
+        }
+    };
+
+    /**
+     * Counting method handle. It has 2 states: counting and non-counting.
+     * It is in counting state for the first n invocations and then transitions to non-counting state.
+     * Behavior in counting and non-counting states is determined by lambda forms produced by
+     * countingFormProducer & nonCountingFormProducer respectively.
+     */
+    static class CountingWrapper extends DelegatingMethodHandle {
+        private final MethodHandle target;
+        private int count;
+        private Function<MethodHandle, LambdaForm> countingFormProducer;
+        private Function<MethodHandle, LambdaForm> nonCountingFormProducer;
+        private volatile boolean isCounting;
+
+        private CountingWrapper(MethodHandle target, LambdaForm lform,
+                                Function<MethodHandle, LambdaForm> countingFromProducer,
+                                Function<MethodHandle, LambdaForm> nonCountingFormProducer,
+                                int count) {
+            super(target.type(), lform);
+            this.target = target;
+            this.count = count;
+            this.countingFormProducer = countingFromProducer;
+            this.nonCountingFormProducer = nonCountingFormProducer;
+            this.isCounting = (count > 0);
+        }
+
+        @Hidden
+        @Override
+        protected MethodHandle getTarget() {
+            return target;
+        }
+
+        @Override
+        public MethodHandle asTypeUncached(MethodType newType) {
+            MethodHandle newTarget = target.asType(newType);
+            MethodHandle wrapper;
+            if (isCounting) {
+                LambdaForm lform;
+                lform = countingFormProducer.apply(target);
+                wrapper = new CountingWrapper(newTarget, lform, countingFormProducer, nonCountingFormProducer, DONT_INLINE_THRESHOLD);
+            } else {
+                wrapper = newTarget; // no need for a counting wrapper anymore
+            }
+            return (asTypeCache = wrapper);
+        }
+
+        boolean countDown() {
+            if (count <= 0) {
+                // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
+                if (isCounting) {
+                    isCounting = false;
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                --count;
+                return false;
+            }
+        }
+
+        @Hidden
+        static void maybeStopCounting(Object o1) {
+             CountingWrapper wrapper = (CountingWrapper) o1;
+             if (wrapper.countDown()) {
+                 // Reached invocation threshold. Replace counting behavior with a non-counting one.
+                 LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
+                 lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
+                 wrapper.updateForm(lform);
+             }
+        }
+
+        static final NamedFunction NF_maybeStopCounting;
+        static {
+            Class<?> THIS_CLASS = CountingWrapper.class;
+            try {
+                NF_maybeStopCounting = new NamedFunction(THIS_CLASS.getDeclaredMethod("maybeStopCounting", Object.class));
+            } catch (ReflectiveOperationException ex) {
+                throw newInternalError(ex);
+            }
+        }
     }
 
     static

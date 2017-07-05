@@ -25,7 +25,7 @@
  * @test
  * @bug 4420687
  * @summary Make sure that a removed provider won't be acceessable.
- * @run main/othervm/policy=RemoveStaticProvider.policy RemoveStaticProvider
+ * @run main/othervm/java.security.policy=RemoveStaticProvider.policy RemoveStaticProvider
  */
 import java.security.*;
 import javax.crypto.*;

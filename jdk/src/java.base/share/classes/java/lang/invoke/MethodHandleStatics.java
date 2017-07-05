@@ -47,10 +47,11 @@ import sun.misc.Unsafe;
     static final boolean TRACE_METHOD_LINKAGE;
     static final boolean USE_LAMBDA_FORM_EDITOR;
     static final int COMPILE_THRESHOLD;
+    static final int DONT_INLINE_THRESHOLD;
     static final int PROFILE_LEVEL;
 
     static {
-        final Object[] values = { false, false, false, false, false, null, null };
+        final Object[] values = new Object[8];
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -59,7 +60,8 @@ import sun.misc.Unsafe;
                     values[3] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE");
                     values[4] = Boolean.getBoolean("java.lang.invoke.MethodHandle.USE_LF_EDITOR");
                     values[5] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", 30);
-                    values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
+                    values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.DONT_INLINE_THRESHOLD", 30);
+                    values[7] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
                     return null;
                 }
             });
@@ -69,7 +71,8 @@ import sun.misc.Unsafe;
         TRACE_METHOD_LINKAGE      = (Boolean) values[3];
         USE_LAMBDA_FORM_EDITOR    = (Boolean) values[4];
         COMPILE_THRESHOLD         = (Integer) values[5];
-        PROFILE_LEVEL             = (Integer) values[6];
+        DONT_INLINE_THRESHOLD     = (Integer) values[6];
+        PROFILE_LEVEL             = (Integer) values[7];
     }
 
     /** Tell if any of the debugging switches are turned on.

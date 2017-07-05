@@ -1141,14 +1141,15 @@ public class JInternalFrame extends JComponent implements
     /**
      * Sets an image to be displayed in the titlebar of this internal frame (usually
      * in the top-left corner).
+     * Some look and feels might not support displaying an icon in the titlebar.
+     *
      * This image is not the <code>desktopIcon</code> object, which
      * is the image displayed in the <code>JDesktop</code> when
      * this internal frame is iconified.
      *
      * Passing <code>null</code> to this function is valid,
-     * but the look and feel
-     * can choose the
-     * appropriate behavior for that situation, such as displaying no icon
+     * but the look and feel can choose the appropriate behavior
+     * for that situation, such as displaying no icon
      * or a default icon for the look and feel.
      *
      * @param icon the <code>Icon</code> to display in the title bar

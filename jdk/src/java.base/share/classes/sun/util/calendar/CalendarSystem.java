@@ -177,44 +177,6 @@ public abstract class CalendarSystem {
         return (cs == null) ? cal : cs;
     }
 
-    /**
-     * Returns a {@link Properties} loaded from lib/calendars.properties.
-     *
-     * @return a {@link Properties} loaded from lib/calendars.properties
-     * @throws IOException if an error occurred when reading from the input stream
-     * @throws IllegalArgumentException if the input stream contains any malformed
-     *                                  Unicode escape sequences
-     */
-    public static Properties getCalendarProperties() throws IOException {
-        Properties calendarProps = null;
-        try {
-            String homeDir = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("java.home"));
-            final String fname = homeDir + File.separator + "lib" + File.separator
-                                 + "calendars.properties";
-            calendarProps = AccessController.doPrivileged(new PrivilegedExceptionAction<Properties>() {
-                @Override
-                public Properties run() throws IOException {
-                    Properties props = new Properties();
-                    try (FileInputStream fis = new FileInputStream(fname)) {
-                        props.load(fis);
-                    }
-                    return props;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException) {
-                throw (IOException) cause;
-            } else if (cause instanceof IllegalArgumentException) {
-                throw (IllegalArgumentException) cause;
-            }
-            // Should not happen
-            throw new InternalError(cause);
-        }
-        return calendarProps;
-    }
-
     //////////////////////////////// Calendar API //////////////////////////////////
 
     /**

@@ -247,7 +247,7 @@ class ServerSocketChannelImpl
                     return null;
                 thread = NativeThread.current();
                 for (;;) {
-                    n = accept0(this.fd, newfd, isaa);
+                    n = accept(this.fd, newfd, isaa);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
                         continue;
                     break;
@@ -408,6 +408,18 @@ class ServerSocketChannelImpl
         }
         sb.append(']');
         return sb.toString();
+    }
+
+    /**
+     * Accept a connection on a socket.
+     *
+     * @implNote Wrap native call to allow instrumentation.
+     */
+    private int accept(FileDescriptor ssfd, FileDescriptor newfd,
+                       InetSocketAddress[] isaa)
+        throws IOException
+    {
+        return accept0(ssfd, newfd, isaa);
     }
 
     // -- Native methods --

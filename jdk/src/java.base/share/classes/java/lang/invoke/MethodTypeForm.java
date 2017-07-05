@@ -63,24 +63,25 @@ final class MethodTypeForm {
     final @Stable LambdaForm[] lambdaForms;
     // Indexes into lambdaForms:
     static final int
-            LF_INVVIRTUAL     =  0,  // DMH invokeVirtual
-            LF_INVSTATIC      =  1,
-            LF_INVSPECIAL     =  2,
-            LF_NEWINVSPECIAL  =  3,
-            LF_INVINTERFACE   =  4,
-            LF_INVSTATIC_INIT =  5,  // DMH invokeStatic with <clinit> barrier
-            LF_INTERPRET      =  6,  // LF interpreter
-            LF_REBIND         =  7,  // BoundMethodHandle
-            LF_DELEGATE       =  8,  // DelegatingMethodHandle
-            LF_EX_LINKER      =  9,  // invokeExact_MT (for invokehandle)
-            LF_EX_INVOKER     = 10,  // MHs.invokeExact
-            LF_GEN_LINKER     = 11,  // generic invoke_MT (for invokehandle)
-            LF_GEN_INVOKER    = 12,  // generic MHs.invoke
-            LF_CS_LINKER      = 13,  // linkToCallSite_CS
-            LF_MH_LINKER      = 14,  // linkToCallSite_MH
-            LF_GWC            = 15,  // guardWithCatch (catchException)
-            LF_GWT            = 16,  // guardWithTest
-            LF_LIMIT          = 17;
+            LF_INVVIRTUAL              =  0,  // DMH invokeVirtual
+            LF_INVSTATIC               =  1,
+            LF_INVSPECIAL              =  2,
+            LF_NEWINVSPECIAL           =  3,
+            LF_INVINTERFACE            =  4,
+            LF_INVSTATIC_INIT          =  5,  // DMH invokeStatic with <clinit> barrier
+            LF_INTERPRET               =  6,  // LF interpreter
+            LF_REBIND                  =  7,  // BoundMethodHandle
+            LF_DELEGATE                =  8,  // DelegatingMethodHandle
+            LF_DELEGATE_BLOCK_INLINING =  9,  // Counting DelegatingMethodHandle w/ @DontInline
+            LF_EX_LINKER               = 10,  // invokeExact_MT (for invokehandle)
+            LF_EX_INVOKER              = 11,  // MHs.invokeExact
+            LF_GEN_LINKER              = 12,  // generic invoke_MT (for invokehandle)
+            LF_GEN_INVOKER             = 13,  // generic MHs.invoke
+            LF_CS_LINKER               = 14,  // linkToCallSite_CS
+            LF_MH_LINKER               = 15,  // linkToCallSite_MH
+            LF_GWC                     = 16,  // guardWithCatch (catchException)
+            LF_GWT                     = 17,  // guardWithTest
+            LF_LIMIT                   = 18;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.
