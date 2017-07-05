@@ -1,0 +1,22 @@
+o.foo = 33
+o.foo = 44
+o.foo = 3
+o.foo = hello
+obj1.func called
+obj2.func called
+no such method: func
+obj4's prototype func called
+MyConstructor.prototype.func
+MyConstructor.prototype.func
+obj1.func called
+obj2.func called
+new obj3.func called
+new obj4.func called
+all new MyConstructor.prototype.func
+all new MyConstructor.prototype.func
+obj.__noSuchProperty__ for foo
+new obj.__noSuchProperty__ for foo
+proto.__noSuchProperty__ for foo
+new proto.__noSuchProperty__ for foo
+find
+find

@@ -84,7 +84,7 @@ class UnixChannelFactory {
                     }
                     continue;
                 }
-                if (option == LinkOption.NOFOLLOW_LINKS && supportsNoFollowLinks()) {
+                if (option == LinkOption.NOFOLLOW_LINKS && O_NOFOLLOW != 0) {
                     flags.noFollowLinks = true;
                     continue;
                 }
@@ -218,7 +218,7 @@ class UnixChannelFactory {
         // follow links by default
         boolean followLinks = true;
         if (!flags.createNew && (flags.noFollowLinks || flags.deleteOnClose)) {
-            if (flags.deleteOnClose && !supportsNoFollowLinks()) {
+            if (flags.deleteOnClose && O_NOFOLLOW == 0) {
                 try {
                     if (UnixFileAttributes.get(path, false).isSymbolicLink())
                         throw new UnixException("DELETE_ON_CLOSE specified and file is a symbolic link");

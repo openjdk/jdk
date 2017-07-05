@@ -2444,8 +2444,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // initial marking in checkpointRootsInitialWork has been completed
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before initial mark: ");
-          Universe::verify();
+          Universe::verify("Verify before initial mark: ");
         }
         {
           bool res = markFromRoots(false);
@@ -2456,8 +2455,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
       case FinalMarking:
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before re-mark: ");
-          Universe::verify();
+          Universe::verify("Verify before re-mark: ");
         }
         checkpointRootsFinal(false, clear_all_soft_refs,
                              init_mark_was_synchronous);
@@ -2468,8 +2466,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // final marking in checkpointRootsFinal has been completed
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before sweep: ");
-          Universe::verify();
+          Universe::verify("Verify before sweep: ");
         }
         sweep(false);
         assert(_collectorState == Resizing, "Incorrect state");
@@ -2484,8 +2481,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // The heap has been resized.
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before reset: ");
-          Universe::verify();
+          Universe::verify("Verify before reset: ");
         }
         reset(false);
         assert(_collectorState == Idling, "Collector state should "
@@ -2853,8 +2849,8 @@ class VerifyMarkedClosure: public BitMapClosure {
   bool failed() { return _failed; }
 };
 
-bool CMSCollector::verify_after_remark() {
-  gclog_or_tty->print(" [Verifying CMS Marking... ");
+bool CMSCollector::verify_after_remark(bool silent) {
+  if (!silent) gclog_or_tty->print(" [Verifying CMS Marking... ");
   MutexLockerEx ml(verification_mark_bm()->lock(), Mutex::_no_safepoint_check_flag);
   static bool init = false;
 
@@ -2915,7 +2911,7 @@ bool CMSCollector::verify_after_remark() {
     warning("Unrecognized value %d for CMSRemarkVerifyVariant",
             CMSRemarkVerifyVariant);
   }
-  gclog_or_tty->print(" done] ");
+  if (!silent) gclog_or_tty->print(" done] ");
   return true;
 }
 
@@ -3426,8 +3422,9 @@ bool ConcurrentMarkSweepGeneration::grow_to_reserved() {
 void ConcurrentMarkSweepGeneration::shrink_free_list_by(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert_lock_strong(freelistLock());
-  // XXX Fix when compaction is implemented.
-  warning("Shrinking of CMS not yet implemented");
+  if (PrintGCDetails && Verbose) {
+    warning("Shrinking of CMS not yet implemented");
+  }
   return;
 }
 
@@ -6010,26 +6007,23 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
                                         &cmsDrainMarkingStackClosure,
                                         NULL);
     }
-    verify_work_stacks_empty();
   }
+
+  // This is the point where the entire marking should have completed.
+  verify_work_stacks_empty();
 
   if (should_unload_classes()) {
     {
       TraceTime t("class unloading", PrintGCDetails, false, gclog_or_tty);
 
-      // Follow SystemDictionary roots and unload classes
+      // Unload classes and purge the SystemDictionary.
       bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure);
 
-      // Follow CodeCache roots and unload any methods marked for unloading
+      // Unload nmethods.
       CodeCache::do_unloading(&_is_alive_closure, purged_class);
 
-      cmsDrainMarkingStackClosure.do_void();
-      verify_work_stacks_empty();
-
-      // Update subklass/sibling/implementor links in KlassKlass descendants
+      // Prune dead klasses from subklass/sibling/implementor lists.
       Klass::clean_weak_klass_links(&_is_alive_closure);
-      // Nothing should have been pushed onto the working stacks.
-      verify_work_stacks_empty();
     }
 
     {
@@ -6043,11 +6037,10 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   // Need to check if we really scanned the StringTable.
   if ((roots_scanning_options() & SharedHeap::SO_Strings) == 0) {
     TraceTime t("scrub string table", PrintGCDetails, false, gclog_or_tty);
-    // Now clean up stale oops in StringTable
+    // Delete entries for dead interned strings.
     StringTable::unlink(&_is_alive_closure);
   }
 
-  verify_work_stacks_empty();
   // Restore any preserved marks as a result of mark stack or
   // work queue overflow
   restore_preserved_marks_if_any();  // done single-threaded for now

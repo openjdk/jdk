@@ -25,29 +25,21 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SCRIPT_RETURN;
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockLexicalContext;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
-import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
@@ -56,10 +48,10 @@ import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LabelNode;
-import jdk.nashorn.internal.ir.LabeledNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.SwitchNode;
@@ -90,20 +82,7 @@ import jdk.nashorn.internal.runtime.Source;
 
 final class Lower extends NodeOperatorVisitor {
 
-    /**
-     * Nesting level stack. Currently just used for loops to avoid the problem
-     * with terminal bodies that end with throw/return but still do continues to
-     * outer loops or same loop.
-     */
-    private final Deque<Node> nesting;
-
     private static final DebugLogger LOG = new DebugLogger("lower");
-
-    private Node lastStatement;
-
-    private List<Node> statements;
-
-    private LexicalContext lexicalContext = new LexicalContext();
 
     /**
      * Constructor.
@@ -111,335 +90,159 @@ final class Lower extends NodeOperatorVisitor {
      * @param compiler the compiler
      */
     Lower() {
-        this.nesting    = new ArrayDeque<>();
-        this.statements = new ArrayList<>();
+        super(new BlockLexicalContext() {
+
+            @Override
+            public List<Node> popStatements() {
+                List<Node> newStatements = new ArrayList<>();
+                boolean terminated = false;
+
+                final List<Node> statements = super.popStatements();
+                for (final Node statement : statements) {
+                    if (!terminated) {
+                        newStatements.add(statement);
+                        if (statement.isTerminal()) {
+                            terminated = true;
+                        }
+                    } else {
+                        if (statement instanceof VarNode) {
+                            newStatements.add(((VarNode)statement).setInit(null));
+                        }
+                    }
+                }
+                return newStatements;
+            }
+        });
     }
 
     @Override
-    public Node enterBlock(final Block block) {
-        final Node       savedLastStatement = lastStatement;
-        final List<Node> savedStatements    = statements;
-        lexicalContext.push(block);
-        try {
-            this.statements = new ArrayList<>();
-            NodeVisitor visitor = this;
-            for (final Node statement : block.getStatements()) {
-                statement.accept(visitor);
-                /*
-                 * This is slightly unsound, for example if we have a loop with
-                 * a guarded statement like if (x) continue in the body and the
-                 * body ends with TERMINAL, e.g. return; we removed the continue
-                 * before we had the loop stack, as all we cared about was a
-                 * return last in the loop.
-                 *
-                 * @see NASHORN-285
-                 */
-                if (lastStatement != null && lastStatement.isTerminal()) {
-                    copyTerminal(block, lastStatement);
-                    visitor = new DeadCodeVarDeclarationVisitor();
-                }
-            }
-            block.setStatements(statements);
+    public boolean enterBlock(final Block block) {
+        final LexicalContext lc = getLexicalContext();
+        if (lc.isFunctionBody() && lc.getCurrentFunction().isProgram() && !lc.getCurrentFunction().hasDeclaredFunctions()) {
+            new ExecuteNode(block.getSource(), block.getToken(), block.getFinish(), LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED)).accept(this);
+        }
+        return true;
+    }
 
-        } finally {
-            this.statements = savedStatements;
-            this.lastStatement = savedLastStatement;
-            lexicalContext.pop(block);
+    @Override
+    public Node leaveBlock(final Block block) {
+        //now we have committed the entire statement list to the block, but we need to truncate
+        //whatever is after the last terminal. block append won't append past it
+
+        final BlockLexicalContext lc = (BlockLexicalContext)getLexicalContext();
+
+        Node last = lc.getLastStatement();
+
+        if (lc.isFunctionBody()) {
+            final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+            final boolean isProgram = currentFunction.isProgram();
+            final ReturnNode returnNode = new ReturnNode(
+                currentFunction.getSource(),
+                currentFunction.getToken(),
+                currentFunction.getFinish(),
+                isProgram ?
+                    compilerConstant(RETURN) :
+                    LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED));
+
+            last = returnNode.accept(this);
         }
 
-        return null;
+        if (last != null && last.isTerminal()) {
+            return block.setIsTerminal(lc, true);
+        }
+
+        return block;
     }
 
     @Override
-    public Node enterBreakNode(final BreakNode breakNode) {
-        return enterBreakOrContinue(breakNode);
+    public boolean enterBreakNode(final BreakNode breakNode) {
+        addStatement(breakNode);
+        return false;
     }
 
     @Override
-    public Node enterCallNode(final CallNode callNode) {
-        final Node function = markerFunction(callNode.getFunction());
-        callNode.setFunction(function);
-        checkEval(callNode); //check if this is an eval call and store the information
-        return callNode;
-    }
-
-    @Override
-    public Node leaveCaseNode(final CaseNode caseNode) {
-        caseNode.copyTerminalFlags(caseNode.getBody());
-        return caseNode;
+    public Node leaveCallNode(final CallNode callNode) {
+        return checkEval(callNode.setFunction(markerFunction(callNode.getFunction())));
     }
 
     @Override
     public Node leaveCatchNode(final CatchNode catchNode) {
-        catchNode.copyTerminalFlags(catchNode.getBody());
-        addStatement(catchNode);
-        return catchNode;
+        return addStatement(catchNode);
     }
 
     @Override
-    public Node enterContinueNode(final ContinueNode continueNode) {
-        return enterBreakOrContinue(continueNode);
+    public boolean enterContinueNode(final ContinueNode continueNode) {
+        addStatement(continueNode);
+        return false;
     }
 
     @Override
-    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
-        return enterWhileNode(doWhileNode);
-    }
-
-    @Override
-    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
-        return leaveWhileNode(doWhileNode);
-    }
-
-    @Override
-    public Node enterEmptyNode(final EmptyNode emptyNode) {
-        return null;
+    public boolean enterEmptyNode(final EmptyNode emptyNode) {
+        return false;
     }
 
     @Override
     public Node leaveExecuteNode(final ExecuteNode executeNode) {
         final Node expr = executeNode.getExpression();
+        ExecuteNode node = executeNode;
 
-        if (getCurrentFunctionNode().isProgram()) {
+        final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+
+        if (currentFunction.isProgram()) {
             if (!(expr instanceof Block) || expr instanceof FunctionNode) { // it's not a block, but can be a function
                 if (!isInternalExpression(expr) && !isEvalResultAssignment(expr)) {
-                    executeNode.setExpression(new BinaryNode(executeNode.getSource(), Token.recast(executeNode.getToken(), TokenType.ASSIGN),
-                            getCurrentFunctionNode().getResultNode(),
-                            expr));
+                    node = executeNode.setExpression(
+                        new BinaryNode(
+                            executeNode.getSource(),
+                            Token.recast(
+                                executeNode.getToken(),
+                                TokenType.ASSIGN),
+                            compilerConstant(RETURN),
+                        expr));
                 }
             }
         }
 
-        copyTerminal(executeNode, executeNode.getExpression());
-        addStatement(executeNode);
-
-        return executeNode;
-    }
-
-    @Override
-    public Node enterForNode(final ForNode forNode) {
-        nest(forNode);
-        return forNode;
+        return addStatement(node);
     }
 
     @Override
     public Node leaveForNode(final ForNode forNode) {
+        ForNode newForNode = forNode;
+
         final Node  test = forNode.getTest();
-        final Block body = forNode.getBody();
-
-        if (!forNode.isForIn() && test == null) {
-            setHasGoto(forNode);
-        }
-
-        final boolean escapes = controlFlowEscapes(body);
-        if (escapes) {
-            setTerminal(body, false);
-        }
-
-        // pop the loop from the loop context
-        unnest(forNode);
-
         if (!forNode.isForIn() && conservativeAlwaysTrue(test)) {
-            forNode.setTest(null);
-            setHasGoto(forNode);
-            setTerminal(forNode, !escapes);
+            newForNode = forNode.setTest(getLexicalContext(), null);
         }
 
-        addStatement(forNode);
-
-        return forNode;
+        return addStatement(checkEscape(newForNode));
     }
 
     @Override
-    public Node enterFunctionNode(final FunctionNode functionNode) {
-        LOG.info("START FunctionNode: " + functionNode.getName());
-
-        if (functionNode.isLazy()) {
-            LOG.info("LAZY: " + functionNode.getName());
-            return null;
-        }
-        lexicalContext.push(functionNode);
-        initFunctionNode(functionNode);
-
-        nest(functionNode);
-
-        /*
-         * As we are evaluating a nested structure, we need to store the
-         * statement list for the surrounding block and restore it when the
-         * function is done
-         */
-        final List<Node> savedStatements = statements;
-        final Node savedLastStatement = lastStatement;
-
-        statements    = new ArrayList<>();
-        lastStatement = null;
-
-        if (functionNode.needsSelfSymbol()) {
-            //function needs to start with var funcIdent = __callee_;
-            statements.add(functionNode.getSelfSymbolInit().accept(this));
-        }
-
-        NodeVisitor visitor = this;
-        try {
-            //do the statements - this fills the block with code
-            boolean needsInitialEvalResult = functionNode.isProgram();
-            for (final Node statement : functionNode.getStatements()) {
-                // If this function is a program, then insert an assignment to the initial eval result after all
-                // function declarations.
-                if(needsInitialEvalResult && !(statement instanceof LineNumberNode || (statement instanceof VarNode && ((VarNode)statement).isFunctionDeclaration()))) {
-                    addInitialEvalResult(functionNode);
-                    needsInitialEvalResult = false;
-                }
-                statement.accept(visitor);
-                //If there are unused terminated endpoints in the function, we need
-                // to add a "return undefined" in those places for correct semantics
-                LOG.info("Checking lastStatement="+lastStatement+" for terminal flags");
-                if (lastStatement != null && lastStatement.hasTerminalFlags()) {
-                    copyTerminal(functionNode, lastStatement);
-                    assert !needsInitialEvalResult;
-                    visitor = new DeadCodeVarDeclarationVisitor();
-                }
-            }
-            if(needsInitialEvalResult) {
-                addInitialEvalResult(functionNode);
-            }
-            functionNode.setStatements(statements);
-
-            if (!functionNode.isTerminal()) {
-                guaranteeReturn(functionNode);
-            }
-        } finally {
-            statements    = savedStatements;
-            lastStatement = savedLastStatement;
-        }
-
-        LOG.info("END FunctionNode: " + functionNode.getName());
-        unnest(functionNode);
-        lexicalContext.pop(functionNode);
-
-        functionNode.setState(CompilationState.LOWERED);
-
-        return null;
-    }
-
-    /**
-     * This visitor is used to go over statements after a terminal statement. Those statements are dead code, but the
-     * var declarations in them still have the effect of declaring a local variable on the function level. Therefore,
-     * they aren't really dead code and must be preserved. Note that they're only preserved as no-op declarations; their
-     * initializers are wiped out as those are, in fact, dead code.
-     */
-    private class DeadCodeVarDeclarationVisitor extends NodeOperatorVisitor {
-        DeadCodeVarDeclarationVisitor() {
-        }
-
-        @Override
-        public Node enterVarNode(VarNode varNode) {
-            // Can't ever see a function declaration, as this visitor is only ever used after a terminal statement was
-            // encountered, and all function declarations precede any terminal statements.
-            assert !varNode.isFunctionDeclaration();
-            if(varNode.getInit() == null) {
-                // No initializer, just pass it to Lower.
-                return varNode.accept(Lower.this);
-            }
-            // Wipe out the initializer and then pass it to Lower.
-            return varNode.setInit(null).accept(Lower.this);
-        }
-    }
-
-    private void addInitialEvalResult(final FunctionNode functionNode) {
-        new ExecuteNode(functionNode.getSource(), functionNode.getFirstToken(), functionNode.getFinish(),
-                getInitialEvalResult(functionNode)).accept(this);
-    }
-
-    /**
-     * Result of initial result of evaluating a particular program, which is either the last function it declares, or
-     * undefined if it doesn't declare any functions.
-     * @param program
-     * @return the initial result of evaluating the program
-     */
-    private static Node getInitialEvalResult(final FunctionNode program) {
-        IdentNode lastFnName = null;
-        for (final FunctionNode fn : program.getDeclaredFunctions()) {
-            assert fn.isDeclared();
-            final IdentNode fnName = fn.getIdent();
-            if(fnName != null) {
-                lastFnName = fnName;
-            }
-        }
-        return lastFnName != null ? new IdentNode(lastFnName) : LiteralNode.newInstance(program, ScriptRuntime.UNDEFINED);
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
+        return !functionNode.isLazy();
     }
 
     @Override
-    public Node enterIfNode(final IfNode ifNode) {
-        return nest(ifNode);
+    public Node leaveFunctionNode(final FunctionNode functionNode) {
+        LOG.info("END FunctionNode: ", functionNode.getName());
+        return functionNode.setState(getLexicalContext(), CompilationState.LOWERED);
     }
 
     @Override
     public Node leaveIfNode(final IfNode ifNode) {
-        final Node pass = ifNode.getPass();
-        final Node fail = ifNode.getFail();
-
-        if (pass.isTerminal() && fail != null && fail.isTerminal()) {
-            setTerminal(ifNode,  true);
-        }
-
-        addStatement(ifNode);
-        unnest(ifNode);
-
-        return ifNode;
+        return addStatement(ifNode);
     }
 
     @Override
-    public Node enterLabelNode(LabelNode labelNode) {
-        final Block body = labelNode.getBody();
-        body.accept(this);
-        copyTerminal(labelNode, body);
-        addStatement(labelNode);
-        return null;
+    public Node leaveLabelNode(final LabelNode labelNode) {
+        return addStatement(labelNode);
     }
 
     @Override
-    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        addStatement(lineNumberNode, false); // don't put it in lastStatement cache
-        return null;
-    }
-
-    @Override
-    public Node enterReturnNode(final ReturnNode returnNode) {
-        final TryNode tryNode = returnNode.getTryChain();
-        final Node    expr    = returnNode.getExpression();
-
-        if (tryNode != null) {
-            //we are inside a try block - we don't necessarily have a result node yet. attr will do that.
-            if (expr != null) {
-                final Source source = getCurrentFunctionNode().getSource();
-
-                //we need to evaluate the result of the return in case it is complex while
-                //still in the try block, store it in a result value and return it afterwards
-                final long token        = returnNode.getToken();
-                final Node resultNode   = new IdentNode(getCurrentFunctionNode().getResultNode());
-                final Node assignResult = new BinaryNode(source, Token.recast(token, TokenType.ASSIGN), resultNode, expr);
-
-                //add return_in_try = expr; to try block
-                new ExecuteNode(source, token, Token.descPosition(token), assignResult).accept(this);
-
-                //splice in the finally code, inlining it here
-                if (copyFinally(tryNode, null)) {
-                    return null;
-                }
-
-                //make sure that the return node now returns 'return_in_try'
-                returnNode.setExpression(resultNode);
-            } else if (copyFinally(tryNode, null)) {
-                return null;
-            }
-        } else if (expr != null) {
-            returnNode.setExpression(expr.accept(this));
-        }
-
-        addStatement(returnNode);
-
-        return null;
+    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
+        addStatement(lineNumberNode); // don't put it in lastStatement cache
+        return false;
     }
 
     @Override
@@ -448,31 +251,10 @@ final class Lower extends NodeOperatorVisitor {
         return returnNode;
     }
 
-    @Override
-    public Node enterSwitchNode(final SwitchNode switchNode) {
-        nest(switchNode);
-        return switchNode;
-    }
 
     @Override
     public Node leaveSwitchNode(final SwitchNode switchNode) {
-        unnest(switchNode);
-
-        final List<CaseNode> cases       = switchNode.getCases();
-        final CaseNode       defaultCase = switchNode.getDefaultCase();
-
-        boolean allTerminal = !cases.isEmpty();
-        for (final CaseNode caseNode : switchNode.getCases()) {
-            allTerminal &= caseNode.isTerminal();
-        }
-
-        if (allTerminal && defaultCase != null && defaultCase.isTerminal()) {
-            setTerminal(switchNode, true);
-        }
-
-        addStatement(switchNode);
-
-        return switchNode;
+        return addStatement(switchNode);
     }
 
     @Override
@@ -481,208 +263,234 @@ final class Lower extends NodeOperatorVisitor {
         return throwNode;
     }
 
-    @Override
-    public Node enterTryNode(final TryNode tryNode) {
-        final Block  finallyBody = tryNode.getFinallyBody();
-        final long   token       = tryNode.getToken();
-        final int    finish      = tryNode.getFinish();
+    private static Node ensureUniqueLabelsIn(final Node node) {
+        return node.accept(new NodeVisitor() {
+           @Override
+           public Node leaveDefault(final Node labelledNode) {
+               return labelledNode.ensureUniqueLabels(getLexicalContext());
+           }
+        });
+    }
 
-        nest(tryNode);
+    private static List<Node> copyFinally(final Block finallyBody) {
+        final List<Node> newStatements = new ArrayList<>();
+        for (final Node statement : finallyBody.getStatements()) {
+            newStatements.add(ensureUniqueLabelsIn(statement));
+            if (statement.hasTerminalFlags()) {
+                return newStatements;
+            }
+        }
+        return newStatements;
+    }
 
-        if (finallyBody == null) {
-            //do nothing if no finally exists
-            return tryNode;
+    private Block catchAllBlock(final TryNode tryNode) {
+        final Source source = tryNode.getSource();
+        final long   token  = tryNode.getToken();
+        final int    finish = tryNode.getFinish();
+
+        final IdentNode exception = new IdentNode(source, token, finish, getLexicalContext().getCurrentFunction().uniqueName("catch_all"));
+
+        final Block catchBody = new Block(source, token, finish, new ThrowNode(source, token, finish, new IdentNode(exception))).
+                setIsTerminal(getLexicalContext(), true); //ends with throw, so terminal
+
+        final CatchNode catchAllNode  = new CatchNode(source, token, finish, new IdentNode(exception), null, catchBody);
+        final Block     catchAllBlock = new Block(source, token, finish, catchAllNode);
+
+        //catchallblock -> catchallnode (catchnode) -> exception -> throw
+
+        return (Block)catchAllBlock.accept(this); //not accepted. has to be accepted by lower
+    }
+
+    private IdentNode compilerConstant(final CompilerConstants cc) {
+        final FunctionNode functionNode = getLexicalContext().getCurrentFunction();
+        return new IdentNode(functionNode.getSource(), functionNode.getToken(), functionNode.getFinish(), cc.symbolName());
+    }
+
+    private static boolean isTerminal(final List<Node> statements) {
+        return !statements.isEmpty() && statements.get(statements.size() - 1).hasTerminalFlags();
+    }
+
+    /**
+     * Splice finally code into all endpoints of a trynode
+     * @param tryNode the try node
+     * @param list of rethrowing throw nodes from synthetic catch blocks
+     * @param finallyBody the code in the original finally block
+     * @return new try node after splicing finally code (same if nop)
+     */
+    private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
+        final Source source = tryNode.getSource();
+        final int    finish = tryNode.getFinish();
+
+        assert tryNode.getFinallyBody() == null;
+
+        final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor() {
+            final List<Node> insideTry = new ArrayList<>();
+
+            @Override
+            public boolean enterDefault(final Node node) {
+                insideTry.add(node);
+                return true;
+            }
+
+            @Override
+            public boolean enterFunctionNode(final FunctionNode functionNode) {
+                // do not enter function nodes - finally code should not be inlined into them
+                return false;
+            }
+
+            @Override
+            public Node leaveThrowNode(final ThrowNode throwNode) {
+                if (rethrows.contains(throwNode)) {
+                    final List<Node> newStatements = copyFinally(finallyBody);
+                    if (!isTerminal(newStatements)) {
+                        newStatements.add(throwNode);
+                    }
+                    return new Block(source, throwNode.getToken(), throwNode.getFinish(), newStatements);
+                }
+                return throwNode;
+            }
+
+            @Override
+            public Node leaveBreakNode(final BreakNode breakNode) {
+                return copy(breakNode, Lower.this.getLexicalContext().getBreakable(breakNode.getLabel()));
+            }
+
+            @Override
+            public Node leaveContinueNode(final ContinueNode continueNode) {
+                return copy(continueNode, Lower.this.getLexicalContext().getContinueTo(continueNode.getLabel()));
+            }
+
+            @Override
+            public Node leaveReturnNode(final ReturnNode returnNode) {
+                final Node  expr  = returnNode.getExpression();
+                final List<Node> newStatements = new ArrayList<>();
+
+                final Node resultNode;
+                if (expr != null) {
+                    //we need to evaluate the result of the return in case it is complex while
+                    //still in the try block, store it in a result value and return it afterwards
+                    resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
+                    newStatements.add(new ExecuteNode(new BinaryNode(source, Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
+                } else {
+                    resultNode = null;
+                }
+
+                newStatements.addAll(copyFinally(finallyBody));
+                if (!isTerminal(newStatements)) {
+                    newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
+                }
+
+                return new ExecuteNode(new Block(source, returnNode.getToken(), getLexicalContext().getCurrentBlock().getFinish(), newStatements));
+            }
+
+            private Node copy(final Node endpoint, final Node targetNode) {
+                if (!insideTry.contains(targetNode)) {
+                    final List<Node> newStatements = copyFinally(finallyBody);
+                    if (!isTerminal(newStatements)) {
+                        newStatements.add(endpoint);
+                    }
+                    return new ExecuteNode(new Block(source, endpoint.getToken(), finish, newStatements));
+                }
+                return endpoint;
+            }
+        });
+
+        addStatement(newTryNode);
+        for (final Node statement : finallyBody.getStatements()) {
+            addStatement(statement);
         }
 
-        /*
-         * We have a finally clause.
-         *
-         * Transform to do finally tail duplication as follows:
-         *
-         * <pre>
-         *  try {
-         *    try_body
-         *  } catch e1 {
-         *    catchbody_1
-         *  }
-         *  ...
-         *  } catch en {
-         *    catchbody_n
-         *  } finally {
-         *    finally_body
-         *  }
-         *
-         *  (where e1 ... en are optional)
-         *
-         *  turns into
-         *
-         *  try {
-         *    try {
-         *      try_body
-         *    } catch e1 {
-         *      catchbody1
-         *      //nothing inlined explicitly here, return, break other
-         *      //terminals may inline the finally body
-         *      ...
-         *    } catch en {
-         *      catchbody2
-         *      //nothing inlined explicitly here, return, break other
-         *      //terminals may inline the finally body
-         *    }
-         *  } catch all ex {
-         *      finally_body_inlined
-         *      rethrow ex
-         *  }
-         *  finally_body_inlined
-         * </pre>
-         *
-         * If tries are catches are terminal, visitors for return, break &
-         * continue will handle the tail duplications. Throw needs to be
-         * treated specially with the catchall as described in the above
-         * ASCII art.
-         *
-         * If the try isn't terminal we do the finally_body_inlined at the
-         * end. If the try is terminated with continue/break/return the
-         * existing visitor logic will inline the finally before that
-         * operation. if the try is terminated with a throw, the catches e1
-         * ... en will have a chance to process the exception. If the
-         * appropriate catch e1..en is non terminal we fall through to the
-         * last finally_body_inlined. if the catch e1...en IS terminal with
-         * continue/break/return existing visitor logic will fix it. If they
-         * are terminal with another throw it goes to the catchall and the
-         * finally_body_inlined marked (*) will fix it before rethrowing
-         * whatever problem there was for identical semantic.
-         */
-        final Source source = getCurrentFunctionNode().getSource();
-
-        // if try node does not contain a catch we can skip creation of a new
-        // try node and just append our synthetic catch to the existing try node.
-        if (!tryNode.getCatchBlocks().isEmpty()) {
-            // insert an intermediate try-catch* node, where we move the body and all catch blocks.
-            // the original try node become a try-finally container for the new try-catch* node.
-            // because we don't clone (to avoid deep copy), we have to fix the block chain in the end.
-            final TryNode innerTryNode;
-            innerTryNode = new TryNode(source, token, finish, tryNode.getNext());
-            innerTryNode.setBody(tryNode.getBody());
-            innerTryNode.setCatchBlocks(tryNode.getCatchBlocks());
-
-            // set outer tryNode's body to innerTryNode
-            final Block outerBody;
-            outerBody = new Block(source, token, finish);
-            outerBody.setStatements(new ArrayList<Node>(Arrays.asList(innerTryNode)));
-            tryNode.setBody(outerBody);
-            tryNode.setCatchBlocks(null);
-        }
-
-        // create a catch-all that inlines finally and rethrows
-
-        final Block catchBlock      = new Block(source, token, finish);
-        //this catch block should get define symbol
-
-        final Block catchBody       = new Block(source, token, finish);
-        final Node  catchAllFinally = finallyBody.copy();
-
-        catchBody.addStatement(new ExecuteNode(source, finallyBody.getToken(), finallyBody.getFinish(), catchAllFinally));
-        setTerminal(catchBody, true);
-
-        final CatchNode catchAllNode;
-        final IdentNode exception;
-
-        exception    = new IdentNode(source, token, finish, getCurrentFunctionNode().uniqueName("catch_all"));
-        catchAllNode = new CatchNode(source, token, finish, new IdentNode(exception), null, catchBody);
-        catchAllNode.setIsSyntheticRethrow();
-
-        catchBlock.addStatement(catchAllNode);
-
-        // replace all catches of outer tryNode with the catch-all
-        tryNode.setCatchBlocks(new ArrayList<>(Arrays.asList(catchBlock)));
-
-        /*
-         * We leave the finally block for the original try in place for now
-         * so that children visitations will work. It is removed and placed
-         * afterwards in the else case below, after all children are visited
-         */
-
-        return tryNode;
+        return newTryNode;
     }
 
     @Override
     public Node leaveTryNode(final TryNode tryNode) {
-        final Block finallyBody   = tryNode.getFinallyBody();
+        final Block finallyBody = tryNode.getFinallyBody();
 
-        boolean allTerminal = tryNode.getBody().isTerminal() && (finallyBody == null || finallyBody.isTerminal());
-
-        for (final Block catchBlock : tryNode.getCatchBlocks()) {
-            allTerminal &= catchBlock.isTerminal();
+        if (finallyBody == null) {
+            return addStatement(tryNode);
         }
 
-        tryNode.setIsTerminal(allTerminal);
+        /*
+         * create a new trynode
+         *    if we have catches:
+         *
+         *    try            try
+         *       x              try
+         *    catch               x
+         *       y              catch
+         *    finally z           y
+         *                   catchall
+         *                        rethrow
+         *
+         *   otheriwse
+         *
+         *   try              try
+         *      x               x
+         *   finally          catchall
+         *      y               rethrow
+         *
+         *
+         *   now splice in finally code wherever needed
+         *
+         */
+        TryNode newTryNode;
 
-        addStatement(tryNode);
-        unnest(tryNode);
+        final Block catchAll = catchAllBlock(tryNode);
 
-        // if finally body is present, place it after the tryNode
-        if (finallyBody != null) {
-            tryNode.setFinallyBody(null);
-            addStatement(finallyBody);
+        final List<ThrowNode> rethrows = new ArrayList<>();
+        catchAll.accept(new NodeVisitor() {
+            @Override
+            public boolean enterThrowNode(final ThrowNode throwNode) {
+                rethrows.add(throwNode);
+                return true;
+            }
+        });
+        assert rethrows.size() == 1;
+
+        if (tryNode.getCatchBlocks().isEmpty()) {
+            newTryNode = tryNode.setFinallyBody(null);
+        } else {
+            Block outerBody = new Block(tryNode.getSource(), tryNode.getToken(), tryNode.getFinish(), new ArrayList<Node>(Arrays.asList(tryNode.setFinallyBody(null))));
+            newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
         }
 
-        return tryNode;
+        newTryNode = newTryNode.setCatchBlocks(Arrays.asList(catchAll)).setFinallyBody(null);
+
+        /*
+         * Now that the transform is done, we have to go into the try and splice
+         * the finally block in front of any statement that is outside the try
+         */
+        return spliceFinally(newTryNode, rethrows, finallyBody);
     }
 
     @Override
     public Node leaveVarNode(final VarNode varNode) {
         addStatement(varNode);
+        if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION) && getLexicalContext().getCurrentFunction().isProgram()) {
+            new ExecuteNode(varNode.getSource(), varNode.getToken(), varNode.getFinish(), new IdentNode(varNode.getName())).accept(this);
+        }
         return varNode;
-    }
-
-    @Override
-    public Node enterWhileNode(final WhileNode whileNode) {
-        return nest(whileNode);
     }
 
     @Override
     public Node leaveWhileNode(final WhileNode whileNode) {
         final Node test = whileNode.getTest();
+        final Block body = whileNode.getBody();
 
-        if (test == null) {
-            setHasGoto(whileNode);
+        if (conservativeAlwaysTrue(test)) {
+            //turn it into a for node without a test.
+            final ForNode forNode = (ForNode)new ForNode(whileNode.getSource(), whileNode.getToken(), whileNode.getFinish(), null, null, body, null, ForNode.IS_FOR).accept(this);
+            getLexicalContext().replace(whileNode, forNode);
+            return forNode;
         }
 
-        final Block   body    = whileNode.getBody();
-        final boolean escapes = controlFlowEscapes(body);
-        if (escapes) {
-            setTerminal(body, false);
-        }
-
-        Node node = whileNode;
-
-        if (body.isTerminal()) {
-            if (whileNode instanceof DoWhileNode) {
-                setTerminal(whileNode, true);
-            } else if (conservativeAlwaysTrue(test)) {
-                node = new ForNode(whileNode.getSource(), whileNode.getToken(), whileNode.getFinish());
-                ((ForNode)node).setBody(body);
-                node.accept(this);
-                setTerminal(node, !escapes);
-            }
-        }
-
-        // pop the loop from the loop context
-        unnest(whileNode);
-        addStatement(node);
-
-        return node;
+         return addStatement(checkEscape(whileNode));
     }
 
     @Override
     public Node leaveWithNode(final WithNode withNode) {
-        if (withNode.getBody().isTerminal()) {
-            setTerminal(withNode,  true);
-        }
-        addStatement(withNode);
-
-        return withNode;
+        return addStatement(withNode);
     }
 
     @Override
@@ -741,23 +549,25 @@ final class Lower extends NodeOperatorVisitor {
      *
      * @param callNode call node to check if it's an eval
      */
-    private void checkEval(final CallNode callNode) {
+    private CallNode checkEval(final CallNode callNode) {
         if (callNode.getFunction() instanceof IdentNode) {
 
             final List<Node> args   = callNode.getArgs();
             final IdentNode  callee = (IdentNode)callNode.getFunction();
 
             // 'eval' call with at least one argument
-            if (args.size() >= 1 && EVAL.tag().equals(callee.getName())) {
-                final CallNode.EvalArgs evalArgs =
+            if (args.size() >= 1 && EVAL.symbolName().equals(callee.getName())) {
+                final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+                return callNode.setEvalArgs(
                     new CallNode.EvalArgs(
-                        args.get(0).copy().accept(this), //clone as we use this for the "is eval case". original evaluated separately for "is not eval case"
-                        getCurrentFunctionNode().getThisNode(),
+                        ensureUniqueLabelsIn(args.get(0)).accept(this),
+                        compilerConstant(THIS),
                         evalLocation(callee),
-                        getCurrentFunctionNode().isStrictMode());
-                callNode.setEvalArgs(evalArgs);
+                        currentFunction.isStrict()));
             }
         }
+
+        return callNode;
     }
 
     private static boolean conservativeAlwaysTrue(final Node node) {
@@ -773,7 +583,7 @@ final class Lower extends NodeOperatorVisitor {
      * @param loopBody the loop body to check
      * @return true if control flow may escape the loop
      */
-    private boolean controlFlowEscapes(final Node loopBody) {
+    private static boolean controlFlowEscapes(final LexicalContext lex, final Block loopBody) {
         final List<Node> escapes = new ArrayList<>();
 
         loopBody.accept(new NodeVisitor() {
@@ -786,7 +596,7 @@ final class Lower extends NodeOperatorVisitor {
             @Override
             public Node leaveContinueNode(final ContinueNode node) {
                 // all inner loops have been popped.
-                if (nesting.contains(node.getTargetNode())) {
+                if (lex.contains(lex.getContinueTo(node.getLabel()))) {
                     escapes.add(node);
                 }
                 return node;
@@ -796,134 +606,22 @@ final class Lower extends NodeOperatorVisitor {
         return !escapes.isEmpty();
     }
 
-    private void guaranteeReturn(final FunctionNode functionNode) {
-        Node resultNode;
-
-        if (functionNode.isProgram()) {
-            resultNode = functionNode.getResultNode(); // the eval result, symbol assigned in Attr
-        } else {
-            if (lastStatement != null && lastStatement.isTerminal() || lastStatement instanceof ReturnNode) {
-                return; //already in place or not needed, as it should be for a non-undefined returning function
-            }
-            resultNode = LiteralNode.newInstance(functionNode, ScriptRuntime.UNDEFINED);
+    private LoopNode checkEscape(final LoopNode loopNode) {
+        final LexicalContext lc = getLexicalContext();
+        final boolean escapes = controlFlowEscapes(lc, loopNode.getBody());
+        if (escapes) {
+            return loopNode.
+                setBody(lc, loopNode.getBody().setIsTerminal(lc, false)).
+                setControlFlowEscapes(lc, escapes);
         }
-
-        //create a return statement
-        final Node returnNode = new ReturnNode(functionNode.getSource(), functionNode.getLastToken(), functionNode.getFinish(), resultNode, null);
-        returnNode.accept(this);
+        return loopNode;
     }
 
 
-    private Node nest(final Node node) {
-        LOG.info("Nesting: " + node);
-        LOG.indent();
-        nesting.push(node);
-        return node;
+    private Node addStatement(final Node statement) {
+        ((BlockLexicalContext)getLexicalContext()).appendStatement(statement);
+        return statement;
     }
-
-    private void unnest(final Node node) {
-        LOG.unindent();
-        assert nesting.getFirst() == node : "inconsistent nesting order : " + nesting.getFirst() + " != " + node;
-        LOG.info("Unnesting: " + nesting);
-        nesting.pop();
-    }
-
-    private static void setTerminal(final Node node, final boolean isTerminal) {
-        LOG.info("terminal = " + isTerminal + " for " + node);
-        node.setIsTerminal(isTerminal);
-    }
-
-    private static void setHasGoto(final Node node) { //, final boolean hasGoto) {
-        LOG.info("hasGoto = true for " + node);
-        node.setHasGoto();
-    }
-
-    private static void copyTerminal(final Node node, final Node sourceNode) {
-        LOG.info("copy terminal flags " + sourceNode + " -> " + node);
-        node.copyTerminalFlags(sourceNode);
-    }
-
-    private void addStatement(final Node statement, final boolean storeInLastStatement) {
-        LOG.info("add statement = " + statement + " (lastStatement = " + lastStatement + ")");
-        statements.add(statement);
-        if (storeInLastStatement) {
-            lastStatement = statement;
-        }
-    }
-
-    private void addStatement(final Node statement) {
-        addStatement(statement, true);
-    }
-
-    /**
-     * Determine if Try block is inside target block.
-     *
-     * @param tryNode Try node to test.
-     * @param target  Target block.
-     *
-     * @return true if try block is inside the target, false otherwise.
-     */
-    private boolean isNestedTry(final TryNode tryNode, final Block target) {
-        for(Iterator<Block> blocks = lexicalContext.getBlocks(getCurrentBlock()); blocks.hasNext();) {
-            final Block block = blocks.next();
-            if(block == target) {
-                return false;
-            }
-            if(tryNode.isChildBlock(block)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Clones the body of the try finallys up to the target block.
-     *
-     * @param node       first try node in the chain.
-     * @param targetNode target block of the break/continue statement or null for return
-     *
-     * @return true if terminates.
-     */
-    private boolean copyFinally(final TryNode node, final Node targetNode) {
-        Block target = null;
-
-        if (targetNode instanceof Block) {
-            target = (Block)targetNode;
-        }
-
-        for (TryNode tryNode = node; tryNode != null; tryNode = tryNode.getNext()) {
-            if (target != null && !isNestedTry(tryNode, target)) {
-                return false;
-            }
-
-            Block finallyBody = tryNode.getFinallyBody();
-            if (finallyBody == null) {
-                continue;
-            }
-
-            finallyBody = (Block)finallyBody.copy();
-            final boolean hasTerminalFlags = finallyBody.hasTerminalFlags();
-
-            new ExecuteNode(finallyBody.getSource(), finallyBody.getToken(), finallyBody.getFinish(), finallyBody).accept(this);
-
-            if (hasTerminalFlags) {
-                getCurrentBlock().copyTerminalFlags(finallyBody);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private Node enterBreakOrContinue(final LabeledNode labeledNode) {
-        final TryNode tryNode = labeledNode.getTryChain();
-        if (tryNode != null && copyFinally(tryNode, labeledNode.getTargetNode())) {
-            return null;
-        }
-        addStatement(labeledNode);
-        return null;
-    }
-
 
     /**
      * An internal expression has a symbol that is tagged internal. Check if
@@ -939,40 +637,21 @@ final class Lower extends NodeOperatorVisitor {
 
     /**
      * Is this an assignment to the special variable that hosts scripting eval
-     * results?
+     * results, i.e. __return__?
      *
      * @param expression expression to check whether it is $evalresult = X
      * @return true if an assignment to eval result, false otherwise
      */
-    private boolean isEvalResultAssignment(final Node expression) {
+    private static boolean isEvalResultAssignment(final Node expression) {
         Node e = expression;
-        if (e.tokenType() == TokenType.DISCARD) {
-            e = ((UnaryNode)expression).rhs();
-        }
-        final Node resultNode = getCurrentFunctionNode().getResultNode();
-        return e instanceof BinaryNode && ((BinaryNode)e).lhs().equals(resultNode);
-    }
-
-    /**
-     * Prepare special function nodes.
-     * TODO : only create those that are needed.
-     * TODO : make sure slot numbering is not hardcoded in {@link CompilerConstants} - now creation order is significant
-     */
-    private static void initFunctionNode(final FunctionNode functionNode) {
-        final Source source = functionNode.getSource();
-        final long token    = functionNode.getToken();
-        final int  finish   = functionNode.getFinish();
-
-        functionNode.setThisNode(new IdentNode(source, token, finish, THIS.tag()));
-        functionNode.setScopeNode(new IdentNode(source, token, finish, SCOPE.tag()));
-        functionNode.setResultNode(new IdentNode(source, token, finish, SCRIPT_RETURN.tag()));
-        functionNode.setCalleeNode(new IdentNode(source, token, finish, CALLEE.tag()));
-        if (functionNode.isVarArg()) {
-            functionNode.setVarArgsNode(new IdentNode(source, token, finish, VARARGS.tag()));
-            if (functionNode.needsArguments()) {
-                functionNode.setArgumentsNode(new IdentNode(source, token, finish, ARGUMENTS.tag()));
+        assert e.tokenType() != TokenType.DISCARD; //there are no discards this early anymore
+        if (e instanceof BinaryNode) {
+            final Node lhs = ((BinaryNode)e).lhs();
+            if (lhs instanceof IdentNode) {
+                return ((IdentNode)lhs).getName().equals(RETURN.symbolName());
             }
         }
+        return false;
     }
 
 }

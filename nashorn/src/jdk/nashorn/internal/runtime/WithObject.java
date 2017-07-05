@@ -232,11 +232,18 @@ public final class WithObject extends ScriptObject implements Scope {
         return (Scope) proto;
     }
 
+    private static GuardedInvocation fixReceiverType(final GuardedInvocation link, final MethodHandle filter) {
+        // The receiver may be an Object or a ScriptObject.
+        final MethodType invType = link.getInvocation().type();
+        final MethodType newInvType = invType.changeParameterType(0, filter.type().returnType());
+        return link.asType(newInvType);
+    }
+
     private static GuardedInvocation fixExpressionCallSite(final NashornCallSiteDescriptor desc, final GuardedInvocation link) {
         // If it's not a getMethod, just add an expression filter that converts WithObject in "this" position to its
         // expression.
         if(!"getMethod".equals(desc.getFirstOperator())) {
-            return link.filterArguments(0, WITHEXPRESSIONFILTER);
+            return fixReceiverType(link, WITHEXPRESSIONFILTER).filterArguments(0, WITHEXPRESSIONFILTER);
         }
 
         final MethodHandle linkInvocation = link.getInvocation();
@@ -252,7 +259,8 @@ public final class WithObject extends ScriptObject implements Scope {
     }
 
     private static GuardedInvocation fixScopeCallSite(final GuardedInvocation link) {
-        return link.replaceMethods(filter(link.getInvocation(), WITHSCOPEFILTER), filterGuard(link, WITHSCOPEFILTER));
+        final GuardedInvocation newLink = fixReceiverType(link, WITHSCOPEFILTER);
+        return link.replaceMethods(filter(newLink.getInvocation(), WITHSCOPEFILTER), filterGuard(newLink, WITHSCOPEFILTER));
     }
 
     private static MethodHandle filterGuard(final GuardedInvocation link, final MethodHandle filter) {

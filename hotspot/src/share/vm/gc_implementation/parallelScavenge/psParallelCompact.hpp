@@ -799,16 +799,6 @@ class PSParallelCompact : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  // Current unused
-  class FollowRootClosure: public OopsInGenClosure {
-   private:
-    ParCompactionManager* _compaction_manager;
-   public:
-    FollowRootClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
- };
-
   class FollowStackClosure: public VoidClosure {
    private:
     ParCompactionManager* _compaction_manager;
@@ -818,10 +808,7 @@ class PSParallelCompact : AllStatic {
   };
 
   class AdjustPointerClosure: public OopClosure {
-   private:
-    bool _is_root;
    public:
-    AdjustPointerClosure(bool is_root) : _is_root(is_root) { }
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
     // do not walk from thread stacks to the code cache on this phase
@@ -838,7 +825,6 @@ class PSParallelCompact : AllStatic {
   friend class AdjustPointerClosure;
   friend class AdjustKlassClosure;
   friend class FollowKlassClosure;
-  friend class FollowRootClosure;
   friend class InstanceClassLoaderKlass;
   friend class RefProcTaskProxy;
 
@@ -853,7 +839,6 @@ class PSParallelCompact : AllStatic {
   static IsAliveClosure       _is_alive_closure;
   static SpaceInfo            _space_info[last_space_id];
   static bool                 _print_phases;
-  static AdjustPointerClosure _adjust_root_pointer_closure;
   static AdjustPointerClosure _adjust_pointer_closure;
   static AdjustKlassClosure   _adjust_klass_closure;
 
@@ -888,9 +873,6 @@ class PSParallelCompact : AllStatic {
   // Mark live objects
   static void marking_phase(ParCompactionManager* cm,
                             bool maximum_heap_compaction);
-
-  template <class T> static inline void adjust_pointer(T* p, bool is_root);
-  static void adjust_root_pointer(oop* p) { adjust_pointer(p, true); }
 
   template <class T>
   static inline void follow_root(ParCompactionManager* cm, T* p);
@@ -1046,7 +1028,6 @@ class PSParallelCompact : AllStatic {
 
   // Closure accessors
   static OopClosure* adjust_pointer_closure()      { return (OopClosure*)&_adjust_pointer_closure; }
-  static OopClosure* adjust_root_pointer_closure() { return (OopClosure*)&_adjust_root_pointer_closure; }
   static KlassClosure* adjust_klass_closure()      { return (KlassClosure*)&_adjust_klass_closure; }
   static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
 
@@ -1067,6 +1048,7 @@ class PSParallelCompact : AllStatic {
   // Check mark and maybe push on marking stack
   template <class T> static inline void mark_and_push(ParCompactionManager* cm,
                                                       T* p);
+  template <class T> static inline void adjust_pointer(T* p);
 
   static void follow_klass(ParCompactionManager* cm, Klass* klass);
   static void adjust_klass(ParCompactionManager* cm, Klass* klass);
@@ -1151,9 +1133,6 @@ class PSParallelCompact : AllStatic {
   static ParMarkBitMap* mark_bitmap() { return &_mark_bitmap; }
   static ParallelCompactData& summary_data() { return _summary_data; }
 
-  static inline void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
-  static inline void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
-
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
 
@@ -1230,7 +1209,7 @@ inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
 }
 
 template <class T>
-inline void PSParallelCompact::adjust_pointer(T* p, bool isroot) {
+inline void PSParallelCompact::adjust_pointer(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);

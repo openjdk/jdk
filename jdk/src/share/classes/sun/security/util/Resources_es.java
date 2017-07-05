@@ -146,7 +146,7 @@ public class Resources_es extends java.util.ListResourceBundle {
 
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
-                "Contrase\u00F1a del Elemento PKCS11 [{0}]: "},
+                "Contrase\u00F1a del Token PKCS11 [{0}]: "},
 
         /* --- DEPRECATED --- */
         // javax.security.auth.Policy

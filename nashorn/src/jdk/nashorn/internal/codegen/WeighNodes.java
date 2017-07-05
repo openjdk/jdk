@@ -35,7 +35,6 @@ import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -101,7 +100,7 @@ final class WeighNodes extends NodeOperatorVisitor {
      * @param weightCache cache of already calculated block weights
      */
     private WeighNodes(FunctionNode topFunction, final Map<Node, Long> weightCache) {
-        super(null, null);
+        super();
         this.topFunction = topFunction;
         this.weightCache = weightCache;
     }
@@ -123,13 +122,13 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enterBlock(final Block block) {
+    public boolean enterBlock(final Block block) {
         if (weightCache != null && weightCache.containsKey(block)) {
             weight += weightCache.get(block);
-            return null;
+            return false;
         }
 
-        return block;
+        return true;
     }
 
     @Override
@@ -157,12 +156,6 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
-        weight += LOOP_WEIGHT;
-        return doWhileNode;
-    }
-
-    @Override
     public Node leaveExecuteNode(final ExecuteNode executeNode) {
         return executeNode;
     }
@@ -174,15 +167,15 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enterFunctionNode(final FunctionNode functionNode) {
-        if(functionNode == topFunction) {
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
+        if (functionNode == topFunction) {
             // the function being weighted; descend into its statements
-            functionNode.visitStatements(this);
-        } else {
-            // just a reference to inner function from outer function
-            weight += FUNC_EXPR_WEIGHT;
+            return true;
+//            functionNode.visitStatements(this);
         }
-        return null;
+        // just a reference to inner function from outer function
+        weight += FUNC_EXPR_WEIGHT;
+        return false;
     }
 
     @Override
@@ -205,7 +198,7 @@ final class WeighNodes extends NodeOperatorVisitor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node enterLiteralNode(final LiteralNode literalNode) {
+    public boolean enterLiteralNode(final LiteralNode literalNode) {
         weight += LITERAL_WEIGHT;
 
         if (literalNode instanceof ArrayLiteralNode) {
@@ -224,10 +217,10 @@ final class WeighNodes extends NodeOperatorVisitor {
                 }
             }
 
-            return null;
+            return false;
         }
 
-        return literalNode;
+        return true;
     }
 
     @Override
@@ -249,9 +242,9 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enterSplitNode(final SplitNode splitNode) {
+    public boolean enterSplitNode(final SplitNode splitNode) {
         weight += SPLIT_WEIGHT;
-        return null;
+        return false;
     }
 
     @Override
