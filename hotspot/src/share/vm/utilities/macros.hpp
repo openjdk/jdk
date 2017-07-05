@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,14 @@
 #else
 #define WINDOWS_ONLY(code)
 #define NOT_WINDOWS(code) code
+#endif
+
+#ifdef _WIN64
+#define WIN64_ONLY(code) code
+#define NOT_WIN64(code)
+#else
+#define WIN64_ONLY(code)
+#define NOT_WIN64(code) code
 #endif
 
 #if defined(IA32) || defined(AMD64)

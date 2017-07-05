@@ -380,29 +380,8 @@ java/io/File/MaxPathLength.java                                 windows-all
 
 # jdk_nio
 
-# 6944810
-java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java       windows-all
-
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
-
-# The asynchronous I/O implementation on Windows requires Windows XP or newer.
-# We can remove the following once all Windows 2000 machines have been
-# decommissioned.
-java/nio/channels/AsynchronousChannelGroup/Basic.java           windows-5.0
-java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java      windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Identity.java        windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Restart.java         windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Unbounded.java       windows-5.0
-java/nio/channels/AsynchronousDatagramChannel/Basic.java        windows-5.0
-java/nio/channels/AsynchronousFileChannel/Lock.java             windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/Basic.java    windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Basic.java          windows-5.0
-java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Leaky.java          windows-5.0
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
-java/nio/channels/Channels/Basic2.java                          windows-5.0
 
 # 6959891
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java
@@ -625,9 +604,6 @@ sun/security/tools/keytool/emptysubject.sh			generic-all
 # Timeout on solaris-sparcv9 or exception thrown
 com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
 
-# File 6535697.test input stream left open? windows samevm
-java/security/cert/CertificateFactory/openssl/OpenSSLCert.java	generic-all
-
 # Leaving file open: SerialVersion.current, windows samevm
 java/security/BasicPermission/SerialVersion.java		generic-all
 
@@ -717,6 +693,7 @@ sun/tools/jconsole/ResourceCheckTest.sh				generic-all
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 
+# Filed 7022325
 # Fails with assertion error on windows
 #   11 separate stacktraces created... file reuse problem?
 java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all

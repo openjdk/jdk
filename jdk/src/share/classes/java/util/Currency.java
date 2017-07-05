@@ -233,7 +233,9 @@ public final class Currency implements Serializable {
                                              "currency.properties");
                     if (propFile.exists()) {
                         Properties props = new Properties();
-                        props.load(new FileReader(propFile));
+                        try (FileReader fr = new FileReader(propFile)) {
+                            props.load(fr);
+                        }
                         Set<String> keys = props.stringPropertyNames();
                         Pattern propertiesPattern =
                             Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*([0-3])");

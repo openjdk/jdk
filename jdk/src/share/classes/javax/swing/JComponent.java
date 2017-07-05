@@ -5158,31 +5158,30 @@ public abstract class JComponent extends Container implements Serializable,
                 }
             }
         }
-
         try {
-            g = safelyGetGraphics(paintingComponent, c);
-            try {
-                if (hasBuffer) {
-                    RepaintManager rm = RepaintManager.currentManager(
-                                               bufferedComponent);
-                    rm.beginPaint();
-                    try {
-                        rm.paint(paintingComponent, bufferedComponent, g,
-                                 paintImmediatelyClip.x,
-                                 paintImmediatelyClip.y,
-                                 paintImmediatelyClip.width,
-                                 paintImmediatelyClip.height);
-                    } finally {
-                        rm.endPaint();
+            if ((g = safelyGetGraphics(paintingComponent, c)) != null) {
+                try {
+                    if (hasBuffer) {
+                        RepaintManager rm = RepaintManager.currentManager(
+                                bufferedComponent);
+                        rm.beginPaint();
+                        try {
+                            rm.paint(paintingComponent, bufferedComponent, g,
+                                    paintImmediatelyClip.x,
+                                    paintImmediatelyClip.y,
+                                    paintImmediatelyClip.width,
+                                    paintImmediatelyClip.height);
+                        } finally {
+                            rm.endPaint();
+                        }
+                    } else {
+                        g.setClip(paintImmediatelyClip.x, paintImmediatelyClip.y,
+                                paintImmediatelyClip.width, paintImmediatelyClip.height);
+                        paintingComponent.paint(g);
                     }
+                } finally {
+                    g.dispose();
                 }
-                else {
-                    g.setClip(paintImmediatelyClip.x,paintImmediatelyClip.y,
-                       paintImmediatelyClip.width,paintImmediatelyClip.height);
-                    paintingComponent.paint(g);
-                }
-            } finally {
-                g.dispose();
             }
         }
         finally {

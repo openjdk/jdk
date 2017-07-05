@@ -374,6 +374,7 @@ SUNWprivate_1.1 {
         Java_sun_java2d_xr_XRSurfaceData_initXRPicture;
         Java_sun_java2d_xr_XRSurfaceData_initIDs;
         Java_sun_java2d_xr_XRSurfaceData_XRInitSurface;
+	Java_sun_java2d_xr_XRSurfaceData_freeXSDOPicture;
 	Java_sun_java2d_xr_XRBackendNative_initIDs;
 	Java_sun_java2d_xr_XRBackendNative_freeGC;
 	Java_sun_java2d_xr_XRBackendNative_createGC;
@@ -432,6 +433,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_GtkFileDialogPeer_run;
         Java_sun_awt_X11_GtkFileDialogPeer_quit;
         Java_sun_awt_X11_GtkFileDialogPeer_toFront;
+        Java_sun_awt_X11_GtkFileDialogPeer_setBounds;
 
 	Java_sun_print_CUPSPrinter_initIDs;
 	Java_sun_print_CUPSPrinter_getCupsServer;
