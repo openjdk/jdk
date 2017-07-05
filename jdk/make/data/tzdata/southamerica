@@ -1229,10 +1229,13 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # DST Start: first Saturday of September 2014 (Sun 07 Sep 2014 04:00 UTC)
 # http://www.diariooficial.interior.gob.cl//media/2014/02/19/do-20140219.pdf
 
-# From Juan Correa (2015-01-28):
-# ... today the Ministry of Energy announced that Chile will drop DST, will keep
-# "summer time" (UTC -3 / UTC -5) all year round....
-# http://www.minenergia.cl/ministerio/noticias/generales/ministerio-de-energia-anuncia.html
+# From Eduardo Romero Urra (2015-03-03):
+# Today has been published officially that Chile will use the DST time
+# permanently until March 25 of 2017
+# http://www.diariooficial.interior.gob.cl/media/2015/03/03/1-large.jpg
+#
+# From Paul Eggert (2015-03-03):
+# For now, assume that the extension will persist indefinitely.
 
 # NOTE: ChileAQ rules for Antarctic bases are stored separately in the
 # 'antarctica' file.
@@ -1291,7 +1294,7 @@ Zone America/Santiago	-4:42:46 -	LMT	1890
 			-3:00	-	CLT
 Zone Pacific/Easter	-7:17:44 -	LMT	1890
 			-7:17:28 -	EMT	1932 Sep    # Easter Mean Time
-			-7:00	Chile	EAS%sT	1982 Mar 13 3:00u # Easter Time
+			-7:00	Chile	EAS%sT	1982 Mar 14 3:00u # Easter Time
 			-6:00	Chile	EAS%sT	2015 Apr 26 3:00u
 			-5:00	-	EAST
 #
@@ -1626,6 +1629,7 @@ Zone America/Port_of_Spain -4:06:04 -	LMT	1912 Mar 2
 
 # These all agree with Trinidad and Tobago since 1970.
 Link America/Port_of_Spain America/Anguilla
+Link America/Port_of_Spain America/Antigua
 Link America/Port_of_Spain America/Dominica
 Link America/Port_of_Spain America/Grenada
 Link America/Port_of_Spain America/Guadeloupe

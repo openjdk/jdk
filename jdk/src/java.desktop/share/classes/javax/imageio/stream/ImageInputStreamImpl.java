@@ -225,7 +225,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     }
 
     public short readShort() throws IOException {
-        if (read(byteBuf, 0, 2) < 0) {
+        if (read(byteBuf, 0, 2) != 2) {
             throw new EOFException();
         }
 
@@ -247,7 +247,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     }
 
     public int readInt() throws IOException {
-        if (read(byteBuf, 0, 4) < 0) {
+        if (read(byteBuf, 0, 4) !=  4) {
             throw new EOFException();
         }
 

@@ -439,6 +439,26 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
         return tip;
     }
 
+    /**
+     * Returns the preferred size of the table header.
+     * This is the size required to display the header and requested for
+     * the viewport.
+     * The returned {@code Dimension} {@code width} will always be calculated by
+     * the underlying TableHeaderUI, regardless of any width specified by
+     * {@link JComponent#setPreferredSize(java.awt.Dimension)}
+     *
+     * @return the size
+     */
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension preferredSize = super.getPreferredSize();
+        if (isPreferredSizeSet() && ui != null) {
+            Dimension size = ui.getPreferredSize(this);
+            if (size != null) preferredSize.width = size.width;
+        }
+        return preferredSize;
+    }
+
 //
 // Managing TableHeaderUI
 //

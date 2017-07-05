@@ -130,7 +130,4 @@ final-images: all
         endif
 	@$(call TargetExit)
 
-
-###########################################################################
-# Phony targets
-.PHONY: jprt_bundle bundles final-images
+ALL_TARGETS += jprt_bundle bundles final-images

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @summary SIGSEGV in PhaseIdealLoop::build_loop_late_post on T5440
  * @library /testlibrary
  *
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main/othervm -showversion -Xbatch Test7068051
  */
 

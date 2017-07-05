@@ -34,6 +34,7 @@
 class G1CollectedHeap;
 class CMBitMap;
 class CMTask;
+class ConcurrentMark;
 typedef GenericTaskQueue<oop, mtGC>            CMTaskQueue;
 typedef GenericTaskQueueSet<CMTaskQueue, mtGC> CMTaskQueueSet;
 

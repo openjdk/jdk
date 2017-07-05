@@ -25,6 +25,8 @@
  * @test
  * Verify behaviour of Unsafe.get/putAddress and Unsafe.addressSize
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutAddress
  */
 

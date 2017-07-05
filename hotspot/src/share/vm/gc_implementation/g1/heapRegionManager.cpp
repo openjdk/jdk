@@ -145,6 +145,24 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions) {
   }
 }
 
+MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
+  size_t used_sz =
+    _prev_bitmap_mapper->committed_size() +
+    _next_bitmap_mapper->committed_size() +
+    _bot_mapper->committed_size() +
+    _cardtable_mapper->committed_size() +
+    _card_counts_mapper->committed_size();
+
+  size_t committed_sz =
+    _prev_bitmap_mapper->reserved_size() +
+    _next_bitmap_mapper->reserved_size() +
+    _bot_mapper->reserved_size() +
+    _cardtable_mapper->reserved_size() +
+    _card_counts_mapper->reserved_size();
+
+  return MemoryUsage(0, used_sz, committed_sz, committed_sz);
+}
+
 uint HeapRegionManager::expand_by(uint num_regions) {
   return expand_at(0, num_regions);
 }

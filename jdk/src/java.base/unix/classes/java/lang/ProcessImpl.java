@@ -285,8 +285,6 @@ final class ProcessImpl extends Process {
      *   1 - fork(2) and exec(2)
      *   2 - posix_spawn(3P)
      *   3 - vfork(2) and exec(2)
-     *
-     *  (4 - clone(2) and exec(2) - obsolete and currently disabled in native code)
      * </pre>
      * @param fds an array of three file descriptors.
      *        Indexes 0, 1, and 2 correspond to standard input,
