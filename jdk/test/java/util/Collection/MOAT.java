@@ -400,8 +400,6 @@ public class MOAT {
     // If add(null) succeeds, contains(null) & remove(null) should succeed
     //----------------------------------------------------------------
     private static void testNullElement(Collection<Integer> c) {
-        // !!!! 5018849: (coll) TreeSet.contains(null) does not agree with Javadoc
-        if (c instanceof TreeSet) return;
 
         try {
             check(c.add(null));

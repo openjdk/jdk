@@ -41,6 +41,9 @@ public class IllegalReceiveException extends IllegalStateException {
 
     /**
      * Constructs an instance of this class with the specified message.
+     *
+     * @param  msg
+     *         The String that contains a detailed message
      */
     public IllegalReceiveException(String msg) {
         super(msg);

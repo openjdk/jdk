@@ -471,16 +471,6 @@ class RuntimeHistogramElement : public HistogramElement {
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
-// Another special case for nmethod_entry_point so the nmethod that the
-// interpreter is about to branch to doesn't get flushed before as we
-// branch to it's interpreter_entry_point.  Skip stress testing here too.
-// Also we don't allow async exceptions because it is just too painful.
-#define IRT_ENTRY_FOR_NMETHOD(result_type, header)                   \
-  result_type header {                                               \
-    nmethodLocker _nmlock(nm);                                       \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)
-
 #define IRT_END }
 
 

@@ -70,7 +70,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
@@ -993,11 +993,12 @@ public final class Period
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(14);  // identifies this as a Period
+     *  out.writeByte(14);  // identifies a Period
      *  out.writeInt(years);
      *  out.writeInt(months);
-     *  out.writeInt(seconds);
+     *  out.writeInt(days);
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
@@ -1011,7 +1012,7 @@ public final class Period
      * @return never
      * @throws java.io.InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

@@ -33,17 +33,42 @@ import java.security.ProtectionDomain;
  *
  */
 final class ScriptLoader extends NashornLoader {
+    private static final String NASHORN_PKG_PREFIX = "jdk.nashorn.internal.";
+
+    private final Context context;
+
+    /*package-private*/ Context getContext() {
+        return context;
+    }
+
     /**
      * Constructor.
      */
-    ScriptLoader(final StructureLoader parent, final Context context) {
-        super(parent, context);
+    ScriptLoader(final ClassLoader parent, final Context context) {
+        super(parent);
+        this.context = context;
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         checkPackageAccess(name);
-        return super.loadClassTrusted(name, resolve);
+        try {
+            return super.loadClass(name, resolve);
+        } catch (final ClassNotFoundException | SecurityException e) {
+            // We'll get ClassNotFoundException for Nashorn 'struct' classes.
+            // Also, we'll get SecurityException for jdk.nashorn.internal.*
+            // classes. So, load these using to context's 'shared' loader.
+            // All these classes start with "jdk.nashorn.internal." prefix.
+            try {
+                if (name.startsWith(NASHORN_PKG_PREFIX)) {
+                    return context.getSharedLoader().loadClass(name);
+                }
+            } catch (final ClassNotFoundException ignored) {
+            }
+
+            // throw the original exception from here
+            throw e;
+        }
     }
 
     // package-private and private stuff below this point

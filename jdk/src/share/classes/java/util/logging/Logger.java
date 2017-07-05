@@ -245,14 +245,26 @@ public class Logger {
         // In order to finish the initialization of the global logger, we
         // will therefore call LogManager.getLogManager() here.
         //
-        // Care must be taken *not* to call Logger.getGlobal() in
-        // LogManager static initializers in order to avoid such
-        // deadlocks.
-        //
-        if (global != null && global.manager == null) {
-            // Complete initialization of the global Logger.
-            global.manager = LogManager.getLogManager();
-        }
+        // To prevent race conditions we also need to call
+        // LogManager.getLogManager() unconditionally here.
+        // Indeed we cannot rely on the observed value of global.manager,
+        // because global.manager will become not null somewhere during
+        // the initialization of LogManager.
+        // If two threads are calling getGlobal() concurrently, one thread
+        // will see global.manager null and call LogManager.getLogManager(),
+        // but the other thread could come in at a time when global.manager
+        // is already set although ensureLogManagerInitialized is not finished
+        // yet...
+        // Calling LogManager.getLogManager() unconditionally will fix that.
+
+        LogManager.getLogManager();
+
+        // Now the global LogManager should be initialized,
+        // and the global logger should have been added to
+        // it, unless we were called within the constructor of a LogManager
+        // subclass installed as LogManager, in which case global.manager
+        // would still be null, and global will be lazily initialized later on.
+
         return global;
     }
 
@@ -298,11 +310,11 @@ public class Logger {
      *             no corresponding resource can be found.
      */
     protected Logger(String name, String resourceBundleName) {
-        this(name, resourceBundleName, null);
+        this(name, resourceBundleName, null, LogManager.getLogManager());
     }
 
-    Logger(String name, String resourceBundleName, Class<?> caller) {
-        this.manager = LogManager.getLogManager();
+    Logger(String name, String resourceBundleName, Class<?> caller, LogManager manager) {
+        this.manager = manager;
         setupResourceInfo(resourceBundleName, caller);
         this.name = name;
         levelValue = Level.INFO.intValue();
@@ -332,8 +344,8 @@ public class Logger {
         levelValue = Level.INFO.intValue();
     }
 
-    // It is called from the LogManager.<clinit> to complete
-    // initialization of the global Logger.
+    // It is called from LoggerContext.addLocalLogger() when the logger
+    // is actually added to a LogManager.
     void setLogManager(LogManager manager) {
         this.manager = manager;
     }
@@ -558,7 +570,7 @@ public class Logger {
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();
         Logger result = new Logger(null, resourceBundleName,
-                                   Reflection.getCallerClass());
+                                   Reflection.getCallerClass(), manager);
         result.anonymous = true;
         Logger root = manager.getLogger("");
         result.doSetParent(root);
@@ -623,7 +635,7 @@ public class Logger {
      * @param record the LogRecord to be published
      */
     public void log(LogRecord record) {
-        if (record.getLevel().intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(record.getLevel())) {
             return;
         }
         Filter theFilter = filter;
@@ -677,7 +689,7 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void log(Level level, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -698,7 +710,7 @@ public class Logger {
      *                        desired log message
      */
     public void log(Level level, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -717,7 +729,7 @@ public class Logger {
      * @param   param1  parameter to the message
      */
     public void log(Level level, String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -738,7 +750,7 @@ public class Logger {
      * @param   params  array of parameters to the message
      */
     public void log(Level level, String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -763,7 +775,7 @@ public class Logger {
      * @param   thrown  Throwable associated with log message.
      */
     public void log(Level level, String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -791,7 +803,7 @@ public class Logger {
      * @since   1.8
      */
     public void log(Level level, Throwable thrown, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -817,7 +829,7 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void logp(Level level, String sourceClass, String sourceMethod, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -844,7 +856,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -869,7 +881,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                                                 String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -896,7 +908,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                                                 String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -927,7 +939,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -961,7 +973,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      Throwable thrown, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -1009,7 +1021,7 @@ public class Logger {
      */
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1040,7 +1052,7 @@ public class Logger {
      */
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1073,7 +1085,7 @@ public class Logger {
      */
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1110,7 +1122,7 @@ public class Logger {
      */
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                         String bundleName, String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1136,9 +1148,6 @@ public class Logger {
      * @param   sourceMethod   name of method that is being entered
      */
     public void entering(String sourceClass, String sourceMethod) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         logp(Level.FINER, sourceClass, sourceMethod, "ENTRY");
     }
 
@@ -1155,11 +1164,7 @@ public class Logger {
      * @param   param1         parameter to the method being entered
      */
     public void entering(String sourceClass, String sourceMethod, Object param1) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
-        Object params[] = { param1 };
-        logp(Level.FINER, sourceClass, sourceMethod, "ENTRY {0}", params);
+        logp(Level.FINER, sourceClass, sourceMethod, "ENTRY {0}", param1);
     }
 
     /**
@@ -1176,14 +1181,12 @@ public class Logger {
      * @param   params         array of parameters to the method being entered
      */
     public void entering(String sourceClass, String sourceMethod, Object params[]) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         String msg = "ENTRY";
         if (params == null ) {
            logp(Level.FINER, sourceClass, sourceMethod, msg);
            return;
         }
+        if (!isLoggable(Level.FINER)) return;
         for (int i = 0; i < params.length; i++) {
             msg = msg + " {" + i + "}";
         }
@@ -1201,9 +1204,6 @@ public class Logger {
      * @param   sourceMethod   name of the method
      */
     public void exiting(String sourceClass, String sourceMethod) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         logp(Level.FINER, sourceClass, sourceMethod, "RETURN");
     }
 
@@ -1221,10 +1221,6 @@ public class Logger {
      * @param   result  Object that is being returned
      */
     public void exiting(String sourceClass, String sourceMethod, Object result) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
-        Object params[] = { result };
         logp(Level.FINER, sourceClass, sourceMethod, "RETURN {0}", result);
     }
 
@@ -1250,7 +1246,7 @@ public class Logger {
      * @param   thrown  The Throwable that is being thrown.
      */
     public void throwing(String sourceClass, String sourceMethod, Throwable thrown) {
-        if (Level.FINER.intValue() < levelValue || levelValue == offValue ) {
+        if (!isLoggable(Level.FINER)) {
             return;
         }
         LogRecord lr = new LogRecord(Level.FINER, "THROW");
@@ -1274,9 +1270,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void severe(String msg) {
-        if (Level.SEVERE.intValue() < levelValue) {
-            return;
-        }
         log(Level.SEVERE, msg);
     }
 
@@ -1290,9 +1283,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void warning(String msg) {
-        if (Level.WARNING.intValue() < levelValue) {
-            return;
-        }
         log(Level.WARNING, msg);
     }
 
@@ -1306,9 +1296,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void info(String msg) {
-        if (Level.INFO.intValue() < levelValue) {
-            return;
-        }
         log(Level.INFO, msg);
     }
 
@@ -1322,9 +1309,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void config(String msg) {
-        if (Level.CONFIG.intValue() < levelValue) {
-            return;
-        }
         log(Level.CONFIG, msg);
     }
 
@@ -1338,9 +1322,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void fine(String msg) {
-        if (Level.FINE.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINE, msg);
     }
 
@@ -1354,9 +1335,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finer(String msg) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINER, msg);
     }
 
@@ -1370,9 +1348,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finest(String msg) {
-        if (Level.FINEST.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINEST, msg);
     }
 
@@ -1798,7 +1773,7 @@ public class Logger {
         if (parent == null) {
             throw new NullPointerException();
         }
-        manager.checkPermission();
+        checkPermission();
         doSetParent(parent);
     }
 

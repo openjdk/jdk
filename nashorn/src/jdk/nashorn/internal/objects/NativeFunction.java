@@ -30,7 +30,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.util.List;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -88,7 +88,7 @@ public final class NativeFunction {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object apply(final Object self, final Object thiz, final Object array) {
-        if (!(self instanceof ScriptFunction)) {
+        if (!(self instanceof ScriptFunction) && !(self instanceof JSObject)) {
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
 
@@ -111,21 +111,27 @@ public final class NativeFunction {
             list.toArray(args = new Object[list.size()]);
         } else if (array == null || array == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;
-        } else if (array instanceof ScriptObjectMirror) {
-            // look for array-like ScriptObjectMirror object
-            final ScriptObjectMirror mirror = (ScriptObjectMirror)array;
-            final Object       len  = mirror.containsKey("length")? mirror.getMember("length") : Integer.valueOf(0);
+        } else if (array instanceof JSObject) {
+            // look for array-like JSObject object
+            final JSObject jsObj = (JSObject)array;
+            final Object       len  = jsObj.hasMember("length")? jsObj.getMember("length") : Integer.valueOf(0);
             final int n = (int)JSType.toUint32(len);
 
             args = new Object[n];
             for (int i = 0; i < args.length; i++) {
-                args[i] = mirror.containsKey(i)? mirror.getSlot(i) : UNDEFINED;
+                args[i] = jsObj.hasSlot(i)? jsObj.getSlot(i) : UNDEFINED;
             }
         } else {
             throw typeError("function.apply.expects.array");
         }
 
-        return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
+        if (self instanceof ScriptFunction) {
+            return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
+        } else if (self instanceof JSObject) {
+            return ((JSObject)self).call(thiz, args);
+        }
+
+        throw new AssertionError("should not reach here");
     }
 
     /**
@@ -137,7 +143,7 @@ public final class NativeFunction {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object call(final Object self, final Object... args) {
-        if (!(self instanceof ScriptFunction)) {
+        if (!(self instanceof ScriptFunction) && !(self instanceof JSObject)) {
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
 
@@ -151,7 +157,13 @@ public final class NativeFunction {
             arguments = ScriptRuntime.EMPTY_ARRAY;
         }
 
-        return ScriptRuntime.apply((ScriptFunction)self, thiz, arguments);
+        if (self instanceof ScriptFunction) {
+            return ScriptRuntime.apply((ScriptFunction)self, thiz, arguments);
+        } else if (self instanceof JSObject) {
+            return ((JSObject)self).call(thiz, arguments);
+        }
+
+        throw new AssertionError("should not reach here");
     }
 
     /**

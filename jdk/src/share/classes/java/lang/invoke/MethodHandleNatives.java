@@ -205,6 +205,9 @@ class MethodHandleNatives {
     static boolean refKindIsMethod(byte refKind) {
         return !refKindIsField(refKind) && (refKind != REF_newInvokeSpecial);
     }
+    static boolean refKindIsConstructor(byte refKind) {
+        return (refKind == REF_newInvokeSpecial);
+    }
     static boolean refKindHasReceiver(byte refKind) {
         assert(refKindIsValid(refKind));
         return (refKind & 1) != 0;
@@ -313,7 +316,65 @@ class MethodHandleNatives {
      * The method assumes the following arguments on the stack:
      * 0: the method handle being invoked
      * 1-N: the arguments to the method handle invocation
-     * N+1: an implicitly added type argument (the given MethodType)
+     * N+1: an optional, implicitly added argument (typically the given MethodType)
+     * <p>
+     * The nominal method at such a call site is an instance of
+     * a signature-polymorphic method (see @PolymorphicSignature).
+     * Such method instances are user-visible entities which are
+     * "split" from the generic placeholder method in {@code MethodHandle}.
+     * (Note that the placeholder method is not identical with any of
+     * its instances.  If invoked reflectively, is guaranteed to throw an
+     * {@code UnsupportedOperationException}.)
+     * If the signature-polymorphic method instance is ever reified,
+     * it appears as a "copy" of the original placeholder
+     * (a native final member of {@code MethodHandle}) except
+     * that its type descriptor has shape required by the instance,
+     * and the method instance is <em>not</em> varargs.
+     * The method instance is also marked synthetic, since the
+     * method (by definition) does not appear in Java source code.
+     * <p>
+     * The JVM is allowed to reify this method as instance metadata.
+     * For example, {@code invokeBasic} is always reified.
+     * But the JVM may instead call {@code linkMethod}.
+     * If the result is an * ordered pair of a {@code (method, appendix)},
+     * the method gets all the arguments (0..N inclusive)
+     * plus the appendix (N+1), and uses the appendix to complete the call.
+     * In this way, one reusable method (called a "linker method")
+     * can perform the function of any number of polymorphic instance
+     * methods.
+     * <p>
+     * Linker methods are allowed to be weakly typed, with any or
+     * all references rewritten to {@code Object} and any primitives
+     * (except {@code long}/{@code float}/{@code double})
+     * rewritten to {@code int}.
+     * A linker method is trusted to return a strongly typed result,
+     * according to the specific method type descriptor of the
+     * signature-polymorphic instance it is emulating.
+     * This can involve (as necessary) a dynamic check using
+     * data extracted from the appendix argument.
+     * <p>
+     * The JVM does not inspect the appendix, other than to pass
+     * it verbatim to the linker method at every call.
+     * This means that the JDK runtime has wide latitude
+     * for choosing the shape of each linker method and its
+     * corresponding appendix.
+     * Linker methods should be generated from {@code LambdaForm}s
+     * so that they do not become visible on stack traces.
+     * <p>
+     * The {@code linkMethod} call is free to omit the appendix
+     * (returning null) and instead emulate the required function
+     * completely in the linker method.
+     * As a corner case, if N==255, no appendix is possible.
+     * In this case, the method returned must be custom-generated to
+     * to perform any needed type checking.
+     * <p>
+     * If the JVM does not reify a method at a call site, but instead
+     * calls {@code linkMethod}, the corresponding call represented
+     * in the bytecodes may mention a valid method which is not
+     * representable with a {@code MemberName}.
+     * Therefore, use cases for {@code linkMethod} tend to correspond to
+     * special cases in reflective code such as {@code findVirtual}
+     * or {@code revealDirect}.
      */
     static MemberName linkMethod(Class<?> callerClass, int refKind,
                                  Class<?> defc, String name, Object type,

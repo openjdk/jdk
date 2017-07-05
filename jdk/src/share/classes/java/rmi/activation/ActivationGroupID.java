@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ public class ActivationGroupID implements java.io.Serializable {
      * Constructs a unique group id.
      *
      * @param system the group's activation system
+     * @throws UnsupportedOperationException if and only if activation is
+     *         not supported by this implementation
      * @since 1.2
      */
     public ActivationGroupID(ActivationSystem system) {

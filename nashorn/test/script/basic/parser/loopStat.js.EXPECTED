@@ -1,0 +1,212 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "WhileStatement",
+            "test": {
+                "type": "Literal",
+                "value": true
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ExpressionStatement",
+                        "expression": {
+                            "type": "CallExpression",
+                            "callee": {
+                                "type": "Identifier",
+                                "name": "print"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "Literal",
+                                    "value": "hello"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "DoWhileStatement",
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ExpressionStatement",
+                        "expression": {
+                            "type": "CallExpression",
+                            "callee": {
+                                "type": "Identifier",
+                                "name": "print"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "Literal",
+                                    "value": "hello"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "test": {
+                "type": "Literal",
+                "value": true
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ForInStatement",
+            "left": {
+                "type": "Identifier",
+                "name": "i"
+            },
+            "right": {
+                "type": "Identifier",
+                "name": "obj"
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ExpressionStatement",
+                        "expression": {
+                            "type": "CallExpression",
+                            "callee": {
+                                "type": "Identifier",
+                                "name": "print"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "MemberExpression",
+                                    "object": {
+                                        "type": "Identifier",
+                                        "name": "obj"
+                                    },
+                                    "property": {
+                                        "type": "Identifier",
+                                        "name": "i"
+                                    },
+                                    "computed": true
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "each": false
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ForInStatement",
+            "left": {
+                "type": "Identifier",
+                "name": "i"
+            },
+            "right": {
+                "type": "Identifier",
+                "name": "obj"
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ExpressionStatement",
+                        "expression": {
+                            "type": "CallExpression",
+                            "callee": {
+                                "type": "Identifier",
+                                "name": "print"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "Identifier",
+                                    "name": "i"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "each": true
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ForStatement",
+            "init": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                    "type": "Identifier",
+                    "name": "i"
+                },
+                "right": {
+                    "type": "Literal",
+                    "value": 0
+                }
+            },
+            "test": {
+                "type": "BinaryExpression",
+                "operator": "<",
+                "left": {
+                    "type": "Identifier",
+                    "name": "i"
+                },
+                "right": {
+                    "type": "Literal",
+                    "value": 10
+                }
+            },
+            "update": {
+                "type": "UpdateExpression",
+                "operator": "++",
+                "prefix": false,
+                "argument": {
+                    "type": "Identifier",
+                    "name": "i"
+                }
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ExpressionStatement",
+                        "expression": {
+                            "type": "CallExpression",
+                            "callee": {
+                                "type": "Identifier",
+                                "name": "print"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "Identifier",
+                                    "name": "i"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
