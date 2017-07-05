@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Google Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -176,7 +177,7 @@ class TimSort<T> {
          */
         int stackLen = (len <    120  ?  5 :
                         len <   1542  ? 10 :
-                        len < 119151  ? 19 : 40);
+                        len < 119151  ? 24 : 40);
         runBase = new int[stackLen];
         runLen = new int[stackLen];
     }

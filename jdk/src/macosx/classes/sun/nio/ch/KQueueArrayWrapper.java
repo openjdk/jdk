@@ -87,6 +87,7 @@ class KQueueArrayWrapper {
     private int incomingInterruptFD;
 
     static {
+        IOUtil.load();
         initStructSizes();
         String datamodel = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.arch.data.model")

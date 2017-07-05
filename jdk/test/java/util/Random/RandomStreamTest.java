@@ -82,13 +82,6 @@ public class RandomStreamTest {
         assertEquals(destination.size(), count);
     }
 
-    @Test(dataProvider = "suppliers")
-    public void testRandomGaussianStream(final Random random, final int count) {
-        final List<Double> destination = new ArrayList<>(count);
-        random.gaussians().limit(count).forEach(destination::add);
-        assertEquals(destination.size(), count);
-    }
-
     @Test
     public void testIntStream() {
         final long seed = System.currentTimeMillis();
@@ -132,20 +125,6 @@ public class RandomStreamTest {
     }
 
     @Test
-    public void testGaussianStream() {
-        final long seed = System.currentTimeMillis();
-        final Random r1 = new Random(seed);
-        final double[] a = new double[SIZE];
-        for (int i=0; i < SIZE; i++) {
-            a[i] = r1.nextGaussian();
-        }
-
-        final Random r2 = new Random(seed); // same seed
-        final double[] b = r2.gaussians().limit(SIZE).toArray();
-        assertEquals(a, b);
-    }
-
-    @Test
     public void testThreadLocalIntStream() throws InterruptedException, ExecutionException, TimeoutException {
         ThreadLocalRandom tlr = ThreadLocalRandom.current();
         testRandomResultSupplierConcurrently(() -> tlr.ints().limit(SIZE).boxed().collect(toList()));
@@ -161,12 +140,6 @@ public class RandomStreamTest {
     public void testThreadLocalDoubleStream() throws InterruptedException, ExecutionException, TimeoutException {
         ThreadLocalRandom tlr = ThreadLocalRandom.current();
         testRandomResultSupplierConcurrently(() -> tlr.doubles().limit(SIZE).boxed().collect(toList()));
-    }
-
-    @Test
-    public void testThreadLocalGaussianStream() throws InterruptedException, ExecutionException, TimeoutException {
-        ThreadLocalRandom tlr = ThreadLocalRandom.current();
-        testRandomResultSupplierConcurrently(() -> tlr.gaussians().limit(SIZE).boxed().collect(toList()));
     }
 
     <T> void testRandomResultSupplierConcurrently(Supplier<T> s) throws InterruptedException, ExecutionException, TimeoutException {
