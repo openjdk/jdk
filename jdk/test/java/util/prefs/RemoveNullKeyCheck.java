@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 7160242 7165118
+ * @bug 7160242 7165118 7197662
  * @summary Check if NullPointerException is thrown if the key passed
  *          to remove() is null.
+ * @run main/othervm -Djava.util.prefs.userRoot=. RemoveNullKeyCheck
  */
 
 import java.util.prefs.Preferences;

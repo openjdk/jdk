@@ -40,82 +40,85 @@ class SharkType : public AllStatic {
 
   // Basic types
  public:
-  static const llvm::Type* void_type() {
+  static llvm::Type* void_type() {
     return context().void_type();
   }
-  static const llvm::IntegerType* bit_type() {
+  static llvm::IntegerType* bit_type() {
     return context().bit_type();
   }
-  static const llvm::IntegerType* jbyte_type() {
+  static llvm::IntegerType* jbyte_type() {
     return context().jbyte_type();
   }
-  static const llvm::IntegerType* jshort_type() {
+  static llvm::IntegerType* jshort_type() {
     return context().jshort_type();
   }
-  static const llvm::IntegerType* jint_type() {
+  static llvm::IntegerType* jint_type() {
     return context().jint_type();
   }
-  static const llvm::IntegerType* jlong_type() {
+  static llvm::IntegerType* jlong_type() {
     return context().jlong_type();
   }
-  static const llvm::Type* jfloat_type() {
+  static llvm::Type* jfloat_type() {
     return context().jfloat_type();
   }
-  static const llvm::Type* jdouble_type() {
+  static llvm::Type* jdouble_type() {
     return context().jdouble_type();
   }
-  static const llvm::IntegerType* intptr_type() {
+  static llvm::IntegerType* intptr_type() {
     return context().intptr_type();
   }
 
   // Compound types
  public:
-  static const llvm::PointerType* itableOffsetEntry_type() {
+  static llvm::PointerType* itableOffsetEntry_type() {
     return context().itableOffsetEntry_type();
   }
-  static const llvm::PointerType* jniEnv_type() {
+  static llvm::PointerType* jniEnv_type() {
     return context().jniEnv_type();
   }
-  static const llvm::PointerType* jniHandleBlock_type() {
+  static llvm::PointerType* jniHandleBlock_type() {
     return context().jniHandleBlock_type();
   }
-  static const llvm::PointerType* klass_type() {
+  static llvm::PointerType* Metadata_type() {
+    return context().Metadata_type();
+  }
+  static llvm::PointerType* klass_type() {
     return context().klass_type();
   }
-  static const llvm::PointerType* Method*_type() {
-    return context().Method*_type();
+  static llvm::PointerType* Method_type() {
+    return context().Method_type();
   }
-  static const llvm::ArrayType* monitor_type() {
+  static llvm::ArrayType* monitor_type() {
     return context().monitor_type();
   }
-  static const llvm::PointerType* oop_type() {
+  static llvm::PointerType* oop_type() {
     return context().oop_type();
   }
-  static const llvm::PointerType* thread_type() {
+  static llvm::PointerType* thread_type() {
     return context().thread_type();
   }
-  static const llvm::PointerType* zeroStack_type() {
+  static llvm::PointerType* zeroStack_type() {
     return context().zeroStack_type();
   }
-  static const llvm::FunctionType* entry_point_type() {
+  static llvm::FunctionType* entry_point_type() {
     return context().entry_point_type();
   }
-  static const llvm::FunctionType* osr_entry_point_type() {
+  static llvm::FunctionType* osr_entry_point_type() {
     return context().osr_entry_point_type();
   }
 
   // Mappings
  public:
-  static const llvm::Type* to_stackType(BasicType type) {
+  static llvm::Type* to_stackType(BasicType type) {
     return context().to_stackType(type);
   }
-  static const llvm::Type* to_stackType(ciType* type) {
+  static llvm::Type* to_stackType(ciType* type) {
     return to_stackType(type->basic_type());
   }
-  static const llvm::Type* to_arrayType(BasicType type) {
+  static llvm::Type* to_arrayType(BasicType type) {
     return context().to_arrayType(type);
   }
-  static const llvm::Type* to_arrayType(ciType* type) {
+  static llvm::Type* to_arrayType(ciType* type) {
     return to_arrayType(type->basic_type());
   }
 };

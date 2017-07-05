@@ -67,10 +67,12 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      * @throws IOException if the socket cannot be created
      * @see java.net.Socket#bind(java.net.SocketAddress)
      */
+    @Override
     public ServerSocket createServerSocket() throws IOException {
         return new SSLServerSocketImpl(context);
     }
 
+    @Override
     public ServerSocket createServerSocket (int port)
     throws IOException
     {
@@ -78,12 +80,14 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
     }
 
 
+    @Override
     public ServerSocket createServerSocket (int port, int backlog)
     throws IOException
     {
         return new SSLServerSocketImpl (port, backlog, context);
     }
 
+    @Override
     public ServerSocket
     createServerSocket (int port, int backlog, InetAddress ifAddress)
     throws IOException
@@ -98,6 +102,7 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      * (preventing person-in-the-middle attacks) and where traffic
      * is encrypted to provide confidentiality.
      */
+    @Override
     public String[] getDefaultCipherSuites() {
         return context.getDefaultCipherSuiteList(true).toStringArray();
     }
@@ -112,6 +117,7 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      *
      * @return an array of cipher suite names
      */
+    @Override
     public String[] getSupportedCipherSuites() {
         return context.getSupportedCipherSuiteList().toStringArray();
     }

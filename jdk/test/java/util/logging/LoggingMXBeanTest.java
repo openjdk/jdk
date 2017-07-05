@@ -208,7 +208,7 @@ public class LoggingMXBeanTest
             String levelName = (String) mbs.invoke(  objectName, "getLoggerLevel", params, signature );
             l = Level.parse(levelName);
             System.out.print("    Logger1: " );
-            if ( l.equals( l.ALL ) ) {
+            if ( l.equals( Level.ALL ) ) {
                 System.out.println("Level Set to ALL: PASSED" );
                 log1 = true;
             }
@@ -226,7 +226,7 @@ public class LoggingMXBeanTest
             levelName = (String) mbs.invoke(  objectName, "getLoggerLevel", params, signature );
             l = Level.parse(levelName);
             System.out.print("    Logger2: " );
-            if ( l.equals( l.FINER ) ) {
+            if ( l.equals( Level.FINER ) ) {
                 System.out.println("Level Set to FINER: PASSED" );
                 log2 = true;
             }
@@ -247,6 +247,6 @@ public class LoggingMXBeanTest
     }
 
     public static void main(String[] argv) throws Exception {
-        LoggingMXBeanTest p = new LoggingMXBeanTest();
+        new LoggingMXBeanTest();
     }
 }

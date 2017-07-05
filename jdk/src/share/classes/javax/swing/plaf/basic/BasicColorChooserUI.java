@@ -94,6 +94,7 @@ public class BasicColorChooserUI extends ColorChooserUI
         tabbedPane = new JTabbedPane();
         tabbedPane.setName("ColorChooser.tabPane");
         tabbedPane.setInheritsPopupMenu(true);
+        tabbedPane.getAccessibleContext().setAccessibleDescription(tabbedPane.getName());
         singlePanel = new JPanel(new CenterLayout());
         singlePanel.setName("ColorChooser.panel");
         singlePanel.setInheritsPopupMenu(true);

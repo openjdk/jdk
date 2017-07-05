@@ -432,32 +432,30 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 # ENABLE_DEBUG_SYMBOLS
 # This must be done after the toolchain is setup, since we're looking at objcopy.
 #
-ENABLE_DEBUG_SYMBOLS=default
-
-# default on macosx is no...
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
 AC_ARG_ENABLE([debug-symbols],
-              [AS_HELP_STRING([--disable-debug-symbols],[disable generation of debug symbols @<:@enabled@:>@])],
-              [ENABLE_DEBUG_SYMBOLS=${enable_debug_symbols}],
-)
+              [AS_HELP_STRING([--disable-debug-symbols],[disable generation of debug symbols @<:@enabled@:>@])])
 
 AC_MSG_CHECKING([if we should generate debug symbols])
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xyes" && test "x$OBJCOPY" = x; then
+if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
    # explicit enabling of enable-debug-symbols and can't find objcopy
    #   this is an error
    AC_MSG_ERROR([Unable to find objcopy, cannot enable debug-symbols])
 fi
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xdefault"; then
+if test "x$enable_debug_symbols" = "xyes"; then
+  ENABLE_DEBUG_SYMBOLS=true
+elif test "x$enable_debug_symbols" = "xno"; then
+  ENABLE_DEBUG_SYMBOLS=false
+else
+  # default on macosx is false
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    ENABLE_DEBUG_SYMBOLS=false
   # Default is on if objcopy is found, otherwise off
-  if test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
-     ENABLE_DEBUG_SYMBOLS=yes
+  elif test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    ENABLE_DEBUG_SYMBOLS=true
   else
-     ENABLE_DEBUG_SYMBOLS=no
+    ENABLE_DEBUG_SYMBOLS=false
   fi
 fi
 
@@ -466,22 +464,16 @@ AC_MSG_RESULT([$ENABLE_DEBUG_SYMBOLS])
 #
 # ZIP_DEBUGINFO_FILES
 #
-ZIP_DEBUGINFO_FILES=yes
-
 AC_ARG_ENABLE([zip-debug-info],
-              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])],
-              [ZIP_DEBUGINFO_FILES=${enable_zip_debug_info}],
-)
+              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])])
 
 AC_MSG_CHECKING([if we should zip debug-info files])
-AC_MSG_RESULT([$ZIP_DEBUGINFO_FILES])
+AC_MSG_RESULT([${enable_zip_debug_info}])
 
-# Hotspot wants ZIP_DEBUGINFO_FILES to be 1 for yes
-#   use that...
-if test "x$ZIP_DEBUGINFO_FILES" = "xyes"; then
-   ZIP_DEBUGINFO_FILES=1
+if test "x${enable_zip_debug_info}" = "xno"; then
+   ZIP_DEBUGINFO_FILES=false
 else
-   ZIP_DEBUGINFO_FILES=0
+   ZIP_DEBUGINFO_FILES=true
 fi
 
 AC_SUBST(ENABLE_DEBUG_SYMBOLS)

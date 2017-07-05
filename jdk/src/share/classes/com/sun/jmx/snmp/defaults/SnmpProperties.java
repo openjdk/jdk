@@ -60,7 +60,7 @@ public class SnmpProperties {
         InputStream is = new FileInputStream(file);
         props.load(is);
         is.close();
-        for (final Enumeration e = props.keys(); e.hasMoreElements() ; ) {
+        for (final Enumeration<?> e = props.keys(); e.hasMoreElements() ; ) {
             final String key = (String) e.nextElement();
             System.setProperty(key,props.getProperty(key));
         }

@@ -37,7 +37,6 @@ import java.util.Enumeration;
 // jmx imports
 //
 import com.sun.jmx.snmp.SnmpOid;
-import com.sun.jmx.snmp.SnmpValue;
 import com.sun.jmx.snmp.SnmpVarBind;
 import com.sun.jmx.snmp.SnmpStatusException;
 
@@ -79,10 +78,11 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
      * @exception SnmpStatusException The default implementation (if not
      *            overridden) is to generate a SnmpStatusException.
      */
+    @Override
     public void get(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            SnmpVarBind var= e.nextElement();
             SnmpStatusException x =
                 new SnmpStatusException(SnmpStatusException.noSuchObject);
             req.registerGetException(var,x);
@@ -102,10 +102,11 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
      * @exception SnmpStatusException The default implementation (if not
      *            overridden) is to generate a SnmpStatusException.
      */
+    @Override
     public void set(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            SnmpVarBind var= e.nextElement();
             SnmpStatusException x =
                 new SnmpStatusException(SnmpStatusException.noAccess);
             req.registerSetException(var,x);
@@ -123,12 +124,13 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
      * @param depth The depth reached in the OID tree.
      *
      * @exception SnmpStatusException The default implementation (if not
-     *            overriden) is to generate a SnmpStatusException.
+     *            overridden) is to generate a SnmpStatusException.
      */
+    @Override
     public void check(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            SnmpVarBind var= e.nextElement();
             SnmpStatusException x =
                 new SnmpStatusException(SnmpStatusException.noAccess);
             req.registerCheckException(var,x);
@@ -143,6 +145,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
     //
     // ---------------------------------------------------------------------
     //
+    @Override
     void findHandlingNode(SnmpVarBind varbind,
                           long[] oid, int depth,
                           SnmpRequestTree handlers)
@@ -191,6 +194,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
     //
     // ---------------------------------------------------------------------
     //
+    @Override
     long[] findNextHandlingNode(SnmpVarBind varbind,
                                 long[] oid, int pos, int depth,
                                 SnmpRequestTree handlers,
@@ -267,6 +271,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
     /**
      * Computes the root OID of the MIB.
      */
+    @Override
     public void getRootOid(Vector<Integer> result) {
 
         // If a node has several children, let assume that we are one step to
@@ -359,7 +364,6 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
             //     String.valueOf(var) + " position= " + cursor);
             children.insertElementAt(child, newPos);
             child.registerNode(oid, cursor + 1, node);
-            return;
         }
         else {
             // The node is already registered
@@ -404,7 +408,6 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
                     }
                 }
                 children.setElementAt(node,pos);
-                return;
             } else {
                 if (child == null)
                     throw new IllegalAccessException();
@@ -469,7 +472,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
 
         int max= varList.length -1 ;
         int curr= low + (max-low)/2;
-        int elmt= 0;
+        int elmt;
         while (low <= max) {
             elmt= varList[curr];
             if (cursor == elmt) {
@@ -494,7 +497,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
         if (varList == null)
             return -1;
         int max= varList.length -1 ;
-        int elmt=0;
+        int elmt;
         //final int[] v = varList;
 
         //if (index > a[max])
@@ -528,7 +531,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
     /**
      * Contains the list of sub nodes.
      */
-    private NonSyncVector<SnmpMibNode> children = new NonSyncVector<SnmpMibNode>(1);
+    private NonSyncVector<SnmpMibNode> children = new NonSyncVector<>(1);
 
     /**
      * The number of sub nodes.

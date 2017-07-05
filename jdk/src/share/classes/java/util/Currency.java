@@ -56,12 +56,13 @@ import sun.util.logging.PlatformLogger;
  * no public constructor. You obtain a <code>Currency</code> instance using
  * the <code>getInstance</code> methods.
  * <p>
- * Users can supersede the Java runtime currency data by creating a properties
- * file named <code>&lt;JAVA_HOME&gt;/lib/currency.properties</code>.  The contents
- * of the properties file are key/value pairs of the ISO 3166 country codes
- * and the ISO 4217 currency data respectively.  The value part consists of
- * three ISO 4217 values of a currency, i.e., an alphabetic code, a numeric
- * code, and a minor unit.  Those three ISO 4217 values are separated by commas.
+ * Users can supersede the Java runtime currency data by means of the system
+ * property {@code java.util.currency.data}. If this system property is
+ * defined then its value is the location of a properties file, the contents of
+ * which are key/value pairs of the ISO 3166 country codes and the ISO 4217
+ * currency data respectively.  The value part consists of three ISO 4217 values
+ * of a currency, i.e., an alphabetic code, a numeric code, and a minor unit.
+ * Those three ISO 4217 values are separated by commas.
  * The lines which start with '#'s are considered comment lines. An optional UTC
  * timestamp may be specified per currency entry if users need to specify a
  * cutover date indicating when the new data comes into effect. The timestamp is
@@ -246,10 +247,13 @@ public final class Currency implements Serializable {
                 }
 
                 // look for the properties file for overrides
+                String propsFile = System.getProperty("java.util.currency.data");
+                if (propsFile == null) {
+                    propsFile = homeDir + File.separator + "lib" +
+                        File.separator + "currency.properties";
+                }
                 try {
-                    File propFile = new File(homeDir + File.separator +
-                                             "lib" + File.separator +
-                                             "currency.properties");
+                    File propFile = new File(propsFile);
                     if (propFile.exists()) {
                         Properties props = new Properties();
                         try (FileReader fr = new FileReader(propFile)) {

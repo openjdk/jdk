@@ -107,11 +107,10 @@ void SharkDecacher::process_oop_tmp_slot(Value** value, int offset) {
 void SharkDecacher::process_method_slot(Value** value, int offset) {
   // Decache the method pointer
   write_value_to_frame(
-    SharkType::Method*_type(),
+    SharkType::Method_type(),
     *value,
     offset);
 
-  oopmap()->set_oop(slot2reg(offset));
 }
 
 void SharkDecacher::process_pc_slot(int offset) {
@@ -205,7 +204,7 @@ void SharkCacher::process_oop_tmp_slot(Value** value, int offset) {
 
 void SharkCacher::process_method_slot(Value** value, int offset) {
   // Cache the method pointer
-  *value = read_value_from_frame(SharkType::Method*_type(), offset);
+  *value = read_value_from_frame(SharkType::Method_type(), offset);
 }
 
 void SharkFunctionEntryCacher::process_method_slot(Value** value, int offset) {
@@ -230,7 +229,7 @@ void SharkCacher::process_local_slot(int          index,
 }
 
 Value* SharkOSREntryCacher::CreateAddressOfOSRBufEntry(int         offset,
-                                                       const Type* type) {
+                                                       Type* type) {
   Value *result = builder()->CreateStructGEP(osr_buf(), offset);
   if (type != SharkType::intptr_type())
     result = builder()->CreateBitCast(result, PointerType::getUnqual(type));
@@ -254,12 +253,12 @@ void SharkOSREntryCacher::process_local_slot(int          index,
   }
 }
 
-void SharkDecacher::write_value_to_frame(const Type* type,
+void SharkDecacher::write_value_to_frame(Type* type,
                                          Value*      value,
                                          int         offset) {
   builder()->CreateStore(value, stack()->slot_addr(offset, type));
 }
 
-Value* SharkCacher::read_value_from_frame(const Type* type, int offset) {
+Value* SharkCacher::read_value_from_frame(Type* type, int offset) {
   return builder()->CreateLoad(stack()->slot_addr(offset, type));
 }

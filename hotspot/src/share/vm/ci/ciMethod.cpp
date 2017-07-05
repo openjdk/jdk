@@ -742,6 +742,24 @@ int ciMethod::interpreter_call_site_count(int bci) {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::get_field_at_bci
+ciField* ciMethod::get_field_at_bci(int bci, bool &will_link) {
+  ciBytecodeStream iter(this);
+  iter.reset_to_bci(bci);
+  iter.next();
+  return iter.get_field(will_link);
+}
+
+// ------------------------------------------------------------------
+// ciMethod::get_method_at_bci
+ciMethod* ciMethod::get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature) {
+  ciBytecodeStream iter(this);
+  iter.reset_to_bci(bci);
+  iter.next();
+  return iter.get_method(will_link, declared_signature);
+}
+
+// ------------------------------------------------------------------
 // Adjust a CounterData count to be commensurate with
 // interpreter_invocation_count.  If the MDO exists for
 // only 25% of the time the method exists, then the

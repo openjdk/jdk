@@ -30,14 +30,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.inline.hpp"
-#endif
 
-# include <signal.h>
+#include <signal.h>
 
  // ***************************************************************
  // Platform dependent initialization and cleanup

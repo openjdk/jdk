@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,13 @@ vprint_message(FILE *fp, const char *prefix, const char *suffix,
     len = (int)strlen((char*)utf8buf);
 
     /* Convert to platform encoding (ignore errors, dangerous area) */
-    (void)(gdata->npt->utf8ToPlatform)(gdata->npt->utf,
-           utf8buf, len, pbuf, MAX_MESSAGE_LEN);
+    if (gdata->npt != NULL) {
+        (void)(gdata->npt->utf8ToPlatform)(gdata->npt->utf,
+               utf8buf, len, pbuf, MAX_MESSAGE_LEN);
+    } else {
+        /* May be called before NPT is initialized so don't fault */
+        strncpy(pbuf, (char*)utf8buf, len);
+    }
     (void)fprintf(fp, "%s%s%s", prefix, pbuf, suffix);
 }
 

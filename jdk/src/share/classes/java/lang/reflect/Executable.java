@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@
 package java.lang.reflect;
 
 import java.lang.annotation.*;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
+import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.generics.repository.ConstructorRepository;
 
 /**
@@ -363,19 +366,28 @@ public abstract class Executable extends AccessibleObject
      * {@inheritDoc}
      * @throws NullPointerException  {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if (annotationClass == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(annotationClass);
 
-        return (T) declaredAnnotations().get(annotationClass);
+        return AnnotationSupport.getOneAnnotation(declaredAnnotations(), annotationClass);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+
+        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);
     }
 
     /**
      * {@inheritDoc}
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return AnnotationParser.toArray(declaredAnnotations());
+        return AnnotationSupport.unpackToArray(declaredAnnotations());
     }
 
     private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
