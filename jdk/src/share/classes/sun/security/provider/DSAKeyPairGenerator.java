@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,9 @@ import sun.security.jca.JCAUtil;
 public class DSAKeyPairGenerator extends KeyPairGenerator
 implements java.security.interfaces.DSAKeyPairGenerator {
 
-    /* The modulus length */
-    private int modlen;
+    /* Length for prime P and subPrime Q in bits */
+    private int plen;
+    private int qlen;
 
     /* whether to force new parameters to be generated for each KeyPair */
     private boolean forceNewParameters;
@@ -65,20 +66,23 @@ implements java.security.interfaces.DSAKeyPairGenerator {
         initialize(1024, null);
     }
 
-    private static void checkStrength(int strength) {
-        if ((strength < 512) || (strength > 1024) || (strength % 64 != 0)) {
+    private static void checkStrength(int sizeP, int sizeQ) {
+        if ((sizeP >= 512) && (sizeP <= 1024) && (sizeP % 64 == 0)
+            && sizeQ == 160) {
+            // traditional - allow for backward compatibility
+            // L=multiples of 64 and between 512 and 1024 (inclusive)
+            // N=160
+        } else if (sizeP == 2048 && (sizeQ == 224 || sizeQ == 256)) {
+            // L=2048, N=224 or 256
+        } else {
             throw new InvalidParameterException
-                ("Modulus size must range from 512 to 1024 "
-                 + "and be a multiple of 64");
+                ("Unsupported prime and subprime size combination: " +
+                 sizeP + ", " + sizeQ);
         }
     }
 
     public void initialize(int modlen, SecureRandom random) {
-        checkStrength(modlen);
-        this.random = random;
-        this.modlen = modlen;
-        this.params = null;
-        this.forceNewParameters = false;
+        initialize(modlen, false, random);
     }
 
     /**
@@ -86,18 +90,27 @@ implements java.security.interfaces.DSAKeyPairGenerator {
      * is false, a set of pre-computed parameters is used.
      */
     public void initialize(int modlen, boolean genParams, SecureRandom random) {
-        checkStrength(modlen);
+        int subPrimeLen = -1;
+        if (modlen <= 1024) {
+            subPrimeLen = 160;
+        } else if (modlen == 2048) {
+            subPrimeLen = 224;
+        }
+        checkStrength(modlen, subPrimeLen);
         if (genParams) {
             params = null;
         } else {
-            params = ParameterCache.getCachedDSAParameterSpec(modlen);
+            params = ParameterCache.getCachedDSAParameterSpec(modlen,
+                subPrimeLen);
             if (params == null) {
                 throw new InvalidParameterException
                     ("No precomputed parameters for requested modulus size "
                      + "available");
             }
+
         }
-        this.modlen = modlen;
+        this.plen = modlen;
+        this.qlen = subPrimeLen;
         this.random = random;
         this.forceNewParameters = genParams;
     }
@@ -136,9 +149,11 @@ implements java.security.interfaces.DSAKeyPairGenerator {
     }
 
     private void initialize0(DSAParameterSpec params, SecureRandom random) {
-        int modlen = params.getP().bitLength();
-        checkStrength(modlen);
-        this.modlen = modlen;
+        int sizeP = params.getP().bitLength();
+        int sizeQ = params.getQ().bitLength();
+        checkStrength(sizeP, sizeQ);
+        this.plen = sizeP;
+        this.qlen = sizeQ;
         this.params = params;
         this.random = random;
         this.forceNewParameters = false;
@@ -156,11 +171,11 @@ implements java.security.interfaces.DSAKeyPairGenerator {
         try {
             if (forceNewParameters) {
                 // generate new parameters each time
-                spec = ParameterCache.getNewDSAParameterSpec(modlen, random);
+                spec = ParameterCache.getNewDSAParameterSpec(plen, qlen, random);
             } else {
                 if (params == null) {
                     params =
-                        ParameterCache.getDSAParameterSpec(modlen, random);
+                        ParameterCache.getDSAParameterSpec(plen, qlen, random);
                 }
                 spec = params;
             }
@@ -203,43 +218,14 @@ implements java.security.interfaces.DSAKeyPairGenerator {
      */
     private BigInteger generateX(SecureRandom random, BigInteger q) {
         BigInteger x = null;
+        byte[] temp = new byte[qlen];
         while (true) {
-            int[] seed = new int[5];
-            for (int i = 0; i < 5; i++) {
-                seed[i] = random.nextInt();
-            }
-            x = generateX(seed, q);
+            random.nextBytes(temp);
+            x = new BigInteger(1, temp).mod(q);
             if (x.signum() > 0 && (x.compareTo(q) < 0)) {
-                break;
+                return x;
             }
         }
-        return x;
-    }
-
-    /**
-     * Given a seed, generate the private key component of the key
-     * pair. In the terminology used in the DSA specification
-     * (FIPS-186) seed is the XSEED quantity.
-     *
-     * @param seed the seed to use to generate the private key.
-     */
-    BigInteger generateX(int[] seed, BigInteger q) {
-
-        // check out t in the spec.
-        int[] t = { 0x67452301, 0xEFCDAB89, 0x98BADCFE,
-                    0x10325476, 0xC3D2E1F0 };
-        //
-
-        int[] tmp = DSA.SHA_7(seed, t);
-        byte[] tmpBytes = new byte[tmp.length * 4];
-        for (int i = 0; i < tmp.length; i++) {
-            int k = tmp[i];
-            for (int j = 0; j < 4; j++) {
-                tmpBytes[(i * 4) + j] = (byte) (k >>> (24 - (j * 8)));
-            }
-        }
-        BigInteger x = new BigInteger(1, tmpBytes).mod(q);
-        return x;
     }
 
     /**

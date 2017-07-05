@@ -452,7 +452,12 @@ extern CK_C_INITIALIZE_ARGS_PTR ckpGlobalInitArgs;
 void *p11malloc(size_t c, char *file, int line);
 void p11free(void *p, char *file, int line);
 
-#define malloc(c)       (p11malloc((c), __FILE__, __LINE__))
-#define free(c)         (p11free((c), __FILE__, __LINE__))
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__
+#endif
+
+#define malloc(c)       (p11malloc((c), THIS_FILE, __LINE__))
+#define free(c)         (p11free((c), THIS_FILE, __LINE__))
 
 #endif
