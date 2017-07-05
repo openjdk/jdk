@@ -48,16 +48,15 @@ public class bug4750590 {
             }
         });
 
-        sun.awt.SunToolkit toolkit = (sun.awt.SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
-
         Robot robo = new Robot();
         robo.setAutoDelay(500);
+        robo.waitForIdle();
+
         Util.hitMnemonics(robo, KeyEvent.VK_F);
         robo.keyPress(KeyEvent.VK_M);
         robo.keyRelease(KeyEvent.VK_M);
 
-        toolkit.realSync();
+        robo.waitForIdle();
 
         if (passed) {
             System.out.println("Test passed!");

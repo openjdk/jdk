@@ -438,7 +438,7 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
                 do {
                     /* The events have been reported and this
                      * thread is about to continue, but it may
-                     * have been started up up just to perform a
+                     * have been started up just to perform a
                      * requested method invocation. If so, we do
                      * the invoke now and then stop again waiting
                      * for another continue. By then another

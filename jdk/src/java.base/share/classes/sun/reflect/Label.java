@@ -52,7 +52,7 @@ class Label {
         final short patchBCI;
         final int   stackDepth;
     }
-    private List<PatchInfo> patches = new ArrayList<>();
+    private final List<PatchInfo> patches = new ArrayList<>();
 
     public Label() {
     }

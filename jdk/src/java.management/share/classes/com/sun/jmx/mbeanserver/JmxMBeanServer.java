@@ -576,7 +576,7 @@ public final class JmxMBeanServer
      * the selected MBeans.
      *
      * @param name The object name pattern identifying the MBeans to
-     *      be retrieved. If null or or no domain and key properties
+     *      be retrieved. If null or no domain and key properties
      *      are specified, all the MBeans registered will be retrieved.
      * @param query The query expression to be applied for selecting
      *      MBeans. If null no query expression will be applied for
@@ -598,7 +598,7 @@ public final class JmxMBeanServer
      * the names of a set of MBeans specified by pattern matching on the
      * <CODE>ObjectName</CODE> and/or a Query expression, a specific
      * MBean name (equivalent to testing whether an MBean is registered).
-     * When the object name is null or or no domain and key properties are
+     * When the object name is null or no domain and key properties are
      * specified, all objects are selected (and filtered if a query is
      * specified). It returns the set of ObjectNames for the MBeans
      * selected.

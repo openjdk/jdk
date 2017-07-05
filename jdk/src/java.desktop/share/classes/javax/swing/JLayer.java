@@ -131,7 +131,7 @@ import java.security.PrivilegedAction;
  * <li>{@link Container#add(java.awt.Component, Object)}</li>
  * <li>{@link Container#add(java.awt.Component, Object, int)}</li>
  * </ul>
- * using any of of them will cause {@code UnsupportedOperationException} to be thrown,
+ * using any of them will cause {@code UnsupportedOperationException} to be thrown,
  * to add a component to {@code JLayer}
  * use {@link #setView(Component)} or {@link #setGlassPane(JPanel)}.
  *

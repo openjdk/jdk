@@ -259,7 +259,6 @@ public class TaskbarPositionTest extends JFrame implements ActionListener {
 
     public static void main(String[] args) throws Throwable {
 
-        sun.awt.SunToolkit toolkit = (sun.awt.SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -275,7 +274,7 @@ public class TaskbarPositionTest extends JFrame implements ActionListener {
         // 1 - menu
         Util.hitMnemonics(robot, KeyEvent.VK_1);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         isPopupOnScreen(menu1.getPopupMenu(), screenBounds);
 
         // 2 menu with sub menu
@@ -283,14 +282,14 @@ public class TaskbarPositionTest extends JFrame implements ActionListener {
         robot.keyRelease(KeyEvent.VK_RIGHT);
         Util.hitMnemonics(robot, KeyEvent.VK_S);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         isPopupOnScreen(menu2.getPopupMenu(), screenBounds);
 
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
 
         // Focus should go to non editable combo box
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(500);
 
         robot.keyPress(KeyEvent.VK_DOWN);
@@ -320,7 +319,7 @@ public class TaskbarPositionTest extends JFrame implements ActionListener {
         robot.mousePress(InputEvent.BUTTON3_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 test.setLocation(-30, 100);
@@ -334,7 +333,7 @@ public class TaskbarPositionTest extends JFrame implements ActionListener {
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(500);
     }
 }

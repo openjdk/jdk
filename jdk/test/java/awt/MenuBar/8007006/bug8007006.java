@@ -26,35 +26,38 @@
  * @bug 8007006
  * @summary [macosx] Closing subwindow loses main window menus.
  * @author Leonid Romanov
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot jdk.testlibrary.OSInfo
  * @run main bug8007006
  */
 
-import sun.awt.SunToolkit;
 import java.awt.*;
 import java.awt.event.*;
+
+import jdk.testlibrary.OSInfo;
 
 public class bug8007006 {
     private static Frame frame1;
     private static Frame frame2;
 
     public static void main(String[] args) throws Exception {
-        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.MACOSX) {
+        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
 
+        ExtendedRobot robot = new ExtendedRobot();
+        robot.setAutoDelay(50);
+
         createAndShowGUI();
-        sleep(1500);
+        robot.waitForIdle(1500);
 
         frame2.dispose();
-        sleep(1500);
 
-        SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
+        robot.waitForIdle(1500);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
 
         // open "Apple" menu (the leftmost one)
         robot.keyPress(KeyEvent.VK_META);
@@ -74,7 +77,7 @@ public class bug8007006 {
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
 
-        sleep(0);
+        robot.waitForIdle();
 
         MenuBar mbar = frame1.getMenuBar();
         Menu menu = mbar.getMenu(0);
@@ -112,13 +115,4 @@ public class bug8007006 {
         return mbar;
     }
 
-    private static void sleep(int ms) {
-        SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
-        tk.realSync();
-
-        try {
-            Thread.sleep(ms);
-        } catch (Exception ignore) {
-        }
-    }
 }

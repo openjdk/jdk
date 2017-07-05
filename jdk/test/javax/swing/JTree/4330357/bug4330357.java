@@ -34,7 +34,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.tree.*;
-import sun.awt.SunToolkit;
 
 public class bug4330357 {
 
@@ -43,7 +42,6 @@ public class bug4330357 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -56,12 +54,12 @@ public class bug4330357 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(getTreeRowClickPoint(1));
         Util.hitKeys(robot, KeyEvent.VK_F2);
         Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_C);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!hasComponent(JTextField.class)) {
             throw new RuntimeException("Cell editor is missed for path: color");
@@ -69,11 +67,11 @@ public class bug4330357 {
 
 
         clickMouse(getButtonClickPoint());
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(getTreeRowClickPoint(2));
         Util.hitKeys(robot, KeyEvent.VK_F2);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!hasComponent(JComboBox.class)) {
             throw new RuntimeException("Cell editor is missed for path: sports");

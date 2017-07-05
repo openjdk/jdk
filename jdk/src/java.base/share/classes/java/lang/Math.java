@@ -2224,7 +2224,7 @@ public final class Math {
          * multiply-store result is subnormal, the next multiply will
          * round it away to zero.  This is done by first multiplying
          * by 2 ^ (scaleFactor % n) and then multiplying several
-         * times by by 2^n as needed where n is the exponent of number
+         * times by 2^n as needed where n is the exponent of number
          * that is a covenient power of two.  In this way, at most one
          * real rounding error occurs.  If the double value set is
          * being used exclusively, the rounding will occur on a
@@ -2249,7 +2249,7 @@ public final class Math {
 
         // magnitude of a power of two so large that scaling a finite
         // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes takes an
+        // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
         final int MAX_SCALE = DoubleConsts.MAX_EXPONENT + -DoubleConsts.MIN_EXPONENT +
                               DoubleConsts.SIGNIFICAND_WIDTH + 1;
@@ -2318,7 +2318,7 @@ public final class Math {
     public static float scalb(float f, int scaleFactor) {
         // magnitude of a power of two so large that scaling a finite
         // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes takes an
+        // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
         final int MAX_SCALE = FloatConsts.MAX_EXPONENT + -FloatConsts.MIN_EXPONENT +
                               FloatConsts.SIGNIFICAND_WIDTH + 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,6 +53,7 @@ import java.awt.Canvas;
 import java.awt.AlphaComposite;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ByteLookupTable;
@@ -77,6 +78,7 @@ import javax.swing.JComponent;
 
 public abstract class ImageTests extends GraphicsTests {
     public static boolean hasVolatileImage;
+    public static boolean hasTransparentVolatileImage;
     public static boolean hasCompatImage;
 
     static {
@@ -89,14 +91,20 @@ public abstract class ImageTests extends GraphicsTests {
             hasCompatImage = true;
         } catch (NoSuchMethodError e) {
         }
+        try {
+            new Canvas().getMousePosition();
+            hasTransparentVolatileImage = true;
+        } catch (NoSuchMethodError e) {
+        }
     }
 
     static Group imageroot;
     static Group.EnableSet imgsrcroot;
     static Group.EnableSet bufimgsrcroot;
 
+    static Group imgbenchroot;
     static Group imgtestroot;
-    static Group imgoptionsroot;
+    static Group imgtestOptRoot;
 
     static Group imageOpRoot;
     static Group imageOpOptRoot;
@@ -106,6 +114,7 @@ public abstract class ImageTests extends GraphicsTests {
     static Group rasterOpTestRoot;
     static Option opList;
     static Option doTouchSrc;
+    static Option interpolation;
 
     static String transNodeNames[] = {
         null, "opaque", "bitmask", "translucent",
@@ -122,19 +131,9 @@ public abstract class ImageTests extends GraphicsTests {
 
         imgsrcroot = new Group.EnableSet(imageroot, "src",
                                          "Image Rendering Sources");
-        imgsrcroot.setBordered(true);
-
-        imgoptionsroot = new Group(imgsrcroot, "options",
-                                "Image Source Options");
-        imgoptionsroot.setBordered(true);
-        doTouchSrc =
-            new Option.Toggle(imgoptionsroot, "touchsrc",
-                              "Touch src image before every operation",
-                               Option.Toggle.Off);
-
-        imgtestroot = new Group(imageroot, "tests",
-                                "Image Rendering Tests");
-        imgtestroot.setBordered(true);
+        imgbenchroot = new Group(imageroot, "benchmarks",
+                                "Image Rendering Benchmarks");
+        imgtestOptRoot = new Group(imgbenchroot, "opts", "Options");
 
         new OffScreen();
 
@@ -144,9 +143,14 @@ public abstract class ImageTests extends GraphicsTests {
                 new CompatImg(Transparency.BITMASK);
                 new CompatImg(Transparency.TRANSLUCENT);
             }
-
             if (hasVolatileImage) {
-                new VolatileImg();
+                if (hasTransparentVolatileImage) {
+                    new VolatileImg(Transparency.OPAQUE);
+                    new VolatileImg(Transparency.BITMASK);
+                    new VolatileImg(Transparency.TRANSLUCENT);
+                } else {
+                    new VolatileImg();
+                }
             }
 
             bufimgsrcroot =
@@ -154,11 +158,15 @@ public abstract class ImageTests extends GraphicsTests {
                                     "BufferedImage Rendering Sources");
             new BufImg(BufferedImage.TYPE_INT_RGB);
             new BufImg(BufferedImage.TYPE_INT_ARGB);
+            new BufImg(BufferedImage.TYPE_INT_ARGB_PRE);
             new BufImg(BufferedImage.TYPE_BYTE_GRAY);
             new BufImg(BufferedImage.TYPE_3BYTE_BGR);
+            new BufImg(BufferedImage.TYPE_4BYTE_ABGR);
+            new BufImg(BufferedImage.TYPE_4BYTE_ABGR_PRE);
             new BmByteIndexBufImg();
             new BufImg(BufferedImage.TYPE_INT_RGB, true);
             new BufImg(BufferedImage.TYPE_INT_ARGB, true);
+            new BufImg(BufferedImage.TYPE_INT_ARGB_PRE, true);
             new BufImg(BufferedImage.TYPE_3BYTE_BGR, true);
 
             imageOpRoot = new Group(imageroot, "imageops",
@@ -211,12 +219,31 @@ public abstract class ImageTests extends GraphicsTests {
             new BufImgOpFilter(true);
             new RasterOpFilter(false);
             new RasterOpFilter(true);
+
+            String interpolationnames[] = {"Nearest neighbor", "Bilinear",
+                                           "Bicubic",};
+            interpolation =
+                    new ObjectList(imgtestOptRoot, "interpolation",
+                                   "Interpolation",
+                                   interpolationnames, new Object[] {
+                            RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR,
+                            RenderingHints.VALUE_INTERPOLATION_BILINEAR,
+                            RenderingHints.VALUE_INTERPOLATION_BICUBIC,
+                    }, interpolationnames, interpolationnames, 1);
         }
+
+        doTouchSrc =
+                new Option.Toggle(imgtestOptRoot, "touchsrc",
+                                  "Touch source image before every operation",
+                                  Option.Toggle.Off);
+
+        imgtestroot = new Group(imgbenchroot, "tests", "Image Rendering Tests");
 
         new DrawImage();
         new DrawImageBg();
         new DrawImageScale("up", 1.5f);
         new DrawImageScale("down", .75f);
+        new DrawImageScale("split", .5f);
         new DrawImageTransform();
     }
 
@@ -236,6 +263,7 @@ public abstract class ImageTests extends GraphicsTests {
         super(parent, nodeName, description);
         addDependency(imgsrcroot, srcFilter);
         addDependency(doTouchSrc);
+        addDependency(interpolation);
     }
 
     public GraphicsTests.Context createContext() {
@@ -248,6 +276,11 @@ public abstract class ImageTests extends GraphicsTests {
 
         ictx.src = env.getSrcImage();
         ictx.touchSrc = env.isEnabled(doTouchSrc);
+        if (hasGraphics2D) {
+            Graphics2D g2d = (Graphics2D) ctx.graphics;
+            final Object modifier = env.getModifier(interpolation);
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, modifier);
+        }
     }
 
     public abstract static class TriStateImageType extends Group {
@@ -290,13 +323,27 @@ public abstract class ImageTests extends GraphicsTests {
     }
 
     public static class VolatileImg extends TriStateImageType {
+        private final int transparency;
+
         public VolatileImg() {
-            super(imgsrcroot, "volimg", "Volatile Image", Transparency.OPAQUE);
+            this(0);
+        }
+
+        public VolatileImg(int transparency) {
+            super(imgsrcroot, Destinations.VolatileImg.ShortNames[transparency],
+                  Destinations.VolatileImg.LongDescriptions[transparency],
+                  transparency);
+            this.transparency = transparency;
         }
 
         public Image makeImage(TestEnvironment env, int w, int h) {
             Canvas c = env.getCanvas();
-            return c.createVolatileImage(w, h);
+            GraphicsConfiguration gc = c.getGraphicsConfiguration();
+            if (transparency == 0) {
+                return gc.createCompatibleVolatileImage(w, h);
+            } else {
+                return gc.createCompatibleVolatileImage(w, h, transparency);
+            }
         }
     }
 

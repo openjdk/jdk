@@ -34,12 +34,10 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-import sun.awt.SunToolkit;
 
 public class bug4220171 {
 
@@ -47,7 +45,6 @@ public class bug4220171 {
 
     public static void main(String args[]) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -58,26 +55,26 @@ public class bug4220171 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         clickMouse(robot, 0, 0);
         Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCell(0, 0);
 
         clickMouse(robot, 0, 1);
         Util.hitKeys(robot, KeyEvent.VK_D, KeyEvent.VK_E, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCell(0, 1);
 
         clickMouse(robot, 1, 0);
         Util.hitKeys(robot, KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCell(1, 0);
 
         clickMouse(robot, 1, 1);
         Util.hitKeys(robot, KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_ENTER);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCell(1, 1);
     }
 

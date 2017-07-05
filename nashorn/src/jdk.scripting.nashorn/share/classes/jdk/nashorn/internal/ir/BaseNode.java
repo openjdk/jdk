@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 
@@ -98,7 +97,7 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
     }
 
     @Override
-    public Type getType(final Function<Symbol, Type> localVariableTypes) {
+    public Type getType() {
         return type == null ? getMostPessimisticType() : type;
     }
 

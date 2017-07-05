@@ -140,7 +140,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * <p>
  * The preferred way to listen for changes in list selection is to add
  * {@code ListSelectionListener}s directly to the {@code JList}. {@code JList}
- * then takes care of listening to the the selection model and notifying your
+ * then takes care of listening to the selection model and notifying your
  * listeners of change.
  * <p>
  * Responsibility for listening to selection changes in order to keep the list's
@@ -717,7 +717,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * <p>
      * This is a JavaBeans bound property.
      *
-     * @param height the height to be used for for all cells in the list
+     * @param height the height to be used for all cells in the list
      * @see #setPrototypeCellValue
      * @see #setFixedCellWidth
      * @see JComponent#addPropertyChangeListener

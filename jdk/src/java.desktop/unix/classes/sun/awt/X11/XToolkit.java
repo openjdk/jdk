@@ -103,11 +103,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static TreeMap<Long, XBaseWindow> winMap = new TreeMap<>();
     static HashMap<Object, Object> specialPeerMap = new HashMap<>();
     static HashMap<Long, Collection<XEventDispatcher>> winToDispatcher = new HashMap<>();
-    private static long _display;
     static UIDefaults uidefaults;
-    static X11GraphicsEnvironment localEnv;
-    static X11GraphicsDevice device;
-    static final X11GraphicsConfig config;
+    static final X11GraphicsEnvironment localEnv;
+    private static final X11GraphicsDevice device;
+    private static final X11GraphicsConfig config;
+    private static final long display;
     static int awt_multiclick_time;
     static boolean securityWarningEnabled;
 
@@ -118,15 +118,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static {
         initSecurityWarning();
         if (GraphicsEnvironment.isHeadless()) {
+            localEnv = null;
+            device = null;
             config = null;
+            display = 0;
         } else {
             localEnv = (X11GraphicsEnvironment) GraphicsEnvironment
                 .getLocalGraphicsEnvironment();
             device = (X11GraphicsDevice) localEnv.getDefaultScreenDevice();
-            config = (X11GraphicsConfig) (device.getDefaultConfiguration());
-            if (device != null) {
-                _display = device.getDisplay();
-            }
+            config = (X11GraphicsConfig) device.getDefaultConfiguration();
+            display = device.getDisplay();
             setupModifierMap();
             initIDs();
             setBackingStoreType();
@@ -197,10 +198,18 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    static Object displayLock = new Object();
-
+    /**
+     * Returns the X11 Display of the default screen device.
+     *
+     * @return X11 Display
+     * @throws AWTError thrown if local GraphicsEnvironment is null, which
+     *         means we are in the headless environment
+     */
     public static long getDisplay() {
-        return _display;
+        if (localEnv == null) {
+            throw new AWTError("Local GraphicsEnvironment must not be null");
+        }
+        return display;
     }
 
     public static long getDefaultRootWindow() {

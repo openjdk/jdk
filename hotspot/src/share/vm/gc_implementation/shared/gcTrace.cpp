@@ -172,6 +172,27 @@ void YoungGCTracer::report_tenuring_threshold(const uint tenuring_threshold) {
   _tenuring_threshold = tenuring_threshold;
 }
 
+bool YoungGCTracer::should_report_promotion_in_new_plab_event() const {
+  return should_send_promotion_in_new_plab_event();
+}
+
+bool YoungGCTracer::should_report_promotion_outside_plab_event() const {
+  return should_send_promotion_outside_plab_event();
+}
+
+void YoungGCTracer::report_promotion_in_new_plab_event(Klass* klass, size_t obj_size,
+                                                       uint age, bool tenured,
+                                                       size_t plab_size) const {
+  assert_set_gc_id();
+  send_promotion_in_new_plab_event(klass, obj_size, age, tenured, plab_size);
+}
+
+void YoungGCTracer::report_promotion_outside_plab_event(Klass* klass, size_t obj_size,
+                                                        uint age, bool tenured) const {
+  assert_set_gc_id();
+  send_promotion_outside_plab_event(klass, obj_size, age, tenured);
+}
+
 void OldGCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {
   assert_set_gc_id();
 
