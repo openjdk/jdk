@@ -42,14 +42,14 @@ public class LoaderConstraintEntry extends sun.jvm.hotspot.utilities.HashtableEn
 
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("LoaderConstraintEntry");
-    nameField = type.getOopField("_name");
+    nameField = type.getAddressField("_name");
     numLoadersField = type.getCIntegerField("_num_loaders");
     maxLoadersField = type.getCIntegerField("_max_loaders");
     loadersField = type.getAddressField("_loaders");
   }
 
   // Fields
-  private static sun.jvm.hotspot.types.OopField nameField;
+  private static AddressField nameField;
   private static CIntegerField numLoadersField;
   private static CIntegerField maxLoadersField;
   private static AddressField loadersField;
@@ -57,7 +57,7 @@ public class LoaderConstraintEntry extends sun.jvm.hotspot.utilities.HashtableEn
   // Accessors
 
   public Symbol name() {
-    return (Symbol) VM.getVM().getObjectHeap().newOop(nameField.getValue(addr));
+    return Symbol.create(nameField.getValue(addr));
   }
 
   public int numLoaders() {

@@ -296,9 +296,10 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   follow_mdo_weak_refs();
   assert(_marking_stack.is_empty(), "just drained");
 
-  // Visit symbol and interned string tables and delete unmarked oops
-  SymbolTable::unlink(&is_alive);
+  // Visit interned string tables and delete unmarked oops
   StringTable::unlink(&is_alive);
+  // Clean up unreferenced symbols in symbol table.
+  SymbolTable::unlink();
 
   assert(_marking_stack.is_empty(), "stack should be empty by now");
 }

@@ -50,7 +50,7 @@ private:
   static klassOop           _garbageCollectorMXBean_klass;
   static klassOop           _managementFactory_klass;
 
-  static klassOop load_and_initialize_klass(symbolHandle sh, TRAPS);
+  static klassOop load_and_initialize_klass(Symbol* sh, TRAPS);
 
 public:
   static void init();

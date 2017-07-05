@@ -57,9 +57,9 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
   {                                                                       \
     methodOop m = (method);                                               \
     if (m != NULL) {                                                      \
-      symbolOop klass_name = m->klass_name();                             \
-      symbolOop name = m->name();                                         \
-      symbolOop signature = m->signature();                               \
+      Symbol* klass_name = m->klass_name();                               \
+      Symbol* name = m->name();                                           \
+      Symbol* signature = m->signature();                                 \
       HS_DTRACE_PROBE6(hotspot, compiled__method__unload,                 \
         klass_name->bytes(), klass_name->utf8_length(),                   \
         name->bytes(), name->utf8_length(),                               \
@@ -1865,7 +1865,7 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke call(ssd.method(), ssd.bci());
     bool has_receiver = call.has_receiver();
-    symbolOop signature = call.signature();
+    Symbol* signature = call.signature();
     fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 #endif // !SHARK
@@ -2636,7 +2636,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
         } else {
           bool did_name = false;
           if (!at_this && ss.is_object()) {
-            symbolOop name = ss.as_symbol_or_null();
+            Symbol* name = ss.as_symbol_or_null();
             if (name != NULL) {
               name->print_value_on(stream);
               did_name = true;

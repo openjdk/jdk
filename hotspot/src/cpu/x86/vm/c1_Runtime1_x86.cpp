@@ -1337,7 +1337,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       { StubFrame f(sasm, "throw_array_store_exception", dont_gc_arguments);
         // tos + 0: link
         //     + 1: return address
-        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), false);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
       }
       break;
 
