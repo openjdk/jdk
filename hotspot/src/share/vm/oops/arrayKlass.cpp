@@ -71,7 +71,9 @@ Klass* ArrayKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) co
   return super()->find_field(name, sig, fd);
 }
 
-Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const {
+Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
+                                           const Symbol* signature,
+                                           OverpassLookupMode overpass_mode) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
   // Always ignore overpass methods in superclasses, although technically the
@@ -80,19 +82,18 @@ Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature, Over
   return super()->uncached_lookup_method(name, signature, Klass::skip_overpass);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name) {
-  set_name(name);
-
-  set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
-  set_layout_helper(Klass::_lh_neutral_value);
-  set_dimension(1);
-  set_higher_dimension(NULL);
-  set_lower_dimension(NULL);
+ArrayKlass::ArrayKlass(Symbol* name) :
+  _dimension(1),
+  _higher_dimension(NULL),
+  _lower_dimension(NULL),
   // Arrays don't add any new methods, so their vtable is the same size as
   // the vtable of klass Object.
-  int vtable_size = Universe::base_vtable_size();
-  set_vtable_length(vtable_size);
-  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+  _vtable_len(Universe::base_vtable_size()) {
+    set_name(name);
+    set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
+    set_layout_helper(Klass::_lh_neutral_value);
+    set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+    TRACE_INIT_ID(this);
 }
 
 

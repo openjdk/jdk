@@ -216,7 +216,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     # The microsoft toolchain also requires INCLUDE and LIB to be set.
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
+  else
+    # Currently we do not define this for other toolchains. This might change as the need arise.
+    TOOLCHAIN_VERSION=
   fi
+  AC_SUBST(TOOLCHAIN_VERSION)
 
   # For solaris we really need solaris tools, and not the GNU equivalent.
   # The build tools on Solaris reside in /usr/ccs (C Compilation System),
@@ -731,6 +735,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_AS="$BUILD_CC -c"
     # Just like for the target compiler, use the compiler as linker
     BUILD_LD="$BUILD_CC"
+    BUILD_LDCXX="$BUILD_CXX"
 
     PATH="$OLDPATH"
   else
@@ -739,6 +744,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_LDCXX="$LDCXX"
     BUILD_NM="$NM"
     BUILD_AS="$AS"
     BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
@@ -749,6 +755,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
   AC_SUBST(BUILD_CC)
   AC_SUBST(BUILD_CXX)
   AC_SUBST(BUILD_LD)
+  AC_SUBST(BUILD_LDCXX)
   AC_SUBST(BUILD_NM)
   AC_SUBST(BUILD_AS)
   AC_SUBST(BUILD_SYSROOT_CFLAGS)
@@ -822,13 +829,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
       [HAS_CFLAG_OPTIMIZE_DEBUG=false])
 
     # "-z relro" supported in GNU binutils 2.17 and later
-    LINKER_RELRO_FLAG="-Xlinker -z -Xlinker relro"
+    LINKER_RELRO_FLAG="-Wl,-z,relro"
     FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_RELRO_FLAG],
       [HAS_LINKER_RELRO=true],
       [HAS_LINKER_RELRO=false])
 
     # "-z now" supported in GNU binutils 2.11 and later
-    LINKER_NOW_FLAG="-Xlinker -z -Xlinker now"
+    LINKER_NOW_FLAG="-Wl,-z,now"
     FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_NOW_FLAG],
       [HAS_LINKER_NOW=true],
       [HAS_LINKER_NOW=false])
@@ -841,7 +848,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
     $ECHO "SUNWprivate_1.1 { local: *; };" > version-script.map
     $ECHO "int main() { }" > main.c
-    if $CXX -Xlinker -version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+    if $CXX -Wl,-version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
       AC_MSG_RESULT(no)
       USING_BROKEN_SUSE_LD=no
     else

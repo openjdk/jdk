@@ -151,16 +151,16 @@ else # HAS_FILE_FUNCTION
   $(eval compress_paths = \
       $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-pre-compress.incl)))
   compress_paths += \
-$(subst $(SRC_ROOT),X97,\
-$(subst $(OUTPUT_ROOT),X98,\
-$(subst X,X00,\
+      $(subst $(SRC_ROOT),X97, \
+      $(subst $(OUTPUT_ROOT),X98, \
+      $(subst X,X00, \
       $(subst $(SPACE),\n,$(strip $1)))))
   $(eval compress_paths += \
       $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-post-compress.incl)))
 
   decompress_paths=$(SED) -f $(SRC_ROOT)/make/common/support/ListPathsSafely-uncompress.sed \
       -e 's|X99|\\n|g' \
-    -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
+      -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
       -e 's|X00|X|g'
 
   ListPathsSafely_IfPrintf = \
@@ -172,10 +172,10 @@ $(subst X,X00,\
   # Param 1 - Name of variable containing paths/arguments to output
   # Param 2 - File to print to
   # Param 3 - Set to true to append to file instead of overwriting
-define ListPathsSafely
-  ifneq (,$$(word 10001,$$($1)))
-    $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
-  endif
+  define ListPathsSafely
+    ifneq (,$$(word 10001,$$($1)))
+      $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
+    endif
     $$(call MakeDir, $$(dir $2))
     ifneq ($$(strip $3), true)
       $$(shell $(RM) $$(strip $2))
@@ -230,7 +230,7 @@ define ListPathsSafely
     $$(call ListPathsSafely_IfPrintf,$1,$2,9251,9500)
     $$(call ListPathsSafely_IfPrintf,$1,$2,9501,9750)
     $$(call ListPathsSafely_IfPrintf,$1,$2,9751,10000)
-endef
+  endef
 endif # HAS_FILE_FUNCTION
 
 # The source tips can come from the Mercurial repository, or in the files
@@ -285,18 +285,24 @@ define SetupLogging
   # Never remove warning messages; this is just for completeness
   LOG_WARN :=
   ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
+    LogInfo = $$(info $$(strip $$1))
     LOG_INFO :=
   else
+    LogInfo =
     LOG_INFO := > /dev/null
   endif
   ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+    LogDebug = $$(info $$(strip $$1))
     LOG_DEBUG :=
   else
+    LogDebug =
     LOG_DEBUG := > /dev/null
   endif
   ifneq ($$(findstring $$(LOG_LEVEL), trace),)
+    LogTrace = $$(info $$(strip $$1))
     LOG_TRACE :=
   else
+    LogTrace =
     LOG_TRACE := > /dev/null
   endif
 endef
@@ -450,6 +456,23 @@ remove-prefixes = \
     $(strip $(if $1,$(patsubst $(firstword $1)%,%,\
       $(call remove-prefixes,$(filter-out $(firstword $1),$1),$2)),$2))
 
+# Convert the string given to upper case, without any $(shell)
+# Inspired by http://lists.gnu.org/archive/html/help-make/2013-09/msg00009.html
+uppercase_table := a,A b,B c,C d,D e,E f,F g,G h,H i,I j,J k,K l,L m,M n,N o,O \
+    p,P q,Q r,R s,S t,T u,U v,V w,W x,X y,Y z,Z
+
+uppercase_internal = \
+  $(if $(strip $1), $$(subst $(firstword $1), $(call uppercase_internal, \
+      $(wordlist 2, $(words $1), $1), $2)), $2)
+
+# Convert a string to upper case. Works only on a-z.
+# $1 - The string to convert
+uppercase = \
+  $(strip \
+    $(eval uppercase_result := $(call uppercase_internal, $(uppercase_table), $1)) \
+    $(uppercase_result) \
+  )
+
 ################################################################################
 
 ifneq ($(DISABLE_CACHE_FIND), true)
@@ -560,8 +583,9 @@ define SetupCopyFilesBody
     $1_NAME_MACRO := identity
   endif
 
-  # Remove any trailing slash from SRC
+  # Remove any trailing slash from SRC and DEST
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
+  $1_DEST := $$(patsubst %/,%,$$($1_DEST))
 
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
@@ -592,9 +616,9 @@ ifeq ($(HAS_FILE_FUNCTION), true)
   WriteFile = \
       $(file >$2,$(strip $1))
 else
-# Use printf to get consistent behavior on all platforms.
-WriteFile = \
-    $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
+  # Use printf to get consistent behavior on all platforms.
+  WriteFile = \
+      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
 endif
 
 ################################################################################

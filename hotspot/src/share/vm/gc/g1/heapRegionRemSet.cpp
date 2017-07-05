@@ -1020,24 +1020,6 @@ HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
 }
 
 #ifndef PRODUCT
-void PerRegionTable::test_fl_mem_size() {
-  PerRegionTable* dummy = alloc(NULL);
-
-  size_t min_prt_size = sizeof(void*) + dummy->bm()->size_in_words() * HeapWordSize;
-  assert(dummy->mem_size() > min_prt_size,
-         "PerRegionTable memory usage is suspiciously small, only has " SIZE_FORMAT " bytes. "
-         "Should be at least " SIZE_FORMAT " bytes.", dummy->mem_size(), min_prt_size);
-  free(dummy);
-  guarantee(dummy->mem_size() == fl_mem_size(), "fl_mem_size() does not return the correct element size");
-  // try to reset the state
-  _free_list = NULL;
-  delete dummy;
-}
-
-void HeapRegionRemSet::test_prt() {
-  PerRegionTable::test_fl_mem_size();
-}
-
 void HeapRegionRemSet::test() {
   os::sleep(Thread::current(), (jlong)5000, false);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();

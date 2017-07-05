@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadLocalStorage.hpp"
-#include "runtime/thread.inline.hpp"
 
 void MacroAssembler::int3() {
   push(rax);
@@ -36,34 +34,4 @@ void MacroAssembler::int3() {
   pop(rcx);
   pop(rdx);
   pop(rax);
-}
-
-// This is simply a call to ThreadLocalStorage::thread()
-void MacroAssembler::get_thread(Register thread) {
-  if (thread != rax) {
-    push(rax);
-  }
-  push(rdi);
-  push(rsi);
-  push(rdx);
-  push(rcx);
-  push(r8);
-  push(r9);
-  push(r10);
-  push(r11);
-
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, ThreadLocalStorage::thread)));
-
-  pop(r11);
-  pop(r10);
-  pop(r9);
-  pop(r8);
-  pop(rcx);
-  pop(rdx);
-  pop(rsi);
-  pop(rdi);
-  if (thread != rax) {
-    movl(thread, rax);
-    pop(rax);
-  }
 }

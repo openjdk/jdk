@@ -180,5 +180,8 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define SIZE_64G  ((uint64_t) UCONST64( 0x1000000000))
 #define SIZE_1T   ((uint64_t) UCONST64(0x10000000000))
 
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+#define THREAD_LOCAL_DECL __thread
+#endif
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

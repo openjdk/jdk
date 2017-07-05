@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,32 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "runtime/os.hpp"
-#include "runtime/threadLocalStorage.hpp"
+// nothing required here
 
-
-// get_thread can be called anywhere inside generated code so we need
-// to save whatever non-callee save context might get clobbered by the
-// call to the C thread_local lookup call or, indeed, the call setup
-// code. x86 appears to save C arg registers.
-
-void MacroAssembler::get_thread(Register dst) {
-  // call pthread_getspecific
-  // void * pthread_getspecific(pthread_key_t key);
-
-  // Save all call-clobbered regs except dst, plus r19 and r20.
-  RegSet saved_regs = RegSet::range(r0, r20) + lr - dst;
-  push(saved_regs, sp);
-  mov(c_rarg0, ThreadLocalStorage::thread_index());
-  mov(r19, CAST_FROM_FN_PTR(address, pthread_getspecific));
-  blrt(r19, 1, 0, 1);
-  if (dst != c_rarg0) {
-    mov(dst, c_rarg0);
-  }
-  // restore pushed registers
-  pop(saved_regs, sp);
-}
 
