@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,29 @@ import java.util.*;
 
 @ExpectedGenericString("public class GenericStringTest")
 public class GenericStringTest {
-    public static void main(String... args){
+    public Map<String, Integer>[] mixed = null;
+    public Map<String, Integer>[][] mixed2 = null;
+
+    public static void main(String... args) throws ReflectiveOperationException {
         int failures = 0;
 
+        String[][] nested = {{""}};
+        int[][]    intArray = {{1}};
+
         failures += checkToGenericString(int.class, "int");
+        failures += checkToGenericString(void.class, "void");
+        failures += checkToGenericString(args.getClass(), "java.lang.String[]");
+        failures += checkToGenericString(nested.getClass(), "java.lang.String[][]");
+        failures += checkToGenericString(intArray.getClass(), "int[][]");
+        failures += checkToGenericString(java.util.Map.class, "public abstract interface java.util.Map<K,V>");
+
+        Field f = GenericStringTest.class.getDeclaredField("mixed");
+        // The expected value includes "<K,V>" rather than
+        // "<...String,...Integer>" since the Class object rather than
+        // Type objects is being queried.
+        failures += checkToGenericString(f.getType(), "java.util.Map<K,V>[]");
+        f = GenericStringTest.class.getDeclaredField("mixed2");
+        failures += checkToGenericString(f.getType(), "java.util.Map<K,V>[][]");
 
         Class<?>[] types = {
             GenericStringTest.class,

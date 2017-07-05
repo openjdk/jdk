@@ -35,7 +35,8 @@ enum ReferenceType {
   REF_SOFT,      // Subclass of java/lang/ref/SoftReference
   REF_WEAK,      // Subclass of java/lang/ref/WeakReference
   REF_FINAL,     // Subclass of java/lang/ref/FinalReference
-  REF_PHANTOM    // Subclass of java/lang/ref/PhantomReference
+  REF_PHANTOM,   // Subclass of java/lang/ref/PhantomReference
+  REF_CLEANER    // Subclass of sun/misc/Cleaner
 };
 
 #endif // SHARE_VM_MEMORY_REFRERENCETYPE_HPP

@@ -361,22 +361,36 @@ public:
 #endif
 };
 
-class IfTrueNode : public CProjNode {
+class IfProjNode : public CProjNode {
 public:
-  IfTrueNode( IfNode *ifnode ) : CProjNode(ifnode,1) {
+  IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
+  virtual Node *Identity(PhaseTransform *phase);
+
+protected:
+  // Type of If input when this branch is always taken
+  virtual bool always_taken(const TypeTuple* t) const = 0;
+};
+
+class IfTrueNode : public IfProjNode {
+public:
+  IfTrueNode( IfNode *ifnode ) : IfProjNode(ifnode,1) {
     init_class_id(Class_IfTrue);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+
+protected:
+  virtual bool always_taken(const TypeTuple* t) const { return t == TypeTuple::IFTRUE; }
 };
 
-class IfFalseNode : public CProjNode {
+class IfFalseNode : public IfProjNode {
 public:
-  IfFalseNode( IfNode *ifnode ) : CProjNode(ifnode,0) {
+  IfFalseNode( IfNode *ifnode ) : IfProjNode(ifnode,0) {
     init_class_id(Class_IfFalse);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+
+protected:
+  virtual bool always_taken(const TypeTuple* t) const { return t == TypeTuple::IFFALSE; }
 };
 
 

@@ -287,6 +287,13 @@ final class ServerHandshaker extends Handshaker {
                 break;
 
             case HandshakeMessage.ht_finished:
+                // A ChangeCipherSpec record must have been received prior to
+                // reception of the Finished message (RFC 5246, 7.4.9).
+                if (!receivedChangeCipherSpec()) {
+                    fatalSE(Alerts.alert_handshake_failure,
+                        "Received Finished message before ChangeCipherSpec");
+                }
+
                 this.clientFinished(
                     new Finished(protocolVersion, input, cipherSuite));
                 break;
