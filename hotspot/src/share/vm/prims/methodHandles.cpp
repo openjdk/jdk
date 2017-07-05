@@ -974,6 +974,8 @@ bool MethodHandles::same_basic_type_for_arguments(BasicType src,
   assert(src != T_VOID && dst != T_VOID, "should not be here");
   if (src == dst)  return true;
   if (type2size[src] != type2size[dst])  return false;
+  if (src == T_OBJECT || dst == T_OBJECT)  return false;
+  if (raw)  return true;  // bitwise reinterpretation; caller guarantees safety
   // allow reinterpretation casts for integral widening
   if (is_subword_type(src)) { // subwords can fit in int or other subwords
     if (dst == T_INT)         // any subword fits in an int
