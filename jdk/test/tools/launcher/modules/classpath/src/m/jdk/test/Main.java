@@ -29,13 +29,14 @@ public class Main {
     static final String JAVA_CLASS_PATH = "java.class.path";
 
     public static void main(String[] args) throws Exception {
+        boolean expected = args[0].equals("true");
+        String cpath = args.length > 1 ? args[1] : "";
         String value = System.getProperty(JAVA_CLASS_PATH);
-        if (value == null) {
-            throw new RuntimeException(JAVA_CLASS_PATH + " is expected non-null" +
-                " for compatibility");
+        if (!value.equals(cpath)) {
+            throw new RuntimeException(JAVA_CLASS_PATH + "=" + value +
+                " expected=" + cpath);
         }
 
-        boolean expected = args[0].equals("true");
         ClassLoader loader = ClassLoader.getSystemClassLoader();
         URL url = loader.getResource("jdk/test/res.properties");
         if ((expected && url == null) || (!expected && url != null)) {

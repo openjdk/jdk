@@ -127,7 +127,7 @@ public abstract class RenderingEngine {
         if (reClass != null) {
             try {
                 Class<?> cls = Class.forName(reClass);
-                reImpl = (RenderingEngine) cls.newInstance();
+                reImpl = (RenderingEngine) cls.getConstructor().newInstance();
             } catch (ReflectiveOperationException ignored0) {
             }
         }
@@ -135,7 +135,7 @@ public abstract class RenderingEngine {
             final String marlinREClass = "sun.java2d.marlin.MarlinRenderingEngine";
             try {
                 Class<?> cls = Class.forName(marlinREClass);
-                reImpl = (RenderingEngine) cls.newInstance();
+                reImpl = (RenderingEngine) cls.getConstructor().newInstance();
             } catch (ReflectiveOperationException ignored1) {
             }
         }

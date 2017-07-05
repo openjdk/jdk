@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static java.util.Calendar.*;
-
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -30,7 +28,9 @@ import java.util.TimeZone;
 /**
  * GregorianCalendar subclass for testing.
  */
+@SuppressWarnings("serial")
 public class Koyomi extends GregorianCalendar {
+
     static final String[] FIELD_NAMES = {
         "ERA", "YEAR", "MONTH", "WEEK_OF_YEAR", "WEEK_OF_MONTH", "DAY_OF_MONTH",
         "DAY_OF_YEAR", "DAY_OF_WEEK", "DAY_OF_WEEK_IN_MONTH", "AM_PM", "HOUR",
@@ -78,7 +78,7 @@ public class Koyomi extends GregorianCalendar {
         StringBuilder sb = new StringBuilder();
         sb.append(internalGet(ERA) == 0 ? "BCE " : "");
         sb.append(internalGet(YEAR)).append('-');
-        sb.append(internalGet(MONTH)+1).append('-');
+        sb.append(internalGet(MONTH) + 1).append('-');
         sb.append(internalGet(DAY_OF_MONTH));
         return sb.toString();
     }
@@ -98,7 +98,7 @@ public class Koyomi extends GregorianCalendar {
         sb.append(ms);
         int offset = internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET);
         offset /= 60000;
-        offset = (offset/60) * 100 + (offset%60);
+        offset = (offset / 60) * 100 + (offset % 60);
         if (offset >= 0) {
             sb.append('+');
         } else {
@@ -187,8 +187,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkActualMaximum(int field, int expectedValue) {
         int val;
         if ((val = getActualMaximum(field)) != expectedValue) {
-            appendMessage("getActualMaximum("+FIELD_NAMES[field]+"): got " + val
-                          + " expected " + expectedValue);
+            appendMessage("getActualMaximum(" + FIELD_NAMES[field] + "): got " + val
+                    + " expected " + expectedValue);
         }
         return getStatus();
     }
@@ -196,8 +196,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkLeastMaximum(int field, int expectedValue) {
         int val;
         if ((val = getLeastMaximum(field)) != expectedValue) {
-            appendMessage("getLeastMaximum("+FIELD_NAMES[field]+"): got " + val
-                          + " expected " + expectedValue);
+            appendMessage("getLeastMaximum(" + FIELD_NAMES[field] + "): got " + val
+                    + " expected " + expectedValue);
         }
         return getStatus();
     }
@@ -205,8 +205,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkActualMinimum(int field, int expectedValue) {
         int val;
         if ((val = getActualMinimum(field)) != expectedValue) {
-            appendMessage("getActualMinimum("+FIELD_NAMES[field]+"): got " + val
-                          + " expected " + expectedValue);
+            appendMessage("getActualMinimum(" + FIELD_NAMES[field] + "): got " + val
+                    + " expected " + expectedValue);
         }
         return getStatus();
     }
@@ -214,8 +214,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkGreatestMinimum(int field, int expectedValue) {
         int val;
         if ((val = getGreatestMinimum(field)) != expectedValue) {
-            appendMessage("getGreatestMinimum("+FIELD_NAMES[field]+"): got " + val
-                          + " expected " + expectedValue);
+            appendMessage("getGreatestMinimum(" + FIELD_NAMES[field] + "): got " + val
+                    + " expected " + expectedValue);
         }
         return getStatus();
     }
@@ -238,7 +238,7 @@ public class Koyomi extends GregorianCalendar {
     }
 
     boolean checkDateTime(int year, int month, int dayOfMonth,
-                          int hourOfDay, int minute, int second, int ms) {
+            int hourOfDay, int minute, int second, int ms) {
         initTest();
         checkFieldValue(YEAR, year);
         checkFieldValue(MONTH, month);
@@ -270,8 +270,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkFieldValue(int field, int expectedValue) {
         int val;
         if ((val = get(field)) != expectedValue) {
-            appendMessage("get(" + FIELD_NAMES[field] + "): got " + val +
-                          ", expected " + expectedValue + "; ");
+            appendMessage("get(" + FIELD_NAMES[field] + "): got " + val
+                    + ", expected " + expectedValue + "; ");
             return false;
         }
         return true;
@@ -280,8 +280,8 @@ public class Koyomi extends GregorianCalendar {
     boolean checkInternalFieldValue(int field, int expectedValue) {
         int val;
         if ((val = internalGet(field)) != expectedValue) {
-            appendMessage("internalGet(" + FIELD_NAMES[field] + "): got " + val +
-                          ", expected " + expectedValue + "; ");
+            appendMessage("internalGet(" + FIELD_NAMES[field] + "): got " + val
+                    + ", expected " + expectedValue + "; ");
             return false;
         }
         return true;

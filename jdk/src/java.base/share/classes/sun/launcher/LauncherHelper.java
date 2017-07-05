@@ -462,6 +462,8 @@ public final class LauncherHelper {
      * This method:
      * 1. Loads the main class from the module or class path
      * 2. Checks the public static void main method.
+     * 3. If the main class extends FX Application then call on FXHelper to
+     * perform the launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the
@@ -479,11 +481,23 @@ public final class LauncherHelper {
         Class<?> mainClass = (mode == LM_MODULE) ? loadModuleMainClass(what)
                                                  : loadMainClass(mode, what);
 
-        validateMainClass(mainClass);
+        // record the real main class for UI purposes
+        // neither method above can return null, they will abort()
+        appClass = mainClass;
 
-        // record main class if not already set
-        if (appClass == null)
-            appClass = mainClass;
+        /*
+         * Check if FXHelper can launch it using the FX launcher. In an FX app,
+         * the main class may or may not have a main method, so do this before
+         * validating the main class.
+         */
+        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
+            doesExtendFXApplication(mainClass)) {
+            // Will abort() if there are problems with FX runtime
+            FXHelper.setFXLaunchParameters(what, mode);
+            mainClass = FXHelper.class;
+        }
+
+        validateMainClass(mainClass);
 
         return mainClass;
     }
@@ -530,7 +544,6 @@ public final class LauncherHelper {
 
             String cn = Normalizer.normalize(mainClass, Normalizer.Form.NFC);
             c = Class.forName(m, cn);
-
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -542,8 +555,6 @@ public final class LauncherHelper {
 
     /**
      * Loads the main class from the class path (LM_CLASS or LM_JAR).
-     * If the main class extends FX Application then call on FXHelper to
-     * determine the main class to launch.
      */
     private static Class<?> loadMainClass(int mode, String what) {
         // get the class name
@@ -570,7 +581,7 @@ public final class LauncherHelper {
             if (System.getProperty("os.name", "").contains("OS X")
                     && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
                 try {
-                    // On Mac OS X since all names with diacretic symbols are
+                    // On Mac OS X since all names with diacritical marks are
                     // given as decomposed it is possible that main class name
                     // comes incorrectly from the command line and we have
                     // to re-compose it
@@ -582,21 +593,6 @@ public final class LauncherHelper {
             } else {
                 abort(cnfe, "java.launcher.cls.error1", cn);
             }
-        }
-
-        // record the main class
-        appClass = mainClass;
-
-        /*
-         * Check if FXHelper can launch it using the FX launcher. In an FX app,
-         * the main class may or may not have a main method, so do this before
-         * validating the main class.
-         */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
-            // Will abort() if there are problems with FX runtime
-            FXHelper.setFXLaunchParameters(what, mode);
-            return FXHelper.class;
         }
         return mainClass;
     }
@@ -773,9 +769,15 @@ public final class LauncherHelper {
          * java -cp somedir FXClass     N/A               LM_CLASS     "LM_CLASS"
          * java -jar fxapp.jar          Present           LM_JAR       "LM_JAR"
          * java -jar fxapp.jar          Not Present       LM_JAR       "LM_JAR"
+         * java -m module/class [1]     N/A               LM_MODULE    "LM_MODULE"
+         * java -m module               N/A               LM_MODULE    "LM_MODULE"
+         *
+         * [1] - JavaFX-Application-Class is ignored when modular args are used, even
+         * if present in a modular jar
          */
         private static final String JAVAFX_LAUNCH_MODE_CLASS = "LM_CLASS";
         private static final String JAVAFX_LAUNCH_MODE_JAR = "LM_JAR";
+        private static final String JAVAFX_LAUNCH_MODE_MODULE = "LM_MODULE";
 
         /*
          * FX application launcher and launch method, so we can launch
@@ -834,6 +836,9 @@ public final class LauncherHelper {
                     break;
                 case LM_JAR:
                     fxLaunchMode = JAVAFX_LAUNCH_MODE_JAR;
+                    break;
+                case LM_MODULE:
+                    fxLaunchMode = JAVAFX_LAUNCH_MODE_MODULE;
                     break;
                 default:
                     // should not have gotten this far...

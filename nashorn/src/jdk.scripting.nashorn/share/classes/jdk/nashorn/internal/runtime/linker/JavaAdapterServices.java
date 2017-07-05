@@ -39,6 +39,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
@@ -51,6 +52,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
@@ -176,6 +178,23 @@ public final class JavaAdapterServices {
     }
 
     /**
+     * Returns the ScriptObject or Global field value from a ScriptObjectMirror using reflection.
+     *
+     * @param mirror the mirror object
+     * @param getGlobal true if we want the global object, false to return the script object
+     * @return the script object or global object
+     */
+    public static ScriptObject unwrapMirror(final Object mirror, final boolean getGlobal) {
+        assert mirror instanceof ScriptObjectMirror;
+        try {
+            final Field field = getGlobal ? MirrorFieldHolder.GLOBAL_FIELD : MirrorFieldHolder.SOBJ_FIELD;
+            return (ScriptObject) field.get(mirror);
+        } catch (final IllegalAccessException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    /**
      * Delegate to {@link Bootstrap#bootstrap(Lookup, String, MethodType, int)}.
      * @param lookup MethodHandle lookup.
      * @param opDesc Dynalink dynamic operation descriptor.
@@ -290,5 +309,25 @@ public final class JavaAdapterServices {
                 MethodHandles.identity(Object[].class)
                 .asCollector(Object[].class, type.parameterCount())
                 .asType(type));
+    }
+
+    // Initialization on demand holder for accessible ScriptObjectMirror fields
+    private static class MirrorFieldHolder {
+
+        private static final Field SOBJ_FIELD   = getMirrorField("sobj");
+        private static final Field GLOBAL_FIELD = getMirrorField("global");
+
+        private static Field getMirrorField(final String fieldName) {
+            try {
+                final Field field = ScriptObjectMirror.class.getDeclaredField(fieldName);
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    field.setAccessible(true);
+                    return null;
+                });
+                return field;
+            } catch (final NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
