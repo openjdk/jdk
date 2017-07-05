@@ -1229,6 +1229,11 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # DST Start: first Saturday of September 2014 (Sun 07 Sep 2014 04:00 UTC)
 # http://www.diariooficial.interior.gob.cl//media/2014/02/19/do-20140219.pdf
 
+# From Juan Correa (2015-01-28):
+# ... today the Ministry of Energy announced that Chile will drop DST, will keep
+# "summer time" (UTC -3 / UTC -5) all year round....
+# http://www.minenergia.cl/ministerio/noticias/generales/ministerio-de-energia-anuncia.html
+
 # NOTE: ChileAQ rules for Antarctic bases are stored separately in the
 # 'antarctica' file.
 
@@ -1270,8 +1275,8 @@ Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	2010	only	-	Apr	Sun>=1	3:00u	0	-
 Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	Chile	2012	max	-	Apr	Sun>=23	3:00u	0	-
-Rule	Chile	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
+Rule	Chile	2012	2015	-	Apr	Sun>=23	3:00u	0	-
+Rule	Chile	2012	2014	-	Sep	Sun>=2	4:00u	1:00	S
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1282,11 +1287,13 @@ Zone America/Santiago	-4:42:46 -	LMT	1890
 			-4:00	-	CLT	1919 Jul  1 # Chile Time
 			-4:42:46 -	SMT	1927 Sep  1 # Santiago Mean Time
 			-5:00	Chile	CL%sT	1947 May 22 # Chile Time
-			-4:00	Chile	CL%sT
+			-4:00	Chile	CL%sT	2015 Apr 26  3:00u
+			-3:00	-	CLT
 Zone Pacific/Easter	-7:17:44 -	LMT	1890
 			-7:17:28 -	EMT	1932 Sep    # Easter Mean Time
-			-7:00	Chile	EAS%sT	1982 Mar 13 21:00 # Easter Time
-			-6:00	Chile	EAS%sT
+			-7:00	Chile	EAS%sT	1982 Mar 13 3:00u # Easter Time
+			-6:00	Chile	EAS%sT	2015 Apr 26 3:00u
+			-5:00	-	EAST
 #
 # Salas y Gómez Island is uninhabited.
 # Other Chilean locations, including Juan Fernández Is, Desventuradas Is,

@@ -103,15 +103,15 @@ if [ -z "${TESTJAVA}" ] ; then
    #if running standalone (no test harness of any kind), compile the
    #support files and the test case
    ${TESTJAVA}/bin/javac -d ${TESTCLASSES} \
-            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}${TESTSRC}" \
+            -classpath "${TESTSRC}" \
             TestScaffold.java VMConnection.java TargetListener.java TargetAdapter.java
    ${TESTJAVA}/bin/javac  -d ${TESTCLASSES} \
-            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}${TESTSRC}" -g \
+            -classpath "${TESTSRC}" -g \
             JITDebug.java
 fi
 echo "JDK under test is: $TESTJAVA"
 #
-CLASSPATH="$TESTJAVA/lib/tools.jar${PATHSEP}${TESTCLASSES}"
+CLASSPATH="${TESTCLASSES}"
 export CLASSPATH
 CP="-classpath \"${CLASSPATH}\""
 #

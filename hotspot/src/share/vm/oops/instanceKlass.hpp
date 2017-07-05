@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,14 +499,15 @@ class InstanceKlass: public Klass {
   static bool method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static);
 
   // find a local method index in default_methods (returns -1 if not found)
-  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static);
+  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature,
+                               OverpassLookupMode overpass_mode, StaticLookupMode static_mode);
 
   // lookup operation (returns NULL if not found)
-  Method* uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const;
+  Method* uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
-  Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature, MethodLookupMode mode) const;
+  Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature, DefaultsLookupMode defaults_mode) const;
 
   // lookup a method in local defaults then in all interfaces
   // (returns NULL if not found)
@@ -1058,8 +1059,10 @@ private:
   Klass* array_klass_impl(bool or_null, TRAPS);
 
   // find a local method (returns NULL if not found)
-  Method* find_method_impl(Symbol* name, Symbol* signature, bool skipping_overpass) const;
-  static Method* find_method_impl(Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass, bool skipping_static);
+  Method* find_method_impl(Symbol* name, Symbol* signature,
+                           OverpassLookupMode overpass_mode, StaticLookupMode static_mode) const;
+  static Method* find_method_impl(Array<Method*>* methods, Symbol* name, Symbol* signature,
+                                  OverpassLookupMode overpass_mode, StaticLookupMode static_mode);
 
   // Free CHeap allocated fields.
   void release_C_heap_structures();

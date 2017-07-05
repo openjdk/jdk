@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,12 +493,7 @@ Symbol* ConstantPool::uncached_klass_ref_at_noresolve(int which) {
 }
 
 char* ConstantPool::string_at_noresolve(int which) {
-  Symbol* s = unresolved_string_at(which);
-  if (s == NULL) {
-    return (char*)"<pseudo-string>";
-  } else {
-    return unresolved_string_at(which)->as_C_string();
-  }
+  return unresolved_string_at(which)->as_C_string();
 }
 
 BasicType ConstantPool::basic_type_for_signature_at(int which) {
@@ -1828,7 +1823,7 @@ void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) 
       // explicitly, because it may require scavenging.
       int obj_index = cp_to_object_index(index);
       pseudo_string_at_put(index, obj_index, patch());
-      DEBUG_ONLY(cp_patches->at_put(index, Handle());)
+     DEBUG_ONLY(cp_patches->at_put(index, Handle());)
     }
   }
 #ifdef ASSERT
