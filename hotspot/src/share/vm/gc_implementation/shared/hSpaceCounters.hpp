@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_HSPACECOUNTERS_HPP
 
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "memory/generation.hpp"
 #include "runtime/perfData.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // A HSpaceCounter is a holder class for performance counters
 // that track a collections (logical spaces) in a heap;

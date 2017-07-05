@@ -5178,9 +5178,7 @@ jint os::init_2(void) {
     if(Verbose && PrintMiscellaneous)
       tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
 #endif
-}
-
-  os::large_page_init();
+  }
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page

@@ -574,6 +574,10 @@ void VMError::report(outputStream* st) {
   STEP(120, "(printing native stack)" )
 
      if (_verbose) {
+     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+       // We have printed the native stack in platform-specific code
+       // Windows/x64 needs special handling.
+     } else {
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
@@ -604,6 +608,7 @@ void VMError::report(outputStream* st) {
           st->cr();
        }
      }
+   }
 
   STEP(130, "(printing Java stack)" )
 

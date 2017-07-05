@@ -105,7 +105,7 @@ bool LIR_Assembler::is_single_instruction(LIR_Op* op) {
         if (src->is_address() && !src->is_stack() && (src->type() == T_OBJECT || src->type() == T_ARRAY)) return false;
       }
 
-      if (UseCompressedKlassPointers) {
+      if (UseCompressedClassPointers) {
         if (src->is_address() && !src->is_stack() && src->type() == T_ADDRESS &&
             src->as_address_ptr()->disp() == oopDesc::klass_offset_in_bytes()) return false;
       }
@@ -963,7 +963,7 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
       case T_METADATA:  __ ld_ptr(base, offset, to_reg->as_register()); break;
       case T_ADDRESS:
 #ifdef _LP64
-        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedKlassPointers) {
+        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedClassPointers) {
           __ lduw(base, offset, to_reg->as_register());
           __ decode_klass_not_null(to_reg->as_register());
         } else
@@ -2208,7 +2208,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedKlassPointers) {
+      if (UseCompressedClassPointers) {
         // We don't need decode because we just need to compare
         __ lduw(src, oopDesc::klass_offset_in_bytes(), tmp);
         __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
@@ -2342,7 +2342,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     metadata2reg(op->expected_type()->constant_encoding(), tmp);
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       // tmp holds the default type. It currently comes uncompressed after the
       // load of a constant, so encode it.
       __ encode_klass_not_null(tmp);
