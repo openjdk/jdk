@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,11 +504,14 @@ public class ClassWriter implements /* imports */ ClassConstants
                             2           /* exp. table len.  */ +
                             2           /* code attr. count */;
 
-            TypeArray exceptionTable = m.getExceptionTable();
-            final int exceptionTableLen = (int) exceptionTable.getLength();
-            if (exceptionTableLen != 0) {
+            boolean hasExceptionTable = m.hasExceptionTable();
+            ExceptionTableElement[] exceptionTable = null;
+            int exceptionTableLen = 0;
+            if (hasExceptionTable) {
+                exceptionTable = m.getExceptionTable();
+                exceptionTableLen = exceptionTable.length;
                 if (DEBUG) debugMessage("\tmethod has exception table");
-                codeSize += (exceptionTableLen / 4) /* exception table is 4-tuple array */
+                codeSize += exceptionTableLen /* exception table is 4-tuple array */
                                          * (2 /* start_pc     */ +
                                             2 /* end_pc       */ +
                                             2 /* handler_pc   */ +
@@ -586,15 +589,15 @@ public class ClassWriter implements /* imports */ ClassConstants
             dos.write(code);
 
             // write exception table size
-            dos.writeShort((short) (exceptionTableLen / 4));
-            if (DEBUG) debugMessage("\texception table length = " + (exceptionTableLen / 4));
+            dos.writeShort((short) exceptionTableLen);
+            if (DEBUG) debugMessage("\texception table length = " + exceptionTableLen);
 
             if (exceptionTableLen != 0) {
-                for (int e = 0; e < exceptionTableLen; e += 4) {
-                     dos.writeShort((short) exceptionTable.getIntAt(e));
-                     dos.writeShort((short) exceptionTable.getIntAt(e + 1));
-                     dos.writeShort((short) exceptionTable.getIntAt(e + 2));
-                     dos.writeShort((short) exceptionTable.getIntAt(e + 3));
+                for (int e = 0; e < exceptionTableLen; e++) {
+                     dos.writeShort((short) exceptionTable[e].getStartPC());
+                     dos.writeShort((short) exceptionTable[e].getEndPC());
+                     dos.writeShort((short) exceptionTable[e].getHandlerPC());
+                     dos.writeShort((short) exceptionTable[e].getCatchTypeIndex());
                 }
             }
 

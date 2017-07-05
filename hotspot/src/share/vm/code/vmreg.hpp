@@ -131,6 +131,10 @@ public:
     assert((is_reg() && value() < stack0->value() - 1) || is_stack(), "must be");
     return (VMReg)(intptr_t)(value() + 1);
   }
+  VMReg next(int i) {
+    assert((is_reg() && value() < stack0->value() - i) || is_stack(), "must be");
+    return (VMReg)(intptr_t)(value() + i);
+  }
   VMReg prev() {
     assert((is_stack() && value() > stack0->value()) || (is_reg() && value() != 0), "must be");
     return (VMReg)(intptr_t)(value() - 1);
