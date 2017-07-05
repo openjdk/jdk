@@ -160,6 +160,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_trans(vmIntrinsics::ID id);
   bool inline_abs(vmIntrinsics::ID id);
   bool inline_sqrt(vmIntrinsics::ID id);
+  void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_pow(vmIntrinsics::ID id);
   bool inline_exp(vmIntrinsics::ID id);
   bool inline_min_max(vmIntrinsics::ID id);
@@ -1535,39 +1536,78 @@ bool LibraryCallKit::inline_abs(vmIntrinsics::ID id) {
   return true;
 }
 
+void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName) {
+  //-------------------
+  //result=(result.isNaN())? funcAddr():result;
+  // Check: If isNaN() by checking result!=result? then either trap
+  // or go to runtime
+  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
+  // Build the boolean node
+  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
+
+  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
+    {
+      BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
+      // End the current control-flow path
+      push_pair(x);
+      if (y != NULL) {
+        push_pair(y);
+      }
+      // The pow or exp intrinsic returned a NaN, which requires a call
+      // to the runtime.  Recompile with the runtime call.
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+    }
+    push_pair(result);
+  } else {
+    // If this inlining ever returned NaN in the past, we compile a call
+    // to the runtime to properly handle corner cases
+
+    IfNode* iff = create_and_xform_if(control(), bolisnum, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
+    Node* if_slow = _gvn.transform( new (C, 1) IfFalseNode(iff) );
+    Node* if_fast = _gvn.transform( new (C, 1) IfTrueNode(iff) );
+
+    if (!if_slow->is_top()) {
+      RegionNode* result_region = new(C, 3) RegionNode(3);
+      PhiNode*    result_val = new (C, 3) PhiNode(result_region, Type::DOUBLE);
+
+      result_region->init_req(1, if_fast);
+      result_val->init_req(1, result);
+
+      set_control(if_slow);
+
+      const TypePtr* no_memory_effects = NULL;
+      Node* rt = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
+                                   no_memory_effects,
+                                   x, top(), y, y ? top() : NULL);
+      Node* value = _gvn.transform(new (C, 1) ProjNode(rt, TypeFunc::Parms+0));
+#ifdef ASSERT
+      Node* value_top = _gvn.transform(new (C, 1) ProjNode(rt, TypeFunc::Parms+1));
+      assert(value_top == top(), "second value must be top");
+#endif
+
+      result_region->init_req(2, control());
+      result_val->init_req(2, value);
+      push_result(result_region, result_val);
+    } else {
+      push_pair(result);
+    }
+  }
+}
+
 //------------------------------inline_exp-------------------------------------
 // Inline exp instructions, if possible.  The Intel hardware only misses
 // really odd corner cases (+/- Infinity).  Just uncommon-trap them.
 bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
   assert(id == vmIntrinsics::_dexp, "Not exp");
 
-  // If this inlining ever returned NaN in the past, we do not intrinsify it
-  // every again.  NaN results requires StrictMath.exp handling.
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
-
   _sp += arg_size();        // restore stack pointer
   Node *x = pop_math_arg();
   Node *result = _gvn.transform(new (C, 2) ExpDNode(0,x));
 
-  //-------------------
-  //result=(result.isNaN())? StrictMath::exp():result;
-  // Check: If isNaN() by checking result!=result? then go to Strict Math
-  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
-  // Build the boolean node
-  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
-
-  { BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
-    // End the current control-flow path
-    push_pair(x);
-    // Math.exp intrinsic returned a NaN, which requires StrictMath.exp
-    // to handle.  Recompile without intrinsifying Math.exp
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
-  }
+  finish_pow_exp(result, x, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-  push_pair(result);
 
   return true;
 }
@@ -1577,17 +1617,12 @@ bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   assert(id == vmIntrinsics::_dpow, "Not pow");
 
-  // If this inlining ever returned NaN in the past, we do not intrinsify it
-  // every again.  NaN results requires StrictMath.pow handling.
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
-
-  // Do not intrinsify on older platforms which lack cmove.
-  if (ConditionalMoveLimit == 0)  return false;
-
   // Pseudocode for pow
   // if (x <= 0.0) {
-  //   if ((double)((int)y)==y) { // if y is int
-  //     result = ((1&(int)y)==0)?-DPow(abs(x), y):DPow(abs(x), y)
+  //   long longy = (long)y;
+  //   if ((double)longy == y) { // if y is long
+  //     if (y + 1 == y) longy = 0; // huge number: even
+  //     result = ((1&longy) == 0)?-DPow(abs(x), y):DPow(abs(x), y);
   //   } else {
   //     result = NaN;
   //   }
@@ -1595,7 +1630,7 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   //   result = DPow(x,y);
   // }
   // if (result != result)?  {
-  //   uncommon_trap();
+  //   result = uncommon_trap() or runtime_call();
   // }
   // return result;
 
@@ -1603,15 +1638,14 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   Node* y = pop_math_arg();
   Node* x = pop_math_arg();
 
-  Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
+  Node* result = NULL;
 
-  // Short form: if not top-level (i.e., Math.pow but inlining Math.pow
-  // inside of something) then skip the fancy tests and just check for
-  // NaN result.
-  Node *result = NULL;
-  if( jvms()->depth() >= 1 ) {
-    result = fast_result;
+  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
+    // Short form: skip the fancy tests and just check for NaN result.
+    result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
   } else {
+    // If this inlining ever returned NaN in the past, include all
+    // checks + call to the runtime.
 
     // Set the merge point for If node with condition of (x <= 0.0)
     // There are four possible paths to region node and phi node
@@ -1627,55 +1661,95 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
     Node *bol1 = _gvn.transform( new (C, 2) BoolNode( cmp, BoolTest::le ) );
     // Branch either way
     IfNode *if1 = create_and_xform_if(control(),bol1, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    Node *opt_test = _gvn.transform(if1);
-    //assert( opt_test->is_If(), "Expect an IfNode");
-    IfNode *opt_if1 = (IfNode*)opt_test;
     // Fast path taken; set region slot 3
-    Node *fast_taken = _gvn.transform( new (C, 1) IfFalseNode(opt_if1) );
+    Node *fast_taken = _gvn.transform( new (C, 1) IfFalseNode(if1) );
     r->init_req(3,fast_taken); // Capture fast-control
 
     // Fast path not-taken, i.e. slow path
-    Node *complex_path = _gvn.transform( new (C, 1) IfTrueNode(opt_if1) );
+    Node *complex_path = _gvn.transform( new (C, 1) IfTrueNode(if1) );
 
     // Set fast path result
-    Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, y, x) );
+    Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
     phi->init_req(3, fast_result);
 
     // Complex path
-    // Build the second if node (if y is int)
-    // Node for (int)y
-    Node *inty = _gvn.transform( new (C, 2) ConvD2INode(y));
-    // Node for (double)((int) y)
-    Node *doubleinty= _gvn.transform( new (C, 2) ConvI2DNode(inty));
-    // Check (double)((int) y) : y
-    Node *cmpinty= _gvn.transform(new (C, 3) CmpDNode(doubleinty, y));
-    // Check if (y isn't int) then go to slow path
+    // Build the second if node (if y is long)
+    // Node for (long)y
+    Node *longy = _gvn.transform( new (C, 2) ConvD2LNode(y));
+    // Node for (double)((long) y)
+    Node *doublelongy= _gvn.transform( new (C, 2) ConvL2DNode(longy));
+    // Check (double)((long) y) : y
+    Node *cmplongy= _gvn.transform(new (C, 3) CmpDNode(doublelongy, y));
+    // Check if (y isn't long) then go to slow path
 
-    Node *bol2 = _gvn.transform( new (C, 2) BoolNode( cmpinty, BoolTest::ne ) );
+    Node *bol2 = _gvn.transform( new (C, 2) BoolNode( cmplongy, BoolTest::ne ) );
     // Branch either way
     IfNode *if2 = create_and_xform_if(complex_path,bol2, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    Node *slow_path = opt_iff(r,if2); // Set region path 2
+    Node* ylong_path = _gvn.transform( new (C, 1) IfFalseNode(if2));
 
-    // Calculate DPow(abs(x), y)*(1 & (int)y)
+    Node *slow_path = _gvn.transform( new (C, 1) IfTrueNode(if2) );
+
+    // Calculate DPow(abs(x), y)*(1 & (long)y)
     // Node for constant 1
-    Node *conone = intcon(1);
-    // 1& (int)y
-    Node *signnode= _gvn.transform( new (C, 3) AndINode(conone, inty) );
+    Node *conone = longcon(1);
+    // 1& (long)y
+    Node *signnode= _gvn.transform( new (C, 3) AndLNode(conone, longy) );
+
+    // A huge number is always even. Detect a huge number by checking
+    // if y + 1 == y and set integer to be tested for parity to 0.
+    // Required for corner case:
+    // (long)9.223372036854776E18 = max_jlong
+    // (double)(long)9.223372036854776E18 = 9.223372036854776E18
+    // max_jlong is odd but 9.223372036854776E18 is even
+    Node* yplus1 = _gvn.transform( new (C, 3) AddDNode(y, makecon(TypeD::make(1))));
+    Node *cmpyplus1= _gvn.transform(new (C, 3) CmpDNode(yplus1, y));
+    Node *bolyplus1 = _gvn.transform( new (C, 2) BoolNode( cmpyplus1, BoolTest::eq ) );
+    Node* correctedsign = NULL;
+    if (ConditionalMoveLimit != 0) {
+      correctedsign = _gvn.transform( CMoveNode::make(C, NULL, bolyplus1, signnode, longcon(0), TypeLong::LONG));
+    } else {
+      IfNode *ifyplus1 = create_and_xform_if(ylong_path,bolyplus1, PROB_FAIR, COUNT_UNKNOWN);
+      RegionNode *r = new (C, 3) RegionNode(3);
+      Node *phi = new (C, 3) PhiNode(r, TypeLong::LONG);
+      r->init_req(1, _gvn.transform( new (C, 1) IfFalseNode(ifyplus1)));
+      r->init_req(2, _gvn.transform( new (C, 1) IfTrueNode(ifyplus1)));
+      phi->init_req(1, signnode);
+      phi->init_req(2, longcon(0));
+      correctedsign = _gvn.transform(phi);
+      ylong_path = _gvn.transform(r);
+      record_for_igvn(r);
+    }
+
     // zero node
-    Node *conzero = intcon(0);
-    // Check (1&(int)y)==0?
-    Node *cmpeq1 = _gvn.transform(new (C, 3) CmpINode(signnode, conzero));
-    // Check if (1&(int)y)!=0?, if so the result is negative
+    Node *conzero = longcon(0);
+    // Check (1&(long)y)==0?
+    Node *cmpeq1 = _gvn.transform(new (C, 3) CmpLNode(correctedsign, conzero));
+    // Check if (1&(long)y)!=0?, if so the result is negative
     Node *bol3 = _gvn.transform( new (C, 2) BoolNode( cmpeq1, BoolTest::ne ) );
     // abs(x)
     Node *absx=_gvn.transform( new (C, 2) AbsDNode(x));
     // abs(x)^y
-    Node *absxpowy = _gvn.transform( new (C, 3) PowDNode(0, y, absx) );
+    Node *absxpowy = _gvn.transform( new (C, 3) PowDNode(0, absx, y) );
     // -abs(x)^y
     Node *negabsxpowy = _gvn.transform(new (C, 2) NegDNode (absxpowy));
-    // (1&(int)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
-    Node *signresult = _gvn.transform( CMoveNode::make(C, NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
+    // (1&(long)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
+    Node *signresult = NULL;
+    if (ConditionalMoveLimit != 0) {
+      signresult = _gvn.transform( CMoveNode::make(C, NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
+    } else {
+      IfNode *ifyeven = create_and_xform_if(ylong_path,bol3, PROB_FAIR, COUNT_UNKNOWN);
+      RegionNode *r = new (C, 3) RegionNode(3);
+      Node *phi = new (C, 3) PhiNode(r, Type::DOUBLE);
+      r->init_req(1, _gvn.transform( new (C, 1) IfFalseNode(ifyeven)));
+      r->init_req(2, _gvn.transform( new (C, 1) IfTrueNode(ifyeven)));
+      phi->init_req(1, absxpowy);
+      phi->init_req(2, negabsxpowy);
+      signresult = _gvn.transform(phi);
+      ylong_path = _gvn.transform(r);
+      record_for_igvn(r);
+    }
     // Set complex path fast result
+    r->init_req(2, ylong_path);
     phi->init_req(2, signresult);
 
     static const jlong nan_bits = CONST64(0x7ff8000000000000);
@@ -1689,26 +1763,9 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
     result=_gvn.transform(phi);
   }
 
-  //-------------------
-  //result=(result.isNaN())? uncommon_trap():result;
-  // Check: If isNaN() by checking result!=result? then go to Strict Math
-  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
-  // Build the boolean node
-  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
-
-  { BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
-    // End the current control-flow path
-    push_pair(x);
-    push_pair(y);
-    // Math.pow intrinsic returned a NaN, which requires StrictMath.pow
-    // to handle.  Recompile without intrinsifying Math.pow.
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
-  }
+  finish_pow_exp(result, x, y, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-  push_pair(result);
 
   return true;
 }

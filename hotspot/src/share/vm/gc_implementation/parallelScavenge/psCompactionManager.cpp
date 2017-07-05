@@ -81,14 +81,14 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   uint parallel_gc_threads = PSParallelCompact::gc_task_manager()->workers();
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
-  _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1 );
+  _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
   guarantee(_manager_array != NULL, "Could not allocate manager_array");
 
   _region_list = NEW_C_HEAP_ARRAY(RegionTaskQueue*,
-                                         parallel_gc_threads+1);
+                         parallel_gc_threads+1, mtGC);
   guarantee(_region_list != NULL, "Could not initialize promotion manager");
 
-  _recycled_stack_index = NEW_C_HEAP_ARRAY(uint, parallel_gc_threads);
+  _recycled_stack_index = NEW_C_HEAP_ARRAY(uint, parallel_gc_threads, mtGC);
 
   // parallel_gc-threads + 1 to be consistent with the number of
   // compaction managers.

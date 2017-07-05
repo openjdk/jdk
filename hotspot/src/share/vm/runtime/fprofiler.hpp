@@ -121,7 +121,7 @@ public:
 };
 #endif // FPROF_KERNEL
 
-class ThreadProfiler: public CHeapObj {
+class ThreadProfiler: public CHeapObj<mtInternal> {
 public:
   ThreadProfiler()    KERNEL_RETURN;
   ~ThreadProfiler()   KERNEL_RETURN;

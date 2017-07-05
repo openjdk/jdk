@@ -29,7 +29,7 @@
 
 class G1CollectorPolicy;
 
-class SurvRateGroup : public CHeapObj {
+class SurvRateGroup : public CHeapObj<mtGC> {
 private:
   G1CollectorPolicy* _g1p;
   const char* _name;
