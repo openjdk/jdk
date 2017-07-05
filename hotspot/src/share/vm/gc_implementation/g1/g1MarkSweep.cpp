@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/genCollectedHeap.hpp"
@@ -126,7 +127,7 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  TraceTime tm("phase 1", PrintGC && Verbose, true, gclog_or_tty);
+  TraceTime tm("phase 1", G1Log::fine() && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace(" 1");
 
   SharedHeap* sh = SharedHeap::heap();
@@ -192,8 +193,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // fail. At the end of the GC, the orginal mark word values
     // (including hash values) are restored to the appropriate
     // objects.
-    Universe::heap()->verify(/* allow dirty */ true,
-                             /* silent      */ false,
+    Universe::heap()->verify(/* silent      */ false,
                              /* option      */ VerifyOption_G1UseMarkWord);
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -291,7 +291,7 @@ void G1MarkSweep::mark_sweep_phase2() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   Generation* pg = g1h->perm_gen();
 
-  TraceTime tm("phase 2", PrintGC && Verbose, true, gclog_or_tty);
+  TraceTime tm("phase 2", G1Log::fine() && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("2");
 
   FindFirstRegionClosure cl;
@@ -335,7 +335,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   Generation* pg = g1h->perm_gen();
 
   // Adjust the pointers to reflect the new locations
-  TraceTime tm("phase 3", PrintGC && Verbose, true, gclog_or_tty);
+  TraceTime tm("phase 3", G1Log::fine() && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("3");
 
   SharedHeap* sh = SharedHeap::heap();
@@ -399,7 +399,7 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   Generation* pg = g1h->perm_gen();
 
-  TraceTime tm("phase 4", PrintGC && Verbose, true, gclog_or_tty);
+  TraceTime tm("phase 4", G1Log::fine() && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("4");
 
   pg->compact();

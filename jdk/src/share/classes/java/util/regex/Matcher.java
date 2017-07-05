@@ -759,16 +759,19 @@ public final class Matcher implements MatchResult {
             char nextChar = replacement.charAt(cursor);
             if (nextChar == '\\') {
                 cursor++;
+                if (cursor == replacement.length())
+                    throw new IllegalArgumentException(
+                        "character to be escaped is missing");
                 nextChar = replacement.charAt(cursor);
                 result.append(nextChar);
                 cursor++;
             } else if (nextChar == '$') {
                 // Skip past $
                 cursor++;
-                // A StringIndexOutOfBoundsException is thrown if
-                // this "$" is the last character in replacement
-                // string in current implementation, a IAE might be
-                // more appropriate.
+                // Throw IAE if this "$" is the last character in replacement
+                if (cursor == replacement.length())
+                   throw new IllegalArgumentException(
+                        "Illegal group reference: group index is missing");
                 nextChar = replacement.charAt(cursor);
                 int refNum = -1;
                 if (nextChar == '{') {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import sun.nio.cs.CharsetMapping;
 
@@ -73,8 +75,12 @@ public class SJIS_0213 extends Charset {
         return new Encoder(this);
     }
 
-    static CharsetMapping mapping =
-        CharsetMapping.get(SJIS_0213.class.getResourceAsStream("sjis0213.dat"));
+    static CharsetMapping mapping = AccessController.doPrivileged(
+        new PrivilegedAction<CharsetMapping>() {
+            public CharsetMapping run() {
+                return CharsetMapping.get(SJIS_0213.class.getResourceAsStream("sjis0213.dat"));
+            }
+        });
 
     protected static class Decoder extends CharsetDecoder {
         protected static final char UNMAPPABLE = CharsetMapping.UNMAPPABLE_DECODING;

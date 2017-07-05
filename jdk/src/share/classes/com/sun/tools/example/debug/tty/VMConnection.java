@@ -114,6 +114,23 @@ class VMConnection {
             String value = token.substring(index + 1,
                                            token.length() - 1); // Remove comma delimiter
 
+            /*
+             * for values enclosed in quotes (single and/or double quotes)
+             * strip off enclosing quote chars
+             * needed for quote enclosed delimited substrings
+             */
+            if (name.equals("options")) {
+                StringBuilder sb = new StringBuilder();
+                for (String s : splitStringAtNonEnclosedWhiteSpace(value)) {
+                    while (isEnclosed(s, "\"") || isEnclosed(s, "'")) {
+                        s = s.substring(1, s.length() - 1);
+                    }
+                    sb.append(s);
+                    sb.append(" ");
+                }
+                value = sb.toString();
+            }
+
             Connector.Argument argument = arguments.get(name);
             if (argument == null) {
                 throw new IllegalArgumentException
@@ -134,6 +151,152 @@ class VMConnection {
                 (MessageOutput.format("Illegal connector argument", argString));
         }
         return arguments;
+    }
+
+    private static boolean isEnclosed(String value, String enclosingChar) {
+        if (value.indexOf(enclosingChar) == 0) {
+            int lastIndex = value.lastIndexOf(enclosingChar);
+            if (lastIndex > 0 && lastIndex  == value.length() - 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<String> splitStringAtNonEnclosedWhiteSpace(String value) throws IllegalArgumentException {
+        List<String> al = new ArrayList<String>();
+        char[] arr;
+        int startPosition = 0;
+        int endPosition = 0;
+        final char SPACE = ' ';
+        final char DOUBLEQ = '"';
+        final char SINGLEQ = '\'';
+
+        /*
+         * An "open" or "active" enclosing state is where
+         * the first valid start quote qualifier is found,
+         * and there is a search in progress for the
+         * relevant end matching quote
+         *
+         * enclosingTargetChar set to SPACE
+         * is used to signal a non open enclosing state
+         */
+        char enclosingTargetChar = SPACE;
+
+        if (value == null) {
+            throw new IllegalArgumentException
+                (MessageOutput.format("value string is null"));
+        }
+
+        // split parameter string into individual chars
+        arr = value.toCharArray();
+
+        for (int i = 0; i < arr.length; i++) {
+            switch (arr[i]) {
+                case SPACE: {
+                    // do nothing for spaces
+                    // unless last in array
+                    if (isLastChar(arr, i)) {
+                        endPosition = i;
+                        // break for substring creation
+                        break;
+                    }
+                    continue;
+                }
+                case DOUBLEQ:
+                case SINGLEQ: {
+                    if (enclosingTargetChar == arr[i]) {
+                        // potential match to close open enclosing
+                        if (isNextCharWhitespace(arr, i)) {
+                            // if peek next is whitespace
+                            // then enclosing is a valid substring
+                            endPosition = i;
+                            // reset enclosing target char
+                            enclosingTargetChar = SPACE;
+                            // break for substring creation
+                            break;
+                        }
+                    }
+                    if (enclosingTargetChar == SPACE) {
+                        // no open enclosing state
+                        // handle as normal char
+                        if (isPreviousCharWhitespace(arr, i)) {
+                            startPosition = i;
+                            // peek forward for end candidates
+                            if (value.indexOf(arr[i], i + 1) >= 0) {
+                                // set open enclosing state by
+                                // setting up the target char
+                                enclosingTargetChar = arr[i];
+                            } else {
+                                // no more target chars left to match
+                                // end enclosing, handle as normal char
+                                if (isNextCharWhitespace(arr, i)) {
+                                    endPosition = i;
+                                    // break for substring creation
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
+                default: {
+                    // normal non-space, non-" and non-' chars
+                    if (enclosingTargetChar == SPACE) {
+                        // no open enclosing state
+                        if (isPreviousCharWhitespace(arr, i)) {
+                            // start of space delim substring
+                            startPosition = i;
+                        }
+                        if (isNextCharWhitespace(arr, i)) {
+                            // end of space delim substring
+                            endPosition = i;
+                            // break for substring creation
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+
+            // break's end up here
+            if (startPosition > endPosition) {
+                throw new IllegalArgumentException
+                    (MessageOutput.format("Illegal option values"));
+            }
+
+            // extract substring and add to List<String>
+            al.add(value.substring(startPosition, ++endPosition));
+
+            // set new start position
+            i = startPosition = endPosition;
+
+        } // for loop
+
+        return al;
+    }
+
+    static private boolean isPreviousCharWhitespace(char[] arr, int curr_pos) {
+        return isCharWhitespace(arr, curr_pos - 1);
+    }
+
+    static private boolean isNextCharWhitespace(char[] arr, int curr_pos) {
+        return isCharWhitespace(arr, curr_pos + 1);
+    }
+
+    static private boolean isCharWhitespace(char[] arr, int pos) {
+        if (pos < 0 || pos >= arr.length) {
+            // outside arraybounds is considered an implicit space
+            return true;
+        }
+        if (arr[pos] == ' ') {
+            return true;
+        }
+        return false;
+    }
+
+    static private boolean isLastChar(char[] arr, int pos) {
+        return (pos + 1 == arr.length);
     }
 
     VMConnection(String connectSpec, int traceFlags) {
