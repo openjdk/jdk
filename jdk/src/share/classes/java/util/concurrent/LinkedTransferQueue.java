@@ -37,10 +37,10 @@ package java.util.concurrent;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -450,7 +450,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         }
 
         final boolean casItem(Object cmp, Object val) {
-            //            assert cmp == null || cmp.getClass() != Node.class;
+            // assert cmp == null || cmp.getClass() != Node.class;
             return UNSAFE.compareAndSwapObject(this, itemOffset, cmp, val);
         }
 
@@ -516,7 +516,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * Tries to artificially match a data node -- used by remove.
          */
         final boolean tryMatchData() {
-            //            assert isData;
+            // assert isData;
             Object x = item;
             if (x != null && x != this && casItem(x, null)) {
                 LockSupport.unpark(waiter);
@@ -569,7 +569,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     @SuppressWarnings("unchecked")
     static <E> E cast(Object item) {
-        //        assert item == null || item.getClass() != Node.class;
+        // assert item == null || item.getClass() != Node.class;
         return (E) item;
     }
 
@@ -588,7 +588,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             throw new NullPointerException();
         Node s = null;                        // the node to append, if needed
 
-        retry: for (;;) {                     // restart on append race
+        retry:
+        for (;;) {                            // restart on append race
 
             for (Node h = head, p = h; p != null;) { // find & match first node
                 boolean isData = p.isData;
@@ -599,7 +600,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                     if (p.casItem(item, e)) { // match
                         for (Node q = p; q != h;) {
                             Node n = q.next;  // update by 2 unless singleton
-                            if (head == h && casHead(h, n == null? q : n)) {
+                            if (head == h && casHead(h, n == null ? q : n)) {
                                 h.forgetNext();
                                 break;
                             }                 // advance and retry
@@ -684,7 +685,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         for (;;) {
             Object item = s.item;
             if (item != e) {                  // matched
-                //                assert item != s;
+                // assert item != s;
                 s.forgetContents();           // avoid garbage
                 return this.<E>cast(item);
             }
@@ -809,22 +810,61 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * Moves to next node after prev, or first node if prev null.
          */
         private void advance(Node prev) {
-            lastPred = lastRet;
-            lastRet = prev;
-            for (Node p = (prev == null) ? head : succ(prev);
-                 p != null; p = succ(p)) {
-                Object item = p.item;
-                if (p.isData) {
-                    if (item != null && item != p) {
-                        nextItem = LinkedTransferQueue.this.<E>cast(item);
-                        nextNode = p;
+            /*
+             * To track and avoid buildup of deleted nodes in the face
+             * of calls to both Queue.remove and Itr.remove, we must
+             * include variants of unsplice and sweep upon each
+             * advance: Upon Itr.remove, we may need to catch up links
+             * from lastPred, and upon other removes, we might need to
+             * skip ahead from stale nodes and unsplice deleted ones
+             * found while advancing.
+             */
+
+            Node r, b; // reset lastPred upon possible deletion of lastRet
+            if ((r = lastRet) != null && !r.isMatched())
+                lastPred = r;    // next lastPred is old lastRet
+            else if ((b = lastPred) == null || b.isMatched())
+                lastPred = null; // at start of list
+            else {
+                Node s, n;       // help with removal of lastPred.next
+                while ((s = b.next) != null &&
+                       s != b && s.isMatched() &&
+                       (n = s.next) != null && n != s)
+                    b.casNext(s, n);
+            }
+
+            this.lastRet = prev;
+
+            for (Node p = prev, s, n;;) {
+                s = (p == null) ? head : p.next;
+                if (s == null)
+                    break;
+                else if (s == p) {
+                    p = null;
+                    continue;
+                }
+                Object item = s.item;
+                if (s.isData) {
+                    if (item != null && item != s) {
+                        nextItem = LinkedTransferQueue.<E>cast(item);
+                        nextNode = s;
                         return;
                     }
                 }
                 else if (item == null)
                     break;
+                // assert s.isMatched();
+                if (p == null)
+                    p = s;
+                else if ((n = s.next) == null)
+                    break;
+                else if (s == n)
+                    p = null;
+                else
+                    p.casNext(s, n);
             }
             nextNode = null;
+            nextItem = null;
         }
 
         Itr() {
@@ -844,10 +884,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         }
 
         public final void remove() {
-            Node p = lastRet;
-            if (p == null) throw new IllegalStateException();
-            if (p.tryMatchData())
-                unsplice(lastPred, p);
+            final Node lastRet = this.lastRet;
+            if (lastRet == null)
+                throw new IllegalStateException();
+            this.lastRet = null;
+            if (lastRet.tryMatchData())
+                unsplice(lastPred, lastRet);
         }
     }
 
@@ -997,8 +1039,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Inserts the specified element at the tail of this queue.
      * As the queue is unbounded, this method will never return {@code false}.
      *
-     * @return {@code true} (as specified by
-     *         {@link BlockingQueue#offer(Object) BlockingQueue.offer})
+     * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
@@ -1130,15 +1171,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Returns an iterator over the elements in this queue in proper
-     * sequence, from head to tail.
+     * Returns an iterator over the elements in this queue in proper sequence.
+     * The elements will be returned in order from first (head) to last (tail).
      *
      * <p>The returned iterator is a "weakly consistent" iterator that
-     * will never throw
-     * {@link ConcurrentModificationException ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
-     * construction of the iterator, and may (but is not guaranteed
-     * to) reflect any modifications subsequent to construction.
+     * will never throw {@link java.util.ConcurrentModificationException
+     * ConcurrentModificationException}, and guarantees to traverse
+     * elements as they existed upon construction of the iterator, and
+     * may (but is not guaranteed to) reflect any modifications
+     * subsequent to construction.
      *
      * @return an iterator over the elements in this queue in proper sequence
      */
@@ -1200,6 +1241,28 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     public boolean remove(Object o) {
         return findAndRemove(o);
+    }
+
+    /**
+     * Returns {@code true} if this queue contains the specified element.
+     * More formally, returns {@code true} if and only if this queue contains
+     * at least one element {@code e} such that {@code o.equals(e)}.
+     *
+     * @param o object to be checked for containment in this queue
+     * @return {@code true} if this queue contains the specified element
+     */
+    public boolean contains(Object o) {
+        if (o == null) return false;
+        for (Node p = head; p != null; p = succ(p)) {
+            Object item = p.item;
+            if (p.isData) {
+                if (item != null && item != p && o.equals(item))
+                    return true;
+            }
+            else if (item == null)
+                break;
+        }
+        return false;
     }
 
     /**

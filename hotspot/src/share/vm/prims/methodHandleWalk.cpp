@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,6 @@ BasicType MethodHandleChain::compute_bound_arg_type(oop target, methodOop m, int
 
 
 void MethodHandleChain::lose(const char* msg, TRAPS) {
-  assert(false, "lose");
   _lose_message = msg;
   if (!THREAD->is_Java_thread() || ((JavaThread*)THREAD)->thread_state() != _thread_in_vm) {
     // throw a preallocated exception

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2187,8 +2187,11 @@ const TypePtr *TypeRawPtr::add_offset( intptr_t offset ) const {
   case TypePtr::NotNull:
     return this;
   case TypePtr::Null:
-  case TypePtr::Constant:
-    return make( _bits+offset );
+  case TypePtr::Constant: {
+    address bits = _bits+offset;
+    if ( bits == 0 ) return TypePtr::NULL_PTR;
+    return make( bits );
+  }
   default:  ShouldNotReachHere();
   }
   return NULL;                  // Lint noise

@@ -61,7 +61,7 @@ public class ParagraphView extends javax.swing.text.ParagraphView {
      * <p>
      * This is implemented
      * to forward to the superclass as well as call the
-     * <a href="#setPropertiesFromAttributes">setPropertiesFromAttributes</a>
+     * {@link #setPropertiesFromAttributes setPropertiesFromAttributes}
      * method to set the paragraph properties from the css
      * attributes.  The call is made at this time to ensure
      * the ability to resolve upward through the parents

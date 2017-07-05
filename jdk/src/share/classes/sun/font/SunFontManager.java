@@ -1576,7 +1576,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                                    .info("Trying to resolve file " + fullPath);
                 }
                 do {
-                    ttf = new TrueTypeFont(fullPath, null, fn++, true);
+                    ttf = new TrueTypeFont(fullPath, null, fn++, false);
                     //  prefer the font's locale name.
                     String fontName = ttf.getFontName(l).toLowerCase();
                     if (unmappedFonts.contains(fontName)) {
@@ -1595,6 +1595,207 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
     }
 
+    /* Hardwire the English names and expected file names of fonts
+     * commonly used at start up. Avoiding until later even the small
+     * cost of calling platform APIs to locate these can help.
+     * The code that registers these fonts needs to "bail" if any
+     * of the files do not exist, so it will verify the existence of
+     * all non-null file names first.
+     * They are added in to a map with nominally the first
+     * word in the name of the family as the key. In all the cases
+     * we are using the the family name is a single word, and as is
+     * more or less required the family name is the initial sequence
+     * in a full name. So lookup first finds the matching description,
+     * then registers the whole family, returning the right font.
+     */
+    public static class FamilyDescription {
+        public String familyName;
+        public String plainFullName;
+        public String boldFullName;
+        public String italicFullName;
+        public String boldItalicFullName;
+        public String plainFileName;
+        public String boldFileName;
+        public String italicFileName;
+        public String boldItalicFileName;
+    }
+
+    static HashMap<String, FamilyDescription> platformFontMap;
+
+    /**
+     * default implementation does nothing.
+     */
+    public HashMap<String, FamilyDescription> populateHardcodedFileNameMap() {
+        return new HashMap<String, FamilyDescription>(0);
+    }
+
+    Font2D findFontFromPlatformMap(String lcName, int style) {
+        if (platformFontMap == null) {
+            platformFontMap = populateHardcodedFileNameMap();
+        }
+
+        if (platformFontMap == null || platformFontMap.size() == 0) {
+            return null;
+        }
+
+        int spaceIndex = lcName.indexOf(' ');
+        String firstWord = lcName;
+        if (spaceIndex > 0) {
+            firstWord = lcName.substring(0, spaceIndex);
+        }
+
+        FamilyDescription fd = platformFontMap.get(firstWord);
+        if (fd == null) {
+            return null;
+        }
+        /* Once we've established that its at least the first word,
+         * we need to dig deeper to make sure its a match for either
+         * a full name, or the family name, to make sure its not
+         * a request for some other font that just happens to start
+         * with the same first word.
+         */
+        int styleIndex = -1;
+        if (lcName.equalsIgnoreCase(fd.plainFullName)) {
+            styleIndex = 0;
+        } else if (lcName.equalsIgnoreCase(fd.boldFullName)) {
+            styleIndex = 1;
+        } else if (lcName.equalsIgnoreCase(fd.italicFullName)) {
+            styleIndex = 2;
+        } else if (lcName.equalsIgnoreCase(fd.boldItalicFullName)) {
+            styleIndex = 3;
+        }
+        if (styleIndex == -1 && !lcName.equalsIgnoreCase(fd.familyName)) {
+            return null;
+        }
+
+        String plainFile = null, boldFile = null,
+            italicFile = null, boldItalicFile = null;
+
+        boolean failure = false;
+        /* In a terminal server config, its possible that getPathName()
+         * will return null, if the file doesn't exist, hence the null
+         * checks on return. But in the normal client config we need to
+         * follow this up with a check to see if all the files really
+         * exist for the non-null paths.
+         */
+         getPlatformFontDirs(noType1Font);
+
+        if (fd.plainFileName != null) {
+            plainFile = getPathName(fd.plainFileName);
+            if (plainFile == null) {
+                failure = true;
+            }
+        }
+
+        if (fd.boldFileName != null) {
+            boldFile = getPathName(fd.boldFileName);
+            if (boldFile == null) {
+                failure = true;
+            }
+        }
+
+        if (fd.italicFileName != null) {
+            italicFile = getPathName(fd.italicFileName);
+            if (italicFile == null) {
+                failure = true;
+            }
+        }
+
+        if (fd.boldItalicFileName != null) {
+            boldItalicFile = getPathName(fd.boldItalicFileName);
+            if (boldItalicFile == null) {
+                failure = true;
+            }
+        }
+
+        if (failure) {
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().
+                    info("Hardcoded file missing looking for " + lcName);
+            }
+            platformFontMap.remove(firstWord);
+            return null;
+        }
+
+        /* Some of these may be null,as not all styles have to exist */
+        final String[] files = {
+            plainFile, boldFile, italicFile, boldItalicFile } ;
+
+        failure = java.security.AccessController.doPrivileged(
+                 new java.security.PrivilegedAction<Boolean>() {
+                     public Boolean run() {
+                         for (int i=0; i<files.length; i++) {
+                             if (files[i] == null) {
+                                 continue;
+                             }
+                             File f = new File(files[i]);
+                             if (!f.exists()) {
+                                 return Boolean.TRUE;
+                             }
+                         }
+                         return Boolean.FALSE;
+                     }
+                 });
+
+        if (failure) {
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().
+                    info("Hardcoded file missing looking for " + lcName);
+            }
+            platformFontMap.remove(firstWord);
+            return null;
+        }
+
+        /* If we reach here we know that we have all the files we
+         * expect, so all should be fine so long as the contents
+         * are what we'd expect. Now on to registering the fonts.
+         * Currently this code only looks for TrueType fonts, so format
+         * and rank can be specified without looking at the filename.
+         */
+        Font2D font = null;
+        for (int f=0;f<files.length;f++) {
+            if (files[f] == null) {
+                continue;
+            }
+            PhysicalFont pf =
+                registerFontFile(files[f], null,
+                                 FONTFORMAT_TRUETYPE, false, Font2D.TTF_RANK);
+            if (f == styleIndex) {
+                font = pf;
+            }
+        }
+
+
+        /* Two general cases need a bit more work here.
+         * 1) If font is null, then it was perhaps a request for a
+         * non-existent font, such as "Tahoma Italic", or a family name -
+         * where family and full name of the plain font differ.
+         * Fall back to finding the closest one in the family.
+         * This could still fail if a client specified "Segoe" instead of
+         * "Segoe UI".
+         * 2) The request is of the form "MyFont Bold", style=Font.ITALIC,
+         * and so we want to see if there's a Bold Italic font, or
+         * "MyFamily", style=Font.BOLD, and we may have matched the plain,
+         * but now need to revise that to the BOLD font.
+         */
+        FontFamily fontFamily = FontFamily.getFamily(fd.familyName);
+        if (fontFamily != null) {
+            if (font == null) {
+                font = fontFamily.getFont(style);
+                if (font == null) {
+                    font = fontFamily.getClosestStyle(style);
+                }
+            } else if (style > 0 && style != font.style) {
+                style |= font.style;
+                font = fontFamily.getFont(style);
+                if (font == null) {
+                    font = fontFamily.getClosestStyle(style);
+                }
+            }
+        }
+
+        return font;
+    }
     private synchronized HashMap<String,String> getFullNameToFileMap() {
         if (fontToFileMap == null) {
 
@@ -1998,6 +2199,17 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
 
         if (FontUtilities.isWindows) {
+
+            font = findFontFromPlatformMap(lowerCaseName, style);
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger()
+                    .info("findFontFromPlatformMap returned " + font);
+            }
+            if (font != null) {
+                fontNameCache.put(mapName, font);
+                return font;
+            }
+
             /* Don't want Windows to return a Lucida Sans font from
              * C:\Windows\Fonts
              */
@@ -2221,7 +2433,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return FontUtilities.getFont2D(font).supportsEncoding(encoding);
     }
 
-    public abstract String getFontPath(boolean noType1Fonts);
+    protected abstract String getFontPath(boolean noType1Fonts);
 
     private Thread fileCloser = null;
     Vector<File> tmpFontFiles = null;
@@ -2934,8 +3146,15 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
     }
 
+
     protected String[] getPlatformFontDirs(boolean noType1Fonts) {
-        String path = getFontPath(true);
+
+        /* First check if we already initialised path dirs */
+        if (pathDirs != null) {
+            return pathDirs;
+        }
+
+        String path = getPlatformFontPath(noType1Fonts);
         StringTokenizer parser =
             new StringTokenizer(path, File.pathSeparator);
         ArrayList<String> pathList = new ArrayList<String>();
@@ -2945,7 +3164,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             }
         } catch (NoSuchElementException e) {
         }
-        return pathList.toArray(new String[0]);
+        pathDirs = pathList.toArray(new String[0]);
+        return pathDirs;
     }
 
     /**
@@ -3047,7 +3267,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     /* A call to this method should be followed by a call to
      * registerFontDirs(..)
      */
-    protected String getPlatformFontPath(boolean noType1Font) {
+    public String getPlatformFontPath(boolean noType1Font) {
         if (fontPath == null) {
             fontPath = getFontPath(noType1Font);
         }

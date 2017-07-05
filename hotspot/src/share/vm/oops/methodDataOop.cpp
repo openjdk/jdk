@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,11 +417,11 @@ void BranchData::print_data_on(outputStream* st) {
 int MultiBranchData::compute_cell_count(BytecodeStream* stream) {
   int cell_count = 0;
   if (stream->code() == Bytecodes::_tableswitch) {
-    Bytecode_tableswitch* sw = Bytecode_tableswitch_at(stream->bcp());
-    cell_count = 1 + per_case_cell_count * (1 + sw->length()); // 1 for default
+    Bytecode_tableswitch sw(stream->method()(), stream->bcp());
+    cell_count = 1 + per_case_cell_count * (1 + sw.length()); // 1 for default
   } else {
-    Bytecode_lookupswitch* sw = Bytecode_lookupswitch_at(stream->bcp());
-    cell_count = 1 + per_case_cell_count * (sw->number_of_pairs() + 1); // 1 for default
+    Bytecode_lookupswitch sw(stream->method()(), stream->bcp());
+    cell_count = 1 + per_case_cell_count * (sw.number_of_pairs() + 1); // 1 for default
   }
   return cell_count;
 }
@@ -434,35 +434,35 @@ void MultiBranchData::post_initialize(BytecodeStream* stream,
   int target_di;
   int offset;
   if (stream->code() == Bytecodes::_tableswitch) {
-    Bytecode_tableswitch* sw = Bytecode_tableswitch_at(stream->bcp());
-    int len = sw->length();
+    Bytecode_tableswitch sw(stream->method()(), stream->bcp());
+    int len = sw.length();
     assert(array_len() == per_case_cell_count * (len + 1), "wrong len");
     for (int count = 0; count < len; count++) {
-      target = sw->dest_offset_at(count) + bci();
+      target = sw.dest_offset_at(count) + bci();
       my_di = mdo->dp_to_di(dp());
       target_di = mdo->bci_to_di(target);
       offset = target_di - my_di;
       set_displacement_at(count, offset);
     }
-    target = sw->default_offset() + bci();
+    target = sw.default_offset() + bci();
     my_di = mdo->dp_to_di(dp());
     target_di = mdo->bci_to_di(target);
     offset = target_di - my_di;
     set_default_displacement(offset);
 
   } else {
-    Bytecode_lookupswitch* sw = Bytecode_lookupswitch_at(stream->bcp());
-    int npairs = sw->number_of_pairs();
+    Bytecode_lookupswitch sw(stream->method()(), stream->bcp());
+    int npairs = sw.number_of_pairs();
     assert(array_len() == per_case_cell_count * (npairs + 1), "wrong len");
     for (int count = 0; count < npairs; count++) {
-      LookupswitchPair *pair = sw->pair_at(count);
-      target = pair->offset() + bci();
+      LookupswitchPair pair = sw.pair_at(count);
+      target = pair.offset() + bci();
       my_di = mdo->dp_to_di(dp());
       target_di = mdo->bci_to_di(target);
       offset = target_di - my_di;
       set_displacement_at(count, offset);
     }
-    target = sw->default_offset() + bci();
+    target = sw.default_offset() + bci();
     my_di = mdo->dp_to_di(dp());
     target_di = mdo->bci_to_di(target);
     offset = target_di - my_di;
