@@ -1107,20 +1107,11 @@ public:
     return _gc_time_stamp;
   }
 
-  void reset_gc_time_stamp() {
-    _gc_time_stamp = 0;
-    OrderAccess::fence();
-    // Clear the cached CSet starting regions and time stamps.
-    // Their validity is dependent on the GC timestamp.
-    clear_cset_start_regions();
-  }
+  inline void reset_gc_time_stamp();
 
   void check_gc_time_stamps() PRODUCT_RETURN;
 
-  void increment_gc_time_stamp() {
-    ++_gc_time_stamp;
-    OrderAccess::fence();
-  }
+  inline void increment_gc_time_stamp();
 
   // Reset the given region's GC timestamp. If it's starts humongous,
   // also reset the GC timestamp of its corresponding

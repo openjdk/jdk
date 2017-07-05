@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
     @test
-    @bug 4217441 4533872 4900935 8020037 8032012
+    @bug 4217441 4533872 4900935 8020037 8032012 8041791
     @summary toLowerCase should lower-case Greek Sigma correctly depending
              on the context (final/non-final).  Also it should handle
              Locale specific (lt, tr, and az) lowercasings and supplementary
@@ -72,8 +72,10 @@ public class ToLowerCase {
         // I-dot tests
         test("\u0130", turkish, "i");
         test("\u0130", az, "i");
-        test("\u0130", lt, "i");
-        test("\u0130", Locale.US, "i");
+        test("\u0130", lt, "\u0069\u0307");
+        test("\u0130", Locale.US, "\u0069\u0307");
+        test("\u0130", Locale.JAPAN, "\u0069\u0307");
+        test("\u0130", Locale.ROOT, "\u0069\u0307");
 
         // Remove dot_above in the sequence I + dot_above (Turkish and Azeri)
         test("I\u0307", turkish, "i");
@@ -109,6 +111,12 @@ public class ToLowerCase {
         StringBuilder exp = new StringBuilder(0x20000);
         for (int cp = 0; cp < 0x20000; cp++) {
             if (cp >= Character.MIN_HIGH_SURROGATE && cp <= Character.MAX_HIGH_SURROGATE) {
+                continue;
+            }
+            if (cp == 0x0130) {
+                // Although UnicodeData.txt has the lower case char as \u0069, it should be
+                // handled with the rules in SpecialCasing.txt, i.e., \u0069\u0307 in
+                // non Turkic locales.
                 continue;
             }
             int lowerCase = Character.toLowerCase(cp);

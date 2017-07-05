@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class JMXPrincipal implements Principal, Serializable {
     private String name;
 
     /**
-     * <p>Creates a JMXPrincipal for a given identity.</p>
+     * Creates a JMXPrincipal for a given identity.
      *
      * @param name the JMX Remote API name for this identity.
      *
@@ -74,8 +74,6 @@ public class JMXPrincipal implements Principal, Serializable {
     /**
      * Returns the name of this principal.
      *
-     * <p>
-     *
      * @return the name of this <code>JMXPrincipal</code>.
      */
     public String getName() {
@@ -84,8 +82,6 @@ public class JMXPrincipal implements Principal, Serializable {
 
     /**
      * Returns a string representation of this <code>JMXPrincipal</code>.
-     *
-     * <p>
      *
      * @return a string representation of this <code>JMXPrincipal</code>.
      */
@@ -98,8 +94,6 @@ public class JMXPrincipal implements Principal, Serializable {
      * for equality.  Returns true if the given object is also a
      * <code>JMXPrincipal</code> and the two JMXPrincipals
      * have the same name.
-     *
-     * <p>
      *
      * @param o Object to be compared for equality with this
      * <code>JMXPrincipal</code>.
@@ -123,8 +117,6 @@ public class JMXPrincipal implements Principal, Serializable {
 
     /**
      * Returns a hash code for this <code>JMXPrincipal</code>.
-     *
-     * <p>
      *
      * @return a hash code for this <code>JMXPrincipal</code>.
      */

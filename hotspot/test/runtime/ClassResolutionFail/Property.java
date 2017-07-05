@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,7 @@
  * questions.
  */
 
-import java.util.*;
-import java.io.*;
+// Class PropertySuper is not found.
 
-public class MyXmlPropertiesProvider
-    extends sun.util.spi.XmlPropertiesProvider
-{
-    private static int createCount;
-    private static int loadCount;
-    private static int storeCount;
-
-    static int createCount() { return createCount; }
-    static int loadCount() { return loadCount; }
-    static int storeCount() { return storeCount; }
-
-    public MyXmlPropertiesProvider() {
-        createCount++;
-    }
-
-    @Override
-    public void load(Properties props, InputStream in)
-        throws IOException, InvalidPropertiesFormatException
-    {
-        loadCount++;
-    }
-
-    @Override
-    public void store(Properties props, OutputStream out,
-                      String comment, String encoding)
-        throws IOException
-    {
-        storeCount++;
-    }
+public class Property extends PropertySuper {
 }

@@ -27,7 +27,7 @@
 
 #include "memory/collectorPolicy.hpp"
 
-class ConcurrentMarkSweepPolicy : public TwoGenerationCollectorPolicy {
+class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
  protected:
   void initialize_alignments();
   void initialize_generations();

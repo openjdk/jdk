@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,7 @@ public class MBeanServerPermission extends BasicPermission {
      * Checks two MBeanServerPermission objects for equality. Checks that
      * <i>obj</i> is an MBeanServerPermission, and represents the same
      * list of allowable actions as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
      * @return true if the objects are equal.
      */

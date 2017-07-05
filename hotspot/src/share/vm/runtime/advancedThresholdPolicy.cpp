@@ -449,7 +449,7 @@ void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHan
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }
-  if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
+  if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
     CompLevel next_level = call_event(mh(), level);
     if (next_level != level) {
       compile(mh, InvocationEntryBci, next_level, thread);
@@ -473,7 +473,7 @@ void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHa
     CompLevel next_osr_level = loop_event(imh(), level);
     CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
     // At the very least compile the OSR version
-    if (!CompileBroker::compilation_is_in_queue(imh, bci) && next_osr_level != level) {
+    if (!CompileBroker::compilation_is_in_queue(imh) && (next_osr_level != level)) {
       compile(imh, bci, next_osr_level, thread);
     }
 
@@ -507,7 +507,7 @@ void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHa
           nm->make_not_entrant();
         }
       }
-      if (!CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
+      if (!CompileBroker::compilation_is_in_queue(mh)) {
         // Fix up next_level if necessary to avoid deopts
         if (next_level == CompLevel_limited_profile && max_osr_level == CompLevel_full_profile) {
           next_level = CompLevel_full_profile;
@@ -519,7 +519,7 @@ void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHa
     } else {
       cur_level = comp_level(imh());
       next_level = call_event(imh(), cur_level);
-      if (!CompileBroker::compilation_is_in_queue(imh, bci) && next_level != cur_level) {
+      if (!CompileBroker::compilation_is_in_queue(imh) && (next_level != cur_level)) {
         compile(imh, InvocationEntryBci, next_level, thread);
       }
     }

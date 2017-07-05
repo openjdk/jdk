@@ -205,7 +205,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
   if (index_size == sizeof(u2)) {
     load_unsigned_short(index, Address(r13, bcp_offset));
   } else if (index_size == sizeof(u4)) {
-    assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     movl(index, Address(r13, bcp_offset));
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.util.xml;
 
-import java.util.Properties;
-import java.util.InvalidPropertiesFormatException;
-import java.io.InputStream;
-import java.io.OutputStream;
+package com.sun.tools.attach;
+
 import java.io.IOException;
 
-import sun.util.spi.XmlPropertiesProvider;
-
 /**
- * A {@code XmlPropertiesProvider} implementation that uses the UKit XML parser.
+ * Exception type to signal that an attach operation failed in the target VM.
+ *
+ * <p> This exception can be thrown by the various operations of
+ * {@link com.sun.tools.attach.VirtualMachine} when the operation
+ * fails in the target VM. If there is a communication error,
+ * a regular IOException will be thrown.
+ *
+ * @since 1.9
  */
+@jdk.Exported
+public class AttachOperationFailedException extends IOException {
 
-public class BasicXmlPropertiesProvider extends XmlPropertiesProvider {
+    private static final long serialVersionUID = 2140308168167478043L;
 
-    public BasicXmlPropertiesProvider() { }
-
-    @Override
-    public void load(Properties props, InputStream in)
-        throws IOException, InvalidPropertiesFormatException
-    {
-        PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
-        handler.load(props, in);
-    }
-
-    @Override
-    public void store(Properties props, OutputStream os, String comment,
-                      String encoding)
-        throws IOException
-    {
-        PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
-        handler.store(props, os, comment, encoding);
+    /**
+     * Constructs an <code>AttachOperationFailedException</code> with
+     * the specified detail message.
+     *
+     * @param   s   the detail message.
+     */
+    public AttachOperationFailedException(String message) {
+        super(message);
     }
 }

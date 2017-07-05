@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ class ResolutionErrorTable : public Hashtable<ConstantPool*, mtClass> {
 public:
   ResolutionErrorTable(int table_size);
 
-  ResolutionErrorEntry* new_entry(int hash, ConstantPool* pool, int cp_index, Symbol* error);
+  ResolutionErrorEntry* new_entry(int hash, ConstantPool* pool, int cp_index,
+                                  Symbol* error, Symbol* message);
   void free_entry(ResolutionErrorEntry *entry);
 
   ResolutionErrorEntry* bucket(int i) {
@@ -55,7 +56,7 @@ public:
   }
 
   void add_entry(int index, unsigned int hash,
-                 constantPoolHandle pool, int which, Symbol* error);
+                 constantPoolHandle pool, int which, Symbol* error, Symbol* message);
 
 
   // find error given the constant pool and constant pool index
@@ -79,16 +80,19 @@ class ResolutionErrorEntry : public HashtableEntry<ConstantPool*, mtClass> {
  private:
   int               _cp_index;
   Symbol*           _error;
+  Symbol*           _message;
 
  public:
-  ConstantPool*      pool() const               { return (ConstantPool*)literal(); }
-  ConstantPool**   pool_addr()                { return (ConstantPool**)literal_addr(); }
+  ConstantPool*      pool() const               { return literal(); }
 
   int                cp_index() const           { return _cp_index; }
   void               set_cp_index(int cp_index) { _cp_index = cp_index; }
 
   Symbol*            error() const              { return _error; }
   void               set_error(Symbol* e);
+
+  Symbol*            message() const            { return _message; }
+  void               set_message(Symbol* c);
 
   ResolutionErrorEntry* next() const {
     return (ResolutionErrorEntry*)HashtableEntry<ConstantPool*, mtClass>::next();

@@ -54,9 +54,6 @@ public class SecurityManagerClinit {
             System.getProperty("java.home") +
             File.separator + "bin" + File.separator + "java";
 
-        // A funky contrived security setup, just for bug repro purposes.
-        java.security.Security.setProperty("package.access", "java.util");
-
         final Policy policy =
             new Policy
             (new FilePermission("<<ALL FILES>>", "execute"),
