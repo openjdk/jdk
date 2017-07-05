@@ -2397,7 +2397,7 @@ public class GroupLayout implements LayoutManager2 {
      * {@code CONSTANT_DESCENT}; otherwise the baseline is anchored to the top
      * of the group.
      * <p>
-     * Elements aligned to the baseline are resizable if they have have
+     * Elements aligned to the baseline are resizable if they have
      * a baseline resize behavior of {@code CONSTANT_ASCENT} or
      * {@code CONSTANT_DESCENT}. Elements with a baseline resize
      * behavior of {@code OTHER} or {@code CENTER_OFFSET} are not resizable.

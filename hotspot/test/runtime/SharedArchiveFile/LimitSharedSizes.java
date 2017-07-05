@@ -30,40 +30,96 @@
 import com.oracle.java.testlibrary.*;
 
 public class LimitSharedSizes {
+    static enum Region {
+        RO, RW, MD, MC
+    }
+
     private static class SharedSizeTestData {
         public String optionName;
         public String optionValue;
         public String expectedErrorMsg;
 
-        public SharedSizeTestData(String name, String value, String msg) {
-            optionName = name;
+        public SharedSizeTestData(Region region, String value, String msg) {
+            optionName = getName(region);
             optionValue = value;
             expectedErrorMsg = msg;
+        }
+
+        public SharedSizeTestData(Region region, String msg) {
+            optionName = getName(region);
+            optionValue = getValue(region);
+            expectedErrorMsg = msg;
+        }
+
+        private String getName(Region region) {
+            String name;
+            switch (region) {
+                case RO:
+                    name = "-XX:SharedReadOnlySize";
+                    break;
+                case RW:
+                    name = "-XX:SharedReadWriteSize";
+                    break;
+                case MD:
+                    name = "-XX:SharedMiscDataSize";
+                    break;
+                case MC:
+                    name = "-XX:SharedMiscCodeSize";
+                    break;
+                default:
+                    name = "Unknown";
+                    break;
+            }
+            return name;
+        }
+
+        private String getValue(Region region) {
+            String value;
+            switch (region) {
+                case RO:
+                    value = Platform.is64bit() ? "9M" : "8M";
+                    break;
+                case RW:
+                    value = Platform.is64bit() ? "12M" : "7M";
+                    break;
+                case MD:
+                    value = Platform.is64bit() ? "4M" : "2M";
+                    break;
+                case MC:
+                    value = "120k";
+                    break;
+                default:
+                    value = "0M";
+                    break;
+            }
+            return value;
         }
     }
 
     private static final SharedSizeTestData[] testTable = {
-        // values in this part of the test table should cause failure
-        // (shared space sizes are deliberately too small)
-        new SharedSizeTestData("-XX:SharedReadOnlySize", "4M",      "read only"),
-        new SharedSizeTestData("-XX:SharedReadWriteSize","4M",      "read write"),
-
-        // Known issue, JDK-8038422 (assert() on Windows)
-        // new SharedSizeTestData("-XX:SharedMiscDataSize", "500k",    "miscellaneous data"),
-
-        // Too small of a misc code size should not cause a vm crash.
-        // It should result in the following error message:
+        // Too small of a region size should not cause a vm crash.
+        // It should result in an error message like the following:
         // The shared miscellaneous code space is not large enough
         // to preload requested classes. Use -XX:SharedMiscCodeSize=
         // to increase the initial size of shared miscellaneous code space.
-        new SharedSizeTestData("-XX:SharedMiscCodeSize", "20k",     "miscellaneous code"),
+        new SharedSizeTestData(Region.RO, "4M",   "read only"),
+        new SharedSizeTestData(Region.RW, "4M",   "read write"),
+        new SharedSizeTestData(Region.MD, "50k",  "miscellaneous data"),
+        new SharedSizeTestData(Region.MC, "20k",  "miscellaneous code"),
 
         // these values are larger than default ones, but should
         // be acceptable and not cause failure
-        new SharedSizeTestData("-XX:SharedReadOnlySize",    "20M", null),
-        new SharedSizeTestData("-XX:SharedReadWriteSize",   "20M", null),
-        new SharedSizeTestData("-XX:SharedMiscDataSize",    "20M", null),
-        new SharedSizeTestData("-XX:SharedMiscCodeSize",    "20M", null)
+        new SharedSizeTestData(Region.RO, "20M", null),
+        new SharedSizeTestData(Region.RW, "20M", null),
+        new SharedSizeTestData(Region.MD, "20M", null),
+        new SharedSizeTestData(Region.MC, "20M", null),
+
+        // test with sizes which just meet the minimum required sizes
+        // the following tests also attempt to use the shared archive
+        new SharedSizeTestData(Region.RO, "UseArchive"),
+        new SharedSizeTestData(Region.RW, "UseArchive"),
+        new SharedSizeTestData(Region.MD, "UseArchive"),
+        new SharedSizeTestData(Region.MC, "UseArchive")
     };
 
     public static void main(String[] args) throws Exception {
@@ -82,10 +138,39 @@ public class LimitSharedSizes {
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
             if (td.expectedErrorMsg != null) {
-                output.shouldContain("The shared " + td.expectedErrorMsg
-                    + " space is not large enough");
+                if (!td.expectedErrorMsg.equals("UseArchive")) {
+                    output.shouldContain("The shared " + td.expectedErrorMsg
+                        + " space is not large enough");
 
-                output.shouldHaveExitValue(2);
+                    output.shouldHaveExitValue(2);
+                } else {
+                    output.shouldNotContain("space is not large enough");
+                    output.shouldHaveExitValue(0);
+
+                    // try to use the archive
+                    pb = ProcessTools.createJavaProcessBuilder(
+                       "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:SharedArchiveFile=./" + fileName,
+                       "-XX:+PrintSharedArchiveAndExit",
+                       "-version");
+
+                    try {
+                        output = new OutputAnalyzer(pb.start());
+                        output.shouldContain("archive is valid");
+                    } catch (RuntimeException e) {
+                        // if sharing failed due to ASLR or similar reasons,
+                        // check whether sharing was attempted at all (UseSharedSpaces)
+                        if ((output.getOutput().contains("Unable to use shared archive") ||
+                             output.getOutput().contains("Unable to map ReadOnly shared space at required address.") ||
+                             output.getOutput().contains("Unable to map ReadWrite shared space at required address.") ||
+                             output.getOutput().contains("Unable to reserve shared space at required address")) &&
+                             output.getExitValue() == 1) {
+                             System.out.println("Unable to use shared archive: test not executed; assumed passed");
+                             return;
+                        }
+                    }
+                    output.shouldHaveExitValue(0);
+                }
             } else {
                 output.shouldNotContain("space is not large enough");
                 output.shouldHaveExitValue(0);

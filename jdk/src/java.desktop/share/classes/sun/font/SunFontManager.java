@@ -575,7 +575,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * that claims to support the Microsoft Windows encoding corresponding to
      * the default file.encoding property of this JRE instance.
      * This narrow value is useful for Swing to decide if the font is useful
-     * for the the Windows Look and Feel, or, if a  composite font should be
+     * for the Windows Look and Feel, or, if a composite font should be
      * used instead.
      * The information used to make the decision is obtained from
      * the ulCodePageRange fields in the font.
@@ -1611,7 +1611,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * all non-null file names first.
      * They are added in to a map with nominally the first
      * word in the name of the family as the key. In all the cases
-     * we are using the the family name is a single word, and as is
+     * we are using the family name is a single word, and as is
      * more or less required the family name is the initial sequence
      * in a full name. So lookup first finds the matching description,
      * then registers the whole family, returning the right font.

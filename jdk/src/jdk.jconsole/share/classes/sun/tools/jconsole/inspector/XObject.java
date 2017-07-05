@@ -65,7 +65,7 @@ public class XObject extends JLabel {
         return object;
     }
 
-    //if true the the object.hashcode is added to the label
+    //if true the object.hashcode is added to the label
     public static void
         useHashCodeRepresentation(boolean useHashCodeRepresentation) {
         XObject.useHashCodeRepresentation = useHashCodeRepresentation;

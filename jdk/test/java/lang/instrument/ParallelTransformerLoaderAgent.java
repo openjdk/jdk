@@ -79,24 +79,15 @@ public class ParallelTransformerLoaderAgent
                         throws IllegalClassFormatException
                 {
                         String tName = Thread.currentThread().getName();
-                        // In 160_03 and older, transform() is called
-                        // with the "system_loader_lock" held and that
-                        // prevents the bootstrap class loaded from
-                        // running in parallel. If we add a slight sleep
-                        // delay here when the transform() call is not
-                        // main or TestThread, then the deadlock in
-                        // 160_03 and older is much more reproducible.
-                        if (!tName.equals("main") && !tName.equals("TestThread")) {
-                            System.out.println("Thread '" + tName +
-                                "' has called transform()");
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException ie) {
-                            }
-                        }
 
-                        // load additional classes when called from other threads
-                        if (!tName.equals("main"))
+                        // Load additional classes when called from thread 'TestThread'
+                        // When a class is loaded during a callback handling the boot loader, we can
+                        // run into ClassCircularityError if the ClassFileLoadHook is set early enough
+                        // to catch classes needed during class loading, e.g.
+                        //          sun.misc.URLClassPath$JarLoader$2.
+                        // The goal of the test is to stress class loading on the test class loaders.
+
+                        if (tName.equals("TestThread") && loader != null)
                         {
                                 loadClasses(3);
                         }

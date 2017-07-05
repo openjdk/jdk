@@ -84,7 +84,7 @@ import java.util.function.LongConsumer;
  * via the {@link #estimateSize} method.  Ideally, as reflected in characteristic
  * {@link #SIZED}, this value corresponds exactly to the number of elements
  * that would be encountered in a successful traversal.  However, even when not
- * exactly known, an estimated value value may still be useful to operations
+ * exactly known, an estimated value may still be useful to operations
  * being performed on the source, such as helping to determine whether it is
  * preferable to split further or traverse the remaining elements sequentially.
  *

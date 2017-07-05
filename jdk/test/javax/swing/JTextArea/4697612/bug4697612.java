@@ -35,7 +35,6 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import javax.swing.text.BadLocationException;
-import sun.awt.SunToolkit;
 
 public class bug4697612 {
 
@@ -49,7 +48,6 @@ public class bug4697612 {
     private static JScrollPane scroller;
 
     public static void main(String[] args) throws Throwable {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(100);
 
@@ -61,7 +59,7 @@ public class bug4697612 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -71,7 +69,7 @@ public class bug4697612 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // 4697612: pressing PgDn + PgUp should not alter caret position
         Util.hitKeys(robot, KeyEvent.VK_HOME);
@@ -102,11 +100,11 @@ public class bug4697612 {
                     }
                 });
 
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 Util.hitKeys(robot, KeyEvent.VK_PAGE_DOWN);
                 Util.hitKeys(robot, KeyEvent.VK_PAGE_UP);
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 int pos = getTextCaretPosition();
                 if (pos0 != pos) {
@@ -126,11 +124,11 @@ public class bug4697612 {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_END);
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         pos0 = getScrollerViewPosition();
         Util.hitKeys(robot, KeyEvent.VK_PAGE_DOWN);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         int pos = getScrollerViewPosition();
 
@@ -187,6 +185,7 @@ public class bug4697612 {
     private static void createAndShowGUI() {
         frame = new JFrame();
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         text = new JTextArea();

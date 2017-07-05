@@ -38,7 +38,6 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import java.util.concurrent.*;
-import sun.awt.SunToolkit;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -54,7 +53,6 @@ public class DragWindowTest {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -66,7 +64,7 @@ public class DragWindowTest {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point pointToClick = Util.invokeOnEDT(new Callable<Point>() {
 
@@ -79,7 +77,7 @@ public class DragWindowTest {
 
         robot.mouseMove(pointToClick.x, pointToClick.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (dragWindowMouseEnteredCount != 1) {
             throw new RuntimeException("No MouseEntered event on Drag Window!");
@@ -95,14 +93,14 @@ public class DragWindowTest {
         });
 
         robot.mouseMove(pointToDrag.x, pointToDrag.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (buttonMouseEnteredCount != 0) {
             throw new RuntimeException("Extra MouseEntered event on button!");
         }
 
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (labelMouseReleasedCount != 1) {
             throw new RuntimeException("No MouseReleased event on label!");

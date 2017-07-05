@@ -564,7 +564,7 @@ decodeByte(char c1, char c2) {
 /*
  * Evaluates all escapes in s.  Assumes that escapes are well-formed
  * syntactically, i.e., of the form %XX.
- * If the path does not require decoding the the original path is
+ * If the path does not require decoding the original path is
  * returned. Otherwise the decoded path (heap allocated) is returned,
  * along with the length of the decoded path. Note that the return
  * string will not be null terminated after decoding.

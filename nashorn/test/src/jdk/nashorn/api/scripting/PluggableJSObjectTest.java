@@ -109,6 +109,35 @@ public class PluggableJSObjectTest {
         }
     }
 
+    // @bug 8062030: Nashorn bug retrieving array property after key string concatenation
+    @Test
+    // ConsString attribute access on a JSObject
+    public void consStringTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        try {
+            final MapWrapperObject obj = new MapWrapperObject();
+            e.put("obj", obj);
+            e.put("f", "f");
+            e.eval("obj[f + 'oo'] = 'bar';");
+
+            assertEquals(obj.getMap().get("foo"), "bar");
+            assertEquals(e.eval("obj[f + 'oo']"), "bar");
+            assertEquals(e.eval("obj['foo']"), "bar");
+            assertEquals(e.eval("f + 'oo' in obj"), Boolean.TRUE);
+            assertEquals(e.eval("'foo' in obj"), Boolean.TRUE);
+            e.eval("delete obj[f + 'oo']");
+            assertFalse(obj.getMap().containsKey("foo"));
+            assertEquals(e.eval("obj[f + 'oo']"), null);
+            assertEquals(e.eval("obj['foo']"), null);
+            assertEquals(e.eval("f + 'oo' in obj"), Boolean.FALSE);
+            assertEquals(e.eval("'foo' in obj"), Boolean.FALSE);
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+    }
+
     public static class BufferObject extends AbstractJSObject {
         private final IntBuffer buf;
 

@@ -280,19 +280,25 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * be rare).
      */
     private Method[] getMemberMethods() {
-        if (memberMethods == null) {
-            memberMethods = AccessController.doPrivileged(
-                new PrivilegedAction<Method[]>() {
-                    public Method[] run() {
-                        final Method[] mm = type.getDeclaredMethods();
-                        validateAnnotationMethods(mm);
-                        AccessibleObject.setAccessible(mm, true);
-                        return mm;
-                    }
-                });
+        Method[] value = memberMethods;
+        if (value == null) {
+            value = computeMemberMethods();
+            memberMethods = value;
         }
-        return memberMethods;
+        return value;
     }
+
+    private Method[] computeMemberMethods() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<Method[]>() {
+                public Method[] run() {
+                    final Method[] methods = type.getDeclaredMethods();
+                    validateAnnotationMethods(methods);
+                    AccessibleObject.setAccessible(methods, true);
+                    return methods;
+                }});
+    }
+
     private transient volatile Method[] memberMethods = null;
 
     /**

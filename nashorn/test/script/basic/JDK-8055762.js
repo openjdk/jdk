@@ -74,9 +74,12 @@ function test(JSObject) {
         }
     };
 
+    var a = "a";
     print(obj["foo"]);
+    print(obj[a + "bc"]);
     print(obj[2]);
     obj.bar = 23;
+    obj[a + "bc"] = 23;
     obj[3] = 23;
     obj.func("hello");
 }

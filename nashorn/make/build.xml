@@ -209,7 +209,7 @@
   </target>
 
   <target name="javadoc" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" 
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${src.dir}/overview.html" 
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true">
       <classpath>

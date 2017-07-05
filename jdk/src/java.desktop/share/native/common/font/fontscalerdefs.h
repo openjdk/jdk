@@ -87,7 +87,7 @@ typedef float t2kScalar;
 #define t2kScalarAverage(a, b) (((a) + (b)) / (t2kScalar)(2))
 
   /* managed: 1 means the glyph has a hardware cached
-   * copy, and its freeing is managed by the the usual
+   * copy, and its freeing is managed by the usual
    * 2D disposer code.
    * A value of 0 means its either unaccelerated (and so has no cellInfos)
    * or we want to free this in a different way.

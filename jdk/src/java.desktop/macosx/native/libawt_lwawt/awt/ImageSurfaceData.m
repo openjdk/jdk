@@ -1692,7 +1692,7 @@ static void ImageSD_Unlock(JNIEnv *env, SurfaceDataOps *ops, SurfaceDataRasInfo 
 {
     ImageSDOps *isdo = (ImageSDOps*)ops;
 
-    // For every ImageSD_Unlock, we need to be be conservative and mark the pixels
+    // For every ImageSD_Unlock, we need to be conservative and mark the pixels
     // as modified by the Sun2D renderer.
     isdo->javaImageInfo[sun_java2d_OSXOffScreenSurfaceData_kNeedToSyncFromJavaPixelsIndex] = 1;
 

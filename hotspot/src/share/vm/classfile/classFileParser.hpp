@@ -75,6 +75,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   Array<u2>*       _inner_classes;
   Array<Klass*>*   _local_interfaces;
   Array<Klass*>*   _transitive_interfaces;
+  Annotations*     _combined_annotations;
   AnnotationArray* _annotations;
   AnnotationArray* _type_annotations;
   Array<AnnotationArray*>* _fields_annotations;
@@ -85,6 +86,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_class_sourcefile_index(u2 x)        { _sourcefile_index = x; }
   void set_class_generic_signature_index(u2 x) { _generic_signature_index = x; }
   void set_class_sde_buffer(char* x, int len)  { _sde_buffer = x; _sde_length = len; }
+
+  void create_combined_annotations(TRAPS);
 
   void init_parsed_class_attributes(ClassLoaderData* loader_data) {
     _loader_data = loader_data;
@@ -110,6 +113,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     _inner_classes = NULL;
     _local_interfaces = NULL;
     _transitive_interfaces = NULL;
+    _combined_annotations = NULL;
     _annotations = _type_annotations = NULL;
     _fields_annotations = _fields_type_annotations = NULL;
   }

@@ -25,7 +25,6 @@ import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -34,7 +33,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.DefaultMetalTheme;
 import javax.swing.plaf.metal.MetalLookAndFeel;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -62,7 +60,7 @@ public class bug8041561 {
             }
         });
 
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        new Robot().waitForIdle();
         Thread.sleep(500);
 
         SwingUtilities.invokeAndWait(new Runnable() {

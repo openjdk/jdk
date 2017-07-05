@@ -451,7 +451,7 @@ public abstract class BufferedContext {
     public abstract RenderQueue getRenderQueue();
 
     /**
-     * Saves the the state of this context.
+     * Saves the state of this context.
      * It may reset the current context.
      *
      * Note: must be called while the RenderQueue lock is held.
