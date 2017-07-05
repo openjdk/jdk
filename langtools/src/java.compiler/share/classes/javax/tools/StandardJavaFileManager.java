@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,17 @@ import static javax.tools.FileManagerUtils.*;
  * files in the {@linkplain java.nio.file.FileSystems#getDefault() default file system.}
  * It is recommended that implementations should support Path objects from any filesystem.</p>
  *
+ *
+ * @apiNote
+ * Some methods on this interface take a {@code Collection<? extends Path>}
+ * instead of {@code Iterable<? extends Path>}.
+ * This is to prevent the possibility of accidentally calling the method
+ * with a single {@code Path} as such an argument, because although
+ * {@code Path} implements {@code Iterable<Path>}, it would almost never be
+ * correct to call these methods with a single {@code Path} and have it be treated as
+ * an {@code Iterable} of its components.
+ *
+ *
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
@@ -266,6 +277,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Associates the given search path with the given location.  Any
      * previous value will be discarded.
      *
+     * If the location is a module-oriented or output location, any module-specific
+     * associations set up by {@linkplain #setLocationForModule setLocationForModule}
+     * will be cancelled.
+     *
      * @param location a location
      * @param files a list of files, if {@code null} use the default
      * search path for this location
@@ -279,24 +294,18 @@ public interface StandardJavaFileManager extends JavaFileManager {
         throws IOException;
 
     /**
-     * Associates the given search path with the given location.  Any
-     * previous value will be discarded.
+     * Associates the given search path with the given location.
+     * Any previous value will be discarded.
      *
-     * @apiNote
-     * The type of the {@code paths} parameter is a {@code Collection}
-     * and not {@code Iterable}. This is to prevent the possibility of
-     * accidentally calling the method with a single {@code Path} as
-     * the second argument, because although {@code Path} implements
-     * {@code Iterable<Path>}, it would almost never be correct to call
-     * this method with a single {@code Path} and have it be treated as
-     * an {@code Iterable} of its components.
-     *
+     * If the location is a module-oriented or output location, any module-specific
+     * associations set up by {@linkplain #setLocationForModule setLocationForModule}
+     * will be cancelled.
      *
      * @implSpec
      * The default implementation converts each path to a file and calls
      * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * {@linkplain IllegalArgumentException IllegalArgumentException}
+     * will be thrown if any of the paths cannot be converted to a file.
      *
      * @param location a location
      * @param paths a list of paths, if {@code null} use the default
@@ -316,13 +325,47 @@ public interface StandardJavaFileManager extends JavaFileManager {
     }
 
     /**
+     * Associates the given search path with the given module and location,
+     * which must be a module-oriented or output location.
+     * Any previous value will be discarded.
+     * This overrides any default association derived from the search path
+     * associated with the location itself.
+     *
+     * All such module-specific associations will be cancelled if a
+     * new search path is associated with the location by calling
+     * {@linkplain #setLocation setLocation } or
+     * {@linkplain #setLocationFromPaths setLocationFromPaths}.
+     *
+     * @throws IllegalStateException if the location is not a module-oriented
+     *  or output location.
+     * @throws UnsupportedOperationException if this operation is not supported by
+     *  this file manager.
+     * @throws IOException if {@code location} is an output location and
+     * {@code paths} does not represent an existing directory
+     *
+     * @param location the location
+     * @param moduleName the name of the module
+     * @param paths the search path to associate with the location and module.
+     *
+     * @see setLocation
+     * @see setLocationFromPaths
+     *
+     * @since 9
+     */
+    default void setLocationForModule(Location location, String moduleName,
+            Collection<? extends Path> paths) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Returns the search path associated with the given location.
      *
      * @param location a location
      * @return a list of files or {@code null} if this location has no
      * associated search path
      * @throws IllegalStateException if any element of the search path
-     * cannot be converted to a {@linkplain File}.
+     * cannot be converted to a {@linkplain File}, or if the search path
+     * cannot be represented as a simple series of files.
      *
      * @see #setLocation
      * @see Path#toFile
@@ -340,6 +383,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @param location a location
      * @return a list of paths or {@code null} if this location has no
      * associated search path
+     * @throws IllegalStateException if the search path cannot be represented
+     * as a simple series of paths.
      *
      * @see #setLocationFromPaths
      * @since 9
