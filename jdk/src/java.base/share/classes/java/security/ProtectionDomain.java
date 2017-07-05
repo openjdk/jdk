@@ -32,6 +32,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.misc.JavaSecurityAccess;
 import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
@@ -524,7 +525,7 @@ public class ProtectionDomain {
                             // have some side effects so this manual
                             // comparison is sufficient.
                             if (pdpName.equals(pp.getName()) &&
-                                pdpActions.equals(pp.getActions())) {
+                                Objects.equals(pdpActions, pp.getActions())) {
                                 plVector.remove(i);
                                 break;
                             }

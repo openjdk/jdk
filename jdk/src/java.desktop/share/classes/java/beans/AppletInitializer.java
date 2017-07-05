@@ -44,6 +44,7 @@ import java.beans.beancontext.BeanContext;
  */
 
 
+@SuppressWarnings("deprecation")
 public interface AppletInitializer {
 
     /**

@@ -55,6 +55,7 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
         super.uninstallListeners();
     }
 
+    @SuppressWarnings("deprecation")
     public void mouseClicked(final MouseEvent e) {
         if (e.getClickCount() != 1) return;
 

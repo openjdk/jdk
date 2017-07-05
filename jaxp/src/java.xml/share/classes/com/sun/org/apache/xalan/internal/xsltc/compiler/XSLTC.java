@@ -43,12 +43,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -116,8 +118,8 @@ public final class XSLTC {
     private File    _destDir = null;     // -d <directory-name>
     private int     _outputType = FILE_OUTPUT; // by default
 
-    private Vector  _classes;
-    private Vector  _bcelClasses;
+    private ArrayList<ByteArrayOutputStream>  _classes;
+    private ArrayList<JavaClass>  _bcelClasses;
     private boolean _callsNodeset = false;
     private boolean _multiDocument = false;
     private boolean _hasIdCall = false;
@@ -160,12 +162,17 @@ public final class XSLTC {
     /**
     *  HashMap with the loaded classes
     */
-    private final Map<String, Class> _externalExtensionFunctions;
+    private final Map<String, Class<?>> _externalExtensionFunctions;
 
     /**
      * Catalog features
      */
     CatalogFeatures _catalogFeatures;
+
+    /**
+     * CDATA chunk size
+     */
+    int _cdataChunkSize;
 
     /**
      * XSLTC compiler constructor
@@ -230,6 +237,8 @@ public final class XSLTC {
             return _extensionClassLoader;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             return _catalogFeatures;
+        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+            return _cdataChunkSize;
         }
         return null;
     }
@@ -254,6 +263,8 @@ public final class XSLTC {
             _externalExtensionFunctions.clear();
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             _catalogFeatures = (CatalogFeatures)value;
+        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+            _cdataChunkSize = Integer.parseInt((String)value);
         }
     }
 
@@ -284,11 +295,11 @@ public final class XSLTC {
     public void init() {
         reset();
         _reader = null;
-        _classes = new Vector();
-        _bcelClasses = new Vector();
+        _classes = new ArrayList<>();
+        _bcelClasses = new ArrayList<>();
     }
 
-    private void setExternalExtensionFunctions(String name, Class clazz) {
+    private void setExternalExtensionFunctions(String name, Class<?> clazz) {
         if (_isSecureProcessing && clazz != null && !_externalExtensionFunctions.containsKey(name)) {
             _externalExtensionFunctions.put(name, clazz);
         }
@@ -319,7 +330,7 @@ public final class XSLTC {
      * Returns unmodifiable view of HashMap with loaded external extension
      * functions - will be needed for the TransformerImpl
     */
-    public Map<String, Class> getExternalExtensionFunctions() {
+    public Map<String, Class<?>> getExternalExtensionFunctions() {
         return Collections.unmodifiableMap(_externalExtensionFunctions);
     }
 
@@ -563,7 +574,7 @@ public final class XSLTC {
         final int count = _classes.size();
         final byte[][] result = new byte[count][1];
         for (int i = 0; i < count; i++)
-            result[i] = (byte[])_classes.elementAt(i);
+            result[i] = _classes.get(i).toByteArray();
         return result;
     }
 
@@ -907,7 +918,7 @@ public final class XSLTC {
                             getOutputFile(clazz.getClassName()))));
                 break;
             case JAR_OUTPUT:
-                _bcelClasses.addElement(clazz);
+                _bcelClasses.add(clazz);
                 break;
             case BYTEARRAY_OUTPUT:
             case BYTEARRAY_AND_FILE_OUTPUT:
@@ -915,13 +926,13 @@ public final class XSLTC {
             case CLASSLOADER_OUTPUT:
                 ByteArrayOutputStream out = new ByteArrayOutputStream(2048);
                 clazz.dump(out);
-                _classes.addElement(out.toByteArray());
+                _classes.add(out);
 
                 if (_outputType == BYTEARRAY_AND_FILE_OUTPUT)
                   clazz.dump(new BufferedOutputStream(
                         new FileOutputStream(getOutputFile(clazz.getClassName()))));
                 else if (_outputType == BYTEARRAY_AND_JAR_OUTPUT)
-                  _bcelClasses.addElement(clazz);
+                  _bcelClasses.add(clazz);
 
                 break;
             }
@@ -945,30 +956,24 @@ public final class XSLTC {
         // create the manifest
         final Manifest manifest = new Manifest();
         final java.util.jar.Attributes atrs = manifest.getMainAttributes();
-        atrs.put(java.util.jar.Attributes.Name.MANIFEST_VERSION,"1.2");
+        atrs.put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.2");
 
-        final Map map = manifest.getEntries();
+        final Map<String, Attributes> map = manifest.getEntries();
         // create manifest
-        Enumeration classes = _bcelClasses.elements();
         final String now = (new Date()).toString();
         final java.util.jar.Attributes.Name dateAttr =
             new java.util.jar.Attributes.Name("Date");
-        while (classes.hasMoreElements()) {
-            final JavaClass clazz = (JavaClass)classes.nextElement();
-            final String className = clazz.getClassName().replace('.','/');
-            final java.util.jar.Attributes attr = new java.util.jar.Attributes();
-            attr.put(dateAttr, now);
-            map.put(className+".class", attr);
-        }
 
         final File jarFile = new File(_destDir, _jarFileName);
         final JarOutputStream jos =
             new JarOutputStream(new FileOutputStream(jarFile), manifest);
-        classes = _bcelClasses.elements();
-        while (classes.hasMoreElements()) {
-            final JavaClass clazz = (JavaClass)classes.nextElement();
-            final String className = clazz.getClassName().replace('.','/');
-            jos.putNextEntry(new JarEntry(className+".class"));
+
+        for (JavaClass clazz : _bcelClasses) {
+            final String className = clazz.getClassName().replace('.', '/');
+            final java.util.jar.Attributes attr = new java.util.jar.Attributes();
+            attr.put(dateAttr, now);
+            map.put(className + ".class", attr);
+            jos.putNextEntry(new JarEntry(className + ".class"));
             final ByteArrayOutputStream out = new ByteArrayOutputStream(2048);
             clazz.dump(out); // dump() closes it's output stream
             out.writeTo(jos);

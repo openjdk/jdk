@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.zone.ZoneRules;
 import java.time.zone.ZoneRulesException;
 import java.time.zone.ZoneRulesProvider;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -284,7 +285,7 @@ public abstract class ZoneId implements Serializable {
      * @return a modifiable copy of the set of zone IDs, not null
      */
     public static Set<String> getAvailableZoneIds() {
-        return ZoneRulesProvider.getAvailableZoneIds();
+        return new HashSet<String>(ZoneRulesProvider.getAvailableZoneIds());
     }
 
     //-----------------------------------------------------------------------

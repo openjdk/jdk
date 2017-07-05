@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,13 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: ToSAXHandler.java,v 1.2.4.1 2005/09/22 11:03:15 pvedula Exp $
- */
+
 package com.sun.org.apache.xml.internal.serializer;
 
 import java.util.ArrayList;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -39,23 +36,16 @@ import org.xml.sax.ext.LexicalHandler;
  *
  * @xsl.usage internal
  */
-public abstract class ToSAXHandler extends SerializerBase
-{
-    public ToSAXHandler()
-    {
-    }
+public abstract class ToSAXHandler extends SerializerBase {
+    public ToSAXHandler() { }
 
-    public ToSAXHandler(
-        ContentHandler hdlr,
-        LexicalHandler lex,
-        String encoding)
-    {
+    public ToSAXHandler(ContentHandler hdlr, LexicalHandler lex, String encoding) {
         setContentHandler(hdlr);
         setLexHandler(lex);
         setEncoding(encoding);
     }
-    public ToSAXHandler(ContentHandler handler, String encoding)
-    {
+
+    public ToSAXHandler(ContentHandler handler, String encoding) {
         setContentHandler(handler);
         setEncoding(encoding);
     }
@@ -90,16 +80,14 @@ public abstract class ToSAXHandler extends SerializerBase
     /**
      * Pass callback to the SAX Handler
      */
-    protected void startDocumentInternal() throws SAXException
-    {
-        if (m_needToCallStartDocument)
-        {
+    protected void startDocumentInternal() throws SAXException {
+        if (m_needToCallStartDocument) {
             super.startDocumentInternal();
-
             m_saxHandler.startDocument();
             m_needToCallStartDocument = false;
         }
     }
+
     /**
      * Do nothing.
      * @see org.xml.sax.ext.LexicalHandler#startDTD(String, String, String)
@@ -113,20 +101,20 @@ public abstract class ToSAXHandler extends SerializerBase
     /**
      * Receive notification of character data.
      *
-     * @param characters The string of characters to process.
+     * @param chars The string of characters to process.
      *
      * @throws org.xml.sax.SAXException
      *
      * @see ExtendedContentHandler#characters(String)
      */
-    public void characters(String characters) throws SAXException
-    {
-        final int len = characters.length();
-        if (len > m_charsBuff.length)
-        {
-           m_charsBuff = new char[len*2 + 1];
+    public void characters(String chars) throws SAXException {
+        final int len = (chars == null) ? 0 : chars.length();
+        if (len > m_charsBuff.length) {
+            m_charsBuff = new char[len * 2 + 1];
         }
-        characters.getChars(0,len, m_charsBuff, 0);
+        if (len > 0) {
+            chars.getChars(0, len, m_charsBuff, 0);
+        }
         characters(m_charsBuff, 0, len);
     }
 
@@ -135,16 +123,13 @@ public abstract class ToSAXHandler extends SerializerBase
      *
      * @see ExtendedLexicalHandler#comment(String)
      */
-    public void comment(String comment) throws SAXException
-    {
+    public void comment(String comment) throws SAXException {
         flushPending();
 
         // Ignore if a lexical handler has not been set
-        if (m_lexHandler != null)
-        {
+        if (m_lexHandler != null) {
             final int len = comment.length();
-            if (len > m_charsBuff.length)
-            {
+            if (len > m_charsBuff.length) {
                m_charsBuff = new char[len*2 + 1];
             }
             comment.getChars(0,len, m_charsBuff, 0);
@@ -153,7 +138,6 @@ public abstract class ToSAXHandler extends SerializerBase
             if (m_tracer != null)
                 super.fireCommentEvent(m_charsBuff, 0, len);
         }
-
     }
 
     /**
@@ -167,12 +151,10 @@ public abstract class ToSAXHandler extends SerializerBase
         // Redefined in SAXXMLOutput
     }
 
-    protected void closeStartTag() throws SAXException
-    {
+    protected void closeStartTag() throws SAXException {
     }
 
-    protected void closeCDATA() throws SAXException
-    {
+    protected void closeCDATA() throws SAXException {
         // Redefined in SAXXMLOutput
     }
 
@@ -191,12 +173,8 @@ public abstract class ToSAXHandler extends SerializerBase
      *
      * @see org.xml.sax.ContentHandler#startElement(String,String,String,Attributes)
      */
-    public void startElement(
-        String arg0,
-        String arg1,
-        String arg2,
-        Attributes arg3)
-        throws SAXException
+    public void startElement(String arg0, String arg1, String arg2,
+                             Attributes arg3) throws SAXException
     {
         if (m_state != null) {
             m_state.resetState(getTransformer());
@@ -211,8 +189,7 @@ public abstract class ToSAXHandler extends SerializerBase
      * Sets the LexicalHandler.
      * @param _lexHandler The LexicalHandler to set
      */
-    public void setLexHandler(LexicalHandler _lexHandler)
-    {
+    public void setLexHandler(LexicalHandler _lexHandler) {
         this.m_lexHandler = _lexHandler;
     }
 
@@ -220,11 +197,9 @@ public abstract class ToSAXHandler extends SerializerBase
      * Sets the SAX ContentHandler.
      * @param _saxHandler The ContentHandler to set
      */
-    public void setContentHandler(ContentHandler _saxHandler)
-    {
+    public void setContentHandler(ContentHandler _saxHandler) {
         this.m_saxHandler = _saxHandler;
-        if (m_lexHandler == null && _saxHandler instanceof LexicalHandler)
-        {
+        if (m_lexHandler == null && _saxHandler instanceof LexicalHandler) {
             // we are not overwriting an existing LexicalHandler, and _saxHandler
             // is also implements LexicalHandler, so lets use it
             m_lexHandler = (LexicalHandler) _saxHandler;
@@ -236,8 +211,7 @@ public abstract class ToSAXHandler extends SerializerBase
      * stream serializers.
      * @see SerializationHandler#setCdataSectionElements(java.util.ArrayList<String>)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames)
-    {
+    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
         // do nothing
     }
 
@@ -247,8 +221,7 @@ public abstract class ToSAXHandler extends SerializerBase
      * @param doOutputNSAttr whether or not namespace declarations
      * should appear as attributes
      */
-    public void setShouldOutputNSAttr(boolean doOutputNSAttr)
-    {
+    public void setShouldOutputNSAttr(boolean doOutputNSAttr) {
         m_shouldGenerateNSAttribute = doOutputNSAttr;
     }
 
@@ -258,8 +231,7 @@ public abstract class ToSAXHandler extends SerializerBase
      * also be mirrored with self generated additional attributes of elements
      * that declare the namespace, for example the attribute xmlns:prefix1="uri1"
      */
-    boolean getShouldOutputNSAttr()
-    {
+    boolean getShouldOutputNSAttr() {
         return m_shouldGenerateNSAttribute;
     }
 
@@ -267,27 +239,21 @@ public abstract class ToSAXHandler extends SerializerBase
      * This method flushes any pending events, which can be startDocument()
      * closing the opening tag of an element, or closing an open CDATA section.
      */
-    public void flushPending() throws SAXException
-    {
-
-            if (m_needToCallStartDocument)
-            {
+    public void flushPending() throws SAXException {
+            if (m_needToCallStartDocument) {
                 startDocumentInternal();
                 m_needToCallStartDocument = false;
             }
 
-            if (m_elemContext.m_startTagOpen)
-            {
+            if (m_elemContext.m_startTagOpen) {
                 closeStartTag();
                 m_elemContext.m_startTagOpen = false;
             }
 
-            if (m_cdataTagOpen)
-            {
+            if (m_cdataTagOpen) {
                 closeCDATA();
                 m_cdataTagOpen = false;
             }
-
     }
 
     /**
@@ -350,8 +316,7 @@ public abstract class ToSAXHandler extends SerializerBase
         throws org.xml.sax.SAXException
     {
         // remember the current node
-        if (m_state != null)
-        {
+        if (m_state != null) {
             m_state.setCurrentNode(node);
         }
 
@@ -392,11 +357,9 @@ public abstract class ToSAXHandler extends SerializerBase
      */
     public void warning(SAXParseException exc) throws SAXException {
         super.warning(exc);
-
         if (m_saxHandler instanceof ErrorHandler)
             ((ErrorHandler)m_saxHandler).warning(exc);
     }
-
 
     /**
      * Try's to reset the super class and reset this class for
@@ -406,11 +369,9 @@ public abstract class ToSAXHandler extends SerializerBase
      * @return true if the class was successfuly reset.
      * @see Serializer#reset()
      */
-    public boolean reset()
-    {
+    public boolean reset() {
         boolean wasReset = false;
-        if (super.reset())
-        {
+        if (super.reset()) {
             resetToSAXHandler();
             wasReset = true;
         }
@@ -421,8 +382,7 @@ public abstract class ToSAXHandler extends SerializerBase
      * Reset all of the fields owned by ToSAXHandler class
      *
      */
-    private void resetToSAXHandler()
-    {
+    private void resetToSAXHandler() {
         this.m_lexHandler = null;
         this.m_saxHandler = null;
         this.m_state = null;

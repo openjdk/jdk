@@ -57,7 +57,7 @@ public class CMSManager {
         if (cmmProviderClass != null) {
             try {
                 Class<?> cls = Class.forName(cmmProviderClass);
-                provider = (CMMServiceProvider)cls.newInstance();
+                provider = (CMMServiceProvider)cls.getConstructor().newInstance();
             } catch (ReflectiveOperationException e) {
             }
         }

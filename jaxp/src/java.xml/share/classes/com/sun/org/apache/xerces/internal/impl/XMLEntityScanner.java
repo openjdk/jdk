@@ -1350,13 +1350,15 @@ public class XMLEntityScanner implements XMLLocator  {
      * @param delimiter The string that signifies the end of the character
      *                  data to be scanned.
      * @param buffer    The XMLStringBuffer to fill.
+     * @param chunkLimit the size limit of the data to be scanned. Zero by default
+     * indicating no limit.
      *
      * @return Returns true if there is more data to scan, false otherwise.
      *
      * @throws IOException  Thrown if i/o error occurs.
      * @throws EOFException Thrown on end of file.
      */
-    protected boolean scanData(String delimiter, XMLStringBuffer buffer)
+    protected boolean scanData(String delimiter, XMLStringBuffer buffer, int chunkLimit)
     throws IOException {
 
         boolean done = false;
@@ -1505,6 +1507,10 @@ public class XMLEntityScanner implements XMLLocator  {
                     buffer.append(fCurrentEntity.ch, offset, length);
                     return true;
                 }
+                if (chunkLimit > 0 &&
+                        (buffer.length + fCurrentEntity.position - offset) >= chunkLimit) {
+                    break;
+                }
             }
             int length = fCurrentEntity.position - offset;
             fCurrentEntity.columnNumber += length - newlines;
@@ -1520,7 +1526,10 @@ public class XMLEntityScanner implements XMLLocator  {
                 print();
                 System.out.println(" -> " + done);
             }
-        } while (!done);
+            if (chunkLimit > 0 && buffer.length >= chunkLimit) {
+                break;
+            }
+        } while (!done && chunkLimit == 0);
         return !done;
 
     } // scanData(String, XMLStringBuffer)

@@ -461,6 +461,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *         not been defined or cannot be created
      * @since 1.5
      */
+    @SuppressWarnings("deprecation")
     public PropertyEditor createPropertyEditor(Object bean) {
         Object editor = null;
 
