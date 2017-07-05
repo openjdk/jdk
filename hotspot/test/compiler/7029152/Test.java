@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.jdi;
+/**
+ * @test
+ * @bug 7029152
+ * @summary Ideal nodes for String intrinsics miss memory edge optimization
+ *
+ * @run main/othervm -Xbatch Test
+ */
 
-import com.sun.jdi.*;
-import sun.jvm.hotspot.oops.Instance;
-import sun.jvm.hotspot.oops.Klass;
-import sun.jvm.hotspot.oops.java_lang_Class;
+public class Test {
 
-public class ClassObjectReferenceImpl extends ObjectReferenceImpl
-                                      implements ClassObjectReference {
-    private ReferenceType reflectedType;
+  static final String str = "11111xx11111xx1x";
+  static int idx = 0;
 
-    ClassObjectReferenceImpl(VirtualMachine vm, Instance oRef) {
-        super(vm, oRef);
+  static int IndexOfTest(String str) {
+    return str.indexOf("11111xx1x");
+  }
+
+  public static void main(String args[]) {
+    final int ITERS=2000000;
+
+    for (int i=0; i<ITERS; i++) {
+      idx = IndexOfTest(str);
     }
-
-    public ReferenceType reflectedType() {
-        if (reflectedType == null) {
-            Klass k = java_lang_Class.asKlass(ref());
-            reflectedType = vm.referenceType(k);
-        }
-        return reflectedType;
-    }
-
-    public String toString() {
-        return "instance of " + referenceType().name() +
-               "(reflected class=" + reflectedType().name() + ", " + "id=" +
-               uniqueID() + ")";
-    }
+    System.out.println("IndexOf = " + idx);
+  }
 }

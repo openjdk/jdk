@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,12 +103,8 @@ public class Oop {
   // Returns the byte size of this object
   public long getObjectSize() {
     Klass k = getKlass();
-    if (k instanceof InstanceKlass) {
-        return ((InstanceKlass)k).getSizeHelper()
-            * VM.getVM().getAddressSize();
-    }
-    // If it is not an instance, this method should be replaced.
-    return getHeaderSize();
+    // All other types should be overriding getObjectSize directly
+    return ((InstanceKlass)k).getObjectSize(this);
   }
 
   // Type test operations
