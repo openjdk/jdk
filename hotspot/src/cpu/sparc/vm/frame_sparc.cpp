@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -806,3 +806,34 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   int index = (Interpreter::expr_offset_in_bytes(offset)/wordSize) - 1;
   return &interpreter_frame_tos_address()[index];
 }
+
+
+#ifdef ASSERT
+
+#define DESCRIBE_FP_OFFSET(name) \
+  values.describe(-1, fp() + frame::name##_offset, #name)
+
+void frame::describe_pd(FrameValues& values, int frame_no) {
+  for (int w = 0; w < frame::register_save_words; w++) {
+    values.describe(frame_no, sp() + w, err_msg("register save area word %d", w), 1);
+  }
+
+  if (is_interpreted_frame()) {
+    DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_padding);
+    DESCRIBE_FP_OFFSET(interpreter_frame_oop_temp);
+  }
+
+  if (!is_compiled_frame()) {
+    if (frame::callee_aggregate_return_pointer_words != 0) {
+      values.describe(frame_no, sp() + frame::callee_aggregate_return_pointer_sp_offset, "callee_aggregate_return_pointer_word");
+    }
+    for (int w = 0; w < frame::callee_register_argument_save_area_words; w++) {
+      values.describe(frame_no, sp() + frame::callee_register_argument_save_area_sp_offset + w,
+                      err_msg("callee_register_argument_save_area_words %d", w));
+    }
+  }
+}
+
+#endif
