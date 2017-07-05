@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,7 @@ void OffsetTableContigSpace::print_on(outputStream* st) const {
               bottom(), top(), _offsets.threshold(), end());
 }
 
-void ContiguousSpace::verify(bool allow_dirty) const {
+void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
@@ -965,27 +965,12 @@ OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOff
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
 
-
-class VerifyOldOopClosure : public OopClosure {
- public:
-  oop  _the_obj;
-  bool _allow_dirty;
-  void do_oop(oop* p) {
-    _the_obj->verify_old_oop(p, _allow_dirty);
-  }
-  void do_oop(narrowOop* p) {
-    _the_obj->verify_old_oop(p, _allow_dirty);
-  }
-};
-
 #define OBJ_SAMPLE_INTERVAL 0
 #define BLOCK_SAMPLE_INTERVAL 100
 
-void OffsetTableContigSpace::verify(bool allow_dirty) const {
+void OffsetTableContigSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  VerifyOldOopClosure blk;      // Does this do anything?
-  blk._allow_dirty = allow_dirty;
   int objs = 0;
   int blocks = 0;
 
@@ -1007,8 +992,6 @@ void OffsetTableContigSpace::verify(bool allow_dirty) const {
 
     if (objs == OBJ_SAMPLE_INTERVAL) {
       oop(p)->verify();
-      blk._the_obj = oop(p);
-      oop(p)->oop_iterate(&blk);
       objs = 0;
     } else {
       objs++;

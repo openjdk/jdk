@@ -26,13 +26,9 @@
 package javax.swing.plaf.synth;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.basic.*;
+import javax.swing.plaf.ComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
 import java.awt.*;
-import java.awt.event.*;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.io.Serializable;
 
 
 /**
@@ -52,6 +48,7 @@ class SynthComboPopup extends BasicComboPopup {
      *
      * @see #createList
      */
+    @Override
     protected void configureList() {
         list.setFont( comboBox.getFont() );
         list.setCellRenderer( comboBox.getRenderer() );
@@ -66,5 +63,28 @@ class SynthComboPopup extends BasicComboPopup {
             list.ensureIndexIsVisible( selectedIndex );
         }
         installListListeners();
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * Overridden to take into account any popup insets specified in
+     * SynthComboBoxUI
+     */
+    @Override
+    protected Rectangle computePopupBounds(int px, int py, int pw, int ph) {
+        ComboBoxUI ui = comboBox.getUI();
+        if (ui instanceof SynthComboBoxUI) {
+            SynthComboBoxUI sui = (SynthComboBoxUI) ui;
+            if (sui.popupInsets != null) {
+                Insets i = sui.popupInsets;
+                return super.computePopupBounds(
+                        px + i.left,
+                        py + i.top,
+                        pw - i.left - i.right,
+                        ph - i.top - i.bottom);
+            }
+        }
+        return super.computePopupBounds(px, py, pw, ph);
     }
 }

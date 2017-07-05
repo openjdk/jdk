@@ -25,24 +25,26 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
+import sun.lwawt.LWCursorManager;
+
+import java.awt.Cursor;
+import java.awt.Point;
 import java.awt.geom.Point2D;
 
-import sun.lwawt.*;
+final class CCursorManager extends LWCursorManager {
 
-public class CCursorManager extends LWCursorManager {
     private static native Point2D nativeGetCursorPosition();
     private static native void nativeSetBuiltInCursor(final int type, final String name);
     private static native void nativeSetCustomCursor(final long imgPtr, final double x, final double y);
 
     private static final int NAMED_CURSOR = -1;
 
-    private final static CCursorManager theInstance = new CCursorManager();
+    private static final CCursorManager theInstance = new CCursorManager();
     public static CCursorManager getInstance() {
         return theInstance;
     }
 
-    Cursor currentCursor;
+    private volatile Cursor currentCursor;
 
     private CCursorManager() { }
 
@@ -62,8 +64,11 @@ public class CCursorManager extends LWCursorManager {
     }
 
     @Override
-    protected void setCursor(final LWWindowPeer windowUnderCursor, final Cursor cursor) {
-        if (cursor == currentCursor) return;
+    protected void setCursor(final Cursor cursor) {
+        if (cursor == currentCursor) {
+            return;
+        }
+        currentCursor = cursor;
 
         if (cursor == null) {
             nativeSetBuiltInCursor(Cursor.DEFAULT_CURSOR, null);
@@ -71,10 +76,12 @@ public class CCursorManager extends LWCursorManager {
         }
 
         if (cursor instanceof CCustomCursor) {
-            final CCustomCursor customCursor = ((CCustomCursor)cursor);
+            final CCustomCursor customCursor = (CCustomCursor) cursor;
             final long imagePtr = customCursor.getImageData();
-            final Point hotSpot = customCursor.getHotSpot();
-            if(imagePtr != 0L) nativeSetCustomCursor(imagePtr, hotSpot.x, hotSpot.y);
+            if (imagePtr != 0L) {
+                final Point hotSpot = customCursor.getHotSpot();
+                nativeSetCustomCursor(imagePtr, hotSpot.x, hotSpot.y);
+            }
             return;
         }
 
@@ -94,13 +101,6 @@ public class CCursorManager extends LWCursorManager {
         throw new RuntimeException("Unimplemented");
     }
 
-    static long getNativeWindow(final LWWindowPeer window) {
-        if (window == null) return 0;
-        final CPlatformWindow platformWindow = (CPlatformWindow)window.getPlatformWindow();
-        if (platformWindow == null) return 0;
-        return platformWindow.getNSWindowPtr();
-    }
-
     // package private methods to handle cursor change during drag-and-drop
     private boolean isDragging = false;
     private Point dragPos = null;
@@ -109,9 +109,7 @@ public class CCursorManager extends LWCursorManager {
         if (isDragging) {
             throw new RuntimeException("Invalid Drag state in CCursorManager!");
         }
-
         isDragging = true;
-
         dragPos = new Point(x, y);
     }
 

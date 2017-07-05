@@ -784,9 +784,8 @@ public class LWWindowPeer
                 }
                 mouseClickButtons &= ~eventButtonMask;
             }
-
-            notifyUpdateCursor();
         }
+        notifyUpdateCursor();
     }
 
     public void dispatchMouseWheelEvent(long when, int x, int y, int modifiers,
@@ -1055,6 +1054,10 @@ public class LWWindowPeer
 
     public static LWWindowPeer getWindowUnderCursor() {
         return lastMouseEventPeer != null ? lastMouseEventPeer.getWindowPeerOrSelf() : null;
+    }
+
+    public static LWComponentPeer<?, ?> getPeerUnderCursor() {
+        return lastMouseEventPeer;
     }
 
     public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {

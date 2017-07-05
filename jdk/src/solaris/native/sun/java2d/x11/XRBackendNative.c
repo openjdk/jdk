@@ -70,7 +70,6 @@ typedef struct _XRadialGradient {
 
 #ifdef __solaris__
 /* Solaris 10 will not have these symbols at runtime */
-#include <link.h>
 
 typedef Picture (*XRenderCreateLinearGradientFuncType)
                                      (Display *dpy,

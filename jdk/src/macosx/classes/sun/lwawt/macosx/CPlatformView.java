@@ -199,7 +199,7 @@ public class CPlatformView extends CFRetainedResource {
 
     private void deliverKeyEvent(NSEvent event) {
         responder.handleKeyEvent(event.getType(), event.getModifierFlags(),
-                                 event.getCharactersIgnoringModifiers(), event.getKeyCode());
+                                 event.getCharactersIgnoringModifiers(), event.getKeyCode(), true);
     }
 
     private void deliverWindowDidExposeEvent() {

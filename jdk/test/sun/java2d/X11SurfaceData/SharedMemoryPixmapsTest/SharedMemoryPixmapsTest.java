@@ -54,8 +54,12 @@ public class SharedMemoryPixmapsTest {
     public SharedMemoryPixmapsTest() {
         testFrame = new Frame("SharedMemoryPixmapsTest");
         testFrame.add(new TestComponent());
+        testFrame.setUndecorated(true);
+        testFrame.setResizable(false);
         testFrame.pack();
+        testFrame.setLocationRelativeTo(null);
         testFrame.setVisible(true);
+        testFrame.toFront();
     }
 
     public static void main(String[] args) {

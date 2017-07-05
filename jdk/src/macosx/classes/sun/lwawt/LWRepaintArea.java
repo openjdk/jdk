@@ -39,12 +39,8 @@ final class LWRepaintArea extends RepaintArea {
     @Override
     protected void updateComponent(final Component comp, final Graphics g) {
         if (comp != null) {
-            final LWComponentPeer peer = (LWComponentPeer) comp.getPeer();
-            if (peer != null) {
-                peer.paintPeer(g);
-            }
             super.updateComponent(comp, g);
-            flushBuffers(peer);
+            flushBuffers((LWComponentPeer) comp.getPeer());
         }
     }
 
