@@ -97,13 +97,11 @@ public class PoolsIndependenceTest implements NotificationListener {
             return false;
         });
         for (BlobType bt : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(bt)) {
-                int expectedNotificationsAmount = bt.equals(btype) ? 1 : 0;
-                Asserts.assertEQ(counters.get(bt.getMemoryPool().getName()).get(),
-                        expectedNotificationsAmount, String.format("Unexpected "
-                                + "amount of notifications for pool: %s",
-                                bt.getMemoryPool().getName()));
-            }
+            int expectedNotificationsAmount = bt.equals(btype) ? 1 : 0;
+            CodeCacheUtils.assertEQorGTE(btype, counters.get(bt.getMemoryPool().getName()).get(),
+                    expectedNotificationsAmount, String.format("Unexpected "
+                            + "amount of notifications for pool: %s",
+                            bt.getMemoryPool().getName()));
         }
         try {
             ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).

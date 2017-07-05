@@ -53,6 +53,7 @@ private:
   bool                   _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_default_methods;
+  bool                   _is_anonymous;
 
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
@@ -177,6 +178,10 @@ public:
   bool has_default_methods()  {
     assert(is_loaded(), "must be loaded");
     return _has_default_methods;
+  }
+
+  bool is_anonymous() {
+    return _is_anonymous;
   }
 
   ciInstanceKlass* get_canonical_holder(int offset);

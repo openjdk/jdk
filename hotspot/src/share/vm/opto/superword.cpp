@@ -183,13 +183,20 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
       break;
     }
 
+    // Ignore nodes with non-primitive type.
+    BasicType bt;
+    if (n->is_Mem()) {
+      bt = n->as_Mem()->memory_type();
+    } else {
+      bt = n->bottom_type()->basic_type();
+    }
+    if (is_java_primitive(bt) == false) {
+      ignored_loop_nodes[i] = n->_idx;
+      continue;
+    }
+
     if (n->is_Mem()) {
       MemNode* current = n->as_Mem();
-      BasicType bt = current->memory_type();
-      if (is_java_primitive(bt) == false) {
-        ignored_loop_nodes[i] = n->_idx;
-        continue;
-      }
       Node* adr = n->in(MemNode::Address);
       Node* n_ctrl = _phase->get_ctrl(adr);
 
@@ -231,11 +238,12 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
 
       BasicType bt;
       Node* n = lpt()->_body.at(i);
-      if (n->is_Store()) {
+      if (n->is_Mem()) {
         bt = n->as_Mem()->memory_type();
       } else {
         bt = n->bottom_type()->basic_type();
       }
+      if (is_java_primitive(bt) == false) continue;
 
       int cur_max_vector = Matcher::max_vector_size(bt);
 
