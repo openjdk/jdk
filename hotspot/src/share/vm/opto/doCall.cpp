@@ -714,8 +714,6 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
   // iterate through all entries sequentially
   for (;!handlers.is_done(); handlers.next()) {
-    // Do nothing if turned off
-    if( !DeutschShiffmanExceptions ) break;
     ciExceptionHandler* handler = handlers.handler();
 
     if (handler->is_rethrow()) {
@@ -741,46 +739,26 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       return;                   // No more handling to be done here!
     }
 
-    // %%% The following logic replicates make_from_klass_unique.
-    // TO DO:  Replace by a subroutine call.  Then generalize
-    // the type check, as noted in the next "%%%" comment.
-
+    // Get the handler's klass
     ciInstanceKlass* klass = handler->catch_klass();
-    if (UseUniqueSubclasses) {
-      // (We use make_from_klass because it respects UseUniqueSubclasses.)
-      const TypeOopPtr* tp = TypeOopPtr::make_from_klass(klass);
-      klass = tp->klass()->as_instance_klass();
+
+    if (!klass->is_loaded()) {  // klass is not loaded?
+      // fall through into catch_call_exceptions which will emit a
+      // handler with an uncommon trap.
+      break;
     }
 
-    // Get the handler's klass
-    if (!klass->is_loaded())    // klass is not loaded?
-      break;                    // Must call Rethrow!
     if (klass->is_interface())  // should not happen, but...
       break;                    // bail out
-    // See if the loaded exception klass has no subtypes
-    if (klass->has_subklass())
-      break;                    // Cannot easily do precise test ==> Rethrow
 
-    // %%% Now that subclass checking is very fast, we need to rewrite
-    // this section and remove the option "DeutschShiffmanExceptions".
-    // The exception processing chain should be a normal typecase pattern,
-    // with a bailout to the interpreter only in the case of unloaded
-    // classes.  (The bailout should mark the method non-entrant.)
-    // This rewrite should be placed in GraphKit::, not Parse::.
-
-    // Add a dependence; if any subclass added we need to recompile
-    // %%% should use stronger assert_unique_concrete_subtype instead
-    if (!klass->is_final()) {
-      C->dependencies()->assert_leaf_type(klass);
-    }
-
-    // Implement precise test
+    // Check the type of the exception against the catch type
     const TypeKlassPtr *tk = TypeKlassPtr::make(klass);
     Node* con = _gvn.makecon(tk);
-    Node* cmp = _gvn.transform( new (C, 3) CmpPNode(ex_klass_node, con) );
-    Node* bol = _gvn.transform( new (C, 2) BoolNode(cmp, BoolTest::ne) );
-    { BuildCutout unless(this, bol, PROB_LIKELY(0.7f));
-      const TypeInstPtr* tinst = TypeInstPtr::make_exact(TypePtr::NotNull, klass);
+    Node* not_subtype_ctrl = gen_subtype_check(ex_klass_node, con);
+    if (!stopped()) {
+      PreserveJVMState pjvms(this);
+      const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->is_instptr();
+      assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new (C, 2) CheckCastPPNode(control(), ex_node, tinst));
       push_ex_oop(ex_oop);      // Push exception oop for handler
 #ifndef PRODUCT
@@ -792,6 +770,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 #endif
       merge_exception(handler_bci);
     }
+    set_control(not_subtype_ctrl);
 
     // Come here if exception does not match handler.
     // Carry on with more handler checks.
@@ -799,21 +778,6 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   }
 
   assert(!stopped(), "you should return if you finish the chain");
-
-  if (remaining == 1) {
-    // Further checks do not matter.
-  }
-
-  if (can_rerun_bytecode()) {
-    // Do not push_ex_oop here!
-    // Re-executing the bytecode will reproduce the throwing condition.
-    bool must_throw = true;
-    uncommon_trap(Deoptimization::Reason_unhandled,
-                  Deoptimization::Action_none,
-                  (ciKlass*)NULL, (const char*)NULL, // default args
-                  must_throw);
-    return;
-  }
 
   // Oops, need to call into the VM to resolve the klasses at runtime.
   // Note:  This call must not deoptimize, since it is not a real at this bci!
