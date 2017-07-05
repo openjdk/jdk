@@ -27,6 +27,9 @@
 # environment variables (Variant, WorkSpace, BootStrapDir, BuildUser, HOTSPOT_BUILD_VERSION)
 # are passed in as command line arguments.
 
+# Note: Running nmake or build.bat from the Windows command shell requires
+# that "sh" be accessible on the PATH. An MKS install does this.
+
 # SA components are built if BUILD_WIN_SA=1 is specified.
 # See notes in README. This produces files:
 #  1. sa-jdi.jar       - This is built before building jvm.dll
@@ -232,6 +235,12 @@ fastdebug: checks $(variantDir) $(variantDir)\local.make sanity
 develop: checks $(variantDir) $(variantDir)\local.make sanity
 	cd $(variantDir)
 	nmake -nologo -f $(WorkSpace)\make\windows\makefiles\top.make BUILD_FLAVOR=product DEVELOP=1 ARCH=$(ARCH)
+
+# target to create just the directory structure
+tree: checks $(variantDir) $(variantDir)\local.make sanity
+	mkdir $(variantDir)\product
+	mkdir $(variantDir)\debug
+	mkdir $(variantDir)\fastdebug
 
 sanity:
 	@ echo;

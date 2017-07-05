@@ -1537,7 +1537,6 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
     global->type = JMM_VMGLOBAL_TYPE_JSTRING;
   } else {
     global->type = JMM_VMGLOBAL_TYPE_UNKNOWN;
-    assert(false, "Unsupported VMGlobal Type");
     return false;
   }
 
