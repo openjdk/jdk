@@ -35,6 +35,7 @@
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384
  * 6328855 6192895 6345469 6988218 6693451 7006761 8140212 8143282 8158482
+ * 8176029
  *
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
@@ -4567,10 +4568,15 @@ public class RegExTest {
         String linebreaks = new String (new char[] {
             0x0A, 0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029 });
         String crnl = "\r\n";
-        if (!Pattern.compile("\\R+").matcher(linebreaks).matches() ||
-            !Pattern.compile("\\R").matcher(crnl).matches() ||
-            Pattern.compile("\\R\\R").matcher(crnl).matches())
+        if (!(Pattern.compile("\\R+").matcher(linebreaks).matches() &&
+              Pattern.compile("\\R").matcher(crnl).matches() &&
+              Pattern.compile("\\Rabc").matcher(crnl + "abc").matches() &&
+              Pattern.compile("\\Rabc").matcher("\rabc").matches() &&
+              Pattern.compile("\\R\\R").matcher(crnl).matches() &&  // backtracking
+              Pattern.compile("\\R\\n").matcher(crnl).matches()) && // backtracking
+              !Pattern.compile("((?<!\\R)\\s)*").matcher(crnl).matches()) { // #8176029
             failCount++;
+        }
         report("linebreakTest");
     }
 

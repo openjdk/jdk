@@ -310,34 +310,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 endif # Windows
 
 ################################################################################
-# doc files
-
-JRE_DOC_LOCATION ?= $(JDK_TOPDIR)
-JDK_DOC_LOCATION ?= $(JDK_TOPDIR)
-
-JRE_DOC_TARGETS := $(addprefix $(JRE_IMAGE_DIR)/, $(JRE_DOC_FILES))
-JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/, $(JDK_DOC_FILES))
-
-# Processing license files from source area to image area
-# These are modified to have the platform specific EOL chars.
-define process-doc-file
-	$(call LogInfo, Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@))
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	LC_ALL=C $(SED) 's/$$//g' $< > $@
-	$(CHMOD) 444 $@
-endef
-
-$(JRE_IMAGE_DIR)/%: $(JRE_DOC_LOCATION)/%
-	$(process-doc-file)
-
-$(JDK_IMAGE_DIR)/%: $(JDK_DOC_LOCATION)/%
-	$(process-doc-file)
-
-JRE_TARGETS += $(JRE_DOC_TARGETS)
-JDK_TARGETS += $(JDK_DOC_TARGETS)
-
-################################################################################
 # src.zip
 
 $(JDK_IMAGE_DIR)/lib/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
