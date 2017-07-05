@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,8 @@ include LibCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
 
   ifeq (, $(filter $(OPENJDK_TARGET_OS), macosx aix))
-
-    # Suppress unused parameters required by exported JNI functions.
-    SCTP_WERROR := -Werror -Wno-error=unused-parameter
-    ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
-      SCTP_WERROR :=
-    endif
+    # DISABLED_WARNINGS_gcc := unused-parameter needed to
+    # suppress unused parameters required by exported JNI functions.
 
     $(eval $(call SetupNativeCompilation,BUILD_LIBSCTP, \
         LIBRARY := sctp, \
@@ -49,7 +45,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
             $(LIBJAVA_HEADER_FLAGS) \
             -I$(SUPPORT_OUTPUTDIR)/headers/jdk.sctp \
             -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
-        CFLAGS_linux := $(SCTP_WERROR), \
+        DISABLED_WARNINGS_gcc := unused-parameter, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsctp/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \

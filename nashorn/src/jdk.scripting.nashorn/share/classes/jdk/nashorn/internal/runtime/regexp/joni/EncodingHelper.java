@@ -229,6 +229,11 @@ public final class EncodingHelper {
 
     /**
      * @see <a href="http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt">http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt</a>
+     *
+     * @param code code
+     * @param ctype ctype
+     *
+     * @return isCodeCType
      */
     public static boolean isCodeCType(final int code, final int ctype) {
         int type;
