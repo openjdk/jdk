@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author Thomas Wuerthinger
  */
-public class InputMethod extends Properties.Object {
+public class InputMethod extends Properties.Entity {
 
     private String name;
     private int bci;

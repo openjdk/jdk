@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -1144,7 +1145,7 @@ public final class JmxMBeanServer
         // This call requires MBeanPermission 'getClassLoaderRepository'
         final ClassLoaderRepository clr = getClassLoaderRepository();
 
-        Class theClass;
+        Class<?> theClass;
         try {
             if (clr == null) throw new ClassNotFoundException(className);
             theClass = clr.loadClass(className);
@@ -1457,23 +1458,22 @@ public final class JmxMBeanServer
      */
     private AttributeList cloneAttributeList(AttributeList list) {
         if (list != null) {
+            List<Attribute> alist = list.asList();
             if (!list.getClass().equals(AttributeList.class)) {
                 // Create new attribute list
                 //
-                AttributeList newList = new AttributeList(list.size());
+                AttributeList newList = new AttributeList(alist.size());
 
                 // Iterate through list and replace non JMX attributes
                 //
-                for (Iterator i = list.iterator(); i.hasNext(); ) {
-                    Attribute attribute = (Attribute) i.next();
+                for (Attribute attribute : alist)
                     newList.add(cloneAttribute(attribute));
-                }
                 return newList;
             } else {
                 // Iterate through list and replace non JMX attributes
                 //
-                for (int i = 0; i < list.size(); i++) {
-                    Attribute attribute = (Attribute) list.get(i);
+                for (int i = 0; i < alist.size(); i++) {
+                    Attribute attribute = alist.get(i);
                     if (!attribute.getClass().equals(Attribute.class)) {
                         list.set(i, cloneAttribute(attribute));
                     }

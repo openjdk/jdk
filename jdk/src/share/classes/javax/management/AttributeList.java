@@ -159,7 +159,7 @@ public class AttributeList extends ArrayList<Object> {
                 checkTypeSafe(this);
             typeSafe = true;
         }
-        return (List<Attribute>) (List) this;
+        return (List<Attribute>) (List<?>) this;
     }
 
     /**

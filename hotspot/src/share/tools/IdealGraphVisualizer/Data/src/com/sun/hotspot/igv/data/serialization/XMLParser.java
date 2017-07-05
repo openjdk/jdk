@@ -25,7 +25,7 @@ package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.Property;
 import com.sun.hotspot.igv.data.Properties;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Stack;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -89,7 +89,7 @@ public class XMLParser implements ContentHandler {
         private Attributes attr;
         private StringBuilder currentText;
         private ParseMonitor monitor;
-        private Hashtable<String, ElementHandler<?, ? super T>> hashtable;
+        private HashMap<String, ElementHandler<?, ? super T>> hashtable;
         private boolean needsText;
         private ElementHandler<P, ?> parentElement;
 
@@ -110,7 +110,7 @@ public class XMLParser implements ContentHandler {
         }
 
         public ElementHandler(String name, boolean needsText) {
-            this.hashtable = new Hashtable<String, ElementHandler<?, ? super T>>();
+            this.hashtable = new HashMap<String, ElementHandler<?, ? super T>>();
             this.name = name;
             this.needsText = needsText;
         }
@@ -153,7 +153,7 @@ public class XMLParser implements ContentHandler {
             for (int i = 0; i < length; i++) {
                 String val = attr.getValue(i).intern();
                 String localName = attr.getLocalName(i).intern();
-                p.add(new Property(val, localName));
+                p.setProperty(val, localName);
             }
         }
 

@@ -141,7 +141,7 @@ public class LeaseManager {
     }
 
     private final Runnable callback;
-    private ScheduledFuture scheduled;  // If null, the lease has expired.
+    private ScheduledFuture<?> scheduled;  // If null, the lease has expired.
 
     private final ScheduledExecutorService executor
             = Executors.newScheduledThreadPool(1,

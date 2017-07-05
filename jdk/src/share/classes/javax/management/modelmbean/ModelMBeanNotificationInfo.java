@@ -46,34 +46,46 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.RuntimeOperationsException;
 
 /**
- * The ModelMBeanNotificationInfo object describes a notification emitted
+ * <p>The ModelMBeanNotificationInfo object describes a notification emitted
  * by a ModelMBean.
  * It is a subclass of MBeanNotificationInfo with the addition of an
- * associated Descriptor and an implementation of the Descriptor interface.
- * <P>
- * The fields in the descriptor are defined, but not limited to,
- * the following:
- * <PRE>
- * name           : notification name
- * descriptorType : must be "notification"
- * severity       : 0-6 where 0: unknown; 1: non-recoverable;
- *                  2: critical, failure; 3: major, severe;
- *                  4: minor, marginal, error; 5: warning;
- *                  6: normal, cleared, informative
- * messageID      : unique key for message text (to allow translation,
- *                  analysis)
- * messageText    : text of notification
- * log            : T - log message F - do not log message
- * logfile        : string fully qualified file name appropriate for
- *                  operating system
- * visibility     : 1-4 where 1: always visible 4: rarely visible
- * presentationString : xml formatted string to allow presentation of data
- * </PRE>
- * The default descriptor contains the name, descriptorType,
+ * associated Descriptor and an implementation of the Descriptor interface.</p>
+ *
+ * <P id="descriptor">
+ * The fields in the descriptor are defined, but not limited to, the following.
+ * Note that when the Type in this table is Number, a String that is the decimal
+ * representation of a Long can also be used.</P>
+ *
+ * <table border="1" cellpadding="5">
+ * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+ * <tr><td>name</td><td>String</td>
+ *     <td>Notification name.</td></tr>
+ * <tr><td>descriptorType</td><td>String</td>
+ *     <td>Must be "notification".</td></tr>
+ * <tr><td>severity</td><td>Number</td>
+ *     <td>0-6 where 0: unknown; 1: non-recoverable;
+ *         2: critical, failure; 3: major, severe;
+ *         4: minor, marginal, error; 5: warning;
+ *         6: normal, cleared, informative</td></tr>
+ * <tr><td>messageID</td><td>String</td>
+ *     <td>Unique key for message text (to allow translation, analysis).</td></tr>
+ * <tr><td>messageText</td><td>String</td>
+ *     <td>Text of notification.</td></tr>
+ * <tr><td>log</td><td>String</td>
+ *     <td>T - log message, F - do not log message.</td></tr>
+ * <tr><td>logfile</td><td>String</td>
+ *     <td>fully qualified file name appropriate for operating system.</td></tr>
+ * <tr><td>visibility</td><td>Number</td>
+ *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
+ * <tr><td>presentationString</td><td>String</td>
+ *     <td>XML formatted string to allow presentation of data.</td></tr>
+ * </table>
+ *
+ * <p>The default descriptor contains the name, descriptorType,
  * displayName and severity(=6) fields.  The default value of the name
  * and displayName fields is the name of the Notification class (as
  * specified by the <code>name</code> parameter of the
- * ModelMBeanNotificationInfo constructor).
+ * ModelMBeanNotificationInfo constructor).</p>
  *
  * <p>The <b>serialVersionUID</b> of this class is <code>-7445681389570207141L</code>.
  *

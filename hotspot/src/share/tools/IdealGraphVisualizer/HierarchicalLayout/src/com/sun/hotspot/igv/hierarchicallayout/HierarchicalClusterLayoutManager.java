@@ -25,7 +25,7 @@ package com.sun.hotspot.igv.hierarchicallayout;
 
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
@@ -69,19 +69,19 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
 
         assert graph.verify();
 
-        Hashtable<Cluster, List<Vertex>> lists = new Hashtable<Cluster, List<Vertex>>();
-        Hashtable<Cluster, List<Link>> listsConnection = new Hashtable<Cluster, List<Link>>();
-        Hashtable<Cluster, Hashtable<Port, ClusterInputSlotNode>> clusterInputSlotHash = new Hashtable<Cluster, Hashtable<Port, ClusterInputSlotNode>>();
-        Hashtable<Cluster, Hashtable<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new Hashtable<Cluster, Hashtable<Port, ClusterOutputSlotNode>>();
+        HashMap<Cluster, List<Vertex>> lists = new HashMap<Cluster, List<Vertex>>();
+        HashMap<Cluster, List<Link>> listsConnection = new HashMap<Cluster, List<Link>>();
+        HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>>();
+        HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>>();
 
-        Hashtable<Cluster, ClusterNode> clusterNodes = new Hashtable<Cluster, ClusterNode>();
-        Hashtable<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new Hashtable<Cluster, Set<ClusterInputSlotNode>>();
-        Hashtable<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new Hashtable<Cluster, Set<ClusterOutputSlotNode>>();
+        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<Cluster, ClusterNode>();
+        HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<Cluster, Set<ClusterInputSlotNode>>();
+        HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<Cluster, Set<ClusterOutputSlotNode>>();
         Set<Link> clusterEdges = new HashSet<Link>();
         Set<Link> interClusterEdges = new HashSet<Link>();
-        Hashtable<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new Hashtable<Link, ClusterOutgoingConnection>();
-        Hashtable<Link, InterClusterConnection> linkInterClusterConnection = new Hashtable<Link, InterClusterConnection>();
-        Hashtable<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new Hashtable<Link, ClusterIngoingConnection>();
+        HashMap<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new HashMap<Link, ClusterOutgoingConnection>();
+        HashMap<Link, InterClusterConnection> linkInterClusterConnection = new HashMap<Link, InterClusterConnection>();
+        HashMap<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new HashMap<Link, ClusterIngoingConnection>();
         Set<ClusterNode> clusterNodeSet = new HashSet<ClusterNode>();
 
         Set<Cluster> cluster = graph.getClusters();
@@ -89,8 +89,8 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         for (Cluster c : cluster) {
             lists.put(c, new ArrayList<Vertex>());
             listsConnection.put(c, new ArrayList<Link>());
-            clusterInputSlotHash.put(c, new Hashtable<Port, ClusterInputSlotNode>());
-            clusterOutputSlotHash.put(c, new Hashtable<Port, ClusterOutputSlotNode>());
+            clusterInputSlotHash.put(c, new HashMap<Port, ClusterInputSlotNode>());
+            clusterOutputSlotHash.put(c, new HashMap<Port, ClusterOutputSlotNode>());
             clusterOutputSlotSet.put(c, new TreeSet<ClusterOutputSlotNode>());
             clusterInputSlotSet.put(c, new TreeSet<ClusterInputSlotNode>());
             ClusterNode cn = new ClusterNode(c, "" + z);

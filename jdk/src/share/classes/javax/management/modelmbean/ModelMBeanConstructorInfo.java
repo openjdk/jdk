@@ -49,22 +49,33 @@ import javax.management.MBeanParameterInfo;
 import javax.management.RuntimeOperationsException;
 
 /**
- * The ModelMBeanConstructorInfo object describes a constructor of the ModelMBean.
+ * <p>The ModelMBeanConstructorInfo object describes a constructor of the ModelMBean.
  * It is a subclass of MBeanConstructorInfo with the addition of an associated Descriptor
- * and an implementation of the DescriptorAccess interface.
- * <P>
- * <PRE>
- * The fields in the descriptor are defined, but not limited to, the following: <P>
- * name           : constructor name
- * descriptorType : must be "operation"
- * role           : must be "constructor"
- * displayName    : human readable name of constructor
- * visibility            : 1-4 where 1: always visible 4: rarely visible
- * presentationString :  xml formatted string to describe how to present operation
- *</PRE>
+ * and an implementation of the DescriptorAccess interface.</p>
+ *
+ * <P id="descriptor">
+ * The fields in the descriptor are defined, but not limited to, the following.
+ * Note that when the Type in this table is Number, a String that is the decimal
+ * representation of a Long can also be used.</P>
+ *
+ * <table border="1" cellpadding="5">
+ * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+ * <tr><td>name</td><td>String</td>
+ *     <td>Constructor name.</td></tr>
+ * <tr><td>descriptorType</td><td>String</td>
+ *     <td>Must be "operation".</td></tr>
+ * <tr><td>role</td><td>String</td>
+ *     <td>Must be "constructor".</td></tr>
+ * <tr><td>displayName</td><td>String</td>
+ *     <td>Human readable name of constructor.</td></tr>
+ * <tr><td>visibility</td><td>Number</td>
+ *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
+ * <tr><td>presentationString</td><td>String</td>
+ *     <td>XML formatted string to describe how to present operation</td></tr>
+ * </table>
  *
  * <p>The {@code persistPolicy} and {@code currencyTimeLimit} fields
- * are meaningless for constructors, but are not considered invalid.
+ * are meaningless for constructors, but are not considered invalid.</p>
  *
  * <p>The default descriptor will have the {@code name}, {@code
  * descriptorType}, {@code displayName} and {@code role} fields.  The
@@ -152,7 +163,7 @@ public class ModelMBeanConstructorInfo
         * describing the MBean constructor.
         */
         public ModelMBeanConstructorInfo(String description,
-                                         Constructor constructorMethod)
+                                         Constructor<?> constructorMethod)
     {
                 super(description, constructorMethod);
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
@@ -194,7 +205,7 @@ public class ModelMBeanConstructorInfo
         */
 
         public ModelMBeanConstructorInfo(String description,
-                                         Constructor constructorMethod,
+                                         Constructor<?> constructorMethod,
                                          Descriptor descriptor)
         {
 
