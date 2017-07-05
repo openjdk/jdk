@@ -214,7 +214,7 @@ inline void CompactibleSpace::scan_and_adjust_pointers(SpaceType* space) {
       assert(space->block_is_obj(q), "should be at block boundaries, and should be looking at objs");
 
       // point all the oops to the new location
-      size_t size = oop(q)->adjust_pointers();
+      size_t size = MarkSweep::adjust_pointers(oop(q));
       size = space->adjust_obj_size(size);
 
       q += size;
@@ -238,7 +238,7 @@ inline void CompactibleSpace::scan_and_adjust_pointers(SpaceType* space) {
     if (oop(q)->is_gc_marked()) {
       // q is alive
       // point all the oops to the new location
-      size_t size = oop(q)->adjust_pointers();
+      size_t size = MarkSweep::adjust_pointers(oop(q));
       size = space->adjust_obj_size(size);
       debug_only(prev_q = q);
       q += size;

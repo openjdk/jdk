@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1RootProcessor.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
@@ -217,7 +218,7 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
         // We must adjust the pointers on the single H object.
         oop obj = oop(r->bottom());
         // point all the oops to the new location
-        obj->adjust_pointers();
+        MarkSweep::adjust_pointers(obj);
       }
     } else {
       // This really ought to be "as_CompactibleSpace"...

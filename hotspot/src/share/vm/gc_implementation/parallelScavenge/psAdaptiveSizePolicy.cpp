@@ -35,8 +35,6 @@
 
 #include <math.h>
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_promo_size,
                                            size_t init_survivor_size,

@@ -37,7 +37,9 @@ public class GenCollectedHeap extends SharedHeap {
   private static CIntegerField nGensField;
   private static AddressField youngGenField;
   private static AddressField oldGenField;
-  private static AddressField genSpecsField;
+
+  private static AddressField youngGenSpecField;
+  private static AddressField oldGenSpecField;
 
   private static GenerationFactory genFactory;
 
@@ -55,9 +57,12 @@ public class GenCollectedHeap extends SharedHeap {
     nGensField = type.getCIntegerField("_n_gens");
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
-    genSpecsField = type.getAddressField("_gen_specs");
 
     genFactory = new GenerationFactory();
+
+    Type collectorPolicyType = db.lookupType("GenCollectorPolicy");
+    youngGenSpecField = collectorPolicyType.getAddressField("_young_gen_spec");
+    oldGenSpecField = collectorPolicyType.getAddressField("_old_gen_spec");
   }
 
   public GenCollectedHeap(Address addr) {
@@ -115,21 +120,23 @@ public class GenCollectedHeap extends SharedHeap {
   /** Package-private access to GenerationSpecs */
   GenerationSpec spec(int level) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that((level >= 0) && (level < nGens()), "Index " + level +
-                  " out of range (should be between 0 and " + nGens() + ")");
+      Assert.that((level == 0) || (level == 1), "Index " + level +
+                  " out of range (should be 0 or 1)");
     }
 
-    if ((level < 0) || (level >= nGens())) {
+    if ((level != 0) && (level != 1)) {
       return null;
     }
 
-    Address ptrList = genSpecsField.getValue(addr);
-    if (ptrList == null) {
-      return null;
+    if (level == 0) {
+      return (GenerationSpec)
+              VMObjectFactory.newObject(GenerationSpec.class,
+                      youngGenSpecField.getAddress());
+    } else {
+      return (GenerationSpec)
+              VMObjectFactory.newObject(GenerationSpec.class,
+                      oldGenSpecField.getAddress());
     }
-    return (GenerationSpec)
-      VMObjectFactory.newObject(GenerationSpec.class,
-                                ptrList.getAddressAt(level * VM.getVM().getAddressSize()));
   }
 
   public CollectedHeapName kind() {
