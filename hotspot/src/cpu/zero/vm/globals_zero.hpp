@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,4 +54,6 @@ define_pd_global(bool,  RewriteFrequentPairs, true);
 
 define_pd_global(bool,  UseMembar,            false);
 
+// GC Ergo Flags
+define_pd_global(intx, CMSYoungGenPerWorker, 16*M);  // default max size of CMS young gen, per GC worker thread
 #endif // CPU_ZERO_VM_GLOBALS_ZERO_HPP
