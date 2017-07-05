@@ -88,13 +88,13 @@ void G1MMUTrackerQueue::add_pause(double start, double end, bool gc_thread) {
     //     the time slice than what's allowed)
     //   consolidate the two entries with the minimum gap between them
     //     (this might allow less GC time than what's allowed)
-    guarantee(NOT_PRODUCT(ScavengeALot ||) G1ForgetfulMMUTracker,
-              "array full, currently we can't recover unless +G1ForgetfulMMUTracker");
+    guarantee(NOT_PRODUCT(ScavengeALot ||) G1UseFixedWindowMMUTracker,
+              "array full, currently we can't recover unless +G1UseFixedWindowMMUTracker");
     // In the case where ScavengeALot is true, such overflow is not
     // uncommon; in such cases, we can, without much loss of precision
     // or performance (we are GC'ing most of the time anyway!),
     // simply overwrite the oldest entry in the tracker: this
-    // is also the behaviour when G1ForgetfulMMUTracker is enabled.
+    // is also the behaviour when G1UseFixedWindowMMUTracker is enabled.
     _head_index = trim_index(_head_index + 1);
     assert(_head_index == _tail_index, "Because we have a full circular buffer");
     _tail_index = trim_index(_tail_index + 1);

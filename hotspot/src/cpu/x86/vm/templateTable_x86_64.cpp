@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2860,12 +2860,8 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no)
     __ andl(recv, 0xFF);
     if (TaggedStackInterpreter) __ shll(recv, 1);  // index*2
     Address recv_addr(rsp, recv, Address::times_8, -Interpreter::expr_offset_in_bytes(1));
-    if (is_invokedynamic) {
-      __ lea(recv, recv_addr);
-    } else {
-      __ movptr(recv, recv_addr);
-      __ verify_oop(recv);
-    }
+    __ movptr(recv, recv_addr);
+    __ verify_oop(recv);
   }
 
   // do null check if needed
