@@ -159,8 +159,9 @@ class CallGenerator : public ResourceObj {
   virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
 
   static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    if (PrintInlining)
+    if (C->print_inlining()) {
       C->print_inlining(callee, inline_level, bci, msg);
+    }
   }
 };
 

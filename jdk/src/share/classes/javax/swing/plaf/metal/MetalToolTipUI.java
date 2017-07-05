@@ -38,7 +38,7 @@ import javax.swing.text.View;
 
 
 /**
- * A Metal L&F extension of BasicToolTipUI.
+ * A Metal L&amp;F extension of BasicToolTipUI.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

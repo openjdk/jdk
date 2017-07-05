@@ -125,7 +125,7 @@ public class ComponentView extends View  {
      * axis of interest.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;=0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -153,7 +153,7 @@ public class ComponentView extends View  {
      * axis of interest.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;=0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -181,7 +181,7 @@ public class ComponentView extends View  {
      * axis of interest.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;=0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -319,7 +319,7 @@ public class ComponentView extends View  {
      * Provides a mapping from the coordinate space of the model to
      * that of the view.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;=0
      * @param a the allocated region to render into
      * @return the bounding box of the given position is returned
      * @exception BadLocationException  if the given position does not
@@ -344,8 +344,8 @@ public class ComponentView extends View  {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;=0
+     * @param y the Y coordinate &gt;=0
      * @param a the allocated region to render into
      * @return the location within the model that best represents
      *    the given point in the view

@@ -22,12 +22,13 @@
  */
 
 /* @test
- * @bug 4777504
+ * @bug 4777504 8024883
  * @summary Ensure that a Selector can return at least 100 selected keys
  * @author Mark Reinhold
  * @library ..
  * @build SelectorLimit
  * @run main/othervm SelectorLimit
+ * @run main/othervm -Dsun.nio.ch.maxUpdateArraySize=128 SelectorLimit
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,32 +548,6 @@ Java_sun_awt_windows_WGlobalCursorManager_findHeavyweightUnderCursor(
     jobject localRef = env->NewLocalRef(globalRef);
     env->DeleteGlobalRef(globalRef);
     return localRef;
-
-    CATCH_BAD_ALLOC_RET(NULL);
-}
-
-/*
- * Class:     sun_awt_windows_WGlobalCursorManager
- * Method:    findComponentAt
- * Signature: (L/java/awt/Container;II)L/java/awt/Component
- */
-JNIEXPORT jobject JNICALL
-Java_sun_awt_windows_WGlobalCursorManager_findComponentAt(
-    JNIEnv *env, jobject, jobject container, jint x, jint y)
-{
-    TRY;
-
-    /*
-     * Call private version of Container.findComponentAt with the following
-     * flag set -- ignoreEnabled = false (i.e., don't return or recur into
-     * disabled Components);
-     * NOTE: it may return a JRootPane's glass pane as the target Component
-     */
-    JNI_CHECK_NULL_RETURN_NULL(container, "null container");
-    jobject comp =
-        env->CallObjectMethod(container, AwtContainer::findComponentAtMID,
-                              x, y, JNI_FALSE);
-    return comp;
 
     CATCH_BAD_ALLOC_RET(NULL);
 }

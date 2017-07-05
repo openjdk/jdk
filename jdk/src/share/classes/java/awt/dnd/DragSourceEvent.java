@@ -96,7 +96,7 @@ public class DragSourceEvent extends EventObject {
      *
      * @param dsc the <code>DragSourceContext</code>
      *
-     * @throws <code>IllegalArgumentException</code> if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
      *
      * @see #getLocation
      */
@@ -117,7 +117,7 @@ public class DragSourceEvent extends EventObject {
      * @param x   the horizontal coordinate for the cursor location
      * @param y   the vertical coordinate for the cursor location
      *
-     * @throws <code>IllegalArgumentException</code> if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
      *
      * @since 1.4
      */

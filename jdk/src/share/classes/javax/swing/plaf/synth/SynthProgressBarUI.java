@@ -35,7 +35,7 @@ import java.beans.PropertyChangeEvent;
 import sun.swing.SwingUtilities2;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JProgressBar}.
  *
  * @author Joshua Outwater
@@ -61,7 +61,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -70,7 +70,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -79,7 +79,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -118,7 +118,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -130,7 +130,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -147,7 +147,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public int getBaseline(JComponent c, int width, int height) {
@@ -165,7 +165,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected Rectangle getBox(Rectangle r) {
@@ -177,7 +177,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void setAnimationIndex(int newValue) {
@@ -386,7 +386,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -396,7 +396,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
@@ -407,7 +407,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getPreferredSize(JComponent c) {
