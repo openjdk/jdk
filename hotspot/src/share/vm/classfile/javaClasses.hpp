@@ -1036,6 +1036,9 @@ class java_lang_invoke_MemberName: AllStatic {
 
   static Metadata*      vmtarget(oop mname);
   static void       set_vmtarget(oop mname, Metadata* target);
+#if INCLUDE_JVMTI
+  static void       adjust_vmtarget(oop mname, Metadata* target);
+#endif // INCLUDE_JVMTI
 
   static intptr_t       vmindex(oop mname);
   static void       set_vmindex(oop mname, intptr_t index);

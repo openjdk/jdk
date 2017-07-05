@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,14 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/globalDefinitions.hpp"
 #ifdef COMPILER1
-#if defined(DEBUG) || defined(FASTDEBUG)
+#ifdef ASSERT
 
 /*
  * To avoid the most part of potential link errors
  * we link this program with -z nodefs .
  *
  * But for 'debug1' and 'fastdebug1' we still have to provide
- * a particular workaround for the following symbols bellow.
+ * a particular workaround for the following symbols below.
  * It will be good to find out a generic way in the future.
  */
 
@@ -79,7 +79,7 @@ address StubRoutines::_call_stub_return_address = NULL;
 
 StubQueue* AbstractInterpreter::_code = NULL;
 
-#endif /* defined(DEBUG) || defined(FASTDEBUG) */
+#endif /* ASSERT */
 #endif /* COMPILER1 */
 
 #define GEN_OFFS(Type,Name)                             \

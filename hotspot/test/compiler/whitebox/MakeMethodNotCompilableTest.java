@@ -27,28 +27,85 @@
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MakeMethodNotCompilableTest
+ * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new MakeMethodNotCompilableTest().runTest();
+        if (args.length == 0) {
+            for (TestCase test : TestCase.values()) {
+                new MakeMethodNotCompilableTest(test).runTest();
+            }
+        } else {
+            for (String name : args) {
+                new MakeMethodNotCompilableTest(
+                        TestCase.valueOf(name)).runTest();
+            }
+        }
     }
 
-    protected void test() throws Exception  {
-        if (!WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be compilable");
+    public MakeMethodNotCompilableTest(TestCase testCase) {
+        super(testCase);
+        // to prevent inlining of #method
+        WHITE_BOX.testSetDontInlineMethod(method, true);
+    }
+
+    /**
+     * Tests {@code WB::makeMethodNotCompilable()} by calling it before
+     * compilation and checking that method isn't compiled. Also
+     * checks that WB::clearMethodState() clears no-compilable flags. For
+     * tiered, additional checks for all available levels are conducted.
+     *
+     * @throws Exception if one of the checks fails.
+     */
+    @Override
+    protected void test() throws Exception {
+        checkNotCompiled();
+        if (!WHITE_BOX.isMethodCompilable(method)) {
+            throw new RuntimeException(method + " must be compilable");
         }
-        WHITE_BOX.makeMethodNotCompilable(METHOD);
-        if (WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be not compilable");
+
+        if (TIERED_COMPILATION) {
+            for (int i = 1, n = TIERED_STOP_AT_LEVEL + 1; i < n; ++i) {
+                WHITE_BOX.makeMethodNotCompilable(method, i);
+                if (WHITE_BOX.isMethodCompilable(method, i)) {
+                    throw new RuntimeException(method
+                            + " must be not compilable at level" + i);
+                }
+                WHITE_BOX.enqueueMethodForCompilation(method, i);
+                checkNotCompiled();
+
+                if (!WHITE_BOX.isMethodCompilable(method)) {
+                    System.out.println(method
+                            + " is not compilable after level " + i);
+                }
+            }
+
+            // WB.clearMethodState() must reset no-compilable flags
+            WHITE_BOX.clearMethodState(method);
+            if (!WHITE_BOX.isMethodCompilable(method)) {
+                throw new RuntimeException(method
+                        + " is not compilable after clearMethodState()");
+            }
+        }
+        WHITE_BOX.makeMethodNotCompilable(method);
+        if (WHITE_BOX.isMethodCompilable(method)) {
+            throw new RuntimeException(method + " must be not compilable");
+        }
+
+        compile();
+        checkNotCompiled();
+        if (WHITE_BOX.isMethodCompilable(method)) {
+            throw new RuntimeException(method + " must be not compilable");
+        }
+        // WB.clearMethodState() must reset no-compilable flags
+        WHITE_BOX.clearMethodState(method);
+        if (!WHITE_BOX.isMethodCompilable(method)) {
+            throw new RuntimeException(method
+                    + " is not compilable after clearMethodState()");
         }
         compile();
-        checkNotCompiled(METHOD);
-        if (WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be not compilable");
-        }
+        checkCompiled();
     }
 }
