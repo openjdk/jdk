@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -248,7 +249,13 @@ public final class NativeError extends ScriptObject {
             final List<StackTraceElement> filtered = new ArrayList<>();
             for (final StackTraceElement st : frames) {
                 if (ECMAErrors.isScriptFrame(st)) {
-                    filtered.add(st);
+                    final String className = "<" + st.getFileName() + ">";
+                    String methodName = st.getMethodName();
+                    if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
+                        methodName = "<program>";
+                    }
+                    filtered.add(new StackTraceElement(className, methodName,
+                            st.getFileName(), st.getLineNumber()));
                 }
             }
             res = filtered.toArray();

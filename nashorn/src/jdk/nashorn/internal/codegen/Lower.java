@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -258,7 +257,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return throwNode;
     }
 
-    private static Node ensureUniqueNamesIn(final LexicalContext lc, final Node node) {
+    private static Node ensureUniqueNamesIn(final Node node) {
         return node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveFunctionNode(final FunctionNode functionNode) {
@@ -273,10 +272,10 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         });
     }
 
-    private static List<Statement> copyFinally(final LexicalContext lc, final Block finallyBody) {
+    private static List<Statement> copyFinally(final Block finallyBody) {
         final List<Statement> newStatements = new ArrayList<>();
         for (final Statement statement : finallyBody.getStatements()) {
-            newStatements.add((Statement)ensureUniqueNamesIn(lc, statement));
+            newStatements.add((Statement)ensureUniqueNamesIn(statement));
             if (statement.hasTerminalFlags()) {
                 return newStatements;
             }
@@ -340,7 +339,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
             @Override
             public Node leaveThrowNode(final ThrowNode throwNode) {
                 if (rethrows.contains(throwNode)) {
-                    final List<Statement> newStatements = copyFinally(lc, finallyBody);
+                    final List<Statement> newStatements = copyFinally(finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(throwNode);
                     }
@@ -374,7 +373,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                     resultNode = null;
                 }
 
-                newStatements.addAll(copyFinally(lc, finallyBody));
+                newStatements.addAll(copyFinally(finallyBody));
                 if (!isTerminal(newStatements)) {
                     newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
                 }
@@ -384,7 +383,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
             private Node copy(final Statement endpoint, final Node targetNode) {
                 if (!insideTry.contains(targetNode)) {
-                    final List<Statement> newStatements = copyFinally(lc, finallyBody);
+                    final List<Statement> newStatements = copyFinally(finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(endpoint);
                     }
@@ -550,7 +549,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                 final FunctionNode currentFunction = lc.getCurrentFunction();
                 return callNode.setEvalArgs(
                     new CallNode.EvalArgs(
-                        ensureUniqueNamesIn(lc, args.get(0)).accept(this),
+                        ensureUniqueNamesIn(args.get(0)).accept(this),
                         compilerConstant(THIS),
                         evalLocation(callee),
                         currentFunction.isStrict()));

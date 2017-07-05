@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,7 +22,6 @@
 # questions.
 #
 
-#!/bin/sh
 # @test
 # @bug 6473331 6485027 6934615
 # @summary Test handling of the Class-Path attribute in jar file manifests

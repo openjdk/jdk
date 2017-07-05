@@ -253,7 +253,6 @@ public class TransformerFactoryImpl
         if (System.getSecurityManager() != null) {
             _isSecureMode = true;
             _isNotSecureProcessing = false;
-            defaultAccess = XalanConstants.getExternalAccessDefault(true);
         }
         _accessExternalStylesheet =  SecuritySupport.getDefaultAccessProperty(
                 XalanConstants.SP_ACCESS_EXTERNAL_STYLESHEET, defaultAccess);

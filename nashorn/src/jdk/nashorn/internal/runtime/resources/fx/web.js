@@ -24,10 +24,10 @@
  */
 
 HTMLEditor        = Java.type("javafx.scene.web.HTMLEditor");
-HTMLEditorBuilder = Java.type("javafx.scene.web.HTMLEditorBuilder");
+//HTMLEditorBuilder = Java.type("javafx.scene.web.HTMLEditorBuilder");
 PopupFeatures     = Java.type("javafx.scene.web.PopupFeatures");
 PromptData        = Java.type("javafx.scene.web.PromptData");
-PromptDataBuilder = Java.type("javafx.scene.web.PromptDataBuilder");
+//PromptDataBuilder = Java.type("javafx.scene.web.PromptDataBuilder");
 WebEngine         = Java.type("javafx.scene.web.WebEngine");
 WebEngineBuilder  = Java.type("javafx.scene.web.WebEngineBuilder");
 WebEvent          = Java.type("javafx.scene.web.WebEvent");

@@ -477,8 +477,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         if (k instanceof InstanceKlass) {
             InstanceKlass ik = (InstanceKlass) k;
             writeObjectID(ik.getClassLoader());
-            writeObjectID(ik.getSigners());
-            writeObjectID(ik.getProtectionDomain());
+            writeObjectID(null);  // ik.getJavaMirror().getSigners());
+            writeObjectID(null);  // ik.getJavaMirror().getProtectionDomain());
             // two reserved id fields
             writeObjectID(null);
             writeObjectID(null);
@@ -516,8 +516,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 if (bottomKlass instanceof InstanceKlass) {
                     InstanceKlass ik = (InstanceKlass) bottomKlass;
                     writeObjectID(ik.getClassLoader());
-                    writeObjectID(ik.getSigners());
-                    writeObjectID(ik.getProtectionDomain());
+                    writeObjectID(null); // ik.getJavaMirror().getSigners());
+                    writeObjectID(null); // ik.getJavaMirror().getProtectionDomain());
                 } else {
                     writeObjectID(null);
                     writeObjectID(null);
