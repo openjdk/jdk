@@ -368,6 +368,11 @@ public:
     return _const_basic_type[type];
   }
 
+  // For two instance arrays of same dimension, return the base element types.
+  // Otherwise or if the arrays have different dimensions, return NULL.
+  static void get_arrays_base_elements(const Type *a1, const Type *a2,
+                                       const TypeInstPtr **e1, const TypeInstPtr **e2);
+
   // Mapping to the array element's basic type.
   BasicType array_element_basic_type() const;
 

@@ -25,8 +25,8 @@
  * @test Test8004741.java
  * @bug 8004741
  * @summary Missing compiled exception handle table entry for multidimensional array allocation
- * @run main/othervm -Xmx64m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers -XX:+SafepointALot -XX:GuaranteedSafepointInterval=100 Test8004741
- * @run main/othervm -Xmx64m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers Test8004741
+ * @run main/othervm -Xmx64m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers -XX:+SafepointALot -XX:GuaranteedSafepointInterval=100 Test8004741
+ * @run main/othervm -Xmx64m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers Test8004741
  */
 
 import java.util.*;

@@ -231,21 +231,6 @@ else ifeq ($(USING_MINGW), true)
     ABS_OS_MAKEFILE := $(subst /,\\,$(shell $(CD) $(HS_MAKE_DIR)/$(OSNAME);$(PWD))/build.make)
 endif
 
-# Disable building SA on windows until we are sure
-# we want to release it.  If we build it here,
-# the SDK makefiles will copy it over and put it into
-# the created image.
-BUILD_WIN_SA = 1
-ifneq ($(ALT_BUILD_WIN_SA),)
-  BUILD_WIN_SA = $(ALT_BUILD_WIN_SA)
-endif
-
-ifeq ($(BUILD_WIN_SA), 1)
-  ifeq ($(ARCH),ia64)
-    BUILD_WIN_SA = 0
-  endif
-endif
-
 EXPORT_SERVER_DIR = $(EXPORT_BIN_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_BIN_DIR)/client
 
@@ -275,21 +260,6 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
 endif
 
 EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
-
-ifeq ($(BUILD_WIN_SA), 1)
-  EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
-  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-    ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.diz
-    else
-      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.pdb
-      EXPORT_LIST += $(EXPORT_BIN_DIR)/sawindbg.map
-    endif
-  endif
-  EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
-  # Must pass this down to nmake.
-  MAKE_ARGS += BUILD_WIN_SA=1
-endif
 
 # Propagate compiler and tools paths from configure to nmake.
 # Need to make sure they contain \\ and not /.

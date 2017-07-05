@@ -369,6 +369,32 @@ Declares a structure type that can be used in other events.
       <structvalue type="G1EvacStats" field="stats" label="Evacuation statistics"/>
     </event>
 
+    <event id="GCG1BasicIHOP" path="vm/gc/detailed/g1_basic_ihop_status" label="G1 Basic IHOP statistics" is_instant="true"
+           description="Basic statistics related to current IHOP calculation">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="BYTES64" field="threshold" label="Current IHOP threshold" description="Current IHOP threshold in bytes"/>
+      <value type="BYTES64" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of old gen"/>
+      <value type="BYTES64" field="targetOccupancy" label="Target occupancy" description="Target old gen occupancy to reach at the start of mixed GC in bytes"/>
+      <value type="BYTES64" field="currentOccupancy" label="Current occupancy" description="Current old gen occupancy in bytes"/>
+      <value type="BYTES64" field="lastAllocationSize" label="Last mutator allocation size" description="Mutator allocation during mutator operation since last GC in bytes"/>
+      <value type="DOUBLE" field="lastAllocationDuration" label="Last mutator operation duration" description="Time the mutator ran since last GC in seconds"/>
+      <value type="DOUBLE" field="lastAllocationRate" label="Last mutator allocation rate" description="Allocation rate of the mutator since last GC in bytes/second"/>
+      <value type="DOUBLE" field="lastMarkingLength" label="Last mutator time from initial mark to first mixed GC" description="Last time from the end of the last initial mark to the first mixed GC in seconds"/>
+    </event>
+
+    <event id="GCG1AdaptiveIHOP" path="vm/gc/detailed/g1_adaptive_ihop_status" label="G1 Adaptive IHOP statistics" is_instant="true"
+           description="Statistics related to current adaptive IHOP calculation">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="BYTES64" field="threshold" label="Current IHOP threshold" description="Current IHOP threshold in bytes"/>
+      <value type="BYTES64" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of the internal target occupancy"/>
+      <value type="BYTES64" field="internalTargetOccupancy" label="Target occupancy" description="Internal target old gen occupancy to reach at the start of mixed GC in bytes"/>
+      <value type="BYTES64" field="currentOccupancy" label="Current occupancy" description="Current old gen occupancy in bytes"/>
+      <value type="BYTES64" field="additionalBufferSize" label="Additional buffer size" description="Additional buffer size in bytes"/>
+      <value type="DOUBLE" field="predictedAllocationRate" label="Predicted mutator allocation rate" description="Current predicted allocation rate for the mutator in bytes/second"/>
+      <value type="DOUBLE" field="predictedMarkingLength" label="Predicted time from initial mark to first mixed GC" description="Current predicted time from the end of the last initial mark to the first mixed GC in seconds"/>
+      <value type="BOOLEAN" field="predictionActive" label="Prediction active" description="Indicates whether the adaptive IHOP prediction is active"/>
+    </event>
+
     <!-- Promotion events, Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. -->
     <event id="PromoteObjectInNewPLAB" path="vm/gc/detailed/object_promotion_in_new_PLAB" label="Promotion in new PLAB"
         description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 

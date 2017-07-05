@@ -71,7 +71,7 @@ public:
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive);
 
-  void compile_method(methodHandle target, int entry_bci, JVMCIEnv* env);
+  void compile_method(const methodHandle& target, int entry_bci, JVMCIEnv* env);
 
   virtual bool is_trivial(Method* method);
 

@@ -154,13 +154,13 @@ private:
   static ConstantIntValue*    _int_2_scope_value;
   static LocationValue*       _illegal_value;
 
-  jint pd_next_offset(NativeInstruction* inst, jint pc_offset, oop method);
-  void pd_patch_OopConstant(int pc_offset, Handle& constant);
-  void pd_patch_MetaspaceConstant(int pc_offset, Handle& constant);
+  jint pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS);
+  void pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS);
+  void pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS);
   void pd_patch_DataSectionReference(int pc_offset, int data_offset);
-  void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination);
-  void pd_relocate_JavaMethod(oop method, jint pc_offset);
-  void pd_relocate_poll(address pc, jint mark);
+  void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS);
+  void pd_relocate_JavaMethod(Handle method, jint pc_offset, TRAPS);
+  void pd_relocate_poll(address pc, jint mark, TRAPS);
 
   objArrayOop sites() { return (objArrayOop) JNIHandles::resolve(_sites_handle); }
   arrayOop code() { return (arrayOop) JNIHandles::resolve(_code_handle); }
@@ -177,33 +177,33 @@ public:
 
   CodeInstaller() : _arena(mtCompiler) {}
 
-  JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle& compiled_code, CodeMetadata& metadata);
-  JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle& compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log);
+  JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS);
+  JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS);
 
   static address runtime_call_target_address(oop runtime_call);
-  static VMReg get_hotspot_reg(jint jvmciRegisterNumber);
+  static VMReg get_hotspot_reg(jint jvmciRegisterNumber, TRAPS);
   static bool is_general_purpose_reg(VMReg hotspotRegister);
 
   const OopMapSet* oopMapSet() const { return _debug_recorder->_oopmaps; }
 
 protected:
-  Location::Type get_oop_type(oop value);
-  ScopeValue* get_scope_value(oop value, BasicType type, GrowableArray<ScopeValue*>* objects, ScopeValue* &second);
-  MonitorValue* get_monitor_value(oop value, GrowableArray<ScopeValue*>* objects);
+  Location::Type get_oop_type(Handle value);
+  ScopeValue* get_scope_value(Handle value, BasicType type, GrowableArray<ScopeValue*>* objects, ScopeValue* &second, TRAPS);
+  MonitorValue* get_monitor_value(Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
-  Metadata* record_metadata_reference(Handle& constant);
+  Metadata* record_metadata_reference(Handle constant, TRAPS);
 #ifdef _LP64
-  narrowKlass record_narrow_metadata_reference(Handle& constant);
+  narrowKlass record_narrow_metadata_reference(Handle constant, TRAPS);
 #endif
 
   // extract the fields of the CompilationResult
-  void initialize_fields(oop target, oop target_method);
-  void initialize_dependencies(oop target_method, OopRecorder* oop_recorder);
+  void initialize_fields(oop target, oop target_method, TRAPS);
+  void initialize_dependencies(oop target_method, OopRecorder* oop_recorder, TRAPS);
 
-  int estimate_stubs_size();
+  int estimate_stubs_size(TRAPS);
 
   // perform data and call relocation on the CodeBuffer
-  JVMCIEnv::CodeInstallResult initialize_buffer(CodeBuffer& buffer);
+  JVMCIEnv::CodeInstallResult initialize_buffer(CodeBuffer& buffer, TRAPS);
 
   void assumption_NoFinalizableSubclass(Handle assumption);
   void assumption_ConcreteSubtype(Handle assumption);
@@ -211,19 +211,19 @@ protected:
   void assumption_ConcreteMethod(Handle assumption);
   void assumption_CallSiteTargetValue(Handle assumption);
 
-  void site_Safepoint(CodeBuffer& buffer, jint pc_offset, oop site);
-  void site_Infopoint(CodeBuffer& buffer, jint pc_offset, oop site);
-  void site_Call(CodeBuffer& buffer, jint pc_offset, oop site);
-  void site_DataPatch(CodeBuffer& buffer, jint pc_offset, oop site);
-  void site_Mark(CodeBuffer& buffer, jint pc_offset, oop site);
+  void site_Safepoint(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
+  void site_Infopoint(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
+  void site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
+  void site_DataPatch(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
+  void site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
 
-  OopMap* create_oop_map(oop debug_info);
+  OopMap* create_oop_map(Handle debug_info, TRAPS);
 
-  void record_scope(jint pc_offset, oop debug_info);
-  void record_scope(jint pc_offset, oop code_pos, GrowableArray<ScopeValue*>* objects);
-  void record_object_value(ObjectValue* sv, oop value, GrowableArray<ScopeValue*>* objects);
+  void record_scope(jint pc_offset, Handle debug_info, TRAPS);
+  void record_scope(jint pc_offset, Handle code_pos, GrowableArray<ScopeValue*>* objects, TRAPS);
+  void record_object_value(ObjectValue* sv, Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
-  GrowableArray<ScopeValue*>* record_virtual_objects(oop debug_info);
+  GrowableArray<ScopeValue*>* record_virtual_objects(Handle debug_info, TRAPS);
 
   void process_exception_handlers();
   int estimateStubSpace(int static_call_stubs);

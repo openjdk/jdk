@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import sun.misc.Unsafe;
-import sun.misc.Contended;
+import jdk.internal.vm.annotation.Contended;
 
 /*
  * @test

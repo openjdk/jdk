@@ -53,15 +53,15 @@
 
 
 // forward declaration for class -- see below for definition
-class SuperTypeClosure;
-class JNIid;
-class jniIdMapBase;
 class BreakpointInfo;
-class fieldDescriptor;
 class DepChange;
-class nmethodBucket;
+class DependencyContext;
+class fieldDescriptor;
+class jniIdMapBase;
+class JNIid;
 class JvmtiCachedClassFieldMap;
 class MemberNameTable;
+class SuperTypeClosure;
 
 // This is used in iterators below.
 class FieldClosure: public StackObj {
@@ -198,7 +198,6 @@ class InstanceKlass: public Klass {
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
-  bool            _has_unloaded_dependent;
 
   // The low two bits of _misc_flags contains the kind field.
   // This can be used to quickly discriminate among the four kinds of
@@ -235,7 +234,7 @@ class InstanceKlass: public Klass {
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
-  nmethodBucket*  _dependencies;         // list of dependent nmethods
+  intptr_t        _dep_context;          // packed DependencyContext structure
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
   // Linked instanceKlasses of previous versions
@@ -467,9 +466,6 @@ class InstanceKlass: public Klass {
   // marking
   bool is_marked_dependent() const         { return _is_marked_dependent; }
   void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
-
-  bool has_unloaded_dependent() const         { return _has_unloaded_dependent; }
-  void set_has_unloaded_dependent(bool value) { _has_unloaded_dependent = value; }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
@@ -835,7 +831,8 @@ public:
   JNIid* jni_id_for(int offset);
 
   // maintenance of deoptimization dependencies
-  int mark_dependent_nmethods(DepChange& changes);
+  inline DependencyContext dependencies();
+  int  mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
@@ -1027,7 +1024,6 @@ public:
   void clean_weak_instanceklass_links(BoolObjectClosure* is_alive);
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
-  void clean_dependent_nmethods();
 
   // Explicit metaspace deallocation of fields
   // For RedefineClasses and class file parsing errors, we need to deallocate
@@ -1318,48 +1314,6 @@ class JNIid: public CHeapObj<mtClass> {
   void set_is_static_field_id()   { _is_static_field_id = true; }
 #endif
   void verify(Klass* holder);
-};
-
-
-//
-// nmethodBucket is used to record dependent nmethods for
-// deoptimization.  nmethod dependencies are actually <klass, method>
-// pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
-//
-class nmethodBucket: public CHeapObj<mtClass> {
-  friend class VMStructs;
- private:
-  nmethod*       _nmethod;
-  int            _count;
-  nmethodBucket* _next;
-
- public:
-  nmethodBucket(nmethod* nmethod, nmethodBucket* next) {
-    _nmethod = nmethod;
-    _next = next;
-    _count = 1;
-  }
-  int count()                             { return _count; }
-  int increment()                         { _count += 1; return _count; }
-  int decrement();
-  nmethodBucket* next()                   { return _next; }
-  void set_next(nmethodBucket* b)         { _next = b; }
-  nmethod* get_nmethod()                  { return _nmethod; }
-
-  static int mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes);
-  static nmethodBucket* add_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
-  static bool remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately);
-  static bool remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
-  static nmethodBucket* clean_dependent_nmethods(nmethodBucket* deps);
-#ifndef PRODUCT
-  static void print_dependent_nmethods(nmethodBucket* deps, bool verbose);
-  static bool is_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
-#endif //PRODUCT
 };
 
 // An iterator that's used to access the inner classes indices in the

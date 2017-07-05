@@ -29,6 +29,17 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 
+#define JVMCI_ERROR(...)       \
+  { Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::jdk_vm_ci_common_JVMCIError(), __VA_ARGS__); return; }
+
+#define JVMCI_ERROR_(ret, ...) \
+  { Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::jdk_vm_ci_common_JVMCIError(), __VA_ARGS__); return ret; }
+
+#define JVMCI_ERROR_0(...)    JVMCI_ERROR_(0, __VA_ARGS__)
+#define JVMCI_ERROR_NULL(...) JVMCI_ERROR_(NULL, __VA_ARGS__)
+#define JVMCI_ERROR_OK(...)   JVMCI_ERROR_(JVMCIEnv::ok, __VA_ARGS__)
+#define CHECK_OK              CHECK_(JVMCIEnv::ok)
+
 class ParseClosure : public StackObj {
   int _lineNo;
   char* _filename;
@@ -171,7 +182,7 @@ class JVMCIRuntime: public AllStatic {
   } \
   (void)(0
 
-  static BasicType kindToBasicType(jchar ch);
+  static BasicType kindToBasicType(Handle kind, TRAPS);
 
   // The following routines are all called from compiled JVMCI code
 

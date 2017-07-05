@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ bool SharedPathsMiscInfo::read(void* ptr, size_t size) {
 }
 
 bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
-  ClassLoader::trace_class_path(msg, name);
+  ClassLoader::trace_class_path(tty, msg, name);
   MetaspaceShared::set_archive_loading_failed();
   return false;
 }

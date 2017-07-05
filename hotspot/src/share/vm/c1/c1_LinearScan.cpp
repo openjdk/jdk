@@ -2087,7 +2087,7 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 #ifdef _LP64
         return LIR_OprFact::double_cpu(assigned_reg, assigned_reg);
 #else
-#if defined(SPARC) || defined(PPC)
+#if defined(SPARC) || defined(PPC32)
         return LIR_OprFact::double_cpu(assigned_regHi, assigned_reg);
 #else
         return LIR_OprFact::double_cpu(assigned_reg, assigned_regHi);
@@ -2728,7 +2728,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef ARM32
       assert(opr->fpu_regnrHi() == opr->fpu_regnrLo() + 1, "assumed in calculation (only fpu_regnrLo is used)");
 #endif
-#ifdef PPC
+#ifdef PPC32
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
 #endif
 
@@ -6233,9 +6233,19 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
             if (prev_branch->stub() == NULL) {
 
               LIR_Op2* prev_cmp = NULL;
+              // There might be a cmove inserted for profiling which depends on the same
+              // compare. If we change the condition of the respective compare, we have
+              // to take care of this cmove as well.
+              LIR_Op2* prev_cmove = NULL;
 
               for(int j = instructions->length() - 3; j >= 0 && prev_cmp == NULL; j--) {
                 prev_op = instructions->at(j);
+                // check for the cmove
+                if (prev_op->code() == lir_cmove) {
+                  assert(prev_op->as_Op2() != NULL, "cmove must be of type LIR_Op2");
+                  prev_cmove = (LIR_Op2*)prev_op;
+                  assert(prev_branch->cond() == prev_cmove->condition(), "should be the same");
+                }
                 if (prev_op->code() == lir_cmp) {
                   assert(prev_op->as_Op2() != NULL, "branch must be of type LIR_Op2");
                   prev_cmp = (LIR_Op2*)prev_op;
@@ -6252,6 +6262,13 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
                 prev_branch->negate_cond();
                 prev_cmp->set_condition(prev_branch->cond());
                 instructions->truncate(instructions->length() - 1);
+                // if we do change the condition, we have to change the cmove as well
+                if (prev_cmove != NULL) {
+                  prev_cmove->set_condition(prev_branch->cond());
+                  LIR_Opr t = prev_cmove->in_opr1();
+                  prev_cmove->set_in_opr1(prev_cmove->in_opr2());
+                  prev_cmove->set_in_opr2(t);
+                }
               }
             }
           }

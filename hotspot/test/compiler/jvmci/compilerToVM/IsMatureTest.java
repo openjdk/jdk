@@ -35,9 +35,11 @@
  *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     compiler.jvmci.compilerToVM.IsMatureTest
  */
+
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.testcases.SimpleClass;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
@@ -46,6 +48,10 @@ import java.lang.reflect.Executable;
 
 public class IsMatureTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final boolean IS_XCOMP
+            = System.getProperty("java.vm.info").contains("compiled mode");
+    private static final boolean TIERED
+            = WB.getBooleanVMFlag("TieredCompilation");
 
     public static void main(String[] args) throws Exception {
         new IsMatureTest().test();
@@ -54,23 +60,21 @@ public class IsMatureTest {
     public void test() throws Exception {
         SimpleClass sclass = new SimpleClass();
         Executable method = SimpleClass.class.getDeclaredMethod("testMethod");
-        long metaspaceMethodData = WB.getMethodData(method);
-        Asserts.assertEQ(metaspaceMethodData, 0L, "MDO should be null for "
-                 + "never invoked method");
-        boolean isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
-        Asserts.assertFalse(isMature, "null MDO can't be mature");
-        for (int i = 0; i < 1000; i++) {
+        long methodData = WB.getMethodData(method);
+        boolean isMature = CompilerToVMHelper.isMature(methodData);
+        Asserts.assertEQ(methodData, 0L,
+                "Never invoked method can't have method data");
+        Asserts.assertFalse(isMature, "Never invoked method can't be mature");
+        for (int i = 0; i < CompilerWhiteBoxTest.THRESHOLD; i++) {
             sclass.testMethod();
         }
-        // warmed up, mdo should be ready for now
-        metaspaceMethodData = WB.getMethodData(method);
-        Asserts.assertNE(metaspaceMethodData, 0L,
-                "MDO should be available after 1000 calls");
-        for (int i = 0; i < 100_000; i++) {
-            sclass.testMethod();
-        }
-        isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
-        Asserts.assertTrue(isMature,
-                "a 100_000 times invoked method should be mature");
+        methodData = WB.getMethodData(method);
+        isMature = CompilerToVMHelper.isMature(methodData);
+        Asserts.assertNE(methodData, 0L,
+                "Multiple times invoked method should have method data");
+        /* a method is not mature for -Xcomp and -Tiered,
+           see NonTieredCompPolicy::is_mature */
+        Asserts.assertEQ(isMature, !(IS_XCOMP && !TIERED),
+                "Unexpected isMature state for multiple times invoked method");
     }
 }
