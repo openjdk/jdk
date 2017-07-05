@@ -37,8 +37,10 @@ AC_DEFUN_ONCE([LIB_SETUP_ALSA],
       [specify directory for the alsa library])])
 
   if test "x$NEEDS_LIB_ALSA" = xfalse; then
-    if test "x${with_alsa}" != x || test "x${with_alsa_include}" != x || test "x${with_alsa_lib}" != x; then
-      AC_MSG_WARN([alsa not used, so --with-alsa is ignored])
+    if (test "x${with_alsa}" != x && test "x${with_alsa}" != xno) || \
+        (test "x${with_alsa_include}" != x && test "x${with_alsa_include}" != xno) || \
+        (test "x${with_alsa_lib}" != x && test "x${with_alsa_lib}" != xno); then
+      AC_MSG_WARN([[alsa not used, so --with-alsa[-*] is ignored]])
     fi
     ALSA_CFLAGS=
     ALSA_LIBS=

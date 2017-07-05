@@ -283,6 +283,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
 # $2: code snippet to call to look for the tool
+# $3: code snippet to call if variable was used to find tool
 AC_DEFUN([BASIC_SETUP_TOOL],
 [
   # Publish this variable in the help.
@@ -340,6 +341,7 @@ AC_DEFUN([BASIC_SETUP_TOOL],
         fi
       fi
     fi
+    $3
   fi
 ])
 
@@ -848,17 +850,8 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 # Goes looking for a usable version of GNU make.
 AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 [
-  # We need to find a recent version of GNU make. Especially on Solaris, this can be tricky.
-  if test "x$MAKE" != x; then
-    # User has supplied a make, test it.
-    if test ! -f "$MAKE"; then
-      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not found.])
-    fi
-    BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=$MAKE])
-    if test "x$FOUND_MAKE" = x; then
-      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer.])
-    fi
-  else
+  BASIC_SETUP_TOOL([MAKE],
+  [
     # Try our hardest to locate a correct version of GNU make
     AC_PATH_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
@@ -886,7 +879,13 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     if test "x$FOUND_MAKE" = x; then
       AC_MSG_ERROR([Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
     fi
-  fi
+  ],[
+    # If MAKE was set by user, verify the version
+    BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=$MAKE])
+    if test "x$FOUND_MAKE" = x; then
+      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer.])
+    fi
+  ])
 
   MAKE=$FOUND_MAKE
   AC_SUBST(MAKE)

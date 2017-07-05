@@ -26,7 +26,9 @@
 package java.util.zip;
 
 import java.nio.file.attribute.FileTime;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 class ZipUtils {
@@ -66,15 +68,16 @@ class ZipUtils {
     /**
      * Converts DOS time to Java time (number of milliseconds since epoch).
      */
-    private static long dosToJavaTime(long dtime) {
-        @SuppressWarnings("deprecation") // Use of date constructor.
-        Date d = new Date((int)(((dtime >> 25) & 0x7f) + 80),
-                          (int)(((dtime >> 21) & 0x0f) - 1),
-                          (int)((dtime >> 16) & 0x1f),
-                          (int)((dtime >> 11) & 0x1f),
-                          (int)((dtime >> 5) & 0x3f),
-                          (int)((dtime << 1) & 0x3e));
-        return d.getTime();
+    public static long dosToJavaTime(long dtime) {
+        LocalDateTime ldt = LocalDateTime.of(
+                (int) (((dtime >> 25) & 0x7f) + 1980),
+                (int) ((dtime >> 21) & 0x0f),
+                (int) ((dtime >> 16) & 0x1f),
+                (int) ((dtime >> 11) & 0x1f),
+                (int) ((dtime >> 5) & 0x3f),
+                (int) ((dtime << 1) & 0x3e));
+        return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
+                ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
     }
 
     /**
@@ -92,16 +95,20 @@ class ZipUtils {
     /**
      * Converts Java time to DOS time.
      */
-    @SuppressWarnings("deprecation") // Use of date methods
     private static long javaToDosTime(long time) {
-        Date d = new Date(time);
-        int year = d.getYear() + 1900;
-        if (year < 1980) {
-            return ZipEntry.DOSTIME_BEFORE_1980;
+        Instant instant = Instant.ofEpochMilli(time);
+        LocalDateTime ldt = LocalDateTime.ofInstant(
+                instant, ZoneId.systemDefault());
+        int year = ldt.getYear() - 1980;
+        if (year < 0) {
+            return (1 << 21) | (1 << 16);
         }
-        return ((year - 1980) << 25 | (d.getMonth() + 1) << 21 |
-                d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
-                d.getSeconds() >> 1) & 0xffffffffL;
+        return (year << 25 |
+            ldt.getMonthValue() << 21 |
+            ldt.getDayOfMonth() << 16 |
+            ldt.getHour() << 11 |
+            ldt.getMinute() << 5 |
+            ldt.getSecond() >> 1) & 0xffffffffL;
     }
 
     /**

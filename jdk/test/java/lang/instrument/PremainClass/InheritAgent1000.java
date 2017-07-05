@@ -27,7 +27,6 @@
  * @summary test config (1,0,0,0): inherited 2-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *
- * @modules java.instrument
  * @run shell ../MakeJAR3.sh InheritAgent1000
  * @run main/othervm -javaagent:InheritAgent1000.jar DummyMain
  */
