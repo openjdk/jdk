@@ -34,12 +34,12 @@ import java.util.HashMap;
  * An abstract sensor.
  *
  * <p>
- * A <tt>AbstractSensor</tt> object consists of two attributes:
+ * A {@code AbstractSensor} object consists of two attributes:
  * <ul>
- *   <li><tt>on</tt> is a boolean flag indicating if a sensor is
+ *   <li>{@code on} is a boolean flag indicating if a sensor is
  *       triggered. This flag will be set or cleared by the
  *       component that owns the sensor.</li>
- *   <li><tt>count</tt> is the total number of times that a sensor
+ *   <li>{@code count} is the total number of times that a sensor
  *       has been triggered.</li>
  * </ul>
  *
@@ -54,7 +54,7 @@ public abstract class Sensor {
     private boolean on;
 
     /**
-     * Constructs a <tt>Sensor</tt> object.
+     * Constructs a {@code Sensor} object.
      *
      * @param name The name of this sensor.
      */
@@ -88,8 +88,8 @@ public abstract class Sensor {
     /**
      * Tests if this sensor is currently on.
      *
-     * @return <tt>true</tt> if the sensor is currently on;
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} if the sensor is currently on;
+     *         {@code false} otherwise.
      *
      */
     public boolean isOn() {
@@ -112,7 +112,7 @@ public abstract class Sensor {
 
     /**
      * Triggers this sensor. This method sets this sensor on
-     * and increments the count with the input <tt>increment</tt>.
+     * and increments the count with the input {@code increment}.
      */
     public void trigger(int increment) {
         synchronized (lock) {
@@ -126,7 +126,7 @@ public abstract class Sensor {
     /**
      * Triggers this sensor piggybacking a memory usage object.
      * This method sets this sensor on
-     * and increments the count with the input <tt>increment</tt>.
+     * and increments the count with the input {@code increment}.
      */
     public void trigger(int increment, MemoryUsage usage) {
         synchronized (lock) {
@@ -150,7 +150,7 @@ public abstract class Sensor {
 
     /**
      * Clears this sensor
-     * and increments the count with the input <tt>increment</tt>.
+     * and increments the count with the input {@code increment}.
      */
     public void clear(int increment) {
         synchronized (lock) {

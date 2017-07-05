@@ -32,7 +32,7 @@
  * @run main/timeout=300 Test7100757
  */
 
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import java.util.BitSet;
 import java.util.Random;
 

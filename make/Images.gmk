@@ -213,7 +213,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jcmd.1 \
       jdb.1 \
       jdeps.1 \
-      jhat.1 \
       jinfo.1 \
       jmap.1 \
       jps.1 \

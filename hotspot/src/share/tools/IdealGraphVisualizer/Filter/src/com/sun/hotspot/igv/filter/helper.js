@@ -21,26 +21,35 @@
  * questions.
  *
  */
-
+ 
  /**
  *
  * @author Thomas Wuerthinger
  */
-
+ 
 function colorize(property, regexp, color) {
     var f = new ColorFilter("");
     f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), color));
-    f.apply(graph);
+    f.apply(graph); 
 }
 
 function remove(property, regexp) {
     var f = new RemoveFilter("");
-    f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), false, false));
+    f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp))));
     f.apply(graph);
 }
 
-function split(property, regexp) {
-    var f = new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)));
+function removeIncludingOrphans(property, regexp) {
+    var f = new RemoveFilter("");
+    f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), true));
+    f.apply(graph);
+}
+
+function split(property, regexp, propertyName) {
+    if (propertyName == undefined) {
+        propertyName = graph.getNodeText();
+    }
+    var f = new SplitFilter("", new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), propertyName);
     f.apply(graph);
 }
 
@@ -53,6 +62,40 @@ function removeInputs(property, regexp, from, to) {
     } else {
         f.addRule(new RemoveInputsFilter.RemoveInputsRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), from, to));
     }
+    f.apply(graph);
+}
+
+function removeUnconnectedSlots(inputs, outputs) {
+    var f = new UnconnectedSlotFilter(inputs, outputs);
+    f.apply(graph);
+}
+
+function colorizeGradient(property, min, max) {
+    var f = new GradientColorFilter();
+    f.setPropertyName(property);
+    f.setMinValue(min);
+    f.setMaxValue(max);
+    f.apply(graph);
+}
+
+function colorizeGradientWithMode(property, min, max, mode) {
+    var f = new GradientColorFilter();
+    f.setPropertyName(property);
+    f.setMinValue(min);
+    f.setMaxValue(max);
+    f.setMode(mode);
+    f.apply(graph);
+}
+
+function colorizeGradientCustom(property, min, max, mode, colors, fractions, nshades) {
+    var f = new GradientColorFilter();
+    f.setPropertyName(property);
+    f.setMinValue(min);
+    f.setMaxValue(max);
+    f.setMode(mode);
+    f.setColors(colors);
+    f.setFractions(fractions);
+    f.setShadeCount(nshades);
     f.apply(graph);
 }
 

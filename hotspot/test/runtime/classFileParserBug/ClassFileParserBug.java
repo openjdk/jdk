@@ -32,7 +32,7 @@
  */
 
 import java.io.File;
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class ClassFileParserBug {
     public static void main(String args[]) throws Throwable {

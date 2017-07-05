@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,55 @@
  * questions.
  */
 
-/*
- *
- * @bug 6455258
- * @summary Sanity test for com.sun.management.HotSpotDiagnosticMXBean.dumpHeap
- *          method
- */
+import static jdk.testlibrary.Asserts.assertTrue;
+import static jdk.testlibrary.Asserts.fail;
 
+import java.io.File;
 import java.lang.management.*;
 import java.util.List;
-import javax.management.MBeanServer;
+
+import jdk.test.lib.hprof.HprofParser;
+import jdk.testlibrary.ProcessTools;
+
 import com.sun.management.HotSpotDiagnosticMXBean;
 
+/*
+ * @test
+ * @bug 6455258
+ * @summary Sanity test for com.sun.management.HotSpotDiagnosticMXBean.dumpHeap method
+ * @library /lib/testlibrary
+ * @library /../../test/lib/share/classes
+ * @build jdk.testlibrary.*
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.utils.*
+ * @run main DumpHeap
+ */
 public class DumpHeap {
-    public static void main(String[] argv) throws Exception {
-         List<HotSpotDiagnosticMXBean> list = ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
-         System.out.println("Dumping to file: " + argv[0] + " ....");
-         list.get(0).dumpHeap(argv[0], true);
+
+    public static void main(String[] args) throws Exception {
+        List<HotSpotDiagnosticMXBean> list = ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
+        File dump = new File(ProcessTools.getProcessId() + ".hprof");
+        if (dump.exists()) {
+            dump.delete();
+        }
+        System.out.println("Dumping to file: " + dump.getAbsolutePath());
+        list.get(0).dumpHeap(dump.getAbsolutePath(), true);
+
+        verifyDumpFile(dump);
+
+        dump.delete();
     }
+
+    private static void verifyDumpFile(File dump) {
+        assertTrue(dump.exists() && dump.isFile(), "Could not create dump file");
+        try {
+            HprofParser.parse(dump);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Could not parse dump file");
+        }
+    }
+
 }

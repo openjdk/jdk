@@ -28,7 +28,7 @@
  * @library /testlibrary /../../test/lib /compiler/whitebox
  * @build  TestExplicitRangeChecks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
+ * @run main ClassFileInstaller jdk.test.lib.Platform
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=compileonly,TestExplicitRangeChecks.test* TestExplicitRangeChecks
  *
@@ -39,7 +39,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 import sun.misc.Unsafe;
 
 public class TestExplicitRangeChecks {

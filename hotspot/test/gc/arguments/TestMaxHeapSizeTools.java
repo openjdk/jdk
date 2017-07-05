@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.hotspot.WhiteBox;
 
 class ErgoArgsPrinter {

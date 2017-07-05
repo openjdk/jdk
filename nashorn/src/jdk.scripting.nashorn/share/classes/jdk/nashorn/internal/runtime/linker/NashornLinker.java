@@ -216,10 +216,11 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         // Could've also used (targetType.isAssignableFrom(ScriptObjectMirror.class) && targetType != Object.class) but
         // it's probably better to explicitly spell out the supported target types
         if (targetType == Map.class || targetType == Bindings.class || targetType == JSObject.class || targetType == ScriptObjectMirror.class) {
-            if(ScriptObject.class.isAssignableFrom(sourceType)) {
+            if (ScriptObject.class.isAssignableFrom(sourceType)) {
                 return new GuardedInvocation(CREATE_MIRROR);
+            } else if (sourceType.isAssignableFrom(ScriptObject.class) || sourceType.isInterface()) {
+                return new GuardedInvocation(CREATE_MIRROR, IS_SCRIPT_OBJECT);
             }
-            return new GuardedInvocation(CREATE_MIRROR, IS_SCRIPT_OBJECT);
         }
         return null;
     }

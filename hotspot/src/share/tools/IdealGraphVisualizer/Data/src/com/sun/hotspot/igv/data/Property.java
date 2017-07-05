@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,25 +32,20 @@ import java.io.Serializable;
 public class Property implements Serializable {
 
     public static final long serialVersionUID = 1L;
-
     private String name;
     private String value;
 
-    private Property() {
-        this(null, null);
-    }
-
-    private Property(Property p) {
-        this(p.getName(), p.getValue());
-    }
-
-    private Property(String name) {
-        this(name, null);
-    }
-
-    public Property(String name, String value) {
+    Property(String name, String value) {
         this.name = name;
         this.value = value;
+
+        if (value == null) {
+            throw new IllegalArgumentException("Property value must not be null!");
+        }
+
+        if (name == null) {
+            throw new IllegalArgumentException("Property name must not be null!");
+        }
     }
 
     public String getName() {
@@ -63,17 +58,20 @@ public class Property implements Serializable {
 
     @Override
     public String toString() {
-        return name + " = " + value + "; ";
+        return name + "=" + value;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Property)) return false;
-        Property p2 = (Property)o;
+        if (!(o instanceof Property)) {
+            return false;
+        }
+        Property p2 = (Property) o;
         return name.equals(p2.name) && value.equals(p2.value);
     }
+
     @Override
     public int hashCode() {
-        return name.hashCode() + value == null ? 0 : value.hashCode();
+        return name.hashCode() * 13 + value.hashCode();
     }
 }

@@ -239,7 +239,7 @@ void InterfaceSupport::stress_derived_pointers() {
     CodeBlob* cb = sfs.current()->cb();
     if (cb != NULL && cb->oop_maps() ) {
       // Find oopmap for current method
-      OopMap* map = cb->oop_map_for_return_address(sfs.current()->pc());
+      const ImmutableOopMap* map = cb->oop_map_for_return_address(sfs.current()->pc());
       assert(map != NULL, "no oopmap found for pc");
       found = map->has_derived_pointer();
     }

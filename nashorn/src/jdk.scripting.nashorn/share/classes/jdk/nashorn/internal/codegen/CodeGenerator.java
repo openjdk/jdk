@@ -3798,7 +3798,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             emitBranch(binaryNode, onTrue, true);
             if (isCurrentDiscard) {
                 method.label(onTrue);
-                method.pop();
             } else {
                 method.load(false);
                 method._goto(skip);

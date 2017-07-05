@@ -204,7 +204,7 @@ public class LexicalContext {
     /**
      * Explicitly apply flags to the topmost element on the stack. This is only valid to use from a
      * {@code NodeVisitor.leaveXxx()} method and only on the node being exited at the time. It is not mandatory to use,
-     * as {@link #pop(LexicalContextNode)} will apply the flags automatically, but this method can be used to apply them
+     * as {@link #pop(Node)} will apply the flags automatically, but this method can be used to apply them
      * during the {@code leaveXxx()} method in case its logic depends on the value of the flags.
      * @param node the node to apply the flags to. Must be the topmost node on the stack.
      * @return the passed in node, or a modified node (if any flags were modified)

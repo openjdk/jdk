@@ -45,26 +45,26 @@ import java.net.MalformedURLException;
 import sun.net.www.ParseUtil;
 
 /**
- * <p>
  * This class checks dependent extensions a particular jar file may have
  * declared through its manifest attributes.
- * </p>
+ * <p>
  * Jar file declared dependent extensions through the extension-list
  * attribute. The extension-list contains a list of keys used to
  * fetch the other attributes describing the required extension.
  * If key is the extension key declared in the extension-list
  * attribute, the following describing attribute can be found in
- * the manifest :
- * key-Extension-Name:  (Specification package name)
- * key-Specification-Version: (Specification-Version)
- * key-Implementation-Version: (Implementation-Version)
- * key-Implementation-Vendor-Id: (Imlementation-Vendor-Id)
- * key-Implementation-Version: (Implementation version)
- * key-Implementation-URL: (URL to download the requested extension)
+ * the manifest:
+ * <ul>
+ * <li>key-Extension-Name:  (Specification package name)</li>
+ * <li>key-Specification-Version: (Specification-Version)</li>
+ * <li>key-Implementation-Version: (Implementation-Version)</li>
+ * <li>key-Implementation-Vendor-Id: (Imlementation-Vendor-Id)</li>
+ * <li>key-Implementation-Version: (Implementation version)</li>
+ * <li>key-Implementation-URL: (URL to download the requested extension)</li>
+ * </ul>
  * <p>
  * This class also maintain versioning consistency of installed
  * extensions dependencies declared in jar file manifest.
- * </p>
  *
  * @deprecated this class will be removed in a future release.
  * @author  Jerome Dochez
@@ -76,10 +76,9 @@ public class ExtensionDependency {
     private static Vector<ExtensionInstallationProvider> providers;
 
     /**
-     * <p>
      * Register an ExtensionInstallationProvider. The provider is responsible
      * for handling the installation (upgrade) of any missing extensions.
-     * </p>
+     *
      * @param eip ExtensionInstallationProvider implementation
      */
     public synchronized static void addExtensionInstallationProvider
@@ -92,9 +91,7 @@ public class ExtensionDependency {
     }
 
     /**
-     * <p>
      * Unregister a previously installed installation provider
-     * </p>
      */
     public synchronized static void removeExtensionInstallationProvider
         (ExtensionInstallationProvider eip)
@@ -103,10 +100,9 @@ public class ExtensionDependency {
     }
 
     /**
-     * <p>
      * Checks the dependencies of the jar file on installed extension.
-     * </p>
-     * @param jarFile containing the attriutes declaring the dependencies
+     *
+     * @param jar containing the attributes declaring the dependencies
      */
     public static boolean checkExtensionsDependencies(JarFile jar)
     {
@@ -182,9 +178,8 @@ public class ExtensionDependency {
 
 
     /*
-     * <p>
      * Check that a particular dependency on an extension is satisfied.
-     * </p>
+     *
      * @param extensionName is the key used for the attributes in the manifest
      * @param attr is the attributes of the manifest file
      *
@@ -204,10 +199,9 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * Check if a particular extension is part of the currently installed
      * extensions.
-     * </p>
+     *
      * @param extensionName is the key for the attributes in the manifest
      * @param attr is the attributes of the manifest
      *
@@ -262,11 +256,9 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * Check if the requested extension described by the attributes
      * in the manifest under the key extensionName is compatible with
      * the jar file.
-     * </p>
      *
      * @param extensionName key in the attribute list
      * @param attr manifest file attributes
@@ -337,10 +329,8 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * An required extension is missing, if an ExtensionInstallationProvider is
      * registered, delegate the installation of that particular extension to it.
-     * </p>
      *
      * @param reqInfo Missing extension information
      * @param instInfo Older installed version information
@@ -380,11 +370,9 @@ public class ExtensionDependency {
     }
 
     /**
-     * <p>
      * Checks if the extension, that is specified in the extension-list in
      * the applet jar manifest, is already installed (i.e. exists in the
      * extension directory).
-     * </p>
      *
      * @param extensionName extension name in the extension-list
      *
@@ -428,9 +416,7 @@ public class ExtensionDependency {
     }
 
     /**
-     * <p>
      * @return the java.ext.dirs property as a list of directory
-     * </p>
      */
     private static File[] getExtDirs() {
         String s = java.security.AccessController.doPrivileged(
@@ -456,9 +442,8 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * Scan the directories and return all files installed in those
-     * </p>
+     *
      * @param dirs list of directories to scan
      *
      * @return the list of files installed in all the directories
@@ -483,9 +468,7 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * @return the list of installed extensions jar files
-     * </p>
      */
     private File[] getInstalledExtensions() throws IOException {
         return AccessController.doPrivileged(
@@ -503,9 +486,7 @@ public class ExtensionDependency {
     }
 
     /*
-     * <p>
      * Add the newly installed jar file to the extension class loader.
-     * </p>
      *
      * @param cl the current installed extension class loader
      *

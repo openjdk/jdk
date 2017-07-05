@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,22 @@
 // suspending thread later calls desynchronize(), allowing the suspended
 // threads to continue.
 class SuspendibleThreadSet : public AllStatic {
+  friend class SuspendibleThreadSetJoiner;
+  friend class SuspendibleThreadSetLeaver;
+
 private:
   static uint   _nthreads;
   static uint   _nthreads_stopped;
   static bool   _suspend_all;
   static double _suspend_all_start;
 
-public:
   // Add the current thread to the set. May block if a suspension is in progress.
   static void join();
 
   // Removes the current thread from the set.
   static void leave();
 
+public:
   // Returns true if an suspension is in progress.
   static bool should_yield() { return _suspend_all; }
 
@@ -63,21 +66,51 @@ public:
 };
 
 class SuspendibleThreadSetJoiner : public StackObj {
+private:
+  bool _active;
+
 public:
-  SuspendibleThreadSetJoiner() {
-    SuspendibleThreadSet::join();
+  SuspendibleThreadSetJoiner(bool active = true) : _active(active) {
+    if (_active) {
+      SuspendibleThreadSet::join();
+    }
   }
 
   ~SuspendibleThreadSetJoiner() {
-    SuspendibleThreadSet::leave();
+    if (_active) {
+      SuspendibleThreadSet::leave();
+    }
   }
 
   bool should_yield() {
-    return SuspendibleThreadSet::should_yield();
+    if (_active) {
+      return SuspendibleThreadSet::should_yield();
+    } else {
+      return false;
+    }
   }
 
   void yield() {
+    assert(_active, "Thread has not joined the suspendible thread set");
     SuspendibleThreadSet::yield();
+  }
+};
+
+class SuspendibleThreadSetLeaver : public StackObj {
+private:
+  bool _active;
+
+public:
+  SuspendibleThreadSetLeaver(bool active = true) : _active(active) {
+    if (_active) {
+      SuspendibleThreadSet::leave();
+    }
+  }
+
+  ~SuspendibleThreadSetLeaver() {
+    if (_active) {
+      SuspendibleThreadSet::join();
+    }
   }
 };
 

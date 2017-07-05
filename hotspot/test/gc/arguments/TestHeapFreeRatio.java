@@ -32,7 +32,7 @@
  * @run main/othervm TestHeapFreeRatio
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestHeapFreeRatio {
 

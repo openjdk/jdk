@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+*** GENERATED FROM project.xml - DO NOT EDIT  ***
+***         EDIT ../build.xml INSTEAD         ***
+-->
+<project name="com.sun.hotspot.igv.selectioncoordinator-impl" basedir="..">
+    <fail message="Please build using Ant 1.7.1 or higher.">
+        <condition>
+            <not>
+                <antversion atleast="1.7.1"/>
+            </not>
+        </condition>
+    </fail>
+    <property file="nbproject/private/suite-private.properties"/>
+    <property file="nbproject/suite.properties"/>
+    <fail unless="suite.dir">You must set 'suite.dir' to point to your containing module suite</fail>
+    <property file="${suite.dir}/nbproject/private/platform-private.properties"/>
+    <property file="${suite.dir}/nbproject/platform.properties"/>
+    <macrodef name="property" uri="http://www.netbeans.org/ns/nb-module-project/2">
+        <attribute name="name"/>
+        <attribute name="value"/>
+        <sequential>
+            <property name="@{name}" value="${@{value}}"/>
+        </sequential>
+    </macrodef>
+    <macrodef name="evalprops" uri="http://www.netbeans.org/ns/nb-module-project/2">
+        <attribute name="property"/>
+        <attribute name="value"/>
+        <sequential>
+            <property name="@{property}" value="@{value}"/>
+        </sequential>
+    </macrodef>
+    <property file="${user.properties.file}"/>
+    <nbmproject2:property name="harness.dir" value="nbplatform.${nbplatform.active}.harness.dir" xmlns:nbmproject2="http://www.netbeans.org/ns/nb-module-project/2"/>
+    <nbmproject2:property name="nbplatform.active.dir" value="nbplatform.${nbplatform.active}.netbeans.dest.dir" xmlns:nbmproject2="http://www.netbeans.org/ns/nb-module-project/2"/>
+    <nbmproject2:evalprops property="cluster.path.evaluated" value="${cluster.path}" xmlns:nbmproject2="http://www.netbeans.org/ns/nb-module-project/2"/>
+    <fail message="Path to 'platform' cluster missing in $${cluster.path} property or using corrupt Netbeans Platform (missing harness).">
+        <condition>
+            <not>
+                <contains string="${cluster.path.evaluated}" substring="platform"/>
+            </not>
+        </condition>
+    </fail>
+    <import file="${harness.dir}/build.xml"/>
+</project>

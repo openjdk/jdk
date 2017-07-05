@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,51 +26,47 @@ package com.sun.hotspot.igv.view.widgets;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.graph.Slot;
-import com.sun.hotspot.igv.view.*;
+import com.sun.hotspot.igv.util.DoubleClickHandler;
+import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
+import java.util.HashSet;
+import java.util.Set;
+import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public abstract class SlotWidget extends Widget {
+public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
     private Slot slot;
     private FigureWidget figureWidget;
-    private Image bufferImage;
     private static double TEXT_ZOOM_FACTOR = 0.9;
     private static double ZOOM_FACTOR = 0.6;
-    private DiagramScene scene;
+    private DiagramScene diagramScene;
 
     public SlotWidget(Slot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(scene);
-        this.scene = scene;
+        this.diagramScene = scene;
         this.slot = slot;
         figureWidget = fw;
-        this.setToolTipText("<HTML>" + slot.getName() + "</HTML>");
+        this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
         this.setCheckClipping(true);
+        parent.addChild(this);
+
+        //this.setPreferredBounds(this.calculateClientArea());
     }
 
-    public Point getAnchorPosition() {
-        Point p = new Point(figureWidget.getFigure().getPosition());
-        Point p2 = slot.getRelativePosition();
-        p.translate(p2.x, p2.y);
-        return p;
-    }
-
-    protected void init() {
-
-        Point p = calculateRelativeLocation();
-        Rectangle r = calculateClientArea();
-        p = new Point(p.x, p.y - r.height / 2);
-        this.setPreferredLocation(p);
+    @Override
+    protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
+        super.notifyStateChanged(previousState, state);
+        repaint();
     }
 
     public Slot getSlot() {
@@ -84,43 +80,98 @@ public abstract class SlotWidget extends Widget {
     @Override
     protected void paintWidget() {
 
-        if (scene.getRealZoomFactor() < ZOOM_FACTOR) {
+        if (getScene().getZoomFactor() < ZOOM_FACTOR) {
             return;
         }
 
-        if (bufferImage == null) {
-            Graphics2D g = this.getGraphics();
-            g.setColor(Color.DARK_GRAY);
-            int w = this.getBounds().width;
-            int h = this.getBounds().height;
+        Graphics2D g = this.getGraphics();
+        // g.setColor(Color.DARK_GRAY);
+        int w = this.getBounds().width;
+        int h = this.getBounds().height;
 
-            if (getSlot().getShortName() != null && getSlot().getShortName().length() > 0 && scene.getRealZoomFactor() >= TEXT_ZOOM_FACTOR) {
-                Font f = new Font("Arial", Font.PLAIN, 8);
-                g.setFont(f.deriveFont(7.5f));
+        if (getSlot().getSource().getSourceNodes().size() > 0) {
+            final int SMALLER = 0;
+            g.setColor(getSlot().getColor());
+
+            int FONT_OFFSET = 2;
+
+            int s = h - SMALLER;
+            int rectW = s;
+
+            Font font = this.getSlot().getFigure().getDiagram().getSlotFont();
+            if (this.getState().isSelected()) {
+                font = font.deriveFont(Font.BOLD);
+            }
+
+            if (getSlot().getShortName() != null && getSlot().getShortName().length() > 0) {
+                g.setFont(font);
                 Rectangle2D r1 = g.getFontMetrics().getStringBounds(getSlot().getShortName(), g);
-                g.drawString(getSlot().getShortName(), (int) (this.getBounds().width - r1.getWidth()) / 2, (int) (this.getBounds().height + r1.getHeight()) / 2);
-            } else {
+                rectW = (int) r1.getWidth() + FONT_OFFSET * 2;
+            }
+            g.fillRect(w / 2 - rectW / 2, 0, rectW - 1, s - 1);
 
-                if (slot instanceof OutputSlot) {
-                    g.fillArc(w / 4, -h / 4 - 1, w / 2, h / 2, 180, 180);
+            if (this.getState().isHighlighted()) {
+                g.setColor(Color.BLUE);
+            } else {
+                g.setColor(Color.BLACK);
+            }
+            g.drawRect(w / 2 - rectW / 2, 0, rectW - 1, s - 1);
+
+            if (getSlot().getShortName() != null && getSlot().getShortName().length() > 0 && getScene().getZoomFactor() >= TEXT_ZOOM_FACTOR) {
+                Rectangle2D r1 = g.getFontMetrics().getStringBounds(getSlot().getShortName(), g);
+                g.drawString(getSlot().getShortName(), (int) (w - r1.getWidth()) / 2, g.getFontMetrics().getAscent() - 1);//(int) (r1.getHeight()));
+            }
+
+        } else {
+
+            if (this.getSlot().getConnections().isEmpty()) {
+                if (this.getState().isHighlighted()) {
+                    g.setColor(Color.BLUE);
                 } else {
-                    g.fillArc(w / 4, 3 * h / 4, w / 2, h / 2, 0, 180);
+                    g.setColor(Color.BLACK);
                 }
+                int r = 2;
+                if (slot instanceof OutputSlot) {
+                    g.fillOval(w / 2 - r, Figure.SLOT_WIDTH - Figure.SLOT_START - r, 2 * r, 2 * r);
+                } else {
+                    g.fillOval(w / 2 - r, Figure.SLOT_START - r, 2 * r, 2 * r);
+                }
+            } else {
+                // Do not paint a slot with connections.
             }
         }
     }
 
     @Override
     protected Rectangle calculateClientArea() {
-        return new Rectangle(0, 0, Figure.SLOT_WIDTH, Figure.SLOT_WIDTH);
+        return new Rectangle(0, 0, slot.getWidth(), Figure.SLOT_WIDTH);
     }
 
-    protected abstract Point calculateRelativeLocation();
+    protected abstract int calculateSlotWidth();
 
-    protected double calculateRelativeY(int size, int index) {
-        assert index >= 0 && index < size;
-        assert size > 0;
-        double height = getFigureWidget().getBounds().getHeight();
-        return height * (index + 1) / (size + 1);
+    protected int calculateWidth(int count) {
+        return getFigureWidget().getFigure().getWidth() / count;
+    }
+
+    @Override
+    public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
+        Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
+        if (diagramScene.isAllVisible()) {
+            hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
+        }
+
+        boolean progress = false;
+        for (Figure f : diagramScene.getModel().getDiagramToView().getFigures()) {
+            for (Slot s : f.getSlots()) {
+                if (DiagramScene.doesIntersect(s.getSource().getSourceNodesAsSet(), slot.getSource().getSourceNodesAsSet())) {
+                    progress = true;
+                    hiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
+                }
+            }
+        }
+
+        if (progress) {
+            this.diagramScene.getModel().showNot(hiddenNodes);
+        }
     }
 }

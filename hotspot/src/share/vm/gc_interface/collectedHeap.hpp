@@ -598,13 +598,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 #endif
 
  public:
-  // This is a convenience method that is used in cases where
-  // the actual number of GC worker threads is not pertinent but
-  // only whether there more than 0.  Use of this method helps
-  // reduce the occurrence of ParallelGCThreads to uses where the
-  // actual number may be germane.
-  static bool use_parallel_gc_threads() { return ParallelGCThreads > 0; }
-
   // Copy the current allocation context statistics for the specified contexts.
   // For each context in contexts, set the corresponding entries in the totals
   // and accuracy arrays to the current values held by the statistics.  Each

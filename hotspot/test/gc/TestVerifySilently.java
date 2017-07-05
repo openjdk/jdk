@@ -30,8 +30,8 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 import java.util.ArrayList;
 import java.util.Collections;
 

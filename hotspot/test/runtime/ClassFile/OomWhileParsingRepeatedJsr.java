@@ -40,7 +40,7 @@
  * @run main OomWhileParsingRepeatedJsr
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 
 public class OomWhileParsingRepeatedJsr {

@@ -250,7 +250,7 @@ public:
 
   // Reset the terminator in ParScanThreadStateSet for
   // "active_workers" threads.
-  virtual void set_for_termination(int active_workers);
+  virtual void set_for_termination(uint active_workers);
 };
 
 class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {

@@ -38,9 +38,9 @@
  *                   TestUseRTMForStackLocksOptionOnSupportedConfig
  */
 
-import com.oracle.java.testlibrary.*;
-import com.oracle.java.testlibrary.cli.*;
-import com.oracle.java.testlibrary.cli.predicate.AndPredicate;
+import jdk.test.lib.*;
+import jdk.test.lib.cli.*;
+import jdk.test.lib.cli.predicate.AndPredicate;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;
 

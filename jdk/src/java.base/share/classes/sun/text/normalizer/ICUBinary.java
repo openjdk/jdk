@@ -65,7 +65,7 @@ public final class ICUBinary
     /**
     * <p>ICU data header reader method.
     * Takes a ICU generated big-endian input stream, parse the ICU standard
-    * file header and authenticates them.</p>
+    * file header and authenticates them.
     * <p>Header format:
     * <ul>
     *     <li> Header size (char)
@@ -84,7 +84,7 @@ public final class ICUBinary
     *                             [0] major [1] minor [2] milli [3] micro
     *     <li> Unicode version (4 bytes) this ICU is based on.
     * </ul>
-    * </p>
+    *
     * <p>
     * Example of use:<br>
     * <pre>
@@ -98,7 +98,7 @@ public final class ICUBinary
     *    System.out.println("This is not a ICU data file");
     * }
     * </pre>
-    * </p>
+    *
     * @param inputStream input stream that contains the ICU data header
     * @param dataFormatIDExpected Data format expected. An array of 4 bytes
     *                     information about the data format.

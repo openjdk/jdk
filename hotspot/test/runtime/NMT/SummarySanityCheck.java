@@ -34,7 +34,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

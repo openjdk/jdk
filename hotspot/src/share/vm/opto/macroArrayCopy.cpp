@@ -1097,8 +1097,15 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       assert(alloc != NULL, "expect alloc");
     }
 
+    const TypePtr* adr_type = _igvn.type(dest)->is_oopptr()->add_offset(Type::OffsetBot);
+    if (ac->_dest_type != TypeOopPtr::BOTTOM) {
+      adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
+    }
+    if (ac->_src_type != ac->_dest_type) {
+      adr_type = TypeRawPtr::BOTTOM;
+    }
     generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
-                       TypeAryPtr::OOPS, T_OBJECT,
+                       adr_type, T_OBJECT,
                        src, src_offset, dest, dest_offset, length,
                        true, !ac->is_copyofrange());
 
@@ -1152,7 +1159,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   }
   // (2) src and dest arrays must have elements of the same BasicType
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem  =  top_src->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
   BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
   if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
@@ -1232,6 +1239,13 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   }
   // This is where the memory effects are placed:
   const TypePtr* adr_type = TypeAryPtr::get_array_body_type(dest_elem);
+  if (ac->_dest_type != TypeOopPtr::BOTTOM) {
+    adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
+  }
+  if (ac->_src_type != ac->_dest_type) {
+    adr_type = TypeRawPtr::BOTTOM;
+  }
+
   generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
                      adr_type, dest_elem,
                      src, src_offset, dest, dest_offset, length,

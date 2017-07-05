@@ -50,7 +50,7 @@ import java.util.Hashtable;
  * Signal objects are created based on their names. For example:
  * <blockquote><pre>
  * new Signal("INT");
- * </blockquote></pre>
+ * </pre></blockquote>
  * constructs a signal object corresponding to <code>SIGINT</code>, which is
  * typically produced when the user presses <code>Ctrl-C</code> at the command line.
  * The <code>Signal</code> constructor throws <code>IllegalArgumentException</code>
@@ -64,7 +64,7 @@ import java.util.Hashtable;
  *     }
  * };
  * Signal.handle(new Signal("INT"), handler);
- * </blockquote></pre>
+ * </pre></blockquote>
  *
  * @author   Sheng Liang
  * @author   Bill Shannon
@@ -149,7 +149,7 @@ public final class Signal {
      *
      * @param sig a signal
      * @param handler the handler to be registered with the given signal.
-     * @result the old handler
+     * @return the old handler
      * @exception IllegalArgumentException the signal is in use by the VM
      * @see sun.misc.Signal#raise(Signal sig)
      * @see sun.misc.SignalHandler

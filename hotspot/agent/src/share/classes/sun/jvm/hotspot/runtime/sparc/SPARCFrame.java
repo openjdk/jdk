@@ -24,8 +24,6 @@
 
 package sun.jvm.hotspot.runtime.sparc;
 
-import java.util.*;
-
 import sun.jvm.hotspot.asm.sparc.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
@@ -34,7 +32,6 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.posix.*;
-import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
 /** Specialization of and implementation of abstract methods of the
@@ -592,7 +589,7 @@ public class SPARCFrame extends Frame {
             map.setIncludeArgumentOops(true);
           }
           if (cb.getOopMaps() != null) {
-            OopMapSet.updateRegisterMap(this, cb, map, VM.getVM().isDebugging());
+            ImmutableOopMapSet.updateRegisterMap(this, cb, map, VM.getVM().isDebugging());
           }
         }
       }

@@ -31,7 +31,7 @@
  * @run main/othervm -XX:NativeMemoryTracking=detail ShutdownTwice
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class ShutdownTwice {
 

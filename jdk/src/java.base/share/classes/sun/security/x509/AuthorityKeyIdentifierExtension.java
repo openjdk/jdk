@@ -196,17 +196,20 @@ implements CertAttrSet<String> {
      * Return the object as a string.
      */
     public String toString() {
-        String s = super.toString() + "AuthorityKeyIdentifier [\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("AuthorityKeyIdentifier [\n");
         if (id != null) {
-            s += id.toString();     // id already has a newline
+            sb.append(id);       // id already has a newline
         }
         if (names != null) {
-            s += names.toString() + "\n";
+            sb.append(names).append('\n');
         }
         if (serialNum != null) {
-            s += serialNum.toString() + "\n";
+            sb.append(serialNum).append('\n');
         }
-        return (s + "]\n");
+        sb.append("]\n");
+        return sb.toString();
     }
 
     /**
