@@ -441,12 +441,25 @@ void VM_Version::get_processor_features() {
       }
     }
 
-    // On family 21 processors default is no sw prefetch
-    if ( cpu_family() == 21 ) {
+    // some defaults for AMD family 15h
+    if ( cpu_family() == 0x15 ) {
+      // On family 15h processors default is no sw prefetch
       if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
         AllocatePrefetchStyle = 0;
       }
+      // Also, if some other prefetch style is specified, default instruction type is PREFETCHW
+      if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+        AllocatePrefetchInstr = 3;
+      }
+      // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
+      if( FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
+        UseXMMForArrayCopy = true;
+      }
+      if( FLAG_IS_DEFAULT(UseUnalignedLoadStores) && UseXMMForArrayCopy ) {
+        UseUnalignedLoadStores = true;
+      }
     }
+
   }
 
   if( is_intel() ) { // Intel cpus specific settings

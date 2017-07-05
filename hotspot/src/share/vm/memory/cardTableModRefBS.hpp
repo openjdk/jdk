@@ -44,6 +44,7 @@
 class Generation;
 class OopsInGenClosure;
 class DirtyCardToOopClosure;
+class ClearNoncleanCardWrapper;
 
 class CardTableModRefBS: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
@@ -165,22 +166,28 @@ class CardTableModRefBS: public ModRefBarrierSet {
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
-  // of mr. cl and dcto_cl must either be the same closure or cl must
-  // wrap dcto_cl. Both are required - neither may be NULL. Also, dcto_cl
-  // may be modified. Note that this function will operate in a parallel
-  // mode if worker threads are available.
-  void non_clean_card_iterate(Space* sp, MemRegion mr,
-                              DirtyCardToOopClosure* dcto_cl,
-                              MemRegionClosure* cl);
+  // of mr. Dirty cards are _not_ cleared by the iterator method itself,
+  // but closures may arrange to do so on their own should they so wish.
+  void non_clean_card_iterate_serial(MemRegion mr, MemRegionClosure* cl);
 
-  // Utility function used to implement the other versions below.
-  void non_clean_card_iterate_work(MemRegion mr, MemRegionClosure* cl);
+  // A variant of the above that will operate in a parallel mode if
+  // worker threads are available, and clear the dirty cards as it
+  // processes them.
+  // ClearNoncleanCardWrapper cl must wrap the DirtyCardToOopClosure dcto_cl,
+  // which may itself be modified by the method.
+  void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
+                                                DirtyCardToOopClosure* dcto_cl,
+                                                ClearNoncleanCardWrapper* cl);
 
-  void par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
-                                       DirtyCardToOopClosure* dcto_cl,
-                                       MemRegionClosure* cl,
-                                       int n_threads);
+ private:
+  // Work method used to implement non_clean_card_iterate_possibly_parallel()
+  // above in the parallel case.
+  void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
+                                            DirtyCardToOopClosure* dcto_cl,
+                                            ClearNoncleanCardWrapper* cl,
+                                            int n_threads);
 
+ protected:
   // Dirty the bytes corresponding to "mr" (not all of which must be
   // covered.)
   void dirty_MemRegion(MemRegion mr);
@@ -237,7 +244,7 @@ class CardTableModRefBS: public ModRefBarrierSet {
                       MemRegion used,
                       jint stride, int n_strides,
                       DirtyCardToOopClosure* dcto_cl,
-                      MemRegionClosure* cl,
+                      ClearNoncleanCardWrapper* cl,
                       jbyte** lowest_non_clean,
                       uintptr_t lowest_non_clean_base_chunk_index,
                       size_t lowest_non_clean_chunk_size);
@@ -409,14 +416,14 @@ public:
   // marking, where a dirty card may cause scanning, and summarization
   // marking, of objects that extend onto subsequent cards.)
   void mod_card_iterate(MemRegionClosure* cl) {
-    non_clean_card_iterate_work(_whole_heap, cl);
+    non_clean_card_iterate_serial(_whole_heap, cl);
   }
 
   // Like the "mod_cards_iterate" above, except only invokes the closure
   // for cards within the MemRegion "mr" (which is required to be
   // card-aligned and sized.)
   void mod_card_iterate(MemRegion mr, MemRegionClosure* cl) {
-    non_clean_card_iterate_work(mr, cl);
+    non_clean_card_iterate_serial(mr, cl);
   }
 
   static uintx ct_max_alignment_constraint();
@@ -492,5 +499,6 @@ public:
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
 };
+
 
 #endif // SHARE_VM_MEMORY_CARDTABLEMODREFBS_HPP

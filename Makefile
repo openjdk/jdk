@@ -97,7 +97,7 @@ define StopTimer
 endef
 
 # Generic build of basic repo series
-generic_build_repo_series::
+generic_build_repo_series:: $(SOURCE_TIPS)
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
 	@$(call StartTimer)
@@ -242,6 +242,14 @@ build_fastdebug_image:
 product_build:: build_product_image
 debug_build:: build_debug_image
 fastdebug_build:: build_fastdebug_image
+
+# The source tips are stored with the relative path to the repo.
+#   This file will be used when constructing the jdk image.
+source_tips: $(SOURCE_TIPS)
+	$(CAT) $<
+$(SOURCE_TIPS): FRC
+	@$(prep-target)
+	@$(call GetSourceTips)
 
 clobber:: REPORT_BUILD_TIMES=
 clobber:: 

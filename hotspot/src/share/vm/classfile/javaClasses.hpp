@@ -440,8 +440,8 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);
 
   // Fill in current stack trace, can cause GC
-  static void fill_in_stack_trace(Handle throwable, TRAPS);
-  static void fill_in_stack_trace(Handle throwable);
+  static void fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS);
+  static void fill_in_stack_trace(Handle throwable, methodHandle method = methodHandle());
   // Programmatic access to stack trace
   static oop  get_stack_trace_element(oop throwable, int index, TRAPS);
   static int  get_stack_trace_depth(oop throwable, TRAPS);
