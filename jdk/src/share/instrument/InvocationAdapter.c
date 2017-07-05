@@ -626,6 +626,7 @@ appendClassPath( JPLISAgent* agent,
     jvmtiError jvmtierr;
 
     jvmtierr = (*jvmtienv)->AddToSystemClassLoaderSearch(jvmtienv, jarfile);
+    check_phase_ret_1(jvmtierr);
 
     if (jvmtierr == JVMTI_ERROR_NONE) {
         return 0;
@@ -634,6 +635,7 @@ appendClassPath( JPLISAgent* agent,
         jvmtiError err;
 
         err = (*jvmtienv)->GetPhase(jvmtienv, &phase);
+        /* can be called from any phase */
         jplis_assert(err == JVMTI_ERROR_NONE);
 
         if (phase == JVMTI_PHASE_LIVE) {
@@ -805,6 +807,8 @@ appendBootClassPath( JPLISAgent* agent,
 
         /* print warning if boot class path not updated */
         if (jvmtierr != JVMTI_ERROR_NONE) {
+            check_phase_blob_ret(jvmtierr, free(path));
+
             fprintf(stderr, "WARNING: %s not added to bootstrap class loader search: ", path);
             switch (jvmtierr) {
                 case JVMTI_ERROR_ILLEGAL_ARGUMENT :

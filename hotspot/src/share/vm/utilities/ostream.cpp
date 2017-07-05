@@ -829,7 +829,7 @@ bool networkStream::connect(const char *ip, short port) {
   server.sin_port = htons(port);
 
   server.sin_addr.s_addr = inet_addr(ip);
-  if (server.sin_addr.s_addr == (unsigned long)-1) {
+  if (server.sin_addr.s_addr == (uint32_t)-1) {
 #ifdef _WINDOWS
     struct hostent* host = hpi::get_host_by_name((char*)ip);
 #else

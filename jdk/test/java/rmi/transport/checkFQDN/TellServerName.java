@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 import java.rmi.*;
 import java.rmi.server.*;
 
-/** 
+/**
  * interface to get server name from an execed vm
  * I am using an execed vm because I need to set
  * rmi's hostname serveral times with different properties.
@@ -32,4 +32,3 @@ import java.rmi.server.*;
 interface TellServerName extends Remote {
     void tellServerName (String serverName) throws RemoteException;
 }
-

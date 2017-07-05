@@ -901,6 +901,8 @@ class Assembler : public AbstractAssembler  {
   void cvtss2sd(XMMRegister dst, XMMRegister src);
   void cvtsd2ss(XMMRegister dst, Address src);   // Convert Scalar Double-Precision Floating-Point Value to Scalar Single-Precision Floating-Point Value
   void cvtsd2ss(XMMRegister dst, XMMRegister src);
+  void cvtdq2pd(XMMRegister dst, XMMRegister src);
+  void cvtdq2ps(XMMRegister dst, XMMRegister src);
 
   void cvtsi2ss(XMMRegister dst, Address src);   // Convert Doubleword Integer to Scalar Single-Precision Floating-Point Value
   void cvtsi2ss(XMMRegister dst, Register src);

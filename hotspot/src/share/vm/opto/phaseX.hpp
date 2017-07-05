@@ -439,6 +439,13 @@ public:
   void add_users_to_worklist0( Node *n );
   void add_users_to_worklist ( Node *n );
 
+  // Replace old node with new one.
+  void replace_node( Node *old, Node *nn ) {
+    add_users_to_worklist(old);
+    hash_delete(old);
+    subsume_node(old, nn);
+  }
+
 #ifndef PRODUCT
 protected:
   // Sub-quadratic implementation of VerifyIterativeGVN.

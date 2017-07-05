@@ -686,6 +686,7 @@ public:
   bool klass_is_exact()    const { return _klass_is_exact; }
   bool is_instance()       const { return _instance_id != UNKNOWN_INSTANCE; }
   uint instance_id()       const { return _instance_id; }
+  bool is_instance_field() const { return _instance_id != UNKNOWN_INSTANCE && _offset >= 0; }
 
   virtual intptr_t get_con() const;
 
@@ -1070,6 +1071,7 @@ inline bool Type::is_floatingpoint() const {
 #define LShiftXNode  LShiftLNode
 // For object size computation:
 #define AddXNode     AddLNode
+#define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
 // Opcodes
@@ -1108,6 +1110,7 @@ inline bool Type::is_floatingpoint() const {
 #define LShiftXNode  LShiftINode
 // For object size computation:
 #define AddXNode     AddINode
+#define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
 // Opcodes

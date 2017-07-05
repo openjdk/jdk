@@ -32,7 +32,7 @@
 
 // Some types of data layouts need a length field.
 bool DataLayout::needs_array_len(u1 tag) {
-  return (tag == multi_branch_data_tag);
+  return (tag == multi_branch_data_tag) || (tag == arg_info_data_tag);
 }
 
 // Perform generic initialization of the data.  More specific
@@ -404,6 +404,17 @@ void MultiBranchData::print_data_on(outputStream* st) {
 }
 #endif
 
+#ifndef PRODUCT
+void ArgInfoData::print_data_on(outputStream* st) {
+  print_shared(st, "ArgInfoData");
+  int nargs = number_of_args();
+  for (int i = 0; i < nargs; i++) {
+    st->print("  0x%x", arg_modified(i));
+  }
+  st->cr();
+}
+
+#endif
 // ==================================================================
 // methodDataOop
 //
@@ -508,6 +519,9 @@ int methodDataOopDesc::compute_allocation_size_in_bytes(methodHandle method) {
   int extra_data_count = compute_extra_data_count(data_size, empty_bc_count);
   object_size += extra_data_count * DataLayout::compute_size_in_bytes(0);
 
+  // Add a cell to record information about modified arguments.
+  int arg_size = method->size_of_parameters();
+  object_size += DataLayout::compute_size_in_bytes(arg_size+1);
   return object_size;
 }
 
@@ -626,6 +640,8 @@ ProfileData* methodDataOopDesc::data_at(int data_index) {
     return new BranchData(data_layout);
   case DataLayout::multi_branch_data_tag:
     return new MultiBranchData(data_layout);
+  case DataLayout::arg_info_data_tag:
+    return new ArgInfoData(data_layout);
   };
 }
 
@@ -681,7 +697,17 @@ void methodDataOopDesc::initialize(methodHandle method) {
 
   // Add some extra DataLayout cells (at least one) to track stray traps.
   int extra_data_count = compute_extra_data_count(data_size, empty_bc_count);
-  object_size += extra_data_count * DataLayout::compute_size_in_bytes(0);
+  int extra_size = extra_data_count * DataLayout::compute_size_in_bytes(0);
+
+  // Add a cell to record information about modified arguments.
+  // Set up _args_modified array after traps cells so that
+  // the code for traps cells works.
+  DataLayout *dp = data_layout_at(data_size + extra_size);
+
+  int arg_size = method->size_of_parameters();
+  dp->initialize(DataLayout::arg_info_data_tag, 0, arg_size+1);
+
+  object_size += extra_size + DataLayout::compute_size_in_bytes(arg_size+1);
 
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
@@ -764,6 +790,10 @@ ProfileData* methodDataOopDesc::bci_to_extra_data(int bci, bool create_if_missin
     // No need for "OrderAccess::load_acquire" ops,
     // since the data structure is monotonic.
     if (dp->tag() == DataLayout::no_tag)  break;
+    if (dp->tag() == DataLayout::arg_info_data_tag) {
+      dp = end; // ArgInfoData is at the end of extra data section.
+      break;
+    }
     if (dp->bci() == bci) {
       assert(dp->tag() == DataLayout::bit_data_tag, "sane");
       return new BitData(dp);
@@ -785,6 +815,16 @@ ProfileData* methodDataOopDesc::bci_to_extra_data(int bci, bool create_if_missin
   return NULL;
 }
 
+ArgInfoData *methodDataOopDesc::arg_info() {
+  DataLayout* dp    = extra_data_base();
+  DataLayout* end   = extra_data_limit();
+  for (; dp < end; dp = next_extra(dp)) {
+    if (dp->tag() == DataLayout::arg_info_data_tag)
+      return new ArgInfoData(dp);
+  }
+  return NULL;
+}
+
 #ifndef PRODUCT
 void methodDataOopDesc::print_data_on(outputStream* st) {
   ResourceMark rm;
@@ -794,15 +834,20 @@ void methodDataOopDesc::print_data_on(outputStream* st) {
     st->fill_to(6);
     data->print_data_on(st);
   }
+  st->print_cr("--- Extra data:");
   DataLayout* dp    = extra_data_base();
   DataLayout* end   = extra_data_limit();
   for (; dp < end; dp = next_extra(dp)) {
     // No need for "OrderAccess::load_acquire" ops,
     // since the data structure is monotonic.
-    if (dp->tag() == DataLayout::no_tag)  break;
-    if (dp == extra_data_base())
-      st->print_cr("--- Extra data:");
-    data = new BitData(dp);
+    if (dp->tag() == DataLayout::no_tag)  continue;
+    if (dp->tag() == DataLayout::bit_data_tag) {
+      data = new BitData(dp);
+    } else {
+      assert(dp->tag() == DataLayout::arg_info_data_tag, "must be BitData or ArgInfo");
+      data = new ArgInfoData(dp);
+      dp = end; // ArgInfoData is at the end of extra data section.
+    }
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);

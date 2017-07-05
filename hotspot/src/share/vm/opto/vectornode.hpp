@@ -48,7 +48,7 @@ class VectorNode : public Node {
   uint length() const { return _length; } // Vector length
 
   static uint max_vlen(BasicType bt) { // max vector length
-    return (uint)(Matcher::vector_width_in_bytes() / type2aelembytes[bt]);
+    return (uint)(Matcher::vector_width_in_bytes() / type2aelembytes(bt));
   }
 
   // Element and vector type
@@ -392,7 +392,7 @@ class VectorLoadNode : public LoadNode {
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const { return length()*type2aelembytes[elt_basic_type()]; }
+  virtual int memory_size() const { return length()*type2aelembytes(elt_basic_type()); }
 
   // Vector opcode from scalar opcode
   static int opcode(int sopc, uint vlen);
@@ -620,7 +620,7 @@ class VectorStoreNode : public StoreNode {
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(); }
   virtual BasicType memory_type() const { return T_VOID; }
-  virtual int memory_size() const { return length()*type2aelembytes[elt_basic_type()]; }
+  virtual int memory_size() const { return length()*type2aelembytes(elt_basic_type()); }
 
   // Vector opcode from scalar opcode
   static int opcode(int sopc, uint vlen);

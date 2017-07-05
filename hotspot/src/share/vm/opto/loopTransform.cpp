@@ -1714,6 +1714,7 @@ void IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   // Gate unrolling, RCE and peeling efforts.
   if( !_child &&                // If not an inner loop, do not split
       !_irreducible &&
+      _allow_optimizations &&
       !tail()->is_top() ) {     // Also ignore the occasional dead backedge
     if (!_has_call) {
       iteration_split_impl( phase, old_new );

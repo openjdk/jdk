@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,124 +45,124 @@ public class UseCustomSocketFactory {
 
     final static int REGISTRY_PORT = 2006;
     static String[] protocol = new String[] { "", "compress", "xor" };
-    
+
     public static void main(String[] args) {
 
-	System.out.println("\nRegression test for bug 4115696\n");
-	
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");	
+        System.out.println("\nRegression test for bug 4115696\n");
 
-	try {
-	    LocateRegistry.createRegistry(REGISTRY_PORT);
-	} catch (Exception e) {
-	    TestLibrary.bomb("creating registry", e);
-	}
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
-	RMID rmid = null;
-	
-	try {
-	    rmid = RMID.createRMID(true);
-	    rmid.addArguments(new String[] {
-		"-C-Djava.security.policy=" + 
-		    TestParams.defaultGroupPolicy + 
-		    " -C-Djava.security.manager=java.rmi.RMISecurityManager "});
-	    rmid.start();
+        try {
+            LocateRegistry.createRegistry(REGISTRY_PORT);
+        } catch (Exception e) {
+            TestLibrary.bomb("creating registry", e);
+        }
 
-	    Echo[] echo = spawnAndTest();
-	    reactivateAndTest(echo);
-	} catch (IOException e) {
-	    TestLibrary.bomb("creating rmid", e);
-	} finally {
-	    if (rmid != null)
-		rmid.destroy();
-	}
+        RMID rmid = null;
+
+        try {
+            rmid = RMID.createRMID(true);
+            rmid.addArguments(new String[] {
+                "-C-Djava.security.policy=" +
+                    TestParams.defaultGroupPolicy +
+                    " -C-Djava.security.manager=java.rmi.RMISecurityManager "});
+            rmid.start();
+
+            Echo[] echo = spawnAndTest();
+            reactivateAndTest(echo);
+        } catch (IOException e) {
+            TestLibrary.bomb("creating rmid", e);
+        } finally {
+            if (rmid != null)
+                rmid.destroy();
+        }
     }
 
     private static Echo[] spawnAndTest() {
-	
-	System.err.println("\nCreate Test-->");
 
-	Echo[] echo = new Echo[protocol.length];
-	
-	for (int i = 0; i < protocol.length; i++) {
-	    
-	    JavaVM serverVM = new JavaVM("EchoImpl", 
-					 "-Djava.security.policy=" + 
-					 TestParams.defaultPolicy,
-					 protocol[i]);
+        System.err.println("\nCreate Test-->");
 
-	    System.err.println("\nusing protocol: " +
-			       (protocol[i] == "" ? "none" : protocol[i]));
-	    
-	    try {
-		/* spawn VM for EchoServer */
-		serverVM.start();
+        Echo[] echo = new Echo[protocol.length];
 
-		/* lookup server */
-		int tries = 12;        // need enough tries for slow machine.
-		echo[i] = null;
-		do {
-		    try {
-			echo[i] = (Echo) Naming.lookup("//:" + REGISTRY_PORT +
-						       "/EchoServer");
-			break;
-		    } catch (NotBoundException e) {
-			try {
-			    Thread.sleep(2000);
-			} catch (Exception ignore) {
-			}
-			continue;
-		    }
-		} while (--tries > 0);
+        for (int i = 0; i < protocol.length; i++) {
 
-		if (echo[i] == null)
-		    TestLibrary.bomb("server not bound in 12 tries", null);
+            JavaVM serverVM = new JavaVM("EchoImpl",
+                                         "-Djava.security.policy=" +
+                                         TestParams.defaultPolicy,
+                                         protocol[i]);
 
-		/* invoke remote method and print result*/
-		System.err.println("Bound to " + echo[i]);
-		byte[] data = ("Greetings, citizen " +
-			       System.getProperty("user.name") + "!"). getBytes();
-		byte[] result = echo[i].echoNot(data);
-		for (int j = 0; j < result.length; j++)
-		    result[j] = (byte) ~result[j];
-		System.err.println("Result: " + new String(result));
-		echo[i].shutdown();
-		
-	    } catch (Exception e) {
-		TestLibrary.bomb("test failed", e);
-		
-	    } finally {
-		serverVM.destroy();
-		try {
-		    Naming.unbind("//:" + REGISTRY_PORT + "/EchoServer");
-		} catch (Exception e) {
-		    TestLibrary.bomb("unbinding EchoServer", e);
-		    
-		}
-	    }
-	}
-	return echo;
+            System.err.println("\nusing protocol: " +
+                               (protocol[i] == "" ? "none" : protocol[i]));
+
+            try {
+                /* spawn VM for EchoServer */
+                serverVM.start();
+
+                /* lookup server */
+                int tries = 12;        // need enough tries for slow machine.
+                echo[i] = null;
+                do {
+                    try {
+                        echo[i] = (Echo) Naming.lookup("//:" + REGISTRY_PORT +
+                                                       "/EchoServer");
+                        break;
+                    } catch (NotBoundException e) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (Exception ignore) {
+                        }
+                        continue;
+                    }
+                } while (--tries > 0);
+
+                if (echo[i] == null)
+                    TestLibrary.bomb("server not bound in 12 tries", null);
+
+                /* invoke remote method and print result*/
+                System.err.println("Bound to " + echo[i]);
+                byte[] data = ("Greetings, citizen " +
+                               System.getProperty("user.name") + "!"). getBytes();
+                byte[] result = echo[i].echoNot(data);
+                for (int j = 0; j < result.length; j++)
+                    result[j] = (byte) ~result[j];
+                System.err.println("Result: " + new String(result));
+                echo[i].shutdown();
+
+            } catch (Exception e) {
+                TestLibrary.bomb("test failed", e);
+
+            } finally {
+                serverVM.destroy();
+                try {
+                    Naming.unbind("//:" + REGISTRY_PORT + "/EchoServer");
+                } catch (Exception e) {
+                    TestLibrary.bomb("unbinding EchoServer", e);
+
+                }
+            }
+        }
+        return echo;
     }
 
 
     private static void reactivateAndTest(Echo[] echo) {
 
-	System.err.println("\nReactivate Test-->");
+        System.err.println("\nReactivate Test-->");
 
-	for (int i = 0; i < echo.length; i++) {
-	    try {
-		System.err.println("\nusing protocol: " +
-				   (protocol[i] == "" ? "none" : protocol[i]));
-		byte[] data = ("Greetings, citizen " +
-			       System.getProperty("user.name") + "!").getBytes();
-		byte[] result = echo[i].echoNot(data);
-		for (int j = 0; j < result.length; j++)
-		    result[j] = (byte) ~result[j];
-		System.err.println("Result: " + new String(result));
-		echo[i].shutdown();
-	    } catch (Exception e) {
-		TestLibrary.bomb("activating EchoServer for protocol " + protocol[i], e);
-	    }
-	}
+        for (int i = 0; i < echo.length; i++) {
+            try {
+                System.err.println("\nusing protocol: " +
+                                   (protocol[i] == "" ? "none" : protocol[i]));
+                byte[] data = ("Greetings, citizen " +
+                               System.getProperty("user.name") + "!").getBytes();
+                byte[] result = echo[i].echoNot(data);
+                for (int j = 0; j < result.length; j++)
+                    result[j] = (byte) ~result[j];
+                System.err.println("Result: " + new String(result));
+                echo[i].shutdown();
+            } catch (Exception e) {
+                TestLibrary.bomb("activating EchoServer for protocol " + protocol[i], e);
+            }
+        }
     }
 }

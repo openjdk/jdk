@@ -2097,7 +2097,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   int type_words = type2size[type];
 
   // Cannot inline wide CAS on machines that don't support it natively
-  if (type2aelembytes[type] > BytesPerInt && !VM_Version::supports_cx8())
+  if (type2aelembytes(type) > BytesPerInt && !VM_Version::supports_cx8())
     return false;
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
@@ -3975,7 +3975,7 @@ address LibraryCallKit::basictype2arraycopy(BasicType t,
     // both indices are constants
     int s_offs = src_offset_inttype->get_con();
     int d_offs = dest_offset_inttype->get_con();
-    int element_size = type2aelembytes[t];
+    int element_size = type2aelembytes(t);
     aligned = ((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
               ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0);
     if (s_offs >= d_offs)  disjoint = true;
@@ -4170,6 +4170,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       && !_gvn.eqv_uncast(src, dest)
       && ((alloc = tightly_coupled_allocation(dest, slow_region))
           != NULL)
+      && _gvn.find_int_con(alloc->in(AllocateNode::ALength), 1) > 0
       && alloc->maybe_set_complete(&_gvn)) {
     // "You break it, you buy it."
     InitializeNode* init = alloc->initialization();
@@ -4389,7 +4390,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     if (alloc != NULL && use_ReduceInitialCardMarks()) {
       // If we do not need card marks, copy using the jint or jlong stub.
       copy_type = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
-      assert(type2aelembytes[basic_elem_type] == type2aelembytes[copy_type],
+      assert(type2aelembytes(basic_elem_type) == type2aelembytes(copy_type),
              "sizes agree");
     }
   }
@@ -4659,7 +4660,7 @@ LibraryCallKit::generate_clear_array(const TypePtr* adr_type,
   Node* mem = memory(adr_type); // memory slice to operate on
 
   // scaling and rounding of indexes:
-  int scale = exact_log2(type2aelembytes[basic_elem_type]);
+  int scale = exact_log2(type2aelembytes(basic_elem_type));
   int abase = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
   int clear_low = (-1 << scale) & (BytesPerInt  - 1);
   int bump_bit  = (-1 << scale) & BytesPerInt;
@@ -4753,7 +4754,7 @@ LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
                                          Node* dest, Node* dest_offset,
                                          Node* dest_size) {
   // See if there is an advantage from block transfer.
-  int scale = exact_log2(type2aelembytes[basic_elem_type]);
+  int scale = exact_log2(type2aelembytes(basic_elem_type));
   if (scale >= LogBytesPerLong)
     return false;               // it is already a block transfer
 

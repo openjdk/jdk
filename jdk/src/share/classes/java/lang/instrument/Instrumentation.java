@@ -636,7 +636,11 @@ public interface Instrumentation {
      * @param   transformer
      *          The ClassFileTransformer which wraps using this prefix.
      * @param   prefix
-     *          The prefix which has been applied to wrapped native methods.
+     *          The prefix to apply to wrapped native methods when
+     *          retrying a failed native method resolution. If prefix
+     *          is either <code>null</code> or the empty string, then
+     *          failed native method resolutions are not retried for
+     *          this transformer.
      * @throws java.lang.NullPointerException if passed a <code>null</code> transformer.
      * @throws java.lang.UnsupportedOperationException if the current configuration of
      *           the JVM does not allow setting a native method prefix

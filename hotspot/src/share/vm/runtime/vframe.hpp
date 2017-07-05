@@ -230,15 +230,18 @@ class MonitorInfo : public ResourceObj {
  private:
   oop        _owner; // the object owning the monitor
   BasicLock* _lock;
+  bool       _eliminated;
  public:
   // Constructor
-  MonitorInfo(oop owner, BasicLock* lock) {
+  MonitorInfo(oop owner, BasicLock* lock, bool eliminated) {
     _owner = owner;
     _lock  = lock;
+    _eliminated = eliminated;
   }
   // Accessors
   oop        owner() const { return _owner; }
   BasicLock* lock()  const { return _lock;  }
+  bool eliminated()  const { return _eliminated; }
 };
 
 class vframeStreamCommon : StackObj {

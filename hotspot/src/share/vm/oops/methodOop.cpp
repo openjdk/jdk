@@ -765,6 +765,28 @@ bool methodOopDesc::is_overridden_in(klassOop k) const {
 }
 
 
+// give advice about whether this methodOop should be cached or not
+bool methodOopDesc::should_not_be_cached() const {
+  if (is_old()) {
+    // This method has been redefined. It is either EMCP or obsolete
+    // and we don't want to cache it because that would pin the method
+    // down and prevent it from being collectible if and when it
+    // finishes executing.
+    return true;
+  }
+
+  if (mark()->should_not_be_cached()) {
+    // It is either not safe or not a good idea to cache this
+    // method at this time because of the state of the embedded
+    // markOop. See markOop.cpp for the gory details.
+    return true;
+  }
+
+  // caching this method should be just fine
+  return false;
+}
+
+
 methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
                                                 u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS) {
   // Code below does not work for native methods - they should never get rewritten anyway

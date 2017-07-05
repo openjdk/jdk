@@ -25,14 +25,15 @@
 //
 // Adaptation for C2 of the escape analysis algorithm described in:
 //
-//     [Choi99] Jong-Deok Shoi, Manish Gupta, Mauricio Seffano, Vugranam C. Sreedhar,
-//              Sam Midkiff,  "Escape Analysis for Java", Procedings of ACM SIGPLAN
-//              OOPSLA  Conference, November 1, 1999
+// [Choi99] Jong-Deok Shoi, Manish Gupta, Mauricio Seffano,
+//          Vugranam C. Sreedhar, Sam Midkiff,
+//          "Escape Analysis for Java", Procedings of ACM SIGPLAN
+//          OOPSLA  Conference, November 1, 1999
 //
 // The flow-insensitive analysis described in the paper has been implemented.
 //
-// The analysis requires construction of a "connection graph" (CG) for the method being
-// analyzed.  The nodes of the connection graph are:
+// The analysis requires construction of a "connection graph" (CG) for
+// the method being analyzed.  The nodes of the connection graph are:
 //
 //     -  Java objects (JO)
 //     -  Local variables (LV)
@@ -40,47 +41,51 @@
 //
 // The CG contains 3 types of edges:
 //
-//   -  PointsTo  (-P>)     {LV,OF}  to JO
-//   -  Deferred  (-D>)    from {LV, OF}  to {LV, OF}
+//   -  PointsTo  (-P>)    {LV, OF} to JO
+//   -  Deferred  (-D>)    from {LV, OF} to {LV, OF}
 //   -  Field     (-F>)    from JO to OF
 //
 // The following  utility functions is used by the algorithm:
 //
-//   PointsTo(n)      - n is any CG node,  it returns the set of JO that n could
-//                      point to.
+//   PointsTo(n) - n is any CG node, it returns the set of JO that n could
+//                 point to.
 //
-// The algorithm describes how to construct the connection graph in the following 4 cases:
+// The algorithm describes how to construct the connection graph
+// in the following 4 cases:
 //
 //          Case                  Edges Created
 //
-// (1)   p   = new T()              LV  -P> JO
-// (2)   p   = q                    LV  -D> LV
-// (3)   p.f = q                    JO  -F> OF,  OF -D> LV
-// (4)   p   = q.f                  JO  -F> OF,  LV -D> OF
+// (1)   p   = new T()              LV -P> JO
+// (2)   p   = q                    LV -D> LV
+// (3)   p.f = q                    JO -F> OF,  OF -D> LV
+// (4)   p   = q.f                  JO -F> OF,  LV -D> OF
 //
-// In all these cases, p and q are local variables.  For static field references, we can
-// construct a local variable containing a reference to the static memory.
+// In all these cases, p and q are local variables.  For static field
+// references, we can construct a local variable containing a reference
+// to the static memory.
 //
 // C2 does not have local variables.  However for the purposes of constructing
 // the connection graph, the following IR nodes are treated as local variables:
 //     Phi    (pointer values)
 //     LoadP
-//     Proj  (value returned from callnodes including allocations)
-//     CheckCastPP
+//     Proj#5 (value returned from callnodes including allocations)
+//     CheckCastPP, CastPP
 //
-// The LoadP, Proj and CheckCastPP behave like variables assigned to only once.  Only
-// a Phi can have multiple assignments.  Each input to a Phi is treated
+// The LoadP, Proj and CheckCastPP behave like variables assigned to only once.
+// Only a Phi can have multiple assignments.  Each input to a Phi is treated
 // as an assignment to it.
 //
-// The following note types are JavaObject:
+// The following node types are JavaObject:
 //
 //     top()
 //     Allocate
 //     AllocateArray
 //     Parm  (for incoming arguments)
+//     CastX2P ("unsafe" operations)
 //     CreateEx
 //     ConP
 //     LoadKlass
+//     ThreadLocal
 //
 // AddP nodes are fields.
 //
@@ -89,7 +94,7 @@
 // source.  This results in a graph with no deferred edges, only:
 //
 //    LV -P> JO
-//    OF -P> JO
+//    OF -P> JO (the object whose oop is stored in the field)
 //    JO -F> OF
 //
 // Then, for each node which is GlobalEscape, anything it could point to
@@ -110,17 +115,18 @@ class PointsToNode {
 friend class ConnectionGraph;
 public:
   typedef enum {
-    UnknownType    = 0,
-    JavaObject = 1,
-    LocalVar   = 2,
-    Field      = 3
+    UnknownType = 0,
+    JavaObject  = 1,
+    LocalVar    = 2,
+    Field       = 3
   } NodeType;
 
   typedef enum {
     UnknownEscape = 0,
-    NoEscape      = 1,
-    ArgEscape     = 2,
-    GlobalEscape  = 3
+    NoEscape      = 1, // A scalar replaceable object with unique type.
+    ArgEscape     = 2, // An object passed as argument or referenced by
+                       // argument (and not globally escape during call).
+    GlobalEscape  = 3  // An object escapes the method and thread.
   } EscapeState;
 
   typedef enum {
@@ -140,18 +146,24 @@ private:
 
   NodeType             _type;
   EscapeState          _escape;
-  GrowableArray<uint>* _edges;  // outgoing edges
-  int                  _offset; // for fields
+  GrowableArray<uint>* _edges;   // outgoing edges
 
-  bool       _unique_type;       // For allocated objects, this node may be a unique type
 public:
-  Node*      _node;              // Ideal node corresponding to this PointsTo node
-  int        _inputs_processed;  // the number of Phi inputs that have been processed so far
-  bool       _hidden_alias;      // this node is an argument to a function which may return it
-                                 // creating a hidden alias
+  Node* _node;              // Ideal node corresponding to this PointsTo node.
+  int   _offset;            // Object fields offsets.
+  bool  _scalar_replaceable;// Not escaped object could be replaced with scalar
+  bool  _hidden_alias;      // This node is an argument to a function.
+                            // which may return it creating a hidden alias.
 
+  PointsToNode():
+    _type(UnknownType),
+    _escape(UnknownEscape),
+    _edges(NULL),
+    _node(NULL),
+    _offset(-1),
+    _scalar_replaceable(true),
+    _hidden_alias(false) {}
 
-  PointsToNode(): _offset(-1), _type(UnknownType), _escape(UnknownEscape), _edges(NULL), _node(NULL), _inputs_processed(0), _hidden_alias(false), _unique_type(true) {}
 
   EscapeState escape_state() const { return _escape; }
   NodeType node_type() const { return _type;}
@@ -182,22 +194,28 @@ public:
 
 class ConnectionGraph: public ResourceObj {
 private:
-  enum {
-    INITIAL_NODE_COUNT = 100                    // initial size of _nodes array
-  };
+  GrowableArray<PointsToNode>* _nodes; // Connection graph nodes indexed
+                                       // by ideal node index.
 
+  Unique_Node_List  _delayed_worklist; // Nodes to be processed before
+                                       // the call build_connection_graph().
 
-  GrowableArray<PointsToNode>* _nodes;          // connection graph nodes  Indexed by ideal
-                                                // node index
-  Unique_Node_List             _deferred;       // Phi's to be processed after parsing
-  VectorSet                    _processed;      // records which nodes have been processed
-  bool                         _collecting;     // indicates whether escape information is
-                                                // still being collected.  If false, no new
-                                                // nodes will be processed
-  uint                         _phantom_object; // index of globally escaping object that
-                                                // pointer values loaded from a field which
-                                                // has not been set are assumed to point to
-  Compile *                    _compile;        // Compile object for current compilation
+  VectorSet                _processed; // Records which nodes have been
+                                       // processed.
+
+  bool                    _collecting; // Indicates whether escape information
+                                       // is still being collected. If false,
+                                       // no new nodes will be processed.
+
+  bool               _has_allocations; // Indicates whether method has any
+                                       // non-escaping allocations.
+
+  uint                _phantom_object; // Index of globally escaping object
+                                       // that pointer values loaded from
+                                       // a field which has not been set
+                                       // are assumed to point to.
+
+  Compile *                  _compile; // Compile object for current compilation
 
   // address of an element in _nodes.  Used when the element is to be modified
   PointsToNode *ptnode_adr(uint idx) {
@@ -208,8 +226,11 @@ private:
     return _nodes->adr_at(idx);
   }
 
+  // Add node to ConnectionGraph.
+  void add_node(Node *n, PointsToNode::NodeType nt, PointsToNode::EscapeState es, bool done);
+
   // offset of a field reference
-  int type_to_offset(const Type *t);
+  int address_offset(Node* adr, PhaseTransform *phase);
 
   // compute the escape state for arguments to a call
   void process_call_arguments(CallNode *call, PhaseTransform *phase);
@@ -217,12 +238,11 @@ private:
   // compute the escape state for the return value of a call
   void process_call_result(ProjNode *resproj, PhaseTransform *phase);
 
-  // compute the escape state of a Phi.  This may be called multiple
-  // times as new inputs are added to the Phi.
-  void process_phi_escape(PhiNode *phi, PhaseTransform *phase);
+  // Populate Connection Graph with Ideal nodes.
+  void record_for_escape_analysis(Node *n, PhaseTransform *phase);
 
-  // compute the escape state of an ideal node.
-  void record_escape_work(Node *n, PhaseTransform *phase);
+  // Build Connection Graph and set nodes escape state.
+  void build_connection_graph(Node *n, PhaseTransform *phase);
 
   // walk the connection graph starting at the node corresponding to "n" and
   // add the index of everything it could point to, to "ptset".  This may cause
@@ -241,8 +261,8 @@ private:
   // a pointsto edge is added if it is a JavaObject
   void add_edge_from_fields(uint adr, uint to_i, int offs);
 
-  // Add a deferred  edge from node given by "from_i" to any field of adr_i whose offset
-  // matches "offset"
+  // Add a deferred  edge from node given by "from_i" to any field
+  // of adr_i whose offset matches "offset"
   void add_deferred_edge_to_fields(uint from_i, uint adr, int offs);
 
 
@@ -262,6 +282,8 @@ private:
   PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn, bool &new_created);
   PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn);
   Node *find_mem(Node *mem, int alias_idx, PhaseGVN  *igvn);
+  Node *find_inst_mem(Node *mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist,  PhaseGVN  *igvn);
+
   // Propagate unique types created for unescaped allocated objects
   // through the graph
   void split_unique_types(GrowableArray<Node *>  &alloc_worklist);
@@ -285,26 +307,24 @@ private:
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
 
-  // bypass any casts and return the node they refer to
-  Node * skip_casts(Node *n);
-
   // Get Compile object for current compilation.
   Compile *C() const        { return _compile; }
 
 public:
   ConnectionGraph(Compile *C);
 
-  // record a Phi for later processing.
-  void record_for_escape_analysis(Node *n);
-
-  // process a node and  fill in its connection graph node
-  void record_escape(Node *n, PhaseTransform *phase);
-
-  // All nodes have been recorded, compute the escape information
+  // Compute the escape information
   void compute_escape();
 
   // escape state of a node
   PointsToNode::EscapeState escape_state(Node *n, PhaseTransform *phase);
+  // other information we have collected
+  bool is_scalar_replaceable(Node *n) {
+    if (_collecting)
+      return false;
+    PointsToNode  ptn = _nodes->at_grow(n->_idx);
+    return ptn.escape_state() == PointsToNode::NoEscape && ptn._scalar_replaceable;
+  }
 
   bool hidden_alias(Node *n) {
     if (_collecting)
