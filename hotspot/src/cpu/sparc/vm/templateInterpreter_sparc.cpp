@@ -379,7 +379,7 @@ void InterpreterGenerator::lock_method(void) {
 
 #ifdef ASSERT
     __ tst(O0);
-    __ breakpoint_trap(Assembler::zero);
+    __ breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
 #endif // ASSERT
 
     __ bind(done);
@@ -2050,7 +2050,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   AddressLiteral stop_at(&StopInterpreterAt);
   __ load_ptr_contents(stop_at, G4_scratch);
   __ cmp(G3_scratch, G4_scratch);
-  __ breakpoint_trap(Assembler::equal);
+  __ breakpoint_trap(Assembler::equal, Assembler::icc);
 }
 #endif // not PRODUCT
 #endif // !CC_INTERP
