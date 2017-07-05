@@ -54,6 +54,12 @@
 
 #define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct) \
                                                                             \
+  develop(bool, StressLCM, false,                                           \
+          "Randomize instruction scheduling in LCM")                        \
+                                                                            \
+  develop(bool, StressGCM, false,                                           \
+          "Randomize instruction scheduling in GCM")                        \
+                                                                            \
   notproduct(intx, CompileZapFirst, 0,                                      \
           "If +ZapDeadCompiledLocals, "                                     \
           "skip this many before compiling in zap calls")                   \
