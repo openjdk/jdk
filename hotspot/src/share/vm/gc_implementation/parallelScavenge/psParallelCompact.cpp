@@ -854,8 +854,7 @@ void PSParallelCompact::post_initialize() {
                            true,          // mt discovery
                            (int) ParallelGCThreads, // mt discovery degree
                            true,          // atomic_discovery
-                           &_is_alive_closure, // non-header is alive closure
-                           false);        // write barrier for next field updates
+                           &_is_alive_closure); // non-header is alive closure
   _counters = new CollectorCounters("PSParallelCompact", 1);
 
   // Initialize static fields in ParCompactionManager.

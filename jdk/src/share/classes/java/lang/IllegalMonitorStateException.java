@@ -36,7 +36,7 @@ package java.lang;
  * @see     java.lang.Object#wait()
  * @see     java.lang.Object#wait(long)
  * @see     java.lang.Object#wait(long, int)
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class IllegalMonitorStateException extends RuntimeException {

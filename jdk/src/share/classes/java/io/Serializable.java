@@ -164,7 +164,7 @@ package java.io;
  * @see java.io.ObjectOutput
  * @see java.io.ObjectInput
  * @see java.io.Externalizable
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface Serializable {
 }

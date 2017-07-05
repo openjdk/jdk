@@ -385,6 +385,15 @@ void ATTR ObjectMonitor::enter(TRAPS) {
       jt->java_suspend_self();
     }
     Self->set_current_pending_monitor(NULL);
+
+    // We cleared the pending monitor info since we've just gotten past
+    // the enter-check-for-suspend dance and we now own the monitor free
+    // and clear, i.e., it is no longer pending. The ThreadBlockInVM
+    // destructor can go to a safepoint at the end of this block. If we
+    // do a thread dump during that safepoint, then this thread will show
+    // as having "-locked" the monitor, but the OS and java.lang.Thread
+    // states will still report that the thread is blocked trying to
+    // acquire it.
   }
 
   Atomic::dec_ptr(&_count);

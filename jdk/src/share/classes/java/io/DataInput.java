@@ -143,7 +143,7 @@ package java.io;
  * @author  Frank Yellin
  * @see     java.io.DataInputStream
  * @see     java.io.DataOutput
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 interface DataInput {

@@ -126,7 +126,7 @@ import sun.util.calendar.ZoneInfo;
  * @see     java.text.DateFormat
  * @see     java.util.Calendar
  * @see     java.util.TimeZone
- * @since   JDK1.0
+ * @since   1.0
  */
 public class Date
     implements java.io.Serializable, Cloneable, Comparable<Date>

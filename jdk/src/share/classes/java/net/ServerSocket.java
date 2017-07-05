@@ -48,7 +48,7 @@ import java.util.Collections;
  * @see     java.net.SocketImpl
  * @see     java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
  * @see     java.nio.channels.ServerSocketChannel
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class ServerSocket implements java.io.Closeable {
@@ -225,7 +225,7 @@ class ServerSocket implements java.io.Closeable {
      * @see SocketOptions
      * @see SocketImpl
      * @see SecurityManager#checkListen
-     * @since   JDK1.1
+     * @since   1.1
      */
     public ServerSocket(int port, int backlog, InetAddress bindAddr) throws IOException {
         setImpl();
@@ -527,7 +527,7 @@ class ServerSocket implements java.io.Closeable {
      *         and the channel is in non-blocking mode
      * @throws IOException if an I/O error occurs when waiting
      * for a connection.
-     * @since   JDK1.1
+     * @since   1.1
      * @revised 1.4
      * @spec JSR-51
      */
@@ -644,7 +644,7 @@ class ServerSocket implements java.io.Closeable {
      * @param timeout the specified timeout, in milliseconds
      * @exception SocketException if there is an error in
      * the underlying protocol, such as a TCP error.
-     * @since   JDK1.1
+     * @since   1.1
      * @see #getSoTimeout()
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
@@ -658,7 +658,7 @@ class ServerSocket implements java.io.Closeable {
      * 0 returns implies that the option is disabled (i.e., timeout of infinity).
      * @return the {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT} value
      * @exception IOException if an I/O error occurs
-     * @since   JDK1.1
+     * @since   1.1
      * @see #setSoTimeout(int)
      */
     public synchronized int getSoTimeout() throws IOException {

@@ -58,7 +58,7 @@ public abstract class ClientNotifForwarder {
 
     private final AccessControlContext acc;
 
-    public ClientNotifForwarder(Map env) {
+    public ClientNotifForwarder(Map<String, ?> env) {
         this(null, env);
     }
 

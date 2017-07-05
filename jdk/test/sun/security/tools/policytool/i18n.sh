@@ -77,7 +77,7 @@ echo "HELLO!"
 echo "Checking for $HOME/.java.policy"
 
 # 8015274
-if [ -e $HOME/.java.policy ]; then
+if [ -f $HOME/.java.policy ]; then
     echo "You have a .java.policy file in your HOME directory"
     echo "The file must be removed before running this test"
     exit 1

@@ -32,7 +32,7 @@ package java.util;
  * @author  unascribed
  * @see     java.util.Enumeration#nextElement()
  * @see     java.util.Iterator#next()
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class NoSuchElementException extends RuntimeException {

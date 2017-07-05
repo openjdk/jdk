@@ -35,7 +35,7 @@ import javax.management.*;
 /**
  * Implementation class for the diagnostic commands subsystem.
  *
- * @since 8
+ * @since 1.8
  */
 class DiagnosticCommandImpl extends NotificationEmitterSupport
     implements DiagnosticCommandMBean {

@@ -117,7 +117,7 @@ import sun.util.ResourceBundleEnumeration;
  * @see ResourceBundle
  * @see ListResourceBundle
  * @see Properties
- * @since JDK1.1
+ * @since 1.1
  */
 public class PropertyResourceBundle extends ResourceBundle {
     /**

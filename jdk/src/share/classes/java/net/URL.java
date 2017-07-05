@@ -131,7 +131,7 @@ import sun.security.util.SecurityConstants;
  * as the encoding scheme defined in RFC2396.
  *
  * @author  James Gosling
- * @since JDK1.0
+ * @since 1.0
  */
 public final class URL implements java.io.Serializable {
 

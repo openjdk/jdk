@@ -44,7 +44,7 @@ package java.rmi;
  * IllegalStateException}.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  */
 public class RemoteException extends java.io.IOException {
 

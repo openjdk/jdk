@@ -3376,7 +3376,7 @@ mp_err   s_mp_div_d(mp_int *mp, mp_digit d, mp_digit *r)
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_DIV_WORD)
   mp_word   w = 0, q;
 #else
-  mp_digit  w, q;
+  mp_digit  w = 0, q;
 #endif
   int       ix;
   mp_err    res;

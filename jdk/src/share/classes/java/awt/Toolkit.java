@@ -108,7 +108,7 @@ import sun.util.CoreResourceBundleControl;
  * @author      Sami Shaio
  * @author      Arthur van Hoff
  * @author      Fred Ecks
- * @since       JDK1.0
+ * @since       1.0
  */
 public abstract class Toolkit {
 
@@ -222,7 +222,7 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.awt.ScrollPane
      * @see       java.awt.peer.ScrollPanePeer
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected abstract ScrollPanePeer createScrollPane(ScrollPane target)
         throws HeadlessException;
@@ -355,7 +355,7 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.awt.PopupMenu
      * @see       java.awt.peer.PopupMenuPeer
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected abstract PopupMenuPeer createPopupMenu(PopupMenu target)
         throws HeadlessException;
@@ -457,7 +457,7 @@ public abstract class Toolkit {
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected void loadSystemColors(int[] systemColors)
         throws HeadlessException {
@@ -1105,7 +1105,7 @@ public abstract class Toolkit {
      * @param     imagedata   an array of bytes, representing
      *                         image data in a supported image format.
      * @return    an image.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Image createImage(byte[] imagedata) {
         return createImage(imagedata, 0, imagedata.length);
@@ -1122,7 +1122,7 @@ public abstract class Toolkit {
      *                         of the data in the array.
      * @param     imagelength  the length of the data in the array.
      * @return    an image.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public abstract Image createImage(byte[] imagedata,
                                       int imageoffset,
@@ -1159,7 +1159,7 @@ public abstract class Toolkit {
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     java.awt.PrintJob
      * @see     java.lang.RuntimePermission
-     * @since   JDK1.1
+     * @since   1.1
      */
     public abstract PrintJob getPrintJob(Frame frame, String jobtitle,
                                          Properties props);
@@ -1230,7 +1230,7 @@ public abstract class Toolkit {
     /**
      * Emits an audio beep depending on native system settings and hardware
      * capabilities.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public abstract void beep();
 
@@ -1273,7 +1273,7 @@ public abstract class Toolkit {
      * @see       java.awt.datatransfer.DataFlavor#plainTextFlavor
      * @see       java.io.Reader
      * @see       java.awt.AWTPermission
-     * @since     JDK1.1
+     * @since     1.1
      */
     public abstract Clipboard getSystemClipboard()
         throws HeadlessException;
@@ -1353,7 +1353,7 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.awt.MenuBar
      * @see       java.awt.MenuShortcut
-     * @since     JDK1.1
+     * @since     1.1
      */
     public int getMenuShortcutKeyMask() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
