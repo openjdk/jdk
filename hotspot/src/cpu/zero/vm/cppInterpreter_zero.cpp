@@ -204,6 +204,20 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
     goto unwind_and_return;
   }
 
+  // Update the invocation counter
+  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
+    thread->set_do_not_unlock();
+    InvocationCounter *counter = method->invocation_counter();
+    counter->increment();
+    if (counter->reached_InvocationLimit()) {
+      CALL_VM_NOCHECK(
+        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
+      if (HAS_PENDING_EXCEPTION)
+        goto unwind_and_return;
+    }
+    thread->clr_do_not_unlock();
+  }
+
   // Lock if necessary
   BasicObjectLock *monitor;
   monitor = NULL;

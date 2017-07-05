@@ -48,7 +48,12 @@ class IdealGraphPrinter;
 
 // Class hierarchy
 // - Thread
-//   - VMThread
+//   - NamedThread
+//     - VMThread
+//     - ConcurrentGCThread
+//     - WorkerThread
+//       - GangWorker
+//       - GCTaskThread
 //   - JavaThread
 //   - WatcherThread
 
@@ -249,6 +254,7 @@ class Thread: public ThreadShadow {
   virtual bool is_GC_task_thread() const             { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
+  virtual bool is_Named_thread() const               { return false; }
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -568,12 +574,18 @@ class NamedThread: public Thread {
   };
  private:
   char* _name;
+  // log JavaThread being processed by oops_do
+  JavaThread* _processed_thread;
+
  public:
   NamedThread();
   ~NamedThread();
   // May only be called once per thread.
   void set_name(const char* format, ...);
+  virtual bool is_Named_thread() const { return true; }
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
+  JavaThread *processed_thread() { return _processed_thread; }
+  void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
 };
 
 // Worker threads are named and have an id of an assigned work.

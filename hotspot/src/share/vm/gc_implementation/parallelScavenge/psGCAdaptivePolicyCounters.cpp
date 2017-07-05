@@ -51,7 +51,7 @@ PSGCAdaptivePolicyCounters::PSGCAdaptivePolicyCounters(const char* name_arg,
 
     cname = PerfDataManager::counter_name(name_space(), "oldCapacity");
     _old_capacity = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Bytes, (jlong) Arguments::initial_heap_size(), CHECK);
+      PerfData::U_Bytes, (jlong) InitialHeapSize, CHECK);
 
     cname = PerfDataManager::counter_name(name_space(), "boundaryMoved");
     _boundary_moved = PerfDataManager::create_variable(SUN_GC, cname,

@@ -316,6 +316,10 @@ private:
   bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
 #endif // PRODUCT
 
+  void adjust_concurrent_refinement(double update_rs_time,
+                                    double update_rs_processed_buffers,
+                                    double goal_ms);
+
 protected:
   double _pause_time_target_ms;
   double _recorded_young_cset_choice_time_ms;
