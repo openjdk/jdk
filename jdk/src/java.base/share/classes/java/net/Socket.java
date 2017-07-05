@@ -470,7 +470,7 @@ class Socket implements java.io.Closeable {
         // getDeclaredMethod, therefore we need permission to access the member
 
         oldImpl = AccessController.doPrivileged
-                                (new PrivilegedAction<Boolean>() {
+                                (new PrivilegedAction<>() {
             public Boolean run() {
                 Class<?> clazz = impl.getClass();
                 while (true) {
@@ -911,7 +911,7 @@ class Socket implements java.io.Closeable {
         InputStream is = null;
         try {
             is = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<InputStream>() {
+                new PrivilegedExceptionAction<>() {
                     public InputStream run() throws IOException {
                         return impl.getInputStream();
                     }
@@ -951,7 +951,7 @@ class Socket implements java.io.Closeable {
         OutputStream os = null;
         try {
             os = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<OutputStream>() {
+                new PrivilegedExceptionAction<>() {
                     public OutputStream run() throws IOException {
                         return impl.getOutputStream();
                     }

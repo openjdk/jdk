@@ -93,7 +93,7 @@ public final class FileSystems {
         private static FileSystem defaultFileSystem() {
             // load default provider
             FileSystemProvider provider = AccessController
-                .doPrivileged(new PrivilegedAction<FileSystemProvider>() {
+                .doPrivileged(new PrivilegedAction<>() {
                     public FileSystemProvider run() {
                         return getDefaultProvider();
                     }

@@ -1194,7 +1194,7 @@ public final class SocketPermission extends Permission
      */
     private static int initEphemeralPorts(String suffix, int defval) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<Integer>(){
+            new PrivilegedAction<>(){
                 public Integer run() {
                     int val = Integer.getInteger(
                             "jdk.net.ephemeralPortRange."+suffix, -1
@@ -1328,7 +1328,7 @@ final class SocketPermissionCollection extends PermissionCollection
      */
 
     public SocketPermissionCollection() {
-        perms = new ArrayList<SocketPermission>();
+        perms = new ArrayList<>();
     }
 
     /**
@@ -1466,7 +1466,7 @@ final class SocketPermissionCollection extends PermissionCollection
         // Get the one we want
         @SuppressWarnings("unchecked")
         Vector<SocketPermission> permissions = (Vector<SocketPermission>)gfields.get("permissions", null);
-        perms = new ArrayList<SocketPermission>(permissions.size());
+        perms = new ArrayList<>(permissions.size());
         perms.addAll(permissions);
     }
 }

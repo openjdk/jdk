@@ -309,7 +309,7 @@ public final class System {
             // calls the installed security manager's checkPermission method
             // which will loop infinitely if there is a non-system class
             // (in this case: the new security manager class) on the stack).
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Object run() {
                     s.getClass().getProtectionDomain().implies
                         (SecurityConstants.ALL_PERMISSION);

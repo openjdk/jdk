@@ -222,7 +222,7 @@ abstract class UnixFileStore
             synchronized (loadLock) {
                 if (props == null) {
                     props = AccessController.doPrivileged(
-                        new PrivilegedAction<Properties>() {
+                        new PrivilegedAction<>() {
                             @Override
                             public Properties run() {
                                 return loadProperties();

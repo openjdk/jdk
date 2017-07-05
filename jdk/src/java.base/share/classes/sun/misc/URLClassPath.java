@@ -97,16 +97,16 @@ public class URLClassPath {
     }
 
     /* The original search path of URLs. */
-    private ArrayList<URL> path = new ArrayList<URL>();
+    private ArrayList<URL> path = new ArrayList<>();
 
     /* The stack of unopened URLs */
-    Stack<URL> urls = new Stack<URL>();
+    Stack<URL> urls = new Stack<>();
 
     /* The resulting search path of Loaders */
-    ArrayList<Loader> loaders = new ArrayList<Loader>();
+    ArrayList<Loader> loaders = new ArrayList<>();
 
     /* Map of each URL opened to its corresponding Loader */
-    HashMap<String, Loader> lmap = new HashMap<String, Loader>();
+    HashMap<String, Loader> lmap = new HashMap<>();
 
     /* The jar protocol handler to use when creating new URLs */
     private URLStreamHandler jarHandler;
@@ -142,7 +142,7 @@ public class URLClassPath {
         if (closed) {
             return Collections.emptyList();
         }
-        List<IOException> result = new LinkedList<IOException>();
+        List<IOException> result = new LinkedList<>();
         for (Loader loader : loaders) {
             try {
                 loader.close();
@@ -234,7 +234,7 @@ public class URLClassPath {
      */
     public Enumeration<URL> findResources(final String name,
                                      final boolean check) {
-        return new Enumeration<URL>() {
+        return new Enumeration<>() {
             private int index = 0;
             private URL url = null;
 
@@ -281,7 +281,7 @@ public class URLClassPath {
      */
     public Enumeration<Resource> getResources(final String name,
                                     final boolean check) {
-        return new Enumeration<Resource>() {
+        return new Enumeration<>() {
             private int index = 0;
             private Resource res = null;
 
@@ -374,7 +374,7 @@ public class URLClassPath {
     private Loader getLoader(final URL url) throws IOException {
         try {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Loader>() {
+                new java.security.PrivilegedExceptionAction<>() {
                 public Loader run() throws IOException {
                     String file = url.getFile();
                     if (file != null && file.endsWith("/")) {
@@ -689,7 +689,7 @@ public class URLClassPath {
             if (jar == null) {
                 try {
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedExceptionAction<Void>() {
+                        new java.security.PrivilegedExceptionAction<>() {
                             public Void run() throws IOException {
                                 if (DEBUG) {
                                     System.err.println("Opening " + csu);
@@ -870,7 +870,7 @@ public class URLClassPath {
             if (index == null)
                 return null;
 
-            HashSet<String> visited = new HashSet<String>();
+            HashSet<String> visited = new HashSet<>();
             return getResource(name, check, visited);
         }
 
@@ -912,7 +912,7 @@ public class URLClassPath {
                              * before
                              */
                             newLoader = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<JarLoader>() {
+                                new PrivilegedExceptionAction<>() {
                                     public JarLoader run() throws IOException {
                                         return new JarLoader(url, handler,
                                             lmap);

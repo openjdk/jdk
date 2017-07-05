@@ -606,7 +606,7 @@ class UnixCopyFile {
         throws UnixException;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 System.loadLibrary("nio");

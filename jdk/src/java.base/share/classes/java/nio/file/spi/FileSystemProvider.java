@@ -110,7 +110,7 @@ public abstract class FileSystemProvider {
 
     // loads all installed providers
     private static List<FileSystemProvider> loadInstalledProviders() {
-        List<FileSystemProvider> list = new ArrayList<FileSystemProvider>();
+        List<FileSystemProvider> list = new ArrayList<>();
 
         ServiceLoader<FileSystemProvider> sl = ServiceLoader
             .load(FileSystemProvider.class, ClassLoader.getSystemClassLoader());
@@ -163,7 +163,7 @@ public abstract class FileSystemProvider {
                     loadingProviders = true;
 
                     List<FileSystemProvider> list = AccessController
-                        .doPrivileged(new PrivilegedAction<List<FileSystemProvider>>() {
+                        .doPrivileged(new PrivilegedAction<>() {
                             @Override
                             public List<FileSystemProvider> run() {
                                 return loadInstalledProviders();
@@ -419,7 +419,7 @@ public abstract class FileSystemProvider {
         throws IOException
     {
         int len = options.length;
-        Set<OpenOption> opts = new HashSet<OpenOption>(len + 3);
+        Set<OpenOption> opts = new HashSet<>(len + 3);
         if (len == 0) {
             opts.add(StandardOpenOption.CREATE);
             opts.add(StandardOpenOption.TRUNCATE_EXISTING);
