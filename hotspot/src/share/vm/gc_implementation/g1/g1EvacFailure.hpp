@@ -177,16 +177,18 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ConcurrentMark* _cm;
   uint _worker_id;
+  HeapRegionClaimer* _hrclaimer;
 
   DirtyCardQueue _dcq;
   UpdateRSetDeferred _update_rset_cl;
 
 public:
   RemoveSelfForwardPtrHRClosure(G1CollectedHeap* g1h,
-                                uint worker_id) :
-    _g1h(g1h), _dcq(&g1h->dirty_card_queue_set()), _update_rset_cl(g1h, &_dcq),
-    _worker_id(worker_id), _cm(_g1h->concurrent_mark()) {
-    }
+                                uint worker_id,
+                                HeapRegionClaimer* hrclaimer) :
+      _g1h(g1h), _dcq(&g1h->dirty_card_queue_set()), _update_rset_cl(g1h, &_dcq),
+      _worker_id(worker_id), _cm(_g1h->concurrent_mark()), _hrclaimer(hrclaimer) {
+  }
 
   bool doHeapRegion(HeapRegion *hr) {
     bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
@@ -195,7 +197,7 @@ public:
     assert(!hr->is_humongous(), "sanity");
     assert(hr->in_collection_set(), "bad CS");
 
-    if (hr->claimHeapRegion(HeapRegion::ParEvacFailureClaimValue)) {
+    if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
         RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, &_update_rset_cl,
                                             during_initial_mark,
@@ -233,14 +235,15 @@ public:
 class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
 protected:
   G1CollectedHeap* _g1h;
+  HeapRegionClaimer _hrclaimer;
 
 public:
   G1ParRemoveSelfForwardPtrsTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("G1 Remove Self-forwarding Pointers"),
-    _g1h(g1h) { }
+      AbstractGangTask("G1 Remove Self-forwarding Pointers"), _g1h(g1h),
+      _hrclaimer(g1h->workers()->active_workers()) {}
 
   void work(uint worker_id) {
-    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, worker_id);
+    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, worker_id, &_hrclaimer);
 
     HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
     _g1h->collection_set_iterate_from(hr, &rsfp_cl);

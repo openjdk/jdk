@@ -353,7 +353,6 @@ void TemplateTable::ldc(bool wide) {
   __ sldi(Rscratch1, Rscratch1, LogBytesPerWord);
   __ cmpdi(CCR0, Rscratch2, JVM_CONSTANT_Integer);
   __ bne(CCR0, notInt);
-  __ isync(); // Order load of constant wrt. tags.
   __ lwax(R17_tos, Rcpool, Rscratch1);
   __ push(itos);
   __ b(exit);
@@ -365,7 +364,6 @@ void TemplateTable::ldc(bool wide) {
   __ cmpdi(CCR0, Rscratch2, JVM_CONSTANT_Float);
   __ asm_assert_eq("unexpected type", 0x8765);
 #endif
-  __ isync(); // Order load of constant wrt. tags.
   __ lfsx(F15_ftos, Rcpool, Rscratch1);
   __ push(ftos);
 
@@ -424,13 +422,11 @@ void TemplateTable::ldc2_w() {
   // Check out Conversions.java for an example.
   // Also ConstantPool::header_size() is 20, which makes it very difficult
   // to double-align double on the constant pool. SG, 11/7/97
-  __ isync(); // Order load of constant wrt. tags.
   __ lfdx(F15_ftos, Rcpool, Rindex);
   __ push(dtos);
   __ b(Lexit);
 
   __ bind(Llong);
-  __ isync(); // Order load of constant wrt. tags.
   __ ldx(R17_tos, Rcpool, Rindex);
   __ push(ltos);
 

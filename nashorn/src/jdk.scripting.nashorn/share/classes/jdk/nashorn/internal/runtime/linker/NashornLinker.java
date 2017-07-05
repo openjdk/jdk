@@ -292,7 +292,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
 
     @SuppressWarnings("unused")
     private static Object createMirror(final Object obj) {
-        return ScriptUtils.wrap(obj);
+        return obj instanceof ScriptObject? ScriptUtils.wrap((ScriptObject)obj) : obj;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

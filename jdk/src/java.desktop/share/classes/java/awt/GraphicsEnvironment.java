@@ -182,7 +182,8 @@ public abstract class GraphicsEnvironment {
                                                      "SunOS".equals(osName) ||
                                                      "FreeBSD".equals(osName) ||
                                                      "NetBSD".equals(osName) ||
-                                                     "OpenBSD".equals(osName)) &&
+                                                     "OpenBSD".equals(osName) ||
+                                                     "AIX".equals(osName)) &&
                                                      (System.getenv("DISPLAY") == null));
                             }
                         }

@@ -45,9 +45,11 @@ public final class WhileNode extends LoopNode {
      * @param token      token
      * @param finish     finish
      * @param isDoWhile  is this a do while loop?
+     * @param test       test expression
+     * @param body       body of the while loop
      */
-    public WhileNode(final int lineNumber, final long token, final int finish, final boolean isDoWhile) {
-        super(lineNumber, token, finish, null, false);
+    public WhileNode(final int lineNumber, final long token, final int finish, final boolean isDoWhile, final JoinPredecessorExpression test, final Block body) {
+        super(lineNumber, token, finish, body, test, false);
         this.isDoWhile = isDoWhile;
     }
 
@@ -55,10 +57,10 @@ public final class WhileNode extends LoopNode {
      * Internal copy constructor
      *
      * @param whileNode while node
-     * @param test      test
-     * @param body      body
+     * @param test      Test expression
+     * @param body      body of the while loop
      * @param controlFlowEscapes control flow escapes?
-     * @param conversion TODO
+     * @param conversion local variable conversion info
      */
     private WhileNode(final WhileNode whileNode, final JoinPredecessorExpression test, final Block body, final boolean controlFlowEscapes, final LocalVariableConversion conversion) {
         super(whileNode, test, body, controlFlowEscapes, conversion);

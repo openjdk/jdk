@@ -35,17 +35,28 @@ import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Lookup;
+import jdk.nashorn.api.scripting.ScriptUtils;
+import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * This linker delegates to a {@code BeansLinker} but passes it a special linker services object that has a modified
  * {@code asType} method that will ensure that we never pass internal engine objects that should not be externally
- * observable (currently only ConsString) to Java APIs, but rather that we flatten it into a String. We can't just add
+ * observable (currently ConsString and ScriptObject) to Java APIs, but rather that we flatten it into a String. We can't just add
  * this functionality as custom converters via {@code GuaardingTypeConverterFactory}, since they are not consulted when
  * the target method handle parameter signature is {@code Object}.
  */
 public class NashornBeansLinker implements GuardingDynamicLinker {
+    // System property to control whether to wrap ScriptObject->ScriptObjectMirror for
+    // Object type arguments of Java method calls, field set and array set.
+    private static final boolean MIRROR_ALWAYS = Options.getBooleanProperty("nashorn.mirror.always", true);
+
     private static final MethodHandle EXPORT_ARGUMENT = new Lookup(MethodHandles.lookup()).findOwnStatic("exportArgument", Object.class, Object.class);
+    private static final MethodHandle EXPORT_NATIVE_ARRAY = new Lookup(MethodHandles.lookup()).findOwnStatic("exportNativeArray", Object.class, NativeArray.class);
+    private static final MethodHandle EXPORT_SCRIPT_OBJECT = new Lookup(MethodHandles.lookup()).findOwnStatic("exportScriptObject", Object.class, ScriptObject.class);
+    private static final MethodHandle IMPORT_RESULT = new Lookup(MethodHandles.lookup()).findOwnStatic("importResult", Object.class, Object.class);
 
     private final BeansLinker beansLinker = new BeansLinker();
 
@@ -67,8 +78,39 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         return delegateLinker.getGuardedInvocation(linkRequest, new NashornBeansLinkerServices(linkerServices));
     }
 
-    static Object exportArgument(final Object arg) {
-        return arg instanceof ConsString ? arg.toString() : arg;
+    @SuppressWarnings("unused")
+    private static Object exportArgument(final Object arg) {
+        return exportArgument(arg, MIRROR_ALWAYS);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object exportNativeArray(final NativeArray arg) {
+        return exportArgument(arg, MIRROR_ALWAYS);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object exportScriptObject(final ScriptObject arg) {
+        return exportArgument(arg, MIRROR_ALWAYS);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object exportScriptArray(final NativeArray arg) {
+        return exportArgument(arg, MIRROR_ALWAYS);
+    }
+
+    static Object exportArgument(final Object arg, final boolean mirrorAlways) {
+        if (arg instanceof ConsString) {
+            return arg.toString();
+        } else if (mirrorAlways && arg instanceof ScriptObject) {
+            return ScriptUtils.wrap((ScriptObject)arg);
+        } else {
+            return arg;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static Object importResult(final Object arg) {
+        return ScriptUtils.unwrap(arg);
     }
 
     private static class NashornBeansLinkerServices implements LinkerServices {
@@ -80,32 +122,55 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
 
         @Override
         public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
-            final MethodHandle typed = linkerServices.asType(handle, fromType);
-
             final MethodType handleType = handle.type();
             final int paramCount = handleType.parameterCount();
             assert fromType.parameterCount() == handleType.parameterCount();
 
+            MethodType newFromType = fromType;
             MethodHandle[] filters = null;
             for(int i = 0; i < paramCount; ++i) {
-                if(shouldConvert(handleType.parameterType(i), fromType.parameterType(i))) {
-                    if(filters == null) {
+                final MethodHandle filter = argConversionFilter(handleType.parameterType(i), fromType.parameterType(i));
+                if (filter != null) {
+                    if (filters == null) {
                         filters = new MethodHandle[paramCount];
                     }
-                    filters[i] = EXPORT_ARGUMENT;
+                    // "erase" specific type with Object type or else we'll get filter mismatch
+                    newFromType = newFromType.changeParameterType(i, Object.class);
+                    filters[i] = filter;
                 }
             }
 
-            return filters != null ? MethodHandles.filterArguments(typed, 0, filters) : typed;
+            final MethodHandle typed = linkerServices.asType(handle, newFromType);
+            MethodHandle result = filters != null ? MethodHandles.filterArguments(typed, 0, filters) : typed;
+            // Filter Object typed return value for possible ScriptObjectMirror. We convert
+            // ScriptObjectMirror as ScriptObject (if it is mirror from current global).
+            if (MIRROR_ALWAYS && areBothObjects(handleType.returnType(), fromType.returnType())) {
+                result = MethodHandles.filterReturnValue(result, IMPORT_RESULT);
+            }
+
+            return result;
+        }
+
+        private static MethodHandle argConversionFilter(final Class<?> handleType, final Class<?> fromType) {
+            if (handleType == Object.class) {
+                if (fromType == Object.class) {
+                    return EXPORT_ARGUMENT;
+                } else if (fromType == NativeArray.class) {
+                    return EXPORT_NATIVE_ARRAY;
+                } else if (fromType == ScriptObject.class) {
+                    return EXPORT_SCRIPT_OBJECT;
+                }
+            }
+            return null;
+        }
+
+        private static boolean areBothObjects(final Class<?> handleType, final Class<?> fromType) {
+            return handleType == Object.class && fromType == Object.class;
         }
 
         @Override
         public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
             return Implementation.asTypeLosslessReturn(this, handle, fromType);
-        }
-
-        private static boolean shouldConvert(final Class<?> handleType, final Class<?> fromType) {
-            return handleType == Object.class && fromType == Object.class;
         }
 
         @Override

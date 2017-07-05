@@ -676,6 +676,22 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return addCode(lookup(fnInit).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
     }
 
+    /**
+     * Returns the return type of a function specialization for particular parameter types.<br>
+     * <b>Be aware that the way this is implemented, it forces full materialization (compilation and installation) of
+     * code for that specialization.</b>
+     * @param callSiteType the parameter types at the call site. It must include the mandatory {@code callee} and
+     * {@code this} parameters, so it needs to start with at least {@code ScriptFunction.class} and
+     * {@code Object.class} class. Since the return type of the function is calculated from the code itself, it is
+     * irrelevant and should be set to {@code Object.class}.
+     * @param runtimeScope a current runtime scope. Can be null but when it's present it will be used as a source of
+     * current runtime values that can improve the compiler's type speculations (and thus reduce the need for later
+     * recompilations) if the specialization is not already present and thus needs to be freshly compiled.
+     * @return the return type of the function specialization.
+     */
+    public Class<?> getReturnType(final MethodType callSiteType, final ScriptObject runtimeScope) {
+        return getBest(callSiteType, runtimeScope, CompiledFunction.NO_FUNCTIONS).type().returnType();
+    }
 
     @Override
     synchronized CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
