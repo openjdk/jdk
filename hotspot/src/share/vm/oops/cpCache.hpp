@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,9 +379,9 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
   bool adjust_method_entry(Method* old_method, Method* new_method,
-         bool * trace_name_printed);
+         bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
-  bool is_interesting_method_entry(Klass* k);
+  Method* get_interesting_method_entry(Klass* k);
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
@@ -478,7 +478,8 @@ class ConstantPoolCache: public MetaspaceObj {
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
   void adjust_method_entries(Method** old_methods, Method** new_methods,
-                             int methods_length, bool * trace_name_printed);
+                             int methods_length, bool* trace_name_printed);
+  void adjust_method_entries(InstanceKlass* holder, bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_cache();
 #endif // INCLUDE_JVMTI
