@@ -1065,7 +1065,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           __ movptr(rbx_temp, Address(rsi_array, elem_offset));
           __ movptr(Address(rax_argslot, slot_offset), rbx_temp);
           elem_offset += type2aelembytes(elem_type);
-          slot_offset += Interpreter::stackElementSize();
+           slot_offset += Interpreter::stackElementSize();
         }
       }
 

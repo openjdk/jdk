@@ -175,6 +175,7 @@ psAdaptiveSizePolicy.hpp                gcUtil.hpp
 psAdaptiveSizePolicy.hpp		adaptiveSizePolicy.hpp
 
 psCompactionManager.cpp                 gcTaskManager.hpp
+psCompactionManager.cpp                 objArrayKlass.inline.hpp
 psCompactionManager.cpp                 objectStartArray.hpp
 psCompactionManager.cpp                 oop.hpp
 psCompactionManager.cpp                 oop.inline.hpp
@@ -188,6 +189,9 @@ psCompactionManager.cpp                 systemDictionary.hpp
 
 psCompactionManager.hpp                 allocation.hpp
 psCompactionManager.hpp                 taskqueue.hpp
+
+psCompactionManager.inline.hpp		psCompactionManager.hpp
+psCompactionManager.inline.hpp		psParallelCompact.hpp
 
 psGCAdaptivePolicyCounters.hpp		gcAdaptivePolicyCounters.hpp
 psGCAdaptivePolicyCounters.hpp          gcPolicyCounters.hpp
@@ -379,12 +383,12 @@ pcTasks.cpp                             fprofiler.hpp
 pcTasks.cpp                             jniHandles.hpp
 pcTasks.cpp                             jvmtiExport.hpp
 pcTasks.cpp                             management.hpp
+pcTasks.cpp                             objArrayKlass.inline.hpp
 pcTasks.cpp                             psParallelCompact.hpp
 pcTasks.cpp                             pcTasks.hpp
 pcTasks.cpp                             oop.inline.hpp
 pcTasks.cpp                             oop.pcgc.inline.hpp
 pcTasks.cpp                             systemDictionary.hpp
-pcTasks.cpp                             taskqueue.hpp
 pcTasks.cpp                             thread.hpp
 pcTasks.cpp                             universe.hpp
 pcTasks.cpp                             vmThread.hpp

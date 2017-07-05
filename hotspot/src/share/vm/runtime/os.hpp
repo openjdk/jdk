@@ -218,6 +218,9 @@ class os: AllStatic {
 
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);
+  static bool   create_stack_guard_pages(char* addr, size_t bytes);
+  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
