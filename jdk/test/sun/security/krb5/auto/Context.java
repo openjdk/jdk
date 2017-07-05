@@ -117,8 +117,8 @@ public class Context {
         out.name = user;
         out.s = new Subject();
         Krb5LoginModule krb5 = new Krb5LoginModule();
-        Map<String, String> map = new HashMap<String, String>();
-        Map<String, Object> shared = new HashMap<String, Object>();
+        Map<String, String> map = new HashMap<>();
+        Map<String, Object> shared = new HashMap<>();
 
         if (pass != null) {
             map.put("useFirstPass", "true");
@@ -151,7 +151,7 @@ public class Context {
         out.name = user;
         out.s = new Subject();
         Krb5LoginModule krb5 = new Krb5LoginModule();
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
         map.put("doNotPrompt", "true");
         map.put("useTicketCache", "false");

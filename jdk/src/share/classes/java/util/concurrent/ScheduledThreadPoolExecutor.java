@@ -360,8 +360,12 @@ public class ScheduledThreadPoolExecutor
             getExecuteExistingDelayedTasksAfterShutdownPolicy();
         boolean keepPeriodic =
             getContinueExistingPeriodicTasksAfterShutdownPolicy();
-        if (!keepDelayed && !keepPeriodic)
+        if (!keepDelayed && !keepPeriodic) {
+            for (Object e : q.toArray())
+                if (e instanceof RunnableScheduledFuture<?>)
+                    ((RunnableScheduledFuture<?>) e).cancel(false);
             q.clear();
+        }
         else {
             // Traverse snapshot to avoid iterator exceptions
             for (Object e : q.toArray()) {

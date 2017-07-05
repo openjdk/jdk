@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1698,18 +1698,17 @@ ciTypeFlow::Block::successors(ciBytecodeStream* str,
         break;
 
       case Bytecodes::_tableswitch:  {
-        Bytecode_tableswitch *tableswitch =
-          Bytecode_tableswitch_at(str->cur_bcp());
+        Bytecode_tableswitch tableswitch(str);
 
-        int len = tableswitch->length();
+        int len = tableswitch.length();
         _successors =
           new (arena) GrowableArray<Block*>(arena, len+1, 0, NULL);
-        int bci = current_bci + tableswitch->default_offset();
+        int bci = current_bci + tableswitch.default_offset();
         Block* block = analyzer->block_at(bci, jsrs);
         assert(_successors->length() == SWITCH_DEFAULT, "");
         _successors->append(block);
         while (--len >= 0) {
-          int bci = current_bci + tableswitch->dest_offset_at(len);
+          int bci = current_bci + tableswitch.dest_offset_at(len);
           block = analyzer->block_at(bci, jsrs);
           assert(_successors->length() >= SWITCH_CASES, "");
           _successors->append_if_missing(block);
@@ -1718,19 +1717,18 @@ ciTypeFlow::Block::successors(ciBytecodeStream* str,
       }
 
       case Bytecodes::_lookupswitch: {
-        Bytecode_lookupswitch *lookupswitch =
-          Bytecode_lookupswitch_at(str->cur_bcp());
+        Bytecode_lookupswitch lookupswitch(str);
 
-        int npairs = lookupswitch->number_of_pairs();
+        int npairs = lookupswitch.number_of_pairs();
         _successors =
           new (arena) GrowableArray<Block*>(arena, npairs+1, 0, NULL);
-        int bci = current_bci + lookupswitch->default_offset();
+        int bci = current_bci + lookupswitch.default_offset();
         Block* block = analyzer->block_at(bci, jsrs);
         assert(_successors->length() == SWITCH_DEFAULT, "");
         _successors->append(block);
         while(--npairs >= 0) {
-          LookupswitchPair *pair = lookupswitch->pair_at(npairs);
-          int bci = current_bci + pair->offset();
+          LookupswitchPair pair = lookupswitch.pair_at(npairs);
+          int bci = current_bci + pair.offset();
           Block* block = analyzer->block_at(bci, jsrs);
           assert(_successors->length() >= SWITCH_CASES, "");
           _successors->append_if_missing(block);

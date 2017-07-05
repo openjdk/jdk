@@ -73,8 +73,11 @@ DEMO_BUILD_AREA     = $(DEMOCLASSDIR)/$(PRODUCT)/$(DEMONAME)
 
 # Destination "src" directory
 DEMO_BUILD_SRCDIR     = $(DEMO_BUILD_AREA)/src
-DEMO_BUILD_SRCZIP     = $(DEMO_BUILD_AREA)/src.zip
-DEMO_SOURCE_ZIP       = $(DEMO_DESTDIR)/src.zip
+
+ifndef DEMO_SKIP_SRCZIP
+  DEMO_BUILD_SRCZIP     = $(DEMO_BUILD_AREA)/src.zip
+  DEMO_SOURCE_ZIP       = $(DEMO_DESTDIR)/src.zip
+endif
 
 # Place to hold the jar image we are creating
 DEMO_JAR_IMAGE      = $(DEMO_BUILD_AREA)/jar_image
@@ -258,14 +261,16 @@ $(DEMO_JAR): \
 
 endif
 
-# Create a src.zip file
-$(DEMO_BUILD_SRCZIP): $(DEMO_FULL_SOURCES)
+ifndef DEMO_SKIP_SRCZIP
+  # Create a src.zip file
+  $(DEMO_BUILD_SRCZIP): $(DEMO_FULL_SOURCES)
 	@$(prep-target)
 	$(CD) $(DEMO_BUILD_AREA)/src && $(ZIPEXE) -q -r ../$(@F) .
 
-# Install the destination src.zip file and create the src tree
-$(DEMO_SOURCE_ZIP): $(DEMO_BUILD_SRCZIP)
+  # Install the destination src.zip file and create the src tree
+  $(DEMO_SOURCE_ZIP): $(DEMO_BUILD_SRCZIP)
 	$(install-file)
+endif
 
 # Native library building
 ifdef DEMO_LIBRARY
@@ -289,6 +294,7 @@ $(DEMO_LIBRARY): $(DEMO_FULL_OBJECTS)
 	@$(prep-target)
 	$(LINK.demo) $(SHARED_LIBRARY_FLAG) $(CC_PROGRAM_OUTPUT_FLAG)$@ \
 	    $(DEMO_FULL_OBJECTS) $(LDLIBS.demo)
+	@$(call binary_file_verification,$@)
 
   # Generation of any javah include file, make sure objects are dependent on it
   ifdef DEMO_NATIVECLASS
@@ -362,7 +368,7 @@ clean clobber:
 	$(RM) -r $(DEMO_BUILD_AREA)
 	$(RM) -r $(DEMO_DESTDIR)
 
-# This should not be needed, but some versions of GNU amke have a bug that
+# This should not be needed, but some versions of GNU make have a bug that
 #   sometimes deleted these files  for some strange  and unknown reason 
 #   (GNU make version 3.78.1 has the problem, GNU make version 3.80 doesn't?)
 .PRECIOUS: $(DEMO_FULL_SOURCES) $(DEMO_BUILD_SRCZIP) $(DEMO_SOURCE_ZIP)

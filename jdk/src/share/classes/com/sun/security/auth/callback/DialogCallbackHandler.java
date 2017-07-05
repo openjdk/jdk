@@ -99,10 +99,10 @@ public class DialogCallbackHandler implements CallbackHandler {
         throws UnsupportedCallbackException
     {
         /* Collect messages to display in the dialog */
-        final List<Object> messages = new ArrayList<Object>(3);
+        final List<Object> messages = new ArrayList<>(3);
 
         /* Collection actions to perform if the user clicks OK */
-        final List<Action> okActions = new ArrayList<Action>(2);
+        final List<Action> okActions = new ArrayList<>(2);
 
         ConfirmationInfo confirmation = new ConfirmationInfo();
 

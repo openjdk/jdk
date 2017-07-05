@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,7 +592,7 @@ address TemplateInterpreter::deopt_continue_after_entry(methodOop method, addres
 //       that do not return "Interpreter::deopt_entry(vtos, 0)"
 address TemplateInterpreter::deopt_reexecute_entry(methodOop method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
-  Bytecodes::Code code   = Bytecodes::java_code_at(bcp);
+  Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
   if (code == Bytecodes::_return) {
     // This is used for deopt during registration of finalizers
     // during Object.<init>.  We simply need to resume execution at

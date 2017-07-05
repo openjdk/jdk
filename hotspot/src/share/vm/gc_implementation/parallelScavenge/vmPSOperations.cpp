@@ -42,8 +42,7 @@ VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t size,
 }
 
 void VM_ParallelGCFailedAllocation::doit() {
-  JvmtiGCForAllocationMarker jgcm;
-  notify_gc_begin(false);
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
@@ -54,8 +53,6 @@ void VM_ParallelGCFailedAllocation::doit() {
   if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
-
-  notify_gc_end();
 }
 
 VM_ParallelGCFailedPermanentAllocation::VM_ParallelGCFailedPermanentAllocation(size_t size,
@@ -67,8 +64,7 @@ VM_ParallelGCFailedPermanentAllocation::VM_ParallelGCFailedPermanentAllocation(s
 }
 
 void VM_ParallelGCFailedPermanentAllocation::doit() {
-  JvmtiGCFullMarker jgcm;
-  notify_gc_begin(true);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
@@ -78,7 +74,6 @@ void VM_ParallelGCFailedPermanentAllocation::doit() {
   if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
-  notify_gc_end();
 }
 
 // Only used for System.gc() calls
@@ -91,8 +86,7 @@ VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(unsigned int gc_count,
 }
 
 void VM_ParallelGCSystemGC::doit() {
-  JvmtiGCFullMarker jgcm;
-  notify_gc_begin(true);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap,
@@ -106,5 +100,4 @@ void VM_ParallelGCSystemGC::doit() {
   } else {
     heap->invoke_full_gc(false);
   }
-  notify_gc_end();
 }

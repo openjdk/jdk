@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/g1/concurrentZFThread.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -348,21 +347,19 @@ HeapRegion::new_dcto_closure(OopClosure* cl,
 }
 
 void HeapRegion::hr_clear(bool par, bool clear_space) {
-  _humongous_type = NotHumongous;
-  _humongous_start_region = NULL;
+  assert(_humongous_type == NotHumongous,
+         "we should have already filtered out humongous regions");
+  assert(_humongous_start_region == NULL,
+         "we should have already filtered out humongous regions");
+  assert(_end == _orig_end,
+         "we should have already filtered out humongous regions");
+
   _in_collection_set = false;
   _is_gc_alloc_region = false;
-
-  // Age stuff (if parallel, this will be done separately, since it needs
-  // to be sequential).
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
   set_young_type(NotYoung);
-
-  // In case it had been the start of a humongous sequence, reset its end.
-  set_end(_orig_end);
 
   if (!par) {
     // If this is parallel, this will be done later.
@@ -386,26 +383,49 @@ void HeapRegion::calc_gc_efficiency() {
 }
 // </PREDICTION>
 
-void HeapRegion::set_startsHumongous(HeapWord* new_end) {
+void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
+  assert(!isHumongous(), "sanity / pre-condition");
   assert(end() == _orig_end,
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
+  assert(bottom() <= new_top && new_top <= new_end, "pre-condition");
 
   _humongous_type = StartsHumongous;
   _humongous_start_region = this;
 
   set_end(new_end);
-  _offsets.set_for_starts_humongous(new_end);
+  _offsets.set_for_starts_humongous(new_top);
 }
 
-void HeapRegion::set_continuesHumongous(HeapRegion* start) {
+void HeapRegion::set_continuesHumongous(HeapRegion* first_hr) {
+  assert(!isHumongous(), "sanity / pre-condition");
   assert(end() == _orig_end,
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
-  assert(start->startsHumongous(), "pre-condition");
+  assert(first_hr->startsHumongous(), "pre-condition");
 
   _humongous_type = ContinuesHumongous;
-  _humongous_start_region = start;
+  _humongous_start_region = first_hr;
+}
+
+void HeapRegion::set_notHumongous() {
+  assert(isHumongous(), "pre-condition");
+
+  if (startsHumongous()) {
+    assert(top() <= end(), "pre-condition");
+    set_end(_orig_end);
+    if (top() > end()) {
+      // at least one "continues humongous" region after it
+      set_top(end());
+    }
+  } else {
+    // continues humongous
+    assert(end() == _orig_end, "sanity");
+  }
+
+  assert(capacity() == (size_t) HeapRegion::GrainBytes, "pre-condition");
+  _humongous_type = NotHumongous;
+  _humongous_start_region = NULL;
 }
 
 bool HeapRegion::claimHeapRegion(jint claimValue) {
@@ -442,15 +462,6 @@ HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
   return low;
 }
 
-void HeapRegion::set_next_on_unclean_list(HeapRegion* r) {
-  assert(r == NULL || r->is_on_unclean_list(), "Malformed unclean list.");
-  _next_in_special_set = r;
-}
-
-void HeapRegion::set_on_unclean_list(bool b) {
-  _is_on_unclean_list = b;
-}
-
 void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   G1OffsetTableContigSpace::initialize(mr, false, mangle_space);
   hr_clear(false/*par*/, clear_space);
@@ -468,15 +479,16 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
     _hrs_index(-1),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false), _is_gc_alloc_region(false),
-    _is_on_free_list(false), _is_on_unclean_list(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
     _young_type(NotYoung), _next_young_region(NULL),
-    _next_dirty_cards_region(NULL),
-    _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _zfs(NotZeroFilled),
-    _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
+    _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
+#ifdef ASSERT
+    _containing_set(NULL),
+#endif // ASSERT
+     _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
+    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
     _predicted_bytes_to_copy(0)
 {
   _orig_end = mr.end();
@@ -549,86 +561,6 @@ SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(HeapRegion_OOP_SINCE_SAVE_MARKS_DEFN)
 
 void HeapRegion::oop_before_save_marks_iterate(OopClosure* cl) {
   oops_in_mr_iterate(MemRegion(bottom(), saved_mark_word()), cl);
-}
-
-#ifdef DEBUG
-HeapWord* HeapRegion::allocate(size_t size) {
-  jint state = zero_fill_state();
-  assert(!G1CollectedHeap::heap()->allocs_are_zero_filled() ||
-         zero_fill_is_allocated(),
-         "When ZF is on, only alloc in ZF'd regions");
-  return G1OffsetTableContigSpace::allocate(size);
-}
-#endif
-
-void HeapRegion::set_zero_fill_state_work(ZeroFillState zfs) {
-  assert(ZF_mon->owned_by_self() ||
-         Universe::heap()->is_gc_active(),
-         "Must hold the lock or be a full GC to modify.");
-#ifdef ASSERT
-  if (top() != bottom() && zfs != Allocated) {
-    ResourceMark rm;
-    stringStream region_str;
-    print_on(&region_str);
-    assert(top() == bottom() || zfs == Allocated,
-           err_msg("Region must be empty, or we must be setting it to allocated. "
-                   "_zfs=%d, zfs=%d, region: %s", _zfs, zfs, region_str.as_string()));
-  }
-#endif
-  _zfs = zfs;
-}
-
-void HeapRegion::set_zero_fill_complete() {
-  set_zero_fill_state_work(ZeroFilled);
-  if (ZF_mon->owned_by_self()) {
-    ZF_mon->notify_all();
-  }
-}
-
-
-void HeapRegion::ensure_zero_filled() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  ensure_zero_filled_locked();
-}
-
-void HeapRegion::ensure_zero_filled_locked() {
-  assert(ZF_mon->owned_by_self(), "Precondition");
-  bool should_ignore_zf = SafepointSynchronize::is_at_safepoint();
-  assert(should_ignore_zf || Heap_lock->is_locked(),
-         "Either we're in a GC or we're allocating a region.");
-  switch (zero_fill_state()) {
-  case HeapRegion::NotZeroFilled:
-    set_zero_fill_in_progress(Thread::current());
-    {
-      ZF_mon->unlock();
-      Copy::fill_to_words(bottom(), capacity()/HeapWordSize);
-      ZF_mon->lock_without_safepoint_check();
-    }
-    // A trap.
-    guarantee(zero_fill_state() == HeapRegion::ZeroFilling
-              && zero_filler() == Thread::current(),
-              "AHA!  Tell Dave D if you see this...");
-    set_zero_fill_complete();
-    // gclog_or_tty->print_cr("Did sync ZF.");
-    ConcurrentZFThread::note_sync_zfs();
-    break;
-  case HeapRegion::ZeroFilling:
-    if (should_ignore_zf) {
-      // We can "break" the lock and take over the work.
-      Copy::fill_to_words(bottom(), capacity()/HeapWordSize);
-      set_zero_fill_complete();
-      ConcurrentZFThread::note_sync_zfs();
-      break;
-    } else {
-      ConcurrentZFThread::wait_for_ZF_completed(this);
-    }
-  case HeapRegion::ZeroFilled:
-    // Nothing to do.
-    break;
-  case HeapRegion::Allocated:
-    guarantee(false, "Should not call on allocated regions.");
-  }
-  assert(zero_fill_state() == HeapRegion::ZeroFilled, "Post");
 }
 
 HeapWord*
@@ -782,9 +714,6 @@ void HeapRegion::verify(bool allow_dirty) const {
   verify(allow_dirty, /* use_prev_marking */ true, /* failures */ &dummy);
 }
 
-#define OBJ_SAMPLE_INTERVAL 0
-#define BLOCK_SAMPLE_INTERVAL 100
-
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
@@ -795,83 +724,125 @@ void HeapRegion::verify(bool allow_dirty,
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  int objs = 0;
-  int blocks = 0;
   VerifyLiveClosure vl_cl(g1, use_prev_marking);
   bool is_humongous = isHumongous();
+  bool do_bot_verify = !is_young();
   size_t object_num = 0;
   while (p < top()) {
-    size_t size = oop(p)->size();
-    if (is_humongous != g1->isHumongous(size)) {
+    oop obj = oop(p);
+    size_t obj_size = obj->size();
+    object_num += 1;
+
+    if (is_humongous != g1->isHumongous(obj_size)) {
       gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
                              SIZE_FORMAT" words) in a %shumongous region",
-                             p, g1->isHumongous(size) ? "" : "non-",
-                             size, is_humongous ? "" : "non-");
+                             p, g1->isHumongous(obj_size) ? "" : "non-",
+                             obj_size, is_humongous ? "" : "non-");
        *failures = true;
+       return;
     }
-    object_num += 1;
-    if (blocks == BLOCK_SAMPLE_INTERVAL) {
-      HeapWord* res = block_start_const(p + (size/2));
-      if (p != res) {
-        gclog_or_tty->print_cr("offset computation 1 for "PTR_FORMAT" and "
-                               SIZE_FORMAT" returned "PTR_FORMAT,
-                               p, size, res);
-        *failures = true;
-        return;
-      }
-      blocks = 0;
-    } else {
-      blocks++;
+
+    // If it returns false, verify_for_object() will output the
+    // appropriate messasge.
+    if (do_bot_verify && !_offsets.verify_for_object(p, obj_size)) {
+      *failures = true;
+      return;
     }
-    if (objs == OBJ_SAMPLE_INTERVAL) {
-      oop obj = oop(p);
-      if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
-        if (obj->is_oop()) {
-          klassOop klass = obj->klass();
-          if (!klass->is_perm()) {
-            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                   "not in perm", klass, obj);
-            *failures = true;
-            return;
-          } else if (!klass->is_klass()) {
-            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                   "not a klass", klass, obj);
-            *failures = true;
-            return;
-          } else {
-            vl_cl.set_containing_obj(obj);
-            obj->oop_iterate(&vl_cl);
-            if (vl_cl.failures()) {
-              *failures = true;
-            }
-            if (G1MaxVerifyFailures >= 0 &&
-                vl_cl.n_failures() >= G1MaxVerifyFailures) {
-              return;
-            }
-          }
-        } else {
-          gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
+
+    if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
+      if (obj->is_oop()) {
+        klassOop klass = obj->klass();
+        if (!klass->is_perm()) {
+          gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                 "not in perm", klass, obj);
           *failures = true;
           return;
+        } else if (!klass->is_klass()) {
+          gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                 "not a klass", klass, obj);
+          *failures = true;
+          return;
+        } else {
+          vl_cl.set_containing_obj(obj);
+          obj->oop_iterate(&vl_cl);
+          if (vl_cl.failures()) {
+            *failures = true;
+          }
+          if (G1MaxVerifyFailures >= 0 &&
+              vl_cl.n_failures() >= G1MaxVerifyFailures) {
+            return;
+          }
         }
-      }
-      objs = 0;
-    } else {
-      objs++;
-    }
-    prev_p = p;
-    p += size;
-  }
-  HeapWord* rend = end();
-  HeapWord* rtop = top();
-  if (rtop < rend) {
-    HeapWord* res = block_start_const(rtop + (rend - rtop) / 2);
-    if (res != rtop) {
-        gclog_or_tty->print_cr("offset computation 2 for "PTR_FORMAT" and "
-                               PTR_FORMAT" returned "PTR_FORMAT,
-                               rtop, rend, res);
+      } else {
+        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
         *failures = true;
         return;
+      }
+    }
+    prev_p = p;
+    p += obj_size;
+  }
+
+  if (p != top()) {
+    gclog_or_tty->print_cr("end of last object "PTR_FORMAT" "
+                           "does not match top "PTR_FORMAT, p, top());
+    *failures = true;
+    return;
+  }
+
+  HeapWord* the_end = end();
+  assert(p == top(), "it should still hold");
+  // Do some extra BOT consistency checking for addresses in the
+  // range [top, end). BOT look-ups in this range should yield
+  // top. No point in doing that if top == end (there's nothing there).
+  if (p < the_end) {
+    // Look up top
+    HeapWord* addr_1 = p;
+    HeapWord* b_start_1 = _offsets.block_start_const(addr_1);
+    if (b_start_1 != p) {
+      gclog_or_tty->print_cr("BOT look up for top: "PTR_FORMAT" "
+                             " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                             addr_1, b_start_1, p);
+      *failures = true;
+      return;
+    }
+
+    // Look up top + 1
+    HeapWord* addr_2 = p + 1;
+    if (addr_2 < the_end) {
+      HeapWord* b_start_2 = _offsets.block_start_const(addr_2);
+      if (b_start_2 != p) {
+        gclog_or_tty->print_cr("BOT look up for top + 1: "PTR_FORMAT" "
+                               " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                               addr_2, b_start_2, p);
+        *failures = true;
+        return;
+      }
+    }
+
+    // Look up an address between top and end
+    size_t diff = pointer_delta(the_end, p) / 2;
+    HeapWord* addr_3 = p + diff;
+    if (addr_3 < the_end) {
+      HeapWord* b_start_3 = _offsets.block_start_const(addr_3);
+      if (b_start_3 != p) {
+        gclog_or_tty->print_cr("BOT look up for top + diff: "PTR_FORMAT" "
+                               " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                               addr_3, b_start_3, p);
+        *failures = true;
+        return;
+      }
+    }
+
+    // Loook up end - 1
+    HeapWord* addr_4 = the_end - 1;
+    HeapWord* b_start_4 = _offsets.block_start_const(addr_4);
+    if (b_start_4 != p) {
+      gclog_or_tty->print_cr("BOT look up for end - 1: "PTR_FORMAT" "
+                             " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                             addr_4, b_start_4, p);
+      *failures = true;
+      return;
     }
   }
 
@@ -879,12 +850,6 @@ void HeapRegion::verify(bool allow_dirty,
     gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
                            "but has "SIZE_FORMAT", objects",
                            bottom(), end(), object_num);
-    *failures = true;
-  }
-
-  if (p != top()) {
-    gclog_or_tty->print_cr("end of last object "PTR_FORMAT" "
-                           "does not match top "PTR_FORMAT, p, top());
     *failures = true;
     return;
   }
@@ -975,68 +940,4 @@ G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
 {
   _offsets.set_space(this);
   initialize(mr, !is_zeroed, SpaceDecorator::Mangle);
-}
-
-size_t RegionList::length() {
-  size_t len = 0;
-  HeapRegion* cur = hd();
-  DEBUG_ONLY(HeapRegion* last = NULL);
-  while (cur != NULL) {
-    len++;
-    DEBUG_ONLY(last = cur);
-    cur = get_next(cur);
-  }
-  assert(last == tl(), "Invariant");
-  return len;
-}
-
-void RegionList::insert_before_head(HeapRegion* r) {
-  assert(well_formed(), "Inv");
-  set_next(r, hd());
-  _hd = r;
-  _sz++;
-  if (tl() == NULL) _tl = r;
-  assert(well_formed(), "Inv");
-}
-
-void RegionList::prepend_list(RegionList* new_list) {
-  assert(well_formed(), "Precondition");
-  assert(new_list->well_formed(), "Precondition");
-  HeapRegion* new_tl = new_list->tl();
-  if (new_tl != NULL) {
-    set_next(new_tl, hd());
-    _hd = new_list->hd();
-    _sz += new_list->sz();
-    if (tl() == NULL) _tl = new_list->tl();
-  } else {
-    assert(new_list->hd() == NULL && new_list->sz() == 0, "Inv");
-  }
-  assert(well_formed(), "Inv");
-}
-
-void RegionList::delete_after(HeapRegion* r) {
-  assert(well_formed(), "Precondition");
-  HeapRegion* next = get_next(r);
-  assert(r != NULL, "Precondition");
-  HeapRegion* next_tl = get_next(next);
-  set_next(r, next_tl);
-  dec_sz();
-  if (next == tl()) {
-    assert(next_tl == NULL, "Inv");
-    _tl = r;
-  }
-  assert(well_formed(), "Inv");
-}
-
-HeapRegion* RegionList::pop() {
-  assert(well_formed(), "Inv");
-  HeapRegion* res = hd();
-  if (res != NULL) {
-    _hd = get_next(res);
-    _sz--;
-    set_next(res, NULL);
-    if (sz() == 0) _tl = NULL;
-  }
-  assert(well_formed(), "Inv");
-  return res;
 }

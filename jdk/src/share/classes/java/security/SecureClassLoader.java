@@ -50,7 +50,7 @@ public class SecureClassLoader extends ClassLoader {
     // HashMap that maps CodeSource to ProtectionDomain
     // @GuardedBy("pdcache")
     private final HashMap<CodeSource, ProtectionDomain> pdcache =
-                        new HashMap<CodeSource, ProtectionDomain>(11);
+                        new HashMap<>(11);
 
     private static final Debug debug = Debug.getInstance("scl");
 
