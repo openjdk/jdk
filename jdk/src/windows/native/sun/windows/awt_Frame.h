@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ public:
         FRAME_SETMENUBAR
     };
 
-    /* int handle field for sun.awt.windows.WEmbeddedFrame */
+    /* java.awt.Frame fields and method IDs */
+    static jfieldID undecoratedID;
+
+    /* sun.awt.windows.WEmbeddedFrame fields and method IDs */
     static jfieldID handleID;
 
-    /* int state field for java.awt.Frame */
-    static jfieldID stateID;
-
-    /* boolean undecorated field for java.awt.Frame */
-    static jfieldID undecoratedID;
+    static jmethodID setExtendedStateMID;
+    static jmethodID getExtendedStateMID;
 
     /* method id for WEmbeddedFrame.requestActivate() method */
     static jmethodID activateEmbeddingTopLevelMID;
@@ -108,7 +108,6 @@ public:
     MsgRouting WmNcMouseDown(WPARAM hitTest, int x, int y, int button);
     MsgRouting WmNcMouseUp(WPARAM hitTest, int x, int y, int button);
     MsgRouting WmGetIcon(WPARAM iconType, LRESULT& retVal);
-    MsgRouting WmWindowPosChanged(LPARAM windowPos);
     MsgRouting WmShowWindow(BOOL show, UINT status);
 
     virtual MsgRouting WmSysCommand(UINT uCmdType, int xPos, int yPos);
@@ -133,11 +132,6 @@ public:
     // adjusts the IME candidate window position if needed
     void AdjustCandidateWindowPos();
 
-    void SynthesizeWmActivate(BOOL doActivate, HWND opposite);
-
-    BOOL activateEmbeddedFrameOnSetFocus(HWND hWndLostFocus);
-    BOOL deactivateEmbeddedFrameOnKillFocus(HWND hWndGotFocus);
-
     // invoked on Toolkit thread
     static jobject _GetBoundsPrivate(void *param);
 
@@ -152,6 +146,14 @@ public:
     static void _NotifyModalBlocked(void *param);
 
     virtual void Reshape(int x, int y, int width, int height);
+
+    virtual BOOL AwtSetActiveWindow(BOOL isMouseEventCause = FALSE, UINT hittest = HTCLIENT);
+
+    void CheckRetainActualFocusedWindow(HWND activatedOpositeHWnd);
+    BOOL CheckActivateActualFocusedWindow(HWND deactivatedOpositeHWnd);
+
+    INLINE HWND GetLastProxiedFocusOwner() { return m_lastProxiedFocusOwner; }
+    INLINE void SetLastProxiedFocusOwner(HWND hwnd) { m_lastProxiedFocusOwner = hwnd; }
 
 protected:
     /* The frame is undecorated. */
@@ -188,6 +190,10 @@ private:
     /* Receives all keyboard input when an AwtWindow which is not an AwtFrame
        or an AwtDialog (or one of its children) has the logical input focus. */
     HWND m_proxyFocusOwner;
+
+    /* Retains the last/current sm_focusOwner proxied. Actually, it should be
+     * a component of an owned window last/currently active. */
+    HWND m_lastProxiedFocusOwner;
 
     /*
      * Fix for 4823903.

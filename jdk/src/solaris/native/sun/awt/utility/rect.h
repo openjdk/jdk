@@ -43,4 +43,15 @@ typedef XRectangle RECT_T;
 
 #define RECT_INC_HEIGHT(r)      (r).height++
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+int BitmapToYXBandedRectangles(int bitsPerPixel, int width, int height,
+        unsigned char * buf, RECT_T * outBuf);
+
+#if defined(__cplusplus)
+}
+#endif
+
 #endif // _AWT_RECT_H

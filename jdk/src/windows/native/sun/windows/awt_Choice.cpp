@@ -23,13 +23,16 @@
  * have any questions.
  */
 
+#include <windowsx.h>
+
 #include "awt_Toolkit.h"
 #include "awt_Choice.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 
 #include "awt_Dimension.h"
 #include "awt_Container.h"
+
+#include "ComCtl32Util.h"
 
 #include <java_awt_Toolkit.h>
 #include <java_awt_FontMetrics.h>
@@ -71,16 +74,29 @@ BOOL AwtChoice::mouseCapture = FALSE;
 /* Bug #4338368: consume the spurious MouseUp when the choice loses focus */
 
 BOOL AwtChoice::skipNextMouseUp = FALSE;
+
+BOOL AwtChoice::sm_isMouseMoveInList = FALSE;
+
+static const UINT MINIMUM_NUMBER_OF_VISIBLE_ITEMS = 8;
+
 /*************************************************************************
  * AwtChoice class methods
  */
 
 AwtChoice::AwtChoice() {
-    killFocusRouting = mrPassAlong;
+    m_hList = NULL;
+    m_listDefWindowProc = NULL;
 }
 
 LPCTSTR AwtChoice::GetClassName() {
     return TEXT("COMBOBOX");  /* System provided combobox class */
+}
+
+void AwtChoice::Dispose() {
+    if (m_hList != NULL && m_listDefWindowProc != NULL) {
+        ComCtl32Util::GetInstance().UnsubclassHWND(m_hList, ListWindowProc, m_listDefWindowProc);
+    }
+    AwtComponent::Dispose();
 }
 
 AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
@@ -162,6 +178,10 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
             env->SetIntField(target, AwtComponent::widthID,  (jint) rc.right);
             env->SetIntField(target, AwtComponent::heightID, (jint) rc.bottom);
 
+            if (IS_WINXP) {
+                ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
+            }
+
             env->DeleteLocalRef(dimension);
         }
     } catch (...) {
@@ -175,24 +195,13 @@ done:
     return c;
 }
 
-BOOL AwtChoice::ActMouseMessage(MSG* pMsg) {
-    if (!IsFocusingMessage(pMsg->message)) {
-        return FALSE;
-    }
-
-    if (pMsg->message == WM_LBUTTONDOWN) {
-        SendMessage(CB_SHOWDROPDOWN, ~SendMessage(CB_GETDROPPEDSTATE, 0, 0), 0);
-    }
-    return TRUE;
-}
-
 // calculate height of drop-down list part of the combobox
 // to show all the items up to a maximum of eight
 int AwtChoice::GetDropDownHeight()
 {
     int itemHeight =(int)::SendMessage(GetHWnd(), CB_GETITEMHEIGHT, (UINT)0,0);
     int numItemsToShow = (int)::SendMessage(GetHWnd(), CB_GETCOUNT, 0,0);
-    numItemsToShow = numItemsToShow > 8 ? 8 : numItemsToShow;
+    numItemsToShow = min(MINIMUM_NUMBER_OF_VISIBLE_ITEMS, numItemsToShow);
     // drop-down height snaps to nearest line, so add a
     // fudge factor of 1/2 line to ensure last line shows
     return itemHeight*numItemsToShow + itemHeight/2;
@@ -253,6 +262,7 @@ void AwtChoice::SetDragCapture(UINT flags)
         }
         return;
     }
+
     // don't want to interfere with other controls
     if (::GetCapture() == NULL) {
         ::SetCapture(GetHWnd());
@@ -370,6 +380,58 @@ void AwtChoice::SetFont(AwtFont* font)
     env->DeleteLocalRef(target);
 }
 
+static int lastClickX = -1;
+static int lastClickY = -1;
+
+LRESULT CALLBACK AwtChoice::ListWindowProc(HWND hwnd, UINT message,
+                                           WPARAM wParam, LPARAM lParam)
+{
+    /*
+     * We don't pass the choice WM_LBUTTONDOWN message. As the result the choice's list
+     * doesn't forward mouse messages it captures. Below we do forward what we need.
+     */
+
+    TRY;
+
+    DASSERT(::IsWindow(hwnd));
+
+    switch (message) {
+        case WM_LBUTTONDOWN: {
+            DWORD curPos = ::GetMessagePos();
+            lastClickX = GET_X_LPARAM(curPos);
+            lastClickY = GET_Y_LPARAM(curPos);
+            break;
+        }
+        case WM_MOUSEMOVE: {
+            RECT rect;
+            ::GetClientRect(hwnd, &rect);
+
+            POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+            if (::PtInRect(&rect, pt)) {
+                sm_isMouseMoveInList = TRUE;
+            }
+
+            POINT lastPt = {lastClickX, lastClickY};
+            ::ScreenToClient(hwnd, &lastPt);
+            if (::PtInRect(&rect, lastPt)) {
+                break; // ignore when dragging inside the list
+            }
+        }
+        case WM_LBUTTONUP: {
+            lastClickX = -1;
+            lastClickY = -1;
+
+            AwtChoice *c = (AwtChoice *)::GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            if (c != NULL) {
+                // forward the msg to the choice
+                c->WindowProc(message, wParam, lParam);
+            }
+        }
+    }
+    return ComCtl32Util::GetInstance().DefWindowProc(NULL, hwnd, message, wParam, lParam);
+
+    CATCH_BAD_ALLOC_RET(0);
+}
 
 
 MsgRouting AwtChoice::WmNotify(UINT notifyCode)
@@ -379,15 +441,24 @@ MsgRouting AwtChoice::WmNotify(UINT notifyCode)
         if (itemSelect != CB_ERR){
             DoCallback("handleAction", "(I)V", itemSelect);
         }
-    } else if (notifyCode == CBN_DROPDOWN && !IsFocusable()) {
-        // While non-focusable Choice is shown all WM_KILLFOCUS messages should be consumed.
-        killFocusRouting = mrConsume;
-    } else if (notifyCode == CBN_CLOSEUP && !IsFocusable()) {
-        // When non-focusable Choice is about to close, send it synthetic WM_KILLFOCUS
-        // message that should be processed by the native widget only. This will allow
-        // the native widget to properly process WM_KILLFOCUS that was earlier consumed.
-        killFocusRouting = mrDoDefault;
-        ::PostMessage(GetHWnd(), WM_KILLFOCUS, (LPARAM)sm_focusOwner, 0);
+    } else if (notifyCode == CBN_DROPDOWN) {
+
+        if (m_hList == NULL) {
+            COMBOBOXINFO cbi;
+            cbi.cbSize = sizeof(COMBOBOXINFO);
+            ::GetComboBoxInfo(GetHWnd(), &cbi);
+            m_hList = cbi.hwndList;
+            m_listDefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(m_hList, ListWindowProc);
+            DASSERT(::GetWindowLongPtr(m_hList, GWLP_USERDATA) == NULL);
+            ::SetWindowLongPtr(m_hList, GWLP_USERDATA, (LONG_PTR)this);
+        }
+        sm_isMouseMoveInList = FALSE;
+
+        // Clicking in the dropdown list steals focus from the proxy.
+        // So, set the focus-restore flag up.
+        SetRestoreFocus(TRUE);
+    } else if (notifyCode == CBN_CLOSEUP) {
+        SetRestoreFocus(FALSE);
     }
     return mrDoDefault;
 }
@@ -414,19 +485,7 @@ MsgRouting
 AwtChoice::WmKillFocus(HWND hWndGotFocus)
 {
     skipNextMouseUp = TRUE;
-
-    switch (killFocusRouting) {
-    case mrConsume:
-        return mrConsume;
-    case mrDoDefault:
-        killFocusRouting = mrPassAlong;
-        return mrDoDefault;
-    case mrPassAlong:
-        return AwtComponent::WmKillFocus(hWndGotFocus);
-    }
-
-    DASSERT(false); // must never reach here
-    return mrDoDefault;
+    return AwtComponent::WmKillFocus(hWndGotFocus);
 }
 
 MsgRouting
@@ -441,27 +500,17 @@ AwtChoice::WmMouseUp(UINT flags, int x, int y, int button)
 
 MsgRouting AwtChoice::HandleEvent(MSG *msg, BOOL synthetic)
 {
-    /*
-     * 6366006
-     * Note: the event can be sent in two cases:
-     *       1) The Choice is closed and user clicks on it to drop it down.
-     *       2) The Choice is non-focusable, it's droped down, user
-     *          clicks on it (or outside) to close it.
-     *       So, if the Choice is in droped down state, we shouldn't call
-     *       heavyweightButtonDown() method. Otherwise it will set a typeahead marker
-     *       that won't be removed, because no focus events will be generated.
-     */
-    if (AwtComponent::sm_focusOwner != GetHWnd() &&
-        (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) &&
-        !IsChoiceOpened())
+    if (IsFocusingMouseMessage(msg)) {
+        SendMessage(CB_SHOWDROPDOWN, ~SendMessage(CB_GETDROPPEDSTATE, 0, 0), 0);
+        delete msg;
+        return mrConsume;
+    }
+    // To simulate the native behavior, we close the list on WM_LBUTTONUP if
+    // WM_MOUSEMOVE has been dedected on the list since it has been dropped down.
+    if (msg->message == WM_LBUTTONUP && SendMessage(CB_GETDROPPEDSTATE, 0, 0) &&
+        sm_isMouseMoveInList)
     {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject target = GetTarget(env);
-        env->CallStaticVoidMethod
-            (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-             AwtKeyboardFocusManager::heavyweightButtonDownMID,
-             target, ((jlong)msg->time) & 0xFFFFFFFF);
-        env->DeleteLocalRef(target);
+        SendMessage(CB_SHOWDROPDOWN, FALSE, 0);
     }
     return AwtComponent::HandleEvent(msg, synthetic);
 }
@@ -618,6 +667,26 @@ done:
     env->DeleteGlobalRef(choice);
 }
 
+void AwtChoice::_CloseList(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    jobject choice = (jobject)param;
+
+    AwtChoice *c = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(choice, done);
+
+    c = (AwtChoice *)pData;
+    if (::IsWindow(c->GetHWnd()) && c->SendMessage(CB_GETDROPPEDSTATE, 0, 0)) {
+        c->SendMessage(CB_SHOWDROPDOWN, FALSE, 0);
+    }
+
+done:
+    env->DeleteGlobalRef(choice);
+}
+
 /************************************************************************
  * WChoicePeer native methods
  */
@@ -752,6 +821,23 @@ Java_sun_awt_windows_WChoicePeer_create(JNIEnv *env, jobject self,
     CATCH_BAD_ALLOC;
 }
 
+/*
+ * Class:     sun_awt_windows_WChoicePeer
+ * Method:    closeList
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WChoicePeer_closeList(JNIEnv *env, jobject self)
+{
+    TRY;
+
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+
+    AwtToolkit::GetInstance().SyncCall(AwtChoice::_CloseList, (void *)selfGlobalRef);
+    // global ref is deleted in _CloseList
+
+    CATCH_BAD_ALLOC;
+}
 } /* extern "C" */
 
 

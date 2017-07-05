@@ -39,6 +39,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import sun.awt.shell.ShellFolder;
 import sun.awt.OSInfo;
@@ -1143,7 +1145,11 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
             File[] baseFolders;
             if (useShellFolder) {
-                baseFolders = (File[])ShellFolder.get("fileChooserComboBoxFolders");
+                baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+                    public File[] run() {
+                        return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
+                    }
+                });
             } else {
                 baseFolders = fsv.getRoots();
             }

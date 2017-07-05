@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,6 @@ public:
     // called on Toolkit thread from JNI
     static jstring _GetText(void *param);
 
-    BOOL ActMouseMessage(MSG* pMsg);
-
     void SetFont(AwtFont* font);
 
     /*
@@ -79,6 +77,8 @@ public:
     MsgRouting WmNotify(UINT notifyCode);
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
     MsgRouting WmPaste();
+
+    virtual BOOL IsFocusingMouseMessage(MSG *pMsg);
 
 /*  To be fully implemented in a future release
 
@@ -124,7 +124,6 @@ private:
     LONG    m_lStartPos;
     LONG    m_lEndPos;
     LONG    m_lLastPos;
-
 
     HFONT m_hFont;
     //im --- end
