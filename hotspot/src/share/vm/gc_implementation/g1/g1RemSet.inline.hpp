@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,67 +84,5 @@ inline void UpdateRSetImmediate::do_oop_work(T* p) {
     _g1_rem_set->par_write_ref(_from, p, 0);
   }
 }
-
-template <class T>
-inline void UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
-  oop obj = oopDesc::load_decode_heap_oop(p);
-#ifdef ASSERT
-  // can't do because of races
-  // assert(obj == NULL || obj->is_oop(), "expected an oop");
-
-  // Do the safe subset of is_oop
-  if (obj != NULL) {
-#ifdef CHECK_UNHANDLED_OOPS
-    oopDesc* o = obj.obj();
-#else
-    oopDesc* o = obj;
-#endif // CHECK_UNHANDLED_OOPS
-    assert((intptr_t)o % MinObjAlignmentInBytes == 0, "not oop aligned");
-    assert(Universe::heap()->is_in_reserved(obj), "must be in heap");
-  }
-#endif // ASSERT
-
-  assert(_from != NULL, "from region must be non-NULL");
-
-  HeapRegion* to = _g1->heap_region_containing(obj);
-  if (to != NULL && _from != to) {
-    // The _record_refs_into_cset flag is true during the RSet
-    // updating part of an evacuation pause. It is false at all
-    // other times:
-    //  * rebuilding the rembered sets after a full GC
-    //  * during concurrent refinement.
-    //  * updating the remembered sets of regions in the collection
-    //    set in the event of an evacuation failure (when deferred
-    //    updates are enabled).
-
-    if (_record_refs_into_cset && to->in_collection_set()) {
-      // We are recording references that point into the collection
-      // set and this particular reference does exactly that...
-      // If the referenced object has already been forwarded
-      // to itself, we are handling an evacuation failure and
-      // we have already visited/tried to copy this object
-      // there is no need to retry.
-      if (!self_forwarded(obj)) {
-        assert(_push_ref_cl != NULL, "should not be null");
-        // Push the reference in the refs queue of the G1ParScanThreadState
-        // instance for this worker thread.
-        _push_ref_cl->do_oop(p);
-      }
-
-      // Deferred updates to the CSet are either discarded (in the normal case),
-      // or processed (if an evacuation failure occurs) at the end
-      // of the collection.
-      // See G1RemSet::cleanup_after_oops_into_collection_set_do().
-    } else {
-      // We either don't care about pushing references that point into the
-      // collection set (i.e. we're not during an evacuation pause) _or_
-      // the reference doesn't point into the collection set. Either way
-      // we add the reference directly to the RSet of the region containing
-      // the referenced object.
-      _g1_rem_set->par_write_ref(_from, p, _worker_i);
-    }
-  }
-}
-
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP
