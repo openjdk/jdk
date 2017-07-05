@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -114,7 +116,106 @@ public class SerializerMessages_cs extends ListResourceBundle {
         "Nen\u00ed-li ur\u010den hostitel, nelze zadat \u00fadaje o u\u017eivateli."},
 
       { MsgKey.ER_SCHEME_REQUIRED,
-        "Je vy\u017eadov\u00e1no sch\u00e9ma!"}
+        "Je vy\u017eadov\u00e1no sch\u00e9ma!"},
+
+      /*
+       * Note to translators:  The words 'Properties' and
+       * 'SerializerFactory' in this message are Java class names
+       * and should not be translated.
+       */
+      {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
+          "Objekt vlastnost\u00ed p\u0159edan\u00fd faktorii SerializerFactory neobsahuje vlastnost ''{0}''. " },
+
+      {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
+          "Varov\u00e1n\u00ed: K\u00f3dov\u00e1n\u00ed ''{0}'' nen\u00ed v b\u011bhov\u00e9m prost\u0159ed\u00ed Java podporov\u00e1no." },
+
+       {MsgKey.ER_FEATURE_NOT_FOUND,
+       "Parametr ''{0}'' nebyl rozpozn\u00e1n."},
+
+       {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+       "Parametr ''{0}'' byl rozpozn\u00e1n, ale nelze nastavit po\u017eadovanou hodnotu."},
+
+       {MsgKey.ER_STRING_TOO_LONG,
+       "V\u00fdsledn\u00fd \u0159et\u011bzec je p\u0159\u00edli\u0161 dlouh\u00fd pro \u0159et\u011bzec DOMString: ''{0}''."},
+
+       {MsgKey.ER_TYPE_MISMATCH_ERR,
+       "Typ hodnoty pro tento n\u00e1zev parametru nen\u00ed kompatibiln\u00ed s o\u010dek\u00e1van\u00fdm typem hodnoty."},
+
+       {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+       "C\u00edlov\u00e9 um\u00edst\u011bn\u00ed v\u00fdstupu pro data ur\u010den\u00e1 k z\u00e1pisu je rovno hodnot\u011b Null. "},
+
+       {MsgKey.ER_UNSUPPORTED_ENCODING,
+       "Bylo nalezeno nepodporovan\u00e9 k\u00f3dov\u00e1n\u00ed."},
+
+       {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+       "Nelze prov\u00e9st serializaci uzlu. "},
+
+       {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+       "Sekce CDATA obsahuje jednu nebo v\u00edce ukon\u010dovac\u00edch zna\u010dek ']]>'."},
+
+       {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+           "Nelze vytvo\u0159it instanci modulu pro kontrolu spr\u00e1vn\u00e9ho utvo\u0159en\u00ed. Parametr spr\u00e1vn\u00e9ho utvo\u0159en\u00ed byl nastaven na hodnotu true, nepoda\u0159ilo se v\u0161ak zkontrolovat spr\u00e1vnost utvo\u0159en\u00ed. "
+       },
+
+       {MsgKey.ER_WF_INVALID_CHARACTER,
+           "Uzel ''{0}'' obsahuje neplatn\u00e9 znaky XML. "
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+           "V pozn\u00e1mce byl zji\u0161t\u011bn neplatn\u00fd znak XML (Unicode: 0x{0})."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+           "V datech instrukce zpracov\u00e1n\u00ed byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+           "V odd\u00edlu CDATASection byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+           "V obsahu znakov\u00fdch dat uzlu byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
+       },
+
+       { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+           "V objektu {0} s n\u00e1zvem ''{1}'' byl nalezen neplatn\u00fd znak XML. "
+       },
+
+       { MsgKey.ER_WF_DASH_IN_COMMENT,
+           "V pozn\u00e1mk\u00e1ch nen\u00ed povolen \u0159et\u011bzec \"--\"."
+       },
+
+       {MsgKey.ER_WF_LT_IN_ATTVAL,
+           "Hodnota atributu \"{1}\" souvisej\u00edc\u00edho s typem prvku \"{0}\" nesm\u00ed obsahovat znak ''<''."
+       },
+
+       {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+           "Odkaz na neanalyzovanou entitu \"&{0};\" nen\u00ed povolen."
+       },
+
+       {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+           "Extern\u00ed odkaz na entitu \"&{0};\" nen\u00ed v hodnot\u011b atributu povolen."
+       },
+
+       {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+           "P\u0159edpona \"{0}\" nesm\u00ed b\u00fdt v\u00e1zan\u00e1 k oboru n\u00e1zv\u016f \"{1}\"."
+       },
+
+       {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+           "Lok\u00e1ln\u00ed n\u00e1zev prvku \"{0}\" m\u00e1 hodnotu Null. "
+       },
+
+       {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+           "Lok\u00e1ln\u00ed n\u00e1zev atributu \"{0}\" m\u00e1 hodnotu Null. "
+       },
+
+       { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+           "Nov\u00fd text uzlu entity \"{0}\" obsahuje uzel prvku \"{1}\" s nesv\u00e1zanou p\u0159edponou \"{2}\"."
+       },
+
+       { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+           "Nov\u00fd text uzlu entity \"{0}\" obsahuje uzel atributu \"{1}\" s nesv\u00e1zanou p\u0159edponou \"{2}\". "
+       },
 
     };
     return contents;

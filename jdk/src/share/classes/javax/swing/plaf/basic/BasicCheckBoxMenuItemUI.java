@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
-import javax.swing.border.*;
-import java.io.Serializable;
-
 
 /**
  * BasicCheckboxMenuItem implementation
@@ -42,6 +39,12 @@ import java.io.Serializable;
  */
 public class BasicCheckBoxMenuItemUI extends BasicMenuItemUI {
 
+    /**
+     * Constructs a new instance of {@code BasicCheckBoxMenuItemUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicCheckBoxMenuItemUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicCheckBoxMenuItemUI();
     }
@@ -50,6 +53,14 @@ public class BasicCheckBoxMenuItemUI extends BasicMenuItemUI {
         return "CheckBoxMenuItem";
     }
 
+    /**
+     * Invoked when mouse event occurs.
+     *
+     * @param item a menu item
+     * @param e a mouse event
+     * @param path an array of {@code MenuElement}
+     * @param manager an instance of {@code MenuSelectionManager}
+     */
     public void processMouseEvent(JMenuItem item,MouseEvent e,MenuElement path[],MenuSelectionManager manager) {
         Point p = e.getPoint();
         if(p.x >= 0 && p.x < item.getWidth() &&

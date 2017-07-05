@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -200,6 +202,93 @@ public class SerializerMessages_ko extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "\uACBD\uACE0: \uC778\uCF54\uB529 ''{0}''\uC740(\uB294) Java \uB7F0\uD0C0\uC784\uC5D0 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "''{0}'' \ub9e4\uac1c\ubcc0\uc218\ub97c \uc778\uc2dd\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "''{0}'' \ub9e4\uac1c\ubcc0\uc218\ub294 \uc778\uc2dd\ud560 \uc218 \uc788\uc73c\ub098 \uc694\uccad\ub41c \uac12\uc744 \uc124\uc815\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "\uacb0\uacfc \ubb38\uc790\uc5f4\uc774 \ub108\ubb34 \uae38\uc5b4 DOMString\uc5d0 \ub9de\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4: ''{0}'' "},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "\uc774 \ub9e4\uac1c\ubcc0\uc218 \uc774\ub984\uc5d0 \ub300\ud55c \uac12 \uc720\ud615\uc774 \uc608\uc0c1 \uac12 \uc720\ud615\uacfc \ud638\ud658\ub418\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "\ub370\uc774\ud130\ub97c \uae30\ub85d\ud560 \ucd9c\ub825 \ub300\uc0c1\uc774 \ub110(null)\uc785\ub2c8\ub2e4."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "\uc9c0\uc6d0\ub418\uc9c0 \uc54a\ub294 \uc778\ucf54\ub529\uc774 \ubc1c\uacac\ub418\uc5c8\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "\ub178\ub4dc\ub97c \uc9c1\ub82c\ud654\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "CDATA \uc139\uc158\uc5d0 \uc885\ub8cc \ud45c\uc2dc \ubb38\uc790\uc778 ']]>'\uac00 \ud558\ub098 \uc774\uc0c1 \ud3ec\ud568\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Well-Formedness \uac80\uc0ac\uae30\uc758 \uc778\uc2a4\ud134\uc2a4\ub97c \uc791\uc131\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. Well-Formed \ub9e4\uac1c\ubcc0\uc218\uac00 true\ub85c \uc124\uc815\ub418\uc5c8\uc9c0\ub9cc Well-Formedness \uac80\uc0ac\ub97c \uc218\ud589\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "''{0}'' \ub178\ub4dc\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790\uac00 \uc788\uc2b5\ub2c8\ub2e4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "\uc124\uba85\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790(Unicode: 0x{0})\uac00 \uc788\uc2b5\ub2c8\ub2e4. "
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "\ucc98\ub9ac \uba85\ub839\uc5b4 \ub370\uc774\ud130\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790(Unicode: 0x{0})\uac00 \uc788\uc2b5\ub2c8\ub2e4 "
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "CDATASection\uc758 \ub0b4\uc6a9\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790(Unicode: 0x{0})\uac00 \uc788\uc2b5\ub2c8\ub2e4. "
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "\ub178\ub4dc\uc758 \ubb38\uc790 \ub370\uc774\ud130 \ub0b4\uc6a9\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790(Unicode: 0x{0})\uac00 \uc788\uc2b5\ub2c8\ub2e4. "
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "\uc774\ub984\uc774 ''{1}''\uc778 {0} \ub178\ub4dc\uc5d0 \uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 XML \ubb38\uc790\uac00 \uc788\uc2b5\ub2c8\ub2e4. "
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "\uc124\uba85 \ub0b4\uc5d0\uc11c\ub294 \"--\" \ubb38\uc790\uc5f4\uc774 \ud5c8\uc6a9\ub418\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "\"{0}\" \uc694\uc18c \uc720\ud615\uacfc \uc5f0\uad00\ub41c \"{1}\" \uc18d\uc131\uac12\uc5d0 ''<'' \ubb38\uc790\uac00 \ud3ec\ud568\ub418\uba74 \uc548\ub429\ub2c8\ub2e4."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "\"&{0};\"\uc758 \uad6c\ubd84 \ubd84\uc11d\ub418\uc9c0 \uc54a\uc740 \uc5d4\ud2f0\ud2f0 \ucc38\uc870\ub294 \ud5c8\uc6a9\ub418\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. "
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "\uc18d\uc131\uac12\uc5d0\ub294 \"&{0};\" \uc678\ubd80 \uc5d4\ud2f0\ud2f0 \ucc38\uc870\uac00 \ud5c8\uc6a9\ub418\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. "
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "\"{0}\" \uc811\ub450\ubd80\ub97c \"{1}\" \uc774\ub984 \uacf5\uac04\uc5d0 \ubc14\uc778\ub4dc\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "\"{0}\" \uc694\uc18c\uc758 \ub85c\uceec \uc774\ub984\uc774 \ub110(null)\uc785\ub2c8\ub2e4."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "\"{0}\" \uc18d\uc131\uc758 \ub85c\uceec \uc774\ub984\uc774 \ub110(null)\uc785\ub2c8\ub2e4."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "\"{0}\" \uc5d4\ud2f0\ud2f0 \ub178\ub4dc\uc758 \ub300\uccb4 \ud14d\uc2a4\ud2b8\uc5d0 \ubc14\uc778\ub4dc\ub418\uc9c0 \uc54a\uc740 \uc811\ub450\ubd80 \"{2}\"\uc744(\ub97c) \uac16\ub294 \"{1}\" \uc694\uc18c \ub178\ub4dc\uac00 \uc788\uc2b5\ub2c8\ub2e4."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "\"{0}\" \uc5d4\ud2f0\ud2f0 \ub178\ub4dc\uc758 \ub300\uccb4 \ud14d\uc2a4\ud2b8\uc5d0 \ubc14\uc778\ub4dc\ub418\uc9c0 \uc54a\uc740 \uc811\ub450\ubd80 \"{2}\"\uc744(\ub97c) \uac16\ub294 \"{1}\" \uc18d\uc131 \ub178\ub4dc\uac00 \uc788\uc2b5\ub2c8\ub2e4."
+             },
 
         };
 

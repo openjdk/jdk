@@ -54,7 +54,7 @@ class OrExpression extends BinaryLogicalExpression {
      *        both the left or right hand side are false
      */
     public void checkCondition(Environment env, Context ctx, Vset vset,
-                               Hashtable exp, ConditionVars cvars) {
+                               Hashtable<Object, Object> exp, ConditionVars cvars) {
         // Find out when the left side is true/false
         left.checkCondition(env, ctx, vset, exp, cvars);
         left = convert(env, ctx, Type.tBoolean, left);

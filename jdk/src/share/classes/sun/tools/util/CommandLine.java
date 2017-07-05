@@ -54,7 +54,7 @@ public class CommandLine {
     public static String[] parse(String[] args)
         throws IOException
     {
-        ArrayList newArgs = new ArrayList(args.length);
+        ArrayList<String> newArgs = new ArrayList<>(args.length);
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.length() > 1 && arg.charAt(0) == '@') {
@@ -68,10 +68,10 @@ public class CommandLine {
                 newArgs.add(arg);
             }
         }
-        return (String[])newArgs.toArray(new String[newArgs.size()]);
+        return newArgs.toArray(new String[newArgs.size()]);
     }
 
-    private static void loadCmdFile(String name, List args)
+    private static void loadCmdFile(String name, List<String> args)
         throws IOException
     {
         Reader r = new BufferedReader(new FileReader(name));

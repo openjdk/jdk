@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,22 @@ import javax.swing.plaf.SeparatorUI;
 
 public class BasicSeparatorUI extends SeparatorUI
 {
+    /**
+     * The color of the shadow.
+     */
     protected Color shadow;
+
+    /**
+     * The color of the highlighting.
+     */
     protected Color highlight;
 
+    /**
+     * Returns a new instance of {@code BasicSeparatorUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicSeparatorUI}
+     */
     public static ComponentUI createUI( JComponent c )
     {
         return new BasicSeparatorUI();
@@ -65,20 +78,40 @@ public class BasicSeparatorUI extends SeparatorUI
         uninstallListeners( (JSeparator)c );
     }
 
+    /**
+     * Installs default properties.
+     *
+     * @param s an instance of {@code JSeparator}
+     */
     protected void installDefaults( JSeparator s )
     {
-        LookAndFeel.installColors( s, "Separator.background", "Separator.foreground" );
-        LookAndFeel.installProperty( s, "opaque", Boolean.FALSE);
+        LookAndFeel.installColors(s, "Separator.background", "Separator.foreground");
+        LookAndFeel.installProperty(s, "opaque", Boolean.FALSE);
     }
 
+    /**
+     * Uninstalls default properties.
+     *
+     * @param s an instance of {@code JSeparator}
+     */
     protected void uninstallDefaults( JSeparator s )
     {
     }
 
+    /**
+     * Registers listeners.
+     *
+     * @param s an instance of {@code JSeparator}
+     */
     protected void installListeners( JSeparator s )
     {
     }
 
+    /**
+     * Unregisters listeners.
+     *
+     * @param s an instance of {@code JSeparator}
+     */
     protected void uninstallListeners( JSeparator s )
     {
     }

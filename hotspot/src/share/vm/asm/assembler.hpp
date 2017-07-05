@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,33 +26,14 @@
 #define SHARE_VM_ASM_ASSEMBLER_HPP
 
 #include "asm/codeBuffer.hpp"
+#include "asm/register.hpp"
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/top.hpp"
-
-#ifdef TARGET_ARCH_x86
-# include "register_x86.hpp"
-# include "vm_version_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "register_sparc.hpp"
-# include "vm_version_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "register_zero.hpp"
-# include "vm_version_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "register_arm.hpp"
-# include "vm_version_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "register_ppc.hpp"
-# include "vm_version_ppc.hpp"
-#endif
 
 // This file contains platform-independent assembler declarations.
 

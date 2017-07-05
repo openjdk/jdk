@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -101,7 +101,7 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return &(get_interpreterState()->_locals);
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   return (intptr_t*) &(get_interpreterState()->_bcp);
 }
 
@@ -113,7 +113,7 @@ inline Method** frame::interpreter_frame_method_addr() const {
   return &(get_interpreterState()->_method);
 }
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   return (intptr_t*) &(get_interpreterState()->_mdx);
 }
 

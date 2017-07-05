@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -385,8 +386,18 @@ public class CoreDOMImplementationImpl
          * reference to the default error handler.
          */
         public LSSerializer createLSSerializer() {
-        return new DOMSerializerImpl();
-    }
+            try {
+                Class serializerClass = ObjectFactory.findProviderClass(
+                    "com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl",
+                    ObjectFactory.findClassLoader(), true);
+                return (LSSerializer) serializerClass.newInstance();
+            }
+            catch (Exception e) {}
+            // Fall back to Xerces' deprecated serializer if
+            // the Xalan based serializer is unavailable.
+            return new DOMSerializerImpl();
+        }
+
         /**
          * DOM Level 3 LS CR - Experimental.
          * Create a new empty input source.
