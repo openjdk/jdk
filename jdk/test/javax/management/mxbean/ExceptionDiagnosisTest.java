@@ -26,11 +26,10 @@
  * @bug 6713777
  * @summary Test that exception messages include all relevant information
  * @author Eamonn McManus
- * @modules java.desktop
- *          java.management
+ * @modules java.management
  */
 
-import java.beans.ConstructorProperties;
+import javax.management.ConstructorParameters;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -131,7 +130,7 @@ public class ExceptionDiagnosisTest {
     }
 
     public static class CaseProb {
-        @ConstructorProperties({"urlPath"})
+        @ConstructorParameters({"urlPath"})
         public CaseProb(String urlPath) {}
 
         public String getURLPath() {return null;}

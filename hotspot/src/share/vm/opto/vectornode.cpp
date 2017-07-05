@@ -86,6 +86,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_MulD:
     assert(bt == T_DOUBLE, "must be");
     return Op_MulVD;
+  case Op_CMoveD:
+    assert(bt == T_DOUBLE, "must be");
+    return Op_CMoveVD;
   case Op_DivF:
     assert(bt == T_FLOAT, "must be");
     return Op_DivVF;
@@ -185,7 +188,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
-    return vopc > 0 && Matcher::match_rule_supported(vopc);
+    return vopc > 0 && Matcher::match_rule_supported(vopc) && (vopc != Op_CMoveD || vlen == 4);
   }
   return false;
 }

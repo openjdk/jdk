@@ -25,8 +25,10 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,jar, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jar.Main"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jar, \
+    MAIN_CLASS := sun.tools.jar.Main, \
+))
 
-$(eval $(call SetupLauncher,jarsigner, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarsigner.Main"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jarsigner, \
+    MAIN_CLASS := sun.security.tools.jarsigner.Main, \
+))

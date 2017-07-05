@@ -145,7 +145,8 @@ void SharkCompiler::initialize() {
 
 void SharkCompiler::compile_method(ciEnv*    env,
                                    ciMethod* target,
-                                   int       entry_bci) {
+                                   int       entry_bci,
+                                   DirectiveSet* directive) {
   assert(is_initialized(), "should be");
   ResourceMark rm;
   const char *name = methodname(
@@ -216,8 +217,8 @@ void SharkCompiler::compile_method(ciEnv*    env,
                        &handler_table,
                        &inc_table,
                        this,
-                       env->comp_level(),
                        false,
+                       directive(),
                        false);
 }
 

@@ -104,8 +104,6 @@ class ciMethod : public ciMetadata {
 
   void load_code();
 
-  void check_is_loaded() const                   { assert(is_loaded(), "not loaded"); }
-
   bool ensure_method_data(methodHandle h_m);
 
   void code_at_put(int bci, Bytecodes::Code code) {
@@ -120,6 +118,8 @@ class ciMethod : public ciMetadata {
   void assert_call_type_ok(int bci);
 
  public:
+  void check_is_loaded() const                   { assert(is_loaded(), "not loaded"); }
+
   // Basic method information.
   ciFlags flags() const                          { check_is_loaded(); return _flags; }
   ciSymbol* name() const                         { return _name; }
@@ -265,14 +265,8 @@ class ciMethod : public ciMetadata {
   // Find the proper vtable index to invoke this method.
   int resolve_vtable_index(ciKlass* caller, ciKlass* receiver);
 
-  // Compilation directives
-  bool should_inline();
-  bool should_not_inline();
-  bool should_print_assembly();
-  bool break_at_execute();
   bool has_option(const char *option);
-  template<typename T>
-  bool has_option_value(const char* option, T& value);
+  bool has_option_value(const char* option, double& value);
   bool can_be_compiled();
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable(const char* reason = NULL);

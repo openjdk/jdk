@@ -84,10 +84,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LIBS := $(JDKLIB_LIBS), \
     LIBS_linux := $(LIBDL), \
-    LIBS_solaris := $(LIBDL) -lc, \
+    LIBS_solaris := $(LIBDL), \
     LIBS_macosx := -liconv, \
-    LIBS_windows := $(JDKLIB_LIBS), \
+    LIBS_aix := -liconv, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=jdwp.dll" \

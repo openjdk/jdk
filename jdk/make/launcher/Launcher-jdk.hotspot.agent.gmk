@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,jsadebugd, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.jvm.hotspot.jdi.SADebugServer"$(COMMA) }' \
-    ,,,,,,,,,Info-privileged.plist))
+$(eval $(call SetupBuildLauncher, jsadebugd, \
+    MAIN_CLASS := sun.jvm.hotspot.jdi.SADebugServer, \
+    MACOSX_SIGNED := true, \
+))
 
 
-$(eval $(call SetupLauncher,jhsdb, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.jvm.hotspot.SALauncher"$(COMMA) }' \
-    ,,,,,,,,,Info-privileged.plist))
-
+$(eval $(call SetupBuildLauncher, jhsdb, \
+    MAIN_CLASS := sun.jvm.hotspot.SALauncher, \
+    MACOSX_SIGNED := true, \
+))

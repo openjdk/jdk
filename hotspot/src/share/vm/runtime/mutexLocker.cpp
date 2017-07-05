@@ -90,6 +90,7 @@ Monitor* CompileThread_lock           = NULL;
 Monitor* Compilation_lock             = NULL;
 Mutex*   CompileTaskAlloc_lock        = NULL;
 Mutex*   CompileStatistics_lock       = NULL;
+Mutex*   DirectivesStack_lock         = NULL;
 Mutex*   MultiArray_lock              = NULL;
 Monitor* Terminator_lock              = NULL;
 Monitor* BeforeExit_lock              = NULL;
@@ -264,6 +265,7 @@ void mutex_init() {
   def(CompiledIC_lock              , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // locks VtableStubs_lock, InlineCacheBuffer_lock
   def(CompileTaskAlloc_lock        , Mutex  , nonleaf+2,   true,  Monitor::_safepoint_check_always);
   def(CompileStatistics_lock       , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);
+  def(DirectivesStack_lock         , Mutex  , special,     true,  Monitor::_safepoint_check_never);
   def(MultiArray_lock              , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // locks SymbolTable_lock
 
   def(JvmtiThreadState_lock        , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // Used by JvmtiThreadState/JvmtiEventController

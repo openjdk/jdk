@@ -26,8 +26,7 @@
 #include <string.h>
 
 #include "jni.h"
-#include "jni_util.h"
-#include "jdk_util.h"
+
 #include "endian.hpp"
 #include "imageDecompressor.hpp"
 #include "imageFile.hpp"
@@ -38,6 +37,17 @@
 #include "jdk_internal_jimage_ImageNativeSubstrate.h"
 
 extern bool MemoryMapImage;
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Static function for primitive throw since libjimage is not linked with libjava
+static void JNICALL ThrowByName(JNIEnv *env, const char *name, const char *msg)
+{
+    jclass cls = (env)->FindClass(name);
+
+    if (cls != 0) /* Otherwise an exception has already been thrown */
+        (env)->ThrowNew(cls, msg);
+}
 
 // jdk.internal.jimage /////////////////////////////////////////////////////////
 
@@ -446,6 +456,23 @@ JNIEXPORT jlong JNICALL Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1Fi
     jlong size = 0;
     jlong ret = 0;
 
+    if (moduleName == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "moduleName");
+        return 0;
+    }
+    if (version == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "version");
+        return 0;
+    }
+    if (path == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "path");
+        return 0;
+    }
+    if (output_size == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "size");
+        return 0;
+    }
+
     do {
         native_module = env->GetStringUTFChars(moduleName, NULL);
         if (native_module == NULL)
@@ -529,25 +556,47 @@ static bool resourceVisitor(JImageFile* image,
         // Store if there is room in the array
         // Concatenate to get full path
         char fullpath[IMAGE_MAX_PATH];
-        fullpath[0] = '\0';
-        if (*module != '\0') {
-            strncpy(fullpath, "/", IMAGE_MAX_PATH - 1);
-            strncat(fullpath, module, IMAGE_MAX_PATH - 1);
-            strncat(fullpath, "/", IMAGE_MAX_PATH - 1);
+        size_t moduleLen = strlen(module);
+        size_t packageLen = strlen(package);
+        size_t nameLen = strlen(name);
+        size_t extLen = strlen(extension);
+        size_t index;
+
+        if (1 + moduleLen + 1 + packageLen + 1 + nameLen + 1 + extLen + 1 > IMAGE_MAX_PATH) {
+            ThrowByName(env, "java/lang/InternalError", "concatenated name too long");
+            return true;
         }
-        if (*package != '\0') {
-            strncat(fullpath, package, IMAGE_MAX_PATH - 1);
-            strncat(fullpath, "/", IMAGE_MAX_PATH - 1);
+
+        index = 0;
+        if (moduleLen > 0) {
+            fullpath[index++] = '/';
+            memcpy(&fullpath[index], module, moduleLen);
+            index += moduleLen;
+            fullpath[index++] = '/';
         }
-        strncat(fullpath, name, IMAGE_MAX_PATH - 1);
-        if (*extension != '\0') {
-            strncat(fullpath, ".", IMAGE_MAX_PATH - 1);
-            strncat(fullpath, extension, IMAGE_MAX_PATH - 1);
+        if (packageLen > 0) {
+            memcpy(&fullpath[index], package, packageLen);
+            index += packageLen;
+            fullpath[index++] = '/';
         }
+        memcpy(&fullpath[index], name, nameLen);
+        index += nameLen;
+        if (extLen > 0) {
+            fullpath[index++] = '.';
+            memcpy(&fullpath[index], extension, extLen);
+            index += extLen;
+        }
+        fullpath[index++] = '\0';
+
         jobject str = env->NewStringUTF(fullpath);
-        JNU_CHECK_EXCEPTION_RETURN(env, true);
+        if (env->ExceptionCheck()) {
+            return true;
+        }
+
         env->SetObjectArrayElement(vdata->array, vdata->size, str);
-        JNU_CHECK_EXCEPTION_RETURN(env, true);
+        if (env->ExceptionCheck()) {
+            return true;
+        }
     }
     vdata->size++; // always count so the total size is returned
     return true;
@@ -584,7 +633,10 @@ JNIEXPORT jstring JNICALL Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1
     jstring module = NULL;
 
     native_package = env->GetStringUTFChars(package_name, NULL);
-    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
+    if (env->ExceptionCheck()) {
+        return NULL;
+    }
+
 
     native_module = JIMAGE_PackageToModule((JImageFile*) jimageHandle, native_package);
     if (native_module != NULL) {
