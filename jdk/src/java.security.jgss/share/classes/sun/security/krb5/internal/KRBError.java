@@ -227,7 +227,7 @@ public class KRBError implements java.io.Serializable {
             } catch (Exception e) {
                 if (DEBUG) {
                     System.out.println("Unable to parse eData field of KRB-ERROR:\n" +
-                            new sun.misc.HexDumpEncoder().encodeBuffer(data));
+                            new sun.security.util.HexDumpEncoder().encodeBuffer(data));
                 }
                 IOException ioe = new IOException(
                         "Unable to parse eData field of KRB-ERROR");
@@ -237,7 +237,7 @@ public class KRBError implements java.io.Serializable {
         } else {
             if (DEBUG) {
                 System.out.println("Unknown eData field of KRB-ERROR:\n" +
-                        new sun.misc.HexDumpEncoder().encodeBuffer(data));
+                        new sun.security.util.HexDumpEncoder().encodeBuffer(data));
             }
         }
     }

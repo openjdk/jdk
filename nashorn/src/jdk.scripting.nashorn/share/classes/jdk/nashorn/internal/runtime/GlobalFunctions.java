@@ -48,9 +48,6 @@ public final class GlobalFunctions {
     /** ParseInt - identity for ints */
     public static final MethodHandle PARSEINT_I = MH.dropArguments(MH.identity(int.class), 0, Object.class);
 
-    /** ParseInt - identity for longs */
-    public static final MethodHandle PARSEINT_J = MH.dropArguments(MH.identity(long.class), 0, Object.class);
-
     /** Methodhandle (specialized) to implementation of ECMA 15.1.2.2, parseInt */
     public static final MethodHandle PARSEINT_O = findOwnMH("parseInt", double.class, Object.class, Object.class);
 

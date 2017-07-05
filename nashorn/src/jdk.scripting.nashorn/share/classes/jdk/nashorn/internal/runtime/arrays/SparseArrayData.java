@@ -195,21 +195,6 @@ class SparseArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        if (index >= 0 && index < maxDenseLength) {
-            final long oldLength = underlying.length();
-            ensure(index);
-            underlying = underlying.set(index, value, strict).safeDelete(oldLength, index - 1, strict);
-            setLength(Math.max(underlying.length(), length()));
-        } else {
-            final Long longIndex = indexToKey(index);
-            sparseMap.put(longIndex, value);
-            setLength(Math.max(longIndex + 1, length()));
-        }
-        return this;
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         if (index >= 0 && index < maxDenseLength) {
             final long oldLength = underlying.length();
@@ -255,22 +240,6 @@ class SparseArrayData extends ArrayData {
             return underlying.getIntOptimistic(index, programPoint);
         }
         return JSType.toInt32Optimistic(sparseMap.get(indexToKey(index)), programPoint);
-    }
-
-    @Override
-    public long getLong(final int index) {
-        if (index >= 0 && index < maxDenseLength) {
-            return underlying.getLong(index);
-        }
-        return JSType.toLong(sparseMap.get(indexToKey(index)));
-    }
-
-    @Override
-    public long getLongOptimistic(final int index, final int programPoint) {
-        if (index >= 0 && index < maxDenseLength) {
-            return underlying.getLongOptimistic(index, programPoint);
-        }
-        return JSType.toLongOptimistic(sparseMap.get(indexToKey(index)), programPoint);
     }
 
     @Override

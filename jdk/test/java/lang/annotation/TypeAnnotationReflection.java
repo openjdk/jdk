@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004698 8007073 8022343 8054304 8058595
+ * @bug 8004698 8007073 8022343 8054304 8057804 8058595
  * @summary Unit test for type annotations
  */
 
@@ -358,6 +358,31 @@ public class TypeAnnotationReflection {
         check(annos.length == 2);
         check(((TypeAnno)annos[0]).value().equals("I1"));
         check(args[0].getAnnotation(TypeAnno2.class).value().equals("I2"));
+
+        // check type args
+        Field f = TestParameterizedType.class.getDeclaredField("theField");
+        AnnotatedParameterizedType fType = (AnnotatedParameterizedType)f.getAnnotatedType();
+        args = fType.getAnnotatedActualTypeArguments();
+        check(args.length == 1);
+        annos = args[0].getAnnotations();
+        check(annos.length == 1);
+        check(((TypeAnno2)annos[0]).value().equals("Map Arg"));
+        check(args[0].getAnnotation(TypeAnno2.class).value().equals("Map Arg"));
+
+        // check outer type type args
+        fType = (AnnotatedParameterizedType)fType.getAnnotatedOwnerType();
+        args = fType.getAnnotatedActualTypeArguments();
+        check(args.length == 1);
+        annos = args[0].getAnnotations();
+        check(annos.length == 1);
+        check(((TypeAnno2)annos[0]).value().equals("String Arg"));
+        check(args[0].getAnnotation(TypeAnno2.class).value().equals("String Arg"));
+
+        // check outer type normal type annotations
+        annos = fType.getAnnotations();
+        check(annos.length == 1);
+        check(((TypeAnno)annos[0]).value().equals("FieldOuter"));
+        check(fType.getAnnotation(TypeAnno.class).value().equals("FieldOuter"));
     }
 
     private static void testWildcardType() throws Exception {
@@ -563,9 +588,12 @@ abstract class TestWildcardType {
 abstract class TestParameterizedType implements @TypeAnno("M") Map<@TypeAnno("S")String, @TypeAnno("I") @TypeAnno2("I2")Integer> {
     public ParameterizedOuter<String>.ParameterizedInner<Integer> foo() {return null;}
     public @TypeAnno("O") ParameterizedOuter<@TypeAnno("S1") @TypeAnno2("S2") String>.
-               @TypeAnno("I") ParameterizedInner<@TypeAnno("I1") @TypeAnno2("I2")Integer> foo2() {
+            @TypeAnno("I") ParameterizedInner<@TypeAnno("I1") @TypeAnno2("I2")Integer> foo2() {
         return null;
     }
+
+    public @TypeAnno("FieldOuter") ParameterizedOuter<@TypeAnno2("String Arg") String>.
+            @TypeAnno("FieldInner")ParameterizedInner<@TypeAnno2("Map Arg")Map> theField;
 }
 
 class ParameterizedOuter <T> {

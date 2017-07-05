@@ -166,7 +166,9 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   }
 }
 
-void ClassLoaderData::record_dependency(Klass* k, TRAPS) {
+void ClassLoaderData::record_dependency(const Klass* k, TRAPS) {
+  assert(k != NULL, "invariant");
+
   ClassLoaderData * const from_cld = this;
   ClassLoaderData * const to_cld = k->class_loader_data();
 
@@ -273,16 +275,18 @@ void ClassLoaderDataGraph::clear_claimed_marks() {
   }
 }
 
-void ClassLoaderData::add_class(Klass* k) {
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  Klass* old_value = _klasses;
-  k->set_next_link(old_value);
-  // Make sure linked class is stable, since the class list is walked without a lock
-  OrderAccess::storestore();
-  // link the new item into the list
-  _klasses = k;
+void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
+  {
+    MutexLockerEx ml(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+    Klass* old_value = _klasses;
+    k->set_next_link(old_value);
+    // Make sure linked class is stable, since the class list is walked without a lock
+    OrderAccess::storestore();
+    // link the new item into the list
+    _klasses = k;
+  }
 
-  if (TraceClassLoaderData && Verbose && k->class_loader_data() != NULL) {
+  if (publicize && TraceClassLoaderData && Verbose && k->class_loader_data() != NULL) {
     ResourceMark rm;
     tty->print_cr("[TraceClassLoaderData] Adding k: " PTR_FORMAT " %s to CLD: "
                   PTR_FORMAT " loader: " PTR_FORMAT " %s",

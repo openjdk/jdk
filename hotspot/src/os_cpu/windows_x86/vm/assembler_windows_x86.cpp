@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadLocalStorage.hpp"
-
 
 void MacroAssembler::int3() {
   emit_int8((unsigned char)0xCC);
@@ -58,44 +56,11 @@ void MacroAssembler::get_thread(Register thread) {
 
   prefix(FS_segment);
   movptr(thread, null);
-  assert(ThreadLocalStorage::get_thread_ptr_offset() != 0,
+  assert(os::win32::get_thread_ptr_offset() != 0,
          "Thread Pointer Offset has not been initialized");
-  movl(thread, Address(thread, ThreadLocalStorage::get_thread_ptr_offset()));
+  movl(thread, Address(thread, os::win32::get_thread_ptr_offset()));
 }
-#else
-// call (Thread*)TlsGetValue(thread_index());
-void MacroAssembler::get_thread(Register thread) {
-   if (thread != rax) {
-     push(rax);
-   }
-   push(rdi);
-   push(rsi);
-   push(rdx);
-   push(rcx);
-   push(r8);
-   push(r9);
-   push(r10);
-   // XXX
-   mov(r10, rsp);
-   andq(rsp, -16);
-   push(r10);
-   push(r11);
 
-   movl(c_rarg0, ThreadLocalStorage::thread_index());
-   call(RuntimeAddress((address)TlsGetValue));
+// #else - use shared x86 implementation in cpu/x86/vm/macroAssembler_x86.cpp
 
-   pop(r11);
-   pop(rsp);
-   pop(r10);
-   pop(r9);
-   pop(r8);
-   pop(rcx);
-   pop(rdx);
-   pop(rsi);
-   pop(rdi);
-   if (thread != rax) {
-       mov(thread, rax);
-       pop(rax);
-   }
-}
 #endif

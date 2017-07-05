@@ -25,17 +25,15 @@
 #ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary_ext.hpp"
+#include "jvmci/systemDictionary_jvmci.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
-#include "jvmci/systemDictionary_jvmci.hpp"
-
 
 // The system dictionary stores all loaded classes and maps:
 //
@@ -73,13 +71,13 @@
 // of placeholders must hold the SystemDictionary_lock.
 //
 
+class ClassFileStream;
 class Dictionary;
 class PlaceholderTable;
 class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
-class Ticks;
 
 // Certain classes are preloaded, such as java.lang.Object and java.lang.String.
 // They are all "well-known", in the sense that no class loader is allowed
@@ -272,34 +270,41 @@ public:
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
   // "child_name" is the class whose super class or interface is being resolved.
   static Klass* resolve_super_or_fail(Symbol* child_name,
-                                        Symbol* class_name,
-                                        Handle class_loader,
-                                        Handle protection_domain,
-                                        bool is_superclass,
-                                        TRAPS);
+                                      Symbol* class_name,
+                                      Handle class_loader,
+                                      Handle protection_domain,
+                                      bool is_superclass,
+                                      TRAPS);
 
   // Parse new stream. This won't update the system dictionary or
   // class hierarchy, simply parse the stream. Used by JVMTI RedefineClasses.
   static Klass* parse_stream(Symbol* class_name,
-                               Handle class_loader,
-                               Handle protection_domain,
-                               ClassFileStream* st,
-                               TRAPS) {
-    KlassHandle nullHandle;
-    return parse_stream(class_name, class_loader, protection_domain, st, nullHandle, NULL, THREAD);
+                             Handle class_loader,
+                             Handle protection_domain,
+                             ClassFileStream* st,
+                             TRAPS) {
+    return parse_stream(class_name,
+                        class_loader,
+                        protection_domain,
+                        st,
+                        NULL, // host klass
+                        NULL, // cp_patches
+                        THREAD);
   }
   static Klass* parse_stream(Symbol* class_name,
-                               Handle class_loader,
-                               Handle protection_domain,
-                               ClassFileStream* st,
-                               KlassHandle host_klass,
-                               GrowableArray<Handle>* cp_patches,
-                               TRAPS);
+                             Handle class_loader,
+                             Handle protection_domain,
+                             ClassFileStream* st,
+                             const Klass* host_klass,
+                             GrowableArray<Handle>* cp_patches,
+                             TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static Klass* resolve_from_stream(Symbol* class_name, Handle class_loader,
-                                      Handle protection_domain,
-                                      ClassFileStream* st, bool verify, TRAPS);
+  static Klass* resolve_from_stream(Symbol* class_name,
+                                    Handle class_loader,
+                                    Handle protection_domain,
+                                    ClassFileStream* st,
+                                    TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
   static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
@@ -546,14 +551,8 @@ public:
                                                      TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints
-  static const char* loader_name(oop loader) {
-    return ((loader) == NULL ? "<bootloader>" :
-            InstanceKlass::cast((loader)->klass())->name()->as_C_string() );
-  }
-  static const char* loader_name(ClassLoaderData* loader_data) {
-    return (loader_data->class_loader() == NULL ? "<bootloader>" :
-            InstanceKlass::cast((loader_data->class_loader())->klass())->name()->as_C_string() );
-  }
+  static const char* loader_name(const oop loader);
+  static const char* loader_name(const ClassLoaderData* loader_data);
 
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
@@ -663,9 +662,6 @@ protected:
   // Setup link to hierarchy
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
 
-  // event based tracing
-  static void post_class_load_event(const Ticks& start_time, instanceKlassHandle k,
-                                    Handle initiating_loader);
   // We pass in the hashtable index so we can calculate it outside of
   // the SystemDictionary_lock.
 

@@ -34,7 +34,7 @@ Symbol* vmSymbols::_symbols[vmSymbols::SID_LIMIT];
 
 Symbol* vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
 
-inline int compare_symbol(Symbol* a, Symbol* b) {
+inline int compare_symbol(const Symbol* a, const Symbol* b) {
   if (a == b)  return 0;
   // follow the natural address order:
   return (address)a > (address)b ? +1 : -1;
@@ -43,8 +43,8 @@ inline int compare_symbol(Symbol* a, Symbol* b) {
 static vmSymbols::SID vm_symbol_index[vmSymbols::SID_LIMIT];
 extern "C" {
   static int compare_vmsymbol_sid(const void* void_a, const void* void_b) {
-    Symbol* a = vmSymbols::symbol_at(*((vmSymbols::SID*) void_a));
-    Symbol* b = vmSymbols::symbol_at(*((vmSymbols::SID*) void_b));
+    const Symbol* a = vmSymbols::symbol_at(*((vmSymbols::SID*) void_a));
+    const Symbol* b = vmSymbols::symbol_at(*((vmSymbols::SID*) void_b));
     return compare_symbol(a, b);
   }
 }
@@ -188,7 +188,7 @@ void vmSymbols::serialize(SerializeClosure* soc) {
 }
 
 
-BasicType vmSymbols::signature_type(Symbol* s) {
+BasicType vmSymbols::signature_type(const Symbol* s) {
   assert(s != NULL, "checking");
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     if (s == _type_signatures[i]) {
@@ -206,7 +206,7 @@ static int find_sid_calls, find_sid_probes;
 // (Typical counts are calls=7000 and probes=17000.)
 #endif
 
-vmSymbols::SID vmSymbols::find_sid(Symbol* symbol) {
+vmSymbols::SID vmSymbols::find_sid(const Symbol* symbol) {
   // Handle the majority of misses by a bounds check.
   // Then, use a binary search over the index.
   // Expected trip count is less than log2_SID_LIMIT, about eight.

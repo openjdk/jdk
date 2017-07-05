@@ -156,8 +156,6 @@ public final class MarlinCache implements MarlinConst {
                     // rewritten to avoid division:
                     || (width * heightSubPixel) >
                             ((edgeSumDeltaY - heightSubPixel) << BLOCK_SIZE_LG);
-//                            ((edgeSumDeltaY - heightSubPixel) * RLE_THRESHOLD);
-//                            ((edgeSumDeltaY - heightSubPixel) << BLOCK_TH_LG);
 
                 if (doTrace && !useRLE) {
                     final float meanCrossings
@@ -293,8 +291,10 @@ public final class MarlinCache implements MarlinConst {
         // update row index to current position:
         rowAAChunkIndex[row] = pos;
 
-        // determine need array size (may overflow):
-        final long needSize = pos + (px_bbox1 - px0);
+        // determine need array size:
+        // for RLE encoding, position must be aligned to 4 bytes (int):
+        // align - 1 = 3 so add +3 and round-off by mask ~3 = -4
+        final long needSize = pos + ((px_bbox1 - px0 + 3) & -4);
 
         // update next position (bytes):
         rowAAChunkPos = needSize;
@@ -401,8 +401,7 @@ public final class MarlinCache implements MarlinConst {
 
         // determine need array size:
         // pessimistic: max needed size = deltaX x 4 (1 int)
-        final int maxLen = (to - from);
-        final long needSize = initialPos + (maxLen << 2);
+        final long needSize = initialPos + ((to - from) << 2);
 
         // update row data:
         OffHeapArray _rowAAChunk = rowAAChunk;
@@ -465,6 +464,13 @@ public final class MarlinCache implements MarlinConst {
                             // note: last pixel exclusive (>= 0)
                             // note: it should check X is smaller than 23bits (overflow)!
 
+                            // check address alignment to 4 bytes:
+                            if (doCheckUnsafe) {
+                                if ((addr_off & 3) != 0) {
+                                    MarlinUtils.logInfo("Misaligned Unsafe address: " + addr_off);
+                                }
+                            }
+
                             // special case to encode entries into a single int:
                             if (val == 0) {
                                 _unsafe.putInt(addr_off,
@@ -520,6 +526,13 @@ public final class MarlinCache implements MarlinConst {
         // absX is the absolute x-coordinate in bits 31 to 8 and val in bits 0..7
         // note: last pixel exclusive (>= 0)
         // note: it should check X is smaller than 23bits (overflow)!
+
+        // check address alignment to 4 bytes:
+        if (doCheckUnsafe) {
+            if ((addr_off & 3) != 0) {
+                MarlinUtils.logInfo("Misaligned Unsafe address: " + addr_off);
+            }
+        }
 
         // special case to encode entries into a single int:
         if (val == 0) {

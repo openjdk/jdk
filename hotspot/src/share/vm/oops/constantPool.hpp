@@ -116,7 +116,7 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  CPSlot slot_at(int which) {
+  CPSlot slot_at(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     // Uses volatile because the klass slot changes without a lock.
     volatile intptr_t adr = (intptr_t)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which));
@@ -349,7 +349,7 @@ class ConstantPool : public Metadata {
     return klass_at_impl(h_this, which, false, THREAD);
   }
 
-  Symbol* klass_name_at(int which);  // Returns the name, w/o resolving.
+  Symbol* klass_name_at(int which) const;  // Returns the name, w/o resolving.
 
   Klass* resolved_klass_at(int which) const {  // Used by Compiler
     guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
@@ -384,7 +384,7 @@ class ConstantPool : public Metadata {
     return *((jdouble*)&tmp);
   }
 
-  Symbol* symbol_at(int which) {
+  Symbol* symbol_at(int which) const {
     assert(tag_at(which).is_utf8(), "Corrupted constant pool");
     return *symbol_at_addr(which);
   }
@@ -668,7 +668,7 @@ class ConstantPool : public Metadata {
   int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
   int signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
 
-  BasicType basic_type_for_signature_at(int which);
+  BasicType basic_type_for_signature_at(int which) const;
 
   // Resolve string constants (to prevent allocation during compilation)
   void resolve_string_constants(TRAPS) {

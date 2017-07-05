@@ -27,7 +27,7 @@ package com.sun.crypto.provider;
 
 import java.io.*;
 import sun.security.util.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;

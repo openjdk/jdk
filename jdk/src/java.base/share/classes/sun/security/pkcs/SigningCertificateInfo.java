@@ -28,7 +28,7 @@ package sun.security.pkcs;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 import sun.security.x509.GeneralNames;

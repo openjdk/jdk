@@ -210,14 +210,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     @Override
-    public Object get(final long key) {
-        if (key >= 0 && key < value.length()) {
-            return String.valueOf(value.charAt((int)key));
-        }
-        return super.get(key);
-    }
-
-    @Override
     public Object get(final int key) {
         if (key >= 0 && key < value.length()) {
             return String.valueOf(value.charAt(key));
@@ -236,33 +228,8 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     @Override
-    public int getInt(final long key, final int programPoint) {
-        return JSType.toInt32MaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
     public int getInt(final int key, final int programPoint) {
         return JSType.toInt32MaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final Object key, final int programPoint) {
-        return JSType.toLongMaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final double key, final int programPoint) {
-        return JSType.toLongMaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final long key, final int programPoint) {
-        return JSType.toLongMaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final int key, final int programPoint) {
-        return JSType.toLongMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
@@ -272,11 +239,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
     @Override
     public double getDouble(final double key, final int programPoint) {
-        return JSType.toNumberMaybeOptimistic(get(key), programPoint);
-    }
-
-    @Override
-    public double getDouble(final long key, final int programPoint) {
         return JSType.toNumberMaybeOptimistic(get(key), programPoint);
     }
 
@@ -298,12 +260,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     @Override
-    public boolean has(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isValidStringIndex(index) || super.has(key);
-    }
-
-    @Override
     public boolean has(final double key) {
         final int index = ArrayIndex.getArrayIndex(key);
         return isValidStringIndex(index) || super.has(key);
@@ -322,12 +278,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     @Override
-    public boolean hasOwnProperty(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isValidStringIndex(index) || super.hasOwnProperty(key);
-    }
-
-    @Override
     public boolean hasOwnProperty(final double key) {
         final int index = ArrayIndex.getArrayIndex(key);
         return isValidStringIndex(index) || super.hasOwnProperty(key);
@@ -336,12 +286,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     @Override
     public boolean delete(final int key, final boolean strict) {
         return checkDeleteIndex(key, strict)? false : super.delete(key, strict);
-    }
-
-    @Override
-    public boolean delete(final long key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return checkDeleteIndex(index, strict)? false : super.delete(key, strict);
     }
 
     @Override

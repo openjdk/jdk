@@ -70,6 +70,8 @@ public class AsLifoQueue {
             check(q.isEmpty());
             equal(q.size(), 0);
         } catch (Throwable t) { unexpected(t); }
+
+        THROWS(NullPointerException.class, () -> Collections.asLifoQueue(null));
     }
 
     //--------------------- Infrastructure ---------------------------

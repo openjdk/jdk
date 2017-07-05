@@ -30,7 +30,7 @@ import java.security.cert.Extension;
 import java.util.Collections;
 import java.util.List;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
 import sun.security.x509.PKIXExtensions;
 

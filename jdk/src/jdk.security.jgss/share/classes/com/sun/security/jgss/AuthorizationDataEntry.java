@@ -64,6 +64,6 @@ public final class AuthorizationDataEntry {
     public String toString() {
         return "AuthorizationDataEntry: type="+type+", data=" +
                 data.length + " bytes:\n" +
-                new sun.misc.HexDumpEncoder().encodeBuffer(data);
+                new sun.security.util.HexDumpEncoder().encodeBuffer(data);
     }
 }

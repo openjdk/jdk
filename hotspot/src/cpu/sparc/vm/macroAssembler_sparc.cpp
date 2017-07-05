@@ -360,10 +360,10 @@ void MacroAssembler::leave() {
 #ifdef ASSERT
 // a hook for debugging
 static Thread* reinitialize_thread() {
-  return ThreadLocalStorage::thread();
+  return Thread::current();
 }
 #else
-#define reinitialize_thread ThreadLocalStorage::thread
+#define reinitialize_thread Thread::current
 #endif
 
 #ifdef ASSERT
@@ -393,7 +393,7 @@ void MacroAssembler::get_thread() {
 }
 
 static Thread* verify_thread_subroutine(Thread* gthread_value) {
-  Thread* correct_value = ThreadLocalStorage::thread();
+  Thread* correct_value = Thread::current();
   guarantee(gthread_value == correct_value, "G2_thread value must be the thread");
   return correct_value;
 }
