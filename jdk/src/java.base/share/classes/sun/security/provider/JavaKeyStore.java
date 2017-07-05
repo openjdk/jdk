@@ -82,7 +82,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
     private static class KeyEntry {
         Date date; // the creation date of this entry
         byte[] protectedPrivKey;
-        Certificate chain[];
+        Certificate[] chain;
     };
 
     // Trusted certificates
@@ -604,7 +604,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
              * the keystore (such as deleting or modifying key or
              * certificate entries).
              */
-            byte digest[] = md.digest();
+            byte[] digest = md.digest();
 
             dos.write(digest);
             dos.flush();
@@ -770,9 +770,8 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
              * with
              */
             if (password != null) {
-                byte computed[], actual[];
-                computed = md.digest();
-                actual = new byte[computed.length];
+                byte[] computed = md.digest();
+                byte[] actual = new byte[computed.length];
                 dis.readFully(actual);
                 for (int i = 0; i < computed.length; i++) {
                     if (computed[i] != actual[i]) {

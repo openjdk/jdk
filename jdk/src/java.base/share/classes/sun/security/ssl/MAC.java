@@ -52,7 +52,7 @@ final class MAC extends Authenticator {
     final static MAC TLS_NULL = new MAC(false);
 
     // Value of the null MAC is fixed
-    private static final byte nullMAC[] = new byte[0];
+    private static final byte[] nullMAC = new byte[0];
 
     // internal identifier for the MAC algorithm
     private final MacAlg macAlg;

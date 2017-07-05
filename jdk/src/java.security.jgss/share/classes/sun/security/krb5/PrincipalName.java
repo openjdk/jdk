@@ -568,7 +568,7 @@ public class PrincipalName implements Cloneable {
         temp.putInteger(bint);
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), temp);
         temp = new DerOutputStream();
-        DerValue der[] = new DerValue[nameStrings.length];
+        DerValue[] der = new DerValue[nameStrings.length];
         for (int i = 0; i < nameStrings.length; i++) {
             der[i] = new KerberosString(nameStrings[i]).toDerValue();
         }

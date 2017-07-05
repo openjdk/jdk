@@ -52,10 +52,8 @@ public class GetUsageTest {
 
     public static void main(String[] args) throws Exception {
         for (BlobType btype : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
-                for (int allocSize = 10; allocSize < 100000; allocSize *= 10) {
-                    new GetUsageTest(btype, allocSize).runTest();
-                }
+            for (int allocSize = 10; allocSize < 100000; allocSize *= 10) {
+                new GetUsageTest(btype, allocSize).runTest();
             }
         }
     }
@@ -87,13 +85,15 @@ public class GetUsageTest {
             for (MemoryPoolMXBean entry : predictableBeans) {
                 long diff = current.get(entry) - initial.get(entry);
                 if (entry.equals(btype.getMemoryPool())) {
-                    Asserts.assertFalse(diff <= 0L || diff > usageUpperEstimate,
-                            String.format("Pool %s usage increase was reported "
-                                    + "unexpectedly as increased by %d using "
-                                    + "allocation size %d", entry.getName(),
-                                    diff, allocateSize));
+                    if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
+                        Asserts.assertFalse(diff <= 0L || diff > usageUpperEstimate,
+                                String.format("Pool %s usage increase was reported "
+                                        + "unexpectedly as increased by %d using "
+                                        + "allocation size %d", entry.getName(),
+                                        diff, allocateSize));
+                    }
                 } else {
-                    Asserts.assertEQ(diff, 0L,
+                    CodeCacheUtils.assertEQorGTE(btype, diff, 0L,
                             String.format("Pool %s usage changed unexpectedly while"
                                     + " trying to increase: %s using allocation "
                                     + "size %d", entry.getName(),

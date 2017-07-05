@@ -41,11 +41,11 @@ import javax.security.auth.callback.CallbackHandler;
   * @author Rosanna Lee
   */
 final public class ServerFactoryImpl implements SaslServerFactory {
-    private static final String myMechs[] = {
+    private static final String[] myMechs = {
         "CRAM-MD5", //
     };
 
-    private static final int mechPolicies[] = {
+    private static final int[] mechPolicies = {
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS,      // CRAM-MD5
     };
 

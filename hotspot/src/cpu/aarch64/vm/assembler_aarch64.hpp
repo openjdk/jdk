@@ -2055,6 +2055,9 @@ public:
   INSN(negr,  1, 0b100000101110);
   INSN(notr,  1, 0b100000010110);
   INSN(addv,  0, 0b110001101110);
+  INSN(cls,   0, 0b100000010010);
+  INSN(clz,   1, 0b100000010010);
+  INSN(cnt,   0, 0b100000010110);
 
 #undef INSN
 
