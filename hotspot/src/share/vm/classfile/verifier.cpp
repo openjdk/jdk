@@ -53,8 +53,8 @@ static void* verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader) {
-  return class_loader == NULL ?
+bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
+  return (class_loader == NULL || !should_verify_class) ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
@@ -68,7 +68,7 @@ bool Verifier::relax_verify_for(oop loader) {
   return !need_verify;
 }
 
-bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, TRAPS) {
+bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool should_verify_class, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm;
 
@@ -81,7 +81,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, TRAPS) {
   // If the class should be verified, first see if we can use the split
   // verifier.  If not, or if verification fails and FailOverToOldVerifier
   // is set, then call the inference verifier.
-  if (is_eligible_for_verification(klass)) {
+  if (is_eligible_for_verification(klass, should_verify_class)) {
     if (TraceClassInitialization) {
       tty->print_cr("Start class verification for: %s", klassName);
     }
@@ -141,12 +141,13 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, TRAPS) {
   }
 }
 
-bool Verifier::is_eligible_for_verification(instanceKlassHandle klass) {
+bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class) {
   symbolOop name = klass->name();
   klassOop refl_magic_klass = SystemDictionary::reflect_magic_klass();
 
-  return (should_verify_for(klass->class_loader()) &&
+  return (should_verify_for(klass->class_loader(), should_verify_class) &&
     // return if the class is a bootstrapping class
+    // or defineClass specified not to verify by default (flags override passed arg)
     // We need to skip the following four for bootstraping
     name != vmSymbols::java_lang_Object() &&
     name != vmSymbols::java_lang_Class() &&
