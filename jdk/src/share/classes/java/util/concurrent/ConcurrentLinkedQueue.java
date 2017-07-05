@@ -250,8 +250,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     public ConcurrentLinkedQueue(Collection<? extends E> c) {
-        for (Iterator<? extends E> it = c.iterator(); it.hasNext();)
-            add(it.next());
+        for (E e : c)
+            add(e);
     }
 
     // Have to override just to update the javadoc

@@ -70,6 +70,11 @@ ifeq ($(PLATFORM), linux)
   else
     CXX            = $(COMPILER_PATH)g++
   endif
+  ifeq ($(ZERO_BUILD), true)
+    # zero
+    REQUIRED_CC_VER = 3.2
+    REQUIRED_GCC_VER = 3.2.*
+  else
   ifneq ("$(findstring sparc,$(ARCH))", "")
     # sparc or sparcv9
     REQUIRED_CC_VER = 4.0
@@ -85,6 +90,7 @@ ifeq ($(PLATFORM), linux)
   ifeq ($(ARCH), ia64)
     # ia64
     REQUIRED_CC_VER = 3.2
+  endif
   endif
   endif
   endif

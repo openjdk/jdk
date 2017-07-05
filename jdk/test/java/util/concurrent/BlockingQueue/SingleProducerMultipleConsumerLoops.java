@@ -73,11 +73,35 @@ public class SingleProducerMultipleConsumerLoops {
             throw new Error();
    }
 
+    static final class LTQasSQ<T> extends LinkedTransferQueue<T> {
+        LTQasSQ() { super(); }
+        public void put(T x) {
+            try { super.transfer(x); }
+            catch (InterruptedException ex) { throw new Error(); }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
+    static final class HalfSyncLTQ<T> extends LinkedTransferQueue<T> {
+        HalfSyncLTQ() { super(); }
+        public void put(T x) {
+            if (ThreadLocalRandom.current().nextBoolean())
+                super.put(x);
+            else {
+                try { super.transfer(x); }
+                catch (InterruptedException ex) { throw new Error(); }
+            }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
     static void oneTest(int consumers, int iters) throws Exception {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), consumers, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), consumers, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), consumers, iters);
-//         oneRun(new LinkedTransferQueue<Integer>(), consumers, iters);
+        oneRun(new LinkedTransferQueue<Integer>(), consumers, iters);
+        oneRun(new LTQasSQ<Integer>(), consumers, iters);
+        oneRun(new HalfSyncLTQ<Integer>(), consumers, iters);
         oneRun(new PriorityBlockingQueue<Integer>(), consumers, iters);
         oneRun(new SynchronousQueue<Integer>(), consumers, iters);
         if (print)

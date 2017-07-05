@@ -137,15 +137,15 @@ ifeq ($(PROGRAM),jdb)
   #   PROGRAM, JAVA_ARGS, and APP_CLASSPATH are used in src/share/bin/java.c
   #   SA is currently not available on windows (for any ARCH), or linux-ia64:
   ifneq ($(ARCH), ia64)
-    JDB_CLASSPATH = "{ \"/lib/tools.jar\", \"/lib/sa-jdi.jar\", \"/classes\" }"
-    OTHER_CPPFLAGS += -DAPP_CLASSPATH=$(JDB_CLASSPATH)
+    JDB_CLASSPATH = { "/lib/tools.jar", "/lib/sa-jdi.jar", "/classes" }
+    OTHER_CPPFLAGS += -DAPP_CLASSPATH='$(JDB_CLASSPATH)'
   endif
 endif
 
 # jconsole only
 ifeq ($(PROGRAM),jconsole)
-  JCONSOLE_CLASSPATH = "{ \"/lib/jconsole.jar\", \"/lib/tools.jar\", \"/classes\" }"
-  OTHER_CPPFLAGS += -DAPP_CLASSPATH=$(JCONSOLE_CLASSPATH)
+  JCONSOLE_CLASSPATH = { "/lib/jconsole.jar", "/lib/tools.jar", "/classes" }
+  OTHER_CPPFLAGS += -DAPP_CLASSPATH='$(JCONSOLE_CLASSPATH)'
   ifeq ($(PLATFORM), windows)
     OTHER_CPPFLAGS += -DJAVAW
     LDLIBS_COMMON  += user32.lib
@@ -163,8 +163,8 @@ endif
 
 # SA tools need special app classpath
 ifeq ($(SA_TOOL),true)
-  SA_CLASSPATH = "{ \"/lib/tools.jar\", \"/lib/sa-jdi.jar\", \"/classes\"}"
-  OTHER_CPPFLAGS += -DAPP_CLASSPATH=$(SA_CLASSPATH)
+  SA_CLASSPATH = { "/lib/tools.jar", "/lib/sa-jdi.jar", "/classes" }
+  OTHER_CPPFLAGS += -DAPP_CLASSPATH='$(SA_CLASSPATH)'
 endif
 
 # Wildcards
@@ -173,11 +173,11 @@ ifeq ($(WILDCARDS),true)
 endif
 
 # Always tell native code what the main class is
-OTHER_CPPFLAGS += -DMAIN_CLASS=\"$(MAIN_CLASS)\"
+OTHER_CPPFLAGS += -DMAIN_CLASS='"$(MAIN_CLASS)"'
 
 # Construct initializer for initial arguments to java
 ALL_ARGS = -J-ms8m $(MAIN_JAVA_ARGS) $(MAIN_CLASS) $(MAIN_ARGS)
-JAVA_ARGS = "{ $(ALL_ARGS:%=\"%\",)  }"
+JAVA_ARGS = { $(ALL_ARGS:%="%",)  }
 
 # Always report launcher info
 build: launcher_info

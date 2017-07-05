@@ -68,32 +68,14 @@
         </replaceregexp>
     </target>
 
-    <!-- Try to get drop sources, set property use.orig.src.dir if no drops. -->
+    <!-- Try to get drop sources. -->
     <target name="-set-props"
 	    depends="init,
                      jaxp_src-update">
-        <condition property="use.orig.src.dir">
-            <and>
-                <available file="${orig.src.dir}" type="dir"/>
-                <not>
-                    <and>
-                        <available file="${jaxp_src.src.dir}" type="dir"/>
-                    </and>
-                </not>
-            </and>
-        </condition>
     </target>
 
-    <!-- Set up source to use orig.src.dir, if use.orig.src.dir defined. -->
-    <target name="-use-orig" depends="-set-props" if="use.orig.src.dir">
-        <property name="primary.src.dir" value="${orig.src.dir}"/>
-        <path id="src.dir.id">
-            <pathelement path="${primary.src.dir}"/>
-        </path>
-    </target>
-
-    <!-- Set up source to use drop.dir, if use.orig.src.dir not defined. -->
-    <target name="-use-drop" depends="-set-props" unless="use.orig.src.dir">
+    <!-- Set up source to use drop.dir. -->
+    <target name="-use-drop" depends="-set-props">
         <property name="primary.src.dir" value="${jaxp_src.src.dir}"/>
         <path id="src.dir.id">
             <pathelement path="${primary.src.dir}"/>
@@ -102,24 +84,19 @@
 
     <!-- Source directory selection. -->
     <target name="-init-src-dirs"
-	    depends="init, -use-orig, -use-drop">
+	    depends="init, -use-drop">
         <echo message="Using primary.src.dir=${primary.src.dir}"/>
         <pathconvert property="src.list.id" refid="src.dir.id"/>
         <echo message="Using src.dir.id=${src.list.id}"/>
     </target>
 
-    <!-- Create orig src.zip. -->
-    <target name="-orig-src-zip" depends="init, -set-props" if="use.orig.src.dir">
-        <zip file="${dist.src.zip}" basedir="${primary.src.dir}"/>
-    </target>
-
     <!-- Create drop src.zip. -->
-    <target name="-drop-src-zip" depends="init, -set-props" unless="use.orig.src.dir">
+    <target name="-drop-src-zip" depends="init, -set-props">
         <zip file="${dist.src.zip}" basedir="${primary.src.dir}"/>
     </target>
 
     <!-- Create src.zip. -->
-    <target name="-dist-src-zip" depends="init, -orig-src-zip, -drop-src-zip">
+    <target name="-dist-src-zip" depends="init, -drop-src-zip">
     </target>
     
 </project>

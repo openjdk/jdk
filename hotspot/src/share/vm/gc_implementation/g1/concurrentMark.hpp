@@ -612,10 +612,11 @@ public:
   // we do nothing.
   void markAndGrayObjectIfNecessary(oop p);
 
-  // This iterates over the bitmap of the previous marking and prints
-  // out all objects that are marked on the bitmap and indicates
-  // whether what they point to is also marked or not.
-  void print_prev_bitmap_reachable();
+  // This iterates over the marking bitmap (either prev or next) and
+  // prints out all objects that are marked on the bitmap and indicates
+  // whether what they point to is also marked or not. It also iterates
+  // the objects over TAMS (either prev or next).
+  void print_reachable(bool use_prev_marking, const char* str);
 
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();

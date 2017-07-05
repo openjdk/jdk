@@ -63,7 +63,7 @@ endif
 # If AUTO_FILES_PROPERTIES_DIRS used, automatically find properties files
 #
 ifdef AUTO_FILES_PROPERTIES_DIRS
-  AUTO_FILES_PROPERTIES_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' ',*'
+  AUTO_FILES_PROPERTIES_FILTERS1  = $(SCM_DIRs) ',*'
   AUTO_FILES_PROPERTIES_FILTERS1 += $(AUTO_PROPERTIES_PRUNE)
   FILES_properties_find_filters1 = $(AUTO_FILES_PROPERTIES_FILTERS1:%=-name % -prune -o)
   FILES_properties_auto1 := \
@@ -111,7 +111,7 @@ include $(JDK_TOPDIR)/make/common/internal/Resources.gmk
 
 ifdef AUTO_FILES_JAVA_DIRS
   # Filter out these files or directories
-  AUTO_FILES_JAVA_SOURCE_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' '*-template.java' ',*'
+  AUTO_FILES_JAVA_SOURCE_FILTERS1  = $(SCM_DIRs) ',*'
   AUTO_FILES_JAVA_SOURCE_FILTERS2  = 
   AUTO_FILES_JAVA_SOURCE_FILTERS1 += $(AUTO_JAVA_PRUNE)
   AUTO_FILES_JAVA_SOURCE_FILTERS2 += $(AUTO_JAVA_PRUNE)

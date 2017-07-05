@@ -38,6 +38,7 @@
 #define X_SPARCV9       3
 #define X_IA64          4
 #define X_AMD64         5
+#define X_ZERO          6
 
 // **********************************
 // Make sure you set X_PLATFORM and X_ARCH defines correctly.
