@@ -47,16 +47,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_FNAME=sunmscapi.dll" \
           -D "JDK_INTERNAL_NAME=sunmscapi" \
           -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsunmscapi, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsunmscapi, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  SECURITY_MSCAPI_LIBRARIES += $(BUILD_LIBSUNMSCAPI)
+  TARGETS += $(BUILD_LIBSUNMSCAPI)
 endif
 
 ################################################################################
-
-jdk.crypto.mscapi: $(SECURITY_MSCAPI_LIBRARIES)
-
-all: jdk.crypto.mscapi
-
-.PHONY: all jdk.crypto.mscapi

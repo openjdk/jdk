@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,33 +37,44 @@ JGSS_WIN64_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
 
 define unzip-sec-file
 	$(ECHO) Unzipping $(<F)
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p $(@D) $(JDK_OUTPUTDIR)
 	$(RM) $@
 	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) -q -o $< > $@.tmp)
 	$(MV) $@.tmp $@
 endef
 
-$(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped: $(SEC_FILES_ZIP)
+define unzip-native-sec-file
+	$(ECHO) Unzipping $(<F)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	($(CD) $(SUPPORT_OUTPUTDIR) && $(UNZIP) -q -o $< > $@.tmp)
+	$(MV) $@.tmp $@
+endef
+
+$(SUPPORT_OUTPUTDIR)/_the.sec-bin.unzipped: $(SEC_FILES_ZIP)
 	$(call unzip-sec-file)
 
-$(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped: $(SEC_FILES_WIN_ZIP)
+# Trying to unzip both of the sec files at the same time may cause a race
+# when creating directories common to both files.
+$(SUPPORT_OUTPUTDIR)/_the.sec-windows-bin.unzipped: $(SEC_FILES_WIN_ZIP) \
+    | $(SUPPORT_OUTPUTDIR)/_the.sec-bin.unzipped
 	$(call unzip-sec-file)
 
-$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped: $(JGSS_WIN32_FILES_ZIP)
-	$(call unzip-sec-file)
+$(SUPPORT_OUTPUTDIR)/_the.jgss-windows-i586-bin.unzipped: $(JGSS_WIN32_FILES_ZIP)
+	$(call unzip-native-sec-file)
 
-$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped: $(JGSS_WIN64_FILES_ZIP)
-	$(call unzip-sec-file)
+$(SUPPORT_OUTPUTDIR)/_the.jgss-windows-x64-bin.unzipped: $(JGSS_WIN64_FILES_ZIP)
+	$(call unzip-native-sec-file)
 
 ifneq ($(wildcard $(SEC_FILES_ZIP)), )
-  IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped
+  IMPORT_TARGET_FILES += $(SUPPORT_OUTPUTDIR)/_the.sec-bin.unzipped
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped
+    IMPORT_TARGET_FILES += $(SUPPORT_OUTPUTDIR)/_the.sec-windows-bin.unzipped
     ifeq ($(OPENJDK_TARGET_CPU), x86)
-      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped
+      IMPORT_TARGET_FILES += $(SUPPORT_OUTPUTDIR)/_the.jgss-windows-i586-bin.unzipped
     endif
     ifeq ($(OPENJDK_TARGET_CPU), x86_64)
-      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped
+      IMPORT_TARGET_FILES += $(SUPPORT_OUTPUTDIR)/_the.jgss-windows-x64-bin.unzipped
     endif
   endif
 endif

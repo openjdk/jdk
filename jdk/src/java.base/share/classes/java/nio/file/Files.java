@@ -1581,8 +1581,8 @@ public final class Files {
      * loader. If the system class loader cannot be found then the extension class
      * loader is used; If the extension class loader cannot be found then the
      * bootstrap class loader is used. File type detectors are typically installed
-     * by placing them in a JAR file on the application class path or in the
-     * extension directory, the JAR file contains a provider-configuration file
+     * by placing them in a JAR file on the application class path,
+     * the JAR file contains a provider-configuration file
      * named {@code java.nio.file.spi.FileTypeDetector} in the resource directory
      * {@code META-INF/services}, and the file lists one or more fully-qualified
      * names of concrete subclass of {@code FileTypeDetector } that have a zero

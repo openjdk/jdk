@@ -207,11 +207,9 @@ import java.util.Hashtable;
  * {@link ClassLoader#getResources <tt>ClassLoader.getResources()</tt>})
  * all <em>application resource files</em> named <tt>jndi.properties</tt>
  * in the classpath.
- * In addition, if the file <i>java.home</i><tt>/lib/jndi.properties</tt>
- * exists and is readable,
+ * In addition, if the Java installation directory contains a built-in
+ * properties file, typically <tt>conf/jndi.properties</tt>,
  * JNDI treats it as an additional application resource file.
- * (<i>java.home</i> indicates the
- * directory named by the <tt>java.home</tt> system property.)
  * All of the properties contained in these files are placed
  * into the environment of the initial context.  This environment
  * is then inherited by other contexts.

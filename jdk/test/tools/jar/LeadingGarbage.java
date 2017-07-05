@@ -46,8 +46,7 @@ import org.testng.annotations.Test;
 @Test
 public class LeadingGarbage {
     final String jar =
-        Paths.get(new File(System.getProperty("java.home")).getParent(),
-                  "bin", "jar").toString();
+        Paths.get(System.getProperty("java.home"), "bin", "jar").toString();
     final File[] files = { new File("a"), new File("b") };
     final File normalZip = new File("normal.zip");
     final File leadingGarbageZip = new File("leadingGarbage.zip");

@@ -32,20 +32,20 @@ include LauncherCommon.gmk
 # overwritten.
 $(eval $(call SetupLauncher,java, \
     -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
-    $(JDK_OUTPUTDIR)/objs/jli_static.lib, $(JAVA_RC_FLAGS), \
-    $(JAVA_VERSION_INFO_RESOURCE), $(JDK_OUTPUTDIR)/objs/java_objs,true))
+    $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
+    $(JAVA_VERSION_INFO_RESOURCE), $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs,true))
 
-$(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
+$(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(CP) $(JDK_OUTPUTDIR)/objs/java_objs$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX) $@
+	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX) $@
 
-LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX)
+TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX)
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupLauncher,javaw, \
       -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
-      $(JDK_OUTPUTDIR)/objs/jli_static.lib, $(JAVA_RC_FLAGS), \
+      $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
       $(JAVA_VERSION_INFO_RESOURCE),,true))
 endif
 
@@ -57,7 +57,7 @@ $(eval $(call SetupLauncher,keytool, \
 BUILD_JEXEC :=
 BUILD_JEXEC_SRC :=
 BUILD_JEXEC_INC :=
-BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+BUILD_JEXEC_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
 
 #
 # UNHANDLED:
@@ -90,7 +90,7 @@ ifeq ($(BUILD_JEXEC), 1)
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), linux)
-    BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib
+    BUILD_JEXEC_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
     BUILD_JEXEC_INC += -I$(JDK_TOPDIR)/src/java.base/share/native/libjli
   endif
 endif
@@ -111,12 +111,12 @@ ifneq ($(BUILD_JEXEC_SRC), )
       CFLAGS_solaris := -KPIC, \
       LDFLAGS := $(LDFLAGS_JDKEXE) \
           $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/jexec_obj, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
       OUTPUT_DIR := $(BUILD_JEXEC_DST_DIR), \
       DEBUG_SYMBOLS := true, \
       PROGRAM := jexec))
 
-  LIBRARIES += $(BUILD_JEXEC)
+  TARGETS += $(BUILD_JEXEC)
 endif
 
 ################################################################################
@@ -124,8 +124,8 @@ endif
 BUILD_JSPAWNHELPER :=
 BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
 JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
-BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
-LINK_JSPAWNHELPER_OBJECTS := $(JDK_OUTPUTDIR)/objs/libjava/childproc.o
+BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
+LINK_JSPAWNHELPER_OBJECTS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o
 LINK_JSPAWNHELPER_FLAGS :=
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
@@ -133,7 +133,7 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib
+  BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
@@ -149,19 +149,13 @@ ifeq ($(BUILD_JSPAWNHELPER), 1)
       CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \
       LDFLAGS_SUFFIX := $(LINK_JSPAWNHELPER_OBJECTS), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/jspawnhelper, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
       OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
       PROGRAM := jspawnhelper))
 
   $(BUILD_JSPAWNHELPER): $(LINK_JSPAWNHELPER_OBJECTS)
 
-  LIBRARIES += $(BUILD_JSPAWNHELPER)
+  TARGETS += $(BUILD_JSPAWNHELPER)
 endif
 
 ################################################################################
-
-java.base: $(LAUNCHERS) $(LIBRARIES)
-
-all: java.base
-
-.PHONY: all java.base
