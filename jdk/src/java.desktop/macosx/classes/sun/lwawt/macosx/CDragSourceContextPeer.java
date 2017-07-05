@@ -93,6 +93,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         InputEvent         triggerEvent = trigger.getTriggerEvent();
 
         Point dragOrigin = new Point(trigger.getDragOrigin());
+        @SuppressWarnings("deprecation")
         int extModifiers = (triggerEvent.getModifiers() | triggerEvent.getModifiersEx());
         long timestamp   = triggerEvent.getWhen();
         int clickCount   = ((triggerEvent instanceof MouseEvent) ? (((MouseEvent) triggerEvent).getClickCount()) : 1);

@@ -117,7 +117,7 @@ class JVMCIJavaClasses : AllStatic {
     oop_field(VMField, type, "Ljava/lang/String;")                                                                                                             \
     long_field(VMField, offset)                                                                                                                                \
     long_field(VMField, address)                                                                                                                               \
-    oop_field(VMField, value, "Ljava/lang/Long;")                                                                                                              \
+    oop_field(VMField, value, "Ljava/lang/Object;")                                                                                                            \
   end_class                                                                                                                                                    \
   start_class(VMFlag)                                                                                                                                          \
     oop_field(VMFlag, name, "Ljava/lang/String;")                                                                                                              \
